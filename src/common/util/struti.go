@@ -14,6 +14,7 @@ package util
 
 import (
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -77,8 +78,7 @@ func Str2Time(timeStr string) time.Time {
 	if nil != err {
 		return fTime
 	}
-	fTime = time.Unix(fTime.Unix()-8*3600, 0)
-	return fTime
+	return fTime.UTC()
 
 }
 
@@ -90,4 +90,13 @@ func FirstNotEmptyString(strs ...string) string {
 		}
 	}
 	return ""
+}
+
+func ContainsAnyString(s string, subs ...string) bool {
+	for index := range subs {
+		if strings.Contains(s, subs[index]) {
+			return true
+		}
+	}
+	return false
 }

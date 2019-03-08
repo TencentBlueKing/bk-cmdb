@@ -13,36 +13,32 @@
 package procserver
 
 import (
-    "fmt"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apimachinery/procserver/process"
-    "configcenter/src/apimachinery/procserver/openapi"
+	"fmt"
+
+	"configcenter/src/apimachinery/procserver/openapi"
+	"configcenter/src/apimachinery/procserver/process"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
 )
 
 type ProcServerClientInterface interface {
-    Process() process.ProcessClientInterface
-    OpenAPI() openapi.OpenAPIClientInterface
-
+	Process() process.ProcessClientInterface
+	OpenAPI() openapi.OpenAPIClientInterface
 }
 
 func NewProcServerClientInterface(c *util.Capability, version string) ProcServerClientInterface {
-    base := fmt.Sprintf("/proc/%s", version)
-    return &procServer{client: rest.NewRESTClient(c, base)}
+	base := fmt.Sprintf("/process/%s", version)
+	return &procServer{client: rest.NewRESTClient(c, base)}
 }
 
 type procServer struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }
 
 func (p *procServer) Process() process.ProcessClientInterface {
-    return process.NewProcessClientInterface(p.client)
+	return process.NewProcessClientInterface(p.client)
 }
 
 func (p *procServer) OpenAPI() openapi.OpenAPIClientInterface {
-    return openapi.NewOpenApiClientInterface(p.client)
+	return openapi.NewOpenApiClientInterface(p.client)
 }
-
-
-

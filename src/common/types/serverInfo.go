@@ -34,6 +34,9 @@ const (
 	CC_MODULE_APISERVER        = "apiserver"
 	CC_MODULE_WEBSERVER        = "webserver"
 	CC_MODULE_EVENTSERVER      = "eventserver"
+	CC_MODULE_CORESERVICE      = "coreservice"
+	GSE_MODULE_PROCSERVER      = "gseprocserver"
+	CC_MODULE_TXC              = "txc"
 )
 
 // AllModule all cc module
@@ -50,11 +53,15 @@ var AllModule = map[string]bool{
 	CC_MODULE_APISERVER:        true,
 	CC_MODULE_WEBSERVER:        true,
 	CC_MODULE_EVENTSERVER:      true,
+	CC_MODULE_TXC:              true,
+	CC_MODULE_CORESERVICE:      true,
 }
 
 // cc functionality define
 const (
 	CCFunctionalityServicediscover = "servicediscover"
+	CCFunctionalityMongo           = "mongo"
+	CCFunctionalityRedis           = "redis"
 )
 
 // ServerInfo define base server information
@@ -79,11 +86,6 @@ type WebServerInfo struct {
 
 // AuditControllerServInfo audit-controller server information
 type AuditControllerServInfo struct {
-	ServerInfo
-}
-
-// DataCollectionControllerServInfo data-collection-controller server information
-type DataCollectionControllerServInfo struct {
 	ServerInfo
 }
 

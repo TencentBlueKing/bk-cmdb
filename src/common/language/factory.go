@@ -12,6 +12,9 @@
 
 package language
 
+// EmptyLanguageSetting empty language setting
+var EmptyLanguageSetting = map[string]LanguageMap{}
+
 // New create new Language instance,
 // dir is directory of language description resource
 func New(dir string) (CCLanguageIf, error) {
@@ -20,7 +23,7 @@ func New(dir string) (CCLanguageIf, error) {
 
 	langType, err := LoadLanguageResourceFromDir(dir)
 	if nil != err {
-		//blog.Error("failed to load the error resource, error info is %s", err.Error())
+		//blog.Errorf("failed to load the error resource, error info is %s", err.Error())
 		return nil, err
 	}
 	tmp.Load(langType)

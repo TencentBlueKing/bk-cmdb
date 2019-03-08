@@ -15,77 +15,71 @@ package meta
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *meta) SelectClassificationWithObject(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/classification/%s/objects", h.OwnerID)
-
+func (t *meta) SelectClassificationWithObject(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationWithObjectsResult, err error) {
+	subPath := fmt.Sprintf("/meta/object/classification/%s/objects", ownerID)
+	resp = new(metadata.QueryObjectClassificationWithObjectsResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *meta) SelectClassifications(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SelectClassifications(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectClassificationResult, err error) {
 	subPath := "/meta/object/classification/search"
-
+	resp = new(metadata.QueryObjectClassificationResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *meta) DeleteClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/classification/%s", id)
-
+func (t *meta) DeleteClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error) {
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
+	resp = new(metadata.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *meta) CreateClassification(ctx context.Context, h util.Headers, dat *metadata.ObjClassification) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) CreateClassification(ctx context.Context, h http.Header, dat *metadata.Classification) (resp *metadata.CreateObjectClassificationResult, err error) {
 	subPath := "/meta/object/classification"
-
+	resp = new(metadata.CreateObjectClassificationResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *meta) UpdateClassification(ctx context.Context, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/meta/object/classification/%s", id)
-
+func (t *meta) UpdateClassification(ctx context.Context, id int64, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error) {
+	subPath := fmt.Sprintf("/meta/object/classification/%d", id)
+	resp = new(metadata.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

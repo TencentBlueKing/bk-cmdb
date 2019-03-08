@@ -70,7 +70,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 						isPass = true
 					}
 					if 11 < len(d) {
-						return errProxy.Error(common.CCErrCommOverLimit)
+						return errProxy.Errorf(common.CCErrCommOverLimit, "option.min")
 					}
 				}
 
@@ -92,7 +92,7 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 						isPass = true
 					}
 					if 11 < len(d) {
-						return errProxy.Error(common.CCErrCommOverLimit)
+						return errProxy.Errorf(common.CCErrCommOverLimit, "option.max")
 					}
 				}
 				if !isPass {
@@ -110,15 +110,6 @@ func ValidPropertyOption(propertyType string, option interface{}, errProxy error
 
 	}
 	return nil
-}
-
-// IsAssocateProperty  is Assocate property
-func IsAssocateProperty(propertyType string) bool {
-	if common.FieldTypeSingleAsst == propertyType || common.FieldTypeMultiAsst == propertyType {
-		return true
-	}
-
-	return false
 }
 
 // IsStrProperty  is string property

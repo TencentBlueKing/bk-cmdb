@@ -58,18 +58,18 @@ const (
 )*/
 
 type AuditLogHosts struct {
-	ID      int
+	ID      int64
 	Content interface{}
 	InnerIP string
 }
 
 type AuditLogExt struct {
-	ID      int //操作实例id
+	ID      int64 //操作实例id
 	Content interface{}
 	ExtKey  string
 }
 
 type AuditLogContext struct {
-	ID      int //操作实例id
+	ID      int64 //操作实例id
 	Content interface{}
 }

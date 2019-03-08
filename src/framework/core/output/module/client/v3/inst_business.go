@@ -1,33 +1,36 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package v3
 
 import (
 	cccommon "configcenter/src/common"
 	"configcenter/src/framework/common"
-	"configcenter/src/framework/core/log"
+
+	"encoding/json"
+	"fmt"
+
+	"github.com/tidwall/gjson"
 
 	"configcenter/src/framework/core/errors"
 	"configcenter/src/framework/core/types"
-	"encoding/json"
-	"fmt"
-	"github.com/tidwall/gjson"
 )
 
+// BusinessGetter business getter interface
 type BusinessGetter interface {
 	Business() BusinessInterface
 }
 
+// BusinessInterface business operation interface
 type BusinessInterface interface {
 	// SearchBusiness search host by condition,
 	SearchBusiness(cond common.Condition) ([]types.MapStr, error)
@@ -110,6 +113,7 @@ func (h *Business) DeleteBusiness(bizID int) error {
 	return nil
 }
 
+// SearchBusiness search bussiness operation
 func (h *Business) SearchBusiness(cond common.Condition) ([]types.MapStr, error) {
 	data := cond.ToMapStr()
 
@@ -124,7 +128,7 @@ func (h *Business) SearchBusiness(cond common.Condition) ([]types.MapStr, error)
 	}
 
 	out := param.ToJSON()
-	log.Infof("search business param %s", out)
+	//log.Infof("search business param %s", out)
 
 	targetURL := fmt.Sprintf("%s/api/v3/biz/search/%s", h.cli.GetAddress(), h.cli.GetSupplierAccount())
 	rst, err := h.cli.httpCli.POST(targetURL, nil, out)

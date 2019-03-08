@@ -13,28 +13,27 @@
 package module
 
 import (
-    "context"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/source_controller/hostcontroller/hostdata/actions/instdata"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
 type ModuleInterface interface {
-    GetHostModulesIDs(ctx context.Context, h util.Headers, dat *instdata.ModuleHostConfigParams) (resp *api.BKAPIRsp, err error)
-    AddModuleHostConfig(ctx context.Context, h util.Headers, dat *instdata.ModuleHostConfigParams) (resp *api.BKAPIRsp, err error)
-    DelModuleHostConfig(ctx context.Context, h util.Headers, dat *instdata.ModuleHostConfigParams) (resp *api.BKAPIRsp, err error)
-    DelDefaultModuleHostConfig(ctx context.Context, h util.Headers, dat *instdata.ModuleHostConfigParams) (resp *api.BKAPIRsp, err error)
-    MoveHost2ResourcePool(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    AssignHostToApp(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    GetModulesHostConfig(ctx context.Context, h util.Headers, dat map[string][]int) (resp *api.BKAPIRsp, err error)
+	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
+	AddModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	DelModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error)
+	MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error)
+	AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error)
+	GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error)
 }
 
 func NewModuleInterface(client rest.ClientInterface) ModuleInterface {
-    return &mod{client:client}
+	return &mod{client: client}
 }
 
 type mod struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

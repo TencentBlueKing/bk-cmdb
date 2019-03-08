@@ -13,6 +13,9 @@
 package api
 
 import (
+	"crypto/tls"
+	"encoding/json"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
@@ -24,13 +27,11 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
-	_ "configcenter/src/common/ssl"
-	"configcenter/src/storage"
-	"configcenter/src/storage/dbclient"
-	"crypto/tls"
-	"encoding/json"
 
-	restful "github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful" //_ "configcenter/src/common/ssl"
+	redis "gopkg.in/redis.v5"
+	//"configcenter/src/storage"
+	//"configcenter/src/storage/dbclient"
 )
 
 type APIRequest struct {
@@ -64,22 +65,22 @@ type APIResource struct {
 	Actions      []*httpserver.Action
 	GlobalFilter func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain)
 	Wactions     []*webserver.Action
-	MetaCli      storage.DI
-	InstCli      storage.DI
-	CacheCli     storage.DI
-	Error        errors.CCErrorIf
-	HostCtrl     func() string
-	ObjCtrl      func() string
-	ProcCtrl     func() string
-	EventCtrl    func() string
-	AuditCtrl    func() string
-	HostAPI      func() string
-	TopoAPI      func() string
-	ProcAPI      func() string
-	EventAPI     func() string
-	APIAddr      func() string
-	AddrSrv      AddrSrv
-	Lang         language.CCLanguageIf
+	//MetaCli      storage.DI
+	//InstCli      storage.DI
+	CacheCli  *redis.Client
+	Error     errors.CCErrorIf
+	HostCtrl  func() string
+	ObjCtrl   func() string
+	ProcCtrl  func() string
+	EventCtrl func() string
+	AuditCtrl func() string
+	HostAPI   func() string
+	TopoAPI   func() string
+	ProcAPI   func() string
+	EventAPI  func() string
+	APIAddr   func() string
+	AddrSrv   AddrSrv
+	Lang      language.CCLanguageIf
 }
 
 // AddrSrv get server address interface
@@ -125,13 +126,13 @@ func (a *APIResource) InitWaction() {
 func (a *APIResource) PreProcess(data []byte) (string, error) {
 	var req APIRequest
 	if err := json.Unmarshal(data, &req); err != nil {
-		blog.Error("fail to parse json, error:%s. data = %s.", err.Error(), string(data))
+		blog.Errorf("fail to parse json, error:%s. data = %s.", err.Error(), string(data))
 		return "", cchttp.InternalError(common.CC_ERR_Comm_JSON_DECODE, common.CC_ERR_Comm_JSON_DECODE_STR)
 	}
 
 	d, err := json.Marshal(req.Request)
 	if err != nil {
-		blog.Error("fail to encode json, error:%s", err.Error())
+		blog.Errorf("fail to encode json, error:%s", err.Error())
 		return "", cchttp.InternalError(common.CC_ERR_Comm_JSON_ENCODE, common.CC_ERR_Comm_JSON_ENCODE_STR)
 	}
 
@@ -157,6 +158,8 @@ func (a *APIResource) ParseConf(data []byte) (map[string]string, error) {
 	return ccapiConfig.Configmap, nil
 }
 
+/*
+TODO:will delete
 // GetDataCli get data cli
 func (a *APIResource) GetDataCli(config map[string]string, dType string) error {
 	host := config[dType+".host"]
@@ -183,6 +186,7 @@ func (a *APIResource) GetDataCli(config map[string]string, dType string) error {
 
 	return nil
 }
+*/
 
 // CreateAPIRspStr create api rsp str
 func (a *APIResource) CreateAPIRspStr(errcode int, info interface{}) (string, error) {

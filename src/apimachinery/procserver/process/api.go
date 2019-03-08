@@ -13,29 +13,35 @@
 package process
 
 import (
-    "context"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+    "configcenter/src/common/metadata"
 )
 
 type ProcessClientInterface interface {
-    GetProcessDetailByID(ctx context.Context, appID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    GetProcessBindModule(ctx context.Context, businessID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    BindModuleProcess(ctx context.Context, businessID string, procID string, moduleName string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    DeleteModuleProcessBind(ctx context.Context, businessID string, procID string, moduleName string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    CreateProcess(ctx context.Context, businessID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    DeleteProcess(ctx context.Context, businessID string, procID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    SearchProcess(ctx context.Context, businessID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    UpdateProcess(ctx context.Context, businessID string, procID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-
+	GetProcessDetailByID(ctx context.Context, ownerID string, appID string, procID string, h http.Header) (resp *metadata.Response, err error)
+	GetProcessBindModule(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error)
+	BindModuleProcess(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error)
+	DeleteModuleProcessBind(ctx context.Context, ownerID string, businessID string, procID string, moduleName string, h http.Header) (resp *metadata.Response, err error)
+	CreateProcess(ctx context.Context, ownerID string, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	DeleteProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header) (resp *metadata.Response, err error)
+	SearchProcess(ctx context.Context, ownerID string, businessID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateProcess(ctx context.Context, ownerID string, businessID string, procID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    BatchUpdateProcess(ctx context.Context, ownerID, businessID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+    OperateProcessInstance(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	QueryProcessOperateResult(ctx context.Context, namespace string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	CreateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	UpdateConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	DeleteConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	QueryConfigTemp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 }
 
 func NewProcessClientInterface(client rest.ClientInterface) ProcessClientInterface {
-    return &process{client:client}
+	return &process{client: client}
 }
 
 type process struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

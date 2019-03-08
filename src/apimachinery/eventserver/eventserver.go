@@ -13,33 +13,32 @@
 package eventserver
 
 import (
-    "fmt"
-    "context"
-    
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/scene_server/event_server/types"
-    paraparse "configcenter/src/common/paraparse"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metadata"
 )
 
 type EventServerClientInterface interface {
-    Query(ctx context.Context, appID string, h util.Headers, dat paraparse.SubscribeCommonSearch) (resp *api.BKAPIRsp, err error)
-    Ping(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    Telnet(ctx context.Context, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error)
-    Subscribe(ctx context.Context, appID string, h util.Headers, subscription *types.Subscription) (resp *api.BKAPIRsp, err error)
-    UnSubscribe(ctx context.Context, appID string, subscribeID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-    Rebook(ctx context.Context, appID string, subscribeID string, h util.Headers, subscription *types.Subscription) (resp *api.BKAPIRsp, err error)
+	Query(ctx context.Context, ownerID string, appID string, h http.Header, dat metadata.ParamSubscriptionSearch) (resp *metadata.Response, err error)
+	Ping(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	Telnet(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
+	Subscribe(ctx context.Context, ownerID string, appID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error)
+	UnSubscribe(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header) (resp *metadata.Response, err error)
+	Rebook(ctx context.Context, ownerID string, appID string, subscribeID string, h http.Header, subscription *metadata.Subscription) (resp *metadata.Response, err error)
 }
 
 func NewEventServerClientInterface(c *util.Capability, version string) EventServerClientInterface {
-    base := fmt.Sprintf("/event/%s", version)
-    
-    return &eventServer{
-        client: rest.NewRESTClient(c, base),
-    }
+	base := fmt.Sprintf("/event/%s", version)
+
+	return &eventServer{
+		client: rest.NewRESTClient(c, base),
+	}
 }
 
 type eventServer struct {
-    client rest.ClientInterface
+	client rest.ClientInterface
 }

@@ -244,6 +244,14 @@ func (e *encoder) addElemName(kind byte, name string) {
 	e.addBytes(0)
 }
 
+func isNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
+}
+
 func (e *encoder) addElem(name string, v reflect.Value, minSize bool) {
 
 	if !v.IsValid() {

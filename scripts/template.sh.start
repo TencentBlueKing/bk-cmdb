@@ -12,4 +12,4 @@ fi
 
 # set execute 
 chmod +x cmdb-name-placeholder
-./cmdb-name-placeholder --addrport=${localIp}:cmdb-port-placeholder --logtostderr=false --log-dir=./logs --v=0 --regdiscv=rd_server_placeholer > ./logs/std.log 2>&1 &
+./cmdb-name-placeholder --addrport=${localIp}:cmdb-port-placeholder --logtostderr=false --log-dir=./logs --v=3 --regdiscv=rd_server_placeholer > ./logs/std.log 2>&1 &

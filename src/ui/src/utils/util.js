@@ -1,25 +1,3 @@
-/**
- * 获取主机关联关系
- * @param data - 主机列表信息
- * @return list - 列表 ['XXX业务 > xxx集群 > XXX模块']
- */
-export function getHostRelation (data) {
-    let list = []
-    data.module.map(module => {
-        let set = data.set.find(set => {
-            return set['bk_set_id'] === module['bk_set_id']
-        })
-        if (set) {
-            let biz = data.biz.find(biz => {
-                return biz['bk_biz_id'] === set['bk_biz_id']
-            })
-            if (biz) {
-                list.push(`${biz['bk_biz_name']} > ${set['bk_set_name']} > ${module['bk_module_name']}`)
-            }
-        }
-    })
-    return list
-}
 const HEX_TO_RGB = (hex) => {
     let rgb = []
     hex = hex.substr(1)
@@ -57,60 +35,14 @@ export function generateObjIcon (image, options) {
         const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
         return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
                     <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                    <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="35" y="-12" fill="${options.iconColor}" width="35" >
+                    <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="22" y="5" fill="${options.iconColor}" width="65" >
                         <image width="15" xlink:href="${base64Image}"></image>
                     </svg>
-                    <foreignObject x="0" y="58" width="100%" height="100%">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
-                            <div style="color:${options.fontColor};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
-                        </div>
-                    </foreignObject>
                 </svg>`
     } else {
         options = image
         return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
                     <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                    <foreignObject x="0" y="43" width="100%" height="100%">
-                        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px">
-                            <div style="color:${options.fontColor};text-align: center;width: 60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin:0 auto">${options.name}</div>
-                        </div>
-                    </foreignObject>
                 </svg>`
     }
-}
-
-/**
- * 加载图片
- * @param {String} src - 图片路径
- * @param {Function} successFunc - 成功回调
- * @param {Function} failFunc - 失败回调
- */
-export function loadImage (src, successFunc, failFunc) {
-    const image = new Image()
-    image.onload = () => {
-        if ('naturalHeight' in image) {
-            if (image.naturalHeight + image.naturalWidth === 0) {
-                image.onerror()
-                return
-            }
-        } else if (image.width + image.height === 0) {
-            image.onerror()
-            return
-        }
-        successFunc(image)
-    }
-    image.onerror = () => {
-        failFunc(image)
-    }
-    image.src = src
-}
-
-/**
- * 封装加载图片方法
- * @param {String} url - 图片路径
- */
-export function getImgUrl (url) {
-    return new Promise((resolve, reject) => {
-        loadImage(url, img => resolve(img), e => reject(e))
-    })
 }

@@ -13,12 +13,13 @@
 package httpserver
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/ssl"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 
 	"github.com/emicklei/go-restful"
 )
@@ -40,14 +41,6 @@ func NewHttpServer(port uint, addr, sock string) *HttpServer {
 
 	wsContainer := restful.NewContainer()
 
-	// Add container filter to enable CORS
-	//	cors := restful.CrossOriginResourceSharing{
-	//		AllowedHeaders: []string{"Content-Type", "Accept"},
-	//		AllowedDomains: []string{},
-	//		CookiesAllowed: true,
-	//		Container:      wsContainer}
-	//	wsContainer.Filter(cors.Filter)
-	//	wsContainer.Filter(wsContainer.OPTIONSFilter)
 	return &HttpServer{
 		addr:         addr,
 		port:         port,
@@ -119,7 +112,7 @@ func (s *HttpServer) RegisterActions(ws *restful.WebService, actions []*Action) 
 			ws.Route(route)
 			blog.Debug("register delete api, url(%s)", action.Path)
 		default:
-			blog.Error("unrecognized action verb: %s", action.Verb)
+			blog.Errorf("unrecognized action verb: %s", action.Verb)
 		}
 	}
 }
@@ -132,7 +125,7 @@ func (s *HttpServer) registerActionsFilter(r *restful.RouteBuilder, filters []re
 
 func (s *HttpServer) ListenAndServe() error {
 
-	var chError = make(chan error)
+	var chError = make(chan error, 1)
 	//list and serve by addrport
 	go func() {
 		addrport := net.JoinHostPort(s.addr, strconv.FormatUint(uint64(s.port), 10))
@@ -140,15 +133,15 @@ func (s *HttpServer) ListenAndServe() error {
 		if s.isSSL {
 			tlsConf, err := ssl.ServerTslConf(s.caFile, s.certFile, s.keyFile, s.certPasswd)
 			if err != nil {
-				blog.Error("fail to load certfile, err:%s", err.Error())
+				blog.Errorf("fail to load certfile, err:%s", err.Error())
 				chError <- fmt.Errorf("fail to load certfile")
 				return
 			}
 			httpserver.TLSConfig = tlsConf
-			blog.Info("Start https service on(%s)", addrport)
+			blog.Infof("Start https service on(%s)", addrport)
 			chError <- httpserver.ListenAndServeTLS("", "")
 		} else {
-			blog.Info("Start http service on(%s)", addrport)
+			blog.Infof("Start http service on(%s)", addrport)
 			chError <- httpserver.ListenAndServe()
 		}
 	}()

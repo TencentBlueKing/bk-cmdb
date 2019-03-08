@@ -26,7 +26,7 @@
 ### 导入模型属性
 
 - API: POST /object/owner/{bk_supplier_account}/object/{bk_obj_id}/import
-- API 名称：export_object_attribute
+- API 名称：import_object_attribute
 - 功能说明：
 	- 中文：导入模型属性
 	- English：import object attribute

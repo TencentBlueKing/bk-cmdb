@@ -1,131 +1,369 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
 import Vue from 'vue'
-import {mapMutations, mapGetters} from 'vuex'
-import store from '@/store'
 import Router from 'vue-router'
+import store from '@/store'
+import preload from '@/setup/preload'
+import $http from '@/api'
+
+const index = () => import(/* webpackChunkName: index */ '@/views/index')
+const modelManage = () => import(/* webpackChunkName: model */ '@/views/model-manage')
+const modelDetail = () => import(/* webpackChunkName: model */ '@/views/model-manage/children')
+const business = () => import(/* webpackChunkName: business */ '@/views/business')
+const businessArchived = () => import(/* webpackChunkName: businessArchived */ '@/views/business/archived')
+const generalModel = () => import(/* webpackChunkName: generalModel */ '@/views/general-model')
+const deleteHistory = () => import(/* webpackChunkName: deleteHistory */ '@/views/history')
+const hosts = () => import(/* webpackChunkName: hosts */ '@/views/hosts')
+const eventpush = () => import(/* webpackChunkName: eventpush */ '@/views/eventpush')
+const permission = () => import(/* webpackChunkName: permission */ '@/views/permission')
+const resource = () => import(/* webpackChunkName: resource */ '@/views/resource')
+const audit = () => import(/* webpackChunkName: audit */ '@/views/audit')
+const topology = () => import(/* webpackChunkName: topology */ '@/views/topology')
+const process = () => import(/* webpackChunkName: process */ '@/views/process')
+const customQuery = () => import(/* webpackChunkName: customQuery */ '@/views/custom-query')
+const networkDiscoveryConfiguration = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-config')
+const networkDiscovery = () => import(/* webpackChunkName: networkDiscovery */ '@/views/network-discovery')
+const networkConfirm = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/confirm')
+const networkHistory = () => import(/* webpackChunkName: networkConfirm */ '@/views/network-discovery/history')
+const error = () => import(/* webpackChunkName: error */ '@/views/status/error')
+const cloudDiscover = () => import(/* webpackChunkName: cloudDiscover */ '@/views/cloud-discover')
+const cloudConfirm = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm')
+const confirmHistory = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm/history')
+const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
+const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
+const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology')
+const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/business-model')
+const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-association')
 
 Vue.use(Router)
 
-const pageIndex = () => import(/* webpackChunkName: "page-index" */ '@/pages/index/index-v2')
-const pageHosts = () => import(/* webpackChunkName: "page-hosts" */ '@/pages/hosts/hosts')
-const pageModel = () => import(/* webpackChunkName: "page-model" */ '@/pages/model/model')
-const pageResource = () => import(/* webpackChunkName: "page-resource" */ '@/pages/resource/resource')
-const pageProcess = () => import(/* webpackChunkName: "page-process" */ '@/pages/process/process')
-const pagePermission = () => import(/* webpackChunkName: "page-permission" */ '@/pages/permission/permission')
-const pageEventpush = () => import(/* webpackChunkName: "page-eventpush" */ '@/pages/eventpush/eventpush')
-const pageAuditing = () => import(/* webpackChunkName: "page-auditing" */ '@/pages/auditing/auditing')
-const pageOrganization = () => import(/* webpackChunkName: "page-organization" */ '@/pages/organization/object')
-const pageTopology = () => import(/* webpackChunkName: "page-topology" */ '@/pages/topology/topology')
-const pageCustomQuery = () => import(/* webpackChunkName: "page-customQuery" */ '@/pages/customQuery/customQuery')
-
-var routerVue = new Vue({
-    store: store,
-    computed: {
-        ...mapGetters('navigation', ['authorizedNavigation'])
-    },
-    methods: {
-        ...mapMutations(['setGlobalLoading']),
-        async isAuthorized (to) {
-            await this.$store.dispatch('navigation/getAuthority')
-            await Promise.all([this.$store.dispatch('navigation/getClassifications'), this.$store.dispatch('usercustom/getUserCustom')])
-            let isAuthorized = false
-            let authorizedPath = ['/index', '/403', '/404']
-            if (authorizedPath.includes(to.path)) {
-                isAuthorized = true
-            } else {
-                isAuthorized = this.authorizedNavigation.some(({id, children}) => {
-                    return children.some(({path}) => path === to.path)
-                })
-            }
-            return Promise.resolve(isAuthorized)
-        }
-    }
-})
-
-var router = new Router({
+const router = new Router({
     linkActiveClass: 'active',
     routes: [{
-        path: '/404',
-        components: require('@/pages/404')
-    }, {
-        path: '/403',
-        components: require('@/pages/403')
-    }, {
         path: '/',
         redirect: '/index'
     }, {
+        name: 'index',
         path: '/index',
-        component: pageIndex
-    }, {
-        path: '/hosts',
-        component: pageHosts,
+        component: index,
         meta: {
-            setBkBizId: true
+            ignoreAuthorize: true,
+            isModel: false
         }
     }, {
+        name: 'business',
+        path: '/business',
+        component: business,
+        meta: {
+            isModel: true,
+            objId: 'biz'
+        }
+    }, {
+        name: 'model',
         path: '/model',
-        component: pageModel
-    }, {
-        path: '/resource',
-        component: pageResource
-    }, {
-        path: '/process',
-        component: pageProcess,
+        component: modelManage,
         meta: {
-            setBkBizId: true
+            isModel: false,
+            requireBusiness: true,
+            showInAdminView: true
         }
     }, {
-        path: '/permission',
-        component: pagePermission
+        path: '/model/details/process',
+        redirect: '/status-404'
     }, {
+        path: '/model/details/plat',
+        redirect: '/status-404'
+    }, {
+        name: 'modelDetails',
+        path: '/model/details/:modelId',
+        component: modelDetail,
+        meta: {
+            returnPath: '/model',
+            relative: '/model',
+            ignoreAuthorize: true,
+            isModel: false
+        }
+    }, {
+        name: 'modelTopology',
+        path: '/model/topology',
+        component: modelTopology,
+        meta: {
+            isModel: false,
+            requireBusiness: true,
+            showInAdminView: true
+        }
+    }, {
+        name: 'modelBusiness',
+        path: '/model/business',
+        component: businessModel,
+        meta: {
+            isModel: false
+        }
+    }, {
+        name: 'modelAssociation',
+        path: '/model/association',
+        component: modelAssociation,
+        meta: {
+            isModel: false
+        }
+    }, {
+        name: 'eventpush',
         path: '/eventpush',
-        component: pageEventpush
-    }, {
-        path: '/auditing',
-        component: pageAuditing
-    }, {
-        path: '/organization/:objId',
-        component: pageOrganization
-    }, {
-        path: '/topology',
-        component: pageTopology,
+        component: eventpush,
         meta: {
-            setBkBizId: true
+            isModel: false,
+            authority: {
+                type: 'backConfig',
+                id: 'event'
+            }
         }
     }, {
-        path: '/customQuery',
-        component: pageCustomQuery,
+        name: 'businessAuthority',
+        path: '/authority/business',
+        component: businessAuthority,
         meta: {
-            setBkBizId: true
+            isModel: false,
+            isAdminOnly: true
+        }
+    }, {
+        name: 'systemAuthority',
+        path: '/authority/system',
+        component: systemAuthority,
+        meta: {
+            isModel: false,
+            isAdminOnly: true
+        }
+    }, {
+        name: 'businessHistory',
+        path: '/history/biz',
+        component: businessArchived,
+        meta: {
+            relative: '/business'
+        }
+    }, {
+        name: 'generalModel',
+        path: '/general-model/:objId',
+        component: generalModel,
+        meta: {
+            isModel: true
+        }
+    }, {
+        name: 'modelHistory',
+        path: '/history/:objId',
+        component: deleteHistory,
+        meta: {
+            isModel: false
+        }
+    }, {
+        name: 'hosts',
+        path: '/hosts',
+        component: hosts,
+        meta: {
+            requireBusiness: true,
+            isModel: false
+        }
+    }, {
+        name: 'resource',
+        path: '/resource',
+        component: resource,
+        meta: {
+            isModel: false,
+            authority: {
+                type: 'globalBusi',
+                id: 'resource'
+            }
+        }
+    }, {
+        name: 'auditing',
+        path: '/auditing',
+        component: audit,
+        meta: {
+            isModel: false,
+            authority: {
+                type: 'backConfig',
+                id: 'audit'
+            }
+        }
+    }, {
+        name: 'topology',
+        path: '/topology',
+        component: topology,
+        meta: {
+            requireBusiness: true,
+            isModel: false
+        }
+    }, {
+        name: 'process',
+        path: '/process',
+        component: process,
+        meta: {
+            requireBusiness: true,
+            isModel: false
+        }
+    }, {
+        name: 'customQuery',
+        path: '/custom-query',
+        component: customQuery,
+        meta: {
+            requireBusiness: true,
+            isModel: false
+        }
+    }, {
+        name: 'networkDiscovery',
+        path: '/network-discovery',
+        component: networkDiscovery
+    }, {
+        name: 'networkDiscoveryConfig',
+        path: '/network-discovery/config',
+        component: networkDiscoveryConfiguration,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
+        }
+    }, {
+        name: 'networkDiscoveryConfirm',
+        path: '/network-discovery/:cloudId/confirm',
+        component: networkConfirm,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
+        }
+    }, {
+        name: 'networkDiscoveryHistory',
+        path: '/network-discovery/history',
+        component: networkHistory,
+        meta: {
+            ignoreAuthorize: true,
+            returnPath: '/network-discovery',
+            relative: '/network-discovery'
+        }
+    }, {
+        name: 'statusRequireBusiness',
+        path: '/status-require-business',
+        components: require('@/views/status/require-business'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        name: 'status403',
+        path: '/status-403',
+        components: require('@/views/status/403'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        name: 'status404',
+        path: '/status-404',
+        components: require('@/views/status/404'),
+        meta: {
+            ignoreAuthorize: true
+        }
+    }, {
+        name: 'statusError',
+        path: '/status-error',
+        component: error,
+        meta: {
+            ignoreAuthorize: true
         }
     }, {
         path: '*',
-        redirect: '/404'
+        redirect: '/status-404'
+    }, {
+        name: 'resourceConfirm',
+        path: '/resource-confirm',
+        component: cloudConfirm
+    }, {
+        name: 'cloud',
+        path: '/cloud-discover',
+        component: cloudDiscover
+    }, {
+        name: 'resourceConfirmHistory',
+        path: '/confirm/history',
+        component: confirmHistory,
+        meta: {
+            relative: '/resource-confirm'
+        }
     }]
 })
 
+const cancelRequest = () => {
+    const allRequest = $http.queue.get()
+    const requestQueue = allRequest.filter(request => request.cancelWhenRouteChange)
+    return $http.cancel(requestQueue.map(request => request.requestId))
+}
+
+const hasPrivilegeBusiness = () => {
+    const privilegeBusiness = router.app.$store.getters['objectBiz/privilegeBusiness']
+    return !!privilegeBusiness.length
+}
+
+const hasAuthority = to => {
+    const privilege = router.app.$store.getters['objectBiz/privilegeBusiness']
+    const {type, id} = to.meta.authority
+    let authority = []
+    if (type === 'globalBusi') {
+        authority = router.app.$store.getters['userPrivilege/globalBusiAuthority'](id)
+    } else if (type === 'backConfig') {
+        authority = router.app.$store.getters['userPrivilege/backConfigAuthority'](id)
+    }
+    return authority.includes('search')
+}
+
 router.beforeEach(async (to, from, next) => {
-    routerVue.setGlobalLoading(true)
-    let isAuthorized = await routerVue.isAuthorized(to)
-    if (isAuthorized) {
-        if (!to.matched.some(({meta}) => meta.setBkBizId)) {
-            delete routerVue.$axios.defaults.headers.bk_biz_id
+    try {
+        const store = router.app.$store
+        if (to.name !== 'statusError') {
+            store.commit('setGlobalLoading', true)
+            await cancelRequest()
+            await preload(router.app)
+            if (to.meta.ignoreAuthorize) {
+                next()
+            } else if (to.meta.hasOwnProperty('authority')) {
+                if (hasAuthority(to)) {
+                    next()
+                } else {
+                    next({name: 'status403'})
+                }
+            } else if (to.meta.requireBusiness) {
+                if (store.getters.isAdminView) {
+                    if (to.meta.showInAdminView) {
+                        next()
+                    } else {
+                        next({name: 'status404'})
+                    }
+                } else if (!hasPrivilegeBusiness()) {
+                    next({
+                        name: 'statusRequireBusiness',
+                        query: {
+                            relative: to.path
+                        }
+                    })
+                } else {
+                    next()
+                }
+            } else {
+                next()
+            }
+        } else {
+            store.commit('setGlobalLoading', false)
+            next()
         }
-        next()
-    } else {
-        next('/403')
+    } catch (e) {
+        next({
+            name: 'statusError',
+            query: {
+                relative: to.path
+            }
+        })
     }
 })
+
 router.afterEach((to, from) => {
-    routerVue.setGlobalLoading(false)
+    const store = router.app.$store
+    if (to.name === 'statusError') {
+        $http.cancel()
+    }
+    store.commit('setGlobalLoading', false)
 })
+
 export default router

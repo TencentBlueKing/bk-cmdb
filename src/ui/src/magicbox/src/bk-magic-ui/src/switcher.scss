@@ -1,0 +1,183 @@
+@charset "utf-8";
+@import "./conf";
+
+.bk-switcher {
+    width: 54px;
+    height: 28px;
+    line-height: 28px;
+    position: relative;
+    border-radius: 50px;
+    display: inline-block;
+    vertical-align: middle;
+    transition: all .4s ease;
+    background-color: $fnMinorColor;
+    text-align: left;
+    &:after {
+        left: 2px;
+        top: 2px;
+        content: "";
+        height: 24px;
+        width: 24px;
+        border-radius: 100px;
+        display: block;
+        transition: all .3s ease;
+        position: absolute;
+        cursor: pointer;
+        background: #fff;
+        box-shadow: 0 0 3px rgba(0, 0, 0, .2)
+    }
+    .switcher-label {
+        width: 30px;
+        height: 28px;
+        font-size: 12px;
+        color: #fff;
+        transition: all ease 0.3s;
+        font-weight: normal;
+        display: none;
+        margin: 0 0 0 26px;
+        text-align: center;
+        vertical-align: top;
+        .switcher-text {
+            // transition: font-size ease 0.3s;
+        }
+        .on-text {
+            display: none;
+        }
+        .off-text {
+            display: inline-block
+        }
+    }
+    &.bk-switcher-small {
+        .switcher-label {
+            margin-left: 25px;
+        }
+    }
+
+    &.show-label {
+        width: 61px;
+        .switcher-label {
+            display: inline-block;
+        }
+    }
+
+    &.is-disabled {
+        cursor: default;
+        background-color: #eee !important;
+        input[type=checkbox] {
+            cursor: not-allowed;
+        }
+    }
+    &.is-checked {
+        background: $successColor;
+
+        &:after {
+            left: 100%;
+            top: 2px;
+            margin-left: -26px;
+        }
+        .switcher-label {
+            margin-left: 4px;
+
+            .on-text {
+                display: inline-block;
+            }
+            .off-text {
+                display: none;
+            }
+        }
+    }
+
+    &.bk-switcher-outline {
+        background: #fff;
+        border: 1px solid $fnMinorColor;
+        &:after {
+            width: 22px;
+            height: 22px;
+            box-shadow: none;
+            background-color: $fnMinorColor;
+        }
+        .switcher-label {
+            height: 26px;
+            color: $fnMinorColor;
+            margin-left: 24px;
+        }
+        &.is-checked {
+            border: 1px solid $successColor;
+            &:after {
+                margin-left: -24px;
+                background-color: $successColor;
+            }
+            .switcher-label {
+                color: $successColor;
+                margin-left: 4px;
+            }
+        }
+        &.is-disabled {
+            background-color: #fff !important;
+            border-color: #eee !important;
+            .switcher-label {
+                color: #eee;
+            }
+            &:after {
+                background-color: #eee;
+            }
+        }
+
+        &.bk-switcher-small {
+            &:after {
+                width: 18px;
+                height: 18px;
+            }
+            &.is-checked {
+                &:after {
+                    margin-left: -20px;
+                }
+            }
+        }
+    }
+
+    &.bk-switcher-square {
+        border-radius: 2px;
+        &:after {
+            border-radius: 2px;
+        }
+        .switcher-label {
+            width: 35px;
+        }
+    }
+
+    &.bk-switcher-small {
+        width: 44px;
+        height: 24px;
+        line-height: 22px;
+
+        .switcher-label {
+            font-size: 12px;
+            display: none !important;
+        }
+        &:after {
+            width: 20px;
+            height: 20px;
+        }
+        &.is-checked {
+            &:after {
+                left: 100%;
+                top: 2px;
+                margin-left: -22px;
+            }
+        }
+    }
+
+    input[type=checkbox],
+    input[type=radio] {
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        z-index: 1;
+        cursor: pointer;
+        left: 0;
+        top: 0;
+        margin: 0;
+    }
+}

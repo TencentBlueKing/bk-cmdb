@@ -14,35 +14,32 @@ package meta
 
 import (
 	"context"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/api/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *meta) SearchTopoGraphics(ctx context.Context, h util.Headers, dat *metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) SearchTopoGraphics(ctx context.Context, h http.Header, dat *metadata.TopoGraphics) (resp *metadata.SearchTopoGraphicsResult, err error) {
 	subPath := "/topographics/search"
-
+	resp = new(metadata.SearchTopoGraphicsResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *meta) UpdateTopoGraphics(ctx context.Context, h util.Headers, dat []metadata.TopoGraphics) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
+func (t *meta) UpdateTopoGraphics(ctx context.Context, h http.Header, dat []metadata.TopoGraphics) (resp *metadata.UpdateResult, err error) {
 	subPath := "/topographics/update"
-
+	resp = new(metadata.UpdateResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return

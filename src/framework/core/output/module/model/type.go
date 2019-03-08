@@ -99,6 +99,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt FieldDataType = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat FieldDataType = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum FieldDataType = "enum"
 
@@ -158,8 +161,8 @@ type Group interface {
 	GetRecordID() int
 
 	CreateAttribute() Attribute
-	FindAttributesLikeName(attributeName string) (AttributeIterator, error)
-	FindAttributesByCondition(cond common.Condition) (AttributeIterator, error)
+	FindAttributesLikeName(supplierAccount string, attributeName string) (AttributeIterator, error)
+	FindAttributesByCondition(supplierAccount string, cond common.Condition) (AttributeIterator, error)
 }
 
 // ClassificationIterator the classification iterator
@@ -184,8 +187,8 @@ type Classification interface {
 	GetIcon() string
 
 	CreateModel() Model
-	FindModelsLikeName(modelName string) (Iterator, error)
-	FindModelsByCondition(cond common.Condition) (Iterator, error)
+	FindModelsLikeName(supplierAccount string, modelName string) (Iterator, error)
+	FindModelsByCondition(supplierAccount string, cond common.Condition) (Iterator, error)
 }
 
 // Iterator the model iterator
@@ -194,7 +197,7 @@ type Iterator interface {
 	ForEach(itemCallback func(item Model) error) error
 }
 
-// Model the interface declaration for model maintence
+// Model the interface declaration for model maintenance
 type Model interface {
 	IsExists() (bool, error)
 	Create() error

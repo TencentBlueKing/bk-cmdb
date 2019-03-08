@@ -13,179 +13,221 @@
 package validator
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/util"
-	"encoding/json"
-	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 // validCreateUnique  valid create unique
-func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) (bool, error) {
-	isInner := false
-	objID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		objID = common.BKINnerObjIDObject
-	}
-
-	if 0 == len(valid.IsOnlyArr) {
-		blog.Debug("is only array is zero %+v", valid.IsOnlyArr)
-		return true, nil
-	}
-	searchCond := make(map[string]interface{})
-
-	// only search data not in diable status
-	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
-
-	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
-			searchCond[key] = val
-		}
-	}
-
-	if !isInner {
-		searchCond[common.BKObjIDField] = valid.objID
-	}
-
-	if 0 == len(searchCond) {
-		return true, nil
-	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Info("get insts by cond: %s", string(info))
-	url := fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, objID)
-	if !strings.HasPrefix(url, "http://") {
-		url = fmt.Sprintf("http://%s", url)
-	}
-	blog.Info("get insts by url : %s", url)
-	rst, err := httpCli.POST(url, nil, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
+func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
+	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
 	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, err
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, err)
+		return err
 	}
-	count := gjson.Get(string(rst), "data.count").Int()
+	if !uniqueresp.Result {
+		blog.Errorf("[validCreateUnique] search [%s] unique error %v", valid.objID, uniqueresp.ErrMsg)
+		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
+	}
 
-	if 0 != count {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
+	if 0 >= len(uniqueresp.Data) {
+		blog.Warnf("[validCreateUnique] there're not unique constraint for %s, return", valid.objID)
+		return nil
 	}
-	return true, nil
+
+	for _, unique := range uniqueresp.Data {
+		// retrieve unique value
+		uniquekeys := map[string]bool{}
+		for _, key := range unique.Keys {
+			switch key.Kind {
+			case metadata.UniqueKeyKindProperty:
+				property, ok := valid.idToProperty[int64(key.ID)]
+				if !ok {
+					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
+				}
+				uniquekeys[property.PropertyID] = true
+			default:
+				blog.Errorf("[validCreateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
+				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
+			}
+		}
+
+		cond := condition.CreateCondition()
+
+		anyEmpty := false
+		for key := range uniquekeys {
+			val, ok := valData[key]
+			if !ok || isEmpty(val) {
+				anyEmpty = true
+			}
+			cond.Field(key).Eq(val)
+		}
+
+		if anyEmpty && !unique.MustCheck {
+			continue
+		}
+
+		// only search data not in disable status
+		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
+			cond.Field(common.BKObjIDField).Eq(valid.objID)
+		}
+
+		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		if nil != err {
+			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, err)
+			return err
+		}
+		if !result.Result {
+			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, result.ErrMsg)
+			return valid.errif.New(result.Code, result.ErrMsg)
+		}
+
+		if 0 < result.Data.Count {
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, unique keys: %#v, objID %s", cond.ToMapStr(), uniquekeys, valid.objID)
+
+			defLang := valid.Language.CreateDefaultCCLanguageIf(util.GetLanguage(valid.pheader))
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(defLang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
+		}
+
+	}
+
+	return nil
+}
+
+func isEmpty(value interface{}) bool {
+	return value == nil || value == ""
 }
 
 // validUpdateUnique valid update unique
-func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, objID string, instID int) (bool, error) {
-	isInner := false
-	urlID := valid.objID
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		urlID = common.BKINnerObjIDObject
-	}
+func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID int64) error {
 
-	if 0 == len(valid.IsOnlyArr) {
-		return true, nil
-	}
-
-	mapData := valid.getInstDataById(objID, instID)
-	searchCond := make(map[string]interface{})
-
-	for key, val := range mapData {
-		if util.InArray(key, valid.IsOnlyArr) {
-			searchCond[key] = val
-		}
-	}
-	for key, val := range valData {
-		if util.InArray(key, valid.IsOnlyArr) {
-			searchCond[key] = val
-		}
-	}
-	objIDName := util.GetObjIDByType(objID)
-	searchCond[objIDName] = map[string]interface{}{common.BKDBNE: instID}
-
-	// only search data not in diable status
-	searchCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
-
-	if !isInner {
-		searchCond[common.BKObjIDField] = valid.objID
-	}
-	if 0 == len(searchCond) {
-		return true, nil
-	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Infof("get insts by cond: %s, instID %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
+	objID := valid.objID
+	mapData, err := valid.getInstDataByID(instID)
 	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return false, valid.ccError.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
+		return err
 	}
-	count := gjson.Get(string(rst), "data.count").Int()
-	if 0 != count {
-		blog.Error("duplicate data ")
-		return false, valid.ccError.Error(common.CCErrCommDuplicateItem)
+
+	// retrive isonly value
+	for key, val := range valData {
+		mapData[key] = val
 	}
-	return true, nil
+
+	uniqueresp, err := valid.CoreAPI.ObjectController().Unique().Search(valid.ctx, valid.pheader, valid.objID)
+	if nil != err {
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, err)
+		return err
+	}
+	if !uniqueresp.Result {
+		blog.Errorf("[validUpdateUnique] search [%s] unique error %v", valid.objID, uniqueresp.ErrMsg)
+		return valid.errif.New(uniqueresp.Code, uniqueresp.ErrMsg)
+	}
+
+	if 0 >= len(uniqueresp.Data) {
+		blog.Warnf("[validUpdateUnique] there're not unique constraint for %s, return", valid.objID)
+		return nil
+	}
+
+	for _, unique := range uniqueresp.Data {
+		// retrive unique value
+		uniquekeys := map[string]bool{}
+		for _, key := range unique.Keys {
+			switch key.Kind {
+			case metadata.UniqueKeyKindProperty:
+				property, ok := valid.idToProperty[int64(key.ID)]
+				if !ok {
+					blog.Errorf("[validUpdateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, property.ID)
+				}
+				uniquekeys[property.PropertyID] = true
+			default:
+				blog.Errorf("[validUpdateUnique] find [%s] property [%d] unique kind invalid [%d]", valid.objID, key.ID, key.Kind)
+				return valid.errif.Errorf(common.CCErrTopoObjectUniqueKeyKindInvalid, key.Kind)
+			}
+		}
+
+		cond := condition.CreateCondition()
+		anyEmpty := false
+		for key := range uniquekeys {
+			val, ok := valData[key]
+			if !ok || isEmpty(val) {
+				anyEmpty = true
+			}
+			cond.Field(key).Eq(val)
+		}
+
+		if anyEmpty && !unique.MustCheck {
+			continue
+		}
+
+		// only search data not in diable status
+		cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+		if common.GetObjByType(valid.objID) == common.BKInnerObjIDObject {
+			cond.Field(common.BKObjIDField).Eq(valid.objID)
+		}
+		cond.Field(common.GetInstIDField(objID)).NotEq(instID)
+
+		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		if nil != err {
+			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, err)
+			return err
+		}
+		if !result.Result {
+			blog.Errorf("[validUpdateUnique] search [%s] inst error %v", valid.objID, result.ErrMsg)
+			return valid.errif.New(result.Code, result.ErrMsg)
+		}
+
+		if 0 < result.Data.Count {
+			blog.Errorf("[validUpdateUnique] duplicate data condition: %#v, origin: %#v, unique keys: %v, objID: %s, instID %v count %d", cond.ToMapStr(), mapData, uniquekeys, valid.objID, instID, result.Data.Count)
+			defLang := valid.Language.CreateDefaultCCLanguageIf(util.GetLanguage(valid.pheader))
+			propertyNames := []string{}
+			for key := range uniquekeys {
+				propertyNames = append(propertyNames, util.FirstNotEmptyString(defLang.Language(valid.objID+"_property_"+key), valid.propertys[key].PropertyName, key))
+			}
+
+			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, " + "))
+		}
+	}
+	return nil
 }
 
-// getInstDataById get inst data by id
-func (valid *ValidMap) getInstDataById(objID string, instID int) map[string]interface{} {
-	isInner := false
-	urlID := valid.objID
-
-	if util.InArray(valid.objID, innerObject) {
-		isInner = true
-	} else {
-		urlID = common.BKINnerObjIDObject
-	}
-
-	if 0 == len(valid.IsOnlyArr) {
-		return nil
-	}
+// getInstDataByID get inst data by id
+func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, error) {
+	objID := valid.objID
 	searchCond := make(map[string]interface{})
 
-	if !isInner {
-		searchCond[common.BKObjIDField] = objID
-		searchCond[common.BKInstIDField] = instID
-	} else {
-		objIDName := util.GetObjIDByType(objID)
-		searchCond[objIDName] = instID
-
+	searchCond[common.GetInstIDField(objID)] = instID
+	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
+		objID = common.BKInnerObjIDObject
+		searchCond[common.BKObjIDField] = valid.objID
 	}
-	condition := make(map[string]interface{})
-	condition["condition"] = searchCond
-	info, _ := json.Marshal(condition)
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetHeader("Content-Type", "application/json")
-	httpCli.SetHeader("Accept", "application/json")
-	blog.Infof("get insts by cond: %s instID: %v", string(info), instID)
-	rst, err := httpCli.POST(fmt.Sprintf("%s/object/v1/insts/%s/search", valid.objCtrl, urlID), nil, []byte(info))
-	blog.Info("get insts by return: %s", string(rst))
+
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
+	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
 	if nil != err {
-		blog.Error("request failed, error:%v", err)
-		return nil
+		return nil, err
 	}
-	data := make(map[string]interface{})
-	result := gjson.Get(string(rst), "data.info.0").Map()
-	for key, val := range result {
-		data[key] = val.Raw
+	if !result.Result {
+		return nil, valid.errif.New(result.Code, result.ErrMsg)
+	}
+	if len(result.Data.Info) == 0 {
+		return nil, valid.errif.Error(common.CCErrCommNotFound)
 	}
 
-	return data
+	if len(result.Data.Info[0]) > 0 {
+		return result.Data.Info[0], nil
+	}
 
+	return nil, valid.errif.Error(common.CCErrCommNotFound)
 }

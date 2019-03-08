@@ -52,10 +52,12 @@ func (cli *attribute) ToMapStr() types.MapStr {
 
 func (cli *attribute) search() ([]types.MapStr, error) {
 	// construct the search condition
-	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID).Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID)
+	cond := common.CreateCondition().Field(PropertyID).Eq(cli.PropertyID)
+	cond.Field(ObjectID).Eq(cli.ObjectID)
+	cond.Field(SupplierAccount).Eq(cli.OwnerID)
 
 	// search all objects by condition
-	dataItems, err := client.GetClient().CCV3().Attribute().SearchObjectAttributes(cond)
+	dataItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().SearchObjectAttributes(cond)
 	return dataItems, err
 }
 
@@ -69,7 +71,7 @@ func (cli *attribute) IsExists() (bool, error) {
 }
 func (cli *attribute) Create() error {
 
-	id, err := client.GetClient().CCV3().Attribute().CreateObjectAttribute(cli.ToMapStr())
+	id, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().CreateObjectAttribute(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
@@ -108,7 +110,7 @@ func (cli *attribute) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ObjectID).Eq(cli.ObjectID).Field(SupplierAccount).Eq(cli.OwnerID).Field(PropertyID).Eq(cli.PropertyID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3().Attribute().UpdateObjectAttribute(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.OwnerID}).Attribute().UpdateObjectAttribute(item, cond); nil != err {
 			return err
 		}
 	}

@@ -1,0 +1,23 @@
+{
+    "import_device_comment_device_name":"device name",
+    "import_device_comment_device_id":"device ID",
+    "import_device_comment_obj_name":"model name",
+    "import_device_comment_obj_id":"model ID",
+    "import_device_comment_device_model":"device model",
+    "import_device_comment_vendor":"vendor",
+
+    "import_property_comment_property_name":"property name",
+    "import_property_comment_device_name":"device name",
+    "import_property_comment_oid":"oid",
+    "import_property_comment_period":"period",
+    "import_property_comment_action":"action",
+    
+    "import_property_comment_net_property_id":"net property id",
+    "import_property_comment_property_id":"property id",
+    "import_property_comment_device_id":"device id",
+    "import_property_comment_object_id":"bk obj id",
+    "import_property_comment_object_name":"bk obj name",
+    "import_property_comment_unit":"unit",
+    
+    "":""
+}

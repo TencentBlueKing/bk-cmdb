@@ -13,178 +13,177 @@
 package auditcontroller
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
-func(t *auditctl) AddBusinessLog(ctx context.Context, businessID string, user string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/app/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddBusinessLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/app/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) GetAuditLog(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/search"
+func (t *auditctl) GetAuditLog(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/search"
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(opt).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddHostLog(ctx context.Context, businessID string, user string, h util.Headers, log interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/host/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddHostLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/host/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(log).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(log).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddHostLogs(ctx context.Context, businessID string, user string, h util.Headers, logs interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/hosts/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddHostLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/hosts/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(logs).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddModuleLog(ctx context.Context, businessID string, user string, h util.Headers, log interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/module/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddModuleLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/module/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(log).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(log).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddModuleLogs(ctx context.Context, businessID string, user string, h util.Headers, logs interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/modules/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddModuleLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/modules/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(logs).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddObjectLog(ctx context.Context, businessID string, user string, h util.Headers, log interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/obj/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddObjectLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/obj/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(log).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(log).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddObjectLogs(ctx context.Context, businessID string, user string, h util.Headers, logs interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/objs/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddObjectLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/objs/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(logs).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddProcLog(ctx context.Context, businessID string, user string, h util.Headers, log interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/proc/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddProcLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/proc/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(log).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(log).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddProcLogs(ctx context.Context, businessID string, user string, h util.Headers, logs interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/procs/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddProcLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/procs/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(logs).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddSetLog(ctx context.Context, businessID string, user string, h util.Headers, log interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/set/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/set/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(log).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(log).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(t *auditctl) AddSetLogs(ctx context.Context, businessID string, user string, h util.Headers, logs interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/sets/%s/%s/%s", h.OwnerID, businessID, user)
+func (t *auditctl) AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/sets/%s/%s/%s", ownerID, businessID, user)
 
-    err = t.client.Post().
-        WithContext(ctx).
-        Body(logs).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }

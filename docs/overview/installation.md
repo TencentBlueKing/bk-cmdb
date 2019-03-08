@@ -36,7 +36,7 @@
 
 请参看官方资料 [ZooKeeper](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#ch_deployment)
 
-推荐版本下载： [ZooKeeper 3.4.11](https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz)
+推荐版本下载： [ZooKeeper 3.4.12](https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-3.4.12/zookeeper-3.4.12.tar.gz)
 
 ### 2. 部署Redis
 
@@ -55,7 +55,7 @@
 ### 4. 源码下载 && 编译
 
 * [源码下载 & 编译](source_compile.md)
-* [可执行文件（linux）](http://bkopen-10032816.file.myqcloud.com/cmdb3/cmdb-3.0.6.tar.gz)，md5[e1ce350eeb7947054e7ab95e7e3470e6]
+* [可执行文件（linux）](http://bkopen-1252002024.file.myqcloud.com/cmdb/cmdb.tar.gz)，md5[22dca56edcbbea1538e9c3be0845f882]
 
 ### 5. 配置数据库
 

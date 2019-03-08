@@ -14,9 +14,8 @@ package params
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"errors"
-	"fmt"
 )
 
 //type Flag string
@@ -57,62 +56,47 @@ type SearchCondition struct {
 	ObjectID  string        `json:"bk_obj_id"`
 }
 
-func ParseHostParams(input []interface{}, output map[string]interface{}) error {
-	fmt.Println(input)
+func ParseHostParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
-		j, ok := i.(map[string]interface{})
-		if false == ok {
-			return errors.New("condition error")
-		}
-		field, ok := j["field"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		operator, ok := j["operator"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		value := j["value"]
-
-		switch operator {
+		switch i.Operator {
 		case common.BKDBEQ:
-			output[field] = value
+			output[i.Field] = i.Value
 		case common.BKDBIN:
-			d := make(map[string]interface{})
-			d[operator] = value
-			output[field] = d
+			queryCondItem := make(map[string]interface{})
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
-			d := make(map[string]interface{})
-			valStr, ok := value.(string)
+			//d := make(map[string]interface{})
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			if !ok {
+				queryCondItem = make(map[string]interface{})
+			}
+			valStr, ok := i.Value.(string)
 			if ok {
-				d[operator] = SpeceialCharChange(valStr)
+				queryCondItem[i.Operator] = SpeceialCharChange(valStr)
 			} else {
-				d[operator] = value
+				queryCondItem[i.Operator] = i.Value
 			}
-
-			output[field] = d
+			output[i.Field] = queryCondItem
 		default:
-			d := make(map[string]interface{})
-			switch value.(type) {
-			case string:
-
-				valStr := value.(string)
-				if util.IsTime(valStr) {
-
-					value = util.Str2Time(valStr)
-				}
-
+			queryCondItem, ok := output[i.Field].(map[string]interface{})
+			if !ok {
+				queryCondItem = make(map[string]interface{})
 			}
-			d[operator] = value
-			output[field] = d
+			switch rawVal := i.Value.(type) {
+			case string:
+				if util.IsTime(rawVal) {
+					i.Value = util.Str2Time(rawVal)
+				}
+			}
+			queryCondItem[i.Operator] = i.Value
+			output[i.Field] = queryCondItem
 		}
-
 	}
-	fmt.Println(output)
 	return nil
 }
 
-func ParseHostIPParams(ipCond IPInfo, output map[string]interface{}) error {
+func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) error {
 	ipArr := ipCond.Data
 	exact := ipCond.Exact
 	flag := ipCond.Flag
@@ -147,7 +131,7 @@ func ParseHostIPParams(ipCond IPInfo, output map[string]interface{}) error {
 		orCond := make([]map[string]map[string]interface{}, 0)
 		for _, ip := range ipArr {
 			c := make(map[string]interface{})
-			c[common.BKDBLIKE] = ip
+			c[common.BKDBLIKE] = SpeceialCharChange(ip)
 			if INNERONLY == flag {
 				ipCon := make(map[string]map[string]interface{})
 				ipCon[common.BKHostInnerIPField] = c

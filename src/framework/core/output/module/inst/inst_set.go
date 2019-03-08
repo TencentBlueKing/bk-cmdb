@@ -13,20 +13,41 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 	//"fmt"
 )
 
-var _ Inst = (*set)(nil)
+var _ SetInterface = (*set)(nil)
+
+// SetInterface the set interface
+type SetInterface interface {
+	Maintaince
+
+	SetBusinessID(bizID int64)
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type set struct {
+	bizID  int64
 	target model.Model
 	datas  types.MapStr
+}
+
+func (cli *set) SetBusinessID(bizID int64) {
+	cli.bizID = bizID
 }
 
 func (cli *set) GetModel() model.Model {
@@ -58,28 +79,6 @@ func (cli *set) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
 }
 
-func (cli *set) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *set) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *set) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *set) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *set) GetChildren() ([]Topo, error) {
-	return nil, nil
-}
-
 func (cli *set) SetValue(key string, value interface{}) error {
 
 	// TODO:需要根据model 的定义对输入的key 及value 进行校验
@@ -89,7 +88,6 @@ func (cli *set) SetValue(key string, value interface{}) error {
 	return nil
 }
 func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
-	businessID := cli.datas.String(BusinessID)
 
 	// get the attributes
 	attrs, err := cli.target.Attributes()
@@ -98,15 +96,24 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// construct the condition which is used to check the if it is exists
-	cond := common.CreateCondition().Field(BusinessID).Eq(businessID)
+	cond := common.CreateCondition().Field(BusinessID).Eq(cli.bizID)
 
 	// extract the required id
 	for _, attrItem := range attrs {
 		if attrItem.GetKey() {
-			if !cli.datas.Exists(attrItem.GetID()) {
-				return attrs, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+
+			if attrItem.GetID() == BusinessID {
+				if 0 >= cli.bizID {
+					return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+				}
+				cond.Field(BusinessID).Eq(cli.bizID)
+				continue
 			}
-			attrVal := cli.datas.String(attrItem.GetID())
+
+			attrVal, exists := cli.datas.Get(attrItem.GetID())
+			if !exists {
+				return nil, nil, errors.New("the key field(" + attrItem.GetID() + ") is not set")
+			}
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
@@ -114,14 +121,18 @@ func (cli *set) search() ([]model.Attribute, []types.MapStr, error) {
 	//fmt.Println("cond:", cond.ToMapStr())
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().Set().SearchSets(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().SearchSets(cond)
 
 	return attrs, existItems, err
 }
 func (cli *set) IsExists() (bool, error) {
 
+	if 0 < cli.bizID {
+		cli.datas.Set(BusinessID, cli.bizID)
+	}
 	_, existItems, err := cli.search()
 	if nil != err {
+		log.Errorf("failed to search the set, error info is %s", err.Error())
 		return false, err
 	}
 
@@ -130,7 +141,7 @@ func (cli *set) IsExists() (bool, error) {
 
 func (cli *set) Create() error {
 
-	setID, err := client.GetClient().CCV3().Set().CreateSet(cli.datas)
+	setID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Set().CreateSet(cli.bizID, cli.datas)
 	if nil != err {
 		return err
 	}
@@ -139,39 +150,44 @@ func (cli *set) Create() error {
 }
 func (cli *set) Update() error {
 
-	businessID := cli.datas.String(BusinessID)
-
 	attrs, existItems, err := cli.search()
 	if nil != err {
 		return err
 	}
 
+	// clear the invalid field
+
+	cli.datas.ForEach(func(key string, val interface{}) {
+		for _, attrItem := range attrs {
+			if attrItem.GetID() == key {
+				return
+			}
+		}
+		cli.datas.Remove(key)
+	})
+
+	//log.Infof("the business %d", cli.bizID)
+
+	cli.datas.Remove("create_time") //invalid check , need to delete
+
+	supplierAccount := cli.target.GetSupplierAccount()
 	for _, existItem := range existItems {
 
-		cli.datas.ForEach(func(key string, val interface{}) {
-			existItem.Set(key, val)
-		})
-
-		instID, err := existItem.Int(SetID)
+		instID, err := existItem.Int64(SetID)
 		if nil != err {
 			return err
 		}
-		updateCond := common.CreateCondition().Field(SetID).Eq(instID).Field(BusinessID).Eq(businessID)
 
-		// clear the invalid field
-		existItem.ForEach(func(key string, val interface{}) {
-			for _, attrItem := range attrs {
-				if attrItem.GetID() == key {
-					return
-				}
-			}
-			existItem.Remove(key)
-		})
+		cli.datas.Remove(SetID)
 
-		err = client.GetClient().CCV3().Set().UpdateSet(existItem, updateCond)
+		updateCond := common.CreateCondition()
+		updateCond.Field(SetID).Eq(instID)
+
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: supplierAccount}).Set().UpdateSet(cli.bizID, cli.datas, updateCond)
 		if nil != err {
 			return err
 		}
+
 		cli.datas.Set(SetID, instID)
 
 	}

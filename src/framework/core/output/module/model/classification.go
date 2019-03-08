@@ -39,7 +39,7 @@ func (cli *classification) search() ([]types.MapStr, error) {
 	cond := common.CreateCondition().Field(ClassificationID).Eq(cli.ClassificationID)
 
 	// search all classifications by condition
-	return client.GetClient().CCV3().Classification().SearchClassifications(cond)
+	return client.GetClient().CCV3(client.Params{}).Classification().SearchClassifications(cond)
 }
 func (cli *classification) IsExists() (bool, error) {
 	items, err := cli.search()
@@ -52,7 +52,7 @@ func (cli *classification) IsExists() (bool, error) {
 
 func (cli *classification) Create() error {
 
-	id, err := client.GetClient().CCV3().Classification().CreateClassification(cli.ToMapStr())
+	id, err := client.GetClient().CCV3(client.Params{}).Classification().CreateClassification(cli.ToMapStr())
 	if nil != err {
 		return err
 	}
@@ -81,7 +81,7 @@ func (cli *classification) Update() error {
 
 		cond := common.CreateCondition()
 		cond.Field(ClassificationID).Eq(cli.ClassificationID).Field("id").Eq(id)
-		if err = client.GetClient().CCV3().Classification().UpdateClassification(item, cond); nil != err {
+		if err = client.GetClient().CCV3(client.Params{}).Classification().UpdateClassification(item, cond); nil != err {
 			return err
 		}
 	}
@@ -132,11 +132,11 @@ func (cli *classification) CreateModel() Model {
 	return m
 }
 
-func (cli *classification) FindModelsLikeName(modelName string) (Iterator, error) {
+func (cli *classification) FindModelsLikeName(supplierAccount string, modelName string) (Iterator, error) {
 	cond := common.CreateCondition().Field(ObjectName).Like(modelName)
-	return newModelIterator(cond)
+	return newModelIterator(supplierAccount, cond)
 }
 
-func (cli *classification) FindModelsByCondition(cond common.Condition) (Iterator, error) {
-	return newModelIterator(cond)
+func (cli *classification) FindModelsByCondition(supplierAccount string, cond common.Condition) (Iterator, error) {
+	return newModelIterator(supplierAccount, cond)
 }

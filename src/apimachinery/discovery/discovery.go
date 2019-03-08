@@ -16,11 +16,12 @@ import (
 	"fmt"
 	"time"
 
-	regd "configcenter/src/common/RegisterDiscover"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
 
 type DiscoveryInterface interface {
+	ApiServer() Interface
 	MigrateServer() Interface
 	EventServer() Interface
 	HostServer() Interface
@@ -31,6 +32,9 @@ type DiscoveryInterface interface {
 	HostCtrl() Interface
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
+	GseProcServ() Interface
+	CoreService() Interface
+	TMServer() Interface
 }
 
 type Interface interface {
@@ -38,7 +42,7 @@ type Interface interface {
 }
 
 func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
-	disc := regd.NewRegDiscoverEx(zkAddr, 10*time.Second)
+	disc := registerdiscover.NewRegDiscoverEx(zkAddr, 10*time.Second)
 	if err := disc.Start(); nil != err {
 		return nil, err
 	}
@@ -47,7 +51,7 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 		servers: make(map[string]Interface),
 	}
 	for component, _ := range types.AllModule {
-		if component == types.CC_MODULE_APISERVER || component == types.CC_MODULE_WEBSERVER {
+		if component == types.CC_MODULE_WEBSERVER {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
@@ -58,11 +62,16 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 
 		d.servers[component] = svr
 	}
+
 	return d, nil
 }
 
 type discover struct {
 	servers map[string]Interface
+}
+
+func (d *discover) ApiServer() Interface {
+	return d.servers[types.CC_MODULE_APISERVER]
 }
 
 func (d *discover) MigrateServer() Interface {
@@ -103,4 +112,16 @@ func (d *discover) ObjectCtrl() Interface {
 
 func (d *discover) ProcCtrl() Interface {
 	return d.servers[types.CC_MODULE_PROCCONTROLLER]
+}
+
+func (d *discover) GseProcServ() Interface {
+	return d.servers[types.GSE_MODULE_PROCSERVER]
+}
+
+func (d *discover) CoreService() Interface {
+	return d.servers[types.CC_MODULE_CORESERVICE]
+}
+
+func (d *discover) TMServer() Interface {
+	return d.servers[types.CC_MODULE_TXC]
 }

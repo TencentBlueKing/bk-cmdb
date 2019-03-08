@@ -13,12 +13,13 @@
 package params
 
 import (
-	"configcenter/src/common"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 )
 
 //common search struct
@@ -37,51 +38,25 @@ type CommonResult struct {
 	Data    interface{} `json:"data"`
 }
 
-func ParseCommonParams(input []interface{}, output map[string]interface{}) error {
+func ParseCommonParams(input []metadata.ConditionItem, output map[string]interface{}) error {
 	for _, i := range input {
-		j, ok := i.(map[string]interface{})
-		if false == ok {
-			return errors.New("condition error")
-		}
-		field, ok := j["field"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		operator, ok := j["operator"].(string)
-		if false == ok {
-			return errors.New("condition error")
-		}
-		value := j["value"]
-		switch operator {
+		switch i.Operator {
 		case common.BKDBEQ:
-			objtype := reflect.TypeOf(value)
-			switch objtype.Kind() {
-			case reflect.Int:
-				output[field] = value
-			case reflect.Float64:
-				output[field] = value
-			case reflect.Float32:
-				output[field] = value
-			case reflect.String:
-				valStr := value.(string)
-				output[field] = SpeceialCharChange(valStr)
-			default:
-				//d := make(map[string]interface{})
-				//d[common.BKDBLIKE] = value
-				output[field] = value
+			if reflect.TypeOf(i.Value).Kind() == reflect.String {
+				output[i.Field] = SpeceialCharChange(i.Value.(string))
+			} else {
+				output[i.Field] = i.Value
 			}
 
 		default:
 			d := make(map[string]interface{})
-			valStr, ok := value.(string)
-			if ok {
-				d[operator] = SpeceialCharChange(valStr)
+			if reflect.TypeOf(i.Value).Kind() == reflect.String {
+				d[i.Operator] = SpeceialCharChange(i.Value.(string))
 			} else {
-				d[operator] = value
+				d[i.Operator] = i.Value
 			}
-			output[field] = d
+			output[i.Field] = d
 		}
-
 	}
 	return nil
 }

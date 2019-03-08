@@ -13,137 +13,135 @@
 package user
 
 import (
-    "context"
-    "fmt"
-    
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/common/core/cc/api"
-    "configcenter/src/source_controller/common/commondata"
+	"context"
+	"fmt"
+	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
-func(u *user) AddUserConfig(ctx context.Context, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/userapi"
+func (u *user) AddUserConfig(ctx context.Context, h http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
+	subPath := "/userapi"
 
-    err = u.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) UpdateUserConfig(ctx context.Context, businessID string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+func (u *user) UpdateUserConfig(ctx context.Context, businessID string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
-    err = u.client.Put().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) DeleteUserConfig(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+func (u *user) DeleteUserConfig(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
 
-    err = u.client.Delete().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) GetUserConfig(ctx context.Context, h util.Headers, opt *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := "/userapi/search"
+func (u *user) GetUserConfig(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error) {
+	resp = new(metadata.GetUserConfigResult)
+	subPath := "/userapi/search"
 
-    err = u.client.Post().
-        WithContext(ctx).
-        Body(opt).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) GetUserConfigDetail(ctx context.Context, businessID string, id string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
+func (u *user) GetUserConfigDetail(ctx context.Context, businessID string, id string, h http.Header) (resp *metadata.GetUserConfigDetailResult, err error) {
+	resp = new(metadata.GetUserConfigDetailResult)
+	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
 
-    err = u.client.Get().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) AddUserCustom(ctx context.Context, user string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/usercustom/%s", user)
+func (u *user) AddUserCustom(ctx context.Context, user string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/usercustom/%s", user)
 
-        err = u.client.Post().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) UpdateUserCustomByID(ctx context.Context, user string, id string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/usercustom/%s/%s", user, id)
+func (u *user) UpdateUserCustomByID(ctx context.Context, user string, id string, h http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/usercustom/%s/%s", user, id)
 
-        err = u.client.Put().
-        WithContext(ctx).
-        Body(dat).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) GetUserCustomByUser(ctx context.Context, user string,  h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/usercustom/user/search/%s", user)
+func (u *user) GetUserCustomByUser(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
+	subPath := fmt.Sprintf("/usercustom/user/search/%s", user)
 
-        err = u.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
 
-func(u *user) GetDefaultUserCustom(ctx context.Context, user string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-    resp = new(api.BKAPIRsp)
-    subPath := fmt.Sprintf("/usercustom/default/search/%s", user)
+func (u *user) GetDefaultUserCustom(ctx context.Context, user string, h http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
+	subPath := fmt.Sprintf("/usercustom/default/search/%s", user)
 
-        err = u.client.Post().
-        WithContext(ctx).
-        Body(nil).
-        SubResource(subPath).
-        WithHeaders(h.ToHeader()).
-        Do().
-        Into(resp)
-    return
+	err = u.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
 }
-

@@ -13,15 +13,29 @@
 package inst
 
 import (
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output/module/client"
 	"configcenter/src/framework/core/output/module/model"
 	"configcenter/src/framework/core/types"
-	"errors"
 )
 
-var _ Inst = (*inst)(nil)
+var _ CommonInstInterface = (*inst)(nil)
+
+// CommonInstInterface the inst interface
+type CommonInstInterface interface {
+	Maintaince
+
+	GetModel() model.Model
+
+	GetInstID() int
+	GetInstName() string
+
+	SetValue(key string, value interface{}) error
+	GetValues() (types.MapStr, error)
+}
 
 type inst struct {
 	target model.Model
@@ -30,16 +44,6 @@ type inst struct {
 
 func (cli *inst) GetModel() model.Model {
 	return cli.target
-}
-
-func (cli *inst) IsMainLine() bool {
-	// TODO：判断当前实例是否为主线实例
-	return true
-}
-
-func (cli *inst) GetAssociationModels() ([]model.Model, error) {
-	// TODO:需要读取此实例关联的实例，所对应的所有模型
-	return nil, nil
 }
 
 func (cli *inst) GetInstID() int {
@@ -55,28 +59,6 @@ func (cli *inst) GetInstName() string {
 
 func (cli *inst) GetValues() (types.MapStr, error) {
 	return cli.datas, nil
-}
-
-func (cli *inst) GetAssociationsByModleID(modleID string) ([]Inst, error) {
-	// TODO:获取当前实例所关联的特定模型的所有已关联的实例
-	return nil, nil
-}
-
-func (cli *inst) GetAllAssociations() (map[model.Model][]Inst, error) {
-	// TODO:获取所有已关联的模型及对应的实例
-	return nil, nil
-}
-
-func (cli *inst) SetParent(parentInstID int) error {
-	return nil
-}
-
-func (cli *inst) GetParent() ([]Topo, error) {
-	return nil, nil
-}
-
-func (cli *inst) GetChildren() ([]Topo, error) {
-	return nil, nil
 }
 
 func (cli *inst) SetValue(key string, value interface{}) error {
@@ -118,7 +100,7 @@ func (cli *inst) search() ([]model.Attribute, []types.MapStr, error) {
 	}
 
 	// search by condition
-	existItems, err := client.GetClient().CCV3().CommonInst().SearchInst(cond)
+	existItems, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().SearchInst(cond)
 	return attrs, existItems, err
 }
 
@@ -133,7 +115,7 @@ func (cli *inst) IsExists() (bool, error) {
 }
 func (cli *inst) Create() error {
 
-	instID, err := client.GetClient().CCV3().CommonInst().CreateCommonInst(cli.datas)
+	instID, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().CreateCommonInst(cli.datas)
 	if nil != err {
 		return err
 	}
@@ -178,7 +160,7 @@ func (cli *inst) Update() error {
 			existItem.Remove(key)
 		})
 
-		err = client.GetClient().CCV3().CommonInst().UpdateCommonInst(existItem, updateCond)
+		err = client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).CommonInst().UpdateCommonInst(existItem, updateCond)
 		if nil != err {
 			return err
 		}

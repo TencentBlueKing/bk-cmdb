@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -25,22 +26,34 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
+	commonUtil "configcenter/src/common/util"
 )
+
+// map[url]responseDataString
+var mockResponseMap map[string]string
+var once = sync.Once{}
+
+func init() {
+	once.Do(func() {
+		mockResponseMap = make(map[string]string)
+	})
+}
 
 // http request verb type
 type VerbType string
 
 const (
-	PUT    VerbType = "put"
-	POST   VerbType = "post"
-	GET    VerbType = "get"
-	DELETE VerbType = "delete"
-	PATCH  VerbType = "patch"
+	PUT    VerbType = http.MethodPut
+	POST   VerbType = http.MethodPost
+	GET    VerbType = http.MethodGet
+	DELETE VerbType = http.MethodDelete
+	PATCH  VerbType = http.MethodPatch
 )
 
 type Request struct {
@@ -49,7 +62,7 @@ type Request struct {
 	verb    VerbType
 	params  url.Values
 	headers http.Header
-	body    io.Reader
+	body    []byte
 	ctx     context.Context
 
 	// prefixed url
@@ -60,7 +73,18 @@ type Request struct {
 	// request timeout value
 	timeout time.Duration
 
-	err error
+	peek bool
+	err  error
+}
+
+func (r *Request) WithParams(params map[string]string) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value)
+	}
+	return r
 }
 
 func (r *Request) WithParam(paramName, value string) *Request {
@@ -85,6 +109,11 @@ func (r *Request) WithHeaders(header http.Header) *Request {
 	return r
 }
 
+func (r *Request) Peek() *Request {
+	r.peek = true
+	return r
+}
+
 func (r *Request) WithContext(ctx context.Context) *Request {
 	r.ctx = ctx
 	return r
@@ -97,30 +126,48 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 
 func (r *Request) SubResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
-	subPath = "/" + subPath
 	r.subPath = subPath
 	return r
 }
 
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
-	if reflect.ValueOf(body).IsNil() {
-		r.body = bytes.NewReader([]byte(""))
+	valueOf := reflect.ValueOf(body)
+	switch valueOf.Kind() {
+	case reflect.Interface:
+		fallthrough
+	case reflect.Map:
+		fallthrough
+	case reflect.Ptr:
+		fallthrough
+	case reflect.Slice:
+		if valueOf.IsNil() {
+			r.body = []byte("")
+			return r
+		}
+		break
+
+	case reflect.Struct:
+		break
+
+	default:
+		r.err = errors.New("body should be one of interface, map, pointer or slice value")
+		r.body = []byte("")
 		return r
 	}
 
 	data, err := json.Marshal(body)
 	if nil != err {
 		r.err = err
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
-	r.body = bytes.NewReader(data)
+	r.body = data
 	return r
 }
 
@@ -159,6 +206,10 @@ func (r *Request) Do() *Result {
 		return result
 	}
 
+	if r.capability.Mock.Mocked {
+		return r.handleMockResult()
+	}
+
 	client := r.capability.Client
 	if client == nil {
 		client = http.DefaultClient
@@ -167,7 +218,10 @@ func (r *Request) Do() *Result {
 	maxRetryCycle := 3
 	retries := 0
 
-	hosts, err := r.capability.Discover.GetServers()
+	hosts, err := r.
+		capability.
+		Discover.
+		GetServers()
 	if err != nil {
 		result.Err = err
 		return result
@@ -177,7 +231,7 @@ func (r *Request) Do() *Result {
 		for index, host := range hosts {
 			retries = try + index
 			url := host + r.WrapURL().String()
-			req, err := http.NewRequest(string(r.verb), url, r.body)
+			req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
 			if err != nil {
 				result.Err = err
 				return result
@@ -188,6 +242,9 @@ func (r *Request) Do() *Result {
 			}
 
 			req.Header = r.headers
+			if len(req.Header) == 0 {
+				req.Header = make(http.Header)
+			}
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 
@@ -203,6 +260,9 @@ func (r *Request) Do() *Result {
 
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 
@@ -222,12 +282,20 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 				body = data
 			}
+			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
+			if r.peek {
+				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
+			}
+
 			return result
 		}
 
@@ -246,7 +314,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, request: %s %s", latency, r.verb, url)
 	}
 }
 
@@ -260,11 +328,81 @@ func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
 	}
-	err := json.Unmarshal(r.Body, obj)
-	if nil != err {
-		return err
+
+	if 0 != len(r.Body) {
+		err := json.Unmarshal(r.Body, obj)
+		if nil != err {
+			if http.StatusOK != r.StatusCode {
+				return fmt.Errorf("http request err: %s", string(r.Body))
+			}
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
+			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
+		}
 	}
 	return nil
+}
+
+func (r *Request) handleMockResult() *Result {
+	if r.capability.Mock.SetMockData {
+		if r.capability.Mock.MockData == nil {
+			mockResponseMap[r.WrapURL().String()] = ""
+			return &Result{
+				Body:       []byte(""),
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		}
+
+		switch reflect.ValueOf(r.capability.Mock.MockData).Kind() {
+		case reflect.String:
+			body := r.capability.Mock.MockData.(string)
+			mockResponseMap[r.WrapURL().String()] = body
+			return &Result{
+				Body:       []byte(body),
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		case reflect.Interface:
+			fallthrough
+		case reflect.Map:
+			fallthrough
+		case reflect.Ptr:
+			fallthrough
+		case reflect.Struct:
+			js, err := json.Marshal(r.capability.Mock.MockData)
+			if err != nil {
+				return &Result{
+					Body:       nil,
+					Err:        err,
+					StatusCode: http.StatusOK,
+				}
+			}
+			mockResponseMap[r.WrapURL().String()] = string(js)
+			return &Result{
+				Body:       js,
+				Err:        nil,
+				StatusCode: http.StatusOK,
+			}
+		default:
+			panic("unsupported mock data")
+		}
+	}
+
+	body, exist := mockResponseMap[r.WrapURL().String()]
+	if exist {
+		return &Result{
+			Body:       []byte(body),
+			Err:        nil,
+			StatusCode: http.StatusOK,
+		}
+	}
+
+	panic("got empty mock response")
+	// return &Result{
+	//     Body: []byte(""),
+	//     Err: errors.New("got empty mock response"),
+	//     StatusCode: http.StatusOK,
+	// }
 }
 
 // Returns if the given err is "connection reset by peer" error.

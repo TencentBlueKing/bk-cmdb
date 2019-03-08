@@ -14,58 +14,43 @@ package object
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	sencapi "configcenter/src/scene_server/api"
-	actobj "configcenter/src/scene_server/topo_server/topo_service/actions/object"
-	obj "configcenter/src/source_controller/api/object"
-	"configcenter/src/source_controller/objectcontroller/objectdata/actions/metadata"
+	"configcenter/src/common/metadata"
 )
 
 type ObjectInterface interface {
-	// graphic
-	SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-
-	// object
-	CreateObjectBatch(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SearchObjectBatch(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	CreateObject(ctx context.Context, h util.Headers, obj sencapi.ObjectDes) (resp *api.BKAPIRsp, err error)
-	SelectObjectWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SelectObjectTopo(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateObject(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteObject(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-
-	// attribute
-	CreateObjectAtt(ctx context.Context, h util.Headers, obj *obj.ObjAttDes) (resp *api.BKAPIRsp, err error)
-	SelectObjectAttWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateObjectAtt(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteObjectAtt(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-
-	// class
-	CreateClassification(ctx context.Context, h util.Headers, obj *sencapi.ObjectClsDes) (resp *api.BKAPIRsp, err error)
-	SelectClassificationWithObjects(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	SelectClassificationWithParams(ctx context.Context, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateClassification(ctx context.Context, classID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DeleteClassification(ctx context.Context, classID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
-
-	// action
-	CreateModel(ctx context.Context, h util.Headers, model *actobj.MainLineObject) (resp *api.BKAPIRsp, err error)
-	DeleteModel(ctx context.Context, objID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectModel(ctx context.Context, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectModelByClsID(ctx context.Context, clsID string, objID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectInst(ctx context.Context, appID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectInstChild(ctx context.Context, objID string, appID string, instID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-
-	// group
-	CreatePropertyGroup(ctx context.Context, h util.Headers, dat obj.ObjAttGroupDes) (resp *api.BKAPIRsp, err error)
-	UpdatePropertyGroup(ctx context.Context, h util.Headers, cond *metadata.PropertyGroupCondition) (resp *api.BKAPIRsp, err error)
-	DeletePropertyGroup(ctx context.Context, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	UpdatePropertyGroupObjectAtt(ctx context.Context, h util.Headers, data metadata.PropertyGroupObjectAtt) (resp *api.BKAPIRsp, err error)
-	DeletePropertyGroupObjectAtt(ctx context.Context, objID string, propertyID string, groupID string, h util.Headers) (resp *api.BKAPIRsp, err error)
-	SelectPropertyGroupByObjectID(ctx context.Context, objID string, h util.Headers, data map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	CreateModel(ctx context.Context, h http.Header, model *metadata.MainLineObject) (resp *metadata.Response, err error)
+	DeleteModel(ctx context.Context, ownerID string, objID string, h http.Header) (resp *metadata.Response, err error)
+	SelectModel(ctx context.Context, ownerID string, h http.Header) (resp *metadata.MainlineObjectTopoResult, err error)
+	SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string, h http.Header) (resp *metadata.Response, err error)
+	SelectInst(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error)
+	SelectInstChild(ctx context.Context, ownerID string, objID string, appID string, instID string, h http.Header) (resp *metadata.Response, err error)
+	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)
+	SelectObjectAttWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateObjectAtt(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error)
+	CreateClassification(ctx context.Context, h http.Header, obj *metadata.Classification) (resp *metadata.Response, err error)
+	SelectClassificationWithObjects(ctx context.Context, ownerID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SelectClassificationWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteClassification(ctx context.Context, classID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SelectObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header) (resp *metadata.Response, err error)
+	CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error)
+	UpdatePropertyGroup(ctx context.Context, h http.Header, cond *metadata.PropertyGroupCondition) (resp *metadata.Response, err error)
+	DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error)
+	UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data metadata.PropertyGroupObjectAtt) (resp *metadata.Response, err error)
+	DeletePropertyGroupObjectAtt(ctx context.Context, ownerID string, objID string, propertyID string, groupID string, h http.Header) (resp *metadata.Response, err error)
+	SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	CreateObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	CreateObject(ctx context.Context, h http.Header, obj metadata.Object) (resp *metadata.Response, err error)
+	SelectObjectWithParams(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	SelectObjectTopo(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	UpdateObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
+	DeleteObject(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (resp *metadata.Response, err error)
 }
 
 func NewObjectInterface(client rest.ClientInterface) ObjectInterface {

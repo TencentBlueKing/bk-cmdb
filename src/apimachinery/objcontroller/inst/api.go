@@ -14,18 +14,17 @@ package inst
 
 import (
 	"context"
+	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/source_controller/common/commondata"
+	"configcenter/src/common/metadata"
 )
 
 type InstanceInterface interface {
-	SearchObjects(ctx context.Context, objType string, h util.Headers, dat *commondata.ObjQueryInput) (resp *api.BKAPIRsp, err error)
-	CreateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	DelObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
-	UpdateObject(ctx context.Context, objType string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error)
+	SearchObjects(ctx context.Context, objType string, h http.Header, dat *metadata.QueryInput) (resp *metadata.QueryInstResult, err error)
+	CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error)
+	DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 }
 
 func NewInstanceInterface(client rest.ClientInterface) InstanceInterface {

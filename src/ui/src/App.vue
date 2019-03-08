@@ -1,84 +1,145 @@
-/*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and limitations under the License.
- */
-
-<template lang="html">
-    <div id="app" class="clearfix">
-        <div class="error-message-content is-chrome" v-show="isChromeShow">
-            <span>{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span><i class="bk-icon icon-close-circle-shape" @click="closeInfo"></i>
+<template>
+    <div id="app">
+        <div class="browser-tips" v-if="showBrowserTips">
+            <span class="tips-text">{{$t('Common["您的浏览器非Chrome，建议您使用最新版本的Chrome浏览，以保证最好的体验效果"]')}}</span>
+            <i class="tips-icon bk-icon icon-close-circle-shape" @click="showBrowserTips = false"></i>
         </div>
-        <v-header></v-header>
-        <v-nav class="fl"></v-nav>
-        <div class="main-container">
-            <div class="main-wrapper">
-                <div :class="['content-wrapper', {fold: fold}]" v-bkloading="{isLoading: globalLoading}">
-                    <router-view/>
-                </div>
+        <the-header></the-header>
+        <the-nav class="nav-layout"></the-nav>
+        <main class="main-layout" v-bkloading="{isLoading: globalLoading}">
+            <div class="admin-tips" v-if="false">
+                <span class="tips-text">{{$t('Common["欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作"]')}}</span>
+                <i class="bk-icon icon-close"></i>
             </div>
-        </div>
+            <div ref="mainScroller" class="main-scroller" @scroll="execMainScrollListener($event)">
+                <router-view class="views-layout"></router-view>
+            </div>
+        </main>
     </div>
 </template>
+
 <script>
-    import vHeader from '@/components/header/header'
-    import vNavigation from '@/components/nav/nav'
-    import vNav from '@/components/nav/nav-v2'
+    import theHeader from '@/components/layout/header'
+    import theNav from '@/components/layout/nav'
+    import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
     export default {
         name: 'app',
         components: {
-            vHeader,
-            vNavigation,
-            vNav
+            theHeader,
+            theNav
         },
         data () {
+            const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
             return {
-                isChromeShow: true
+                showBrowserTips,
+                execMainScrollListener
             }
         },
         computed: {
             ...mapGetters(['globalLoading']),
-            ...mapGetters('navigation', ['fold'])
+            ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
+        },
+        mounted () {
+            addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            this.setDefaultCollection()
+        },
+        beforeDestroy () {
+            removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
         },
         methods: {
-            closeInfo () {
-                this.isChromeShow = false
+            async setDefaultCollection () {
+                await Promise.all([
+                    this.searchUsercustom(),
+                    this.searchBiz()
+                ])
+                const firstEntryKey = this.firstEntryKey
+                if (this.usercustom[firstEntryKey] === void 0) {
+                    const classifyNavigationKey = this.classifyNavigationKey
+                    this.$store.dispatch('userCustom/saveUsercustom', {
+                        [firstEntryKey]: false,
+                        [classifyNavigationKey]: ['biz', '$resource']
+                    })
+                }
+            },
+            searchUsercustom () {
+                return this.$store.dispatch('userCustom/searchUsercustom', {
+                    config: {
+                        requestId: 'post_searchUsercustom'
+                    }
+                })
+            },
+            searchBiz () {
+                return this.$store.dispatch('objectBiz/searchBusiness', {
+                    config: {
+                        requestId: 'post_searchBusiness_$ne_disabled',
+                        fromCache: true
+                    }
+                }).then(business => {
+                    this.$store.commit('objectBiz/setBusiness', business.info)
+                    return business
+                })
             }
-        },
-        created () {
-            this.isChromeShow = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
         }
     }
 </script>
 <style lang="scss" scoped>
-    $primaryColor: #737987;
-    .main-container{
-        overflow: hidden;
+    #app{
         height: 100%;
-        position: relative;
-        .main-wrapper{
-            height: 100%;
-            padding-top: 43px;
-            overflow: auto;
-            position: relative;
-            .content-wrapper{
-                height: 100%;
-                min-width: 1060px;
-                &.fold{
-                    min-width: 1220px;
-                }
-            }
+    }
+    .browser-tips{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        color: #ff5656;
+        background-color: #f8f6db;
+        z-index: 99999;
+        .tips-text{
+            margin: 0 20px 0 0 ;
+        }
+        .tips-icon{
+            cursor: pointer;
         }
     }
-</style>
-<style lang="scss">
-    @import './common/scss/common.scss';
-    @import './common/icon/cc-icon/style.css';
-    @import './common/icon/bk-icon-2.0/iconfont.css';
-    @import './magicbox/bk-magicbox-ui/bk.scss';
+    .admin-tips {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40px;
+        line-height: 38px;
+        text-align: center;
+        color: #3a84ff;
+        border-top: 1px solid #3a84ff;
+        border-bottom: 1px solid #3a84ff;
+        background: rgba(58, 132, 255, .13);
+        z-index: 9999;
+    }
+    .nav-layout{
+        position: relative;
+        float: left;
+        height: 100%;
+        margin: -61px 0 0 0;
+        z-index: 1001;
+    }
+    .main-layout{
+        height: calc(100% - 61px);
+        overflow: hidden;
+        position: relative;
+    }
+    .main-scroller{
+        height: 100%;
+        overflow: auto;
+        @include scrollbar;
+    }
+    .views-layout{
+        min-height: 100%;
+        min-width: 1100px;
+        padding: 20px;
+    }
 </style>

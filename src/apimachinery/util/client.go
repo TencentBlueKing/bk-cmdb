@@ -23,14 +23,15 @@ import (
 
 func NewClient(c *TLSClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
-	if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
-		var err error
-		tlsConf, err = ssl.ClientTslConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
-		if err != nil {
-			return nil, err
-		}
-
+	if nil != c {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
+		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
+			var err error
+			tlsConf, err = ssl.ClientTslConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	transport := &http.Transport{
@@ -40,10 +41,14 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 			Timeout:   5 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial,
-		ResponseHeaderTimeout: 30 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Minute,
 	}
 
 	client := new(http.Client)
 	client.Transport = transport
 	return client, nil
+}
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }

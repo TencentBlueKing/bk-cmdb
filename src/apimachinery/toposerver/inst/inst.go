@@ -15,149 +15,147 @@ package inst
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/paraparse"
-	"configcenter/src/scene_server/topo_server/topo_service/actions/inst"
+	"configcenter/src/common/metadata"
 )
 
 // TODO: config this body data struct.
-func (t *instanceClient) CreateInst(ctx context.Context, objID string, h util.Headers, dat interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/%s/%s", h.OwnerID, objID)
+func (t *instanceClient) CreateInst(ctx context.Context, ownerID string, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
+	subPath := fmt.Sprintf("/inst/%s/%s", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) DeleteInst(ctx context.Context, objID string, instID string, h util.Headers) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/%s/%s/%s", h.OwnerID, objID, instID)
+func (t *instanceClient) DeleteInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/inst/%s/%s/%d", ownerID, objID, instID)
 
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID string, h util.Headers, dat map[string]interface{}) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/%s/%s/%s", h.OwnerID, objID, instID)
+func (t *instanceClient) UpdateInst(ctx context.Context, ownerID string, objID string, instID int64, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/inst/%s/%s/%d", ownerID, objID, instID)
 
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInsts(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/search/%s/%s", h.OwnerID, objID)
+func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/search/%s/%s", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s/detail", h.OwnerID, objID)
+func (t *instanceClient) SelectInstsAndAsstDetail(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s/detail", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) InstSearch(ctx context.Context, objID string, h util.Headers, s *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", h.OwnerID, objID)
+func (t *instanceClient) InstSearch(ctx context.Context, ownerID string, objID string, h http.Header, s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/search/owner/%s/object/%s", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, objID string, h util.Headers, p *inst.AssociationParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/association/search/owner/%s/object/%s", h.OwnerID, objID)
+func (t *instanceClient) SelectInstsByAssociation(ctx context.Context, ownerID string, objID string, h http.Header, p *metadata.AssociationParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/association/search/owner/%s/object/%s", ownerID, objID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectInst(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/search/owner/%s/%s/%s", h.OwnerID, objID, instID)
+func (t *instanceClient) SelectInst(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/search/owner/%s/%s/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectTopo(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/search/topo/owner/%s/object/%s/inst/%s", h.OwnerID, objID, instID)
+func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/search/topo/owner/%s/object/%s/inst/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
 }
 
-func (t *instanceClient) SelectAssociationTopo(ctx context.Context, objID string, instID string, h util.Headers, p *params.SearchParams) (resp *api.BKAPIRsp, err error) {
-	resp = new(api.BKAPIRsp)
-	subPath := fmt.Sprintf("/inst/association/topo/search/owner/%sobject/%s/inst/%s", h.OwnerID, objID, instID)
+func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
+	resp = new(metadata.SearchInstResult)
+	subPath := fmt.Sprintf("/inst/association/topo/search/owner/%sobject/%s/inst/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(p).
 		SubResource(subPath).
-		WithHeaders(h.ToHeader()).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 	return
