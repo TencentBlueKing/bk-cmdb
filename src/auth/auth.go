@@ -41,6 +41,9 @@ type ResourceHandler interface {
 	Update(ctx context.Context, r *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
+
+	// RegisterResourceType(ctx context.Context, r []meta.ResourceAttribute) error
+	// UnregisterResourceType(ctx context.Context, r []meta.ResourceAttribute) error
 }
 
 // NewAuthorize is used to initialized a Authorize instance interface,
@@ -48,6 +51,6 @@ type ResourceHandler interface {
 // This allows bk-cmdb to support other kind of auth center.
 // tls can be nil if it is not care.
 // authConfig is a way to parse configuration info for the connection to a auth center.
-func NewAuthorize(tls *util.TLSClientConfig, authConfig map[string]string) (Authorize, error) {
+func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig) (Authorize, error) {
 	return authcenter.NewAuthCenter(tls, authConfig)
 }
