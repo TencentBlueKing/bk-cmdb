@@ -35,49 +35,54 @@ const (
 	cmdbUserID             string = "system"
 )
 
-// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthCenter, error) {
-	client, err := util.NewClient(tls)
-	if err != nil {
-		return nil, err
-	}
-
+// ParseConfigFromKV returns a new config
+func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
-	address, exist := authCfg["auth.address"]
+
+	address, exist := conifgmap[prefix+".address"]
 	if !exist {
-		return nil, errors.New(`missing "address" configuration for auth center`)
+		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
 
 	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
 	if len(cfg.Address) == 0 {
-		return nil, errors.New(`invalid "address" configuration for auth center`)
+		return cfg, errors.New(`invalid "address" configuration for auth center`)
 	}
 
-	cfg.AppSecret, exist = authCfg["auth.appSecret"]
+	cfg.AppSecret, exist = conifgmap[prefix+".appSecret"]
 	if !exist {
-		return nil, errors.New(`missing "appSecret" configuration for auth center`)
+		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
 	}
 
 	if len(cfg.AppSecret) == 0 {
-		return nil, errors.New(`invalid "appSecret" configuration for auth center`)
+		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = authCfg["auth.appCode"]
+	cfg.AppCode, exist = conifgmap[prefix+".appCode"]
 	if !exist {
-		return nil, errors.New(`missing "appCode" configuration for auth center`)
+		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
 
 	if len(cfg.AppCode) == 0 {
-		return nil, errors.New(`invalid "appCode" configuration for auth center`)
+		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
-	cfg.SystemID, exist = authCfg["auth.systemID"]
+	cfg.SystemID, exist = conifgmap[prefix+".systemID"]
 	if !exist {
-		return nil, errors.New(`missing "systemID" configuration for auth center`)
+		return cfg, errors.New(`missing "systemID" configuration for auth center`)
 	}
 
 	if len(cfg.SystemID) == 0 {
-		return nil, errors.New(`invalid "systemID" configuration for auth center`)
+		return cfg, errors.New(`invalid "systemID" configuration for auth center`)
+	}
+	return cfg, nil
+}
+
+// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+	client, err := util.NewClient(tls)
+	if err != nil {
+		return nil, err
 	}
 
 	c := &util.Capability{

@@ -15,8 +15,7 @@ package service
 import (
 	"context"
 
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -25,6 +24,8 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -32,6 +33,8 @@ type Service struct {
 	db           dal.RDB
 	ccApiSrvAddr string
 	ctx          context.Context
+
+	authCenter *authcenter.AuthCenter
 }
 
 func NewService(ctx context.Context) *Service {

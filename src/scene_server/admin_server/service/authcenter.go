@@ -28,7 +28,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
-	err := initial.Init(s.ctx, nil)
+	err := initial.Init(s.ctx, s.authCenter)
 	if nil != err {
 		blog.Errorf("db upgrade error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
