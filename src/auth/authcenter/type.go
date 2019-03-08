@@ -15,6 +15,8 @@ type AuthConfig struct {
 	AppSecret string
 	// the system id that cmdb used in auth center.
 	SystemID string
+	// enable string
+	Enable bool
 }
 
 type RegisterInfo struct {

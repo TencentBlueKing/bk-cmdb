@@ -47,6 +47,10 @@ func (s *Service) SetDB(db dal.RDB) {
 	s.db = db
 }
 
+func (s *Service) SetAuthcenter(authCenter *authcenter.AuthCenter) {
+	s.authCenter = authCenter
+}
+
 func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
 	s.ccApiSrvAddr = ccApiSrvAddr
 }
