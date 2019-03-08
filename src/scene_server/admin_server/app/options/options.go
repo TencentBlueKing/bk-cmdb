@@ -47,7 +47,7 @@ type Config struct {
 	Configures    ConfConfig
 	Register      RegisterConfig
 	ProcSrvConfig ProcSrvConfig
-	AuthCenter    authcenter.Config
+	AuthCenter    authcenter.AuthConfig
 }
 
 type LanguageConfig struct {
