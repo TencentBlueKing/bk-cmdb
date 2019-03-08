@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
 )
 
 func Init(ctx context.Context, cli *authcenter.AuthCenter) error {
@@ -33,7 +32,7 @@ func Init(ctx context.Context, cli *authcenter.AuthCenter) error {
 		ResourceTypes: expectSystemResourceType,
 	})
 
-	_, err := cli.QuerySystemInfo(ctx, meta.SystemIDCMDB, false)
+	_, err := cli.QuerySystemInfo(ctx, authcenter.SystemIDCMDB, false)
 	if err != nil && err != authcenter.ErrNotFound {
 		return err
 	}
@@ -42,10 +41,10 @@ func Init(ctx context.Context, cli *authcenter.AuthCenter) error {
 		return err
 	}
 
-	if err := cli.UpsertResourceTypeBatch(ctx, meta.SystemIDCMDB, meta.ScopeTypeIDSystem, expectSystemResourceType); err != nil {
+	if err := cli.UpsertResourceTypeBatch(ctx, authcenter.SystemIDCMDB, authcenter.ScopeTypeIDSystem, expectSystemResourceType); err != nil {
 		return err
 	}
-	if err := cli.UpsertResourceTypeBatch(ctx, meta.SystemIDCMDB, meta.ScopeTypeIDBiz, expectBizResourceType); err != nil {
+	if err := cli.UpsertResourceTypeBatch(ctx, authcenter.SystemIDCMDB, authcenter.ScopeTypeIDBiz, expectBizResourceType); err != nil {
 		return err
 	}
 

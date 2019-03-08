@@ -6,6 +6,18 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constanst
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
+)
+
 type AuthConfig struct {
 	// blueking's auth center addresses
 	Address []string
@@ -126,10 +138,10 @@ type System struct {
 }
 
 type ResourceType struct {
-	ResourceTypeID       string   `json:"resource_type_id"`
-	ResourceTypeName     string   `json:"resource_type_name"`
-	ParentResourceTypeID string   `json:"parent_resource_type_id"`
-	Actions              []Action `json:"actions"`
+	ResourceTypeID       ResourceTypeID `json:"resource_type_id"`
+	ResourceTypeName     string         `json:"resource_type_name"`
+	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type_id"`
+	Actions              []Action       `json:"actions"`
 }
 
 type Action struct {

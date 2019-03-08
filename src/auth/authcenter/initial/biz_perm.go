@@ -14,12 +14,11 @@ package initial
 
 import (
 	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
 )
 
 var expectBizResourceType = []authcenter.ResourceType{
 	{
-		ResourceTypeID:       meta.ModelClassification.String(),
+		ResourceTypeID:       authcenter.BizModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -41,9 +40,9 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Model.String(),
+		ResourceTypeID:       authcenter.BizModel,
 		ResourceTypeName:     "模型",
-		ParentResourceTypeID: meta.ModelClassification.String(),
+		ParentResourceTypeID: authcenter.BizModelGroup,
 		Actions: []authcenter.Action{
 			{
 				ActionID:          authcenter.Create,
@@ -63,9 +62,9 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.ModelInstance.String(),
+		ResourceTypeID:       authcenter.BizInstance,
 		ResourceTypeName:     "实例",
-		ParentResourceTypeID: meta.Model.String(),
+		ParentResourceTypeID: authcenter.BizModel,
 		Actions: []authcenter.Action{
 			{
 				ActionID:          authcenter.Create,
@@ -90,7 +89,7 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.DynamicGrouping.String(),
+		ResourceTypeID:       authcenter.BizCustomQuery,
 		ResourceTypeName:     "动态分组",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -117,7 +116,7 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Process.String(),
+		ResourceTypeID:       authcenter.BizProcessInstance,
 		ResourceTypeName:     "进程",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -149,7 +148,7 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.MainlineInstanceTopology.String(),
+		ResourceTypeID:       authcenter.BizTopoInstance,
 		ResourceTypeName:     "拓扑",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -181,7 +180,7 @@ var expectBizResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Host,
+		ResourceTypeID:       authcenter.BizHostInstance,
 		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{

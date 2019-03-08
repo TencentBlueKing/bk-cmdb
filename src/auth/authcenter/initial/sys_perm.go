@@ -16,14 +16,13 @@ import (
 	"strings"
 
 	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
 )
 
 var expectSystem = authcenter.System{
-	SystemID:           meta.SystemIDCMDB,
-	SystemName:         meta.SystemNameCMDB,
+	SystemID:           authcenter.SystemIDCMDB,
+	SystemName:         authcenter.SystemNameCMDB,
 	Desc:               "蓝鲸配置平台（CMDB）",
-	ReleatedScopeTypes: strings.Join([]string{meta.ScopeTypeIDBiz, meta.ScopeTypeIDSystem}, ";"),
+	ReleatedScopeTypes: strings.Join([]string{authcenter.ScopeTypeIDBiz, authcenter.ScopeTypeIDSystem}, ";"),
 	Managers:           "system",
 	Creator:            "system",
 	Updater:            "system",
@@ -31,7 +30,7 @@ var expectSystem = authcenter.System{
 
 var expectSystemResourceType = []authcenter.ResourceType{
 	{
-		ResourceTypeID:       meta.ModelClassification.String(),
+		ResourceTypeID:       authcenter.SysModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -53,9 +52,9 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Model.String(),
+		ResourceTypeID:       authcenter.SysModel,
 		ResourceTypeName:     "模型",
-		ParentResourceTypeID: meta.ModelClassification.String(),
+		ParentResourceTypeID: authcenter.SysModelGroup,
 		Actions: []authcenter.Action{
 			{
 				ActionID:          authcenter.Create,
@@ -75,9 +74,9 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.ModelInstance.String(),
+		ResourceTypeID:       authcenter.SysInstance,
 		ResourceTypeName:     "实例",
-		ParentResourceTypeID: meta.Model.String(),
+		ParentResourceTypeID: authcenter.SysModel,
 		Actions: []authcenter.Action{
 			{
 				ActionID:          authcenter.Create,
@@ -102,7 +101,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.AssociationType.String(),
+		ResourceTypeID:       authcenter.SysAssociationType,
 		ResourceTypeName:     "关联类型",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -124,7 +123,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Business.String(),
+		ResourceTypeID:       authcenter.SysBusinessInstance,
 		ResourceTypeName:     "业务",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -151,7 +150,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.Host,
+		ResourceTypeID:       authcenter.SysHostInstance,
 		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -183,7 +182,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.EventPushing,
+		ResourceTypeID:       authcenter.SysEventPushing,
 		ResourceTypeName:     "事件推送",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
@@ -210,7 +209,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       meta.SystemFunctionality,
+		ResourceTypeID:       authcenter.SysSystemBase,
 		ResourceTypeName:     "系统基础",
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
