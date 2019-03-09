@@ -13,13 +13,13 @@
 package meta
 
 // AuthAttribute is used for check authorization, it's verify multiple Resources field
-// system constanst
+// system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
 	SystemNameCMDB = "蓝鲸智云配置平台"
 )
 
-// ScopeTypeID constanst
+// ScopeTypeID constant
 const (
 	ScopeTypeIDSystem = "system"
 	ScopeTypeIDBiz    = "biz"

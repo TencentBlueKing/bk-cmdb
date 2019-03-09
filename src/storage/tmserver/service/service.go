@@ -69,6 +69,13 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCf
 			Context:  context.Background(),
 			ListenIP: s.listenIP,
 		}, txnCfg, db, s.listenIP)
+	go func() {
+		if err := txn.Run(); err != nil {
+			blog.Errorf("tmserver stoped with error: %v", err)
+		} else {
+			blog.Errorf("tmserver stoped")
+		}
+	}()
 
 	s.core = core.New(txn, db)
 

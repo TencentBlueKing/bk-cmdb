@@ -110,12 +110,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		process.Service.SetCache(cache)
 
-		var rpccli *rpc.Client
-		if process.Config.RPC.Address != "" {
-			rpccli, err = rpc.Dial(process.Config.RPC.Address)
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed %s", err.Error())
-			}
+		rpccli, err := rpc.NewClientPool("tcp", engine.Discover.TMServer().GetServers, "/txn/v3/rpc")
+		if err != nil {
+			return fmt.Errorf("connect rpc server failed %s", err.Error())
 		}
 
 		subcli, err := redis.NewFromConfig(process.Config.Redis)

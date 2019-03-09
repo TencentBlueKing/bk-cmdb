@@ -33,7 +33,7 @@ func (lgc *Logics) GetObjFieldIDs(ctx context.Context, objID string) (common.KvM
 		return nil, err
 	}
 	if !result.Result {
-		blog.Errorf("SelectObjectAttWithParams http do error.get %s fields error:%s,rid:%s", objID, err.Error(), lgc.rid)
+		blog.Errorf("SelectObjectAttWithParams http do error.get %s fields err code:%d, err msg:%s,rid:%s", objID, result.Code, result.ErrMsg, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
