@@ -17,7 +17,8 @@
                                     <input type="checkbox"
                                         :id="'systemAuth-' + authority.id" 
                                         :value="authority.id"
-                                        v-model="config.selectedAuthorities">{{$t(authority.name)}}
+                                        v-model="config.selectedAuthorities">
+                                    <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
                                 </label>
                             </li>
                         </ul>
@@ -44,7 +45,8 @@
                                             <input type="checkbox"
                                                 :id="'model-all-'+model['bk_obj_id']" 
                                                 :checked="model.selectedAuthorities.length === 3"
-                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["全选"]')}}
+                                                @change="checkAllModelAuthorities(classifyIndex,modelIndex,$event)">
+                                            <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -53,7 +55,8 @@
                                             <input type="checkbox" value='search' 
                                                 :id="'model-search-'+model['bk_obj_id']" 
                                                 v-model="model.selectedAuthorities"
-                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">{{$t('Common["查询"]')}}
+                                                @change="checkOtherAuthorities(classifyIndex,modelIndex,$event)">
+                                            <span class="cmdb-checkbox-text">{{$t('Common["查询"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -63,7 +66,8 @@
                                             <input type="checkbox" value='update' 
                                                 :id="'model-update-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1"  
-                                                v-model="model.selectedAuthorities">{{$t('Common["编辑"]')}}
+                                                v-model="model.selectedAuthorities">
+                                            <span class="cmdb-checkbox-text">{{$t('Common["编辑"]')}}</span>
                                         </label>
                                     </span>
                                     <span class="model-authority-checkbox fl">
@@ -73,7 +77,8 @@
                                             <input type="checkbox" value='delete' 
                                                 :id="'model-delete-'+model['bk_obj_id']"
                                                 :disabled="model.selectedAuthorities.indexOf('search') === -1" 
-                                                v-model="model.selectedAuthorities">{{$t('Common["删除"]')}}
+                                                v-model="model.selectedAuthorities">
+                                            <span class="cmdb-checkbox-text">{{$t('Common["删除"]')}}</span>
                                         </label>
                                     </span>
                                 </li>
@@ -297,7 +302,7 @@
         .system-list{
             white-space: nowrap;
             .system-item{
-                width: 115px;
+                min-width: 115px;
                 height: 32px;
                 margin: 0 0 0 5px;
             }
@@ -348,7 +353,6 @@
         }
     }
     label.cmdb-form-checkbox{
-        max-width: 130px;
         line-height: 32px;
         padding: 0;
         margin: 0;
@@ -364,7 +368,6 @@
             width: 14px;
             height: 14px;
             margin-right: 10px;
-            vertical-align: -2px;
         }
     }
     .footer{

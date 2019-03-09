@@ -13,6 +13,7 @@
 package middleware
 
 import (
+	"plugin"
 	"strings"
 
 	"configcenter/src/apimachinery/discovery"
@@ -25,8 +26,8 @@ import (
 	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
 	redis "gopkg.in/redis.v5"
 )
 
@@ -35,6 +36,7 @@ var checkUrl string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
+var LoginPlg *plugin.Plugin
 
 //ValidLogin   valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
@@ -57,6 +59,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.JSON(403, gin.H{
 					"status": "access forbidden",
 				})
+				c.Abort()
 				return
 			}
 			//http request header add user
@@ -64,10 +67,11 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
-			ownerID = "0"
+			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
@@ -76,6 +80,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				}
 				url := servers[0]
 				httpclient.ProxyHttp(c, url)
+
 			} else {
 				c.Next()
 			}
@@ -84,11 +89,13 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.JSON(401, gin.H{
 					"status": "log out",
 				})
+				c.Abort()
 				return
 			} else {
-				user := user.NewUser(config)
-				aa := user.GetLoginUrl(c)
-				c.Redirect(302, aa)
+				user := user.NewUser(config, Engine, CacheCli, LoginPlg)
+				url := user.GetLoginUrl(c)
+				c.Redirect(302, url)
+				c.Abort()
 			}
 
 		}
@@ -114,16 +121,10 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
-			ownerMan := user.NewOwnerManager("admin", cookieOwnerID, cookieLanuage)
-			ownerMan.Engine = Engine
-			ownerMan.CacheCli = CacheCli
-			if err := ownerMan.InitOwner(); nil != err {
-				blog.Errorf("init owner fail %s", err.Error())
-				return true
-			}
 		}
+		session.Set(common.WEBSessionSupplierID, "0")
 
-		blog.Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
@@ -132,7 +133,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	}
 	session := sessions.Default(c)
 	cc_token := session.Get(common.HTTPCookieBKToken)
-	user := user.NewUser(config)
+	user := user.NewUser(config, Engine, CacheCli, LoginPlg)
 	if nil == cc_token {
 		return user.LoginUser(c)
 	}
@@ -145,8 +146,19 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	if !ok || "" == ownerID {
 		return user.LoginUser(c)
 	}
+	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
+	if !ok || "" == supplierID {
+		return user.LoginUser(c)
+	}
 
-	bk_token, err := c.Cookie(common.HTTPCookieBKToken)
+	bkTokenName := common.HTTPCookieBKToken
+	if nil != LoginPlg {
+		bkPluginTokenName, err := LoginPlg.Lookup("BKTokenName")
+		if nil == err {
+			bkTokenName = *bkPluginTokenName.(*string)
+		}
+	}
+	bk_token, err := c.Cookie(bkTokenName)
 	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)

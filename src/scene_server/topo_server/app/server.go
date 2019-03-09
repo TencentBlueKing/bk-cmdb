@@ -16,21 +16,24 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	restful "github.com/emicklei/go-restful"
+	"strconv"
+	"time"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
+	"configcenter/src/storage/dal/mongo"
+
+	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -41,16 +44,23 @@ type TopoServer struct {
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-
-	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
-	if nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
+	topoMax := common.BKTopoBusinessLevelDefault
+	var err error
+	if current.ConfigMap["level.businessTopoMax"] != "" {
+		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+		if err != nil {
+			blog.Errorf("invalid business topo max value, err: %v", err)
+			return
+		}
 	}
+	t.Config.BusinessTopoLevelMax = topoMax
+	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 
-	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
-	}
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core)
 }
 
@@ -61,16 +71,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.V(3).Infof("srv conf:", svrInfo)
+	blog.V(5).Infof("srv conf:", svrInfo)
+
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
 
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -106,6 +120,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_TOPO,
 		op.ServConf.ExConfig,
 		topoSvr.onTopoConfigUpdate,
+		discover,
 		bonC)
 
 	if nil != err {

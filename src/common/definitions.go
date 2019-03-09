@@ -12,6 +12,8 @@
 
 package common
 
+import "math"
+
 const (
 	// HTTPCreate create method
 	HTTPCreate = "POST"
@@ -61,7 +63,7 @@ const (
 	BKDefaultSupplierID = 0
 
 	// BKSuperOwnerID the super owner value
-	BKSuperOwnerID = "supperowner"
+	BKSuperOwnerID = "superadmin"
 
 	// BKDefaultDirSubArea the default dir subarea
 	BKDefaultDirSubArea = 0
@@ -89,8 +91,8 @@ const (
 	// BKInnerObjIDHost the inner object
 	BKInnerObjIDHost = "host"
 
-	// BKINnerObjIDObject the inner object
-	BKINnerObjIDObject = "object"
+	// BKInnerObjIDObject the inner object
+	BKInnerObjIDObject = "object"
 
 	// BKInnerObjIDProc the inner object
 	BKInnerObjIDProc = "process"
@@ -134,7 +136,7 @@ const (
 	// BKDBOR the db operator
 	BKDBOR = "$or"
 
-	// BKDBOR the db operator
+	// BKDBAND the db operator
 	BKDBAND = "$and"
 
 	// BKDBLIKE the db operator
@@ -164,6 +166,27 @@ const (
 	// BKDBExists the db opeartor
 	BKDBExists = "$exists"
 
+	// BKDBNot the db opeartor
+	BKDBNot = "$not"
+
+	// BKDBCount the db opeartor
+	BKDBCount = "$count"
+
+	// BKDBGroup the db opeartor
+	BKDBGroup = "$group"
+
+	// BKDBMatch the db opeartor
+	BKDBMatch = "$match"
+
+	// BKDBSum the db opeartor
+	BKDBSum = "$sum"
+
+	// BKDBPush the db opeartor
+	BKDBPush = "$push"
+
+	// BKDBUNSET the db opeartor
+	BKDBUNSET = "$unset"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -176,7 +199,7 @@ const (
 )
 
 const (
-	// BKFIeldID the id definition
+	// BKFieldID the id definition
 	BKFieldID = "id"
 
 	// BKDefaultField the default field
@@ -191,14 +214,59 @@ const (
 	// BKAppIDField the appid field
 	BKAppIDField = "bk_biz_id"
 
-	// BKIPAddr the ip address
+	// BKIPArr the ip address
 	BKIPArr = "ipArr"
+
+	// BKAssetIDField  the asset id field
+	BKAssetIDField = "bk_asset_id"
 
 	// BKHostInnerIPField the host innerip field
 	BKHostInnerIPField = "bk_host_innerip"
 
+	// BKHostCloudRegionField the host cloud region field
+	BKHostCloudRegionField = "bk_cloud_region"
+
 	// BKHostOuterIPField the host outerip field
 	BKHostOuterIPField = "bk_host_outerip"
+
+	// TimeTransferModel the time transferModel field
+	TimeTransferModel = "2006-01-02 15:04:05"
+
+	// BKLastTimeCloudSync the last time cloud sync
+	BKLastTimeCloudSync = "bk_last_sync_time"
+
+	// BKCloudTaskID the cloud sync task id
+	BKCloudTaskID = "bk_task_id"
+
+	// BKSyncStatus the cloud sync status
+	BKSyncStatus = "bk_sync_status"
+
+	// BKNewAddHost the cloud sync new add hosts
+	BKNewAddHost = "new_add"
+
+	// BKAttrChangedHost the cloud sync attr changed hosts
+	BKAttrChangedHost = "attr_changed"
+
+	// BKCloudConfirm whether new add cloud hosts need confirm
+	BKCloudConfirm = "bk_confirm"
+
+	// BKAttrConfirm the cloud hosts attr changed need confirm
+	BKAttrConfirm = "bk_attr_confirm"
+
+	// BKCloudSyncTaskName the cloud sync task name field
+	BKCloudSyncTaskName = "bk_task_name"
+
+	// BKCloudAccountType the cloud account type field
+	BKCloudAccountType = "bk_account_type"
+
+	// BKCloudSyncAccountAdmin the cloud sync account admin
+	BKCloudSyncAccountAdmin = "bk_account_admin"
+
+	// BKResourceType the cloud sync resource type
+	BKResourceType = "bk_resource_type"
+
+	// BKImportFrom the host import from field
+	BKImportFrom = "import_from"
 
 	// BKHostIDField the host id field
 	BKHostIDField = "bk_host_id"
@@ -231,6 +299,18 @@ const (
 
 	// BKOSNameField the os name field
 	BKOSNameField = "bk_os_name"
+
+	// BKHttpGet the http get
+	BKHttpGet = "GET"
+
+	// BKTencentCloudTimeOut the tencent cloud timeout
+	BKTencentCloudTimeOut = 10
+
+	// TencentCloudUrl the tencent cloud url
+	TencentCloudUrl = "cvm.tencentcloudapi.com"
+
+	// TencentCloudSignMethod the tencent cloud sign method
+	TencentCloudSignMethod = "HmacSHA1"
 
 	// BKCloudIDField the cloud id field
 	BKCloudIDField = "bk_cloud_id"
@@ -387,9 +467,6 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
-	// bkIsOnly the isonly field, is primary key
-	BKIsOnly = "isonly"
-
 	// BKIsIncrementField the isincrement field
 	BKIsIncrementField = "is_increment"
 
@@ -473,7 +550,18 @@ const (
 	// BKInstKeyField the inst key field for metric discover
 	BKInstKeyField = "bk_inst_key"
 
-	BKProcinstanceID = "proc_instance_id"
+	// for net collect device
+	BKDeviceIDField    = "device_id"
+	BKDeviceNameField  = "device_name"
+	BKDeviceModelField = "device_model"
+	BKVendorField      = "bk_vendor"
+
+	// for net collect property of device
+	BKNetcollectPropertyIDField = "netcollect_property_id"
+	BKOIDField                  = "oid"
+	BKPeriodField               = "period"
+	BKActionField               = "action"
+	BKProcinstanceID            = "proc_instance_id"
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
@@ -503,6 +591,12 @@ const (
 
 	// CreateTimeField the create time field
 	CreateTimeField = "create_time"
+
+	// ConfirmTimeField the cloud resource confirm time filed
+	ConfirmTimeField = "confirm_time"
+
+	// StartTimeField the cloud sync start time field
+	StartTimeFiled = "start_time"
 
 	// ModifierField the modifier field
 	ModifierField = "modifier"
@@ -535,6 +629,15 @@ const BKAppName string = "蓝鲸"
 
 const BKMainLine = "mainline"
 
+// bk_classification_id value
+const BKNetwork = "bk_network"
+
+const (
+	SNMPActionGet = "get"
+
+	SNMPActionGetNext = "getnext"
+)
+
 const (
 	// DefaultResModuleFlag the default resource module flag
 	DefaultResModuleFlag int = 1
@@ -551,6 +654,9 @@ const (
 
 	// FieldTypeInt the int field type
 	FieldTypeInt string = "int"
+
+	// FieldTypeFloat the float field type
+	FieldTypeFloat string = "float"
 
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum string = "enum"
@@ -569,6 +675,9 @@ const (
 
 	// FieldTypeMultiAsst the multi association
 	FieldTypeMultiAsst string = "multiasst"
+
+	// FieldTypeForeignKey the multi association
+	FieldTypeForeignKey string = "foreignkey"
 
 	// FieldTypeTimeZone the timezone field type
 	FieldTypeTimeZone string = "timezone"
@@ -596,6 +705,9 @@ const (
 	// HostAddMethodExcelIndexOffset the height of the table header
 	HostAddMethodExcelIndexOffset = 3
 
+	// HostAddMethodExcelAssociationIndexOffset
+	HostAddMethodExcelAssociationIndexOffset = 1
+
 	/*EXCEL color AARRGGBB :
 	AA means Alpha
 	RRGGBB means Red, in hex.
@@ -617,7 +729,9 @@ const (
 	ExcelCellDefaultBorderColor = "FFD4D4D4"
 
 	// ExcelAsstPrimaryKeySplitChar split char
-	ExcelAsstPrimaryKeySplitChar = "##"
+	ExcelAsstPrimaryKeySplitChar = ","
+	// ExcelAsstPrimaryKeyJoinChar split char
+	ExcelAsstPrimaryKeyJoinChar = "="
 	// ExcelAsstPrimaryKeyRowChar split char
 	ExcelAsstPrimaryKeyRowChar = "\n"
 
@@ -699,14 +813,21 @@ const (
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
+	// BKHTTPOwnerID the owner
+	BKHTTPOwner = "HTTP_BK_SUPPLIER_ACCOUNT"
 	// BKHTTPOwnerID the owner id
 	BKHTTPOwnerID = "HTTP_BLUEKING_SUPPLIER_ID"
 	//BKHTTPOwnerID = "HTTP_BLUEKING_OWNERID"
 	BKHTTPCookieLanugageKey = "blueking_language"
 	BKSessionLanugageKey    = "language"
+	BKHTTPSupplierID        = "bk_supplier_id"
 
-	BKHTTPCCRequestID     = "cc_request_id"
-	BKHTTPCCTransactionID = "cc_txn_id"
+	// BKHTTPCCRequestID cc request id cc_request_id
+	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
+	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
+	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
+	BKHTTPCCTransactionID = "CC_TXN_ID"
 )
 
 type CCContextKey string
@@ -733,14 +854,16 @@ const (
 
 // integer const
 const (
-	MaxUint64 = ^uint64(0)
-	MinUint64 = 0
-	MaxInt64  = int64(MaxUint64 >> 1)
-	MinInt64  = -MaxInt64 - 1
-	MaxUint   = ^uint(0)
-	MinUint   = 0
-	MaxInt    = int(MaxUint >> 1)
-	MinInt    = -MaxInt - 1
+	MaxUint64  = ^uint64(0)
+	MinUint64  = 0
+	MaxInt64   = int64(MaxUint64 >> 1)
+	MinInt64   = -MaxInt64 - 1
+	MaxUint    = ^uint(0)
+	MinUint    = 0
+	MaxInt     = int(MaxUint >> 1)
+	MinInt     = -MaxInt - 1
+	MaxFloat64 = math.MaxFloat64
+	MinFloat64 = -math.MaxFloat64
 )
 
 //flag
@@ -777,6 +900,17 @@ const (
 )
 
 const (
+	// period default value
+	Infinite = "∞"
+)
+
+// netcollect
+const (
+	BKNetDevice   = "net_device"
+	BKNetProperty = "net_property"
+)
+
+const (
 	BKDefaultLoginUserPluginVersion = "self"
 	HTTPCookieBKToken               = "bk_token"
 
@@ -790,6 +924,7 @@ const (
 	WEBSessionAvatarUrlKey     = "avatar_url"
 	WEBSessionMultiSupplierKey = "multisupplier"
 	WEBSessionLanguageKey      = "language"
+	WEBSessionSupplierID       = "supplier_id"
 
 	LoginSystemMultiSupplierTrue  = "1"
 	LoginSystemMultiSupplierFalse = "0"
@@ -832,4 +967,36 @@ const (
 	RedisProcSrvHostInstanceRefreshModuleKey  = BKCacheKeyV3Prefix + "prochostinstancerefresh:set"
 	RedisProcSrvHostInstanceAllRefreshLockKey = BKCacheKeyV3Prefix + "lock:prochostinstancerefresh"
 	RedisProcSrvQueryProcOPResultKey          = BKCacheKeyV3Prefix + "procsrv:query:opresult:set"
+	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
+	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
+	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
+	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
+)
+
+// association fields
+const (
+	// the id of the association kind
+	AssociationKindIDField    = "bk_asst_id"
+	AssociationKindNameField  = "bk_asst_name"
+	AssociationObjAsstIDField = "bk_obj_asst_id"
+	AssociatedObjectIDField   = "bk_asst_obj_id"
+)
+
+// association
+const (
+	AssociationKindMainline = "bk_mainline"
+	AssociationTypeBelong   = "belong"
+	AssociationTypeGroup    = "group"
+	AssociationTypeRun      = "run"
+	AssociationTypeConnect  = "connect"
+	AssociationTypeDefault  = "default"
+)
+
+const (
+	// MetadataField data business key
+	MetadataField = "metadata"
+)
+
+const (
+	BKBizDefault = "bizdefault"
 )

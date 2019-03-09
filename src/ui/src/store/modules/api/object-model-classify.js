@@ -11,17 +11,40 @@
 import $http from '@/api'
 import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
 
+const _getNavigationById = id => {
+    let navigation
+    for (let classificationId in STATIC_NAVIGATION) {
+        navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
+        if (navigation) break
+    }
+    return navigation
+}
+
 const state = {
     classifications: [],
     invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
     interceptStaticModel: {
         'bk_host_manage': ['resource'],
         'bk_back_config': ['event', 'model', 'audit']
-    }
+    },
+    staticClassifyId: Object.keys(STATIC_NAVIGATION)
 }
 
 const getters = {
     classifications: state => state.classifications,
+    staticClassifyId: state => state.staticClassifyId,
+    models: state => {
+        const models = []
+        state.classifications.forEach(classification => {
+            (classification['bk_objects'] || []).forEach(model => {
+                models.push(model)
+            })
+        })
+        return models
+    },
+    getModelById: (state, getters) => id => {
+        return getters.models.find(model => model['bk_obj_id'] === id)
+    },
     activeClassifications: state => {
         let classifications = state.classifications
         // 1.去掉停用模型
@@ -44,64 +67,90 @@ const getters = {
     authorizedClassifications: (state, getters, rootState, rootGetters) => {
         let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
         let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
-        if (!rootGetters.admin) {
-            // 1.去除无权限分类
-            authorizedClassifications = authorizedClassifications.filter(classification => {
-                return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
-            })
-            // 2.去除分类下无权限的模型
-            authorizedClassifications.forEach(classification => {
-                classification['bk_objects'] = classification['bk_objects'].filter(model => {
-                    return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
-                })
-            })
-        }
+        // if (!rootGetters.admin) {
+        //     // 1.去除无权限分类
+        //     authorizedClassifications = authorizedClassifications.filter(classification => {
+        //         return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
+        //     })
+        //     // 2.去除分类下无权限的模型
+        //     authorizedClassifications.forEach(classification => {
+        //         classification['bk_objects'] = classification['bk_objects'].filter(model => {
+        //             return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
+        //         })
+        //     })
+        // }
         return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
     },
-    // 被授权的导航(包含主机管理、后台配置、通用模型)
-    authorizedNavigation: (state, getters, rootState, rootGetters) => {
-        let authorizedClassifications = JSON.parse(JSON.stringify(getters.authorizedClassifications))
-        // 构造模型导航数据
-        let navigation = authorizedClassifications.map(classification => {
-            return {
-                'icon': classification['bk_classification_icon'],
-                'id': classification['bk_classification_id'],
-                'name': classification['bk_classification_name'],
-                'children': classification['bk_objects'].map(model => {
-                    return {
-                        'path': model['bk_obj_id'] === 'biz' ? '/business' : `/general-model/${model['bk_obj_id']}`,
-                        'id': model['bk_obj_id'],
-                        'name': model['bk_obj_name'],
-                        'icon': model['bk_obj_icon'],
-                        'classificationId': model['bk_classification_id']
-                    }
-                })
-            }
+    authorizedModels: (state, getters) => {
+        const models = []
+        getters.authorizedClassifications.forEach(classification => {
+            classification['bk_objects'].forEach(model => {
+                models.push(model)
+            })
         })
-        let staticNavigation = JSON.parse(JSON.stringify(STATIC_NAVIGATION))
-        // 检查主机管理、后台配置权限
-        if (!rootGetters.admin) {
-            let sysConfig = {
-                'bk_host_manage': rootGetters['userPrivilege/privilege']['sys_config']['global_busi'] || [],
-                'bk_back_config': rootGetters['userPrivilege/privilege']['sys_config']['back_config'] || []
-            }
-            for (let classificationId in staticNavigation) {
-                if (sysConfig.hasOwnProperty(classificationId)) {
-                    staticNavigation[classificationId].children = STATIC_NAVIGATION[classificationId].children.filter(({id}) => {
-                        if (state.interceptStaticModel[classificationId].includes(id)) {
-                            return sysConfig[classificationId].includes(id)
-                        }
-                        return !['permission', 'model'].includes(id) // 权限管理、模型管理仅管理员拥有且后台接口不返回其配置
+        return models
+    },
+    authorizedNavigation: (state, getters, rootState, rootGetters) => {
+        const authority = rootGetters['userPrivilege/privilege']
+        const collectionKey = 'bk_collection'
+        const collection = []
+        const specialCollecton = [{
+            id: 'biz',
+            path: '/business',
+            icon: 'icon-cc-business',
+            i18n: 'Nav["业务"]',
+            authorized: true,
+            classificationId: collectionKey
+        }]
+        const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
+        if (hasResourcePrivilege) {
+            specialCollecton.push({
+                id: '$resource',
+                path: '/resource',
+                icon: 'icon-cc-host-free-pool',
+                i18n: 'Nav["主机"]',
+                authorized: hasResourcePrivilege,
+                classificationId: collectionKey
+            })
+        }
+        const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
+        const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
+        collectedModelIds.forEach(modelId => {
+            const specialModel = specialCollecton.find(({id}) => id === modelId)
+            if (specialModel) {
+                collection.push(specialModel)
+            } else {
+                const model = getters.getModelById(modelId)
+                if (model) {
+                    collection.push({
+                        id: modelId,
+                        name: model['bk_obj_name'],
+                        icon: model['bk_obj_icon'],
+                        path: `/general-model/${modelId}`,
+                        authorized: true,
+                        classificationId: collectionKey
                     })
                 }
             }
+        })
+        STATIC_NAVIGATION[collectionKey].children = collection
+
+        if (!rootGetters.admin) {
+            STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
+                navigation.authorized = false
+            })
+
+            const systemConfig = authority['sys_config']
+            const backConfig = systemConfig['back_config'] || []
+            const globalConfig = systemConfig['global_busi'] || []
+            const needsCheck = ['audit', 'event']
+            needsCheck.forEach(id => {
+                const navigation = _getNavigationById(id)
+                navigation.authorized = backConfig.includes(id)
+            })
         }
-        return [
-            staticNavigation['bk_index'],
-            staticNavigation['bk_host_manage'],
-            ...navigation,
-            staticNavigation['bk_back_config']
-        ]
+        const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
+        return navigation.sort((A, B) => A.order - B.order)
     }
 }
 
@@ -114,8 +163,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createClassification ({ commit, state, dispatch }, { params }) {
-        return $http.post(`object/classification`, params)
+    createClassification ({ commit, state, dispatch }, { params, config }) {
+        return $http.post('create/objectclassification', params, config)
     },
 
     /**
@@ -127,7 +176,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteClassification ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`object/classification/${id}`)
+        return $http.delete(`delete/objectclassification/${id}`)
     },
 
     /**
@@ -140,7 +189,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateClassification ({ commit, state, dispatch }, { id, params }) {
-        return $http.put(`object/classification/${id}`, params)
+        return $http.put(`update/objectclassification/${id}`, params)
     },
 
     /**
@@ -151,8 +200,8 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchClassifications ({ commit, state, dispatch }) {
-        return $http.post(`object/classifications`)
+    searchClassifications ({ commit, state, dispatch }, {params, config}) {
+        return $http.post('find/objectclassification', params || {}, config)
     },
 
     /**
@@ -164,8 +213,9 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchClassificationsObjects ({ commit, state, dispatch, rootGetters }, { params = {}, config }) {
-        return $http.post(`object/classification/${rootGetters.supplierAccount}/objects`, params, config).then(classifications => {
-            commit('setClassificationsObjects', classifications)
+        return $http.post('find/classificationobject', params, config).then(data => {
+            commit('setClassificationsObjects', data)
+            return data
         })
     }
 }

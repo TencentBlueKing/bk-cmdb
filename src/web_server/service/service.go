@@ -13,9 +13,13 @@
 package service
 
 import (
+	"plugin"
+	"strings"
+
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -23,13 +27,16 @@ import (
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/holmeswang/contrib/sessions"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
+	VersionPlg *plugin.Plugin
 	*options.ServerOption
-	Engine *backbone.Engine
+	Engine   *backbone.Engine
+	CacheCli *redis.Client
 	*logics.Logics
 	Disc   discovery.DiscoveryInterface
 	Config options.Config
@@ -38,14 +45,24 @@ type Service struct {
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
-	store, rediserr := sessions.NewRedisStore(10, "tcp", s.Config.Session.Host+":"+s.Config.Session.Port, s.Config.Session.Secret, []byte("secret"))
-	if rediserr != nil {
-		panic(rediserr)
+	var store sessions.RedisStore
+	var redisErr error
+	if 0 == len(s.Config.Session.Address) {
+		address := s.Config.Session.Host + ":" + s.Config.Session.Port
+		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
+		}
+	} else {
+		address := strings.Split(s.Config.Session.Address, ";")
+		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, s.Config.Session.MasterName, "tcp", s.Config.Session.Secret, []byte("secret"))
+		if redisErr != nil {
+			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
+		}
 	}
 
 	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
 	middleware.Engine = s.Engine
-	ws.Use(middleware.Cors())
 	ws.Use(middleware.ValidLogin(s.Config, s.Disc))
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
@@ -55,12 +72,15 @@ func (s *Service) WebService() *gin.Engine {
 	ws.POST("/hosts/export", s.ExportHost)
 	ws.GET("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
-	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.LogOutUser)
+	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportObject)
 	ws.POST("/object/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportObject)
 	ws.GET("/user/list", s.GetUserList)
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
+	ws.GET("/userinfo", s.UserInfo)
+	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
+
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/", s.Index)
 	return ws

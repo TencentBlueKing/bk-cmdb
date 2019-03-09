@@ -1,9 +1,9 @@
-import Vue from 'vue'
 import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
+import { language } from '@/i18n'
 
 const Site = window.Site
 window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
@@ -19,7 +19,7 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.response.use(
     response => {
-        return response.data
+        return response
     },
     error => {
         return Promise.reject(error)
@@ -127,10 +127,11 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @return
  */
 function handleResponse ({config, response, resolve, reject}) {
-    if (!response.result && config.globalError) {
-        reject({message: response['bk_error_msg']})
+    const transformedResponse = response.data
+    if (!transformedResponse.result && config.globalError) {
+        reject({message: transformedResponse['bk_error_msg']})
     } else {
-        resolve(config.originalResponse ? response : response.data, config)
+        resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
 }
 
@@ -151,8 +152,10 @@ function handleReject (error, config) {
             window.location.href = Site.login
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
+        } else if (status === 403) {
+            nextError.message = language === 'en' ? 'You don\'t have permission.' : '无权限操作'
         } else if (status === 500) {
-            nextError.message = '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
+            nextError.message = language === 'en' ? 'System error, please contact developers.' : '系统出现异常, 请记录下错误场景并与开发人员联系, 谢谢!'
         }
         $error(nextError.message)
         return Promise.reject(nextError)
@@ -185,6 +188,8 @@ function initConfig (method, url, userConfig) {
         clearCache: false,
         // 响应结果是否返回原始数据
         originalResponse: false,
+        // 转换返回数据，仅返回data对象
+        transformData: true,
         // 当路由变更时取消请求
         cancelWhenRouteChange: true,
         // 取消上次请求
@@ -209,7 +214,5 @@ function getCancelToken () {
         cancelExcutor
     }
 }
-
-Vue.prototype.$http = $http
 
 export default $http

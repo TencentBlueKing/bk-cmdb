@@ -5,7 +5,8 @@
         :searchable="privilegeBusiness.length > 5"
         :disabled="disabled"
         setting-key="bk_biz_id"
-        display-key="bk_biz_name">
+        display-key="bk_biz_name"
+        search-key="bk_biz_name">
     </bk-selector>
 </template>
 
@@ -28,11 +29,15 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['privilegeBusiness', 'bizId'])
         },
         watch: {
-            localSelected (localSelected) {
+            localSelected (localSelected, prevSelected) {
                 window.localStorage.setItem('selectedBusiness', localSelected)
+                if (prevSelected !== '') {
+                    window.location.reload()
+                    return
+                }
                 if (this.$route.meta.requireBusiness) {
                     this.$http.setHeader('bk_biz_id', localSelected)
                 } else {
@@ -40,11 +45,15 @@
                 }
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
+                this.setLocalSelected()
             },
             value (value) {
                 if (value !== this.localSelected) {
                     this.setLocalSelected()
                 }
+            },
+            bizId (value) {
+                this.localSelected = value
             }
         },
         beforeCreate () {
@@ -65,9 +74,12 @@
             getPrivilegeBusiness () {
                 return this.$store.dispatch('objectBiz/searchBusiness', {
                     config: {
-                        requestId: 'post_searchBusiness',
+                        requestId: 'post_searchBusiness_$ne_disabled',
                         fromCache: true
                     }
+                }).then(business => {
+                    this.$store.commit('objectBiz/setBusiness', business.info)
+                    return business
                 })
             },
             setLocalSelected () {
@@ -78,6 +90,7 @@
                 } else if (this.privilegeBusiness.length) {
                     this.localSelected = this.privilegeBusiness[0]['bk_biz_id']
                 }
+                this.$store.commit('objectBiz/setBizId', this.localSelected)
             }
         }
     }

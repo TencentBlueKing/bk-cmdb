@@ -1,7 +1,11 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <bk-button class="fl" type="primary" @click="handleCreate">{{$t("Inst['立即创建']")}}</bk-button>
+            <bk-button class="fl" type="primary"
+                :disabled="!authority.includes('update') || !isAdminView"
+                @click="handleCreate">
+                {{$t("Inst['立即创建']")}}
+            </bk-button>
             <div class="options-button fr">
                 <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
                     <i class="icon-cc-history2"></i>
@@ -54,16 +58,19 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
+                        :show-options="isAdminView"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
+                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
@@ -76,7 +83,8 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :inst-id="attribute.inst.details['bk_biz_id']">
+                        :authority="authority"
+                        :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
@@ -154,10 +162,17 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             customBusinessColumns () {
-                return this.usercustom['biz_table_columns'] || []
+                return this.usercustom[this.columnsConfigKey] || []
+            },
+            authority () {
+                return this.$store.getters['userPrivilege/modelAuthority']('biz')
             }
         },
         watch: {
@@ -175,12 +190,13 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
@@ -209,6 +225,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'biz',
+                    params: this.$injectMetadata(),
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_biz'
@@ -228,12 +245,14 @@
                 })
             },
             setFilterOptions () {
-                this.filter.options = this.properties.map(property => {
-                    return {
-                        id: property['bk_property_id'],
-                        name: property['bk_property_name']
-                    }
-                })
+                this.filter.options = this.properties
+                    .filter(property => !['singleasst', 'multiasst'].includes(property['bk_property_type']))
+                    .map(property => {
+                        return {
+                            id: property['bk_property_id'],
+                            name: property['bk_property_name']
+                        }
+                    })
                 this.filter.id = this.filter.options.length ? this.filter.options[0]['id'] : ''
             },
             updateTableHeader (properties) {
@@ -249,7 +268,7 @@
             },
             handleRowClick (item) {
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${item['bk_biz_name']}`
+                this.slider.title = item['bk_biz_name']
                 this.attribute.inst.details = item
                 this.attribute.type = 'details'
             },
@@ -290,7 +309,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && this.filter.value) {
+                if (this.filter.id && String(this.filter.value).length) {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {
@@ -364,17 +383,17 @@
             },
             handleApplayColumnsConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': properties.map(property => property['bk_property_id'])
+                    [this.columnsConfigKey]: properties.map(property => property['bk_property_id'])
                 })
                 this.columnsConfig.show = false
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': []
+                    [this.columnsConfigKey]: []
                 })
             },
             routeToHistory () {
-                this.$router.push('/history/biz?relative=/business')
+                this.$router.push({name: 'businessHistory'})
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

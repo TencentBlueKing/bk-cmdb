@@ -114,13 +114,13 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 		headers := []Header{}
 		attrs, err := a.obj.GetAttributesExceptInnerFields()
 		if nil != err {
-			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s", a.obj.GetID(), err.Error())
+			blog.Errorf("[audit]failed to get the object(%s)' attribute, error info is %s", a.obj.Object().ObjectID, err.Error())
 			return
 		}
 		for _, attr := range attrs {
 			headers = append(headers, Header{
-				PropertyID:   attr.GetID(),
-				PropertyName: attr.GetName(),
+				PropertyID:   attr.Attribute().PropertyID,
+				PropertyName: attr.Attribute().PropertyName,
 			})
 		}
 
@@ -132,7 +132,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			},
 			common.BKOpDescField:   desc,
 			common.BKOpTypeField:   action,
-			common.BKOpTargetField: a.obj.GetID(),
+			common.BKOpTargetField: a.obj.Object().ObjectID,
 			"inst_id":              id,
 		}
 
@@ -157,7 +157,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
 				return
 			}
-		case common.BKInnerObjIDApp, common.BKINnerObjIDObject:
+		case common.BKInnerObjIDApp, common.BKInnerObjIDObject:
 			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
 			if nil != err {
 				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())

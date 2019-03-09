@@ -73,10 +73,10 @@
             ...mapActions('procConfig', ['searchProcess']),
             getProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_obj_id': 'process',
                         'bk_supplier_account': this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'post_searchObjectAttribute_process',
                         fromCache: true

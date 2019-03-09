@@ -34,7 +34,7 @@ func NewValidMap(ownerID, objID string, pheader http.Header, engine *backbone.En
 
 		propertys:    map[string]metadata.Attribute{},
 		require:      map[string]bool{},
-		isOnly:       map[string]bool{},
+		idToProperty: map[int64]metadata.Attribute{},
 		shouldIgnore: map[string]bool{},
 	}
 }
@@ -68,13 +68,11 @@ func (valid *ValidMap) Init() error {
 			continue
 		}
 		valid.propertys[attr.PropertyID] = attr
+		valid.idToProperty[attr.ID] = attr
 		valid.propertyslice = append(valid.propertyslice, attr)
 		if attr.IsRequired {
 			valid.require[attr.PropertyID] = true
 			valid.requirefields = append(valid.requirefields, attr.PropertyID)
-		}
-		if attr.IsOnly {
-			valid.isOnly[attr.PropertyID] = true
 		}
 	}
 	return nil
@@ -84,13 +82,19 @@ func (valid *ValidMap) Init() error {
 func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string, instID int64) error {
 	err := valid.Init()
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed %s", err.Error())
 		return err
 	}
 
-	//valid create request
+	// valid create request
 	if validType == common.ValidCreate {
 		FillLostedFieldValue(valData, valid.propertyslice, valid.requirefields)
+		for _, key := range valid.requirefields {
+			if _, ok := valData[key]; !ok {
+				blog.Errorf("params in need, valid %s, data: %+v", valid.objID, valData)
+				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			}
+		}
 	}
 
 	for key, val := range valData {
@@ -102,7 +106,7 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Error("params is not valid, the key is %s", key)
+			blog.Errorf("params is not valid, the key is %s", key)
 			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
@@ -123,6 +127,12 @@ func (valid *ValidMap) ValidMap(valData map[string]interface{}, validType string
 			err = valid.validTimeZone(val, key)
 		case common.FieldTypeBool:
 			err = valid.validBool(val, key)
+		case common.FieldTypeForeignKey:
+			err = valid.validForeignKey(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
+		case common.FieldTypeUser:
+			err = valid.validUser(val, key)
 		default:
 			continue
 		}
@@ -143,7 +153,6 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 		if valid.require[key] {
 			blog.Error("params in need")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
-
 		}
 		return nil
 	}
@@ -254,7 +263,7 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 	if !ok {
 		return nil
 	}
-	intObjOption := parseIntOption(property.Option)
+	intObjOption := parseMinMaxOption(property.Option)
 	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
 		return nil
 	}
@@ -271,6 +280,26 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 		blog.Errorf("params %s:%#v not valid", key, val)
 		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
+	return nil
+}
+
+// validForeignKey valid foreign key
+func (valid *ValidMap) validForeignKey(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
+	}
+
+	_, ok := util.GetTypeSensitiveUInt64(val)
+	if !ok {
+		blog.Errorf("params %s:%#v not int", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+	}
+
 	return nil
 }
 
@@ -299,6 +328,26 @@ func (valid *ValidMap) validTimeZone(val interface{}, key string) error {
 	return nil
 }
 
+//valid char
+func (valid *ValidMap) validUser(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
+	}
+
+	switch val.(type) {
+	case string:
+	default:
+		blog.Error("params should be string")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
+	}
+	return nil
+}
+
 //validBool
 func (valid *ValidMap) validBool(val interface{}, key string) error {
 	if nil == val {
@@ -315,6 +364,46 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 	default:
 		blog.Error("params should be  bool")
 		return valid.errif.Errorf(common.CCErrCommParamsNeedBool, key)
+	}
+	return nil
+}
+
+//validFloat
+func (valid *ValidMap) validFloat(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+		}
+		return nil
+	}
+
+	value, err := util.GetFloat64ByInterface(val)
+	if nil != err {
+		blog.Error("params should be float")
+		return valid.errif.Errorf(common.CCErrCommParamsNeedFloat, key)
+	}
+
+	property, ok := valid.propertys[key]
+	if !ok {
+		return nil
+	}
+	floatObjOption := parseMinMaxOption(property.Option)
+	if 0 == len(floatObjOption.Min) || 0 == len(floatObjOption.Max) {
+		return nil
+	}
+
+	maxValue, err := strconv.ParseFloat(floatObjOption.Max, 64)
+	if nil != err {
+		maxValue = common.MaxFloat64
+	}
+	minValue, err := strconv.ParseFloat(floatObjOption.Min, 64)
+	if nil != err {
+		minValue = common.MinFloat64
+	}
+	if value > maxValue || value < minValue {
+		blog.Errorf("params %s:%v not valid", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }

@@ -13,19 +13,20 @@
 package backbone
 
 import (
-	"configcenter/src/common/types"
 	"context"
 	"fmt"
 	"sync"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/discovery"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/types"
 )
 
-func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath string, procHandler cc.ProcHandlerFunc, c *Config) (*Engine, error) {
+func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath string, procHandler cc.ProcHandlerFunc, discover discovery.DiscoveryInterface, c *Config) (*Engine, error) {
 	disc, err := NewServcieDiscovery(zkAddr)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
@@ -35,6 +36,7 @@ func NewBackbone(ctx context.Context, zkAddr string, procName string, confPath s
 	if err != nil {
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
+	engine.Discover = discover
 
 	handler := &cc.CCHandler{
 		OnProcessUpdate:  procHandler,
@@ -65,6 +67,7 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 		SvcDisc:    disc,
 		Language:   language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:      errors.NewFromCtx(errors.EmptyErrorsSetting),
+		CCCtx:      newCCContext(),
 	}, nil
 }
 
@@ -75,6 +78,8 @@ type Engine struct {
 	SvcDisc    ServiceDiscoverInterface
 	Language   language.CCLanguageIf
 	CCErr      errors.CCErrorIf
+	CCCtx      CCContextInterface
+	Discover   discovery.DiscoveryInterface
 }
 
 func (e *Engine) onLanguageUpdate(previous, current map[string]language.LanguageMap) {

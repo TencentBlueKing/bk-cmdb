@@ -14,7 +14,8 @@ const state = {
     header: {
         back: false
     },
-    userList: []
+    userList: [],
+    headerTitle: ''
 }
 
 const getters = {
@@ -22,6 +23,20 @@ const getters = {
     user: state => state.user,
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
+    isAdminView: (state, getters, rootState, rootGetters) => {
+        if (!getters.admin) {
+            return false
+        }
+        if (window.sessionStorage.hasOwnProperty('isAdminView')) {
+            return window.sessionStorage.getItem('isAdminView') === 'true'
+        } else {
+            window.sessionStorage.setItem('isAdminView', false)
+            return false
+        }
+    },
+    isBusinessSelected: (state, getters, rootState, rootGetters) => {
+        return rootGetters['objectBiz/bizId'] !== null
+    },
     language: state => state.language,
     supplier: state => state.supplier,
     supplierAccount: state => state.supplier.account,
@@ -29,7 +44,8 @@ const getters = {
     navStick: state => state.nav.stick,
     navFold: state => state.nav.fold,
     showBack: state => state.header.back,
-    userList: state => state.userList
+    userList: state => state.userList,
+    headerTitle: state => state.headerTitle
 }
 
 const actions = {
@@ -57,6 +73,13 @@ const mutations = {
     },
     setUserList (state, list) {
         state.userList = list
+    },
+    setHeaderTitle (state, headerTitle) {
+        state.headerTitle = headerTitle
+    },
+    setAdminView (state, isAdminView) {
+        window.sessionStorage.setItem('isAdminView', isAdminView)
+        window.location.reload()
     }
 }
 

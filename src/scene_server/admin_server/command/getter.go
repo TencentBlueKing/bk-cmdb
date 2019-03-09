@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -25,6 +26,10 @@ import (
 func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 	result := &Topo{}
 	objIds := []string{}
+	root, err := getBKAppNode(ctx, db, opt)
+	if nil != err {
+		return nil, err
+	}
 	if opt.scope == "all" || opt.scope == common.BKInnerObjIDApp {
 		assts, err := getAsst(ctx, db, opt)
 		if nil != err {
@@ -35,12 +40,8 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 			return nil, err
 		}
 		objIds = append(objIds, topo...)
-		root, err := getBKAppNode(ctx, db, opt)
-		if nil != err {
-			return nil, err
-		}
 		pcmap := getPCmap(assts)
-		// blog.InfoJSON("%s", pcmap)
+
 		err = getTree(ctx, db, root, pcmap)
 		if nil != err {
 			return nil, err
@@ -51,12 +52,17 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 
 	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
 		objIds = append(objIds, common.BKInnerObjIDProc)
-		procmodules, err := getProcessTopo(ctx, db, opt)
+
+		bizID, err := root.getInstID()
+		if err != nil {
+			return nil, err
+		}
+		procmodules, err := getProcessTopo(ctx, db, opt, bizID)
 		if nil != err {
 			return nil, err
 		}
 		proctopo := &ProcessTopo{
-			BizName: common.BKAppName,
+			BizName: opt.bizName,
 			Procs:   procmodules,
 		}
 		result.ProcTopos = proctopo
@@ -71,14 +77,14 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 
 		if result.BizTopo != nil {
 			result.BizTopo.walk(func(node *Node) error {
-				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{"bk_parent_id"})
+				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{common.BKInstParentStr})
 				return nil
 			})
 		}
 
 		if result.ProcTopos != nil {
 			for _, proc := range result.ProcTopos.Procs {
-				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path"), []string{"bk_parent_id", "bk_biz_id", "bk_supplier_account"})
+				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path", "bk_start_param_regex"), []string{common.BKInstParentStr, common.BKAppIDField, common.BKOwnerIDField})
 			}
 		}
 	}
@@ -90,7 +96,7 @@ func getBKAppNode(ctx context.Context, db dal.RDB, opt *option) (*Node, error) {
 	bkapp := newNode(common.BKInnerObjIDApp)
 	condition := map[string]interface{}{
 		common.BKOwnerIDField: opt.OwnerID,
-		common.BKAppNameField: common.BKAppName,
+		common.BKAppNameField: opt.bizName,
 	}
 
 	err := db.Table(common.BKTableNameBaseApp).Find(condition).One(ctx, &bkapp.Data)
@@ -110,22 +116,22 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	if nil != err {
 		return nil
 	}
-	condition := map[string]interface{}{
-		common.BKInstParentStr: instID,
-	}
+
+	childCondition := condition.CreateCondition()
+	childCondition.Field(common.BKInstParentStr).Eq(instID)
 
 	switch asst.ObjectID {
 	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
-		condition["default"] = map[string]interface{}{common.BKDBEQ: 0}
+		childCondition.Field(common.BKDefaultField).NotGt(0)
 	default:
-		condition[common.BKObjIDField] = asst.ObjectID
+		childCondition.Field(common.BKObjIDField).Eq(asst.ObjectID)
 	}
 
 	// blog.InfoJSON("get childs for %s:%d", asst.ObjectID, instID)
 	childs := []map[string]interface{}{}
 	tablename := common.GetInstTableName(asst.ObjectID)
 
-	err = db.Table(tablename).Find(condition).All(ctx, &childs)
+	err = db.Table(tablename).Find(childCondition.ToMapStr()).All(ctx, &childs)
 	if nil != err {
 		return fmt.Errorf("get inst for %s error: %s", asst.ObjectID, err.Error())
 	}
@@ -147,6 +153,7 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	return nil
 }
 
+// get parent -> child mapping
 func getPCmap(assts []*metadata.Association) map[string]*metadata.Association {
 	m := map[string]*metadata.Association{}
 	for _, asst := range assts {
@@ -188,38 +195,39 @@ func getMainline(root string, assts []*metadata.Association) ([]string, error) {
 
 func getAsst(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Association, error) {
 	assts := []*metadata.Association{}
-	condition := map[string]interface{}{
-		common.BKOwnerIDField:  opt.OwnerID,
-		common.BKObjAttIDField: common.BKChildStr,
-	}
 
-	err := db.Table("cc_ObjAsst").Find(condition).All(ctx, &assts)
+	cond := condition.CreateCondition()
+	cond.Field(common.AssociationKindIDField).Eq(common.AssociationKindMainline)
+
+	err := db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(ctx, &assts)
 	if nil != err {
 		return nil, fmt.Errorf("query cc_ObjAsst error: %s", err.Error())
 	}
 	return assts, nil
 }
 
-func getProcessTopo(ctx context.Context, db dal.RDB, opt *option) ([]*Process, error) {
-	// fetch all process
-	procs := []map[string]interface{}{}
-
-	err := db.Table(common.BKTableNameBaseProcess).Find(map[string]interface{}{}).All(ctx, &procs)
-	if nil != err {
-		return nil, fmt.Errorf("get process faile %s", err.Error())
-	}
-
+func getProcessTopo(ctx context.Context, db dal.RDB, opt *option, bizID uint64) ([]*Process, error) {
 	// fetch all process module
 	procmodules := []ProModule{}
-
-	err = db.Table(common.BKTableNameProcModule).Find(map[string]interface{}{}).All(ctx, &procmodules)
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(bizID)
+	err := db.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, &procmodules)
 	if nil != err {
 		return nil, fmt.Errorf("get process faile %s", err.Error())
 	}
 
 	procmodMap := map[uint64][]string{} // processID -> modules
+	procIDs := []uint64{}
 	for _, pm := range procmodules {
+		procIDs = append(procIDs, pm.ProcessID)
 		procmodMap[pm.ProcessID] = append(procmodMap[pm.ProcessID], pm.ModuleName)
+	}
+
+	// fetch all process
+	procs := []map[string]interface{}{}
+	err = db.Table(common.BKTableNameBaseProcess).Find(cond.ToMapStr()).All(ctx, &procs)
+	if nil != err {
+		return nil, fmt.Errorf("get process faile %s", err.Error())
 	}
 
 	topos := []*Process{}
@@ -227,7 +235,7 @@ func getProcessTopo(ctx context.Context, db dal.RDB, opt *option) ([]*Process, e
 		topo := Process{
 			Data: proc,
 		}
-		procID, err := getInt64(proc["bk_process_id"])
+		procID, err := getInt64(proc[common.BKProcessIDField])
 		if nil != err {
 			return nil, err
 		}

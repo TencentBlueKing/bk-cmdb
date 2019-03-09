@@ -32,7 +32,7 @@
             :isShow.sync="slider.isShow"
             :title="slider.title"
             :width="564"
-            :beforeClose="handleSliderBeforeClose">
+            :beforeClose="handleBeforeSliderClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
@@ -92,12 +92,16 @@
                 }
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
+            this.getTableData()
+        },
         methods: {
             ...mapActions('eventSub', [
                 'searchSubscription',
                 'unsubcribeEvent'
             ]),
-            handleSliderBeforeClose () {
+            handleBeforeSliderClose () {
                 if (this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
@@ -177,9 +181,6 @@
                 this.table.pagination.current = page
                 this.getTableData()
             }
-        },
-        created () {
-            this.getTableData()
         },
         components: {
             vPushDetail

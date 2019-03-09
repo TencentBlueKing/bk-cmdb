@@ -14,7 +14,6 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
-
 	"github.com/spf13/pflag"
 )
 
@@ -44,25 +43,31 @@ type Session struct {
 	Skip            string
 	DefaultLanguage string
 	Host            string
+	Address         string // used to redis sentinel mode, expect format style: ip:port;ip:port
 	Port            string
 	Secret          string
+	MasterName      string
 	MultipleOwner   string
 }
 
 type Site struct {
-	AccountUrl    string
-	DomainUrl     string
-	HtmlRoot      string
-	ResourcesPath string
-	BkLoginUrl    string
-	AppCode       string
-	CheckUrl      string
+	AccountUrl      string
+	DomainUrl       string
+	HttpsDomainUrl  string
+	HtmlRoot        string
+	ResourcesPath   string
+	BkLoginUrl      string
+	BkHttpsLoginUrl string
+	AppCode         string
+	CheckUrl        string
 }
 
 type Config struct {
-	Site        Site
-	Session     Session
-	Version     string
-	AgentAppUrl string
-	LoginUrl    string
+	Site         Site
+	Session      Session
+	Version      string
+	AgentAppUrl  string
+	LoginUrl     string
+	LoginVersion string
+	ConfigMap    map[string]string
 }

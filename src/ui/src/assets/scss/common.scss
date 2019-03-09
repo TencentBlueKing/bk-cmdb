@@ -13,6 +13,7 @@ body {
     overflow: hidden;
     font-family: "pingFang-SC-Regular,Microsoft Yahei,Arial";
     color: $cmdbTextColor;
+    background: #fff;
 }
 
 ul,
@@ -35,6 +36,7 @@ a:focus {
 
 .clearfix {
     zoom: 1;
+
     &:before,
     &:after {
         content: "";
@@ -65,6 +67,28 @@ input::-webkit-input-placeholder {
     font-size: 12px;
 }
 
+div.cmdb-form-item {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+
+    &.is-error {
+        input.cmdb-form-input {
+            border-color: $cmdbDangerColor;
+        }
+
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            line-height: 14px;
+            color: $cmdbDangerColor;
+        }
+    }
+
+}
+
 input.cmdb-form-input {
     width: 100%;
     height: 36px;
@@ -73,13 +97,90 @@ input.cmdb-form-input {
     border: 1px solid $cmdbBorderColor;
     border-radius: 2px;
     outline: none;
+
     &:focus {
         border-color: $cmdbBorderFocusColor;
     }
+
     &:disabled {
         background-color: #fafafa;
         color: #aaa;
         cursor: not-allowed;
+    }
+}
+
+.cmdb-form-checkbox {
+    font-size: 0;
+    color: #737987;
+    margin-right: 30px;
+    line-height: 18px;
+    display: inline-block;
+    padding: 7px 0;
+    font-size: 0;
+
+    .cmdb-checkbox-text {
+        display: inline-block;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 14px;
+        cursor: pointer;
+        vertical-align: middle;
+        font-size: 14px;
+        @include ellipsis;
+    }
+
+    input[type=checkbox] {
+        width: 18px;
+        height: 18px;
+        outline: none;
+        visibility: visible;
+        cursor: pointer;
+        vertical-align: middle;
+        background: #fff;
+        background-image: url('../images/checkbox-sprite.png');
+        display: inline-block;
+        background-position: 0 -62px;
+        -webkit-appearance: none;
+        margin: 0 5px 0 0;
+
+        &:checked {
+            background-position: -33px -62px;
+
+            &[disabled] {
+                color: #ccc;
+                background-position: -99px -62px;
+            }
+        }
+
+        &[disabled] {
+            background-position: -66px -62px;
+            cursor: default;
+
+            &+.bk-checkbox-text {
+                color: #ccc;
+                cursor: default;
+            }
+        }
+    }
+
+    &.cmdb-checkbox-small {
+        input[type=checkbox] {
+            width: 14px;
+            height: 14px;
+            background-position: 0 -95px;
+
+            &:checked {
+                background-position: -33px -95px;
+
+                &[disabled] {
+                    background-position: -99px -95px;
+                }
+            }
+
+            &[disabled] {
+                background-position: -66px -95px;
+            }
+        }
     }
 }
 
@@ -110,18 +211,22 @@ input.cmdb-form-input {
         display: inline-block;
         background-position: 0 0;
         -webkit-appearance: none;
+
         margin: 0 5px 0 0;
 
         &:checked {
             background-position: -33px 0;
+
             &[disabled] {
                 color: #ccc;
                 background-position: -99px 0;
             }
         }
+
         &[disabled] {
             background-position: -66px 0;
             cursor: default;
+
             &+.bk-radio-text {
                 color: #ccc;
                 cursor: default;
@@ -137,144 +242,13 @@ input.cmdb-form-input {
 
             &:checked {
                 background-position: -33px -33px;
+
                 &[disabled] {
                     background-position: -99px -33px;
                 }
             }
+
             &[disabled] {
-                background-position: -66px -33px;
-            }
-        }
-    }
-}
-
-.cmdb-form-checkbox {
-    font-size: 14px;
-    color: #737987;
-    margin-right: 30px;
-    line-height: 18px;
-    display: inline-block;
-    padding: 7px 0;
-
-    .cmdb-checkbox-text {
-        display: inline-block;
-        font-style: normal;
-        font-weight: normal;
-        cursor: pointer;
-        vertical-align: middle;
-        @include ellipsis;
-    }
-
-    input[type=checkbox] {
-        width: 18px;
-        height: 18px;
-        outline: none;
-        visibility: visible;
-        cursor: pointer;
-        vertical-align: middle;
-        background: #fff;
-        background-image: url('../images/checkbox-sprite.png');
-        display: inline-block;
-        background-position: 0 -62px;
-        -webkit-appearance: none;
-        margin: 0 5px 0 0;
-
-        &:checked {
-            background-position: -33px -62px;
-            &[disabled] {
-                color: #ccc;
-                background-position: -99px -62px;
-            }
-        }
-        &[disabled] {
-            background-position: -66px -62px;
-            cursor: default;
-            &+.bk-checkbox-text {
-                color: #ccc;
-                cursor: default;
-            }
-        }
-    }
-
-    &.cmdb-checkbox-small {
-        input[type=checkbox] {
-            width: 14px;
-            height: 14px;
-            background-position: 0 -95px;
-
-            &:checked {
-                background-position: -33px -95px;
-                &[disabled] {
-                    background-position: -99px -95px;
-                }
-            }
-            &[disabled] {
-                background-position: -66px -95px;
-            }
-        }
-    }
-}
-
-.cmdb-form-radio{
-    font-size: 14px;
-    color: #666666;
-    margin-right: 30px;
-    line-height: 18px;
-    display: inline-block;
-    padding: 7px 0;
-
-    .cmdb-radio-text{
-        font-style: normal;
-        font-weight: normal;
-        cursor: pointer;
-        vertical-align: middle;
-    }
-
-    input[type=radio]{
-        width: 18px;
-        height: 18px;
-        outline: none;
-        visibility: visible;
-        cursor: pointer;
-        vertical-align: middle;
-        background-color: #fff;
-        background-image: url('../images/checkbox-sprite.png');
-        display: inline-block;
-        background-position: 0 0;
-        -webkit-appearance: none;
-
-        margin: 0 5px 0 0;
-
-        &:checked {
-            background-position: -33px 0;
-            &[disabled]{
-                color: #ccc;
-                background-position: -99px 0;
-            }
-        }
-        &[disabled]{
-            background-position: -66px 0;
-            cursor: default;
-            & + .bk-radio-text{
-                color: #ccc;
-                cursor: default;
-            }
-        }
-    }
-
-    &.cmdb-radio-small{
-        input[type=radio]{
-            width: 14px;
-            height: 14px;
-            background-position: 0 -33px;
-
-            &:checked {
-                background-position: -33px -33px;
-                &[disabled]{
-                    background-position: -99px -33px;
-                }
-            }
-            &[disabled]{
                 background-position: -66px -33px;
             }
         }
@@ -291,14 +265,26 @@ input.cmdb-form-input {
 }
 
 .text-primary {
+    -webkit-appearance: none;
+    border: none;
+    outline: 0;
+    background-color: transparent;
     color: #3c96ff;
+    cursor: pointer;
     &:hover {
         color: #0082ff;
+    }
+
+    &.disabled,
+    &:disabled {
+        opacity: .385;
+        cursor: not-allowed !important;
     }
 }
 
 .text-danger {
     color: #ff5656;
+
     &:hover {
         color: #f72239;
     }
@@ -306,6 +292,12 @@ input.cmdb-form-input {
 
 .color-danger {
     color: #ff5656;
+}
+.color-warning {
+    color: #ffb400;
+}
+.color-success {
+    color: #30d878;
 }
 
 .mask {
@@ -326,8 +318,10 @@ input.cmdb-form-input {
     border: none !important;
     height: 100% !important;
     padding: 0 20px;
+
     .bk-tab2-content {
         height: calc(100% - 58px) !important;
+
         section {
             height: 100% !important;
         }
@@ -344,6 +338,17 @@ input.cmdb-form-input {
     background: #fff;
 }
 
+button.bk-button.bk-danger {
+    background: #fff;
+    color: $cmdbDangerColor;
+
+    &:hover {
+        border-color: $cmdbDangerHoverColor;
+        color: $cmdbDangerHoverColor;
+        background: #fff;
+    }
+}
+
 .bk-selector .bk-selector-list-item .text {
     @include ellipsis;
 }
@@ -353,6 +358,7 @@ input.cmdb-form-input {
         height: 30px;
         line-height: 30px;
     }
+
     .bk-selector-icon {
         top: 9px;
     }
@@ -365,9 +371,11 @@ input.cmdb-form-input {
 /* form-error -----------start----------- */
 
 .form-component.error {
+
     input[name="date-select"],
     .bk-selector-input,
     .form-int-input,
+    .form-float-input,
     .form-longchar-input,
     .form-singlechar-input,
     .member-container {
@@ -408,6 +416,7 @@ input.cmdb-form-input {
 
     &[x-placement^="top"] {
         margin-bottom: 5px;
+
         .tooltip-arrow {
             border-width: 5px 5px 0 5px;
             border-left-color: transparent !important;
@@ -508,6 +517,7 @@ input.cmdb-form-input {
         p {
             margin-bottom: 10px;
         }
+
         .bk-button {
             margin-top: 10px;
         }
@@ -515,4 +525,3 @@ input.cmdb-form-input {
 }
 
 /* table -------end------- */
-

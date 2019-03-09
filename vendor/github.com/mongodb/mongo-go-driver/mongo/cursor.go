@@ -22,7 +22,7 @@ import (
 //		defer cur.Close(ctx)
 //
 // 		for cur.Next(ctx) {
-//			elem := bson.NewDocument()
+//			elem := &bson.D{}
 //			if err := cur.Decode(elem); err != nil {
 // 				log.Fatal(err)
 // 			}
@@ -46,7 +46,7 @@ type Cursor interface {
 
 	Decode(interface{}) error
 
-	DecodeBytes() (bson.Reader, error)
+	DecodeBytes() (bson.Raw, error)
 
 	// Returns the error status of the cursor
 	Err() error

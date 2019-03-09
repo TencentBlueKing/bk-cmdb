@@ -15,13 +15,13 @@ package service
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateObjectAttribute create a new object attribute
-func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	attr, err := s.core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
@@ -32,12 +32,12 @@ func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathPara
 }
 
 // SearchObjectAttribute search the object attributes
-func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
 	if err := cond.Parse(data); nil != err {
-		blog.Errorf("failed to parset the data into condition, error info is %s", err.Error())
+		blog.Errorf("search object attribute, but failed to parse the data into condition, err: %v", err)
 		return nil, err
 	}
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
@@ -46,10 +46,8 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 }
 
 // UpdateObjectAttribute update the object attribute
-func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
-
-	cond := condition.CreateCondition()
-	paramPath := frtypes.MapStr{}
+func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
@@ -57,17 +55,17 @@ func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	err = s.core.AttributeOperation().UpdateObjectAttribute(params, data, id, cond)
+	data.Remove(metadata.BKMetadata)
+
+	err = s.core.AttributeOperation().UpdateObjectAttribute(params, data, id)
 
 	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
+func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	cond := condition.CreateCondition()
-
-	paramPath := frtypes.MapStr{}
+	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
 	if nil != err {
@@ -75,7 +73,13 @@ func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathPara
 		return nil, err
 	}
 
-	err = s.core.AttributeOperation().DeleteObjectAttribute(params, id, cond)
+	cond := condition.CreateCondition()
+	cond.Field(metadata.AttributeFieldSupplierAccount).Eq(params.SupplierAccount)
+	cond.Field(metadata.AttributeFieldID).Eq(id)
+
+	data.Remove(metadata.BKMetadata)
+
+	err = s.core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }

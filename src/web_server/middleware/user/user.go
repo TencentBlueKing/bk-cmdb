@@ -13,9 +13,13 @@
 package user
 
 import (
+	"plugin"
+
+	"configcenter/src/common/backbone"
 	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
+	redis "gopkg.in/redis.v5"
 )
 
 type User interface {
@@ -25,6 +29,6 @@ type User interface {
 }
 
 //NewUser return user instance by type
-func NewUser(config options.Config) User {
-	return &publicUser{config}
+func NewUser(config options.Config, engin *backbone.Engine, cacheCli *redis.Client, loginPlg *plugin.Plugin) User {
+	return &publicUser{config, engin, cacheCli, loginPlg}
 }

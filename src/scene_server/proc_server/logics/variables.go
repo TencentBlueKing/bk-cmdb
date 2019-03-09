@@ -30,39 +30,46 @@ type Variables struct {
 	appID   int64
 }
 
-func (lgc *Logics) NewVariables(pheader http.Header, ownerID string, appID int64) *Variables {
+func (lgc *Logics) NewVariables(ctx context.Context, appID int64) *Variables {
 	return &Variables{
 		logic:   lgc,
-		header:  pheader,
-		ownerID: ownerID,
+		header:  lgc.header,
+		ownerID: lgc.ownerID,
 		appID:   appID,
 	}
 }
 
-func (v *Variables) GetAppVariables() types.MapStr {
+func (v *Variables) GetAppVariables(ctx context.Context) types.MapStr {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, v.header, &input)
-
-	if nil != err || !result.Result || 0 == len(result.Data.Info) {
-		blog.Errorf("get app info use template variables, error %v. error code:%d, error message:%s", err, result.Code, result.ErrMsg)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDApp, &input)
+	if err != nil {
+		blog.Errorf("GetAppVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
+		return data
+	}
+	if !result.Result {
+		blog.Errorf("GetAppVariables SearchObjects http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, input, v.logic.rid)
 		return data
 	}
 
 	return result.Data.Info[0]
 }
 
-func (v *Variables) GetSetVariables(setName string) (int64, types.MapStr) {
+func (v *Variables) GetSetVariables(ctx context.Context, setName string) (int64, types.MapStr) {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID,
 		common.BKSetNameField: setName}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, v.header, &input)
-
-	if nil != err || !result.Result || 0 == len(result.Data.Info) {
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDSet, &input)
+	if err != nil {
+		blog.Errorf("GetSetVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
+		return 0, data
+	}
+	if !result.Result {
+		blog.Errorf("GetSetVariables SearchObjects http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, input, v.logic.rid)
 		return 0, data
 	}
 
@@ -74,17 +81,20 @@ func (v *Variables) GetSetVariables(setName string) (int64, types.MapStr) {
 	return setID, setInfo
 }
 
-func (v *Variables) GetModuleVariables(setID int64, moduleName string) (int64, types.MapStr) {
+func (v *Variables) GetModuleVariables(ctx context.Context, setID int64, moduleName string) (int64, types.MapStr) {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID,
 		common.BKSetIDField:   setID,
 		common.BKSetNameField: moduleName}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, v.header, &input)
-
-	if nil != err || !result.Result || 0 == len(result.Data.Info) {
-		blog.Errorf("get data error %v", err)
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDModule, &input)
+	if err != nil {
+		blog.Errorf("GetModuleVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
+		return 0, data
+	}
+	if !result.Result {
+		blog.Errorf("GetmoduleVariables SearchObjects http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, input, v.logic.rid)
 		return 0, data
 	}
 
@@ -96,65 +106,71 @@ func (v *Variables) GetModuleVariables(setID int64, moduleName string) (int64, t
 	return moduleID, moduleInfo
 }
 
-func (v *Variables) GetHostVariables(HostID int64) types.MapStr {
+func (v *Variables) GetHostVariables(ctx context.Context, HostID int64) types.MapStr {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKHostIDField: HostID}
 
 	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.HostController().Host().GetHosts(context.Background(), v.header, &input)
-
-	if nil != err || !result.Result || 0 == len(result.Data.Info) {
-		blog.Errorf("get data error %v", err)
+	result, err := v.logic.CoreAPI.HostController().Host().GetHosts(ctx, v.header, &input)
+	if err != nil {
+		blog.Errorf("GetHostVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
+		return data
+	}
+	if !result.Result {
+		blog.Errorf("GetHostVariables SearchObjects http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, input, v.logic.rid)
 		return data
 	}
 
 	return result.Data.Info[0]
 }
 
-func (v *Variables) GetProcessVariables(funcID int64) types.MapStr {
+func (v *Variables) GetProcessVariables(ctx context.Context, funcID int64) types.MapStr {
 	data := types.MapStr{}
 	cond := types.MapStr{common.BKAppIDField: v.appID, common.BKFuncIDField: funcID}
 
-	input := metadata.QueryInput{Condition: cond}
-	result, err := v.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDProc, v.header, &input)
-
-	if nil != err || !result.Result || 0 == len(result.Data.Info) {
+	input := metadata.QueryCondition{Condition: cond}
+	result, err := v.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, v.header, common.BKInnerObjIDApp, &input)
+	if err != nil {
+		blog.Errorf("GetProcessVariables SearchObjects http do error,err:%s,query:%+v,rid:%s", err.Error(), input, v.logic.rid)
 		return data
 	}
-
+	if !result.Result {
+		blog.Errorf("GetProcessVariables SearchObjects http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, input, v.logic.rid)
+		return data
+	}
 	return result.Data.Info[0]
 }
 
-func (v *Variables) GetHostIDByInst(setID, moduleID, funcID, instID int64) int64 {
+func (v *Variables) GetHostIDByInst(ctx context.Context, setID, moduleID, funcID, instID int64) int64 {
 	return 0
 }
 
-func (v *Variables) GetStandVariables(setName, moduleName string, funcID, instID int64) types.MapStr {
+func (v *Variables) GetStandVariables(ctx context.Context, setName, moduleName string, funcID, instID int64) types.MapStr {
 	allVariables := types.MapStr{}
-	appVariables := v.GetAppVariables()
+	appVariables := v.GetAppVariables(ctx)
 	if 0 == len(appVariables) {
 		return allVariables
 	}
-	setID, setVariables := v.GetSetVariables(setName)
+	setID, setVariables := v.GetSetVariables(ctx, setName)
 	if 0 == len(setVariables) || 0 == setID {
 		return allVariables
 	}
 
-	moduleID, moduleVariables := v.GetModuleVariables(setID, moduleName)
+	moduleID, moduleVariables := v.GetModuleVariables(ctx, setID, moduleName)
 	if 0 == moduleID || 0 == len(moduleVariables) {
 		return allVariables
 	}
-	hostID := v.GetHostIDByInst(setID, moduleID, funcID, instID)
+	hostID := v.GetHostIDByInst(ctx, setID, moduleID, funcID, instID)
 	if 0 == hostID {
 		return allVariables
 	}
 
-	hostVariables := v.GetHostVariables(hostID)
+	hostVariables := v.GetHostVariables(ctx, hostID)
 	if 0 == len(hostVariables) {
 		return allVariables
 	}
 
-	procVariables := v.GetProcessVariables(hostID)
+	procVariables := v.GetProcessVariables(ctx, hostID)
 	if 0 == len(procVariables) {
 		return allVariables
 	}

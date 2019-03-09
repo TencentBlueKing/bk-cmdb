@@ -98,9 +98,12 @@
                 const res = await this.pingSubscription({
                     params: {
                         callback_url: this.callbackURL,
-                        data: {}
+                        data: JSON.stringify(this.example)
                     },
-                    config: {requestId: 'testPing'}
+                    config: {
+                        requestId: 'testPing',
+                        transformData: false
+                    }
                 })
                 this.resultInfo = res
             },
@@ -111,7 +114,10 @@
                 this.isResultShow = true
                 const res = await this.testingConnection({
                     params: {callback_url: this.callbackURL},
-                    config: {requestId: 'testTelnet'}
+                    config: {
+                        requestId: 'testTelnet',
+                        transformData: false
+                    }
                 })
                 this.resultInfo = res
             },

@@ -55,7 +55,7 @@
         <div class="form-options" :class="{sticky: scrollbar}">
             <slot name="details-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!$authorized.update || !hasChange || $loading()"
+                    :disabled="!authority.includes('update') || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -71,6 +71,14 @@
     export default {
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
+        props: {
+            authority: {
+                type: Array,
+                default () {
+                    return []
+                }
+            }
+        },
         data () {
             return {
                 values: {},
@@ -83,7 +91,11 @@
             changedValues () {
                 const changedValues = {}
                 for (let propertyId in this.values) {
-                    if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
+                    const property = this.getProperty(propertyId)
+                    if (
+                        ['bool'].includes(property['bk_property_type']) ||
+                        this.values[propertyId] !== this.refrenceValues[propertyId]
+                    ) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
                 }
@@ -154,6 +166,9 @@
                 let output = temp.innerText
                 temp = null
                 return output
+            },
+            getProperty (id) {
+                return this.properties.find(property => property['bk_property_id'] === id)
             },
             getValidateRules (property) {
                 const rules = {}

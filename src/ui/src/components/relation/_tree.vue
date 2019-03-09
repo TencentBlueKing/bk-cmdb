@@ -61,7 +61,7 @@
                 return this.$parent.objId
             },
             instId () {
-                return this.$parent.instId
+                return this.$parent.formatedInst['bk_inst_id']
             }
         },
         watch: {
@@ -82,6 +82,7 @@
                 return this.getInstRelation({
                     objId: this.objId,
                     instId: this.instId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: `get_getInstRelation_${this.objId}_${this.instId}`,
                         fromCache: true

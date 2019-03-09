@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/redis"
 	"github.com/spf13/pflag"
 )
 
@@ -47,5 +48,6 @@ type Gse struct {
 }
 
 type Config struct {
-	Gse Gse
+	Gse   Gse
+	Redis redis.Config
 }

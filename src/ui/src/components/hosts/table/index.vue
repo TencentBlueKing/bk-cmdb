@@ -20,6 +20,9 @@
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
                     <input type="hidden" name="bk_biz_id" value="-1">
+                    <input type="hidden" name="metadata"
+                        v-if="$route.name !== 'resource'"
+                        :value="JSON.stringify($injectMetadata().metadata)">
                 </form>
                 <cmdb-clipboard-selector class="options-button"
                     :list="clipboardList"
@@ -80,6 +83,7 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="tab.attribute.type === 'details'"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.details"
@@ -89,6 +93,7 @@
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
                         ref="form"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.edit"
@@ -98,6 +103,7 @@
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
+                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         @on-submit="handleMultipleSave"
@@ -108,7 +114,8 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
-                        :inst-id="tab.attribute.inst.details['bk_host_id']">
+                        :authority="authority"
+                        :inst="tab.attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')" :show="['details', 'update'].includes(tab.attribute.type)">
@@ -202,6 +209,12 @@
             quickSearch: {
                 type: Boolean,
                 default: false
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return ['search', 'update', 'delete']
+                }
             }
         },
         data () {
@@ -287,6 +300,9 @@
             },
             customColumns () {
                 this.setTableHeader()
+            },
+            columnsConfigProperties () {
+                this.setTableHeader()
             }
         },
         async created () {
@@ -295,7 +311,6 @@
                     this.getProperties(),
                     this.getHostPropertyGroups()
                 ])
-                await this.setTableHeader()
             } catch (e) {
                 console.log(e)
             }
@@ -314,14 +329,13 @@
             },
             getProperties () {
                 return this.batchSearchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: {'$in': Object.keys(this.properties)},
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }, {inject: this.$route.name !== 'resource'}),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
-                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`),
-                        fromCache: true
+                        requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
@@ -333,6 +347,7 @@
             getHostPropertyGroups () {
                 return this.searchGroup({
                     objId: 'host',
+                    params: this.$injectMetadata(),
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_host'
@@ -343,31 +358,28 @@
                 })
             },
             setTableHeader () {
-                return new Promise((resolve, reject) => {
-                    const headerProperties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
-                    resolve(headerProperties)
-                }).then(properties => {
-                    this.table.header = [{
-                        id: 'bk_host_id',
-                        type: 'checkbox',
-                        objId: 'host'
-                    }].concat(properties.map(property => {
-                        return {
-                            id: property['bk_property_id'],
-                            name: property['bk_property_name'],
-                            objId: property['bk_obj_id'],
-                            sortable: property['bk_obj_id'] === 'host'
-                        }
-                    }))
-                    this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
-                })
+                const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
+                this.table.header = [{
+                    id: 'bk_host_id',
+                    type: 'checkbox',
+                    objId: 'host'
+                }].concat(properties.map(property => {
+                    return {
+                        id: property['bk_property_id'],
+                        name: property['bk_property_name'],
+                        objId: property['bk_obj_id'],
+                        sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
+                    }
+                }))
+                this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
             },
             setAllHostList (list) {
-                if (this.table.allList.length === this.table.pagination.count) return
                 const newList = []
                 list.forEach(item => {
-                    const exist = this.table.allList.some(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
-                    if (!exist) {
+                    const existItem = this.table.allList.find(existItem => existItem['host']['bk_host_id'] === item['host']['bk_host_id'])
+                    if (existItem) {
+                        Object.assign(existItem, item)
+                    } else {
                         newList.push(item)
                     }
                 })
@@ -427,9 +439,12 @@
                     return data
                 })
             },
-            search (business, condition) {
+            search (business, condition, resetPage = false) {
                 this.filter.business = business
                 this.filter.condition = condition
+                if (resetPage) {
+                    this.table.pagination.current = 1
+                }
                 this.getHostList()
             },
             handlePageChange (current) {
@@ -478,16 +493,16 @@
             handleRowClick (item) {
                 const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['编辑']")} ${inst['bk_host_innerip']}`
+                this.slider.title = inst['bk_host_innerip']
                 this.tab.attribute.inst.details = inst
                 this.tab.attribute.inst.original = item
                 this.tab.attribute.type = 'details'
             },
             async handleSave (values, changedValues, inst, type) {
-                await this.batchUpdate({
+                await this.batchUpdate(this.$injectMetadata({
                     ...changedValues,
                     'bk_host_id': inst['bk_host_id'].toString()
-                })
+                }, {inject: this.$route.name !== 'resource'}))
                 this.tab.attribute.type = 'details'
                 this.searchHostByInnerip({
                     bizId: this.filter.business,
@@ -518,10 +533,10 @@
                 this.slider.show = true
             },
             async handleMultipleSave (changedValues) {
-                await this.batchUpdate({
+                await this.batchUpdate(this.$injectMetadata({
                     ...changedValues,
                     'bk_host_id': this.table.checked.join(',')
-                })
+                }, {inject: this.$route.name !== 'resource'}))
                 this.slider.show = false
             },
             handleMultipleCancel () {
@@ -567,8 +582,8 @@
             handleQuickSearchToggle () {
                 this.calcTableMinusHeight()
             },
-            handleQuickSearch (property, value) {
-                this.$emit('on-quick-search', property, value)
+            handleQuickSearch (property, value, operator) {
+                this.$emit('on-quick-search', property, value, operator)
             }
         }
     }

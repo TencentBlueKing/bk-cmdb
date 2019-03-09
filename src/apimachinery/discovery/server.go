@@ -18,13 +18,13 @@ import (
 	"strings"
 	"sync"
 
-	regd "configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
 )
 
-func newServerDiscover(disc *regd.RegDiscover, path string) (Interface, error) {
+func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (Interface, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
 		return nil, eventErr
@@ -45,7 +45,7 @@ type server struct {
 	index        int
 	path         string
 	servers      []string
-	discoverChan <-chan *regd.DiscoverEvent
+	discoverChan <-chan *registerdiscover.DiscoverEvent
 }
 
 func (s *server) GetServers() ([]string, error) {
@@ -121,12 +121,12 @@ func (s *server) updateServer(svrs []string) {
 		host := fmt.Sprintf("%s://%s:%d", scheme, server.IP, server.Port)
 		newSvr = append(newSvr, host)
 	}
-	
+
 	s.Lock()
 	defer s.Unlock()
 
 	if len(newSvr) != 0 {
 		s.servers = newSvr
-		blog.V(3).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
+		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
 	}
 }

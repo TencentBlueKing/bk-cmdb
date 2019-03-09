@@ -99,6 +99,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt FieldDataType = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat FieldDataType = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum FieldDataType = "enum"
 
@@ -194,7 +197,7 @@ type Iterator interface {
 	ForEach(itemCallback func(item Model) error) error
 }
 
-// Model the interface declaration for model maintence
+// Model the interface declaration for model maintenance
 type Model interface {
 	IsExists() (bool, error)
 	Create() error

@@ -18,8 +18,6 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -27,6 +25,8 @@ import (
 	"configcenter/src/scene_server/admin_server/app"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/command"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
@@ -40,11 +40,16 @@ func main() {
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
-	command.Parse(os.Args)
+	if err := command.Parse(os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
 	util.InitFlags()
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Fatal(err)
+		blog.Errorf("process stoped by %v", err)
+		blog.CloseLogs()
+		os.Exit(1)
 	}
 }

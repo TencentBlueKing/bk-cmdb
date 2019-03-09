@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"plugin"
 	"strings"
 	"time"
 
@@ -28,19 +29,16 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/storage/dal/redis"
 	confCenter "configcenter/src/web_server/app/config"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
 	websvc "configcenter/src/web_server/service"
-
-	redis "gopkg.in/redis.v5"
 )
 
 type WebServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service *websvc.Service
+	Config options.Config
 }
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -50,14 +48,18 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -90,6 +92,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_WEBSERVER,
 		op.ServConf.ExConfig,
 		webSvr.onServerConfigUpdate,
+		discover,
 		bonC)
 
 	if err != nil {
@@ -116,21 +119,31 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		redisAddress = webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
 	}
 
-	cacheCli := redis.NewClient(
-		&redis.Options{
-			Addr:     webSvr.Config.Session.Host + webSvr.Config.Session.Port,
-			PoolSize: 100,
-			Password: redisSecret,
-			DB:       0,
-		})
+	cacheCli, err := redis.NewFromConfig(redis.Config{
+		Address:    redisAddress,
+		Password:   redisSecret,
+		MasterName: webSvr.Config.Session.MasterName,
+		Database:   "0",
+	})
+
+	if nil != err {
+		return err
+	}
 
 	service.Engine = engine
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = webSvr.Config
-	webSvr.Core = engine
-	webSvr.Service = service
+
+	if webSvr.Config.LoginVersion != common.BKDefaultLoginUserPluginVersion && webSvr.Config.LoginVersion != "" {
+		service.VersionPlg, err = plugin.Open("login.so")
+		if nil != err {
+			service.VersionPlg = nil
+			return fmt.Errorf("load login so err: %v", err)
+		}
+	}
 	middleware.Engine = engine
 	middleware.CacheCli = cacheCli
+	middleware.LoginPlg = service.VersionPlg
 
 	select {}
 	return nil
@@ -164,21 +177,26 @@ func (w *WebServer) getConfig(regDiscover string) error {
 	w.Config.Site.AppCode = config["site.app_code"]
 	w.Config.Site.CheckUrl = config["site.check_url"]
 	w.Config.Site.AccountUrl = config["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = config["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = config["site.https_domain_url"]
 
 	w.Config.Session.Name = config["session.name"]
 	w.Config.Session.Skip = config["session.skip"]
 	w.Config.Session.Host = config["session.host"]
 	w.Config.Session.Port = config["session.port"]
+	w.Config.Session.Address = config["session.address"]
 	w.Config.Session.Secret = strings.TrimSpace(config["session.secret"])
 	w.Config.Session.MultipleOwner = config["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = config["session.defaultlanguage"]
+	w.Config.Session.MasterName = config["session.mastername"]
+	w.Config.LoginVersion = config["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
 	w.Config.Version = config["api.version"]
 	w.Config.AgentAppUrl = config["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-
+	w.Config.ConfigMap = config
 	return nil
 }
 
@@ -189,14 +207,20 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
 	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
 	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
+	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
+	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
 
 	w.Config.Session.Name = current.ConfigMap["session.name"]
 	w.Config.Session.Skip = current.ConfigMap["session.skip"]
 	w.Config.Session.Host = current.ConfigMap["session.host"]
 	w.Config.Session.Port = current.ConfigMap["session.port"]
+	w.Config.Session.Address = current.ConfigMap["session.address"]
+	w.Config.Session.MasterName = current.ConfigMap["session.mastername"]
 	w.Config.Session.Secret = strings.TrimSpace(current.ConfigMap["session.secret"])
 	w.Config.Session.MultipleOwner = current.ConfigMap["session.multiple_owner"]
 	w.Config.Session.DefaultLanguage = current.ConfigMap["session.defaultlanguage"]
+	w.Config.LoginVersion = current.ConfigMap["login.version"]
 	if "" == w.Config.Session.DefaultLanguage {
 		w.Config.Session.DefaultLanguage = "zh-cn"
 	}
@@ -204,6 +228,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+	w.Config.ConfigMap = current.ConfigMap
 
 }
 

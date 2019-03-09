@@ -19,20 +19,23 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/language"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
+	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/storage/dal"
+	mongo "configcenter/src/storage/dal/mongo/remote"
+
+	"github.com/emicklei/go-restful"
 )
 
 // TopoServiceInterface the topo service methods used to init
@@ -50,6 +53,7 @@ func New() TopoServiceInterface {
 // topoService topo service
 type topoService struct {
 	engin    *backbone.Engine
+	tx       dal.DB
 	language language.CCLanguageIf
 	err      errors.CCErrorIf
 	actions  []action
@@ -60,6 +64,16 @@ type topoService struct {
 func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.cfg = cfg
 	s.engin = engin
+
+	var dbErr error
+	s.tx, dbErr = mongo.NewWithDiscover(engin.
+		Discover.
+		TMServer().
+		GetServers, cfg.Mongo)
+	if dbErr != nil {
+		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
+		return
+	}
 }
 
 // SetOperation set the operation
@@ -79,14 +93,10 @@ func (s *topoService) WebService() *restful.WebService {
 
 	ws := new(restful.WebService)
 
-	/*
-		getErrFun := func() errors.CCErrorIf {
-			return s.err
-		}
-
-		ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
-	*/
-	ws.Path("/topo/{version}").Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	getErrFunc := func() errors.CCErrorIf {
+		return s.err
+	}
+	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
 	innerActions := s.Actions()
 
@@ -128,6 +138,25 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
+func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
+
+	rsp := meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     nil,
+	}
+
+	if common.CCSuccess != errcode {
+		rsp.Code = errcode
+		rsp.Result = false
+		rsp.ErrMsg = errmsg
+	} else {
+		rsp.ErrMsg = common.CCSuccessStr
+	}
+	rsp.Data = info
+	data, err := json.Marshal(rsp)
+	return string(data), err
+}
+
 func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
@@ -135,6 +164,17 @@ func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMs
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 	}
+}
+
+func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
+	resp.Header().Set("Content-Type", "application/json")
+	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
+	if nil == rspErr {
+		io.WriteString(resp, rsp)
+		return
+	}
+	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
+
 }
 
 // Actions return the all actions
@@ -146,7 +186,6 @@ func (s *topoService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-
 				ownerID := util.GetActionOnwerID(req)
 				user := util.GetActionUser(req)
 
@@ -166,7 +205,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 					return
 				}
 
-				mData := frtypes.MapStr{}
+				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
 						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
@@ -183,7 +222,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 						return
 					}
 				}
-
+				metadata := meta.NewMetaDataFromMap(mData)
 				data, dataErr := act.HandlerFunc(types.ContextParams{
 					Err:             defErr,
 					Lang:            defLang,
@@ -192,6 +231,7 @@ func (s *topoService) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.engin,
+					MetaData:        metadata,
 				},
 					req.PathParameter,
 					req.QueryParameter,
@@ -200,9 +240,9 @@ func (s *topoService) Actions() []*httpserver.Action {
 				if nil != dataErr {
 					switch e := dataErr.(type) {
 					default:
-						s.sendResponse(resp, common.CCSystemBusy, dataErr.Error())
+						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
 					case errors.CCErrorCoder:
-						s.sendResponse(resp, e.GetCode(), dataErr.Error())
+						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
 					}
 					return
 				}

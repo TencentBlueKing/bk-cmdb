@@ -14,88 +14,76 @@ package logics
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	types "configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (phpapi *PHPAPI) GetDefaultModules(appID int) (types.MapStr, error) {
+func (phpapi *PHPAPI) GetDefaultModules(ctx context.Context, appID int) (types.MapStr, errors.CCError) {
 
-	param := &meta.QueryInput{
-		Condition: map[string]interface{}{
+	param := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
 			common.BKAppIDField:   appID,
 			common.BKDefaultField: 1,
 		},
-		Fields: fmt.Sprintf("%s,%s", common.BKSetIDField, common.BKModuleIDField),
+		Fields: []string{common.BKSetIDField, common.BKModuleIDField},
 	}
 
-	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDModule)
-
+	resMap, err := phpapi.getObjByCondition(ctx, param, common.BKInnerObjIDModule)
 	if nil != err {
 		return nil, err
 	}
 
-	blog.V(3).Infof("getDefaultModules complete, res: %v", resMap)
+	blog.V(5).Infof("getDefaultModules complete, res: %+v.rid:%s", resMap, phpapi.rid)
 
-	if false == resMap.Result {
-		return nil, errors.New(resMap.ErrMsg)
+	if len(resMap) == 0 {
+		blog.Errorf("GetDefaultModules default module not found, appID:%d, params:%+v, rid:%s", appID, param, phpapi.rid)
+		return nil, phpapi.ccErr.Errorf(common.CCErrCommNotFound)
 	}
 
-	if resMap.Data.Count == 0 {
-		return nil, errors.New(fmt.Sprintf("can not found default module, appid: %d", appID))
-	}
-
-	return resMap.Data.Info[0], nil
+	return resMap[0], nil
 
 }
 
-func (phpapi *PHPAPI) GetHostByIPAndSource(innerIP string, platID int64) ([]types.MapStr, error) {
+func (phpapi *PHPAPI) GetHostByIPAndSource(ctx context.Context, innerIP string, platID int64) ([]types.MapStr, errors.CCError) {
 
-	param := &meta.QueryInput{
-		Condition: map[string]interface{}{
+	param := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
 			common.BKHostInnerIPField: innerIP,
 			common.BKCloudIDField:     platID,
 		},
-		Fields: common.BKHostIDField,
+		Fields: []string{common.BKHostIDField},
 	}
 
-	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDHost)
+	resMap, err := phpapi.getObjByCondition(ctx, param, common.BKInnerObjIDHost)
 
 	if nil != err {
 		return nil, err
 	}
 
-	if !resMap.Result {
-		return nil, errors.New(resMap.ErrMsg)
-	}
+	blog.V(5).Infof("getHostByIPAndSource res: %+v,rid:%s", resMap, phpapi.rid)
 
-	blog.V(3).Infof("getHostByIPAndSource res: %v", resMap)
-
-	return resMap.Data.Info, nil
+	return resMap, nil
 }
 
-func (phpapi *PHPAPI) GetHostByCond(param *meta.QueryInput) ([]types.MapStr, error) {
-	blog.V(3).Infof("GetHostByCond param:%v", param)
-	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDHost)
+func (phpapi *PHPAPI) GetHostByCond(ctx context.Context, param *meta.QueryCondition) ([]types.MapStr, errors.CCError) {
+	blog.V(5).Infof("GetHostByCond param:%+v,rid:%s", param, phpapi.rid)
+	resMap, err := phpapi.getObjByCondition(ctx, param, common.BKInnerObjIDHost)
 	if nil != err {
 		return nil, err
 	}
 
-	if false == resMap.Result {
-		return nil, errors.New(resMap.ErrMsg)
-	}
-
-	blog.V(3).Infof("getHostByIPArrAndSource res: %v", resMap)
-	return resMap.Data.Info, nil
+	blog.V(5).Infof("getHostByIPArrAndSource res: %+v,rid:%s", resMap, phpapi.rid)
+	return resMap, nil
 }
 
 //search host helpers
-func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[int64]map[string]interface{}, []int64, error) {
+func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string]interface{}) (map[int64]map[string]interface{}, []int64, errors.CCError) {
 	hostMap := make(map[int64]map[string]interface{})
 	hostIDArr := make([]int64, 0)
 
@@ -104,34 +92,33 @@ func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[in
 		Fields:    "",
 		Condition: condition,
 	}
-	res, err := phpapi.logic.CoreAPI.HostController().Host().GetHosts(context.Background(), phpapi.header, searchParams)
+	res, err := phpapi.logic.CoreAPI.HostController().Host().GetHosts(ctx, phpapi.header, searchParams)
 
 	if nil != err {
-		blog.Errorf("getHostMapByCond error params:%s, error:%s", condition, err.Error())
+		blog.Errorf("getHostMapByCond error params:%+v, error:%s,rid:%s", condition, err.Error(), phpapi.rid)
 		return hostMap, hostIDArr, err
 	}
 
-	blog.V(3).Infof("appInfo:%v", res)
-
 	if false == res.Result {
-		return nil, nil, errors.New(res.ErrMsg)
+		blog.Errorf("getHostMapByCond GetHosts http response error, params:%+v, err code:%d, err msg:%s,rid:%s", condition, res.Code, res.ErrMsg, phpapi.rid)
+		return nil, nil, phpapi.ccErr.New(res.Code, res.ErrMsg)
 	}
 
 	for _, host := range res.Data.Info {
-
-		host_id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		HostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
-			return nil, nil, err
+			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, phpapi.rid)
+			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 
-		hostMap[host_id] = host
-		hostIDArr = append(hostIDArr, host_id)
+		hostMap[HostID] = host
+		hostIDArr = append(hostIDArr, HostID)
 	}
 	return hostMap, hostIDArr, nil
 }
 
 // GetHostDataByConfig  get host info
-func (phpapi *PHPAPI) GetHostDataByConfig(configData []map[string]int64) ([]interface{}, error) {
+func (phpapi *PHPAPI) GetHostDataByConfig(ctx context.Context, configData []map[string]int64) ([]mapstr.MapStr, errors.CCError) {
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
@@ -143,12 +130,12 @@ func (phpapi *PHPAPI) GetHostDataByConfig(configData []map[string]int64) ([]inte
 		},
 	}
 
-	hostMap, _, err := phpapi.GetHostMapByCond(hostMapCondition)
+	hostMap, _, err := phpapi.GetHostMapByCond(ctx, hostMapCondition)
 	if nil != err {
 		return nil, err
 	}
 
-	hostData, err := phpapi.SetHostData(configData, hostMap)
+	hostData, err := phpapi.SetHostData(ctx, configData, hostMap)
 	if nil != err {
 		return hostData, err
 	}
@@ -156,24 +143,25 @@ func (phpapi *PHPAPI) GetHostDataByConfig(configData []map[string]int64) ([]inte
 	return hostData, nil
 }
 
-func (phpapi *PHPAPI) GetCustomerPropertyByOwner(objType string) ([]meta.Attribute, error) {
+func (phpapi *PHPAPI) GetCustomerPropertyByOwner(ctx context.Context, objType string) ([]meta.Attribute, errors.CCError) {
 
-	blog.V(3).Infof("getCustomerPropertyByOwner start")
-	searchBody := make(map[string]interface{})
-	searchBody[common.BKObjIDField] = common.BKInnerObjIDHost
-	searchBody[common.BKOwnerIDField] = util.GetOwnerID(phpapi.header)
-	res, err := phpapi.logic.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), phpapi.header, searchBody)
+	blog.V(5).Infof("getCustomerPropertyByOwner start,objType:%s,rid:%s", objType, phpapi.rid)
+	opt := hutil.NewOperation().WithOwnerID(phpapi.logic.ownerID).WithObjID(common.BKInnerObjIDHost).WithAttrComm().MapStr()
+	searchBody := &meta.QueryCondition{
+		Condition: opt,
+	}
+	res, err := phpapi.logic.CoreAPI.CoreService().Model().ReadModelAttr(ctx, phpapi.header, common.BKInnerObjIDHost, searchBody)
 	if nil != err {
-		blog.Errorf("GetHostDetailById  attr error :%v", err)
-		return nil, err
+		blog.Errorf("GetCustomerPropertyByOwner  http do  error, err:%s,param:%+v,objType:%s", err.Error(), searchBody, objType, phpapi.rid)
+		return nil, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if false == res.Result {
-		blog.Errorf("GetHostDetailById  attr error :%v", err)
-		return nil, fmt.Errorf(res.ErrMsg)
+		blog.Errorf("GetCustomerPropertyByOwner  http response  error, err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, phpapi.rid)
+		return nil, phpapi.ccErr.New(res.Code, res.ErrMsg)
 	}
 	customAttrArr := make([]meta.Attribute, 0)
-	for _, attr := range res.Data { //hostAttrArr {
+	for _, attr := range res.Data.Info { //hostAttrArr {
 		if false == attr.IsPre {
 			customAttrArr = append(customAttrArr, attr)
 		}
@@ -191,12 +179,17 @@ func (phpapi *PHPAPI) In_existIpArr(arr []string, ip string) bool {
 	return false
 }
 
-func (phpapi *PHPAPI) getObjByCondition(dat *meta.QueryInput, objType string) (*meta.QueryInstResult, error) {
+func (phpapi *PHPAPI) getObjByCondition(ctx context.Context, dat *meta.QueryCondition, objType string) ([]mapstr.MapStr, errors.CCError) {
 
-	res, err := phpapi.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), objType, phpapi.header, dat)
+	res, err := phpapi.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, phpapi.header, objType, dat)
 	if nil != err {
-		return nil, err
+		blog.Errorf("getObjByCondition  http do  error, err:%s,param:%+v,objType:%s", err.Error(), dat, objType, phpapi.rid)
+		return nil, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if false == res.Result {
+		blog.Errorf("getObjByCondition  http response error, err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, phpapi.rid)
+		return nil, phpapi.ccErr.New(res.Code, res.ErrMsg)
 	}
 
-	return res, nil
+	return res.Data.Info, nil
 }

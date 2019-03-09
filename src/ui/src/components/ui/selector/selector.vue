@@ -6,8 +6,11 @@
         :disabled="disabled"
         :allow-clear="allowClear"
         :selected.sync="selected"
+        :has-children="hasChildren"
         :setting-key="settingKey"
-        :display-key="displayKey">
+        :search-key="displayKey"
+        :display-key="displayKey"
+        :empty-text="emptyText">
     </bk-selector>
 </template>
 
@@ -47,6 +50,14 @@
             placeholder: {
                 type: String,
                 default: ''
+            },
+            hasChildren: {
+                type: Boolean,
+                default: false
+            },
+            emptyText: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -56,7 +67,15 @@
         },
         computed: {
             searchable () {
-                return this.list.length > 7
+                if (this.hasChildren) {
+                    let list = []
+                    this.list.forEach(group => {
+                        list = [...list, ...group.children]
+                    })
+                    return list.length > 7
+                } else {
+                    return this.list.length > 7
+                }
             },
             selectedOption () {
                 return this.list.find(option => option[this.settingKey] === this.selected)

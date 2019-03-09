@@ -2,13 +2,13 @@ language: go
 
 go:
   - "1.8.x"
-  - "1.10.x"
 
 # safelist
 branches:
   only:
-  - master
-  - travis_ci
+    - master
+    - /^v3\.[1-9]+[0-9]*[0-9]*\.x$/
+    - travis_ci
 
 env:
   global:
@@ -33,6 +33,6 @@ script:
 notifications:
   email:
     recipients:
-      - gmaclinuxer@gmail.com
+      - lowenitt@sina.com
     on_success: always # default: change
     on_failure: always # default: always

@@ -14,26 +14,33 @@ package logics
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/common"
-
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
-func (lgc *Logics) GetTemplateAttributes(ownerID string, header http.Header) ([]metadata.Header, error) {
+func (lgc *Logics) GetTemplateAttributes(ctx context.Context, ownerID string) ([]metadata.Header, error) {
 	params := map[string]interface{}{
 		common.BKOwnerIDField: ownerID,
 		common.BKObjIDField:   common.BKInnerObjIDConfigTemp,
 	}
+	input := new(metadata.QueryCondition)
+	input.Condition = params
+	input.Limit.Limit = common.BKNoLimit
 
-	result, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, params)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, lgc.ErrHandle.New(result.Code, result.ErrMsg)
+	result, err := lgc.CoreAPI.CoreService().Model().ReadModelAttr(ctx, lgc.header, common.BKInnerObjIDConfigTemp, input)
+	if err != nil {
+		blog.Errorf("GetTemplateAttributes SelectObjectAttWithParams http do error,err:%s,query:%+v,rid:%s", err.Error(), params, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetTemplateAttributes SelectObjectAttWithParams http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, params, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	headers := make([]metadata.Header, 0)
-	for _, p := range result.Data {
+	for _, p := range result.Data.Info {
 		if p.PropertyID == common.BKChildStr {
 			continue
 		}
@@ -46,17 +53,23 @@ func (lgc *Logics) GetTemplateAttributes(ownerID string, header http.Header) ([]
 	return headers, nil
 }
 
-func (lgc *Logics) GetTemplateInstanceDetails(pheader http.Header, ownerID string, tempID int64) (map[string]interface{}, error) {
+func (lgc *Logics) GetTemplateInstanceDetails(ctx context.Context, tempID int64) (map[string]interface{}, error) {
 
-	params := metadata.QueryInput{
+	params := metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKOwnerIDField:   ownerID,
+			common.BKOwnerIDField:   lgc.ownerID,
 			common.BKTemlateIDField: tempID,
 		},
+		Limit: metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDConfigTemp, pheader, &params)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, lgc.ErrHandle.New(result.Code, result.ErrMsg)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDConfigTemp, &params)
+	if err != nil {
+		blog.Errorf("GetTemplateInstanceDetails SelectObjectAttWithParams http do error,err:%s,query:%+v,rid:%s", err.Error(), params, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetTemplateInstanceDetails SelectObjectAttWithParams http response error,err code:%d,err msg:%s,query:%+v,rid:%s", result.Code, result.ErrMsg, params, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info[0], nil

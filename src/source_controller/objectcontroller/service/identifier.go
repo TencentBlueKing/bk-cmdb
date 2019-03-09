@@ -19,14 +19,14 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	cccondition "configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 //SearchIdentifier get identifier
@@ -100,6 +100,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		hostIDs = append(hostIDs, host.HostID)
 		cloudIDs = append(cloudIDs, host.CloudID)
 	}
+
 	relations := []metadata.ModuleHost{}
 	cond := cccondition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	err = db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).All(ctx, &relations)
@@ -174,7 +175,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		for appID, modulenames := range appmodulenames {
 			proc2modules := []metadata.ProcessModule{}
 			cond := cccondition.CreateCondition().Field(common.BKAppIDField).Eq(appID).Field(common.BKModuleNameField).In(modulenames)
-			err = cli.Instance.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, proc2modules)
+			err = cli.Instance.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, &proc2modules)
 			if err != nil && !cli.Instance.IsNotFoundError(err) {
 				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})

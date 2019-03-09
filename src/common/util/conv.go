@@ -86,6 +86,72 @@ func GetInt64ByInterface(a interface{}) (int64, error) {
 	return id, err
 }
 
+func GetFloat64ByInterface(a interface{}) (float64, error) {
+	switch i := a.(type) {
+	case int:
+		return float64(i), nil
+	case int8:
+		return float64(i), nil
+	case int16:
+		return float64(i), nil
+	case int32:
+		return float64(i), nil
+	case int64:
+		return float64(i), nil
+	case uint:
+		return float64(i), nil
+	case uint8:
+		return float64(i), nil
+	case uint16:
+		return float64(i), nil
+	case uint32:
+		return float64(i), nil
+	case uint64:
+		return float64(i), nil
+	case float64:
+		return i, nil
+	case float32:
+		return float64(i), nil
+	case string:
+		return strconv.ParseFloat(i, 64)
+	case json.Number:
+		return i.Float64()
+	default:
+		return 0, errors.New("not numeric")
+	}
+}
+
+func GetTypeSensitiveUInt64(v interface{}) (uint64, bool) {
+	switch tv := v.(type) {
+	case int8:
+		return uint64(tv), true
+	case int16:
+		return uint64(tv), true
+	case int32:
+		return uint64(tv), true
+	case int64:
+		return uint64(tv), true
+	case int:
+		return uint64(tv), true
+	case uint8:
+		return uint64(tv), true
+	case uint16:
+		return uint64(tv), true
+	case uint32:
+		return uint64(tv), true
+	case uint64:
+		return uint64(tv), true
+	case uint:
+		return uint64(tv), true
+	case float32:
+		return uint64(tv), true
+	case float64:
+		return uint64(tv), true
+	default:
+		return 0, false
+	}
+}
+
 func GetMapInterfaceByInerface(data interface{}) ([]interface{}, error) {
 	var values []interface{}
 	switch data.(type) {

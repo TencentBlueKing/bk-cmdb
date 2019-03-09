@@ -17,10 +17,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/app/options"
-	"configcenter/src/api_server/ccapi/logics/v2"
 	apisvc "configcenter/src/api_server/service"
 	"configcenter/src/api_server/service/v3"
 	"configcenter/src/apimachinery"
@@ -30,6 +27,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -38,19 +37,23 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
+	if err != nil {
+		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
+	}
+
 	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
 		QPS:       1000,
 		Burst:     2000,
 		TLSConfig: nil,
 	}
 
-	machinery, err := apimachinery.NewApiMachinery(c)
+	machinery, err := apimachinery.NewApiMachinery(c, discover)
 	if err != nil {
 		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
-	v2Service := new(apisvc.Service)
+	v2Service := apisvc.NewService()
 	v3Service := new(v3.Service)
 	v3Service.Client, err = util.NewClient(&util.TLSClientConfig{})
 	if err != nil {
@@ -64,7 +67,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
-	ctnr.Add(v2Service.V2WebService())
+	ctnr.Add(v2Service.WebService())
 	ctnr.Add(v3Service.V3WebService())
 	ctnr.Add(v3Service.V3Healthz())
 	server := backbone.Server{
@@ -87,26 +90,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		types.CC_MODULE_APISERVER,
 		op.ServConf.ExConfig,
 		apiSvr.onHostConfigUpdate,
+		discover,
 		bonC)
 
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
-	v2Service.Engine = engine
-	v2Service.Logics = &logics.Logics{Engine: engine}
+	v2Service.SetEngine(engine)
 	v3Service.Engine = engine
 	apiSvr.Core = engine
-	apiSvr.Service = v2Service
-	apiSvr.Logic = v2Service.Logics
 	select {}
 	return nil
 }
 
 type APIServer struct {
-	Core    *backbone.Engine
-	Service *apisvc.Service
-	Logic   *logics.Logics
+	Core *backbone.Engine
 }
 
 func (h *APIServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {

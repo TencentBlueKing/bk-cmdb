@@ -23,10 +23,7 @@
                             v-if="node['bk_obj_id'] === 'module'"
                             :checked="selectedModuleStates.includes(state)"
                             :true-value="true"
-                            :false-value="false"
-                            @click.stop
-                            @change="handleNodeCheck(...arguments, node, state)"
-                            >
+                            :false-value="false">
                         </cmdb-form-bool>
                         <template v-if="[1, 2].includes(node.default)">
                             <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
@@ -111,9 +108,8 @@
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
             showIncrementOption () {
-                const isMoreThanOne = this.selectedHosts.length > 1
                 const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && isMoreThanOne && !hasSpecialModule
+                return !!this.selectedModuleStates.length && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -150,8 +146,9 @@
             ]),
             getMainlineModel () {
                 return this.searchMainlineObject({
-                    requestId: 'get_searchMainlineObject',
-                    fromCache: true
+                    config: {
+                        requestId: 'get_searchMainlineObject'
+                    }
                 }).then(topoModel => {
                     this.topoModel = topoModel
                     return topoModel
@@ -162,15 +159,13 @@
                     this.getInstTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: `get_getInstTopo_${this.businessId}`,
-                            fromCache: true
+                            requestId: `get_getInstTopo_${this.businessId}`
                         }
                     }),
                     this.getInternalTopo({
                         bizId: this.businessId,
                         config: {
-                            requestId: `get_getInternalTopo_${this.businessId}`,
-                            fromCache: true
+                            requestId: `get_getInternalTopo_${this.businessId}`
                         }
                     })
                 ]).then(([instTopo, internalTopo]) => {
@@ -199,19 +194,21 @@
                 })
             },
             setSelectedModuleStates () {
-                const modules = this.selectedHosts[0]['module']
-                const selectedStates = []
-                modules.forEach(module => {
-                    const nodeId = this.getTopoNodeId({
-                        'bk_obj_id': 'module',
-                        'bk_inst_id': module['bk_module_id']
+                this.$nextTick(() => {
+                    const modules = this.selectedHosts[0]['module']
+                    const selectedStates = []
+                    modules.forEach(module => {
+                        const nodeId = this.getTopoNodeId({
+                            'bk_obj_id': 'module',
+                            'bk_inst_id': module['bk_module_id']
+                        })
+                        const state = this.$refs.topoTree.getStateById(nodeId)
+                        if (state) {
+                            selectedStates.push(state)
+                        }
                     })
-                    const state = this.$refs.topoTree.getStateById(nodeId)
-                    if (state) {
-                        selectedStates.push(state)
-                    }
+                    this.selectedModuleStates = selectedStates
                 })
-                this.selectedModuleStates = selectedStates
             },
             getModelByObjId (id) {
                 return this.topoModel.find(model => model['bk_obj_id'] === id)
@@ -255,20 +252,6 @@
                     }
                 }
                 return asyncConfirm
-            },
-            async handleNodeCheck (checked, vNode, node, state) {
-                if (!checked) {
-                    this.selectedModuleStates = this.selectedModuleStates.filter(moduleState => moduleState !== state)
-                } else {
-                    const confirm = await this.beforeNodeSelect(node, state)
-                    if (confirm) {
-                        if (!this.selectedModuleStates.includes(state)) {
-                            this.selectedModuleStates.push(state)
-                        }
-                    } else {
-                        vNode.localChecked = false
-                    }
-                }
             },
             handleNodeClick (node, state) {
                 const isModule = node['bk_obj_id'] === 'module'
@@ -436,6 +419,7 @@
             transform: scale(0.888);
             background-color: #fff;
             z-index: 2;
+            pointer-events: none;
         }
         .topo-node-icon{
             display: inline-block;
@@ -469,6 +453,10 @@
         .selected-label {
             padding: 0 0 0 25px;
         }
+    }
+    .modules-layout {
+        height: calc(100% - 65px);
+        @include scrollbar-y;
     }
     .module-list {
         .module-item {

@@ -13,7 +13,6 @@
 package discovery
 
 import (
-	"configcenter/src/framework/core/log"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -22,12 +21,13 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/RegisterDiscover"
+	"context"
+
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
-
-	"context"
+	"configcenter/src/framework/core/log"
 )
 
 var _ DiscoverInterface = &RegDiscover{}
@@ -38,7 +38,7 @@ type RegDiscover struct {
 	ip         string
 	port       uint
 	isSSL      bool
-	rd         *RegisterDiscover.RegDiscover
+	rd         *registerdiscover.RegDiscover
 	rootCtx    context.Context
 	cancel     context.CancelFunc
 	topoServs  []*types.TopoServInfo
@@ -54,7 +54,7 @@ func NewRegDiscover(moduleName string, zkserv string, ip string, port uint, isSS
 		ip:         ip,
 		port:       port,
 		isSSL:      isSSL,
-		rd:         RegisterDiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
+		rd:         registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
 		topoServs:  []*types.TopoServInfo{},
 		procServs:  []*types.ProcServInfo{},
 	}
@@ -72,13 +72,13 @@ func (r *RegDiscover) Start() error {
 	r.rootCtx, r.cancel = context.WithCancel(context.Background())
 	//start regdiscover
 	if err := r.rd.Start(); err != nil {
-		blog.Error("fail to start register and discover serv. err:%s", err.Error())
+		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
 		return err
 	}
 
 	// register migrate server
 	if err := r.registerItself(); err != nil {
-		blog.Error("fail to register migrate(%s), err:%s", r.ip, err.Error())
+		blog.Errorf("fail to register migrate(%s), err:%s", r.ip, err.Error())
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (r *RegDiscover) registerItself() error {
 
 	data, err := json.Marshal(migrateServInfo)
 	if err != nil {
-		blog.Error("fail to marshal Migrate server info to json. err:%s", err.Error())
+		blog.Errorf("fail to marshal Migrate server info to json. err:%s", err.Error())
 		return err
 	}
 
