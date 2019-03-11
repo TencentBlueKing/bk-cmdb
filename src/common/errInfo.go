@@ -12,8 +12,8 @@
 
 package common
 
-//CC error number defined in this file
-//Errno name is composed of the following format CCErr[XXX]
+// CC error number defined in this file
+// Errno name is composed of the following format CCErr[XXX]
 const (
 
 	// the system code
@@ -156,9 +156,9 @@ const (
 	// auth failed, do not have permission.
 	CCErrCommAuthNotHavePermission = 1199047
 
-	CCErrCommAuthorizeFailed             = 1199045
-	CCErrCommRegistResourceToIAMFailed   = 1199046
-	CCErrCommUnRegistResourceToIAMFailed = 1199047
+	CCErrCommAuthorizeFailed             = 1199048
+	CCErrCommRegistResourceToIAMFailed   = 1199049
+	CCErrCommUnRegistResourceToIAMFailed = 1199050
 
 	// apiserver 1100XXX
 
@@ -611,12 +611,6 @@ const (
 	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
 
 	/** TODO: 以下错误码需要改造 **/
-
-	//http
-	CC_Err_Comm_http_DO              = 2000
-	CC_Err_Comm_http_DO_STR          = "do http request failed!"
-	CC_Err_Comm_http_ReadReqBody     = 2002
-	CC_Err_Comm_http_ReadReqBody_STR = "read http request body failed!"
 
 	//json
 	CC_ERR_Comm_JSON_DECODE     = 3001
