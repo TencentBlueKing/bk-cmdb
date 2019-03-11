@@ -10,193 +10,188 @@
  * limitations under the License.
  */
 
-package initial
+package authcenter
 
-import (
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/meta"
-)
-
-var expectBizResourceType = []authcenter.ResourceType{
+var expectBizResourceType = []ResourceType{
 	{
-		ResourceTypeID:       meta.ModelClassification.String(),
+		ResourceTypeID:       BizModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
-		Actions: []authcenter.Action{
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.Model.String(),
+		ResourceTypeID:       BizModel,
 		ResourceTypeName:     "模型",
-		ParentResourceTypeID: meta.ModelClassification.String(),
-		Actions: []authcenter.Action{
+		ParentResourceTypeID: BizModelGroup,
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.ModelInstance.String(),
+		ResourceTypeID:       BizInstance,
 		ResourceTypeName:     "实例",
-		ParentResourceTypeID: meta.Model.String(),
-		Actions: []authcenter.Action{
+		ParentResourceTypeID: BizModel,
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.DynamicGrouping.String(),
+		ResourceTypeID:       BizCustomQuery,
 		ResourceTypeName:     "动态分组",
 		ParentResourceTypeID: "",
-		Actions: []authcenter.Action{
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.Process.String(),
+		ResourceTypeID:       BizProcessInstance,
 		ResourceTypeName:     "进程",
 		ParentResourceTypeID: "",
-		Actions: []authcenter.Action{
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.BindModule,
+				ActionID:          BindModule,
 				ActionName:        "绑定到模块",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.MainlineInstanceTopology.String(),
+		ResourceTypeID:       BizTopoInstance,
 		ResourceTypeName:     "拓扑",
 		ParentResourceTypeID: "",
-		Actions: []authcenter.Action{
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Create,
+				ActionID:          Create,
 				ActionName:        "新建",
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.HostTransfer,
+				ActionID:          HostTransfer,
 				ActionName:        "主机转移",
 				IsRelatedResource: true,
 			},
 		},
 	},
 	{
-		ResourceTypeID:       meta.Host,
+		ResourceTypeID:       BizHostInstance,
 		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
-		Actions: []authcenter.Action{
+		Actions: []Action{
 			{
-				ActionID:          authcenter.Edit,
+				ActionID:          Edit,
 				ActionName:        "编辑",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.Delete,
+				ActionID:          Delete,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          authcenter.ModuleTransfer,
+				ActionID:          ModuleTransfer,
 				ActionName:        "转资源池",
 				IsRelatedResource: true,
 			},

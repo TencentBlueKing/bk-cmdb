@@ -30,17 +30,19 @@ type Authorizer interface {
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 }
 
-// ResourceManager is used to handle the resources register to authorize center.
+// ResourceHandler is used to handle the resources register to authorize center.
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(ctx context.Context, r *meta.ResourceAttribute) error
+	RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
 	// deregister a resource
-	Deregister(ctx context.Context, r *meta.ResourceAttribute) error
+	DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
 	// update a resource's info
-	Update(ctx context.Context, r *meta.ResourceAttribute) error
+	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
+	// init the authcenter
+	Init(ctx context.Context) error
 }
 
 // NewAuthorize is used to initialized a Authorize instance interface,
@@ -48,6 +50,6 @@ type ResourceHandler interface {
 // This allows bk-cmdb to support other kind of auth center.
 // tls can be nil if it is not care.
 // authConfig is a way to parse configuration info for the connection to a auth center.
-func NewAuthorize(tls *util.TLSClientConfig, authConfig map[string]string) (Authorize, error) {
+func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig) (Authorize, error) {
 	return authcenter.NewAuthCenter(tls, authConfig)
 }
