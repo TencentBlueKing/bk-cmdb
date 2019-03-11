@@ -14,6 +14,7 @@ package mongo
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -28,6 +29,7 @@ type Config struct {
 	Mechanism    string
 	MaxOpenConns string
 	MaxIdleConns string
+	Transaction  string
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -48,6 +50,22 @@ func (c Config) BuildURI() string {
 	return uri
 }
 
+func (c Config) GetMaxOpenConns() int {
+	max, err := strconv.Atoi(c.MaxOpenConns)
+	if err != nil {
+		return 0
+	}
+	return max
+}
+
+func (c Config) GetMaxIdleConns() int {
+	max, err := strconv.Atoi(c.MaxIdleConns)
+	if err != nil {
+		return 0
+	}
+	return max
+}
+
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 	return Config{
@@ -59,5 +77,6 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) Config {
 		MaxOpenConns: conifgmap[prefix+".maxOpenConns"],
 		MaxIdleConns: conifgmap[prefix+".maxIDleConns"],
 		Mechanism:    conifgmap[prefix+".mechanism"],
+		Transaction:  conifgmap[prefix+".transaction"],
 	}
 }

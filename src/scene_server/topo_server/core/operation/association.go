@@ -139,6 +139,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 	return rsp.Data.Info, nil
 }
 
+// CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
 
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
@@ -458,6 +459,7 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 	}
 
 	return a.clientSet.CoreService().Association().ReadAssociation(context.Background(), params.Header, &input)
+
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -482,6 +484,7 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int, req
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
+	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}

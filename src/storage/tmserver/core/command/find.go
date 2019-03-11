@@ -13,6 +13,7 @@
 package command
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/rpc"
@@ -38,17 +39,26 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 
 	msg := types.OPFindOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
 	}
+	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
 
 	opt := findopt.Many{}
 	opt.Skip = int64(msg.Start)
 	opt.Limit = int64(msg.Limit)
 	//opt.Sort = msg.Sort
 
-	err := d.dbProxy.Collection(msg.Collection).Find(ctx, msg.Selector, &opt, &reply.Docs)
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	err := targetCol.Find(ctx, msg.Selector, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {
@@ -72,10 +82,12 @@ func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*t
 
 	msg := types.OPFindAndModifyOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
 	}
+	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
 
 	opt := findopt.FindAndModify{}
 	opt.Upsert = msg.Upsert
@@ -89,7 +101,8 @@ func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*t
 		targetCol = d.dbProxy.Collection(msg.Collection)
 	}
 
-	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, nil, &reply.Docs)
+	reply.Docs = types.Documents{types.Document{}}
+	err := targetCol.FindOneAndModify(ctx, msg.Selector, msg.DOC, &opt, &reply.Docs[0])
 	if nil == err {
 		reply.Success = true
 	} else {

@@ -29,8 +29,8 @@ const actions = {
      * @param {Object} config API请求配置
      * @return {Promise} promise 对象
      */
-    getInstRelation ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
-        return $http.post(`inst/association/topo/search/owner/${rootGetters.supplierAccount}/object/${objId}/inst/${instId}`, {}, config)
+    getInstRelation ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
+        return $http.post(`find/instassttopo/object/${objId}/inst/${instId}`, params, config)
     },
 
     updateInstRelation ({commit, state, dispatch, rootGetters}, {params, config}) {

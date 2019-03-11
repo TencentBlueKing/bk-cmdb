@@ -14,9 +14,9 @@ package types
 
 // MsgHeader message header
 type MsgHeader struct {
+	OPCode    OPCode
 	TxnID     string
 	RequestID string
-	OPCode    OPCode
 }
 
 // OPCode operation code type
@@ -35,6 +35,8 @@ const (
 	OPFindAndModifyCode
 	// OPCountCode count operation code
 	OPCountCode
+	// OPAggregateCode aggregate operation code
+	OPAggregateCode
 	// OPStartTransactionCode start a transaction code
 	OPStartTransactionCode OPCode = 666
 	// OPCommitCode transaction commit operation code
@@ -60,9 +62,11 @@ func (c OPCode) String() string {
 	case OPStartTransactionCode:
 		return "OPStartTransaction"
 	case OPCommitCode:
-		return "OPCommit"
+		return "OPCommitTransaction"
 	case OPAbortCode:
-		return "OPAbort"
+		return "OPAbortTransaction"
+	case OPAggregateCode:
+		return "OPAggregate"
 	default:
 		return "UNKNOW"
 	}
@@ -73,6 +77,13 @@ type OPInsertOperation struct {
 	MsgHeader            // 标准报文头
 	Collection string    // "dbname.collectionname"
 	DOCS       Documents // 要插入集合的文档
+}
+
+// OPPipelineOperation insert operation request structure
+type OPAggregateOperation struct {
+	MsgHeader            // 标准报文头
+	Collection string    // "dbname.collectionname"
+	Pipiline   Documents // 要插入集合的文档
 }
 
 // OPUpdateOperation update operation request structure

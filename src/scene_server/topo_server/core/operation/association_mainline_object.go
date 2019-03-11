@@ -82,9 +82,12 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
+	foundObjIDMap := make(map[string]bool)
 	results := make([]*metadata.MainlineObjectTopo, 0)
 	for {
 		tObject := targetObj.Object()
+
+		resultsLen := len(results)
 		tmpRst := &metadata.MainlineObjectTopo{}
 		tmpRst.ObjID = tObject.ObjectID
 		tmpRst.ObjName = tObject.ObjectName
@@ -103,15 +106,29 @@ func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, 
 			tmpRst.NextObj = childObj.Object().ObjectID
 			tmpRst.NextName = childObj.Object().ObjectName
 		} else if nil != err {
-			if io.EOF == err {
-				results = append(results, tmpRst)
-				return results, nil
+			if io.EOF != err {
+				return nil, err
 			}
-			return nil, err
+			if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
+				results = append(results, tmpRst)
+				foundObjIDMap[tmpRst.ObjID] = true
+			}
+			return results, nil
 		}
 
-		results = append(results, tmpRst)
+		if _, ok := foundObjIDMap[tmpRst.ObjID]; !ok {
+			results = append(results, tmpRst)
+			foundObjIDMap[tmpRst.ObjID] = true
+		}
 		targetObj = childObj
+
+		// detect infinite loop by checking whether there are new added objects in current loop.
+		if resultsLen == len(results) {
+			// merely return found objects here to avoid infinite loop.
+			// returned results here maybe parts of all mainline objects.
+			// better to prevent loop from taking shape seriously, at adding or editing association.
+			return results, nil
+		}
 	}
 
 }
@@ -127,6 +144,11 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 	if data.AsstObjID == "" {
 		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
+	}
+
+	if data.ClassificationID == "" {
+		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
 	}
 
 	params.MetaData = &data.Metadata

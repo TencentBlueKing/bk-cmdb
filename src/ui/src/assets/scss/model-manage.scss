@@ -3,8 +3,9 @@
 .topo-wrapper,
 .model-manage-wrapper {
     .slider-content {
-        padding: 20px;
         height: 100%;
+        padding: 20px 20px 0;
+        @include scrollbar;
         .form-label {
             display: block;
             margin-bottom: 15px;
@@ -52,8 +53,13 @@
             }
         }
         .btn-group {
-            margin: 30px 0 0;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 0;
             font-size: 0;
+            background: #fff;
             .bk-primary {
                 margin-right: 10px;
             }

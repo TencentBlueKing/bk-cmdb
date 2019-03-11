@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/zkclient"
 )
@@ -33,42 +33,14 @@ type ZkRegDiscv struct {
 }
 
 //NewZkRegDiscv create a object of ZkRegDiscv
-func NewZkRegDiscv(serv string, timeOut time.Duration) *ZkRegDiscv {
-	zkservs := strings.Split(serv, ",")
+func NewZkRegDiscv(client *zk.ZkClient) *ZkRegDiscv {
+	ctx, ctxCancel := client.WithCancel()
 	return &ZkRegDiscv{
-		zkcli:          zkclient.NewZkClient(zkservs),
-		sessionTimeOut: timeOut,
+		zkcli:          client.Client(),
+		sessionTimeOut: client.SessionTimeOut(),
+		cancel:         ctxCancel,
+		rootCxt:        ctx,
 	}
-}
-
-// Ping to ping server
-func (zkRD *ZkRegDiscv) Ping() error {
-	return zkRD.zkcli.Ping()
-}
-
-//Start used to run register and discover server
-func (zkRD *ZkRegDiscv) Start() error {
-	//connect zookeeper
-	if err := zkRD.zkcli.ConnectEx(zkRD.sessionTimeOut); err != nil {
-
-		return fmt.Errorf("fail to connect zookeeper. err:%s", err.Error())
-	}
-
-	// create root context
-	zkRD.rootCxt, zkRD.cancel = context.WithCancel(context.Background())
-
-	return nil
-}
-
-//Stop used to stop register and discover server
-func (zkRD *ZkRegDiscv) Stop() error {
-	//close the connection of zookeeper
-	zkRD.zkcli.Close()
-
-	//cancel
-	zkRD.cancel()
-
-	return nil
 }
 
 //RegisterAndWatch create ephemeral node for the service and watch it. if it exit, register again
@@ -110,6 +82,11 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 // GetServNodes get server nodes by path
 func (zkRD *ZkRegDiscv) GetServNodes(path string) ([]string, error) {
 	return zkRD.zkcli.GetChildren(path)
+}
+
+// Ping to ping server
+func (zkRD *ZkRegDiscv) Ping() error {
+	return zkRD.zkcli.Ping()
 }
 
 //Discover watch the children

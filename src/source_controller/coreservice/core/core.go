@@ -101,6 +101,7 @@ type AssociationKind interface {
 // ModelAssociation manager model association
 type ModelAssociation interface {
 	CreateModelAssociation(ctx ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error)
+	CreateMainlineModelAssociation(ctx ContextParams, inputParam metadata.CreateModelAssociation) (*metadata.CreateOneDataResult, error)
 	SetModelAssociation(ctx ContextParams, inputParam metadata.SetModelAssociation) (*metadata.SetDataResult, error)
 	UpdateModelAssociation(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
 	SearchModelAssociation(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryResult, error)
