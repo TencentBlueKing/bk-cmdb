@@ -38,12 +38,10 @@ type ObjectOperationInterface interface {
 	FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error)
 	FindObjectTopo(params types.ContextParams, cond condition.Condition) ([]metadata.ObjectTopo, error)
 	FindSingleObject(params types.ContextParams, objectID string) (model.Object, error)
-	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error
+	UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64) error
 
 	SetProxy(modelFactory model.Factory, instFactory inst.Factory, cls ClassificationOperationInterface, asst AssociationOperationInterface, inst InstOperationInterface, attr AttributeOperationInterface, grp GroupOperationInterface, unique UniqueOperationInterface)
 	IsValidObject(params types.ContextParams, objID string) error
-
-	CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error)
 }
 
 // NewObjectOperation create a new object operation instance
@@ -691,7 +689,7 @@ func (o *object) FindObject(params types.ContextParams, cond condition.Condition
 	return model.CreateObject(params, o.clientSet, models), nil
 }
 
-func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
+func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id int64) error {
 
 	obj := o.modelFactory.CreateObject(params)
 	obj.SetRecordID(id)
@@ -718,79 +716,4 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	}
 
 	return nil
-}
-
-func (o *object) CreateOneObject(params types.ContextParams, data mapstr.MapStr) (model.Object, error) {
-	obj := o.modelFactory.CreateObject(params)
-
-	err := obj.Parse(data)
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to parse the data(%#v), error info is %s", data, err.Error())
-		return nil, err
-	}
-
-	// check the classification
-	_, err = obj.GetClassification()
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to create the object, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrTopoObjectCreateFailed, err.Error())
-	}
-
-	err = obj.Create()
-	if nil != err {
-		blog.Errorf("[operation-obj] failed to save the data(%#v), error info is %s", data, err.Error())
-		return nil, err
-	}
-
-	// create the default group
-	grp := obj.CreateGroup()
-	grp.SetGroup(metadata.Group{
-		IsDefault:  true,
-		GroupIndex: -1,
-		GroupName:  "Default",
-		GroupID:    model.NewGroupID(true),
-		ObjectID:   obj.Object().ObjectID,
-		OwnerID:    obj.Object().OwnerID,
-	})
-
-	if err = grp.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default group, error info is %s", err.Error())
-		return nil, err
-	}
-
-	group := grp.Group()
-	// create the default inst name
-	attr := obj.CreateAttribute()
-	attr.SetAttribute(metadata.Attribute{
-		IsOnly:            true,
-		IsPre:             true,
-		Creator:           "user",
-		IsEditable:        true,
-		PropertyIndex:     -1,
-		PropertyGroup:     group.GroupID,
-		PropertyGroupName: group.GroupName,
-		IsRequired:        true,
-		PropertyType:      common.FieldTypeSingleChar,
-		PropertyID:        obj.GetInstNameFieldName(),
-		PropertyName:      obj.GetDefaultInstPropertyName(),
-	})
-	if nil != params.MetaData {
-		attr.Attribute().Metadata = *params.MetaData
-	}
-
-	if err = attr.Create(); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
-		return nil, err
-	}
-
-	uni := obj.CreateUnique()
-	uni.SetKeys([]metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attr.Attribute().ID)}})
-	uni.SetIsPre(false)
-	uni.SetMustCheck(true)
-	if err = uni.Save(nil); nil != err {
-		blog.Errorf("[operation-obj] failed to create the default inst name field, error info is %s", err.Error())
-		return nil, err
-	}
-
-	return obj, nil
 }

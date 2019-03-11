@@ -160,7 +160,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	hostID := req.PathParameter("bk_host_id")

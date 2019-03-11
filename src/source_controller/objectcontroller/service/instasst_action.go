@@ -34,7 +34,7 @@ import (
 func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -138,7 +138,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -216,7 +216,7 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 func (cli *Service) SearchInstAssociations(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

@@ -19,8 +19,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"configcenter/src/scene_server/topo_server/core/wrapper"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -33,6 +31,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
 	mongo "configcenter/src/storage/dal/mongo/remote"
@@ -61,7 +60,7 @@ type topoService struct {
 	actions  []action
 	core     core.Core
 	cfg      options.Config
-	authAPI  wrapper.AuthAPI
+	authAPI  topoauth.TopoAuth
 }
 
 func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
@@ -199,11 +198,11 @@ func (s *topoService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
 				defLang := s.language.CreateDefaultCCLanguageIf(language)
 

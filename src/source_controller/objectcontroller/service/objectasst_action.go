@@ -34,7 +34,7 @@ import (
 func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -79,7 +79,7 @@ func (cli *Service) CreateObjectAssociation(req *restful.Request, resp *restful.
 func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -141,7 +141,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -190,7 +190,7 @@ func (cli *Service) SelectObjectAssociations(req *restful.Request, resp *restful
 	// TODO: 输入参数有变化
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
