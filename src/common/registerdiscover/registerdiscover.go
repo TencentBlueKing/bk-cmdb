@@ -14,6 +14,8 @@ package registerdiscover
 
 import (
 	"time"
+
+	"configcenter/src/common/backbone/service_mange/zk"
 )
 
 //DiscoverEvent if servers chenged, will create a discover event
@@ -30,40 +32,25 @@ type RegDiscover struct {
 }
 
 //NewRegDiscover used to create a object of RegDiscover
-func NewRegDiscover(serv string) *RegDiscover {
+func NewRegDiscover(client *zk.ZkClient, timeout time.Duration) *RegDiscover {
 	regDiscv := &RegDiscover{
 		rdServer: nil,
 	}
 
-	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(serv, time.Second*60))
+	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(client))
 
 	return regDiscv
 }
 
 //NewRegDiscoverEx used to create a object of RegDiscover
-func NewRegDiscoverEx(serv string, timeOut time.Duration) *RegDiscover {
+func NewRegDiscoverEx(client *zk.ZkClient) *RegDiscover {
 	regDiscv := &RegDiscover{
 		rdServer: nil,
 	}
 
-	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(serv, timeOut))
+	regDiscv.rdServer = RegDiscvServer(NewZkRegDiscv(client))
 
 	return regDiscv
-}
-
-// Ping to ping server
-func (cc *RegDiscover) Ping() error {
-	return cc.rdServer.Ping()
-}
-
-//Start the register and discover service
-func (rd *RegDiscover) Start() error {
-	return rd.rdServer.Start()
-}
-
-//Stop the register and discover service
-func (rd *RegDiscover) Stop() error {
-	return rd.rdServer.Stop()
 }
 
 //RegisterAndWatchService register service info into register-discover platform
@@ -81,4 +68,9 @@ func (rd *RegDiscover) GetServNodes(key string) ([]string, error) {
 //DiscoverService used to discover the service that registered in `key`
 func (rd *RegDiscover) DiscoverService(key string) (<-chan *DiscoverEvent, error) {
 	return rd.rdServer.Discover(key)
+}
+
+// Ping to ping server
+func (rd *RegDiscover) Ping() error {
+	return rd.rdServer.Ping()
 }
