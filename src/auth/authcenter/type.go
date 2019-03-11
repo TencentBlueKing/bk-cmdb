@@ -32,21 +32,21 @@ type AuthConfig struct {
 }
 
 type RegisterInfo struct {
-	CreatorType string `json:"creator_type"`
-	CreatorID   string `json:"creator_id"`
-	ScopeInfo
-	ResourceType ResourceTypeID   `json:"resource_type"`
-	Resources    []ResourceEntity `json:"resources"`
+	CreatorType string           `json:"creator_type"`
+	CreatorID   string           `json:"creator_id"`
+	Resources   []ResourceEntity `json:"resources"`
 }
 
 type ResourceEntity struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ScopeInfo
 	ResourceName string       `json:"resource_name,omitempty"`
 	ResourceID   []ResourceID `json:"resource_id"`
 }
 
 type ResourceID struct {
-	ResourceID   string         `json:"resource_id"`
 	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   string         `json:"resource_id"`
 }
 
 type ResourceInfo struct {
@@ -80,8 +80,7 @@ type ResultStatus struct {
 }
 
 type DeregisterInfo struct {
-	ScopeInfo
-	ResourceInfo
+	Resources []ResourceEntity `json:"resources"`
 }
 
 type UpdateInfo struct {

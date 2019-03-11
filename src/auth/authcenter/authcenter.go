@@ -183,6 +183,10 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	info := RegisterInfo{}
+	info.CreatorType = cmdbUser
+	info.CreatorID = cmdbUserID
+	header := http.Header{}
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {
 			return errors.New("invalid resource attribute with empty object")
@@ -192,28 +196,28 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 			return err
 		}
 
-		// rscInfo, err := adaptor(&r)
-		// if err != nil {
-		// 	return fmt.Errorf("adaptor resource info failed, err: %v", err)
-		// }
-		info := &RegisterInfo{
-			CreatorType: cmdbUser,
-			CreatorID:   cmdbUserID,
-			ScopeInfo:   *scope,
-			// ResourceInfo: *rscInfo,
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
 
-		header := http.Header{}
+		info.Resources = append(info.Resources, entity)
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-		return ac.authClient.registerResource(ctx, header, info)
 	}
+	return ac.authClient.registerResource(ctx, header, &info)
 
-	return nil
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	info := DeregisterInfo{}
+	header := http.Header{}
 	for _, r := range rs {
-
 		if len(r.Basic.Type) == 0 {
 			return errors.New("invalid resource attribute with empty object")
 		}
@@ -228,17 +232,19 @@ func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.Resourc
 			return fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 
-		info := &DeregisterInfo{
-			ScopeInfo:    *scope,
-			ResourceInfo: *rscInfo,
-		}
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
 
-		header := http.Header{}
+		info.Resources = append(info.Resources, entity)
+
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-		return ac.authClient.deregisterResource(ctx, header, info)
 	}
 
-	return nil
+	return ac.authClient.deregisterResource(ctx, header, &info)
 }
 
 func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
