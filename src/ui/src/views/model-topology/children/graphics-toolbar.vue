@@ -1,7 +1,19 @@
 <template>
     <div class="graphics-toolbar clearfix">
         <div class="toolbar-left fl">
-            <bk-button type="primary">{{$t('ModelManagement["编辑拓扑"]')}}</bk-button>
+            <template v-if="isEditMode">
+                <bk-button type="primary"
+                    @click="handleToggleMode">
+                    {{$t('Common["返回"]')}}
+                </bk-button>
+                <span class="edit-tips">{{$t('ModelManagement["所有更改已自动保存"]')}}</span>
+            </template>
+            <template v-else>
+                <bk-button type="primary"
+                    @click="handleToggleMode">
+                    {{$t('ModelManagement["编辑拓扑"]')}}
+                </bk-button>
+            </template>
         </div>
         <div class="toolbar-right">
             <i class="toolbar-icon bk-icon icon-full-screen"
@@ -25,30 +37,38 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     export default {
         name: 'graphics-toolabr',
         inject: ['parentRefs'],
         data () {
-            return {}
+            return {
+                editMode: false
+            }
+        },
+        computed: {
+            ...mapGetters('globalModels', ['isEditMode'])
         },
         methods: {
-            getNetwork () {
+            getGraphics () {
                 const { graphics } = this.parentRefs
-                return graphics.instance.network
+                return graphics.instance
+            },
+            handleToggleMode () {
+                this.$store.commit('globalModels/changeEditMode')
             },
             handleResize () {
-                const network = this.getNetwork()
-                network.moveTo({scale: 1})
-                network.fit()
+                const graphics = this.getGraphics()
+                graphics.resize()
             },
             handleZoom (type) {
-                const network = this.getNetwork()
-                const ratio = type === 'in' ? 1.05 : 0.95
-                network.moveTo({
-                    scale: network.getScale() * ratio
-                })
+                const graphics = this.getGraphics()
+                graphics.zoom(type)
             },
-            handleSetConfig () {}
+            handleSetConfig () {
+                const { config } = this.parentRefs
+                config.toggleSlider()
+            }
         }
     }
 </script>
@@ -56,9 +76,17 @@
 <style lang="scss">
     .graphics-toolbar {
         padding: 0 20px;
-        border-bottom: 1px solid $cmdbBorderColor;
-        line-height: 49px;
+        line-height: 50px;
         font-size: 0;
+        .toolbar-left {
+            .edit-tips {
+                display: inline-block;
+                margin: 0 0 0 10px;
+                vertical-align: middle;
+                font-size: 14px;
+                color: #a4aab3;
+            }
+        }
         .toolbar-right {
             text-align: right;
             overflow: hidden;
