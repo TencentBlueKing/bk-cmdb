@@ -182,57 +182,66 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 
 }
 
-func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
-	}
-	scope, err := ac.getScopeInfo(r)
-	if err != nil {
-		return err
+func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	for _, r := range rs {
+		if len(r.Basic.Type) == 0 {
+			return errors.New("invalid resource attribute with empty object")
+		}
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return err
+		}
+
+		// rscInfo, err := adaptor(&r)
+		// if err != nil {
+		// 	return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		// }
+		info := &RegisterInfo{
+			CreatorType: cmdbUser,
+			CreatorID:   cmdbUserID,
+			ScopeInfo:   *scope,
+			// ResourceInfo: *rscInfo,
+		}
+
+		header := http.Header{}
+		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+		return ac.authClient.registerResource(ctx, header, info)
 	}
 
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
-	}
-	info := &RegisterInfo{
-		CreatorType:  cmdbUser,
-		CreatorID:    cmdbUserID,
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
-	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.registerResource(ctx, header, info)
+	return nil
 }
 
-func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
+func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	for _, r := range rs {
+
+		if len(r.Basic.Type) == 0 {
+			return errors.New("invalid resource attribute with empty object")
+		}
+
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return err
+		}
+
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		}
+
+		info := &DeregisterInfo{
+			ScopeInfo:    *scope,
+			ResourceInfo: *rscInfo,
+		}
+
+		header := http.Header{}
+		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+		return ac.authClient.deregisterResource(ctx, header, info)
 	}
 
-	scope, err := ac.getScopeInfo(r)
-	if err != nil {
-		return err
-	}
-
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
-	}
-
-	info := &DeregisterInfo{
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
-	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.deregisterResource(ctx, header, info)
+	return nil
 }
 
-func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) error {
+func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
 	if len(r.Basic.Type) == 0 || len(r.Basic.Name) == 0 {
 		return errors.New("invalid resource attribute with empty object or object name")
 	}
@@ -258,40 +267,6 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
-}
-
-func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string, detail bool) (*SystemDetail, error) {
-	return ac.authClient.QuerySystemInfo(ctx, http.Header{}, systemID, detail)
-
-}
-
-func (ac *AuthCenter) RegistSystem(ctx context.Context, system System) error {
-	return ac.authClient.RegistSystem(ctx, http.Header{}, system)
-}
-
-func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
-	return ac.authClient.UpdateSystem(ctx, http.Header{}, system)
-
-}
-
-func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.RegistResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpdateResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpsertResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpsertResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceTypeActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
-	return ac.authClient.InitSystemBatch(ctx, http.Header{}, detail)
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {

@@ -15,7 +15,6 @@ package service
 import (
 	"net/http"
 
-	"configcenter/src/auth/authcenter/initial"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -28,8 +27,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
-	err := initial.Init(s.ctx, s.authCenter)
-	if nil != err {
+	if err := s.authCenter.Init(s.ctx); nil != err {
 		blog.Errorf("db upgrade error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
 		return
