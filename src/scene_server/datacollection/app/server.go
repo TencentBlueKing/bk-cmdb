@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -37,8 +36,6 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -47,45 +44,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: &util.TLSClientConfig{InsecureSkipVerify: true},
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := new(svc.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_DATACOLLECTION, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	process := new(DCServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_DATACOLLECTION,
-		op.ServConf.ExConfig,
-		process.onHostConfigUpdate,
-		discover,
-		bonC)
+
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -107,7 +75,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		esbChan := make(chan esbutil.EsbConfig, 1)
 		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(c, esbChan)
+		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan)
 		if err != nil {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
@@ -122,7 +90,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.InfoJSON("process started with info %s", svrInfo)
-
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		return err
+	}
 	<-ctx.Done()
 	blog.V(0).Info("process stoped")
 	return nil

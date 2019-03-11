@@ -21,7 +21,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -39,7 +38,6 @@ type HttpClient interface {
 type Service struct {
 	Engine *backbone.Engine
 	Client HttpClient
-	Disc   discovery.DiscoveryInterface
 }
 
 const (
@@ -166,19 +164,19 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	servers := make([]string, 0)
 	switch kind {
 	case TopoType:
-		servers, err = s.Disc.TopoServer().GetServers()
+		servers, err = s.Engine.Discovery().TopoServer().GetServers()
 
 	case ProcType:
-		servers, err = s.Disc.ProcServer().GetServers()
+		servers, err = s.Engine.Discovery().ProcServer().GetServers()
 
 	case EventType:
-		servers, err = s.Disc.EventServer().GetServers()
+		servers, err = s.Engine.Discovery().EventServer().GetServers()
 
 	case HostType:
-		servers, err = s.Disc.HostServer().GetServers()
+		servers, err = s.Engine.Discovery().HostServer().GetServers()
 
 	case DataCollectType:
-		servers, err = s.Disc.DataCollect().GetServers()
+		servers, err = s.Engine.Discovery().DataCollect().GetServers()
 
 	}
 
