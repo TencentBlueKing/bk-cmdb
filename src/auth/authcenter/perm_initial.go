@@ -10,52 +10,50 @@
  * limitations under the License.
  */
 
-package initial
+package authcenter
 
 import (
 	"context"
 	"fmt"
 	"sort"
 	"strings"
-
-	"configcenter/src/auth/authcenter"
 )
 
-func Init(ctx context.Context, cli *authcenter.AuthCenter) error {
-	detail := authcenter.SystemDetail{}
+func (ac *AuthCenter) Init(ctx context.Context) error {
+	detail := SystemDetail{}
 	detail.System = expectSystem
 	detail.Scopes = append(detail.Scopes, struct {
-		ScopeTypeID   string                    `json:"scope_type_id"`
-		ResourceTypes []authcenter.ResourceType `json:"resource_types"`
+		ScopeTypeID   string         `json:"scope_type_id"`
+		ResourceTypes []ResourceType `json:"resource_types"`
 	}{
 		ScopeTypeID:   "system",
 		ResourceTypes: expectSystemResourceType,
 	})
 
-	_, err := cli.QuerySystemInfo(ctx, authcenter.SystemIDCMDB, false)
-	if err != nil && err != authcenter.ErrNotFound {
+	_, err := ac.authClient.QuerySystemInfo(ctx, ac.header, SystemIDCMDB, false)
+	if err != nil && err != ErrNotFound {
 		return err
 	}
 
-	if err := cli.RegistSystem(ctx, expectSystem); err != nil && err != authcenter.ErrDuplicated {
+	if err := ac.authClient.RegistSystem(ctx, ac.header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
 	}
 
-	if err := cli.UpsertResourceTypeBatch(ctx, authcenter.SystemIDCMDB, authcenter.ScopeTypeIDSystem, expectSystemResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDSystem, expectSystemResourceType); err != nil {
 		return err
 	}
-	if err := cli.UpsertResourceTypeBatch(ctx, authcenter.SystemIDCMDB, authcenter.ScopeTypeIDBiz, expectBizResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDBiz, expectBizResourceType); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func resourceKey(res authcenter.ResourceType) string {
+func resourceKey(res ResourceType) string {
 	return fmt.Sprintf("%s-%s-%s", res.ResourceTypeID, res.ResourceTypeName, res.ParentResourceTypeID)
 }
 
-func actionKey(actions []authcenter.Action) string {
+func actionKey(actions []Action) string {
 	sort.Slice(actions, func(i, j int) bool {
 		if actions[i].ActionID < actions[j].ActionID {
 			return true

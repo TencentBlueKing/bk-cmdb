@@ -30,20 +30,19 @@ type Authorizer interface {
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 }
 
-// ResourceManager is used to handle the resources register to authorize center.
+// ResourceHandler is used to handle the resources register to authorize center.
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	Register(ctx context.Context, r *meta.ResourceAttribute) error
+	RegisterResource(ctx context.Context, r ...meta.ResourceAttribute) error
 	// deregister a resource
-	Deregister(ctx context.Context, r *meta.ResourceAttribute) error
+	DeregisterResource(ctx context.Context, r ...meta.ResourceAttribute) error
 	// update a resource's info
-	Update(ctx context.Context, r *meta.ResourceAttribute) error
+	UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
-
-	// RegisterResourceType(ctx context.Context, r []meta.ResourceAttribute) error
-	// UnregisterResourceType(ctx context.Context, r []meta.ResourceAttribute) error
+	// init the authcenter
+	Init(ctx context.Context) error
 }
 
 // NewAuthorize is used to initialized a Authorize instance interface,
