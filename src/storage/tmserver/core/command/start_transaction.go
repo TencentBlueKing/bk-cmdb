@@ -13,6 +13,7 @@
 package command
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
 	"configcenter/src/storage/tmserver/core/transaction"
@@ -34,8 +35,9 @@ func (d *startTransaction) SetTxn(txn *transaction.Manager) {
 }
 
 func (d *startTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
-
+	blog.V(4).Infof("[MONGO OPERATION] %+v", &ctx.Header)
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	sess, err := d.txn.CreateTransaction(ctx.Header.RequestID)
 	if nil != err {
 		reply.Message = err.Error()

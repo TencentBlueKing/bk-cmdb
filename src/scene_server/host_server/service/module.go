@@ -355,7 +355,16 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
-
+	businessMetadata := conf.Metadata
+	if businessMetadata.Label == nil {
+		businessMetadata.Label = make(metadata.Label)
+	}
+	businessMetadata.Label.SetBusinessID(conf.ApplicationID)
+	if err := srvData.lgc.DeleteHostBusinessAttributes(srvData.ctx, conf.HostID, &businessMetadata); err != nil {
+		blog.Errorf("move host to resource pool, delete host bussiness private, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+		return
+	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 

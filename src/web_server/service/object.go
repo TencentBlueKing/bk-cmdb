@@ -64,8 +64,8 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	inputJson := c.PostForm("json")
-	metaInfo := map[string]metadata.Metadata{}
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
 	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -93,7 +93,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang, metaInfo[metadata.BKMetadata])
+	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang, metaInfo)
 	if 0 == len(attrItems) {
 		msg := ""
 		if nil != err {
@@ -119,7 +119,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 			"meta": nil,
 			"attr": attrItems,
 		},
-		metadata.BKMetadata: metaInfo[metadata.BKMetadata],
+		metadata.BKMetadata: metaInfo,
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
@@ -228,13 +228,16 @@ func (s *Service) ExportObject(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	metaInfo := make(map[string]metadata.Metadata)
-	err := c.Bind(&metaInfo)
-	if nil != err {
-		blog.Errorf("parse input metadata error: %v", err)
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
 	}
+
 	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo[metadata.BKMetadata])
+	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
 	if nil != err {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)

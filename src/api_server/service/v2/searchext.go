@@ -45,8 +45,8 @@ func (s *Service) getHostListByOwner(req *restful.Request, resp *restful.Respons
 	srvData.ownerID = formData["OwnerQQ"][0]
 	dataArr, dataErr := srvData.lgc.GetAllHostAndModuleRelation(srvData.ctx)
 	if nil != dataErr {
-		blog.Errorf("getHostListByOwner error: %s,input:%#v,rid:%s", err.Error(), formData, srvData.rid)
-		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, err.Error(), resp)
+		blog.Errorf("getHostListByOwner error: %s,input:%#v,rid:%s", dataErr.Error(), formData, srvData.rid)
+		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, dataErr.Error(), resp)
 		return
 	}
 

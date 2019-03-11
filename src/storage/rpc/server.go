@@ -45,32 +45,38 @@ var connectfaile = "400 Connect failed to CC RPC"
 
 // ServeHTTP implements http.Handler interface
 func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	blog.V(3).Infof("receive rpc connect from rpc client %s", req.RemoteAddr)
 	if req.Method != "CONNECT" {
 		resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		resp.WriteHeader(http.StatusMethodNotAllowed)
 		io.WriteString(resp, "405 must CONNECT\n")
+		blog.Errorf("method not match %s", req.RemoteAddr)
 		return
 	}
 	conn, _, err := resp.(http.Hijacker).Hijack()
 	if err != nil {
-		blog.Errorf("rpc hijacking %s: %s", req.RemoteAddr, err.Error())
+		blog.Errorf("rpc hijack failed %s: %s", req.RemoteAddr, err.Error())
 		return
 	}
-
 	session, err := NewServerSession(s, conn, "deflate")
 	if err != nil {
 		blog.Errorf("rpc new server session faile %s: %s", req.RemoteAddr, err.Error())
-		io.WriteString(conn, "HTTP/1.0 "+connectfaile+"\n\n")
+		if _, err = io.WriteString(conn, "HTTP/1.0 "+connectfaile+"\n\n"); err != nil {
+			blog.Errorf("write string failed %s: %v", req.RemoteAddr, err)
+		}
 		return
 	}
 
-	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
-	blog.V(3).Infof("connect from rpc client %s", req.RemoteAddr)
-
+	if _, err = io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n"); err != nil {
+		blog.Errorf("write string failed %s: %v", req.RemoteAddr, err)
+		return
+	}
+	blog.V(3).Infof("connected from rpc client %s", req.RemoteAddr)
 	if err = session.Run(); err != nil {
-		blog.Errorf("dissconnect from rpc client %s: %s ", req.RemoteAddr, err.Error())
+		blog.Errorf("disconnect from rpc client %s with error: %s ", req.RemoteAddr, err.Error())
 		return
 	}
+	blog.V(3).Infof("disconnect from rpc client %s", req.RemoteAddr)
 }
 
 // Handle regist new handler
@@ -137,7 +143,7 @@ func (s *ServerSession) readFromWire() error {
 
 	switch msg.typz {
 	case TypeRequest:
-		blog.V(3).Infof("[rpc server] calling [%s]", msg.cmd)
+		blog.V(5).Infof("[rpc server] calling [%s]", msg.cmd)
 		if handlerFunc, ok := s.srv.handlers[msg.cmd]; ok {
 			go s.handle(handlerFunc, &msg)
 		} else if handlerFunc, ok := s.srv.streamHandlers[msg.cmd]; ok {

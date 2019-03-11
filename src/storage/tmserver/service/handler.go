@@ -36,15 +36,13 @@ func (s *coreService) DBOperation(input rpc.Request) (interface{}, error) {
 }
 
 func (s *coreService) WatchTransaction(input rpc.Request, stream rpc.ServerStream) (err error) {
-	/*
-		ch := make(chan *types.Transaction, 100)
-		t.man.Subscribe(ch)
-		defer t.man.UnSubscribe(ch)
-		for txn := range ch {
-			if err = stream.Send(txn); err != nil {
-				return err
-			}
+	ch := make(chan *types.Transaction, 100)
+	s.core.Subscribe(ch)
+	defer s.core.UnSubscribe(ch)
+	for txn := range ch {
+		if err = stream.Send(txn); err != nil {
+			return err
 		}
-	*/
+	}
 	return nil
 }

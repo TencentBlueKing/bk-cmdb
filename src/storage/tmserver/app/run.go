@@ -17,11 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
 	mgo "configcenter/src/storage/mongodb/driver"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/tmserver/service"
@@ -31,47 +28,20 @@ import (
 
 // Run main goroute
 func Run(ctx context.Context, op *options.ServerOption) error {
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	coreService := service.New(svrInfo.IP, svrInfo.Port)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TXC, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	tmServer := &Server{}
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_TXC,
-		op.ServConf.ExConfig,
-		tmServer.onConfigUpdate,
-		bonC)
-
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: tmServer.onConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -80,28 +50,36 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	tmServer.coreService = coreService
 
 	// connect to the mongodb
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 
 	for {
+		tmServer.configLock.Lock()
 		if tmServer.config == nil {
+			tmServer.configLock.Unlock()
+			blog.Infof("config is empty, retry 2s later")
 			time.Sleep(time.Second * 2)
 			continue
 		}
+		tmServer.configLock.Unlock()
 
 		// connect db
+		blog.Infof("connecting to mongo %v", tmServer.config.MongoDB.BuildURI())
 		db := mgo.NewClient(tmServer.config.MongoDB.BuildURI())
 		err = db.Open()
 		if nil != err {
-			errCh <- err
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 
+		blog.Infof("connected to mongo %v", tmServer.config.MongoDB.BuildURI())
+
 		// set core service
 		coreService.SetConfig(engine, db, tmServer.config.Transaction)
-
 		break
 	}
-
+	tmServer.engin = engine
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+		return err
+	}
 	// waiting to exit
 	select {
 	case <-ctx.Done():
