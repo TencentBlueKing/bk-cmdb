@@ -13,6 +13,7 @@
 package options
 
 import (
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 
@@ -46,6 +47,7 @@ type Config struct {
 	Configures    ConfConfig
 	Register      RegisterConfig
 	ProcSrvConfig ProcSrvConfig
+	AuthCenter    authcenter.AuthConfig
 }
 
 type LanguageConfig struct {
