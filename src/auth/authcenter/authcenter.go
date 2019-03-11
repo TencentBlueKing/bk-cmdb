@@ -177,7 +177,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	}
 
 	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierID)
+	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierAccount)
 	return ac.authClient.verifyInList(ctx, header, info)
 
 }

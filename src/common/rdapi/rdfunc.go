@@ -61,7 +61,7 @@ func FilterRdAddrSrv(typeSrv string) func(req *restful.Request, resp *restful.Re
 		cli := api.NewAPIResource()
 
 		url, err := cli.AddrSrv.GetServer(typeSrv)
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		if nil == cli.Error {
 			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
 			io.WriteString(resp, rsp)
@@ -106,7 +106,7 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		cli := api.NewAPIResource()
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		if nil == cli.Error {
 			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
 			io.WriteString(resp, rsp)
@@ -150,12 +150,11 @@ func FilterRdAddrSrvs(typeSrvs ...string) func(req *restful.Request, resp *restf
 }
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
-	util.SetActionOwerIDAndAccount(req)
-	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	if "" == ownerId {
+	util.SetOwnerIDAndAccount(req)
+	if "" == util.GetOwnerID(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
-	if "" == user {
+	if "" == util.GetUser(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
 	}
 
@@ -174,7 +173,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 				return
 			}
 		}
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
@@ -199,7 +198,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 func GlobalFilter(typeSrvs ...string) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		cli := api.NewAPIResource()
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		if nil == cli.Error {
 			rsp, _ := createAPIRspStr(common.CCErrCommConfMissItem, "config file is missing err item")
 			io.WriteString(resp, rsp)

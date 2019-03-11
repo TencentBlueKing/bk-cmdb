@@ -12,6 +12,18 @@
 
 package meta
 
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constanst
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
+)
+
 type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
@@ -27,7 +39,7 @@ type UserInfo struct {
 	// the name of this user.
 	UserName string
 	// the supplier id that this user belongs to.
-	SupplierID string
+	SupplierAccount string
 }
 
 type Item Basic
@@ -48,6 +60,7 @@ type Basic struct {
 	Type ResourceType
 
 	// the action that user want to do with this resource.
+	// this field should be empty when it's used in resource handle operation.
 	Action Action
 
 	// the name of the resource, which could be a bk-route, etc.

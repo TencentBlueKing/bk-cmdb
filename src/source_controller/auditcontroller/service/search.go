@@ -26,7 +26,7 @@ import (
 )
 
 func (s *Service) Get(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

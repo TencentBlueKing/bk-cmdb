@@ -10,10 +10,49 @@
  * limitations under the License.
  */
 
-package wrapper
+package topoauth
 
-import "configcenter/src/auth"
+import (
+	"configcenter/src/common/util"
+	"net/http"
 
-type Auth struct {
+	"configcenter/src/auth"
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
+)
+
+type TopoAuth struct {
 	authorizer auth.Authorize
+}
+
+func (ta *TopoAuth) RegisterObject(header http.Header, object metadata.Object) error {
+	resource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type: meta.Model,
+			Name: object.ObjectID,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+	}
+
+	return nil
+}
+
+func (ta *TopoAuth) RegisterObjectsBatch(header http.Header) error {
+
+	return nil
+}
+
+func (ta *TopoAuth) DeregisterObject() error {
+
+	return nil
+}
+
+func (ta *TopoAuth) RegisterInstance() error {
+
+	return nil
+}
+
+func (ta *TopoAuth) DeregisterInstance() error {
+
+	return nil
 }

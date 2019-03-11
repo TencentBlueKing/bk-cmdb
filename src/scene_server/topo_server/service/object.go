@@ -61,7 +61,6 @@ func (s *topoService) SearchObject(params types.ContextParams, pathParams, query
 func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	cond := condition.CreateCondition()
 	err := cond.Parse(data)
-
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, err.Error())
 	}
@@ -71,23 +70,17 @@ func (s *topoService) SearchObjectTopo(params types.ContextParams, pathParams, q
 
 // UpdateObject update the object
 func (s *topoService) UpdateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	cond := condition.CreateCondition()
 	id, err := strconv.ParseInt(pathParams("id"), 10, 64)
-
 	if nil != err {
 		blog.Errorf("[api-obj] failed to parse the path params id(%s), error info is %s ", pathParams("id"), err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "object id")
 	}
-
-	err = s.core.ObjectOperation().UpdateObject(params, data, id, cond)
+	err = s.core.ObjectOperation().UpdateObject(params, data, id)
 	return nil, err
 }
 
 // DeleteObject delete the object
 func (s *topoService) DeleteObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	cond := condition.CreateCondition()
-
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
@@ -96,15 +89,7 @@ func (s *topoService) DeleteObject(params types.ContextParams, pathParams, query
 		return nil, err
 	}
 
+	cond := condition.CreateCondition()
 	err = s.core.ObjectOperation().DeleteObject(params, id, cond, true)
 	return nil, err
-}
-
-func (s *topoService) CreateOneObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.core.ObjectOperation().CreateOneObject(params, data)
-	if nil != err {
-		return nil, err
-	}
-
-	return rsp.ToMapStr()
 }

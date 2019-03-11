@@ -88,7 +88,7 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 }
 
 func (lgc *Logics) getObjectGroup(objID string, header http.Header) ([]PropertyGroup, error) {
-	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
+	ownerID := util.GetOwnerID(header)
 	condition := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {

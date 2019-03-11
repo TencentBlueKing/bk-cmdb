@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/topo_server/core/wrapper"
+	"configcenter/src/scene_server/topo_server/core/auth"
 )
 
 // ContextParams the logic function params
@@ -34,5 +34,5 @@ type ContextParams struct {
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 	MetaData        *metadata.Metadata
-	AuthAPI         wrapper.AuthAPI
+	AuthAPI         topoauth.TopoAuth
 }
