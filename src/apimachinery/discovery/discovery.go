@@ -24,6 +24,7 @@ import (
 type ServiceManageInterface interface {
 	// 判断当前进程是否为master 进程， 服务注册节点的第一个节点
 	IsMaster() bool
+	TMServer() Interface
 }
 
 type DiscoveryInterface interface {
@@ -40,7 +41,6 @@ type DiscoveryInterface interface {
 	ProcCtrl() Interface
 	GseProcServ() Interface
 	CoreService() Interface
-	TMServer() Interface
 	ServiceManageInterface
 }
 
