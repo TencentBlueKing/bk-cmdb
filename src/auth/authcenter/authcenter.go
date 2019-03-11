@@ -183,6 +183,10 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if len(rs) <= 0 {
+		// not resource should be register
+		return nil
+	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
 	info.CreatorID = cmdbUserID
@@ -215,6 +219,10 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
+	}
 	info := DeregisterInfo{}
 	header := http.Header{}
 	for _, r := range rs {
