@@ -116,5 +116,8 @@ const (
 	MoveHostToModule               Action = "moveHostToModule"
 	TransferHost                   Action = "transferHost"
 
-	TopoModelMange Action = "topoModelMange"
+	// process actions
+	BoundModuleToProcess   Action = "boundModuleToProcess"
+	UnboundModuleToProcess Action = "unboundModelToProcess"
+	FindBoundModuleProcess Action = "findBoundModuleProcess"
 )

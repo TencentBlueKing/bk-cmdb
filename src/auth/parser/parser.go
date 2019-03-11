@@ -13,7 +13,6 @@
 package parser
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +21,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 
 	"github.com/emicklei/go-restful"

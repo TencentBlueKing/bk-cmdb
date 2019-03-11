@@ -215,7 +215,7 @@ var expectSystemResourceType = []authcenter.ResourceType{
 		ParentResourceTypeID: "",
 		Actions: []authcenter.Action{
 			{
-				ActionID:          authcenter.TopoLayerManage,
+				ActionID:          authcenter.ModelTopologyOperation,
 				ActionName:        "拓扑层级管理",
 				IsRelatedResource: false,
 			},

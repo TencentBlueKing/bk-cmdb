@@ -14,12 +14,12 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
