@@ -21,8 +21,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -42,42 +40,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := new(synchronizeService.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_SYNCHRONZESERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	synchronSrv := &SynchronizeServer{
 		synchronizeClientConfig: make(chan synchronizeUtil.SychronizeConfig, 10),
 	}
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_SYNCHRONZESERVER,
-		op.ServConf.ExConfig,
-		synchronSrv.onSynchronizeServerConfigUpdate,
-		bonC)
+	input := &backbone.BackboneParameter{
+		Regdiscv:     op.ServConf.RegDiscover,
+		ConfigPath:   op.ServConf.ExConfig,
+		ConfigUpdate: synchronSrv.onSynchronizeServerConfigUpdate,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -96,12 +69,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	service.Config = synchronSrv.Config
 	synchronSrv.Service = service
-	synchronizeClientInst, err := synchronizeClient.NewSynchronize(c, synchronSrv.synchronizeClientConfig)
+	synchronizeClientInst, err := synchronizeClient.NewSynchronize(engine.ApiMachineryConfig(), synchronSrv.synchronizeClientConfig)
 	if err != nil {
 		return fmt.Errorf("new NewSynchronize failed, err: %v", err)
 	}
 	service.SetSynchronizeServer(synchronizeClientInst)
 	go synchronSrv.Service.InitBackground()
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		return err
+	}
 	select {}
 	return nil
 }
