@@ -56,7 +56,6 @@ func (s *topoService) initBusinessObjectAttrGroup() {
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattgroup", HandlerFunc: s.UpdateObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroup/{id}", HandlerFunc: s.DeleteObjectGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/objectattgroupproperty", HandlerFunc: s.UpdateObjectAttributeGroup, HandlerParseOriginDataFunc: s.ParseUpdateObjectAttributeGroupInput})
-	//	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/objectattgroupasst/object/{bk_obj_id}/property/{property_id}/group/{group_id}", HandlerFunc: s.DeleteObjectAttributeGroup})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/objectattgroup/object/{bk_obj_id}", HandlerFunc: s.SearchGroupByObject})
 }
 
@@ -71,10 +70,7 @@ func (s *topoService) initBusinessAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/topomodelmainline", HandlerFunc: s.CreateMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/topomodelmainline/object/{bk_obj_id}", HandlerFunc: s.DeleteMainLineObject})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topomodelmainline", HandlerFunc: s.SearchMainLineObjectTopo})
-	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/model/{owner_id}/{cls_id}/{obj_id}", HandlerFunc: s.SearchObjectByClassificationID})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topoinst/biz/{bk_biz_id}", HandlerFunc: s.SearchBusinessTopo})
-	// TODO: delete this api, it's not used by front.
-	//	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/topo/inst/child/{owner_id}/{obj_id}/{app_id}/{inst_id}", HandlerFunc: s.SearchMainLineChildInstTopo})
 
 	// association type methods ,NOT SUPPORT BUSSINESS
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/topoassociationtype", HandlerFunc: s.SearchObjectAssoWithAssoKindList})
@@ -110,7 +106,6 @@ func (s *topoService) initBusinessInst() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/deletemany/instance/object/{bk_obj_id}", HandlerFunc: s.DeleteInsts})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/instance/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.UpdateInst})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/updatemany/instance/object/{bk_obj_id}", HandlerFunc: s.UpdateInsts})
-	//	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/inst/object/{bk_obj_id}", HandlerFunc: s.SearchInsts})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instance/object/{bk_obj_id}", HandlerFunc: s.SearchInstAndAssociationDetail})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/find/instdetail/object/{bk_obj_id}/inst/{inst_id}", HandlerFunc: s.SearchInstByInstID})
 
