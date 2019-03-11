@@ -23,6 +23,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -117,6 +118,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return err
 		}
+
+		if process.Config.AuthCenter.Enable {
+			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
+			if err != nil {
+				return fmt.Errorf("new authcenter client failed: %v", err)
+			} else {
+				process.Service.SetAuthcenter(authcli)
+			}
+		}
 		break
 	}
 	<-ctx.Done()
@@ -154,6 +164,12 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
 
 		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
+
+		var err error
+		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil && h.Config.AuthCenter.Enable {
+			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
+		}
 	}
 }
 

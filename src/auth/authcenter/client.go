@@ -90,7 +90,7 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
 	util.CopyHeader(header, a.basicHeader)
 	resp := new(ResourceResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-register", a.Config.SystemID)
 	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
@@ -116,7 +116,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 func (a *authClient) deregisterResource(ctx context.Context, header http.Header, info *DeregisterInfo) error {
 	util.CopyHeader(header, a.basicHeader)
 	resp := new(ResourceResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-delete", a.Config.SystemID)
 	err := a.client.Delete().
 		SubResource(url).
 		WithContext(ctx).

@@ -143,7 +143,7 @@ func (ha *HostAuthorizer) RegisterHosts(req *restful.Request, businessID int64, 
 	// register host one by one
 	for _, hostID := range *hostIDs {
 		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
-		err := ha.register.Register(context.Background(), resource)
+		err := ha.register.RegisterResource(context.Background(), *resource)
 		if err == nil {
 			blog.Debug("auth register success, resourceAttribute=%v", resource)
 			continue
@@ -164,7 +164,7 @@ func (ha *HostAuthorizer) DeregisterHosts(req *restful.Request, businessID int64
 
 	for _, hostID := range *hostIDs {
 		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
-		err := ha.register.Deregister(context.Background(), resource)
+		err := ha.register.RegisterResource(context.Background(), *resource)
 		if err == nil {
 			blog.Debug("auth register success, resourceAttribute=%v", resource)
 			continue
