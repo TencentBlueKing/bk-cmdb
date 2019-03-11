@@ -12,12 +12,14 @@ const HEX_TO_RGB = (hex) => {
 const GET_FILE_EXTENSION = (fileName) => {
     return fileName.substr((~-fileName.lastIndexOf('.') >>> 0) + 2)
 }
+
+const canvas = document.createElement('canvas')
+
 const GET_BASE_64_IMAGE = (image, color) => {
-    let canvas = document.createElement('canvas')
-    let ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const ctx = canvas.getContext('2d')
     canvas.width = image.width
     canvas.height = image.height
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(image, 0, 0, image.width, image.height)
     const imageData = ctx.getImageData(0, 0, image.width, image.height)
     const rgbColor = HEX_TO_RGB(color)
@@ -30,19 +32,12 @@ const GET_BASE_64_IMAGE = (image, color) => {
     return canvas.toDataURL(`image/${GET_FILE_EXTENSION(image.src)}`)
 }
 
-export function generateObjIcon (image, options) {
-    if (image instanceof Image) {
-        const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
-        return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
-                    <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                    <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 18 18" x="22" y="5" fill="${options.iconColor}" width="65" >
-                        <image width="15" xlink:href="${base64Image}"></image>
-                    </svg>
-                </svg>`
-    } else {
-        options = image
-        return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
-                    <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
-                </svg>`
-    }
+export function svgToImageUrl (image, options) {
+    const base64Image = GET_BASE_64_IMAGE(image, options.iconColor)
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+                <circle cx="50" cy="50" r="49" fill="${options.backgroundColor}"/>
+                <svg xmlns="http://www.w3.org/2000/svg" stroke="rgba(0, 0, 0, 0)" viewBox="0 0 32 32" x="28" y="25" fill="${options.iconColor}" width="100">
+                    <image width="15" xlink:href="${base64Image}"></image>
+                </svg>
+            </svg>`)
 }
