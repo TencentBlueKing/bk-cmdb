@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/authorize"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
 
@@ -57,6 +58,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service := new(hostsvc.Service)
+	authorizer := authorize.NewHostAuthorizer()
+	service.Authorizer = *authorizer
+
 	server := backbone.Server{
 		ListenAddr: svrInfo.IP,
 		ListenPort: svrInfo.Port,
