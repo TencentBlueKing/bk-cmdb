@@ -769,13 +769,13 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	params := new(meta.QueryCondition)
 	res, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDPlat, params)
 	if nil != err {
-		blog.Errorf("GetPlat error: %v,rid:%s", err, srvData.rid)
+		blog.Errorf("GetPlat htt do error: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())})
 		return
 	}
 	if false == res.Result {
-		blog.Errorf("GetPlat error. err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetCloudErrStrFaild, err.Error())})
+		blog.Errorf("GetPlat http reply error. err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 
 	} else {
 		resp.WriteEntity(meta.Response{

@@ -28,7 +28,7 @@ type Collection struct {
 	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID      string // 事务ID,uuid
 	collection string // 集合名
-	rpc        *rpc.Client
+	rpc        rpc.Client
 }
 
 // Find 查询多个并反序列化到 Result
@@ -89,9 +89,6 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
-	}
-	if c.TxnID != "" {
-		msg.TxnID = c.TxnID
 	}
 
 	// set txn
@@ -182,7 +179,39 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 
 // AggregateOne 聚合查询
 func (c *Collection) AggregateOne(ctx context.Context, pipeline interface{}, result interface{}) error {
-	return dal.ErrNotImplemented
+	// build msg
+	msg := types.OPAggregateOperation{}
+	msg.OPCode = types.OPAggregateCode
+	msg.Collection = c.collection
+
+	if err := msg.Pipiline.Encode(pipeline); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	if len(reply.Docs) <= 0 {
+		return dal.ErrDocumentNotFound
+	}
+	return reply.Docs[0].Decode(result)
 }
 
 // AggregateAll 聚合查询

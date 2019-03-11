@@ -70,8 +70,20 @@ func (d *MockDiscovery) CoreService() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) TMServer() Interface {
+	return &mockServer{}
+}
+
+func (d *MockDiscovery) IsMaster() bool {
+	return true
+}
+
 type mockServer struct{}
 
 func (*mockServer) GetServers() ([]string, error) {
 	return []string{"http://127.0.0.1:8080"}, nil
+}
+
+func (*mockServer) IsMaster(string) bool {
+	return true
 }

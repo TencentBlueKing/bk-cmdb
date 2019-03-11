@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/common"
@@ -24,22 +25,55 @@ import (
 
 // CreateMainLineObject create a new object in the main line topo
 func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+	tx, err := s.tx.StartTransaction(context.Background())
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 	mainLineAssociation := &metadata.Association{}
 
-	_, err := mainLineAssociation.Parse(data)
+	_, err = mainLineAssociation.Parse(data)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
 	}
 	params.MetaData = &mainLineAssociation.Metadata
-	return s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
+	ret, err := s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
+
+	if err != nil {
+		if txerr := tx.Abort(context.Background()); txerr != nil {
+			blog.Errorf("[api-asst] abort transaction failed; %v", err)
+			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	} else {
+		if txerr := tx.Commit(context.Background()); txerr != nil {
+			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	}
+
+	return ret, err
 }
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	tx, err := s.tx.StartTransaction(context.Background())
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 
 	objID := pathParams("bk_obj_id")
-	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+	err = s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+
+	if err != nil {
+		if txerr := tx.Abort(context.Background()); txerr != nil {
+			blog.Errorf("[api-asst] abort transaction failed; %v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	} else {
+		if txerr := tx.Commit(context.Background()); txerr != nil {
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	}
 	return nil, err
 }
 

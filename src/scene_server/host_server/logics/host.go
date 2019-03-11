@@ -24,11 +24,13 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	hutil "configcenter/src/scene_server/host_server/util"
-	"configcenter/src/scene_server/validator"
 )
 
-func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string) ([]metadata.Header, error) {
+func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, businessMedatadata *metadata.Metadata) ([]metadata.Header, error) {
 	searchOp := hutil.NewOperation().WithObjID(common.BKInnerObjIDHost).WithOwnerID(lgc.ownerID).WithAttrComm().MapStr()
+	if businessMedatadata != nil {
+		searchOp.Set(common.MetadataField, businessMedatadata)
+	}
 	query := &metadata.QueryCondition{
 		Condition: searchOp,
 	}
@@ -71,7 +73,7 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 	hostInfo := result.Data
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
-		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, err:%s, inst:%+v  input:%+v, rid:%s", err.Error(), hostInfo, hostID, lgc.rid)
+		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, lgc.rid)
 		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", err.Error())
 
 	}
@@ -145,13 +147,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 					host[field.PropertyID] = nil
 				}
 			}
-		}
-
-		valid := validator.NewValidMap(util.GetOwnerID(lgc.header), common.BKInnerObjIDHost, lgc.header, lgc.Engine)
-		hasErr = valid.ValidMap(host, "create", 0)
-		if nil != hasErr {
-			blog.Errorf("EnterIP valid error, input:%+v, err:%s, rid:%s", host, err.Error(), lgc.rid)
-			return lgc.ccErr.Errorf(common.CCErrCommFieldNotValidFail, hasErr.Error())
 		}
 
 		result, err := lgc.CoreAPI.HostController().Host().AddHost(ctx, lgc.header, host)
@@ -294,4 +289,10 @@ func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond map[string][]int64)
 	}
 
 	return hostIDs, nil
+}
+
+// DeleteHostBusinessAttributes delete host business private property
+func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, businessMedatadata *metadata.Metadata) error {
+
+	return nil
 }

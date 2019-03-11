@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -124,7 +125,7 @@ func (s *HttpServer) registerActionsFilter(r *restful.RouteBuilder, filters []re
 
 func (s *HttpServer) ListenAndServe() error {
 
-	var chError = make(chan error)
+	var chError = make(chan error, 1)
 	//list and serve by addrport
 	go func() {
 		addrport := net.JoinHostPort(s.addr, strconv.FormatUint(uint64(s.port), 10))

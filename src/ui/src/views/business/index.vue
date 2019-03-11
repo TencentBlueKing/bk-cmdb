@@ -2,7 +2,7 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!authority.includes('update') || !isAdminView"
                 @click="handleCreate">
                 {{$t("Inst['立即创建']")}}
             </bk-button>
@@ -64,6 +64,7 @@
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
+                        :show-options="isAdminView"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -161,10 +162,14 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
+            columnsConfigKey () {
+                return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+            },
             customBusinessColumns () {
-                return this.usercustom['biz_table_columns'] || []
+                return this.usercustom[this.columnsConfigKey] || []
             },
             authority () {
                 return this.$store.getters['userPrivilege/modelAuthority']('biz')
@@ -188,10 +193,10 @@
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
@@ -220,6 +225,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'biz',
+                    params: this.$injectMetadata(),
                     config: {
                         fromCache: true,
                         requestId: 'post_searchGroup_biz'
@@ -377,17 +383,17 @@
             },
             handleApplayColumnsConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': properties.map(property => property['bk_property_id'])
+                    [this.columnsConfigKey]: properties.map(property => property['bk_property_id'])
                 })
                 this.columnsConfig.show = false
             },
             handleResetColumnsConfig () {
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    'biz_table_columns': []
+                    [this.columnsConfigKey]: []
                 })
             },
             routeToHistory () {
-                this.$router.push('/history/biz?relative=/business')
+                this.$router.push({name: 'businessHistory'})
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

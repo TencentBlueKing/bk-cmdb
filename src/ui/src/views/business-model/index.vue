@@ -22,62 +22,24 @@
                 </a>
             </div>
         </div>
-        <bk-dialog
-            :is-show.sync="addLevel.showDialog" 
-            :close-icon="false" 
-            :has-header="false"
-            :width="600"
-            :padding="0"
+        <the-create-model
+            :is-show.sync="addLevel.showDialog"
+            :is-main-line="true"
+            :title="$t('ModelManagement[\'新建层级\']')"
             @confirm="handleCreateLevel"
-            @cancel="handleCancelCreateLevel">
-            <div class="add-level-wrapper" slot="content">
-                <h2 class="add-level-title">{{$t('ModelManagement["新建层级"]')}}</h2>
-                <div class="add-level-form clearfix">
-                    <a href="javascript:void(0)" class="add-level-icon fl" @click="addLevel.showIconSelector = true">
-                        <i :class="['icon', addLevel.icon]"></i>
-                        <span class="text">{{$t('ModelManagement["点击切换"]')}}</span>
-                    </a>
-                    <div class="add-level-info">
-                        <label class="label">{{$t('ModelManagement["唯一标识"]')}}</label>
-                        <input type="text" class="input cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入英文标识\']')"
-                            name="enName"
-                            v-model.trim="addLevel.enName"
-                            v-validate="'required|modelId'" />
-                        <span class="error">{{errors.first('enName')}}</span>
-                    </div>
-                    <div class="add-level-info" style="margin-top: 10px">
-                        <label class="label">{{$t('ModelManagement["名称"]')}}</label>
-                        <input type="text" class="input cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入名称\']')"
-                            name="name"
-                            v-model.trim="addLevel.name"
-                            v-validate="'required|singlechar'" />
-                        <span class="error">{{errors.first('name')}}</span>
-                    </div>
-                </div>
-                <the-choose-icon class="icon-selector"
-                    v-if="addLevel.showIconSelector"
-                    v-model="addLevel.icon"
-                    @chooseIcon="addLevel.showIconSelector = false">
-                </the-choose-icon>
-                <span class="back"
-                    v-show="addLevel.showIconSelector"
-                    @click="addLevel.showIconSelector = false">
-                    <i class="bk-icon icon-back2"></i>
-                </span>
-            </div>
-        </bk-dialog>
+        ></the-create-model>
     </div>
 </template>
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import theChooseIcon from '@/components/model-manage/_choose-icon'
+    import theCreateModel from '@/components/model-manage/_create-model'
 
     const NODE_MARGIN = 62
 
     export default {
         components: {
-            theChooseIcon
+            theCreateModel
         },
         data () {
             return {
@@ -86,16 +48,12 @@
                 innerModel: ['biz', 'set', 'module', 'host'],
                 addLevel: {
                     showDialog: false,
-                    showIconSelector: false,
-                    icon: 'icon-cc-default',
-                    name: '',
-                    enName: '',
                     parent: null
                 }
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
             authority () {
                 return this.admin ? ['search', 'update', 'delete'] : []
             }
@@ -114,7 +72,7 @@
             ]),
             async getMainLineModel () {
                 try {
-                    const topo = await this.searchMainlineObject()
+                    const topo = await this.searchMainlineObject({})
                     this.topo = topo.map(model => {
                         return {
                             ...model,
@@ -131,30 +89,27 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model
                 this.addLevel.showDialog = true
             },
-            async handleCreateLevel () {
-                const valid = await this.$validator.validateAll()
-                if (!valid) {
-                    return false
-                }
+            async handleCreateLevel (data) {
                 try {
                     await this.createMainlineObject({
-                        params: {
+                        params: this.$injectMetadata({
                             'bk_asst_obj_id': this.addLevel.parent['bk_obj_id'],
                             'bk_classification_id': 'bk_biz_topo',
-                            'bk_obj_icon': this.addLevel.icon,
-                            'bk_obj_id': this.addLevel.enName,
-                            'bk_obj_name': this.addLevel.name,
+                            'bk_obj_icon': data['bk_obj_icon'],
+                            'bk_obj_id': data['bk_obj_id'],
+                            'bk_obj_name': data['bk_obj_name'],
                             'bk_supplier_account': this.supplierAccount,
                             'creator': this.userName
-                        }
+                        })
                     })
                     await this.searchClassificationsObjects({
+                        params: this.$injectMetadata({}),
                         config: {
                             clearCache: true,
                             requestId: 'post_searchClassificationsObjects'
@@ -167,13 +122,8 @@
                 }
             },
             handleCancelCreateLevel () {
-                this.addLevel.name = ''
-                this.addLevel.enName = ''
                 this.addLevel.parent = null
-                this.addLevel.icon = 'icon-cc-default'
                 this.addLevel.showDialog = false
-                this.addLevel.showIconSelector = false
-                this.$validator.reset()
             }
         }
     }
@@ -211,7 +161,7 @@
             background: #fff;
             box-shadow: 0px 2px 4px 0px rgba(147,147,147,0.5);
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 0;
             color: #3c96ff;
             &.is-inner {
                 color: #868b97;
@@ -224,6 +174,7 @@
                 width: 62px;
                 height: 0;
                 border-top: 2px dashed $cmdbBorderColor;
+                pointer-events: none;
             }
             &:after {
                 content: "";
@@ -234,10 +185,14 @@
                 height: 40px;
                 margin: 0 0 0 -1px;
                 border-right: 2px dashed $cmdbBorderColor;
+                pointer-events: none;
             }
             &.is-first:before,
             &.is-last:after {
                 display: none;
+            }
+            .icon {
+                font-size: 24px;
             }
         }
         .node-name {
@@ -277,95 +232,6 @@
                 width: 2px;
                 height: 8px;
             }
-        }
-    }
-    .add-level-wrapper {
-        text-align: left;
-        padding: 23px 13px;
-        position: relative;
-        .add-level-title {
-            font-size: 20px;
-            line-height: 26px;
-        }
-        .add-level-form {
-            margin: 30px 12px;
-        }
-        .add-level-icon {
-            display: block;
-            width: 93px;
-            border-radius: 4px;
-            border: 1px solid $cmdbBorderColor;
-            text-align: center;
-            .icon {
-                display: block;
-                height: 70px;
-                line-height: 70px;
-                font-size: 38px;
-                color: #3c96ff;
-            }
-            .text {
-                display: block;
-                height: 30px;
-                line-height: 30px;
-                font-size: 12px;
-                border-top: 1px solid $cmdbBorderColor;
-                background-color: #ebf4ff;
-                border-radius: 0 0 4px 4px;
-            }
-        }
-        .add-level-info {
-            position: relative;
-            padding: 5px 0;
-            margin: 0 0 0 93px;
-            font-size: 0;
-            .label {
-                display: inline-block;
-                width: 100px;
-                padding: 0 4px;
-                font-size: 16px;
-                line-height: 36px;
-                vertical-align: middle;
-                text-align: right;
-                &:after {
-                    display: inline-block;
-                    content: "*";
-                    color: $cmdbDangerColor;
-                }
-            }
-            .input {
-                width: 330px;
-                font-size: 16px;
-                vertical-align: middle;
-            }
-            .error {
-                position: absolute;
-                top: 40px;
-                left: 100px;
-                color: $cmdbDangerColor;
-                font-size: 12px;
-            }
-        }
-        .icon-selector {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc(100% + 60px);
-            background-color: #fff;
-        }
-        .back {
-            position: absolute;
-            left: 100%;
-            top: 0;
-            width: 44px;
-            height: 44px;
-            padding: 7px;
-            margin: 0 0 0 3px;
-            cursor: pointer;
-            font-size: 18px;
-            text-align: center;
-            background: #2f2f2f;
-            color: #fff;
         }
     }
 </style>

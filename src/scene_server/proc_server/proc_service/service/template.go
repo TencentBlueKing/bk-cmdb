@@ -309,3 +309,43 @@ func (ps *ProcServer) SearchTemplate(req *restful.Request, resp *restful.Respons
 
 	resp.WriteEntity(meta.NewSuccessResp(ret.Data))
 }
+
+func (ps *ProcServer) GetTemplateGroup(req *restful.Request, resp *restful.Response) {
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+
+	appIDStr := req.PathParameter(common.BKAppIDField)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if nil != err {
+		blog.Errorf("get config template group failed! derr: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		return
+	}
+
+	var input meta.QueryInput
+	input.Condition = types.MapStr{common.BKAppIDField: appID}
+	input.Fields = ""
+	input.Start = 0
+	input.Limit = common.BKNoLimit
+	input.Sort = ""
+
+	ret, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(srvData.ctx, common.BKInnerObjIDConfigTemp, req.Request.Header, &input)
+	if err != nil || (err == nil && !ret.Result) {
+		blog.Errorf("query config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	result := make([]string, 0)
+	for _, data := range ret.Data.Info {
+		group, ok := data[common.BKGroupField].(string)
+		if false == ok {
+			continue
+		}
+		if !util.InArray(group, result) {
+			result = append(result, group)
+		}
+
+	}
+
+	resp.WriteEntity(meta.NewSuccessResp(result))
+}

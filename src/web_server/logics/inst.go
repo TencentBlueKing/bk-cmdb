@@ -53,7 +53,7 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 }
 
 //GetInstData get inst data
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta metadata.Metadata) ([]mapstr.MapStr, error) {
 
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
@@ -73,13 +73,15 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		common.BKObjIDField:   objID,
 	}
 	searchCond["page"] = nil
-
+	searchCond[metadata.BKMetadata] = meta
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
 	if nil != err || !result.Result {
+		blog.Errorf("get inst detail error:%v , search condition:%#v", err, searchCond)
 		return nil, errors.New(result.ErrMsg)
 	}
 
 	if 0 == result.Data.Count {
+		blog.Errorf("inst inst count is 0 ")
 		return nil, errors.New("no inst")
 	}
 

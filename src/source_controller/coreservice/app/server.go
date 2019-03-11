@@ -16,9 +16,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -29,8 +30,6 @@ import (
 	coresvr "configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 // CoreServer the core server
@@ -46,6 +45,10 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core, nil, nil)
 }
 
@@ -56,55 +59,29 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_CORESERVICE, svrInfo.IP)
 	coreSvr := new(CoreServer)
-
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
 	webhandler := restful.NewContainer().Add(coreService.WebService())
 	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    webhandler,
-		TLS:        backbone.TLSConfig{},
+
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: coreSvr.onCoreServiceConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
 	}
-
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	engine, err := backbone.NewBackbone(
-		ctx,
-		op.ServConf.RegDiscover,
-		types.CC_MODULE_CORESERVICE,
-		op.ServConf.ExConfig,
-		coreSvr.onCoreServiceConfigUpdate,
-		bonC)
-
-	if nil != err {
-		return fmt.Errorf("new engine failed, error is %s", err.Error())
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	coreSvr.Core = engine
 	coreService.SetConfig(coreSvr.Config, engine, engine.CCErr, engine.Language)
-
+	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
+		return err
+	}
 	select {
 	case <-ctx.Done():
 	}
