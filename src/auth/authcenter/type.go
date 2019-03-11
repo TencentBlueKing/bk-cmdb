@@ -6,6 +6,18 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constanst
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
+)
+
 type AuthConfig struct {
 	// blueking's auth center addresses
 	Address []string
@@ -15,21 +27,33 @@ type AuthConfig struct {
 	AppSecret string
 	// the system id that cmdb used in auth center.
 	SystemID string
+	// enable string
+	Enable bool
 }
 
 type RegisterInfo struct {
-	CreatorType  string `json:"creator_type"`
-	CreatorID    string `json:"creator_id"`
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	CreatorType string           `json:"creator_type"`
+	CreatorID   string           `json:"creator_id"`
+	Resources   []ResourceEntity `json:"resources"`
+}
+
+type ResourceEntity struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ScopeInfo
+	ResourceName string       `json:"resource_name,omitempty"`
+	ResourceID   []ResourceID `json:"resource_id"`
+}
+
+type ResourceID struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   string         `json:"resource_id"`
 }
 
 type ResourceInfo struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	// this filed is not always used, it's decided by the api
 	// that is used.
-	ResourceName string `json:"resource_name,omitempty"`
-	ResourceID   string `json:"resource_id"`
+	ResourceEntity
 }
 
 type ScopeInfo struct {
@@ -38,9 +62,9 @@ type ScopeInfo struct {
 }
 
 type ResourceResult struct {
-	metadata.BaseResp `json:",inline"`
-	RequestID         string       `json:"request_id"`
-	Data              ResultStatus `json:"data"`
+	metadata.BaseResp
+	RequestID string       `json:"request_id"`
+	Data      ResultStatus `json:"data"`
 }
 
 type ResultStatus struct {
@@ -56,13 +80,12 @@ type ResultStatus struct {
 }
 
 type DeregisterInfo struct {
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	Resources []ResourceEntity `json:"resources"`
 }
 
 type UpdateInfo struct {
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	ScopeInfo
+	ResourceInfo
 }
 
 type Principal struct {
@@ -71,25 +94,25 @@ type Principal struct {
 }
 
 type AuthBatch struct {
-	Principal       `json:",inline"`
-	ScopeInfo       `json:",inline"`
+	Principal
+	ScopeInfo
 	ResourceActions []ResourceAction `json:"resources_actions"`
 }
 
 type BatchResult struct {
-	metadata.BaseResp `json:",inline"`
-	RequestID         string        `json:"request_id"`
-	Data              []BatchStatus `json:"data"`
+	metadata.BaseResp
+	RequestID string        `json:"request_id"`
+	Data      []BatchStatus `json:"data"`
 }
 
 type ResourceAction struct {
-	ResourceInfo `json:",inline"`
-	ActionID     ActionID `json:"action_id"`
+	ResourceInfo
+	ActionID ActionID `json:"action_id"`
 }
 
 type BatchStatus struct {
-	ActionID     string `json:"action_id"`
-	ResourceInfo `json:",inline"`
+	ActionID string `json:"action_id"`
+	ResourceInfo
 	// for authorize confirm use, define if a user have
 	// the permission to this request.
 	IsPass bool `json:"is_pass"`
@@ -124,10 +147,10 @@ type System struct {
 }
 
 type ResourceType struct {
-	ResourceTypeID       string   `json:"resource_type_id"`
-	ResourceTypeName     string   `json:"resource_type_name"`
-	ParentResourceTypeID string   `json:"parent_resource_type_id"`
-	Actions              []Action `json:"actions"`
+	ResourceTypeID       ResourceTypeID `json:"resource_type_id"`
+	ResourceTypeName     string         `json:"resource_type_name"`
+	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type_id"`
+	Actions              []Action       `json:"actions"`
 }
 
 type Action struct {

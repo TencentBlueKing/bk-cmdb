@@ -35,49 +35,54 @@ const (
 	cmdbUserID             string = "system"
 )
 
-// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthCenter, error) {
-	client, err := util.NewClient(tls)
-	if err != nil {
-		return nil, err
-	}
-
+// ParseConfigFromKV returns a new config
+func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
-	address, exist := authCfg["auth.address"]
+
+	address, exist := conifgmap[prefix+".address"]
 	if !exist {
-		return nil, errors.New(`missing "address" configuration for auth center`)
+		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
 
 	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
 	if len(cfg.Address) == 0 {
-		return nil, errors.New(`invalid "address" configuration for auth center`)
+		return cfg, errors.New(`invalid "address" configuration for auth center`)
 	}
 
-	cfg.AppSecret, exist = authCfg["auth.appSecret"]
+	cfg.AppSecret, exist = conifgmap[prefix+".appSecret"]
 	if !exist {
-		return nil, errors.New(`missing "appSecret" configuration for auth center`)
+		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
 	}
 
 	if len(cfg.AppSecret) == 0 {
-		return nil, errors.New(`invalid "appSecret" configuration for auth center`)
+		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = authCfg["auth.appCode"]
+	cfg.AppCode, exist = conifgmap[prefix+".appCode"]
 	if !exist {
-		return nil, errors.New(`missing "appCode" configuration for auth center`)
+		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
 
 	if len(cfg.AppCode) == 0 {
-		return nil, errors.New(`invalid "appCode" configuration for auth center`)
+		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
-	cfg.SystemID, exist = authCfg["auth.systemID"]
+	cfg.SystemID, exist = conifgmap[prefix+".systemID"]
 	if !exist {
-		return nil, errors.New(`missing "systemID" configuration for auth center`)
+		return cfg, errors.New(`missing "systemID" configuration for auth center`)
 	}
 
 	if len(cfg.SystemID) == 0 {
-		return nil, errors.New(`invalid "systemID" configuration for auth center`)
+		return cfg, errors.New(`invalid "systemID" configuration for auth center`)
+	}
+	return cfg, nil
+}
+
+// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+	client, err := util.NewClient(tls)
+	if err != nil {
+		return nil, err
 	}
 
 	c := &util.Capability{
@@ -177,57 +182,80 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 
 }
 
-func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
+func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if len(rs) <= 0 {
+		// not resource should be register
+		return nil
 	}
-	scope, err := ac.getScopeInfo(r)
-	if err != nil {
-		return err
-	}
-
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
-	}
-	info := &RegisterInfo{
-		CreatorType:  cmdbUser,
-		CreatorID:    cmdbUserID,
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
+	info := RegisterInfo{}
+	info.CreatorType = cmdbUser
+	info.CreatorID = cmdbUserID
 	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.registerResource(ctx, header, info)
+	for _, r := range rs {
+		if len(r.Basic.Type) == 0 {
+			return errors.New("invalid resource attribute with empty object")
+		}
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return err
+		}
+
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		}
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
+
+		info.Resources = append(info.Resources, entity)
+		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	}
+	return ac.authClient.registerResource(ctx, header, &info)
+
 }
 
-func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
+func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
 	}
-
-	scope, err := ac.getScopeInfo(r)
-	if err != nil {
-		return err
-	}
-
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
-	}
-
-	info := &DeregisterInfo{
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
+	info := DeregisterInfo{}
 	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.deregisterResource(ctx, header, info)
+	for _, r := range rs {
+		if len(r.Basic.Type) == 0 {
+			return errors.New("invalid resource attribute with empty object")
+		}
+
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return err
+		}
+
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		}
+
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
+
+		info.Resources = append(info.Resources, entity)
+
+		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	}
+
+	return ac.authClient.deregisterResource(ctx, header, &info)
 }
 
-func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) error {
+func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
 	if len(r.Basic.Type) == 0 || len(r.Basic.Name) == 0 {
 		return errors.New("invalid resource attribute with empty object or object name")
 	}
@@ -253,40 +281,6 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
-}
-
-func (ac *AuthCenter) QuerySystemInfo(ctx context.Context, systemID string, detail bool) (*SystemDetail, error) {
-	return ac.authClient.QuerySystemInfo(ctx, http.Header{}, systemID, detail)
-
-}
-
-func (ac *AuthCenter) RegistSystem(ctx context.Context, system System) error {
-	return ac.authClient.RegistSystem(ctx, http.Header{}, system)
-}
-
-func (ac *AuthCenter) UpdateSystem(ctx context.Context, system System) error {
-	return ac.authClient.UpdateSystem(ctx, http.Header{}, system)
-
-}
-
-func (ac *AuthCenter) RegistResourceBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.RegistResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpdateResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpsertResourceTypeBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpsertResourceTypeBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) UpdateResourceActionBatch(ctx context.Context, systemID, scopeType string, resources []ResourceType) error {
-	return ac.authClient.UpdateResourceTypeActionBatch(ctx, http.Header{}, systemID, scopeType, resources)
-}
-
-func (ac *AuthCenter) InitSystemBatch(ctx context.Context, detail SystemDetail) error {
-	return ac.authClient.InitSystemBatch(ctx, http.Header{}, detail)
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
