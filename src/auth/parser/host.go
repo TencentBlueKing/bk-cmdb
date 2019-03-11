@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/json"
 	"configcenter/src/framework/core/errors"
 )
 
@@ -35,6 +35,22 @@ var (
 	findWithUserCustomRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[\S][^/]+/[0-9]+/[0-9]+$`)
 )
 
+func (ps *parseStream) parseBusinessID() (int64, error) {
+	type Business struct {
+		BusinessID int64
+	}
+
+	biz := new(Business)
+	if err := json.Unmarshal(ps.RequestCtx.Body, biz); err != nil {
+		return 0, err
+	}
+
+	if biz.BusinessID == 0 {
+		return 0, errors.New("can not parse business id")
+	}
+	return biz.BusinessID, nil
+}
+
 func (ps *parseStream) userCustom() *parseStream {
 	if ps.err != nil {
 		return ps
@@ -42,15 +58,12 @@ func (ps *parseStream) userCustom() *parseStream {
 
 	// create user custom query operation.
 	if ps.hitPattern(createUserCustomPattern, http.MethodPost) {
-		type Business struct {
-			BusinessID int64
-		}
-		biz := new(Business)
-		if err := json.Unmarshal(ps.RequestCtx.Body, biz); err != nil {
-			ps.err = fmt.Errorf("create host user custom query, but get business id failed, err: %v", err)
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
 			return ps
 		}
-
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -204,10 +217,30 @@ const (
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
 	findHostsWithConditionPattern     = "/api/v3/hosts/search"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
+	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
 )
 
 func (ps *parseStream) host() *parseStream {
 	if ps.err != nil {
+		return ps
+	}
+
+	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+					Name:   meta.Host,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -220,7 +253,7 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
-					Name:   "host",
+					Name:   meta.Host,
 				},
 			},
 		}
@@ -231,6 +264,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -246,6 +285,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts from a module to resource pool.
 	if ps.hitPattern(moveHostsFromModuleToResPoolPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -261,6 +306,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts to business module operation.
 	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -276,6 +327,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -291,6 +348,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move host to a business fault module.
 	if ps.hitPattern(moveHostsToBizFaultModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -306,6 +369,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts to a business idle module.
 	if ps.hitPattern(moveHostsToBizIdleModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -321,6 +390,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// move hosts from one business module to another business module.
 	if ps.hitPattern(moveHostsFromOneToAnotherBizModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -338,6 +413,12 @@ func (ps *parseStream) host() *parseStream {
 	// when these hosts only exist in this set or module. otherwise these hosts will only be
 	// removed from this set or module.
 	if ps.hitPattern(cleanHostInSetOrModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -354,6 +435,12 @@ func (ps *parseStream) host() *parseStream {
 	// synchronize hosts directly to a module in a business if this host does not exist.
 	// otherwise, this operation will only change host's attribute.
 	if ps.hitPattern(moveHostToBusinessOrModulePattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -369,6 +456,12 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
