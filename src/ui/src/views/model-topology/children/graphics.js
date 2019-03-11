@@ -1,60 +1,61 @@
 import Vis from 'vis'
 import uuid from 'uuid/v4'
+import {svgToImageUrl} from '@/utils/util'
+export const color = {
+    node: {
+        label: '#868b97'
+    },
+    edge: {
+        label: '#868B97'
+    }
+}
 const OPTIONS = {
     nodes: {
         shape: 'image',
-        widthConstraint: 62
+        widthConstraint: 62,
+        font: {
+            color: color.node.label
+        }
     },
     edges: {
         color: {
             color: '#c3cdd7',
             highlight: '#3c96ff',
-            hover: '#3c96ff'
+            hover: '#3c96ff',
+            opacity: 1
         },
         font: {
+            color: color.edge.label,
             background: '#fff'
         },
         smooth: {
-            type: 'curvedCW',
-            roundness: 0.1
+            type: 'curvedCW'
         },
         arrows: {
-            to: {
-                scaleFactor: 0.6
-            },
-            from: {
-                scaleFactor: 0.6
-            }
+            to: true,
+            from: false
         },
         arrowStrikethrough: false
     },
     interaction: {
-        hover: true
-    },
-    layout: {
-        randomSeed: 522492360
+        hover: true,
+        dragNodes: false
     },
     physics: true
 }
 
 const TOOL_NODE_OPTION = {
-    shape: 'box',
-    shapeProperties: {
-        borderRadius: 12
-    },
-    heightConstraint: 14,
+    shape: 'image',
+    value: 30,
     scaling: {
-        max: 24
+        max: 10
+    },
+    color: {
+        opacity: 0
     },
     physics: false,
-    hidden: true,
+    hidden: false,
     fixed: true,
-    color: {
-        background: 'background: rgba(24, 24, 24, .8)'
-    },
-    font: {
-        color: '#fff'
-    },
     group: 'tool'
 }
 
@@ -74,12 +75,19 @@ const SHADOW_NODE_OPTION = {
 const SHADOW_EDGE_OPTION = {
     dashed: true,
     color: {
-        color: '#ffb23a'
-    }
+        color: '#ffb23a',
+        highlight: '#ffb23a',
+        hover: '#ffb23a'
+    },
+    hoverWidth: 1.5,
+    width: 1.5,
+    smooth: {
+        roundness: 0
+    },
+    dashes: true
 }
 
 const DEFAULT_STATE = {
-    editMode: true,
     stabilizing: false,
     timer: null,
     ready: false,
@@ -93,11 +101,11 @@ const Utils = {
         return data.map(option => Object.assign({}, defaultOption, option))
     }
 }
-
 export default class Graphics {
     constructor (container, {nodes, edges}) {
+        this.editMode = false
         this.state = {...DEFAULT_STATE}
-
+        this.listeners = {}
         this.nodes = new Vis.DataSet()
         this.edges = new Vis.DataSet()
 
@@ -112,34 +120,103 @@ export default class Graphics {
 
         this.shadowNode = null
         this.shadowEdge = null
+        this.tempEdge = null
 
         this.addNodes(nodes)
-        this.addEdges(edges)
+        this.addEdges(this.createAssignedEdges(edges))
         this.addToolNodes([{
             id: this.addEdgeTriggerId,
-            label: '创建关联'
+            icon: 'cc-line',
+            label: 'line'
         }, {
             id: this.deleteNodeTriggerId,
-            label: '删除'
-        }])
-        this.network = new Vis.Network(container, {
-            nodes: this.nodes,
-            edges: this.edges
-        }, OPTIONS)
-        this.network.on('hoverNode', data => this.handleNodeHover(data))
-        this.network.on('blurNode', data => this.handleNodeBlur(data))
-        this.network.on('selectNode', data => this.handleNodeSelect(data))
-        this.network.on('dragStart', data => this.handleDragStart(data))
-        this.network.on('dragEnd', data => this.handleDragEnd(data))
-        this.network.on('startStabilizing', data => this.handleStartStabilizing(data))
-        this.network.on('stabilized', data => this.handleStabilized(data))
-        this.network.stabilize()
-        this.network.fit()
+            icon: 'cc-del',
+            label: 'del'
+        }]).then(() => {
+            this.network = new Vis.Network(container, {
+                nodes: this.nodes,
+                edges: this.edges
+            }, OPTIONS)
+            this.network.on('click', data => this.handleClick(data))
+            this.network.on('hoverNode', data => this.handleNodeHover(data))
+            this.network.on('blurNode', data => this.handleNodeBlur(data))
+            this.network.on('dragStart', data => this.handleDragStart(data))
+            this.network.on('dragEnd', data => this.handleDragEnd(data))
+            this.network.on('startStabilizing', data => this.handleStartStabilizing(data))
+            this.network.on('stabilized', data => this.handleStabilized(data))
+            this.network.stabilize()
+            this.network.fit()
+        })
+    }
+
+    on (type, listener) {
+        if (typeof listener === 'function') {
+            this.listeners[type] = listener
+        }
+    }
+
+    fire (type) {
+        const listener = this.listeners[type]
+        if (listener) {
+            return listener(...[].slice.call(arguments, 1))
+        }
+        return true
+    }
+
+    changeMode (isEditMode) {
+        this.editMode = isEditMode
+        this.network.setOptions({
+            interaction: {
+                dragNodes: isEditMode
+            }
+        })
+    }
+
+    async handleRemoveNode (nodeId) {
+        try {
+            const edges = this.getNodeEdges(nodeId)
+            const result = await this.fire('deleteNode', nodeId, edges)
+            if (result) {
+                this.nodes.remove(nodeId)
+            }
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+    handleClick (data) {
+        if (data.nodes.length) {
+            if (data.nodes.includes(this.addEdgeTriggerId)) { // 设置开始连线状态
+                this.createShadowNode(data)
+                this.state.ready = true
+                this.state.to = this.shadowNode.id
+                this.createShadowEdge(this.shadowNode.id)
+            } else if (this.state.ready) {
+                this.destroyShadowEdge()
+                this.destroyShadowNode()
+                this.createTempEdge(data)
+                this.resetstate()
+            } else if (data.nodes.includes(this.deleteNodeTriggerId)) {
+                this.handleRemoveNode(this.state.from)
+            }
+            this.schedulerUpdateToolNodes({
+                hidden: true,
+                immediate: true
+            })
+        } else if (this.state.ready) {
+            this.destroyShadowEdge()
+            this.destroyShadowNode()
+            this.resetstate()
+        } else if (data.edges.length) {
+            const edgeId = data.edges[0]
+            const edge = this.getEdge(edgeId)
+            this.fire('edgeClick', edge)
+        }
     }
 
     handleNodeHover (data) {
         const nodeId = data.node
-        if (this.state.ready) {
+        if (!this.editMode || this.state.ready) {
             return false
         }
         if (this.state.timer) {
@@ -158,26 +235,6 @@ export default class Graphics {
         })
     }
 
-    handleNodeSelect (data) {
-        if (data.nodes.includes(this.addEdgeTriggerId)) { // 设置开始连线状态
-            this.createShadowNode(data)
-            this.state.ready = true
-            this.state.to = this.shadowNode.id
-            this.createShadowEdge(this.shadowNode.id)
-        } else if (this.state.ready) {
-            this.destroyShadowEdge()
-            this.destroyShadowNode()
-            this.createEdges(data)
-            this.resetstate()
-        } else if (data.nodes.includes(this.deleteNodeTriggerId)) {
-            this.removeNode()
-        }
-        this.schedulerUpdateToolNodes({
-            hidden: true,
-            immediate: true
-        })
-    }
-
     handleDragStart (data) {
         if (!data.nodes.length) { return false }
         if (this.triggerIds.includes(data.nodes[0])) {
@@ -187,7 +244,7 @@ export default class Graphics {
             id: data.nodes[0],
             fixed: false
         })
-        if (this.state.editMode) {
+        if (this.editMode) {
             this.schedulerUpdateToolNodes({
                 hidden: true,
                 immediate: true
@@ -197,10 +254,12 @@ export default class Graphics {
 
     handleDragEnd (data) {
         if (!data.nodes.length) { return false }
-        if (this.triggerIds.includes(data.nodes[0])) { return false }
-        this.bounceOverlapNodes(data)
-        if (this.state.editMode) {
-            this.updateToolNodePosition(data.nodes[0])
+        const [nodeId] = data.nodes
+        if (this.triggerIds.includes(nodeId)) { return false }
+        this.bounceOverlapNodes(nodeId)
+        this.fire('dragNode', nodeId, this.network.getPositions([nodeId])[nodeId])
+        if (this.editMode) {
+            this.updateToolNodePosition(nodeId)
         }
     }
 
@@ -215,6 +274,7 @@ export default class Graphics {
         this.nodes.update(this.overlapNodes.map(id => {
             return {id, fixed: true}
         }))
+        this.fire('stabilized', this.network.getPositions())
     }
 
     handleStartStabilizing (data) {
@@ -225,8 +285,7 @@ export default class Graphics {
         })
     }
 
-    bounceOverlapNodes (data) {
-        const referenceId = data.nodes[0]
+    bounceOverlapNodes (referenceId) {
         const referenceBox = this.network.getBoundingBox(referenceId)
         const overlapNodes = [referenceId]
         this.normalNodeIds.forEach(id => {
@@ -260,10 +319,10 @@ export default class Graphics {
         const nodeR = OPTIONS.nodes.widthConstraint / 2
         const {x, y} = this.network.getPositions([refNodeId])[refNodeId]
         const addEdgeRect = this.getNodeRect(this.addEdgeTriggerId)
-        const addEdgeTriggerX = x + Math.sqrt(2) / 2 * nodeR + addEdgeRect.width / 2
+        const addEdgeTriggerX = x + Math.sqrt(2) / 2 * nodeR + addEdgeRect.width / 2 - nodeR
         const addEdgeTriggerY = y - Math.sqrt(2) / 2 * nodeR
         this.network.moveNode(this.addEdgeTriggerId, addEdgeTriggerX, addEdgeTriggerY)
-        this.network.moveNode(this.deleteNodeTriggerId, addEdgeTriggerX + 30, addEdgeTriggerY + 30)
+        this.network.moveNode(this.deleteNodeTriggerId, addEdgeTriggerX + 10, addEdgeTriggerY + 18)
         this.state.from = refNodeId
         this.schedulerUpdateToolNodes({
             hidden: false,
@@ -307,13 +366,9 @@ export default class Graphics {
 
     shadowNodeFollowMouse (event) {
         if (!this.shadowNode) { return false }
-        const pointer = this.network.body.functions.getPointer({
-            x: event.clientX,
-            y: event.clientY
-        })
         this.nodes.update({
             id: this.shadowNode.id,
-            ...this.network.canvas.DOMtoCanvas(pointer)
+            ...this.convertNodePosition(event)
         })
     }
 
@@ -326,12 +381,100 @@ export default class Graphics {
         return this.nodes.remove(ids)
     }
 
-    addEdges (data) {
-        this.edges.add(data)
+    // vis在拥有相同方向箭头的情况下，连线会重叠，通过重新分配方向及弧度使线不重叠
+    createAssignedEdges (edges) {
+        const groups = {}
+        // 1.将两两节点相同的连线聚类
+        edges.forEach(edge => {
+            const forward = `${edge.from}-${edge.to}`
+            const reverse = `${edge.to}-${edge.from}`
+            const groupId = groups[forward] ? forward : reverse
+            if (groups[groupId]) {
+                groups[groupId].push(edge)
+            } else {
+                groups[groupId] = [edge]
+            }
+        })
+        // 2.平均分配不同方向的连线，并将分配的连线from、to、箭头方向反转
+        const assignedEdges = []
+        Object.keys(groups).forEach(groupId => {
+            const fromId = groups[groupId][0]['from']
+            const edges = this.reassignEdges(groups[groupId])
+            Array.prototype.push.apply(assignedEdges, edges)
+        })
+        return assignedEdges
     }
 
-    addToolNodes (data) {
-        this.addNodes(data, TOOL_NODE_OPTION)
+    // 重新分配连续的起点终点，箭头方向
+    reassignEdges (edges) {
+        if (!edges.length) { return edges }
+        const fromId = edges[0]['from']
+        const forwardEdges = edges.filter(edge => edge.from === fromId)
+        const reverseEdges = edges.filter(edge => edge.to === fromId)
+        const forwardCount = forwardEdges.length
+        const reverseCount = reverseEdges.length
+        const lessCount = Math.abs(forwardCount - reverseCount)
+        if (lessCount > 1) {
+            const MoreEdges = forwardCount > reverseCount ? forwardEdges : reverseEdges
+            const lessEdges = forwardCount > reverseCount ? reverseEdges : forwardEdges
+            const countToAssign = Math.floor(lessCount / 2)
+            const edgesToAssign = MoreEdges.splice(MoreEdges.length - countToAssign)
+            Array.prototype.push.apply(lessEdges, edgesToAssign.map(edge => {
+                return {
+                    ...edge,
+                    from: edge.to,
+                    to: edge.from,
+                    arrows: {
+                        from: true,
+                        to: false
+                    }
+                }
+            }))
+        }
+        this.setEdgeRoundness(forwardEdges, forwardCount, reverseCount)
+        this.setEdgeRoundness(reverseEdges, forwardCount, reverseCount)
+        return [...forwardEdges, ...reverseEdges]
+    }
+
+    setEdgeRoundness (edges, forwardCount, reverseCount) {
+        const averageCount = Math.floor((forwardCount + reverseCount) / 2)
+        const edgesCount = edges.length
+        edges.forEach((edge, index) => {
+            edge.smooth = {
+                roundness: (edgesCount > averageCount) ? (index * 0.1) : ((index + 1) * 0.1)
+            }
+        })
+        return edges
+    }
+
+    addEdges (data) {
+        this.edges.update(data)
+    }
+
+    async addToolNodes (data) {
+        const nodes = await Promise.all(data.map(config => {
+            return new Promise(resolve => {
+                const image = new Image()
+                image.onload = () => {
+                    resolve({
+                        id: config.id,
+                        image: svgToImageUrl(image, {
+                            iconColor: '#fff',
+                            backgroundColor: 'rgba(24, 24, 24, .8)'
+                        })
+                    })
+                }
+                image.onerror = () => {
+                    resolve({
+                        id: config.id,
+                        shape: 'box',
+                        label: config.label
+                    })
+                }
+                image.src = `${window.location.origin}/static/svg/${config.icon}.svg`
+            })
+        }))
+        this.addNodes(nodes, TOOL_NODE_OPTION)
     }
 
     createShadowNode (data) {
@@ -348,12 +491,98 @@ export default class Graphics {
         this.shadowNode = null
     }
 
-    createEdges (data) {
-        this.edges.add({
-            from: this.state.from,
-            to: data.nodes[0]
+    showNode (nodeId, position = {}) {
+        this.nodes.update({
+            id: nodeId,
+            hidden: false,
+            ...position
         })
-        this.network.unselectAll()
+        this.bounceOverlapNodes(nodeId)
+    }
+
+    getNodeEdges (nodeId) {
+        const edgeData = this.edges['_data']
+        const edges = []
+        Object.keys(edgeData).forEach(id => {
+            const edge = edgeData[id]
+            if (edge.from === nodeId || edge.to === nodeId) {
+                edges.push(edge)
+            }
+        })
+        return edges
+    }
+
+    async createTempEdge (data) {
+        try {
+            const toNode = data.nodes[0]
+            const tempEdge = {
+                id: uuid(),
+                from: this.state.from,
+                to: toNode,
+                color: SHADOW_EDGE_OPTION.color
+            }
+            const existEdges = this.getExisitEdges(tempEdge)
+            const reassignEdges = this.reassignEdges([tempEdge, ...existEdges])
+            this.edges.update(reassignEdges)
+            this.network.unselectAll()
+            this.tempEdge = tempEdge
+            const result = await this.fire('addEdge', {
+                id: tempEdge.id,
+                from: this.state.from,
+                to: toNode
+            })
+            if (result) {
+                this.createRealEdge(result)
+            } else {
+                this.destroyTempEdge()
+            }
+        } catch (e) {
+            this.destroyTempEdge()
+        }
+    }
+
+    createRealEdge (data) {
+        if (this.tempEdge) {
+            this.edges.remove(this.tempEdge.id)
+            this.edges.add({
+                ...this.tempEdge,
+                ...data,
+                color: OPTIONS.edges.color
+            })
+            this.tempEdge = null
+        }
+    }
+
+    destroyTempEdge () {
+        const tempEdge = this.tempEdge
+        if (tempEdge) {
+            const existEdges = this.getExisitEdges(tempEdge).filter(edge => edge.id !== tempEdge.id)
+            const reassignEdges = this.reassignEdges(existEdges)
+            this.edges.remove(tempEdge.id)
+            this.edges.update(reassignEdges)
+        }
+    }
+
+    getExisitEdges ({from, to}) {
+        const existEdges = []
+        const edgeData = this.edges['_data']
+        Object.keys(edgeData).find(key => {
+            const edge = edgeData[key]
+            const isSame = edge.from === from && edge.to === to
+            const isReverse = edge.to === from && edge.from === to
+            if (isSame || isReverse) {
+                existEdges.push({...edge})
+            }
+        })
+        return existEdges
+    }
+
+    getEdge (edgeId) {
+        return this.edges['_data'][edgeId]
+    }
+
+    deleteEdge (edgeId) {
+        this.edges.remove(edgeId)
     }
 
     createShadowEdge () {
@@ -371,7 +600,38 @@ export default class Graphics {
         this.shadowEdge = null
     }
 
+    convertNodePosition (event) {
+        const pointer = this.network.body.functions.getPointer({
+            x: event.clientX,
+            y: event.clientY
+        })
+        return this.network.canvas.DOMtoCanvas(pointer)
+    }
+
     resetstate () {
         this.state = {...DEFAULT_STATE}
+    }
+
+    updateOptions (options) {
+        this.network.setOptions(options)
+    }
+
+    updateEdges (config) {
+        this.edges.update(config)
+    }
+
+    resize () {
+        this.network.fit()
+    }
+
+    zoom (type = 'in') {
+        const ratio = type === 'in' ? 1.2 : 0.8
+        this.network.moveTo({
+            scale: this.network.getScale() * ratio,
+            animation: {
+                duration: 100,
+                easingFunction: 'easeInOutCubic'
+            }
+        })
     }
 }
