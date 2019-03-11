@@ -13,25 +13,31 @@
 package topoauth
 
 import (
-	"configcenter/src/common/util"
+	"context"
 	"net/http"
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 type TopoAuth struct {
 	authorizer auth.Authorize
 }
 
-func (ta *TopoAuth) RegisterObject(header http.Header, object metadata.Object) error {
+func (ta *TopoAuth) RegisterObject(ctx context.Context, header http.Header, object metadata.Object) error {
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
-			Type: meta.Model,
-			Name: object.ObjectID,
+			Type:       meta.Model,
+			Name:       object.ObjectID,
+			InstanceID: object.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
+	}
+
+	if err := ta.authorizer.RegisterResource(ctx, resource); err != nil {
+		return err
 	}
 
 	return nil

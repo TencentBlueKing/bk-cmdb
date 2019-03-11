@@ -847,11 +847,6 @@ const (
 	HostOSTypeEnumWindows = "2"
 )
 
-const (
-	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
-	InstAsstIDSplit = ","
-)
-
 // integer const
 const (
 	MaxUint64  = ^uint64(0)
@@ -866,13 +861,9 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-//flag
+// flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
-const (
-	BKHTTPMIMEJSON = "application/json"
-)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -881,7 +872,7 @@ const (
 
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
-	// multiple url separeted by commas
+	// multiple url separated by commas
 	URLFilterWhiteListSuffix = "/healthz"
 
 	URLFilterWhiteListSepareteChar = ","
