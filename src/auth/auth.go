@@ -34,11 +34,11 @@ type Authorizer interface {
 // request id is a identifier for a request, returned by IAM.
 type ResourceHandler interface {
 	// register a resource
-	RegisterResource(ctx context.Context, r ...meta.ResourceAttribute) error
+	RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
 	// deregister a resource
-	DeregisterResource(ctx context.Context, r ...meta.ResourceAttribute) error
+	DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
 	// update a resource's info
-	UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error
+	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
 	// init the authcenter
