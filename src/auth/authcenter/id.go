@@ -18,7 +18,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-func GenerateResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func GenerateResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 	switch attribute.Basic.Type {
 	case meta.Business:
 		return businessResourceID(attribute)
@@ -63,115 +63,115 @@ func GenerateResourceID(attribute *meta.ResourceAttribute) (string, error) {
 	case meta.NetDataCollector:
 		return netDataCollectorResourceID(attribute)
 	default:
-		return "", fmt.Errorf("unsupported resource type: %s", attribute.Type)
+		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
 	}
 }
 
 // generate business related resource id.
-func businessResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func businessResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
 // generate model's resource id, works for app model and model management
 // resource type in auth center.
-func modelResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
 // generate module resource id.
-func modelModuleResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelModuleResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelSetResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelSetResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func mainlineModelResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func mainlineModelResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func mainlineModelTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func mainlineModelTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func mainlineInstanceTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func mainlineInstanceTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelAssociationResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelAssociationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func associationTypeResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func associationTypeResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelInstanceAssociationResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceAssociationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelInstanceResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelInstanceTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelClassificationResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelClassificationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelAttributeGroupResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelAttributeGroupResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelAttributeResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelAttributeResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelUniqueResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelUniqueResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func hostUserCustomResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func hostUserCustomResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func hostFavoriteResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func hostFavoriteResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func processResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func processResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func netDataCollectorResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func netDataCollectorResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
