@@ -18,10 +18,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -39,46 +37,23 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := new(hostsvc.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
+	hostSrv := new(HostServer)
+
+	input := &backbone.BackboneParameter{
+		Regdiscv:     op.ServConf.RegDiscover,
+		ConfigPath:   op.ServConf.ExConfig,
+		ConfigUpdate: hostSrv.onHostConfigUpdate,
+		SrvInfo:      svrInfo,
 	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOST, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	hostSvr := new(HostServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOST,
-		op.ServConf.ExConfig,
-		hostSvr.onHostConfigUpdate,
-		bonC)
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" == hostSvr.Config.Redis.Address {
+		if "" == hostSrv.Config.Redis.Address {
 			time.Sleep(time.Second)
 		} else {
 			configReady = true
@@ -88,18 +63,21 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-	cacheDB, err := redis.NewFromConfig(hostSvr.Config.Redis)
+	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
 	service.Engine = engine
-	service.Config = &hostSvr.Config
+	service.Config = &hostSrv.Config
 	service.CacheDB = cacheDB
-	hostSvr.Core = engine
-	hostSvr.Service = service
+	hostSrv.Core = engine
+	hostSrv.Service = service
 
-	go hostSvr.Service.InitBackground()
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		return err
+	}
+	go hostSrv.Service.InitBackground()
 	select {}
 	return nil
 }
@@ -108,6 +86,10 @@ type HostServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *hostsvc.Service
+}
+
+func (h *HostServer) WebService() *restful.WebService {
+	return h.Service.WebService()
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {

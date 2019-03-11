@@ -17,9 +17,13 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
@@ -30,36 +34,46 @@ var _ dal.DB = (*Mongo)(nil)
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       *rpc.Client
+	rpc       rpc.Client
 	getServer types.GetServerFunc
 	parent    *Mongo
+
+	enableTransaction bool
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc) (dal.DB, error) {
-	servers, err := getServer()
-	if err != nil {
-		return nil, err
+func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
+	var enableTransaction bool
+	if config.Transaction == "enable" {
+		enableTransaction = true
 	}
 
-	rpccli, err := rpc.DialHTTPPath("tcp", servers[0], "/txn/v3/rpc")
+	if !enableTransaction {
+		blog.Warnf("not enable transaction")
+		return &Mongo{
+			enableTransaction: enableTransaction,
+		}, nil
+	}
+
+	pool, err := rpc.NewClientPool("tcp", getServer, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc:       rpccli,
-		getServer: getServer,
+		rpc:               pool,
+		enableTransaction: enableTransaction,
 	}, nil
 }
 
 // New returns new DB
-func New(uri string) (dal.DB, error) {
+func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
 	}
 	return &Mongo{
-		rpc: rpccli,
+		rpc:               rpccli,
+		enableTransaction: enableTransaction,
 	}, nil
 }
 
@@ -76,22 +90,34 @@ func (c *Mongo) Ping() error {
 // Clone create a new DB instance
 func (c *Mongo) Clone() dal.DB {
 	nc := Mongo{
-		TxnID:     c.TxnID,
-		RequestID: c.RequestID,
-		rpc:       c.rpc,
-		parent:    c,
+		TxnID:             c.TxnID,
+		RequestID:         c.RequestID,
+		rpc:               c.rpc,
+		parent:            c,
+		enableTransaction: c.enableTransaction,
 	}
 	return &nc
 }
 
 // IsDuplicatedError check the error
-func (c *Mongo) IsDuplicatedError(error) bool {
+func (c *Mongo) IsDuplicatedError(err error) bool {
+	if err == dal.ErrDuplicated {
+		return true
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "The existing index") {
+			return true
+		}
+		if strings.Contains(err.Error(), "There's already an index with name") {
+			return true
+		}
+	}
 	return false
 }
 
 // IsNotFoundError check the error
-func (c *Mongo) IsNotFoundError(error) bool {
-	return false
+func (c *Mongo) IsNotFoundError(err error) bool {
+	return err == dal.ErrDocumentNotFound
 }
 
 // Table collection operation
@@ -114,7 +140,9 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	msg.OPCode = types.OPFindAndModifyCode
 	msg.Collection = common.BKTableNameIDgenerator
 	if err := msg.DOC.Encode(types.Document{
-		"$inc": types.Document{"SequenceID": 1},
+		"$inc":         types.Document{"SequenceID": 1},
+		"$setOnInsert": types.Document{"create_time": time.Now()},
+		"$set":         types.Document{"last_time": time.Now()},
 	}); err != nil {
 		return 0, err
 	}

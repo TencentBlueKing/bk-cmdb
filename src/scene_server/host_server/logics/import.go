@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
@@ -29,7 +28,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/framework/core/errors"
 	hutil "configcenter/src/scene_server/host_server/util"
-	"configcenter/src/scene_server/validator"
 )
 
 func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
@@ -49,7 +47,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 
 	var errMsg, updateErrMsg, succMsg []string
 	logConents := make([]auditoplog.AuditLogExt, 0)
-	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID)
+	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -258,15 +256,6 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	delete(host, "import_from")
 	delete(host, common.CreateTimeField)
 
-	filterFields := []string{common.CreateTimeField}
-
-	valid := validator.NewValidMapWithKeyFields(util.GetOwnerID(h.pheader), common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
-	err := valid.ValidMap(host, common.ValidUpdate, hostID)
-	if nil != err {
-		blog.Errorf("host valid error %v %v", index, err.Error())
-		return fmt.Errorf(h.ccLang.Languagef("import_row_int_error_str", index, err.Error()))
-	}
-
 	input := &metadata.UpdateOption{} //更新主机数据
 	input.Condition = map[string]interface{}{common.BKHostIDField: hostID}
 	input.Data = host
@@ -276,9 +265,9 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, err.Error()))
 	}
-	if uResult.Result {
+	if !uResult.Result {
 		ip, _ := host[common.BKHostInnerIPField].(string)
-		blog.Errorf("updateHostInstance http response error,  err code:$d, err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, input, h.rid)
+		blog.Errorf("updateHostInstance http response error,  err code:%d, err msg:%s,input:%+v,rid:%s", uResult.Code, uResult.ErrMsg, input, h.rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, uResult.ErrMsg))
 	}
 	return nil
@@ -291,15 +280,11 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		host[common.BKCloudIDField] = cloudID
 	}
 
-	filterFields := []string{common.CreateTimeField}
-	valid := validator.NewValidMapWithKeyFields(util.GetOwnerID(h.pheader), common.BKInnerObjIDHost, filterFields, h.pheader, h.Engine)
-	err := valid.ValidMap(host, common.ValidCreate, 0)
-
-	if nil != err {
-		return 0, fmt.Errorf(h.ccLang.Languagef("import_row_int_error_str", index, err.Error()))
+	input := &metadata.CreateModelInstance{
+		Data: host,
 	}
-	host[common.CreateTimeField] = time.Now().UTC()
-	result, err := h.CoreAPI.HostController().Host().AddHost(h.ctx, h.pheader, host)
+
+	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input) //(h.ctx, h.pheader, host)
 	if err != nil {
 		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
@@ -309,17 +294,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, result.ErrMsg))
 	}
 
-	hID, ok := result.Data.(map[string]interface{})[common.BKHostIDField]
-	if !ok {
-		blog.Errorf("addHostInstance not foud hostID,host:%+v,input:%+v,rid:%s", result.Data, host, h.rid)
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip))
-	}
-
-	hostID, err := util.GetInt64ByInterface(hID)
-	if err != nil {
-		blog.Errorf("add host by ip:%s reply hostID not integer,host:%+v,input:%+v,rid:%s", ip, result.Data, host, h.rid)
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
-	}
+	hostID := int64(result.Data.Created.ID)
 
 	opt := &metadata.ModuleHostConfigParams{
 		ApplicationID: appID,

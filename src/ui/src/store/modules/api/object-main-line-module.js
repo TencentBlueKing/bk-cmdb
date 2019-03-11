@@ -28,7 +28,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createMainlineObject ({ commit, state, dispatch }, { params }) {
-        return $http.post(`topo/model/mainline`, params)
+        return $http.post(`create/topomodelmainline`, params)
     },
 
     /**
@@ -41,7 +41,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteMainlineObject ({ commit, state, dispatch, rootGetters }, { bkObjId, config }) {
-        return $http.delete(`topo/model/mainline/owners/${rootGetters.supplierAccount}/objectids/${bkObjId}`, config)
+        return $http.delete(`delete/topomodelmainline/object/${bkObjId}`, config)
     },
 
     /**
@@ -51,8 +51,8 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchMainlineObject ({ commit, state, dispatch, rootGetters }, config) {
-        return $http.get(`topo/model/${rootGetters.supplierAccount}`, config)
+    searchMainlineObject ({ commit, state, dispatch, rootGetters }, {params, config}) {
+        return $http.post(`find/topomodelmainline`, params, config)
     },
 
     /**
@@ -64,7 +64,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     getInstTopo ({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-        return $http.get(`topo/inst/${rootGetters.supplierAccount}/${bizId}?level=-1`, config)
+        return $http.post(`find/topoinst/biz/${bizId}?level=-1`, config)
     },
 
     /**
@@ -79,7 +79,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInstTopo ({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
-        return $http.get(`topo/inst/child/${bkSupplierAccount}/${bkObjId}/${bkBizId}/${bkInstId}`)
+        return $http.get(`topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`)
     },
 
     /**

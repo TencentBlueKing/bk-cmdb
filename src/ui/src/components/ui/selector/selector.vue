@@ -9,7 +9,8 @@
         :has-children="hasChildren"
         :setting-key="settingKey"
         :search-key="displayKey"
-        :display-key="displayKey">
+        :display-key="displayKey"
+        :empty-text="emptyText">
     </bk-selector>
 </template>
 
@@ -53,6 +54,10 @@
             hasChildren: {
                 type: Boolean,
                 default: false
+            },
+            emptyText: {
+                type: String,
+                default: ''
             }
         },
         data () {

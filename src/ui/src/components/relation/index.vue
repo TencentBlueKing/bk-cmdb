@@ -99,7 +99,11 @@
                     let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
                         this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
                         this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'}),
-                        this.$store.dispatch('objectMainLineModule/searchMainlineObject', {requestId: 'getMainLineModels'})
+                        this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
+                            config: {
+                                requestId: 'getMainLineModels'
+                            }
+                        })
                     ])
                     mainLineModels = mainLineModels.filter(model => !['biz', 'host'].includes(model['bk_obj_id']))
                     dataAsSource = this.getAvailableRelation(dataAsSource, mainLineModels)
@@ -118,7 +122,7 @@
             },
             getObjectAssociation (condition, config) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: {condition},
+                    params: this.$injectMetadata({condition}),
                     config
                 })
             },

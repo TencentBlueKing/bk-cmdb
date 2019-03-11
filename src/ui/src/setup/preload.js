@@ -12,6 +12,7 @@ export function _preloadPrivilege (app) {
 
 export function _preloadClassifications (app) {
     return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
+        params: app.$injectMetadata(),
         config: {
             ...preloadConfig,
             requestId: 'post_searchClassificationsObjects'
@@ -59,11 +60,11 @@ export function _preloadUserList (app) {
     })
 }
 
-export default function (app) {
+export default async function (app) {
+    await _preloadBusiness(app)
     return Promise.all([
         _preloadPrivilege(app),
         _preloadClassifications(app),
-        _preloadBusiness(app),
         _preloadUserCustom(app),
         _preloadUserList(app)
     ])

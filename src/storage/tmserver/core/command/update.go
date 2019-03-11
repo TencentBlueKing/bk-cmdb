@@ -13,6 +13,7 @@
 package command
 
 import (
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
@@ -37,10 +38,12 @@ func (d *update) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OP
 
 	msg := types.OPUpdateOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
 	}
+	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
 
 	var targetCol mongodb.CollectionInterface
 	if nil != ctx.Session {

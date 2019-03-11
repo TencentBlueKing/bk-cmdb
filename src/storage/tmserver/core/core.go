@@ -15,6 +15,7 @@ package core
 import (
 	"fmt"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core/transaction"
@@ -24,6 +25,8 @@ import (
 // Core core operation methods
 type Core interface {
 	ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error)
+	Subscribe(chan *types.Transaction)
+	UnSubscribe(chan<- *types.Transaction)
 }
 
 type core struct {
@@ -75,6 +78,17 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	}
 
 	reply, err := cmd.Execute(ctx, input)
+	if err != nil {
+		blog.Errorf("[MONGO OPERATION] failed: %v, cmd: %s", err, input)
+	}
 	return reply, err
 
+}
+
+func (c *core) Subscribe(ch chan *types.Transaction) {
+	c.txn.Subscribe(ch)
+}
+
+func (c *core) UnSubscribe(ch chan<- *types.Transaction) {
+	c.txn.UnSubscribe(ch)
 }

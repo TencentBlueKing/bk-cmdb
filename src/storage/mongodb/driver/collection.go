@@ -14,9 +14,11 @@ package driver
 
 import (
 	"context"
+	"errors"
+	"reflect"
 
-	"configcenter/src/common/mapstr"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/aggregateopt"
 	"configcenter/src/storage/mongodb/options/deleteopt"
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/mongodb/options/insertopt"
@@ -167,7 +169,7 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	if nil != c.innerSession {
 		var innerCnt uint64
 		err := mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
-			cnt, err := c.innerCollection.Count(ctx, filter)
+			cnt, err := c.innerCollection.CountDocuments(mctx, filter)
 			innerCnt = uint64(cnt)
 			return err
 		})
@@ -175,7 +177,7 @@ func (c *collection) Count(ctx context.Context, filter interface{}) (uint64, err
 	}
 
 	// no session
-	cnt, err := c.innerCollection.Count(ctx, filter)
+	cnt, err := c.innerCollection.CountDocuments(ctx, filter)
 	return uint64(cnt), err
 }
 
@@ -223,7 +225,7 @@ func (c *collection) DeleteMany(ctx context.Context, filter interface{}, opts *d
 	// in a session
 	if nil != c.innerSession {
 		err := mongo.WithSession(ctx, c.innerSession, func(mtcx mongo.SessionContext) error {
-			delResult, err := c.innerCollection.DeleteMany(ctx, filter, deleteOption)
+			delResult, err := c.innerCollection.DeleteMany(mtcx, filter, deleteOption)
 			if nil != err {
 				return err
 			}
@@ -249,34 +251,17 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		findOptions = opts.ConvertToMongoOptions()
 	}
 
-	datas := []mapstr.MapStr{}
-
 	// in a session
 	if nil != c.innerSession {
-
 		return mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
 
 			cursor, err := c.innerCollection.Find(mctx, filter, findOptions)
-
 			if nil != err {
 				return err
 			}
 
 			defer cursor.Close(mctx)
-			datas := []mapstr.MapStr{}
-			for cursor.Next(mctx) {
-				result := mapstr.New()
-				if err := cursor.Decode(&result); nil != err {
-					return err
-				}
-				datas = append(datas, result)
-			}
-
-			if err := cursor.Err(); err != nil {
-				return err
-			}
-
-			return mapstr.ConvertArrayMapStrInto(datas, output)
+			return decodeCusorIntoSlice(mctx, cursor, output)
 		})
 	}
 
@@ -286,21 +271,30 @@ func (c *collection) Find(ctx context.Context, filter interface{}, opts *findopt
 		return err
 	}
 	defer cursor.Close(ctx)
+	return decodeCusorIntoSlice(ctx, cursor, output)
+}
 
-	for cursor.Next(ctx) {
-		result := mapstr.New()
-		if err := cursor.Decode(&result); nil != err {
-			return err
-		}
-		datas = append(datas, result)
+func decodeCusorIntoSlice(ctx context.Context, cursor *mongo.Cursor, result interface{}) error {
+	resultv := reflect.ValueOf(result)
+	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
+		return errors.New("result argument must be a slice address")
 	}
 
+	elemt := resultv.Elem().Type().Elem()
+	slice := reflect.MakeSlice(resultv.Elem().Type(), 0, 10)
+	for cursor.Next(ctx) {
+		elemp := reflect.New(elemt)
+		if err := cursor.Decode(elemp.Interface()); nil != err {
+			return err
+		}
+		slice = reflect.Append(slice, elemp.Elem())
+	}
 	if err := cursor.Err(); err != nil {
 		return err
 	}
 
-	// package result
-	return mapstr.ConvertArrayMapStrInto(datas, output)
+	resultv.Elem().Set(slice)
+	return nil
 }
 
 func (c *collection) FindOne(ctx context.Context, filter interface{}, opts *findopt.One, output interface{}) error {
@@ -337,6 +331,38 @@ func (c *collection) FindOneAndModify(ctx context.Context, filter interface{}, u
 
 	// no session
 	return c.innerCollection.FindOneAndUpdate(ctx, filter, update, findOneAndModify).Decode(output)
+}
+
+func (c *collection) AggregateOne(ctx context.Context, pipeline interface{}, opts *aggregateopt.One, output interface{}) error {
+	aggregateOptions := &options.AggregateOptions{}
+	if nil != opts {
+		aggregateOptions = opts.ConvertToMongoOptions()
+	}
+
+	mongo.WithSession(ctx, c.innerSession, func(mctx mongo.SessionContext) error {
+		cursor, err := c.innerCollection.Aggregate(mctx, pipeline, aggregateOptions)
+		if nil != err {
+			return err
+		}
+
+		defer cursor.Close(mctx)
+		for cursor.Next(ctx) {
+			return cursor.Decode(output)
+		}
+		return cursor.Err()
+	})
+
+	// no session
+	cursor, err := c.innerCollection.Aggregate(ctx, pipeline, aggregateOptions)
+	if nil != err {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		return cursor.Decode(output)
+	}
+	return cursor.Err()
 }
 
 func (c *collection) InsertOne(ctx context.Context, document interface{}, opts *insertopt.One) error {
