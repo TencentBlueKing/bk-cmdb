@@ -38,7 +38,6 @@ type HttpClient interface {
 type Service struct {
 	Engine *backbone.Engine
 	Client HttpClient
-	//Disc   discovery.DiscoveryInterface
 }
 
 const (
