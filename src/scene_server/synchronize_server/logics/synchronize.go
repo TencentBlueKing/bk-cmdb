@@ -66,10 +66,14 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
-		lgc.Synchronize(ctx, config)
 		if config.Trigger.IsTiming() {
 			timeInterval = time.Duration(nextDayTrigger) * time.Minute
 		}
+		if !lgc.Engine.ServiceManageInterface.IsMaster() {
+			blog.Infof(" not master ")
+			continue
+		}
+		lgc.Synchronize(ctx, config)
 
 	}
 
