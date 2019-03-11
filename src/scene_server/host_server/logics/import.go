@@ -39,7 +39,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		return nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
 	}
 
-	hostMap, err := lgc.getAddHostIDMap(ctx, hostInfos)
+	hostMap, err := lgc.GetAddHostIDMap(ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s", err.Error())
 		return nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
@@ -183,7 +183,7 @@ func (lgc *Logics) getHostIPCloudKey(ip, cloudID interface{}) string {
 	return fmt.Sprintf("%v-%v", ip, cloudID)
 }
 
-func (lgc *Logics) getAddHostIDMap(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]map[string]interface{}, error) {
+func (lgc *Logics) GetAddHostIDMap(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]map[string]interface{}, error) {
 	var ipArr []string
 	for _, host := range hostInfos {
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
