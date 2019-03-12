@@ -25,3 +25,81 @@
 ## TODO
 - 查询模型拓扑支持 `withDetail` 选项
 
+## 输出demo
+
+- 查询模型拓扑
+
+```json
+{
+  "result": true,
+  "bk_error_code": 0,
+  "bk_error_msg": "success",
+  "data": {
+    "Children": [
+      {
+        "Children": [
+          {
+            "Children": [
+              {
+                "Children": [
+                  {
+                    "Children": [],
+                    "ObjectID": "host"
+                  }
+                ],
+                "ObjectID": "module"
+              }
+            ],
+            "ObjectID": "set"
+          }
+        ],
+        "ObjectID": "mainlinelevel1"
+      }
+    ],
+    "ObjectID": "biz"
+  }
+}
+```
+
+- 业务实例拓扑
+
+```json
+{
+  "result": true,
+  "bk_error_code": 0,
+  "bk_error_msg": "success",
+  "data": {
+    "Children": [
+      {
+        "Children": [
+          {
+            "Children": [
+              {
+                "Children": [],
+                "ObjectID": "module",
+                "InstanceID": 1,
+                "Detail": {}
+              },
+              {
+                "Children": [],
+                "ObjectID": "module",
+                "InstanceID": 2,
+                "Detail": {}
+              }
+            ],
+            "ObjectID": "set",
+            "InstanceID": 1,
+            "Detail": {}
+          }
+        ],
+        "ObjectID": "mainlinelevel1",
+        "InstanceID": 1,
+        "Detail": {}
+      }
+    ],
+    "ObjectID": "biz",
+    "InstanceID": 1,
+    "Detail": {}
+  }
+}
+```

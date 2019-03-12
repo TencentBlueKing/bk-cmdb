@@ -130,9 +130,10 @@ func (tn *TopoModelNode) LeftestObjectIDList() []string {
 	node := tn
 	for {
 		objectIDs = append(objectIDs, node.ObjectID)
-		if len(node.Children) > 0 {
-			node = node.Children[0]
+		if len(node.Children) == 0 {
+			break
 		}
+		node = node.Children[0]
 	}
 	return objectIDs
 }
@@ -141,14 +142,14 @@ type TopoInstanceNode struct {
 	Children   []*TopoInstanceNode
 	ObjectID   string
 	InstanceID int64
-	Detail     interface{}
+	Detail     map[string]interface{}
 }
 
 type TopoInstance struct {
 	ObjectID         string
 	InstanceID       int64
 	ParentInstanceID int64
-	Detail           interface{}
+	Detail           map[string]interface{}
 }
 
 // Key generate a unique key for instance(as instances's of different object type maybe conflict)
