@@ -46,12 +46,11 @@ const OPTIONS = {
 
 const TOOL_NODE_OPTION = {
     shape: 'image',
-    value: 30,
+    value: 20,
+    widthConstraint: 20,
+    heightConstraint: 20,
     scaling: {
-        max: 10
-    },
-    color: {
-        opacity: 0
+        max: 20
     },
     physics: false,
     hidden: false,
@@ -139,7 +138,9 @@ export default class Graphics {
             }, OPTIONS)
             this.network.on('click', data => this.handleClick(data))
             this.network.on('hoverNode', data => this.handleNodeHover(data))
+            this.network.on('hoverEdge', data => this.handleEdgeHover(data))
             this.network.on('blurNode', data => this.handleNodeBlur(data))
+            this.network.on('blurEdge', data => this.handleEdgeBlur(data))
             this.network.on('dragStart', data => this.handleDragStart(data))
             this.network.on('dragEnd', data => this.handleDragEnd(data))
             this.network.on('startStabilizing', data => this.handleStartStabilizing(data))
@@ -195,7 +196,7 @@ export default class Graphics {
                 this.destroyShadowEdge()
                 this.destroyShadowNode()
                 this.createTempEdge(data)
-                this.resetstate()
+                this.resetState()
             } else if (data.nodes.includes(this.deleteNodeTriggerId)) {
                 this.handleRemoveNode(this.state.from)
             }
@@ -206,17 +207,25 @@ export default class Graphics {
         } else if (this.state.ready) {
             this.destroyShadowEdge()
             this.destroyShadowNode()
-            this.resetstate()
+            this.resetState()
         } else if (data.edges.length) {
             const edgeId = data.edges[0]
             const edge = this.getEdge(edgeId)
             this.fire('edgeClick', edge)
+            this.setCursor('default')
         }
     }
 
     handleNodeHover (data) {
         const nodeId = data.node
-        if (!this.editMode || this.state.ready) {
+        if (!this.editMode) {
+            this.network.unselectAll()
+            this.network.selectNodes([data.node])
+            return false
+        } else {
+            this.setCursor('pointer')
+        }
+        if (this.state.ready) {
             return false
         }
         if (this.state.timer) {
@@ -229,10 +238,20 @@ export default class Graphics {
     }
 
     handleNodeBlur (data) {
+        this.setCursor('default')
+        this.network.unselectAll()
         this.schedulerUpdateToolNodes({
             hidden: true,
             immediate: false
         })
+    }
+
+    handleEdgeHover (data) {
+        this.setCursor('pointer')
+    }
+
+    handleEdgeBlur (data) {
+        this.setCursor('default')
     }
 
     handleDragStart (data) {
@@ -317,12 +336,13 @@ export default class Graphics {
     updateToolNodePosition (refNodeId) {
         if (this.state.stabilizing) { return false }
         const nodeR = OPTIONS.nodes.widthConstraint / 2
+        const toolR = TOOL_NODE_OPTION.widthConstraint / 2
         const {x, y} = this.network.getPositions([refNodeId])[refNodeId]
-        const addEdgeRect = this.getNodeRect(this.addEdgeTriggerId)
-        const addEdgeTriggerX = x + Math.sqrt(2) / 2 * nodeR + addEdgeRect.width / 2 - nodeR
-        const addEdgeTriggerY = y - Math.sqrt(2) / 2 * nodeR
+        const deltaXY = Math.sqrt(2) / 2 * (nodeR + toolR)
+        const addEdgeTriggerX = x + deltaXY
+        const addEdgeTriggerY = y - deltaXY
         this.network.moveNode(this.addEdgeTriggerId, addEdgeTriggerX, addEdgeTriggerY)
-        this.network.moveNode(this.deleteNodeTriggerId, addEdgeTriggerX + 10, addEdgeTriggerY + 18)
+        this.network.moveNode(this.deleteNodeTriggerId, addEdgeTriggerX + toolR, y)
         this.state.from = refNodeId
         this.schedulerUpdateToolNodes({
             hidden: false,
@@ -420,13 +440,14 @@ export default class Graphics {
             const countToAssign = Math.floor(lessCount / 2)
             const edgesToAssign = MoreEdges.splice(MoreEdges.length - countToAssign)
             Array.prototype.push.apply(lessEdges, edgesToAssign.map(edge => {
+                const arrows = edge.arrows || {from: false, to: true}
                 return {
                     ...edge,
                     from: edge.to,
                     to: edge.from,
                     arrows: {
-                        from: true,
-                        to: false
+                        from: arrows.to,
+                        to: arrows.from
                     }
                 }
             }))
@@ -532,7 +553,7 @@ export default class Graphics {
                 to: toNode
             })
             if (result) {
-                this.createRealEdge(result)
+                this.createRealEdge(result, existEdges)
             } else {
                 this.destroyTempEdge()
             }
@@ -541,14 +562,15 @@ export default class Graphics {
         }
     }
 
-    createRealEdge (data) {
+    createRealEdge (data, existEdges) {
         if (this.tempEdge) {
             this.edges.remove(this.tempEdge.id)
-            this.edges.add({
+            const reassignEdges = this.reassignEdges([{
                 ...this.tempEdge,
                 ...data,
                 color: OPTIONS.edges.color
-            })
+            }, ...existEdges])
+            this.edges.update(reassignEdges)
             this.tempEdge = null
         }
     }
@@ -608,7 +630,7 @@ export default class Graphics {
         return this.network.canvas.DOMtoCanvas(pointer)
     }
 
-    resetstate () {
+    resetState () {
         this.state = {...DEFAULT_STATE}
     }
 
@@ -633,5 +655,9 @@ export default class Graphics {
                 easingFunction: 'easeInOutCubic'
             }
         })
+    }
+
+    setCursor (cursor) {
+        document.body.style.cursor = cursor
     }
 }
