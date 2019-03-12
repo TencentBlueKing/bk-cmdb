@@ -16,10 +16,10 @@
                                 :title="getTitle(inst, property)">
                                 <span class="property-name fl">{{property['bk_property_name']}}</span>
                                 <span class="property-value clearfix fl" v-if="property.unit">
-                                    <span class="property-value-text fl">{{inst[property['bk_property_id']] || '--'}}</span>
+                                    <span class="property-value-text fl">{{getValue(property)}}</span>
                                     <span class="property-value-unit fl">{{property.unit}}</span>
                                 </span>
-                                <span class="property-value fl" v-else>{{inst[property['bk_property_id']] || '--'}}</span>
+                                <span class="property-value fl" v-else>{{getValue(property)}}</span>
                             </li>
                         </ul>
                     </cmdb-collapse>
@@ -119,6 +119,10 @@
             },
             getTitle (inst, property) {
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
+            },
+            getValue (property) {
+                const value = this.inst[property['bk_property_id']]
+                return String(value).length ? value : '--'
             },
             handleEdit () {
                 this.$emit('on-edit', this.inst)
