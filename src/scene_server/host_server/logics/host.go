@@ -73,7 +73,7 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 	hostInfo := result.Data
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
-		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, err:%s, inst:%+v  input:%+v, rid:%s", err.Error(), hostInfo, hostID, lgc.rid)
+		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, lgc.rid)
 		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", err.Error())
 
 	}
