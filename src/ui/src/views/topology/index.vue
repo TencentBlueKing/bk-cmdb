@@ -479,19 +479,21 @@
                     condition
                 }
                 const quickSearch = this.table.quickSearch
-                if (quickSearch.property && quickSearch.value !== null) {
+                if (quickSearch.property && quickSearch.value !== null && String(quickSearch.value).length) {
                     const quickSearchType = quickSearch.property['bk_property_type']
-                    if (['singleasst', 'multiasst'].includes(quickSearchType)) {
-                        condition.push({
-                            'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
-                            condition: [{
-                                field: 'bk_inst_name',
-                                operator: quickSearch.operator,
-                                value: quickSearch.value
-                            }]
+                    const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
+                    if (['date', 'time'].includes(quickSearchType)) {
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$gte',
+                            value: quickSearch.value[0]
+                        })
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$lte',
+                            value: quickSearch.value[1]
                         })
                     } else {
-                        const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
                         hostCondition.condition.push({
                             field: quickSearch.property['bk_property_id'],
                             operator: quickSearch.operator,
