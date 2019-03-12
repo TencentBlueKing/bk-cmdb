@@ -196,7 +196,7 @@ func buildExcelPrimaryStr(property PropertyPrimaryVal) string {
 //BuildExcelTemplate  return httpcode, error
 func (lgc *Logics) BuildExcelTemplate(objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) error {
 	filterFields := getFilterFields(objID)
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, header, meta)
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, "", header, meta)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return err
