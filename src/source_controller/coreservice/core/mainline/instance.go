@@ -15,6 +15,7 @@ package mainline
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -68,8 +69,14 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	blog.V(5).Infof("SearchMainlineInstanceTopo moduleInstances: %+v", moduleInstances)
 
 	// other mainline instance list of target business
-	mongoCondition = mongo.NewCondition()
-	mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bkBizID})
+	query := condition.CreateCondition()
+	query.Field(common.BKObjIDField).In(objectIDs)
+	query.Field(common.BKAppIDField).Eq(bkBizID)
+	mongoCondition, err = mongo.NewConditionFromMapStr(query.ToMapStr())
+	if err != nil {
+		blog.Errorf("new mongo condition failed, %+v", err)
+		return nil, err
+	}
 
 	commonInstances := make([]mapstr.MapStr, 0)
 	err = m.dbProxy.Table(common.BKTableNameBaseInst).Find(mongoCondition.ToMapStr()).All(ctx, &commonInstances)
@@ -131,6 +138,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		allTopoInstances = append(allTopoInstances, topoInstance)
 		instanceMap[topoInstance.Key()] = topoInstance
 	}
+
 	for _, instance := range moduleInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKModuleIDField])
 		if err != nil {
@@ -154,6 +162,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		allTopoInstances = append(allTopoInstances, topoInstance)
 		instanceMap[topoInstance.Key()] = topoInstance
 	}
+
 	for _, instance := range commonInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
 		if err != nil {
@@ -255,6 +264,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		if topoInstance.ParentInstanceID == 0 {
 			continue
 		}
+
 		parentObjectID := objectParentMap[topoInstance.ObjectID]
 		parentKey := fmt.Sprintf("%s:%d", parentObjectID, topoInstance.ParentInstanceID)
 		if _, exist := topoInstanceNodeMap[parentKey]; exist == false {
