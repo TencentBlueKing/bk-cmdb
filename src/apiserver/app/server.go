@@ -13,151 +13,109 @@
 package app
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/common/blog"
-	"configcenter/src/framework/core/errors"
-	"context"
-	"fmt"
-	"os"
-	"time"
+    "context"
+    "fmt"
+    "os"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
-	"configcenter/src/apiserver/app/options"
-	"configcenter/src/apiserver/service"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/types"
-	"configcenter/src/common/version"
-
-	cc "configcenter/src/common/backbone/configcenter"
-	"github.com/emicklei/go-restful"
+    "configcenter/src/common/version"
+    "configcenter/src/apimachinery/util"
+    "configcenter/src/apiserver/app/options"
+    "configcenter/src/apiserver/service"
+    "configcenter/src/auth"
+    "configcenter/src/auth/authcenter"
+    "configcenter/src/common/backbone"
+    cc "configcenter/src/common/backbone/configcenter"
+    "configcenter/src/common/types"
+    "github.com/emicklei/go-restful"
 )
 
 // Run main loop function
 func Run(ctx context.Context, op *options.ServerOption) error {
-	svrInfo, err := newServerInfo(op)
-	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
-	}
+    svrInfo, err := newServerInfo(op)
+    if err != nil {
+        return fmt.Errorf("wrap server info failed, err: %v", err)
+    }
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
+    client, err := util.NewClient(&util.TLSClientConfig{})
+    if err != nil {
+        return fmt.Errorf("new proxy client failed, err: %v", err)
+    }
 
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
+    svc := service.NewService()
+    ctnr := restful.NewContainer()
+    ctnr.Router(restful.CurlyRouter{})
+    ctnr.Router(restful.CurlyRouter{})
+    for _, item := range svc.WebServices() {
+        ctnr.Add(item)
+    }
 
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
+    apiSvr := new(APIServer)
+    input := &backbone.BackboneParameter{
+        ConfigUpdate: apiSvr.onApiServerConfigUpdate,
+        ConfigPath:   op.ServConf.ExConfig,
+        Regdiscv:     op.ServConf.RegDiscover,
+        SrvInfo:      svrInfo,
+    }
 
-	apisvr := service.NewService()
+    authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
+    if err != nil {
+        return err
+    }
 
-	httpClient, err := util.NewClient(&util.TLSClientConfig{})
-	if err != nil {
-		return fmt.Errorf("new proxy client failed, err: %v", err)
-	}
+    authorize, err := auth.NewAuthorize(nil, authConf)
+    if err != nil {
+        return fmt.Errorf("new authorize failed, err: %v", err)
+    }
 
-	ctnr := restful.NewContainer()
-	ctnr.Router(restful.CurlyRouter{})
-	for _, item := range apisvr.WebServices() {
-		ctnr.Add(item)
-	}
+    engine, err := backbone.NewBackbone(ctx, input)
+    if err != nil {
+        return fmt.Errorf("new backbone failed, err: %v", err)
+    }
+    svc.SetConfig(engine, client, engine.Discovery(), authorize)
+    apiSvr.Core = engine
+    if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
+        return err
+    }
 
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    ctnr,
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_APISERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	apiServer := new(APIServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_APISERVER,
-		op.ServConf.ExConfig,
-		apiServer.onApiServerConfigUpdate,
-		discover,
-		bonC)
-
-	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
-	}
-
-	try := 300
-	for i := 0; i <= try; i++ {
-		if len(apiServer.Config) == 0 {
-			blog.Info("waiting for the config items from zookeeper, will wait for another second.")
-			time.Sleep(time.Second)
-			continue
-		} else {
-			break
-		}
-
-		if i == try {
-			return errors.New("wait for api server config items in zookeeper timeout")
-		}
-	}
-
-	authorize, err := auth.NewAuthorize(nil, apiServer.Config)
-	if err != nil {
-		return err
-	}
-	apisvr.SetConfig(engine, httpClient, discover, authorize)
-	apiServer.Core = engine
-
-	select {
-	case <-ctx.Done():
-	}
-	return nil
+    select {
+    case <-ctx.Done():
+    }
+    return nil
 }
 
 // APIServer apiserver struct
 type APIServer struct {
-	Core   *backbone.Engine
-	Config map[string]string
+    Core   *backbone.Engine
+    Config map[string]string
 }
 
 func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
-	h.Config = current.ConfigMap
+    h.Config = current.ConfigMap
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-	ip, err := op.ServConf.GetAddress()
-	if err != nil {
-		return nil, err
-	}
+    ip, err := op.ServConf.GetAddress()
+    if err != nil {
+        return nil, err
+    }
 
-	port, err := op.ServConf.GetPort()
-	if err != nil {
-		return nil, err
-	}
+    port, err := op.ServConf.GetPort()
+    if err != nil {
+        return nil, err
+    }
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
+    hostname, err := os.Hostname()
+    if err != nil {
+        return nil, err
+    }
 
-	info := &types.ServerInfo{
-		IP:       ip,
-		Port:     port,
-		HostName: hostname,
-		Scheme:   "http",
-		Version:  version.GetVersion(),
-		Pid:      os.Getpid(),
-	}
-	return info, nil
+    info := &types.ServerInfo{
+        IP:       ip,
+        Port:     port,
+        HostName: hostname,
+        Scheme:   "http",
+        Version:  version.GetVersion(),
+        Pid:      os.Getpid(),
+    }
+    return info, nil
 }

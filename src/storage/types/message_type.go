@@ -14,9 +14,9 @@ package types
 
 // MsgHeader message header
 type MsgHeader struct {
+	OPCode    OPCode
 	TxnID     string
 	RequestID string
-	OPCode    OPCode
 }
 
 // OPCode operation code type
@@ -62,9 +62,9 @@ func (c OPCode) String() string {
 	case OPStartTransactionCode:
 		return "OPStartTransaction"
 	case OPCommitCode:
-		return "OPCommit"
+		return "OPCommitTransaction"
 	case OPAbortCode:
-		return "OPAbort"
+		return "OPAbortTransaction"
 	case OPAggregateCode:
 		return "OPAggregate"
 	default:

@@ -207,7 +207,11 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	c.dbc.Refresh()
 	coll := c.dbc.DB(c.dbname).C("cc_idgenerator")
 	change := mgo.Change{
-		Update:    bson.M{"$inc": bson.M{"SequenceID": int64(1)}},
+		Update: bson.M{
+			"$inc":         bson.M{"SequenceID": int64(1)},
+			"$setOnInsert": bson.M{"create_time": time.Now()},
+			"$set":         bson.M{"last_time": time.Now()},
+		},
 		ReturnNew: true,
 		Upsert:    true,
 	}
