@@ -13,6 +13,9 @@
 package mainline
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -21,16 +24,14 @@ import (
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"encoding/json"
-	"fmt"
 )
 
-// SearchMainlineBusinessTopo get topo tree of model on mainline
+// SearchMainlineBusinessTopo get topo tree of mainline model
 func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool) (*metadata.TopoInstanceNode, error) {
 	bizTopoNode, err := m.SearchMainlineModelTopo()
 	if err != nil {
 		blog.Errorf("get mainline model topo info failed, %+v", err)
-		return nil, err
+		return nil, fmt.Errorf("get mainline model topo info failed, %+v", err)
 	}
 
 	objectIDs := bizTopoNode.LeftestObjectIDList()
@@ -51,10 +52,10 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	setInstances := make([]mapstr.MapStr, 0)
 	err = m.dbProxy.Table(common.BKTableNameBaseSet).Find(mongoCondition.ToMapStr()).All(ctx, &setInstances)
 	if err != nil {
-		blog.Errorf("get set instances failed, %+v", err)
-		return nil, err
+		blog.Errorf("get set instances by business:%d failed, %+v", bkBizID, err)
+		return nil, fmt.Errorf("get set instances by business:%d failed, %+v", bkBizID, err)
 	}
-	blog.V(5).Infof("SearchMainlineInstanceTopo setInstances: %+v", setInstances)
+	blog.V(5).Infof("get set instances by business:%d result: %+v", bkBizID, setInstances)
 
 	// module instance list of target business
 	mongoCondition = mongo.NewCondition()
@@ -63,10 +64,10 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	moduleInstances := make([]mapstr.MapStr, 0)
 	err = m.dbProxy.Table(common.BKTableNameBaseModule).Find(mongoCondition.ToMapStr()).All(ctx, &moduleInstances)
 	if err != nil {
-		blog.Errorf("get module instances failed, %+v", err)
-		return nil, err
+		blog.Errorf("get module instances by business:%d failed, %+v", bkBizID, err)
+		return nil, fmt.Errorf("get module instances by business:%d failed, %+v", bkBizID, err)
 	}
-	blog.V(5).Infof("SearchMainlineInstanceTopo moduleInstances: %+v", moduleInstances)
+	blog.V(5).Infof("get module instances by business:%d result: %+v", bkBizID, moduleInstances)
 
 	// other mainline instance list of target business
 	query := condition.CreateCondition()
@@ -74,17 +75,17 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	query.Field(common.BKAppIDField).Eq(bkBizID)
 	mongoCondition, err = mongo.NewConditionFromMapStr(query.ToMapStr())
 	if err != nil {
-		blog.Errorf("new mongo condition failed, %+v", err)
-		return nil, err
+		blog.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
+		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
 	}
 
 	commonInstances := make([]mapstr.MapStr, 0)
 	err = m.dbProxy.Table(common.BKTableNameBaseInst).Find(mongoCondition.ToMapStr()).All(ctx, &commonInstances)
 	if err != nil {
-		blog.Errorf("get common instances failed, %+v", err)
-		return nil, err
+		blog.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
+		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
 	}
-	blog.V(5).Infof("SearchMainlineInstanceTopo commonInstances: %+v", commonInstances)
+	blog.V(5).Infof("get other mainline instances by business:%d result: %+v", bkBizID, commonInstances)
 
 	instanceMap := map[string]*metadata.TopoInstance{}
 	allTopoInstances := []*metadata.TopoInstance{}
@@ -102,13 +103,13 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		businessInstances := make([]mapstr.MapStr, 0)
 		err = m.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &businessInstances)
 		if err != nil {
-			blog.Errorf("get business instances failed, %+v", err)
-			return nil, err
+			blog.Errorf("get business instances by business:%d failed", bkBizID, err)
+			return nil, fmt.Errorf("get business instances by business:%d failed, %+v", bkBizID, err)
 		}
 		blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v", businessInstances)
 		if len(businessInstances) == 0 {
-			blog.Error("get business instances failed, not found")
-			return nil, fmt.Errorf("business with bk_biz_id=%d not found", bkBizID)
+			blog.Errorf("business instances by business:%d not found", bkBizID)
+			return nil, fmt.Errorf("business instances by business:%d not found", bkBizID)
 		}
 		bizTopoInstance.Detail = businessInstances[0]
 	}
@@ -118,13 +119,13 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	for _, instance := range setInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKSetIDField])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKSetIDField], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKSetIDField], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKSetIDField], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKSetIDField], err)
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         common.BKInnerObjIDSet,
@@ -142,13 +143,13 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	for _, instance := range moduleInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKModuleIDField])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKModuleIDField], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKModuleIDField], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKModuleIDField], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKModuleIDField], err)
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         common.BKInnerObjIDModule,
@@ -166,13 +167,13 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	for _, instance := range commonInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstIDField], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstIDField], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         instance[common.BKObjIDField].(string),
@@ -192,11 +193,11 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		blog.Errorf("json encode instanceMap failed, %+v", err)
 		return nil, fmt.Errorf("json encode instanceMap failed, %+v", err)
 	}
-	blog.V(3).Infof("instanceMap: %s", instanceMapStr)
+	blog.V(3).Infof("instanceMap before check is: %s", instanceMapStr)
 
 	// prepare loop that make sure all node's parent are exist in allTopoInstances
 	for _, topoInstance := range allTopoInstances {
-		blog.V(5).Infof("topoInstance: %+v", topoInstance)
+		blog.V(5).Infof("topo instance: %+v", topoInstance)
 		if topoInstance.ParentInstanceID == 0 {
 			continue
 		}
@@ -218,24 +219,28 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		missedInstances := make([]mapstr.MapStr, 0)
 		err = m.dbProxy.Table(common.BKTableNameBaseInst).Find(mongoCondition.ToMapStr()).All(ctx, &missedInstances)
 		if err != nil {
-			blog.Errorf("get common instances failed, %+v", err)
+			blog.Errorf("get common instances with ID:%d failed, %+v", topoInstance.ParentInstanceID, err)
 			return nil, err
 		}
-		blog.V(5).Infof("SearchMainlineInstanceTopo missedInstances: %+v", missedInstances)
-		if len(missedInstances) != 1 {
-			blog.Errorf("SearchMainlineInstanceTopo foud unexpected count of missedInstances: %+v", missedInstances)
-			return nil, fmt.Errorf("SearchMainlineInstanceTopo foud %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+		blog.V(5).Infof("get missed instances by id:%d results: %+v", topoInstance.ParentInstanceID, missedInstances)
+		if len(missedInstances) == 0 {
+			blog.Errorf("found unexpected count of missedInstances: %+v", missedInstances)
+			return nil, fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+		}
+		if len(missedInstances) > 1 {
+			blog.Errorf("found too many(%d) missedInstances: %+v by id: %d", len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
+			return nil, fmt.Errorf("found too many(%d) missedInstances: %+v by id: %d", len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
 		}
 		instance := missedInstances[0]
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstIDField], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstIDField], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
 		}
 		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
 		if err != nil {
-			blog.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
-			return nil, fmt.Errorf("parse isntanceID:%+v failed, %+v", instance[common.BKInstParentStr], err)
+			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+			return nil, fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 		}
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
@@ -255,7 +260,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		blog.Errorf("json encode instanceMap failed, %+v", err)
 		return nil, fmt.Errorf("json encode instanceMap failed, %+v", err)
 	}
-	blog.V(3).Infof("instanceMap: %s", instanceMapStr)
+	blog.V(3).Infof("instanceMap after check: %s", instanceMapStr)
 
 	var bizTopoInstanceNode *metadata.TopoInstanceNode
 	topoInstanceNodeMap := map[string]*metadata.TopoInstanceNode{}
