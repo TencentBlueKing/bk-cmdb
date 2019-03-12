@@ -67,7 +67,7 @@ func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 
 	var dbErr error
 	tx, dbErr := mongo.NewWithDiscover(engin.
-		Discover.
+		ServiceManageInterface.
 		TMServer().
 		GetServers, cfg.Mongo)
 	if dbErr != nil {

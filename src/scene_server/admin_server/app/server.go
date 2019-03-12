@@ -20,9 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -34,8 +33,6 @@ import (
 	svc "configcenter/src/scene_server/admin_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -50,45 +47,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("parse config file error %s", err.Error())
 	}
 	process.onHostConfigUpdate(*pconfig, *pconfig)
-
-	discover, err := discovery.NewDiscoveryInterface(process.Config.Register.Address)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := svc.NewService(ctx)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
 
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_MIGRATE, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     process.Config.Register.Address,
+		SrvInfo:      svrInfo,
 	}
-
-	engine, err := backbone.NewBackbone(ctx, process.Config.Register.Address,
-		types.CC_MODULE_MIGRATE,
-		op.ServConf.ExConfig,
-		process.onHostConfigUpdate,
-		discover,
-		bonC)
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -96,7 +63,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	process.ConfigCenter = configures.NewConfCenter(ctx, process.Config.Register.Address)
+	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
@@ -118,6 +85,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return err
 		}
 		break
+	}
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		return err
 	}
 	<-ctx.Done()
 	blog.V(0).Info("process stoped")
