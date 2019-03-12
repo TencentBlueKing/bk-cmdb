@@ -116,3 +116,17 @@ func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[s
 		Into(resp)
 	return
 }
+
+func (m *mod) TransferHostToDefaultModule(ctx context.Context, h http.Header, dat *metadata.TransferHostToDefaultModuleConfig) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "transfer/host/default/module"
+
+	err = m.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
