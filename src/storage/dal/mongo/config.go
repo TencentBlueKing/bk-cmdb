@@ -14,6 +14,7 @@ package mongo
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -47,6 +48,22 @@ func (c Config) BuildURI() string {
 		uri += "?authMechanism=" + c.Mechanism
 	}
 	return uri
+}
+
+func (c Config) GetMaxOpenConns() int {
+	max, err := strconv.Atoi(c.MaxOpenConns)
+	if err != nil {
+		return 0
+	}
+	return max
+}
+
+func (c Config) GetMaxIdleConns() int {
+	max, err := strconv.Atoi(c.MaxIdleConns)
+	if err != nil {
+		return 0
+	}
+	return max
 }
 
 // ParseConfigFromKV returns a new config

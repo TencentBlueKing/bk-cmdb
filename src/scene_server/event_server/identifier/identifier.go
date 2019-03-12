@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -29,6 +27,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
+
+	redis "gopkg.in/redis.v5"
 )
 
 var delayTime = time.Second * 30
@@ -403,7 +403,7 @@ func (i *Inst) saveCache(cache *redis.Client) error {
 	if err != nil {
 		return err
 	}
-	return cache.Set(getInstCacheKey(i.objType, i.instID), string(out), 0).Err()
+	return cache.Set(getInstCacheKey(i.objType, i.instID), string(out), time.Minute*20).Err()
 }
 
 func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {

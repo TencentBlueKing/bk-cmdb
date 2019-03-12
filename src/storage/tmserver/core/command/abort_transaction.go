@@ -37,6 +37,7 @@ func (d *abortTransaction) SetTxn(txn *transaction.Manager) {
 func (d *abortTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
 	blog.V(4).Infof("[MONGO OPERATION] %+v", &ctx.Header)
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	err := d.txn.Abort(ctx.Header.TxnID)
 	if nil != err {
 		reply.Message = err.Error()
