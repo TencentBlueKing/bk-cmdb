@@ -44,7 +44,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bkBizID})
 
 	setInstances := make([]mapstr.MapStr, 0)
-	err = m.dbProxy.Table(common.BKTableNameBaseSet).Find(mongoCondition.ToMapStr()).All(ctx, setInstances)
+	err = m.dbProxy.Table(common.BKTableNameBaseSet).Find(mongoCondition.ToMapStr()).All(ctx, &setInstances)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bkBizID})
 
 	moduleInstances := make([]mapstr.MapStr, 0)
-	err = m.dbProxy.Table(common.BKTableNameBaseModule).Find(mongoCondition.ToMapStr()).All(ctx, moduleInstances)
+	err = m.dbProxy.Table(common.BKTableNameBaseModule).Find(mongoCondition.ToMapStr()).All(ctx, &moduleInstances)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 	mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bkBizID})
 
 	commonInstances := make([]mapstr.MapStr, 0)
-	err = m.dbProxy.Table(common.BKTableNameBaseInst).Find(mongoCondition.ToMapStr()).All(ctx, commonInstances)
+	err = m.dbProxy.Table(common.BKTableNameBaseInst).Find(mongoCondition.ToMapStr()).All(ctx, &commonInstances)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
 		mongoCondition.Element(&mongo.Eq{Key: common.BKAppIDField, Val: bkBizID})
 
 		businessInstances := make([]mapstr.MapStr, 0)
-		err = m.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, businessInstances)
+		err = m.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &businessInstances)
 		if err != nil {
 			return nil, err
 		}
