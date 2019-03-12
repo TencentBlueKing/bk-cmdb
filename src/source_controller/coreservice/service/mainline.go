@@ -13,29 +13,39 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
-	// "configcenter/src/common/errors"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) SearchMainlineModelTopo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	return s.core.TopoOperation().SearchMainlineModelTopo()
+	result, err := s.core.TopoOperation().SearchMainlineModelTopo()
+	if err != nil {
+		blog.Errorf("search mainline model topo failed, %+v", err)
+		return nil, fmt.Errorf("search mainline model topo failed, %+v", err)
+	}
+	return result, nil
 }
 
 func (s *coreService) SearchMainlineInstanceTopo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	bkBizID := pathParams("bk_biz_id")
+	bkBizID := pathParams(common.BKAppIDField)
 	if len(bkBizID) == 0 {
-		return nil, errors.New("bk_biz_id field empty")
+		return nil, fmt.Errorf("field %s empty", common.BKAppIDField)
 	}
 	bizID, err := strconv.ParseInt(bkBizID, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("bk_biz_id field invalid, %v", err)
+		return nil, fmt.Errorf("field %s invalid, %v", common.BKAppIDField, err)
 	}
 
 	// TODO add parse withDetail option
-	return s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, false)
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, false)
+	if err != nil {
+		blog.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)
+		return nil, fmt.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)
+	}
+	return result, nil
 }
