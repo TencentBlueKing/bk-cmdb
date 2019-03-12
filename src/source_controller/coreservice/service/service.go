@@ -35,6 +35,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -94,7 +95,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 	// connect the remote mongodb
 
-	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s))
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), mainline.New(db))
 }
 
 // WebService the web service
