@@ -26,6 +26,11 @@
                 v-else-if="property['bk_property_type'] === 'bool'"
                 v-model.trim="value">
             </cmdb-form-bool-input>
+            <cmdb-form-date-range class="filter-value fl"
+                v-else-if="['date', 'time'].includes(property['bk_property_type'])"
+                :timer="property['bk_property_type'] === 'time'"
+                v-model="value">
+            </cmdb-form-date-range>
             <comonent class="filter-value"
                 v-else
                 :is="`cmdb-form-${property['bk_property_type']}`"
@@ -70,11 +75,18 @@
             },
             operator () {
                 const map = {
-                    'objuser': '$in',
+                    'singlechar': '$regex',
                     'int': '$eq',
+                    'float': '$eq',
+                    'enum': '$eq',
+                    'date': '$in',
+                    'time': '$in',
+                    'longchar': '$regex',
+                    'objuser': '$in',
+                    'timezone': '$eq',
                     'bool': '$eq'
                 }
-                return map[this.type] || '$regex'
+                return map[this.type] || '$eq'
             }
         },
         watch: {
@@ -155,7 +167,7 @@
             vertical-align: middle;
             position: relative;
             .filter-value {
-                width: 260px;
+                min-width: 260px;
                 margin: 0 0 0 -1px;
             }
             .filter-search {
