@@ -122,10 +122,7 @@
                                 from: model['bk_obj_id'],
                                 to: asst['bk_obj_id'],
                                 label: this.getEdgeLable(asst),
-                                arrows: {
-                                    from: false,
-                                    to: true
-                                },
+                                arrows: this.getEdgeArrows(asst),
                                 data: asst
                             })
                         })
@@ -236,7 +233,8 @@
                             resolve({
                                 id: data['bk_inst_id'],
                                 label: this.getEdgeLable(data),
-                                data: data
+                                data: data,
+                                arrows: this.getEdgeArrows(data)
                             })
                             this.$store.commit(commitMethod, {resolve: null, reject: null})
                         },
@@ -246,6 +244,14 @@
                         }
                     })
                 })
+            },
+            getEdgeArrows (data) {
+                const associationId = data['bk_asst_inst_id']
+                const association = this.associationList.find(association => association.id === associationId)
+                return {
+                    from: association.direction === 'bidirectional',
+                    to: association.direction !== 'none'
+                }
             },
             handleEdgeClick (edge) {
                 this.$store.commit('globalModels/setAssociation', {
