@@ -345,7 +345,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
 	if err != nil {
-		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%+v,rid:%s", agents, srvData.rid)
+		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%#v,rid:%s", agents, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
@@ -748,6 +748,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 // The host belongs to the current module or host only, and puts the host into the idle machine of the current service.
 // When the host data is in multiple modules or sets. Disconnect the host from the module or set only
 func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
 	srvData := s.newSrvComm(req.Request.Header)
 
 	var data meta.SetHostConfigParams
@@ -756,11 +757,23 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	if 0 == data.ApplicationID {
+		blog.Errorf("MoveSetHost2IdleModule bk_biz_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
 
 	//get host in set
 	condition := make(map[string][]int64)
 	hostIDArr := make([]int64, 0)
 	sModuleIDArr := make([]int64, 0)
+
+	if 0 == data.SetID && 0 == data.ModuleID {
+		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
 	if 0 != data.SetID {
 		condition[common.BKSetIDField] = []int64{data.SetID}
 	}
@@ -803,6 +816,12 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	moduleID := moduleIDArr[0]
+
+	// idle modle not change
+	if moduleID == data.ModuleID {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
 
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID

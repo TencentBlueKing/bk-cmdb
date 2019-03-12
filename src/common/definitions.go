@@ -565,6 +565,7 @@ const (
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
+	BKGroupField               = "group"
 )
 
 const (
@@ -823,11 +824,11 @@ const (
 	BKHTTPSupplierID        = "bk_supplier_id"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
-	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
-	BKHTTPCCTransactionID = "CC_TXN_ID"
+	BKHTTPCCRequestTime   = "Cc_Request_Time"
+	BKHTTPCCTransactionID = "Cc_Txn_Id"
 )
 
 type CCContextKey string

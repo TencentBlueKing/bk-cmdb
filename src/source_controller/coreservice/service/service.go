@@ -80,7 +80,8 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var db dal.DB
 	var dbErr error
 	if cfg.Mongo.Transaction == "enable" {
-		db, dbErr = remote.NewWithDiscover(engin.Discover.TMServer().GetServers, cfg.Mongo)
+		blog.Infof("connecting to transaction manager")
+		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 			return
