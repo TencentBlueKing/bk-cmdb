@@ -25,6 +25,8 @@ import (
 // Core core operation methods
 type Core interface {
 	ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error)
+	Subscribe(chan *types.Transaction)
+	UnSubscribe(chan<- *types.Transaction)
 }
 
 type core struct {
@@ -81,4 +83,12 @@ func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPRe
 	}
 	return reply, err
 
+}
+
+func (c *core) Subscribe(ch chan *types.Transaction) {
+	c.txn.Subscribe(ch)
+}
+
+func (c *core) UnSubscribe(ch chan<- *types.Transaction) {
+	c.txn.UnSubscribe(ch)
 }
