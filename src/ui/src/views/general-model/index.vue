@@ -17,6 +17,7 @@
                 </div>
                 <form id="exportForm" :action="url.export" method="POST" hidden>
                     <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
+                    <input type="hidden" name="bk_custom_columns" :value="usercustom[customConfigKey]">
                     <input type="hidden" name="metadata"
                         v-if="!isPublicModel"
                         :value="JSON.stringify($injectMetadata().metadata)">
