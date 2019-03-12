@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
+	"fmt"
 )
 
 // SearchMainlineModelTopo get topo tree of model on mainline
@@ -29,42 +30,43 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 	mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
 
 	ctx := core.ContextParams{}
-	ossociations := make([]mapstr.MapStr, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, &ossociations)
+	associations := make([]mapstr.MapStr, 0)
+	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, &associations)
 	if err != nil {
-		return nil, err
+		blog.Errorf("query topo model mainline association from db failed, %+v", err)
+		return nil, fmt.Errorf("query topo model mainline association from db failed, %+v", err)
 	}
-	blog.V(5).Infof("associactions: %+v", ossociations)
+	blog.V(2).Infof("get topo model mainline associations result: %+v", associations)
 
 	// step2: construct a tree fro associations
 	var bizTopoModelNode *metadata.TopoModelNode
-	topoModleNodelMap := map[string]*metadata.TopoModelNode{}
-	for _, associaction := range ossociations {
-		blog.V(5).Infof("associaction: %+v", associaction)
-		parentObjectID := associaction[common.AssociatedObjectIDField].(string)
-		if _, exist := topoModleNodelMap[parentObjectID]; exist == false {
-			topoModleNodelMap[parentObjectID] = &metadata.TopoModelNode{
+	topoModelNodeMap := map[string]*metadata.TopoModelNode{}
+	for _, association := range associations {
+		blog.V(5).Infof("association: %+v", association)
+		parentObjectID := association[common.AssociatedObjectIDField].(string)
+		if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
+			topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
 				ObjectID: parentObjectID,
 				Children: []*metadata.TopoModelNode{},
 			}
 		}
 
-		parentTopoModelNode := topoModleNodelMap[parentObjectID]
+		parentTopoModelNode := topoModelNodeMap[parentObjectID]
 
 		// extract tree root node pointer
-		if parentObjectID == "biz" {
+		if parentObjectID == common.BKInnerObjIDApp {
 			bizTopoModelNode = parentTopoModelNode
 		}
 
-		childObjectID := associaction[common.BKObjIDField].(string)
-		if _, exist := topoModleNodelMap[childObjectID]; exist == false {
-			topoModleNodelMap[childObjectID] = &metadata.TopoModelNode{
+		childObjectID := association[common.BKObjIDField].(string)
+		if _, exist := topoModelNodeMap[childObjectID]; exist == false {
+			topoModelNodeMap[childObjectID] = &metadata.TopoModelNode{
 				ObjectID: childObjectID,
 				Children: []*metadata.TopoModelNode{},
 			}
 		}
-		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModleNodelMap[childObjectID])
+		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
 	}
-	blog.V(5).Infof("bizTopoModelNode: %+v", bizTopoModelNode)
+	blog.V(2).Infof("bizTopoModelNode: %+v", bizTopoModelNode)
 	return bizTopoModelNode, nil
 }
