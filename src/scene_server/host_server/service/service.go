@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/metadata"
+
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/apimachinery/discovery"
@@ -54,8 +55,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
-	ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
+	//ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
+	//ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
 	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
@@ -102,6 +103,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
+
+	ws.Route(ws.POST("/findmany/modulehost").To(s.FindModuleHost))
 
 	return ws
 }

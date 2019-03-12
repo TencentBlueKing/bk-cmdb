@@ -141,6 +141,7 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 	return instAsst, nil
 }
 
+// CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
 
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
