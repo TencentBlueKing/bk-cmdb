@@ -26,6 +26,7 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 	// TODO support withDetail option
 	// step1: get all model associations
 	mongoCondition := mongo.NewCondition()
+	mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
 
 	ctx := core.ContextParams{}
 	ossociations := make([]mapstr.MapStr, 0)
@@ -33,6 +34,7 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 	if err != nil {
 		return nil, err
 	}
+	blog.V(5).Infof("associactions: %+v", ossociations)
 
 	// step2: construct a tree fro associations
 	var bizTopoModelNode *metadata.TopoModelNode
@@ -41,7 +43,10 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 		blog.V(5).Infof("associaction: %+v", associaction)
 		parentObjectID := associaction[common.AssociatedObjectIDField].(string)
 		if _, exist := topoModleNodelMap[parentObjectID]; exist == false {
-			topoModleNodelMap[parentObjectID] = &metadata.TopoModelNode{ObjectID: parentObjectID}
+			topoModleNodelMap[parentObjectID] = &metadata.TopoModelNode{
+				ObjectID: parentObjectID,
+				Children: []*metadata.TopoModelNode{},
+			}
 		}
 
 		parentTopoModelNode := topoModleNodelMap[parentObjectID]
@@ -53,7 +58,10 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 
 		childObjectID := associaction[common.BKObjIDField].(string)
 		if _, exist := topoModleNodelMap[childObjectID]; exist == false {
-			topoModleNodelMap[childObjectID] = &metadata.TopoModelNode{ObjectID: childObjectID}
+			topoModleNodelMap[childObjectID] = &metadata.TopoModelNode{
+				ObjectID: childObjectID,
+				Children: []*metadata.TopoModelNode{},
+			}
 		}
 		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModleNodelMap[childObjectID])
 	}
