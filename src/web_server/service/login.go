@@ -25,7 +25,7 @@ func (s *Service) LogOutUser(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	c.Request.URL.Path = ""
-	userManger := user.NewUser(s.Config, s.Engine, s.CacheCli, s.VersionPlg)
+	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.VersionPlg)
 	loginURL := userManger.GetLoginUrl(c)
 	ret := metadata.LogoutResult{}
 	ret.BaseResp.Result = true

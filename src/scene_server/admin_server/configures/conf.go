@@ -15,13 +15,13 @@ package configures
 import (
 	"encoding/json"
 	"path/filepath"
-	"time"
 
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -36,10 +36,10 @@ type ConfCenter struct {
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(ctx context.Context, serv string) *ConfCenter {
+func NewConfCenter(ctx context.Context, client *zk.ZkClient) *ConfCenter {
 	return &ConfCenter{
 		ctx:          ctx,
-		confRegDiscv: confregdiscover.NewZkRegDiscover(serv, time.Second*60),
+		confRegDiscv: confregdiscover.NewZkRegDiscover(client),
 	}
 }
 
@@ -50,11 +50,6 @@ func (cc *ConfCenter) Ping() error {
 
 // Start the configure center module service
 func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
-	// start configure register and discover service
-	if err := cc.confRegDiscv.Start(); err != nil {
-		blog.Errorf("fail to start config register and discover service. err:%s", err.Error())
-		return err
-	}
 
 	// save configures
 	if err := cc.writeConfs2Center(confDir); err != nil {
@@ -82,15 +77,8 @@ func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	go func() {
 		select {
 		case <-cc.ctx.Done():
-			cc.Stop()
 		}
 	}()
-	return nil
-}
-
-// Stop the configure center
-func (cc *ConfCenter) Stop() error {
-	cc.confRegDiscv.Stop()
 	return nil
 }
 
