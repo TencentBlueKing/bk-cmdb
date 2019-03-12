@@ -89,17 +89,10 @@ func (a *association) saveSynchronizeAssociationModuleHostConfig(ctx core.Contex
 	tableName := common.BKTableNameModuleHostConfig
 	for _, item := range a.base.syncData.InfoArray {
 
-		// todo v3.3.x branch clone not support deep copy
+		//  branch clone not support deep copy
 		// not change value
-		newItem, err := item.Info.Clone()
-		if err != nil {
-			blog.Errorf("saveSynchronizeAssociationModuleHostConfig copy data error. err:%s, inst info:%#v,rid:%s", err.Error(), item, ctx.ReqID)
-			a.base.errorArray[item.ID] = synchronizeAdapterError{
-				instInfo: item,
-				err:      ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, a.DataClassify, "info", "copy mapstr", err.Error()),
-			}
-			continue
-		}
+		newItem := item.Info.Clone()
+
 		newItem.Remove(common.MetadataField)
 		cnt, err := a.dbProxy.Table(tableName).Find(newItem).Count(ctx)
 		if err != nil {
