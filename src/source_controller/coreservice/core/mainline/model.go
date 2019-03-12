@@ -14,6 +14,7 @@ package mainline
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -28,35 +29,34 @@ func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
 
 	ctx := core.ContextParams{}
 	ossociations := make([]mapstr.MapStr, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, ossociations)
+	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, &ossociations)
 	if err != nil {
 		return nil, err
 	}
 
 	// step2: construct a tree fro associations
 	var bizTopoModelNode *metadata.TopoModelNode
-	topoNodeMap := map[string]*metadata.TopoModelNode{}
+	topoModleNodelMap := map[string]*metadata.TopoModelNode{}
 	for _, associaction := range ossociations {
+		blog.V(5).Infof("associaction: %+v", associaction)
 		parentObjectID := associaction[common.AssociatedObjectIDField].(string)
-		if _, exist := topoNodeMap[parentObjectID]; exist == false {
-			topoModelNode := &metadata.TopoModelNode{ObjectID: parentObjectID}
-			topoNodeMap[parentObjectID] = topoModelNode
+		if _, exist := topoModleNodelMap[parentObjectID]; exist == false {
+			topoModleNodelMap[parentObjectID] = &metadata.TopoModelNode{ObjectID: parentObjectID}
 		}
 
-		parentNode := topoNodeMap[parentObjectID]
+		parentTopoModelNode := topoModleNodelMap[parentObjectID]
 
 		// extract tree root node pointer
 		if parentObjectID == "biz" {
-			bizTopoModelNode = parentNode
+			bizTopoModelNode = parentTopoModelNode
 		}
 
 		childObjectID := associaction[common.BKObjIDField].(string)
-		if _, exist := topoNodeMap[childObjectID]; exist == false {
-			topoModelNode := &metadata.TopoModelNode{ObjectID: childObjectID}
-			topoNodeMap[childObjectID] = topoModelNode
+		if _, exist := topoModleNodelMap[childObjectID]; exist == false {
+			topoModleNodelMap[childObjectID] = &metadata.TopoModelNode{ObjectID: childObjectID}
 		}
-		childNode, _ := topoNodeMap[childObjectID]
-		topoNodeMap[parentObjectID].Children = append(topoNodeMap[parentObjectID].Children, childNode)
+		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModleNodelMap[childObjectID])
 	}
+	blog.V(5).Infof("bizTopoModelNode: %+v", bizTopoModelNode)
 	return bizTopoModelNode, nil
 }
