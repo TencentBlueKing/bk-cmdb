@@ -36,7 +36,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	switch resourceType {
 	case meta.Business:
-		info.ResourceType = BusinessInstanceManagement
+		info.ResourceType = SysBusinessInstance
 		return info, nil
 
 	case meta.Model,
@@ -44,23 +44,23 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
 		if attribute.BusinessID == 0 {
-			info.ResourceType = AppModel
+			info.ResourceType = BizModel
 		} else {
-			info.ResourceType = ModelManagement
+			info.ResourceType = SysModel
 		}
 
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
-		info.ResourceType = BusinessTopology
+		info.ResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
 		// action=拓扑层级操作
-		info.ResourceType = SystemBase
+		info.ResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		info.ResourceType = ModelGroup
+		info.ResourceType = SysModelGroup
 
 	case meta.AssociationType:
-		info.ResourceType = AssociationType
+		info.ResourceType = SysAssociationType
 
 	case meta.ModelAssociation:
 		return info, errors.New("model association does not support auth now")
@@ -70,23 +70,23 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	case meta.ModelInstance:
 		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
-			info.ResourceType = BusinessHost
+			info.ResourceType = BizHostInstance
 		}
 
 		if attribute.BusinessID == 0 {
-			info.ResourceType = InstanceManagement
+			info.ResourceType = SysInstance
 		} else {
-			info.ResourceType = AppInstance
+			info.ResourceType = BizInstance
 		}
 
 	case meta.HostUserCustom:
-		info.ResourceType = CustomQuery
+		info.ResourceType = BizCustomQuery
 
 	case meta.HostFavorite:
 		return info, errors.New("host favorite does not support auth now")
 
 	case meta.Process:
-		info.ResourceType = Process
+		info.ResourceType = BizProcessInstance
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
@@ -97,26 +97,34 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	return info, nil
 }
 
-// type is resource's type in auth center.
+// ResourceTypeID is resource's type in auth center.
 type ResourceTypeID string
 
+// System Resource
+const (
+	SysSystemBase       ResourceTypeID = "sysSystemBase"
+	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
+	SysHostInstance     ResourceTypeID = "sysHostInstance"
+	SysEventPushing     ResourceTypeID = "sysEventPushing"
+
+	SysModelGroup ResourceTypeID = "sysModelGroup"
+	SysModel      ResourceTypeID = "sysModel"
+	SysInstance   ResourceTypeID = "sysInstance"
+
+	SysAssociationType ResourceTypeID = "sysAssociationType "
+)
+
+// Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	CustomQuery        ResourceTypeID = "customQuery"
-	AppModel           ResourceTypeID = "appModel"
-	Host               ResourceTypeID = "host"
-	Process            ResourceTypeID = "process"
-	BusinessTopology   ResourceTypeID = "topology"
-	AppInstance        ResourceTypeID = "appInstance"
-	InstanceManagement ResourceTypeID = "instanceManagement"
-	ModelManagement    ResourceTypeID = "modelManagement"
-	AssociationType    ResourceTypeID = "associationType"
-	ModelGroup         ResourceTypeID = "modelGroup"
-	Event              ResourceTypeID = "event"
-	SystemBase         ResourceTypeID = "systemBase"
-	BusinessHost       ResourceTypeID = "businessHost"
+	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
+	BizHostInstance    ResourceTypeID = "bizHostInstance"
+	BizProcessInstance ResourceTypeID = "bizProcessInstance"
+	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
 
-	BusinessInstanceManagement ResourceTypeID = "businessInstanceManagement"
+	BizModelGroup ResourceTypeID = "bizModelGroup"
+	BizModel      ResourceTypeID = "bizModel"
+	BizInstance   ResourceTypeID = "bizInstance"
 )
 
 type ActionID string
@@ -224,62 +232,62 @@ type ResourceDetail struct {
 
 var (
 	CustomQueryDescribe = ResourceDetail{
-		Type:    CustomQuery,
+		Type:    BizCustomQuery,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AppModelDescribe = ResourceDetail{
-		Type:    AppModel,
+		Type:    BizModel,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	HostDescribe = ResourceDetail{
-		Type:    Host,
+		Type:    BizHostInstance,
 		Actions: []ActionID{Get, Delete, Edit, Create, ModuleTransfer},
 	}
 
 	ProcessDescribe = ResourceDetail{
-		Type:    Process,
+		Type:    BizProcessInstance,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BusinessTopology,
+		Type:    BizTopoInstance,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
 	AppInstanceDescribe = ResourceDetail{
-		Type:    AppInstance,
+		Type:    BizInstance,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	InstanceManagementDescribe = ResourceDetail{
-		Type:    InstanceManagement,
+		Type:    SysInstance,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelManagementDescribe = ResourceDetail{
-		Type:    ModelManagement,
+		Type:    SysModel,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	AssociationTypeDescribe = ResourceDetail{
-		Type:    AssociationType,
+		Type:    SysAssociationType,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	ModelGroupDescribe = ResourceDetail{
-		Type:    ModelGroup,
+		Type:    SysModelGroup,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	EventDescribe = ResourceDetail{
-		Type:    Event,
+		Type:    SysEventPushing,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 
 	SystemBaseDescribe = ResourceDetail{
-		Type:    SystemBase,
+		Type:    SysSystemBase,
 		Actions: []ActionID{Get, Delete, Edit, Create},
 	}
 )

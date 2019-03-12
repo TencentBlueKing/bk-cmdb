@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
@@ -91,7 +90,7 @@ func Parse(args []string) error {
 		}
 		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filepath, mode)
 		if err := export(ctx, db, opt); err != nil {
-			blog.Errorf("export error: %s", err.Error())
+			fmt.Printf("export error: %s", err.Error())
 			os.Exit(2)
 		}
 		fmt.Printf("blueking %s has been export to %s\n", bizName, filepath)
@@ -104,14 +103,14 @@ func Parse(args []string) error {
 		opt.mini = false
 		opt.scope = "all"
 		if err := importBKBiz(ctx, db, opt); err != nil {
-			blog.Errorf("import error: %s", err.Error())
+			fmt.Printf("import error: %s", err.Error())
 			os.Exit(2)
 		}
 		if !dryrunflag {
 			fmt.Printf("%s business has been import from %s\n", bizName, filepath)
 		}
 	} else {
-		blog.Errorf("invalide argument")
+		fmt.Printf("invalide argument")
 	}
 
 	os.Exit(0)
