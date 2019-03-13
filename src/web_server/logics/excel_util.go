@@ -43,6 +43,19 @@ func getFilterFields(objID string) []string {
 	return []string{"create_time"}
 }
 
+func getCustomFields(filterFields []string, customFieldsStr string) []string {
+	customFields := strings.Split(customFieldsStr, ",")
+	customFieldsList := make([]string, 0)
+
+	for _, fieldID := range customFields {
+		if util.InStrArr(filterFields, fieldID) || "" == fieldID {
+			continue
+		}
+		customFieldsList = append(customFieldsList, fieldID)
+	}
+	return customFieldsList
+}
+
 // checkExcelHealer check whether invalid fields exists in header and return headers
 func checkExcelHealer(sheet *xlsx.Sheet, fields map[string]Property, isCheckHeader bool, defLang lang.DefaultCCLanguageIf) (map[int]string, error) {
 
