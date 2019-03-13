@@ -117,4 +117,5 @@ func (s *coreService) initService() {
 	s.initModelAssociation()
 	s.initModelInstances()
 	s.initInstanceAssociation()
+	s.initDataSynchronize()
 }

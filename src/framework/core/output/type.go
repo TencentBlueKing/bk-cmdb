@@ -35,7 +35,7 @@ type Outputer interface {
 	// This information will be printed when the Inputer is abnormal, which is convenient for debugging.
 	Name() string
 
-	// Run the output main loop. This should block until singnalled to stop by invocation of the Stop() method.
+	// Run the output main loop. This should block until be signalled to stop by invocation of the Stop() method.
 	Put(data types.MapStr) error
 
 	// Stop is the invoked to signal that the Run() method should its execution.

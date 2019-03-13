@@ -43,7 +43,7 @@ func FindHostByCondition(supplierAccount string, cond common.Condition) (*HostIt
 	if nil != err {
 		return nil, err
 	}
-	//fmt.Println("the host model:", targetModel)
+
 	iter, err := mgr.OutputerMgr.InstOperation().FindHostsByCondition(targetModel, cond)
 	return &HostIteratorWrapper{host: iter}, err
 }

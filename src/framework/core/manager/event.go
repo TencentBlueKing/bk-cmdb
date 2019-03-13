@@ -13,13 +13,13 @@
 package manager
 
 import (
+	"context"
+	"errors"
+
 	"configcenter/src/framework/common"
 	"configcenter/src/framework/core/log"
 	"configcenter/src/framework/core/output"
 	"configcenter/src/framework/core/types"
-
-	"context"
-	"errors"
 )
 
 type eventRegister struct {

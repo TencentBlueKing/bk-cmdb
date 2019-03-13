@@ -27,7 +27,7 @@ func NewClient(c *TLSClientConfig) (*http.Client, error) {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
 		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
 			var err error
-			tlsConf, err = ssl.ClientTslConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
+			tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
 			if err != nil {
 				return nil, err
 			}

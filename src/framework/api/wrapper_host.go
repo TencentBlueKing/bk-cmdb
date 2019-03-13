@@ -61,7 +61,6 @@ type FinderHostWrapper struct {
 
 // GetBizs return all business for the host
 func (cli *FinderHostWrapper) GetBizs() ([]*BusinessWrapper, error) {
-
 	bizWraps := make([]*BusinessWrapper, 0)
 	bizs := cli.host.GetBizs()
 	for _, biz := range bizs {
