@@ -49,6 +49,12 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "address" configuration for auth center`)
 	}
 
+	for i := range cfg.Address {
+		if !strings.HasSuffix(cfg.Address[i], "/") {
+			cfg.Address[i] = cfg.Address[i] + "/"
+		}
+	}
+
 	cfg.AppSecret, exist = conifgmap[prefix+".appSecret"]
 	if !exist {
 		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
@@ -67,13 +73,10 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
-	cfg.SystemID, exist = conifgmap[prefix+".systemID"]
-	if !exist {
-		return cfg, errors.New(`missing "systemID" configuration for auth center`)
-	}
+	cfg.SystemID = SystemIDCMDB
 
-	if len(cfg.SystemID) == 0 {
-		return cfg, errors.New(`invalid "systemID" configuration for auth center`)
+	if strings.ToLower(conifgmap[prefix+".enable"]) == "true" {
+		cfg.Enable = true
 	}
 	return cfg, nil
 }

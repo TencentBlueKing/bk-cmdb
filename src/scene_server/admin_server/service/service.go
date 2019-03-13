@@ -62,6 +62,7 @@ func (s *Service) WebService() *restful.WebService {
 	}
 	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
+	ws.Route(ws.POST("/authcenter/init").To(s.InitAuthCenter))
 	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	ws.Route(ws.POST("/clear").To(s.clear))
