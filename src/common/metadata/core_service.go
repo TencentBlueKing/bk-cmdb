@@ -14,6 +14,7 @@ package metadata
 
 import (
 	"configcenter/src/common/mapstr"
+	"fmt"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
@@ -116,3 +117,42 @@ type Dimension struct {
 
 type SetOneInstanceAssociation CreateOneInstanceAssociation
 type SetManyInstanceAssociation CreateManyInstanceAssociation
+
+type TopoModelNode struct {
+	Children []*TopoModelNode
+	ObjectID string
+}
+
+// LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
+// it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
+func (tn *TopoModelNode) LeftestObjectIDList() []string {
+	objectIDs := make([]string, 0)
+	node := tn
+	for {
+		objectIDs = append(objectIDs, node.ObjectID)
+		if len(node.Children) == 0 {
+			break
+		}
+		node = node.Children[0]
+	}
+	return objectIDs
+}
+
+type TopoInstanceNode struct {
+	Children   []*TopoInstanceNode
+	ObjectID   string
+	InstanceID int64
+	Detail     map[string]interface{}
+}
+
+type TopoInstance struct {
+	ObjectID         string
+	InstanceID       int64
+	ParentInstanceID int64
+	Detail           map[string]interface{}
+}
+
+// Key generate a unique key for instance(as instances's of different object type maybe conflict)
+func (ti *TopoInstance) Key() string {
+	return fmt.Sprintf("%s:%d", ti.ObjectID, ti.InstanceID)
+}
