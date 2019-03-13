@@ -68,15 +68,14 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		return info, errors.New("model instance association does not support  auth now")
 
 	case meta.ModelInstance:
-		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
-			info.ResourceType = BizHostInstance
-		}
-
 		if attribute.BusinessID == 0 {
 			info.ResourceType = SysInstance
 		} else {
 			info.ResourceType = BizInstance
 		}
+
+	case meta.HostInstance:
+		info.ResourceType = BizHostInstance
 
 	case meta.HostUserCustom:
 		info.ResourceType = BizCustomQuery
@@ -105,12 +104,10 @@ const (
 	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
 	SysHostInstance     ResourceTypeID = "sysHostInstance"
 	SysEventPushing     ResourceTypeID = "sysEventPushing"
-
-	SysModelGroup ResourceTypeID = "sysModelGroup"
-	SysModel      ResourceTypeID = "sysModel"
-	SysInstance   ResourceTypeID = "sysInstance"
-
-	SysAssociationType ResourceTypeID = "sysAssociationType "
+	SysModelGroup       ResourceTypeID = "sysModelGroup"
+	SysModel            ResourceTypeID = "sysModel"
+	SysInstance         ResourceTypeID = "sysInstance"
+	SysAssociationType  ResourceTypeID = "sysAssociationType "
 )
 
 // Business Resource
@@ -120,10 +117,9 @@ const (
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
 	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
-
-	BizModelGroup ResourceTypeID = "bizModelGroup"
-	BizModel      ResourceTypeID = "bizModel"
-	BizInstance   ResourceTypeID = "bizInstance"
+	BizModelGroup      ResourceTypeID = "bizModelGroup"
+	BizModel           ResourceTypeID = "bizModel"
+	BizInstance        ResourceTypeID = "bizInstance"
 )
 
 type ActionID string
