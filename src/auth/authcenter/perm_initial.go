@@ -14,23 +14,10 @@ package authcenter
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"sort"
-	"strings"
 )
 
 func (ac *AuthCenter) Init(ctx context.Context) error {
-	detail := SystemDetail{}
-	detail.System = expectSystem
-	detail.Scopes = append(detail.Scopes, struct {
-		ScopeTypeID   string         `json:"scope_type_id"`
-		ResourceTypes []ResourceType `json:"resource_types"`
-	}{
-		ScopeTypeID:   "system",
-		ResourceTypes: expectSystemResourceType,
-	})
-
 	header := http.Header{}
 	if err := ac.authClient.RegistSystem(ctx, header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
@@ -47,27 +34,9 @@ func (ac *AuthCenter) Init(ctx context.Context) error {
 		return err
 	}
 
-	return nil
-}
-
-func resourceKey(res ResourceType) string {
-	return fmt.Sprintf("%s-%s-%s", res.ResourceTypeID, res.ResourceTypeName, res.ParentResourceTypeID)
-}
-
-func actionKey(actions []Action) string {
-	sort.Slice(actions, func(i, j int) bool {
-		if actions[i].ActionID < actions[j].ActionID {
-			return true
-		} else if actions[i].ActionName < actions[j].ActionName {
-			return true
-		} else {
-			return actions[i].IsRelatedResource == actions[j].IsRelatedResource
-		}
-	})
-
-	keys := []string{}
-	for _, action := range actions {
-		keys = append(keys, fmt.Sprintf("%s-%s-%v", action.ActionID, action.ActionName, action.IsRelatedResource))
+	if err := ac.authClient.registerResource(ctx, header, &expectResourceInst); err != nil {
+		return err
 	}
-	return strings.Join(keys, ":")
+
+	return nil
 }
