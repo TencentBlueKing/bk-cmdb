@@ -319,12 +319,7 @@ const (
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
-	CCErrorTopoAssociationKindHasBeenUsed = 1101060
-	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
-	CCErrorTopoAssociationKindMainlineUnavailable = 1199043
-	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
-	CCErrorTopoAssociationKindInconsistent = 1199044
-
+	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033
@@ -356,19 +351,23 @@ const (
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
 	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
-
 	// association kind has been apply to object
-	CCErrorTopoAssKindHasApplyToObject = 1101069
-
+	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
-	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
-	CCErrorTopoAsstKindIsNotExist       = 1101071
-	CCErrorAsstInstIsNotExist           = 1101072
-	CCErrorInstToAsstIsNotExist         = 1101073
-	CCErrorInstHasAsst                  = 1101074
-
-	CCErrTopoMulueIDNotfoundFailed = 1101080
-	CCErrTopoBkAppNotAllowedDelete = 1101081
+	CCErrorTopoPreAssKindCanNotBeDelete = 1101071
+	CCErrorTopoAsstKindIsNotExist       = 1101072
+	CCErrorAsstInstIsNotExist           = 1101073
+	CCErrorInstToAsstIsNotExist         = 1101074
+	CCErrorInstHasAsst                  = 1101075
+	CCErrTopoCreateAssoKindFailed       = 1101076
+	CCErrTopoUpdateAssoKindFailed       = 1101077
+	CCErrTopoDeleteAssoKindFailed       = 1101078
+	CCErrTopoMulueIDNotfoundFailed      = 1101080
+	CCErrTopoBkAppNotAllowedDelete      = 1101081
+	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
+	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+	CCErrorTopoAssociationKindInconsistent = 1101083
 
 	// objectcontroller 1102XXX
 
@@ -621,10 +620,6 @@ const (
 	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
 	CC_ERR_Comm_JSON_ENCODE     = 3002
 	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
-
-	CC_Err_Comm_APP_QUERY_FAIL = 4008
-	//user custom
-	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL = 5000
 
 	Json_Marshal_ERR     = 9000
 	Json_Marshal_ERR_STR = "json marshal error"
