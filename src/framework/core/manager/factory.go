@@ -13,8 +13,9 @@
 package manager
 
 import (
-	"configcenter/src/framework/core/types"
 	"net/http"
+
+	"configcenter/src/framework/core/types"
 )
 
 // New return a new  Manager instance

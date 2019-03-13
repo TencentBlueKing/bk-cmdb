@@ -146,6 +146,7 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CC_MODULE_EVENTSERVER)
 	modules = append(modules, types.CC_MODULE_TXC)
 	modules = append(modules, types.CC_MODULE_CORESERVICE)
+	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
 
 	for _, moduleName := range modules {
 		filePath := filepath.Join(confRootPath, moduleName+".conf")

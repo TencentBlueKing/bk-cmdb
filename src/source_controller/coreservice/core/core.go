@@ -13,6 +13,7 @@
 package core
 
 import (
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -116,6 +117,15 @@ type InstanceAssociation interface {
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
+// DataSynchronize manager data synchronize interface
+type DataSynchronizeOperation interface {
+	SynchronizeInstanceAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	SynchronizeModelAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	SynchronizeAssociationAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	Find(ctx ContextParams, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
+	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
+}
+
 // AssociationOperation association methods
 type AssociationOperation interface {
 	AssociationKind
@@ -128,20 +138,23 @@ type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
 	AssociationOperation() AssociationOperation
+	DataSynchronizeOperation() DataSynchronizeOperation
 }
 
 type core struct {
-	model        ModelOperation
-	instance     InstanceOperation
-	associaction AssociationOperation
+	model           ModelOperation
+	instance        InstanceOperation
+	associaction    AssociationOperation
+	dataSynchronize DataSynchronizeOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation) Core {
 	return &core{
-		model:        model,
-		instance:     instance,
-		associaction: association,
+		model:           model,
+		instance:        instance,
+		associaction:    association,
+		dataSynchronize: dataSynchronize,
 	}
 }
 
@@ -155,4 +168,8 @@ func (m *core) InstanceOperation() InstanceOperation {
 
 func (m *core) AssociationOperation() AssociationOperation {
 	return m.associaction
+}
+
+func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
+	return m.dataSynchronize
 }
