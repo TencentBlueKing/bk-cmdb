@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -57,7 +56,7 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFieldsStr string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
@@ -68,26 +67,16 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 		return nil, err
 	}
 
-	customFields := strings.Split(customFieldsStr, ",")
-	customFieldsList := make([]string, 0)
-
-	for _, fieldID := range customFields {
-		if util.InStrArr(filterFields, fieldID) || "" == fieldID {
-			continue
-		}
-		customFieldsList = append(customFieldsList, fieldID)
-	}
-
 	ret := make(map[string]Property)
 	indexCustom := 0
-	indexOthers := len(customFieldsList)
+	indexOthers := len(customFields)
 
 	for _, group := range groups {
 		for _, field := range fields {
 			if field.Group == group.ID {
 				if util.InStrArr(filterFields, field.ID) {
 					field.NotExport = true
-				} else if util.InStrArr(customFieldsList, field.ID) {
+				} else if util.InStrArr(customFields, field.ID) {
 					field.ExcelColIndex = indexCustom
 					indexCustom++
 				} else {

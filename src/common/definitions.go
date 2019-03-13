@@ -333,8 +333,8 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
-	// BKInstCustomColumns the use custom display columns
-	BKInstCustomColumns = "bk_custom_columns"
+	// ExportCustomFields the use custom display columns
+	ExportCustomFields = "export_custom_fields"
 
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
