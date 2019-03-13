@@ -20,6 +20,8 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -68,6 +70,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
+	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
+	if err != nil {
+		return err
+	}
+
+	authorize, err := auth.NewAuthorize(nil, authConf)
+	if err != nil {
+		return fmt.Errorf("new authorize failed, err: %v", err)
+	}
+
 	cacheDB, err := redis.NewFromConfig(*procSvr.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
@@ -78,6 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
+	procSvr.Auth = authorize
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
