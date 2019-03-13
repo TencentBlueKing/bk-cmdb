@@ -29,7 +29,7 @@ const cloudConfirm = () => import(/* webpackChunkName: cloudConfirm */ '@/views/
 const confirmHistory = () => import(/* webpackChunkName: cloudConfirm */ '@/views/cloud-confirm/history')
 const systemAuthority = () => import(/* webpackChunkName: systemAuthority */ '@/views/permission/role')
 const businessAuthority = () => import(/* webpackChunkName: businessAuthority */ '@/views/permission/business')
-const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology')
+const modelTopology = () => import(/* webpackChunkName: modelTopology */ '@/views/model-topology/index.old')
 const businessModel = () => import(/* webpackChunkName: businessModel */ '@/views/business-model')
 const modelAssociation = () => import(/* webpackChunkName: modelAssociation */ '@/views/model-association')
 
