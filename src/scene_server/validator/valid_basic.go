@@ -411,7 +411,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 // validEnum valid enum
 func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	// validate require
-	if nil == val {
+	if nil == val || val == "" {
 		if valid.require[key] {
 			blog.Error("params can not be null")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
