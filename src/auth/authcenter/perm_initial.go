@@ -15,6 +15,7 @@ package authcenter
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 )
@@ -30,19 +31,19 @@ func (ac *AuthCenter) Init(ctx context.Context) error {
 		ResourceTypes: expectSystemResourceType,
 	})
 
-	_, err := ac.authClient.QuerySystemInfo(ctx, ac.header, SystemIDCMDB, false)
-	if err != nil && err != ErrNotFound {
+	header := http.Header{}
+	if err := ac.authClient.RegistSystem(ctx, header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
 	}
 
-	if err := ac.authClient.RegistSystem(ctx, ac.header, expectSystem); err != nil && err != ErrDuplicated {
+	if err := ac.authClient.UpdateSystem(ctx, header, System{SystemID: expectSystem.SystemID, SystemName: expectSystem.SystemName}); err != nil {
 		return err
 	}
 
-	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDSystem, expectSystemResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, header, SystemIDCMDB, ScopeTypeIDSystem, expectSystemResourceType); err != nil {
 		return err
 	}
-	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDBiz, expectBizResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, header, SystemIDCMDB, ScopeTypeIDBiz, expectBizResourceType); err != nil {
 		return err
 	}
 
