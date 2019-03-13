@@ -31,7 +31,7 @@ var errNoMoreChunks = errors.New("no more chunks remaining")
 type DownloadStream struct {
 	numChunks     int32
 	chunkSize     int32
-	cursor        mongo.Cursor
+	cursor        *mongo.Cursor
 	done          bool
 	closed        bool
 	buffer        []byte // store up to 1 chunk if the user provided buffer isn't big enough
@@ -42,7 +42,7 @@ type DownloadStream struct {
 	fileLen       int64
 }
 
-func newDownloadStream(cursor mongo.Cursor, chunkSize int32, fileLen int64) *DownloadStream {
+func newDownloadStream(cursor *mongo.Cursor, chunkSize int32, fileLen int64) *DownloadStream {
 	numChunks := int32(math.Ceil(float64(fileLen) / float64(chunkSize)))
 
 	return &DownloadStream{
@@ -167,12 +167,7 @@ func (ds *DownloadStream) fillBuffer(ctx context.Context) error {
 		return errNoMoreChunks
 	}
 
-	nextChunk, err := ds.cursor.DecodeBytes()
-	if err != nil {
-		return err
-	}
-
-	chunkIndex, err := nextChunk.LookupErr("n")
+	chunkIndex, err := ds.cursor.Current.LookupErr("n")
 	if err != nil {
 		return err
 	}
@@ -182,13 +177,27 @@ func (ds *DownloadStream) fillBuffer(ctx context.Context) error {
 	}
 
 	ds.expectedChunk++
-	data, err := nextChunk.LookupErr("data")
+	data, err := ds.cursor.Current.LookupErr("data")
 	if err != nil {
 		return err
 	}
 
 	_, dataBytes := data.Binary()
 	copied := copy(ds.buffer, dataBytes)
+
+	bytesLen := int32(len(dataBytes))
+	if ds.expectedChunk == ds.numChunks {
+		// final chunk can be fewer than ds.chunkSize bytes
+		bytesDownloaded := ds.chunkSize * (ds.expectedChunk - 1)
+		bytesRemaining := ds.fileLen - int64(bytesDownloaded)
+
+		if int64(bytesLen) != bytesRemaining {
+			return ErrWrongSize
+		}
+	} else if bytesLen != ds.chunkSize {
+		// all intermediate chunks must have size ds.chunkSize
+		return ErrWrongSize
+	}
 
 	ds.bufferStart = 0
 	ds.bufferEnd = copied

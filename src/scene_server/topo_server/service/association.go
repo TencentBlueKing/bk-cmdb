@@ -26,6 +26,9 @@ import (
 // CreateMainLineObject create a new object in the main line topo
 func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	tx, err := s.tx.StartTransaction(context.Background())
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 	mainLineAssociation := &metadata.Association{}
 
@@ -37,15 +40,12 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 	ret, err := s.core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 
 	if err != nil {
-		blog.Infof("[api-asst] abording transaction")
 		if txerr := tx.Abort(context.Background()); txerr != nil {
 			blog.Errorf("[api-asst] abort transaction failed; %v", err)
 			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	} else {
-		blog.Infof("[api-asst] committing transaction")
 		if txerr := tx.Commit(context.Background()); txerr != nil {
-			blog.Errorf("[api-asst] commit transaction failed; %v", err)
 			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	}
@@ -55,9 +55,25 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 
 // DeleteMainLineObject delete a object int the main line topo
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	tx, err := s.tx.StartTransaction(context.Background())
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+	}
+	params.Header = tx.TxnInfo().IntoHeader(params.Header)
 
 	objID := pathParams("bk_obj_id")
-	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+	err = s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+
+	if err != nil {
+		if txerr := tx.Abort(context.Background()); txerr != nil {
+			blog.Errorf("[api-asst] abort transaction failed; %v", err)
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	} else {
+		if txerr := tx.Commit(context.Background()); txerr != nil {
+			return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
+		}
+	}
 	return nil, err
 }
 

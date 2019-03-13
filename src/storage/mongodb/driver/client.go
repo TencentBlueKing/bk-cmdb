@@ -26,18 +26,16 @@ var _ mongodb.CommonClient = (*client)(nil)
 type collectionName string
 
 type client struct {
-	createdByPool  bool
-	uri            string
-	collectionMaps map[collectionName]mongodb.CollectionInterface
-	innerDB        *database
-	innerClient    *mongo.Client
+	createdByPool bool
+	uri           string
+	innerDB       *database
+	innerClient   *mongo.Client
 }
 
 // NewClient create a mongoc client instance
 func NewClient(uri string) mongodb.CommonClient {
 	return &client{
-		uri:            uri,
-		collectionMaps: map[collectionName]mongodb.CollectionInterface{},
+		uri: uri,
 	}
 }
 
@@ -81,12 +79,7 @@ func (c *client) Database() mongodb.Database {
 }
 
 func (c *client) Collection(collName string) mongodb.CollectionInterface {
-	target, ok := c.collectionMaps[collectionName(collName)]
-	if !ok {
-		target = newCollection(c.innerDB.innerDatabase, collName)
-		c.collectionMaps[collectionName(collName)] = target
-	}
-	return target
+	return newCollection(c.innerDB.innerDatabase, collName)
 }
 
 func (c *client) Session() mongodb.SessionOperation {

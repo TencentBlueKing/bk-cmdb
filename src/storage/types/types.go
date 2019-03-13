@@ -54,6 +54,21 @@ const (
 	TxStatusException
 )
 
+func (s TxStatus) String() string {
+	switch s {
+	case TxStatusOnProgress:
+		return "OnProgress"
+	case TxStatusCommited:
+		return "Commited"
+	case TxStatusAborted:
+		return "Aborted"
+	case TxStatusException:
+		return "Exception"
+	default:
+		return "Unknow"
+	}
+}
+
 type Document map[string]interface{}
 
 func (d Document) Decode(result interface{}) error {

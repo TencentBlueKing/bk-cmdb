@@ -100,6 +100,10 @@ func (c *Client) Connect(ctx context.Context) error {
 // or write operations. If this method returns with no errors, all connections
 // associated with this Client have been closed.
 func (c *Client) Disconnect(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	c.endSessions(ctx)
 	return replaceTopologyErr(c.topology.Disconnect(ctx))
 }
@@ -448,7 +452,7 @@ func (c *Client) UseSessionWithOptions(ctx context.Context, opts *options.Sessio
 // to running a raw aggregation with a $changeStream stage because it supports resumability in the case of some errors.
 // The client must have read concern majority or no read concern for a change stream to be created successfully.
 func (c *Client) Watch(ctx context.Context, pipeline interface{},
-	opts ...*options.ChangeStreamOptions) (Cursor, error) {
+	opts ...*options.ChangeStreamOptions) (*ChangeStream, error) {
 
 	return newClientChangeStream(ctx, c, pipeline, opts...)
 }
