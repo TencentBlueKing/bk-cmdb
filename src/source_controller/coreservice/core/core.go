@@ -116,6 +116,12 @@ type InstanceAssociation interface {
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
+// TopoOperation methods
+type TopoOperation interface {
+	SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
+	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
+}
+
 // AssociationOperation association methods
 type AssociationOperation interface {
 	AssociationKind
@@ -128,20 +134,23 @@ type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
 	AssociationOperation() AssociationOperation
+	TopoOperation() TopoOperation
 }
 
 type core struct {
 	model        ModelOperation
 	instance     InstanceOperation
 	associaction AssociationOperation
+	topo         TopoOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, topo TopoOperation) Core {
 	return &core{
 		model:        model,
 		instance:     instance,
 		associaction: association,
+		topo:         topo,
 	}
 }
 
@@ -155,4 +164,8 @@ func (m *core) InstanceOperation() InstanceOperation {
 
 func (m *core) AssociationOperation() AssociationOperation {
 	return m.associaction
+}
+
+func (m *core) TopoOperation() TopoOperation {
+	return m.topo
 }
