@@ -47,7 +47,7 @@
                 inst: {}
             }
         },
-        created () {
+        mounted () {
             this.init()
         },
         methods: {
