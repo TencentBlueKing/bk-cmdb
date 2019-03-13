@@ -19,9 +19,8 @@ import (
 	"strconv"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,8 +31,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
-
-	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -73,65 +70,30 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	blog.V(5).Infof("srv conf:", svrInfo)
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
-
 	topoSvr := new(TopoServer)
 	topoSvr.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
-
-	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
-	}
 
 	topoService := toposvr.New()
 	topoSvr.Service = topoService
 
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(topoService.WebService()),
-		TLS:        backbone.TLSConfig{},
+	input := &backbone.BackboneParameter{
+		Regdiscv:     op.ServConf.RegDiscover,
+		ConfigPath:   op.ServConf.ExConfig,
+		ConfigUpdate: topoSvr.onTopoConfigUpdate,
+		SrvInfo:      svrInfo,
 	}
-
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	engine, err := backbone.NewBackbone(
-		ctx,
-		op.ServConf.RegDiscover,
-		types.CC_MODULE_TOPO,
-		op.ServConf.ExConfig,
-		topoSvr.onTopoConfigUpdate,
-		discover,
-		bonC)
-
-	if nil != err {
-		return fmt.Errorf("new engine failed, error is %s", err.Error())
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	topoSvr.Core = engine
 
 	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
-	topoService.SetConfig(topoSvr.Config, engine)
-
+	// topoService.SetConfig(topoSvr.Config, engine)
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(topoService.WebService())); err != nil {
+		return err
+	}
 	select {
 	case <-ctx.Done():
 	}

@@ -175,7 +175,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 		updateInstCond := condition.CreateCondition()
 		updateInstCond.Field("bk_obj_id").Eq(asst.ObjectID)
-		updateInstCond.Field("bk_asst_id").Eq(asst.AsstObjID)
+		updateInstCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
 		err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateInstCond.ToMapStr(), updateInst)
 		if err != nil {
 			return err

@@ -30,14 +30,16 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/authorize"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc    discovery.DiscoveryInterface
-	CacheDB *redis.Client
+	disc       discovery.DiscoveryInterface
+	CacheDB    *redis.Client
+	Authorizer authorize.HostAuthorizer
 }
 
 type srvComm struct {
@@ -88,8 +90,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
-	ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
+	//ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
+	//ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
 	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))

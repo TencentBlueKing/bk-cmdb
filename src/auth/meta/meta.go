@@ -44,6 +44,7 @@ type UserInfo struct {
 
 type Item Basic
 
+// ResourceAttribute represent one iam resource
 type ResourceAttribute struct {
 	Basic
 
@@ -71,6 +72,12 @@ type Basic struct {
 	InstanceID int64
 }
 
+// CommonInfo contains common field which can be extracted from restful.Request
+type CommonInfo struct {
+	User       UserInfo
+	APIVersion string
+}
+
 type Decision struct {
 	// the authorize decision, whether a user has been authorized or not.
 	Authorized bool
@@ -95,7 +102,8 @@ const (
 	Find       Action = "find"
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.
-	Unknown Action = "unknown"
+	Unknown     Action = "unknown"
+	EmptyAction Action = "" // used for register resources
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
@@ -107,6 +115,7 @@ const (
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
 	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
+	TransferHost                   Action = "transferHost"
 
 	// process actions
 	BoundModuleToProcess   Action = "boundModuleToProcess"
