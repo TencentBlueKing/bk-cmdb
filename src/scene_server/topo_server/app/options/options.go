@@ -15,22 +15,19 @@ package options
 import (
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
-
 	"github.com/spf13/pflag"
 )
 
-//ServerOption define option of server in flags
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
-// Config export
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
 	Mongo                mongo.Config
+	ConfigMap            map[string]string
 }
 
-//NewServerOption create a ServerOption object
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -39,7 +36,6 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
-//AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60001", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")

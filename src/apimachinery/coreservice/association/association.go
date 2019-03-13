@@ -21,14 +21,15 @@ import (
 )
 
 type AssociationClientInterface interface {
-	CreateAssociation(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error)
+	UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
+	DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
+	ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error)
+	CreateAssociationType(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error)
+
 	CreateManyAssociation(ctx context.Context, h http.Header, input *metadata.CreateManyAssociationKind) (resp *metadata.CreatedManyOptionResult, err error)
 	SetAssociation(ctx context.Context, h http.Header, input *metadata.SetAssociationKind) (resp *metadata.SetOptionResult, err error)
 	SetManyAssociation(ctx context.Context, h http.Header, input *metadata.SetManyAssociationKind) (resp *metadata.SetOptionResult, err error)
-	UpdateAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	DeleteAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
 	DeleteAssociationCascade(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
-	ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error)
 	CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error)
 	CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error)
 	SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error)

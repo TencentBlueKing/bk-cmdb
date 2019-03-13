@@ -12,18 +12,6 @@
 
 package meta
 
-// system constanst
-const (
-	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
-)
-
-// ScopeTypeID constanst
-const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
-)
-
 type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string

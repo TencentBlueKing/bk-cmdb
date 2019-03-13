@@ -91,7 +91,7 @@ func ParseUserInfo(req *restful.Request) (*meta.UserInfo, error) {
 	if len(supplierID) == 0 {
 		return nil, errors.New("miss bk_supplier_id in your request header")
 	}
-	userInfo.SupplierID = supplierID
+	userInfo.SupplierAccount = supplierID
 	return userInfo, nil
 }
 

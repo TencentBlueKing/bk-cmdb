@@ -43,7 +43,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-		if attribute.BusinessID == 0 {
+		if attribute.BusinessID != 0 {
 			info.ResourceType = BizModel
 		} else {
 			info.ResourceType = SysModel
@@ -53,7 +53,6 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		info.ResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
-		// action=拓扑层级操作
 		info.ResourceType = SysSystemBase
 
 	case meta.ModelClassification:
