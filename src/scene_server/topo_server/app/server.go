@@ -101,12 +101,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	server.Service = &service.Service{
-		Engine: engine,
-		Auth:   authAPI,
-		Core:   core.New(engine.CoreAPI, authAPI),
-		Error:  engine.CCErr,
-		Txn:    txn,
-		Config: server.Config,
+		Language: engine.Language,
+		Engine:   engine,
+		Auth:     authAPI,
+		Core:     core.New(engine.CoreAPI, authAPI),
+		Error:    engine.CCErr,
+		Txn:      txn,
+		Config:   server.Config,
 	}
 
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(server.Service.WebService())); err != nil {
