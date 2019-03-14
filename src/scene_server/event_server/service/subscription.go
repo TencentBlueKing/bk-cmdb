@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -38,6 +39,16 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+
+	if decision, err := s.auth.Authorize(s.ctx, &meta.AuthAttribute{}); err != nil {
+		blog.Errorf("Permission Deny for create Subcribe, %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, err)})
+		return
+	} else if !decision.Authorized {
+		blog.Errorf("Permission Deny for create Subcribe, %v", decision.Reason)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, decision.Reason)})
+		return
+	}
 
 	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
