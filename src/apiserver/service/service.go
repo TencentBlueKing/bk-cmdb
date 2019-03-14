@@ -97,8 +97,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: "invalid supplier account.",
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusBadRequest)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -116,8 +115,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusBadRequest)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -130,8 +128,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
 		decision, err := authorize.Authorize(req.Request.Context(), attribute)
@@ -142,8 +139,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -154,8 +150,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusForbidden)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusForbidden, rsp, restful.MIME_JSON)
 			return
 		}
 
