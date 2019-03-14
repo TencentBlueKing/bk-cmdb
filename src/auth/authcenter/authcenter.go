@@ -120,6 +120,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 	header.Set(authAppSecretHeaderKey, cfg.AppSecret)
 
 	return &AuthCenter{
+		Config: cfg,
 		authClient: &authClient{
 			client:      rest.NewRESTClient(c, ""),
 			Config:      cfg,
@@ -323,7 +324,7 @@ func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error
 		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 	} else {
 		s.ScopeType = "system"
-		s.ScopeID = "bk-cmdb"
+		s.ScopeID = "bk_cmdb"
 	}
 	return s, nil
 }
