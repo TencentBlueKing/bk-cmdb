@@ -38,6 +38,11 @@ const (
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
+	if strings.ToLower(conifgmap[prefix+".enable"]) == "true" {
+		cfg.Enable = true
+	} else {
+		return cfg, nil
+	}
 
 	enable, exist := configmap[prefix+".enable"]
 	if !exist {
