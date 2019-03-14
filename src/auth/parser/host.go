@@ -235,9 +235,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.FindMany,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -251,9 +250,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.DeleteMany,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -273,9 +271,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -294,9 +291,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostFromModuleToResPool,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -315,9 +311,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostToModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -336,9 +331,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveResPoolHostToBizIdleModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -357,9 +351,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizFaultModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -378,9 +371,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizIdleModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -399,9 +391,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -422,9 +413,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.CleanHostInSetOrModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -444,9 +434,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.MoveHostsToBusinessOrModule,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -465,9 +454,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.FindMany,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -480,9 +468,8 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.HostInstance,
 					Action: meta.UpdateMany,
-					Name:   meta.Host,
 				},
 			},
 		}
@@ -581,8 +568,5 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 		return ps
 	}
-
-	//
-
 	return ps
 }

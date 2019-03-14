@@ -63,7 +63,7 @@ func NewResoruceAttribute(commonInfo *meta.CommonInfo, businessID int64,
 			Action:     action,
 		},
 		BusinessID:      businessID,
-		SupplierAccount: commonInfo.User.SupplierID,
+		SupplierAccount: commonInfo.User.SupplierAccount,
 	}
 	return resource
 }

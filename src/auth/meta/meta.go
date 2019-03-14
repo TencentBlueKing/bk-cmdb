@@ -27,7 +27,7 @@ type UserInfo struct {
 	// the name of this user.
 	UserName string
 	// the supplier id that this user belongs to.
-	SupplierID string
+	SupplierAccount string
 }
 
 type Item Basic
@@ -49,6 +49,7 @@ type Basic struct {
 	Type ResourceType
 
 	// the action that user want to do with this resource.
+	// this field should be empty when it's used in resource handle operation.
 	Action Action
 
 	// the name of the resource, which could be a bk-route, etc.
