@@ -107,13 +107,13 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(&req.Request.Header, resp, params.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("deregister host:%+v from current business failed, [%v], err:%v, rid:%s", err.Error(), srvData.rid)
 	}
 
@@ -210,7 +210,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModule), Data: detail})
 	}
 
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("register host:%+v to current business failed, [%v], err:%v, rid:%s", hostIDArr, err.Error(), srvData.rid)
 	}
 
@@ -256,7 +256,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &config.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 
@@ -398,10 +398,10 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to iam failed, error:%v, rid:%v", conf.HostID, err, srvData.rid)
 	}
 
@@ -423,7 +423,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to iam failed, error:%v, rid:%v", conf.HostID, err, srvData.rid)
 	}
 
@@ -528,10 +528,10 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	audit.WithPrevious(srvData.ctx)
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v from business:%d failed. err: %v, rid:%s", conf.HostID, appID, err, srvData.rid)
 	}
 
@@ -547,7 +547,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	// register host to new business
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v from business:%d failed. err: %v, rid:%s", conf.HostID, appID, err, srvData.rid)
 	}
 
@@ -621,10 +621,10 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("deregister host:%+v failed, error:%s, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
@@ -647,7 +647,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 	}
 	if 0 == len(errmsg) {
-		if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 			blog.Errorf("register host:%+v failed, error:%s, rid:%s", hostIDArr, err, srvData.rid)
 		}
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -698,11 +698,11 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	// deregister host
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v to business:%d failed, err: %v, rid:%s", conf.HostID, err, srvData.rid)
 	}
 
@@ -752,7 +752,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// register host
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to business:%d failed, err: %v, rid:%s", conf.HostID, err, srvData.rid)
 	}
 

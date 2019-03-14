@@ -13,7 +13,8 @@
 package authcenter
 
 import (
-	"context"
+    "configcenter/src/common/blog"
+    "context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -80,6 +81,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
 func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+    blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	client, err := util.NewClient(tls)
 	if err != nil {
 		return nil, err

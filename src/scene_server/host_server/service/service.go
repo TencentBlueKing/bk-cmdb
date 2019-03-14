@@ -76,8 +76,8 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	//restful.DefaultRequestContentType(restful.MIME_JSON)
-	//restful.DefaultResponseContentType(restful.MIME_JSON)
+	// restful.DefaultRequestContentType(restful.MIME_JSON)
+	// restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.DELETE("/hosts/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
@@ -90,8 +90,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	//ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
-	//ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
+	// ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
+	// ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
 	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))

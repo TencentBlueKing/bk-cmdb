@@ -13,10 +13,12 @@
 package parser
 
 import (
-	"errors"
+    "configcenter/src/common/blog"
+    "errors"
 	"fmt"
 	"io/ioutil"
-	"regexp"
+    "net/http"
+    "regexp"
 	"strings"
 
 	"configcenter/src/auth/meta"
@@ -62,34 +64,28 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 }
 
 // ParseCommonInfo get common info from req, aims at avoiding too much repeat code
-func ParseCommonInfo(req *restful.Request) (*meta.CommonInfo, error) {
+func ParseCommonInfo(requestHeader *http.Header) (*meta.CommonInfo, error) {
 	commonInfo := new(meta.CommonInfo)
 
-	userInfo, err := ParseUserInfo(req)
+	userInfo, err := ParseUserInfo(requestHeader)
 	if err != nil {
 		return nil, err
 	}
 	commonInfo.User = *userInfo
 
-	apiVersion, err := ParseAPIVersion(req)
-	if err != nil {
-		return nil, err
-	}
-	commonInfo.APIVersion = apiVersion
-
 	return commonInfo, nil
 }
 
-func ParseUserInfo(req *restful.Request) (*meta.UserInfo, error) {
+func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 	userInfo := new(meta.UserInfo)
-	user := req.Request.Header.Get(common.BKHTTPHeaderUser)
+	user := requestHeader.Get(common.BKHTTPHeaderUser)
 	if len(user) == 0 {
-		return nil, errors.New("miss BK_User in your request header")
+		return nil, errors.New("parse user info failed, miss BK_User in your request header")
 	}
 	userInfo.UserName = user
-	supplierID := req.Request.Header.Get(common.BKHTTPSupplierID)
+	supplierID := requestHeader.Get(common.BKHTTPSupplierID)
 	if len(supplierID) == 0 {
-		return nil, errors.New("miss bk_supplier_id in your request header")
+		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
 	}
 	userInfo.SupplierID = supplierID
 	return userInfo, nil
@@ -98,11 +94,13 @@ func ParseUserInfo(req *restful.Request) (*meta.UserInfo, error) {
 func ParseAPIVersion(req *restful.Request) (string, error) {
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
-		return "", err
+	    blog.Errorf("parse api version failed, %+v", err)
+		return "", fmt.Errorf("parse api version failed, %+v", err)
 	}
 	version := elements[1]
 	if version != "v3" {
-		return "", fmt.Errorf("unsupported api version: %s", version)
+        blog.Errorf("parse api version failed, unsupported api version: %s", version)
+		return "", fmt.Errorf("parse api version failed, unsupported api version: %s", version)
 	}
 	return version, nil
 }
@@ -112,7 +110,7 @@ var urlRegex = regexp.MustCompile(`^/api/([^/]+)/([^/]+)/([^/]+)/(.*)$`)
 
 func urlParse(url string) (elements []string, err error) {
 	if !urlRegex.MatchString(url) {
-		return nil, errors.New("invalid url format")
+		return nil, fmt.Errorf("invalid url format, url=%s", url)
 	}
 
 	return strings.Split(url, "/")[1:], nil

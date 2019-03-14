@@ -118,7 +118,7 @@ type InstanceAssociation interface {
 
 // TopoOperation methods
 type TopoOperation interface {
-	SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
+	SearchMainlineModelTopo(withDetail bool) (*metadata.TopoModelNode, error)
 	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
