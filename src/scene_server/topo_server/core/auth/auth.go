@@ -24,6 +24,7 @@ import (
 )
 
 type TopoAuth struct {
+	enableAuth bool
 	authorizer auth.Authorize
 }
 
@@ -41,6 +42,7 @@ func NewTopologyAuth(cfg map[string]string) (*TopoAuth, error) {
 	}
 
 	return &TopoAuth{
+		enableAuth: authConf.Enable,
 		authorizer: authorize,
 	}, nil
 }
@@ -116,11 +118,6 @@ func (ta *TopoAuth) DeregisterObject(ctx context.Context, header http.Header, ob
 	if err := ta.authorizer.DeregisterResource(ctx, resource); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (ta *TopoAuth) RegisterObjectsBatch() error {
-
 	return nil
 }
 
