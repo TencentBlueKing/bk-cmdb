@@ -20,7 +20,10 @@
                                     :class="{required: property['isrequired']}">
                                     {{property['bk_property_name']}}
                                 </label>
-                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
+                                <i class="property-name-tooltips icon-cc-tips"
+                                    v-if="property['placeholder']"
+                                    v-tooltip="htmlEncode(property['placeholder'])">
+                                </i>
                             </div>
                             <div class="property-value">
                                 <component class="form-component"
@@ -285,7 +288,7 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
-                color: #ffb400;
+                color: #c3cdd7;
             }
             .property-value{
                 height: 36px;

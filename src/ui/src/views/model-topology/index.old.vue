@@ -126,13 +126,11 @@
                 ref="addEdgeIcon"
                 @click="addEdge">
                 <i class="icon-cc-line"></i>
-                <span>创建关联</span>
             </span>
             <span class="icon-box is-del"
                 ref="deleteNodeIcon"
                 @click="deleteNode">
                 <i class="icon-cc-del"></i>
-                <span>删除</span>
             </span>
         </div>
     </div>
@@ -551,31 +549,19 @@
                     const scale = this.networkInstance.getScale()
                     const nodeBox = this.networkInstance.getBoundingBox(nodeId)
                     const containerBox = this.$refs.topo.getBoundingClientRect()
-                    const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale + NAV_WIDTH
-                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale + TOOLBAR_HEIHGT
+                    const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale + NAV_WIDTH - 8
+                    const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale + TOOLBAR_HEIHGT - 8
                     const {nodeTooltips, addEdgeIcon, deleteNodeIcon} = this.$refs
                     nodeTooltips.style.left = left + 'px'
                     nodeTooltips.style.top = top + 'px'
                     const ICON_DEFAULT_HEIGHT = 24
                     const scaledHeight = Math.max(14, Math.min(50, ICON_DEFAULT_HEIGHT * scale))
                     const scaleRatio = scaledHeight / ICON_DEFAULT_HEIGHT
-                    const margin = 4 * scale
+                    const margin = 2 * scale
                     const x1 = 0
                     const y1 = 0
-                    const x2 = x1
+                    const x2 = x1 - 5
                     const y2 = scaledHeight + margin
-                    // const boxWidth = nodeBox.right - nodeBox.left
-                    // const R = Math.sqrt(2) / 2 * boxWidth * scale
-                    // const x1 = (1 - Math.sqrt(2) / 2) * R
-                    // const y1 = scaledHeight - x1
-                    // const y2 = x1 + margin
-                    // const tempY = Math.sqrt(2) / 2 * R - margin - scaledHeight
-                    // let x2
-                    // if (tempY <= R) {
-                    //     x2 = R - Math.sqrt(Math.pow(R, 2) - Math.pow(Math.sqrt(2) / 2 * R - margin - scaledHeight), 2)
-                    // } else {
-                    //     x2 = R - Math.sqrt(Math.pow(R, 2) - Math.pow(margin - Math.sqrt(2) / 2 * R), 2)
-                    // }
                     addEdgeIcon.style.transform = `scale(${scaleRatio})`
                     addEdgeIcon.style.top = -1 * y1 + 'px'
                     addEdgeIcon.style.left = -1 * x1 + 'px'
@@ -1320,7 +1306,7 @@
         .icon-box {
             position: absolute;
             height: 24px;
-            padding: 0 12px;
+            width: 24px;
             line-height: 24px;
             font-size: 0px;
             border-radius: 12px;

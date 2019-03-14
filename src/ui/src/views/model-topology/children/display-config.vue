@@ -190,8 +190,6 @@
         height: 100%;
         .display-box {
             padding: 0 30px;
-            max-height: calc(100% - 56px);
-            @include scrollbar;
         }
     }
     .display-setting {
