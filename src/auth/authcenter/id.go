@@ -14,6 +14,7 @@ package authcenter
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 )
@@ -62,6 +63,8 @@ func GenerateResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error)
 		return processResourceID(attribute)
 	case meta.NetDataCollector:
 		return netDataCollectorResourceID(attribute)
+	case meta.EventPushing:
+		return eventSubscribeResourceID(attribute)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
 	}
@@ -174,4 +177,13 @@ func processResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) 
 func netDataCollectorResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
+}
+
+func eventSubscribeResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	return []ResourceID{
+		{
+			ResourceType: SysEventPushing,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }
