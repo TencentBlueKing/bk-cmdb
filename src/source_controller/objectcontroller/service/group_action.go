@@ -129,7 +129,6 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
 	cond := make(map[string]interface{})
