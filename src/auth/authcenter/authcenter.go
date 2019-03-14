@@ -36,10 +36,25 @@ const (
 )
 
 // ParseConfigFromKV returns a new config
-func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, error) {
+func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
 	var cfg AuthConfig
 
-	address, exist := conifgmap[prefix+".address"]
+	enable, exist := configmap[prefix+".enable"]
+	if !exist {
+		return AuthConfig{}, nil
+	}
+
+	var err error
+	cfg.Enable, err = strconv.ParseBool(enable)
+	if err != nil {
+		return AuthConfig{}, errors.New(`invalid auth "enable" value`)
+	}
+
+	if !cfg.Enable {
+		return AuthConfig{}, nil
+	}
+
+	address, exist := configmap[prefix+".address"]
 	if !exist {
 		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
@@ -48,14 +63,13 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 	if len(cfg.Address) == 0 {
 		return cfg, errors.New(`invalid "address" configuration for auth center`)
 	}
-
 	for i := range cfg.Address {
 		if !strings.HasSuffix(cfg.Address[i], "/") {
 			cfg.Address[i] = cfg.Address[i] + "/"
 		}
 	}
 
-	cfg.AppSecret, exist = conifgmap[prefix+".appSecret"]
+	cfg.AppSecret, exist = configmap[prefix+".appSecret"]
 	if !exist {
 		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
 	}
@@ -64,7 +78,7 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = conifgmap[prefix+".appCode"]
+	cfg.AppCode, exist = configmap[prefix+".appCode"]
 	if !exist {
 		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
@@ -75,14 +89,14 @@ func ParseConfigFromKV(prefix string, conifgmap map[string]string) (AuthConfig, 
 
 	cfg.SystemID = SystemIDCMDB
 
-	if strings.ToLower(conifgmap[prefix+".enable"]) == "true" {
-		cfg.Enable = true
-	}
 	return cfg, nil
 }
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
 func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+	if !cfg.Enable {
+		return new(AuthCenter), nil
+	}
 	client, err := util.NewClient(tls)
 	if err != nil {
 		return nil, err
@@ -126,6 +140,9 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
+	if !ac.Config.Enable {
+		return meta.Decision{Authorized: true}, nil
+	}
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, rsc := range a.Resources {
 		// check whether this request is in whitelist, so that it can be skip directly.
@@ -186,6 +203,10 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+
 	if len(rs) <= 0 {
 		// not resource should be register
 		return nil
@@ -222,6 +243,9 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if !ac.Config.Enable {
+		return nil
+	}
 	if len(rs) <= 0 {
 		// not resource should be deregister
 		return nil
@@ -259,6 +283,10 @@ func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.Resourc
 }
 
 func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+
 	if len(r.Basic.Type) == 0 || len(r.Basic.Name) == 0 {
 		return errors.New("invalid resource attribute with empty object or object name")
 	}
