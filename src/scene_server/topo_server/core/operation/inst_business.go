@@ -225,7 +225,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error {
 	if err := b.auth.DeregisterBusiness(params.Context, params.Header, bizID); err != nil {
-		blog.Errorf("delete business: %d, but deregister businessfrom auth failed, err: %v", bizID, err)
+		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v", bizID, err)
 		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
 

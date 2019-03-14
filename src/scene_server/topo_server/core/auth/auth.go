@@ -51,7 +51,7 @@ func (ta *TopoAuth) RegisterObject(ctx context.Context, header http.Header, obje
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:       meta.Model,
-			Name:       object.ObjectID,
+			Name:       object.ObjectName,
 			InstanceID: object.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
@@ -76,7 +76,7 @@ func (ta *TopoAuth) UpdateRegisteredObject(ctx context.Context, header http.Head
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:       meta.Model,
-			Name:       object.ObjectID,
+			Name:       object.ObjectName,
 			InstanceID: object.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
@@ -90,7 +90,7 @@ func (ta *TopoAuth) UpdateRegisteredObject(ctx context.Context, header http.Head
 		resource.BusinessID = bizID
 	}
 
-	if err := ta.authorizer.RegisterResource(ctx, resource); err != nil {
+	if err := ta.authorizer.UpdateResource(ctx, &resource); err != nil {
 		return err
 	}
 
@@ -101,7 +101,7 @@ func (ta *TopoAuth) DeregisterObject(ctx context.Context, header http.Header, ob
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:       meta.Model,
-			Name:       object.ObjectID,
+			Name:       object.ObjectName,
 			InstanceID: object.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
@@ -131,6 +131,14 @@ func (ta *TopoAuth) RegisterClassification(ctx context.Context, header http.Head
 		SupplierAccount: util.GetOwnerID(header),
 	}
 
+	if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
+		bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
+		if err != nil {
+			return err
+		}
+		resource.BusinessID = bizID
+	}
+
 	if err := ta.authorizer.RegisterResource(ctx, resource); err != nil {
 		return err
 	}
@@ -138,14 +146,22 @@ func (ta *TopoAuth) RegisterClassification(ctx context.Context, header http.Head
 	return nil
 }
 
-func (ta *TopoAuth) UpdateRegisteredClassification(ctx context.Context, header http.Header, name string, id int64) error {
+func (ta *TopoAuth) UpdateRegisteredClassification(ctx context.Context, header http.Header, class *metadata.Classification) error {
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:       meta.ModelClassification,
-			Name:       name,
-			InstanceID: id,
+			Name:       class.ClassificationName,
+			InstanceID: class.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
+	}
+
+	if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
+		bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
+		if err != nil {
+			return err
+		}
+		resource.BusinessID = bizID
 	}
 
 	if err := ta.authorizer.UpdateResource(ctx, &resource); err != nil {
@@ -162,6 +178,14 @@ func (ta *TopoAuth) DeregisterClassification(ctx context.Context, header http.He
 			InstanceID: class.ID,
 		},
 		SupplierAccount: util.GetOwnerID(header),
+	}
+
+	if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
+		bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
+		if err != nil {
+			return err
+		}
+		resource.BusinessID = bizID
 	}
 
 	if err := ta.authorizer.DeregisterResource(ctx, resource); err != nil {
@@ -197,7 +221,7 @@ func (ta *TopoAuth) UpdateAssociationType(ctx context.Context, header http.Heade
 		SupplierAccount: util.GetOwnerID(header),
 	}
 
-	if err := ta.authorizer.RegisterResource(ctx, resource); err != nil {
+	if err := ta.authorizer.UpdateResource(ctx, &resource); err != nil {
 		return err
 	}
 
