@@ -23,14 +23,13 @@ import (
 )
 
 func (s *coreService) SearchMainlineModelTopo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	withDetail := data["withDetail"].(string)
-	bWithDetail, err := strconv.ParseBool(withDetail)
-	if err != nil {
-		blog.Errorf("field with_detail with value:%s invalid, %v", withDetail, err)
-		return nil, fmt.Errorf("field with_detail with value:%s invalid, %v", withDetail, err)
-	}
-
-	result, err := s.core.TopoOperation().SearchMainlineModelTopo(bWithDetail)
+    detail := struct{WithDetail bool}{}
+    if err := mapstr.SetValueToStructByTags(detail, data); err != nil {
+        blog.Errorf("decode body %+v failed, err: %v", data, err)
+        return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
+    }
+    
+	result, err := s.core.TopoOperation().SearchMainlineModelTopo(detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline model topo failed, %+v", err)
 		return nil, fmt.Errorf("search mainline model topo failed, %+v", err)
@@ -49,14 +48,15 @@ func (s *coreService) SearchMainlineInstanceTopo(params core.ContextParams, path
 		return nil, fmt.Errorf("field %s with valued:%s invalid, %v", common.BKAppIDField, bkBizID, err)
 	}
 
-	withDetail := data["withDetail"].(string)
-	bWithDetail, err := strconv.ParseBool(withDetail)
-	if err != nil {
-		blog.Errorf("field with_detail with value:%s invalid, %v", withDetail, err)
-		return nil, fmt.Errorf("field with_detail with value:%s invalid, %v", withDetail, err)
-	}
-
-	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, bWithDetail)
+    blog.V(2).Infof("decode body %+v", data)
+	detail := struct{WithDetail bool `field:"with_detail"`}{}
+    if err := mapstr.SetValueToStructByTags(&detail, data); err != nil {
+        blog.Errorf("decode body %+v failed, err: %v", data, err)
+        return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
+    }
+    blog.V(2).Infof("decode result: %+v", detail)
+    
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)
 		return nil, fmt.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)

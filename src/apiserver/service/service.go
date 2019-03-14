@@ -33,7 +33,7 @@ import (
 // Service service methods
 type Service interface {
 	WebServices() []*restful.WebService
-	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
+	SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
 // NewService create a new service instance
@@ -44,6 +44,7 @@ func NewService() Service {
 }
 
 type service struct {
+	enableAuth bool
 	engine     *backbone.Engine
 	client     HTTPClient
 	core       core.Core
@@ -51,7 +52,8 @@ type service struct {
 	authorizer auth.Authorizer
 }
 
-func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+	s.enableAuth = enableAuth
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
@@ -71,7 +73,7 @@ func (s *service) WebServices() []*restful.WebService {
 	ws := &restful.WebService{}
 
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
-		Filter(authFilter(s.authorizer, getErrFun))
+		Filter(authFilter(s.enableAuth, s.authorizer, getErrFun))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -85,8 +87,25 @@ func (s *service) WebServices() []*restful.WebService {
 	return allWebServices
 }
 
-func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
+			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommParseAuthAttributeFailed,
+				ErrMsg: "invalid supplier account.",
+				Result: false,
+			}
+			resp.WriteHeader(http.StatusBadRequest)
+			resp.WriteAsJson(rsp)
+			return
+		}
+
+		if !enableAuth {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {

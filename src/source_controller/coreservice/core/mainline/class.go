@@ -94,6 +94,7 @@ func (mm *ModelMainline) GetRoot(withDetail bool) (*metadata.TopoModelNode, erro
        return nil, fmt.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
    }
    if withDetail == true {
+       // thinking what's detail actually
        panic("detail option not implemented yet.")
    }
    return mm.root, nil

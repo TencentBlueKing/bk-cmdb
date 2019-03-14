@@ -13,7 +13,8 @@
 package service
 
 import (
-	"errors"
+    "context"
+    "errors"
 	"fmt"
 	"net/http"
 
@@ -22,7 +23,9 @@ import (
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
+    "configcenter/src/common/condition"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/util"
 )
 
 // verifyBusinessPermission will write response directly if authorized forbidden
@@ -33,7 +36,7 @@ func (s *Service) verifyBusinessPermission(requestHeader *http.Header, resp *res
 	decision, err := s.Authorizer.CanDoBusinessAction(requestHeader, businessID, action)
 	if decision.Authorized == false {
 		blog.Errorf("check business authorization failed, reason: %v, err: %v", decision.Reason, err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 	return true
@@ -47,7 +50,7 @@ func (s *Service) verifyModulePermission(requestHeader *http.Header, resp *restf
     decision, err := s.Authorizer.CanDoModuleAction(requestHeader, moduleID, action)
     if decision.Authorized == false {
         blog.Errorf("check module:%d action:%s authorization failed, reason: %v, err: %v", moduleID, action, decision.Reason, err)
-        resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+        resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
         return
     }
     return true
@@ -66,7 +69,7 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
         businessID, err = s.getHostOwenedApplicationID(*requestHeader, hostIDArr)
         if err != nil {
             blog.Errorf("check host authorization failed, get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
-            resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+            resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
             return
         }
 	}
@@ -75,7 +78,7 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 	decision, err := s.Authorizer.CanDoHostAction(requestHeader, businessID, hostIDArr, action)
 	if decision.Authorized == false {
 		blog.Errorf("check host authorization failed, reason: %v, err: %v", decision.Reason, err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
 		return
 	}
 	return true
@@ -103,6 +106,59 @@ func (s *Service) getHostOwenedApplicationID(rHeader http.Header, hostIDArr *[]i
 		}
 	}
 	return businessID, nil
+}
+
+// get resource layers id by hostID
+func (s *Service) getHostLayers(rHeader http.Header, hostIDArr *[]int64) (bkBizID int64, batchLayers [][]authmeta.Item, err error) {
+    batchLayers = make([][]authmeta.Item, 0)
+    
+    cond := condition.CreateCondition()
+    cond.Field(common.BKHostIDField).In(hostIDArr)
+    query := &metadata.QueryCondition{
+        Fields: []string{common.BKAppIDField, common.BKModuleIDField, common.BKSetIDField, common.BKHostIDField},
+        Condition: cond.ToMapStr(),
+        Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+    }
+    result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), rHeader, common.BKTableNameModuleHostConfig, query)
+    if err != nil {
+        err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+        return
+    }
+    if len(result.Data.Info) == 0 {
+        err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDArr)
+        return
+    }
+    bkBizID, err = util.GetInt64ByInterface(result.Data.Info[0][common.BKAppIDField])
+    if err != nil {
+        err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+        return
+    }
+    
+    bizTopoTreeRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(context.Background(), rHeader, bkBizID, true)
+    if err != nil {
+        err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+        return
+    }
+    
+    for _, item := range result.Data.Info {
+        moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
+        if err != nil {
+            err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
+        }
+        path := bizTopoTreeRoot.TraversalFindModule(moduleID)
+        layers := make([]authmeta.Item, 0)
+        for i := len(path) -1; i >= 0; i-- {
+            node := path[i]
+            item := authmeta.Item{
+                Name: node.Name(),
+                InstanceID: node.InstanceID,
+            }
+            layers = append(layers, item)
+        }
+        batchLayers = append(batchLayers, layers)
+    }
+    
+    return
 }
 
 func (s *Service) registerHostToCurrentBusiness(requestHeader *http.Header, hostIDArr *[]int64) error {

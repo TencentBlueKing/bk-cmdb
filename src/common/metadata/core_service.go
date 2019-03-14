@@ -13,8 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
-	"fmt"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/util"
+
+    "fmt"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
@@ -144,6 +148,63 @@ type TopoInstanceNode struct {
 	InstanceID int64
 	Detail     map[string]interface{}
 }
+
+func (node *TopoInstanceNode)Name() string {
+    var name string
+    var exist bool
+    var val interface{}
+    switch node.ObjectID {
+    case common.BKInnerObjIDSet:
+        val, exist = node.Detail[common.BKSetIDField]
+    case common.BKInnerObjIDApp:
+        val, exist = node.Detail[common.BKAppIDField]
+    case common.BKInnerObjIDModule:
+        val, exist = node.Detail[common.BKModuleIDField]
+    default:
+        val, exist = node.Detail[common.BKInstNameField]
+    }
+
+    if exist == false {
+        blog.V(7).Infof("extract topo instance node name failed, err: %+v", err)
+        name = fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+    } else {
+        name = util.GetStrByInterface(val)
+    }
+    return name
+}
+
+func (node *TopoInstanceNode)TraversalFindModule(targetID int64) []*TopoInstanceNode {
+    if node.ObjectID == common.BKInnerObjIDModule && node.InstanceID == targetID {
+        return []*TopoInstanceNode{node}
+    }
+    for _, child := range node.Children {
+        path := child.TraversalFindModule(targetID)
+        if len(path) > 0 {
+            path = append(path, node)
+            return path
+        }
+    }
+    return []*TopoInstanceNode{}
+}
+
+/*
+// TODO we need a low cost algorithm to get host layers
+func ReversalTree(root *metadata.TopoInstanceNode, targetID int64) []*metadata.TopoInstanceNode {
+    nodesMap := map[string]*metadata.TopoInstanceNode{}
+    if _, exist := nodesMap[root.InstanceID]
+    if root.ObjectID == "module" && root.InstanceID == targetID {
+        return []*metadata.TopoInstanceNode{root}
+    }
+    for _, child := range root.Children {
+        path := traversalFind(child, targetID)
+        if len(path) > 0 {
+            path = append(path, root)
+            return path
+        }
+    }
+    return []*metadata.TopoInstanceNode{}
+}
+*/
 
 type TopoInstance struct {
 	ObjectID         string

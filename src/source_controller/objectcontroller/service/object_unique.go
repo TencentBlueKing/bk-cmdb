@@ -31,7 +31,7 @@ import (
 
 // CreateObjectUnique create object's unique
 func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -108,7 +108,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 
 // UpdateObjectUnique update object's unique
 func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -196,7 +196,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 
 // DeleteObjectUnique delte object's unique
 func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -241,7 +241,7 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 
 // SearchObjectUnique delte object's unique
 func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

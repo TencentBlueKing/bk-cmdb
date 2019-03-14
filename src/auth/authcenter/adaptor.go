@@ -43,7 +43,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-		if attribute.BusinessID == 0 {
+		if attribute.BusinessID != 0 {
 			info.ResourceType = BizModel
 		} else {
 			info.ResourceType = SysModel
@@ -53,7 +53,6 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		info.ResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
-		// action=拓扑层级操作
 		info.ResourceType = SysSystemBase
 
 	case meta.ModelClassification:
@@ -69,14 +68,17 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		return info, errors.New("model instance association does not support  auth now")
 
 	case meta.ModelInstance:
-		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
-			info.ResourceType = BizHostInstance
-		}
-
 		if attribute.BusinessID == 0 {
 			info.ResourceType = SysInstance
 		} else {
 			info.ResourceType = BizInstance
+		}
+
+	case meta.HostInstance:
+		if attribute.BusinessID == 0 {
+			info.ResourceType = SysHostInstance
+		} else {
+			info.ResourceType = BizHostInstance
 		}
 
 	case meta.HostUserCustom:
@@ -106,12 +108,10 @@ const (
 	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
 	SysHostInstance     ResourceTypeID = "sysHostInstance"
 	SysEventPushing     ResourceTypeID = "sysEventPushing"
-
-	SysModelGroup ResourceTypeID = "sysModelGroup"
-	SysModel      ResourceTypeID = "sysModel"
-	SysInstance   ResourceTypeID = "sysInstance"
-
-	SysAssociationType ResourceTypeID = "sysAssociationType "
+	SysModelGroup       ResourceTypeID = "sysModelGroup"
+	SysModel            ResourceTypeID = "sysModel"
+	SysInstance         ResourceTypeID = "sysInstance"
+	SysAssociationType  ResourceTypeID = "sysAssociationType "
 )
 
 // Business Resource
@@ -121,10 +121,9 @@ const (
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
 	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
-
-	BizModelGroup ResourceTypeID = "bizModelGroup"
-	BizModel      ResourceTypeID = "bizModel"
-	BizInstance   ResourceTypeID = "bizInstance"
+	BizModelGroup      ResourceTypeID = "bizModelGroup"
+	BizModel           ResourceTypeID = "bizModel"
+	BizInstance        ResourceTypeID = "bizInstance"
 )
 
 type ActionID string

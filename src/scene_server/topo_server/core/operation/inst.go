@@ -391,7 +391,6 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		if nil != err {
 			return err
 		}
-
 	}
 
 	return nil
@@ -860,10 +859,6 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
-	//	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
-	//		return err
-	//	}
-
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -884,7 +879,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 		Data:      data,
 		Condition: fCond,
 	}
-	blog.Infof("aaaaaaaaaaaaaaaa %#v", inputParams)
+
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, fCond)
 	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(context.Background(), params.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
@@ -893,7 +888,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg)
+		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())
