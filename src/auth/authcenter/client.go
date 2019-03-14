@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common/util"
 )
 
@@ -48,7 +47,7 @@ type authClient struct {
 	basicHeader http.Header
 }
 
-func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) (meta.Decision, error) {
+func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", a.Config.SystemID)
@@ -60,31 +59,17 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		Do().Into(resp)
 
 	if err != nil {
-		return meta.Decision{}, err
+		return nil, err
 	}
 
 	if resp.Code != 0 {
-		return meta.Decision{}, &AuthError{
+		return nil, &AuthError{
 			RequestID: resp.RequestID,
 			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
 		}
 	}
 
-	noAuth := make([]ResourceTypeID, 0)
-	for _, item := range resp.Data {
-		if !item.IsPass {
-			noAuth = append(noAuth, item.ResourceType)
-		}
-	}
-
-	if len(noAuth) != 0 {
-		return meta.Decision{
-			Authorized: false,
-			Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
-		}, nil
-	}
-
-	return meta.Decision{Authorized: true}, nil
+	return resp.Data, nil
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {

@@ -198,8 +198,24 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 
 	header := http.Header{}
 	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierAccount)
-	return ac.authClient.verifyInList(ctx, header, info)
 
+	batchresult, err := ac.authClient.verifyInList(ctx, header, info)
+
+	noAuth := make([]ResourceTypeID, 0)
+	for _, item := range batchresult {
+		if !item.IsPass {
+			noAuth = append(noAuth, item.ResourceType)
+		}
+	}
+
+	if len(noAuth) != 0 {
+		return meta.Decision{
+			Authorized: false,
+			Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
+		}, nil
+	}
+
+	return meta.Decision{Authorized: true}, nil
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
