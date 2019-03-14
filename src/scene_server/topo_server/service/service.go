@@ -13,19 +13,17 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"configcenter/src/scene_server/topo_server/core/wrapper"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/json"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -33,74 +31,25 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
-	mongo "configcenter/src/storage/dal/mongo/remote"
-
 	"github.com/emicklei/go-restful"
 )
 
-// TopoServiceInterface the topo service methods used to init
-type TopoServiceInterface interface {
-	SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf)
-	WebService() *restful.WebService
-	SetConfig(cfg options.Config, engin *backbone.Engine)
-}
-
-// New ceate topo servcie instance
-func New() TopoServiceInterface {
-	return &topoService{}
-}
-
-// topoService topo service
-type topoService struct {
-	engin    *backbone.Engine
-	tx       dal.DB
-	language language.CCLanguageIf
-	err      errors.CCErrorIf
+type Service struct {
+	Engine   *backbone.Engine
+	Txn      dal.DB
+	Core     core.Core
+	Config   options.Config
+	Auth     *topoauth.TopoAuth
+	Error    errors.CCErrorIf
+	Language language.CCLanguageIf
 	actions  []action
-	core     core.Core
-	cfg      options.Config
-	authAPI  wrapper.AuthAPI
-}
-
-func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
-	s.cfg = cfg
-	s.engin = engin
-
-	// authAPI, err := wrapper.NewAuthAPI()
-	// if err != nil {
-	// 	blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
-	// }
-	// s.authAPI = authAPI
-
-	var dbErr error
-	tx, dbErr := mongo.NewWithDiscover(engin.
-		ServiceManageInterface.
-		TMServer().
-		GetServers, cfg.Mongo)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-		return
-	}
-
-	if s.tx != nil {
-		s.tx.Close()
-	}
-	s.tx = tx
-}
-
-// SetOperation set the operation
-func (s *topoService) SetOperation(operation core.Core, err errors.CCErrorIf, language language.CCLanguageIf) {
-
-	s.core = operation
-	s.err = err
-	s.language = language
-
 }
 
 // WebService the web service
-func (s *topoService) WebService() *restful.WebService {
+func (s *Service) WebService() *restful.WebService {
 
 	// init service actions
 	s.initService()
@@ -108,7 +57,7 @@ func (s *topoService) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 
 	getErrFunc := func() errors.CCErrorIf {
-		return s.err
+		return s.Error
 	}
 	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
 
@@ -132,7 +81,7 @@ func (s *topoService) WebService() *restful.WebService {
 	return ws
 }
 
-func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, error) {
+func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
 
 	rsp := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
@@ -152,7 +101,7 @@ func (s *topoService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
-func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
+func (s *Service) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
 
 	rsp := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
@@ -171,7 +120,7 @@ func (s *topoService) createCompleteAPIRspStr(errcode int, errmsg string, info i
 	return string(data), err
 }
 
-func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
+func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		if _, err := io.WriteString(resp, rsp); nil != err {
@@ -182,7 +131,7 @@ func (s *topoService) sendResponse(resp *restful.Response, errorCode int, dataMs
 	}
 }
 
-func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
+func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
 	if nil == rspErr {
@@ -196,7 +145,7 @@ func (s *topoService) sendCompleteResponse(resp *restful.Response, errorCode int
 }
 
 // Actions return the all actions
-func (s *topoService) Actions() []*httpserver.Action {
+func (s *Service) Actions() []*httpserver.Action {
 
 	var httpactions []*httpserver.Action
 	for _, a := range s.actions {
@@ -204,16 +153,16 @@ func (s *topoService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
-				defLang := s.language.CreateDefaultCCLanguageIf(language)
+				defLang := s.Language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
-				defErr := s.err.CreateDefaultCCErrorIf(language)
+				defErr := s.Error.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
@@ -241,19 +190,18 @@ func (s *topoService) Actions() []*httpserver.Action {
 					}
 				}
 
-				ctx, _ := s.engin.CCCtx.WithCancel()
+				ctx, _ := s.Engine.CCCtx.WithCancel()
 				metadata := metadata.NewMetaDataFromMap(mData)
 				data, dataErr := act.HandlerFunc(types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
 					Lang:            defLang,
-					MaxTopoLevel:    s.cfg.BusinessTopoLevelMax,
+					MaxTopoLevel:    s.Config.BusinessTopoLevelMax,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
 					User:            user,
-					Engin:           s.engin,
+					Engin:           s.Engine,
 					MetaData:        metadata,
-					AuthAPI:         s.authAPI,
 				},
 					req.PathParameter,
 					req.QueryParameter,

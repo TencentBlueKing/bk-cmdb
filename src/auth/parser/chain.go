@@ -159,7 +159,7 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPOwnerID)
 		return ps
 	}
-	ps.Attribute.User.SupplierID = supplier
+	ps.Attribute.User.SupplierAccount = supplier
 
 	return ps
 }

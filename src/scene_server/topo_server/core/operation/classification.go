@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -39,14 +40,16 @@ type ClassificationOperationInterface interface {
 }
 
 // NewClassificationOperation create a new classification operation instance
-func NewClassificationOperation(client apimachinery.ClientSetInterface) ClassificationOperationInterface {
+func NewClassificationOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) ClassificationOperationInterface {
 	return &classification{
 		clientSet: client,
+		auth:      auth,
 	}
 }
 
 type classification struct {
 	clientSet    apimachinery.ClientSetInterface
+	auth         *topoauth.TopoAuth
 	asst         AssociationOperationInterface
 	obj          ObjectOperationInterface
 	modelFactory model.Factory
@@ -77,13 +80,16 @@ func (c *classification) FindSingleClassification(params types.ContextParams, cl
 }
 
 func (c *classification) CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error) {
-
 	cls := c.modelFactory.CreateClassification(params)
-
 	_, err := cls.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to parse the params, error info is %s", err.Error())
 		return nil, err
+	}
+
+	class := cls.Classify()
+	if err := c.auth.RegisterClassification(params.Context, params.Header, &class); err != nil {
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	//	if nil != params.MetaData {
@@ -122,8 +128,13 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 			return err
 		}
 
+		class := cls.Classify()
+		if err := c.auth.DeregisterClassification(params.Context, params.Header, &class); err != nil {
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+
 		if 0 != len(objs) {
-			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.Classify().ClassificationID)
+			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", class.ClassificationID)
 			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
 		}
 	}
@@ -240,7 +251,18 @@ func (c *classification) FindClassification(params types.ContextParams, cond con
 }
 
 func (c *classification) UpdateClassification(params types.ContextParams, data mapstr.MapStr, id int64, cond condition.Condition) error {
+	if name, exist := data.Get(common.BKClassificationNameField); exist {
+		className, err := data.String(common.BKClassificationNameField)
+		if err != nil {
+			blog.Errorf("update classification, but parse classification name: %v failed, err: %v", name, err)
+			return params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
 
+		if err := c.auth.UpdateRegisteredClassification(params.Context, params.Header, className, id); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v", className, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+	}
 	cls := c.modelFactory.CreateClassification(params)
 	data.Set("id", id)
 	if _, err := cls.Parse(data); err != nil {

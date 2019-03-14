@@ -73,7 +73,7 @@ func (s *coreService) DeleteModelClassification(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().DeleteModelClassificaiton(params, inputData)
+	return s.core.ModelOperation().DeleteModelClassification(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
