@@ -34,7 +34,10 @@ func (ac *AuthCenter) Init(ctx context.Context) error {
 		return err
 	}
 
-	if err := ac.authClient.registerResource(ctx, header, &expectResourceInst); err != nil {
+	if err := ac.authClient.registerResource(ctx, header, &expectModelGroupResourceInst); err != nil {
+		return err
+	}
+	if err := ac.authClient.registerResource(ctx, header, &expectModelResourceInst); err != nil {
 		return err
 	}
 
