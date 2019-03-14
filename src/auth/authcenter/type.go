@@ -149,7 +149,7 @@ type System struct {
 type ResourceType struct {
 	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
-	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type_id"`
+	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
 	Actions              []Action       `json:"actions"`
 }
 
