@@ -15,6 +15,7 @@ package parser
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"configcenter/src/auth/meta"
@@ -30,11 +31,11 @@ func (ps *parseStream) eventRelated() *parseStream {
 	return ps
 }
 
-const (
-	findSubscribePattern   = `/api/v3/event/subscribe/search/\S+/\d+`
-	createSubscribePattern = `/api/v3/event/subscribe/\S+/\d+`
-	updateSubscribePattern = `/api/v3/event/subscribe/\S+/\d+/\d+`
-	deleteSubscribePattern = `/api/v3/event/subscribe/\S+/\d+/\d+`
+var (
+	findSubscribePattern   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+`)
+	createSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+`)
+	updateSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+`)
+	deleteSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+`)
 )
 
 func (ps *parseStream) subscribe() *parseStream {
@@ -43,7 +44,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// find all the subscription
-	if ps.hitPattern(findSubscribePattern, http.MethodPost) {
+	if ps.hitRegexp(findSubscribePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -56,7 +57,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// create a subscription
-	if ps.hitPattern(createSubscribePattern, http.MethodPost) {
+	if ps.hitRegexp(createSubscribePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -69,7 +70,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// update a subscription
-	if ps.hitPattern(updateSubscribePattern, http.MethodPut) {
+	if ps.hitRegexp(updateSubscribePattern, http.MethodPut) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])
@@ -88,7 +89,7 @@ func (ps *parseStream) subscribe() *parseStream {
 	}
 
 	// delete a subscription
-	if ps.hitPattern(deleteSubscribePattern, http.MethodDelete) {
+	if ps.hitRegexp(deleteSubscribePattern, http.MethodDelete) {
 		subscribeID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update subscription batch, but got invalid subscription id: %s", ps.RequestCtx.Elements[4])

@@ -65,7 +65,7 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 	if resp.Code != 0 {
 		return nil, &AuthError{
 			RequestID: resp.RequestID,
-			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message),
 		}
 	}
 
@@ -88,7 +88,10 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		if resp.Code == codeDuplicated {
+			return ErrDuplicated
+		}
+		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsCreated {
@@ -114,7 +117,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsDeleted {
@@ -140,7 +143,7 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsUpdated {
