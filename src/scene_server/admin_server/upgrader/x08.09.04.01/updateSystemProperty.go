@@ -23,7 +23,7 @@ import (
 )
 
 func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	objs := []metadata.ObjectDes{}
+	objs := []metadata.Object{}
 	condition := map[string]interface{}{
 		"bk_classification_id": "bk_biz_topo",
 	}

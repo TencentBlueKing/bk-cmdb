@@ -13,9 +13,10 @@
 package mainline
 
 import (
+    "fmt"
+    
     "configcenter/src/common/blog"
     "configcenter/src/common/metadata"
-    "fmt"
 )
 
 // SearchMainlineModelTopo get topo tree of model on mainline

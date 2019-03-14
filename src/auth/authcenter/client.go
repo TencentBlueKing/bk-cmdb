@@ -347,7 +347,7 @@ func (a *authClient) UpsertResourceTypeBatch(ctx context.Context, header http.He
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-upsert", systemID, scopeType)
 	resp := BaseResponse{}
 
-	err := a.client.Put().
+	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
 		WithHeaders(header).

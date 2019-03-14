@@ -37,11 +37,11 @@ type BackboneParameter struct {
 	// ConfigUpdate handle process config change
 	ConfigUpdate cc.ProcHandlerFunc
 
-	// servvice component addr
+	// service component addr
 	Regdiscv string
 	// config path
 	ConfigPath string
-	// http server paramster
+	// http server parameter
 	SrvInfo *types.ServerInfo
 }
 

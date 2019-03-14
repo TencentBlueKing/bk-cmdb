@@ -87,7 +87,7 @@ func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 	if len(supplierID) == 0 {
 		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
 	}
-	userInfo.SupplierID = supplierID
+	userInfo.SupplierAccount = supplierID
 	return userInfo, nil
 }
 
