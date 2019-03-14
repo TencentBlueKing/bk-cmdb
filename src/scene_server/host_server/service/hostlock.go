@@ -51,7 +51,7 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -91,7 +91,7 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -131,7 +131,7 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
 		return
 	}
 

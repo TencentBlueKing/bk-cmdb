@@ -19,44 +19,60 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	auth_meta "configcenter/src/auth/meta"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 )
 
-// verifyBusinessPermission will write response directly if authorized forbbiden
-func (s *Service) verifyBusinessPermission(req *restful.Request, resp *restful.Response, businessID int64, action auth_meta.Action) (shouldContinue bool) {
-	rHeader := req.Request.Header
-	srvData := s.newSrvComm(rHeader)
+// verifyBusinessPermission will write response directly if authorized forbidden
+func (s *Service) verifyBusinessPermission(requestHeader *http.Header, resp *restful.Response, businessID int64, action authmeta.Action) (shouldContinue bool) {
+	srvData := s.newSrvComm(*requestHeader)
 
 	// check authorization by call interface
-	decision, err := s.Authorizer.CanDoBusinessAction(req, businessID, action)
+	decision, err := s.Authorizer.CanDoBusinessAction(requestHeader, businessID, action)
 	if decision.Authorized == false {
 		blog.Errorf("check business authorization failed, reason: %v, err: %v", decision.Reason, err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 	return true
 }
 
-// verifyHostPermission will write response directly if authorized forbbiden
-func (s *Service) verifyHostPermission(req *restful.Request, resp *restful.Response, hostIDArr *[]int64, action auth_meta.Action) (shouldContinue bool) {
-	rHeader := req.Request.Header
-	srvData := s.newSrvComm(rHeader)
+// verifyBusinessPermission will write response directly if authorized forbidden
+func (s *Service) verifyModulePermission(requestHeader *http.Header, resp *restful.Response, moduleID int64, action authmeta.Action) (shouldContinue bool) {
+    srvData := s.newSrvComm(*requestHeader)
+
+    // check authorization by call interface
+    decision, err := s.Authorizer.CanDoModuleAction(requestHeader, moduleID, action)
+    if decision.Authorized == false {
+        blog.Errorf("check module:%d action:%s authorization failed, reason: %v, err: %v", moduleID, action, decision.Reason, err)
+        resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+        return
+    }
+    return true
+}
+
+// verifyHostPermission will write response directly if authorized forbidden
+func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful.Response, hostIDArr *[]int64, action authmeta.Action) (shouldContinue bool) {
+	srvData := s.newSrvComm(*requestHeader)
 	shouldContinue = false
 
 	// check authorization
-	// step1. get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
-	if err != nil {
-		blog.Errorf("check host authorization failed, get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-		return
+	var businessID int64
+	var err error
+	if len(*hostIDArr) > 0 {
+        // step1. get app id by host id
+        businessID, err = s.getHostOwenedApplicationID(*requestHeader, hostIDArr)
+        if err != nil {
+            blog.Errorf("check host authorization failed, get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
+            resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+            return
+        }
 	}
 
 	// step2. check authorization by call interface
-	decision, err := s.Authorizer.CanDoHostAction(req, businessID, hostIDArr, action)
+	decision, err := s.Authorizer.CanDoHostAction(requestHeader, businessID, hostIDArr, action)
 	if decision.Authorized == false {
 		blog.Errorf("check host authorization failed, reason: %v, err: %v", decision.Reason, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
@@ -89,46 +105,42 @@ func (s *Service) getHostOwenedApplicationID(rHeader http.Header, hostIDArr *[]i
 	return businessID, nil
 }
 
-func (s *Service) registerHostToCurrentBusiness(req *restful.Request, hostIDArr *[]int64) error {
-	rHeader := req.Request.Header
-
+func (s *Service) registerHostToCurrentBusiness(requestHeader *http.Header, hostIDArr *[]int64) error {
 	// get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
+	businessID, err := s.getHostOwenedApplicationID(*requestHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
 	}
-	err = s.Authorizer.RegisterHosts(req, businessID, hostIDArr)
+	err = s.Authorizer.RegisterHosts(requestHeader, businessID, hostIDArr)
 	return err
 }
 
-func (s *Service) deregisterHostFromCurrentBusiness(req *restful.Request, hostIDArr *[]int64) error {
-	rHeader := req.Request.Header
-
+func (s *Service) deregisterHostFromCurrentBusiness(requestHeader *http.Header, hostIDArr *[]int64) error {
 	// get app id by host id
-	businessID, err := s.getHostOwenedApplicationID(rHeader, hostIDArr)
+	businessID, err := s.getHostOwenedApplicationID(*requestHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
 	}
-	err = s.Authorizer.DeregisterHosts(req, businessID, hostIDArr)
+	err = s.Authorizer.DeregisterHosts(requestHeader, businessID, hostIDArr)
 	return err
 }
 
-// verifyCreatePlatPermission will write response directly if authorized forbbiden
-func (s *Service) verifyCreatePlatPermission(req *restful.Request, resp *restful.Response) (shouldContinue bool) {
+// verifyCreatePlatPermission will write response directly if authorized forbidden
+func (s *Service) verifyCreatePlatPermission(requestHeader *http.Header, resp *restful.Response) (shouldContinue bool) {
 	shouldContinue = true
 	return shouldContinue
 }
 
-// verifyPlatPermission will write response directly if authorized forbbiden
-func (s *Service) verifyPlatPermission(req *restful.Request, resp *restful.Response, platIDArr *[]int64, action auth_meta.Action) (shouldContinue bool) {
+// verifyPlatPermission will write response directly if authorized forbidden
+func (s *Service) verifyPlatPermission(requestHeader *http.Header, resp *restful.Response, platIDArr *[]int64, action authmeta.Action) (shouldContinue bool) {
 	shouldContinue = true
 	// TODO finish this method
 	return shouldContinue
 }
 
-func (s *Service) registerPlat(req *restful.Request, platID int64, businessID int64) error {
+func (s *Service) registerPlat(requestHeader *http.Header, platID int64, businessID int64) error {
 	// TODO implement me
 
 	// get app id by host id
@@ -136,7 +148,7 @@ func (s *Service) registerPlat(req *restful.Request, platID int64, businessID in
 	return nil
 }
 
-func (s *Service) deregisterPlat(req *restful.Request, platID int64, businessID int64) error {
+func (s *Service) deregisterPlat(requestHeader *http.Header, platID int64, businessID int64) error {
 	// TODO implement me
 
 	// get app id by host id

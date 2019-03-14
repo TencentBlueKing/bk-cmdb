@@ -20,12 +20,16 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (m *mainline) CreateManyModelClassification(ctx context.Context, h http.Header) (resp *metadata.TopoModelNode, err error) {
+func (m *mainline) CreateManyModelClassification(ctx context.Context, h http.Header, withDetail bool) (resp *metadata.TopoModelNode, err error) {
 	resp = new(metadata.TopoModelNode)
 	subPath := "/read/mainline/model"
 
+	input := map[string]bool{}
+	input["withDetail"] = withDetail
+
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -33,12 +37,16 @@ func (m *mainline) CreateManyModelClassification(ctx context.Context, h http.Hea
 	return
 }
 
-func (m *mainline) CreateModelClassification(ctx context.Context, h http.Header, bkBizID string) (resp *metadata.TopoInstanceNode, err error) {
+func (m *mainline) CreateModelClassification(ctx context.Context, h http.Header, bkBizID string, withDetail bool) (resp *metadata.TopoInstanceNode, err error) {
 	resp = new(metadata.TopoInstanceNode)
 	subPath := fmt.Sprintf("/read/mainline/instance/%s", bkBizID)
 
+	input := map[string]bool{}
+	input["withDetail"] = withDetail
+
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

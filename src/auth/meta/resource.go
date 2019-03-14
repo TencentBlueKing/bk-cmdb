@@ -39,6 +39,7 @@ const (
 	HostUserCustom           ResourceType = "hostUserCustom"
 	HostFavorite             ResourceType = "hostFavorite"
 	Process                  ResourceType = "process"
+    HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping"
 )

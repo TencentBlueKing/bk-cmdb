@@ -67,7 +67,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &iHostIDArr, authmeta.DeleteMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &iHostIDArr, authmeta.DeleteMany); shouldContinue == false {
 		return
 	}
 
@@ -108,7 +108,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	if err := s.deregisterHostFromCurrentBusiness(req, &iHostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &iHostIDArr); err != nil {
 		blog.Errorf("deregist host from current business failed, err:%v, hosts:%+v, rid:%s", err, iHostIDArr, srvData.rid)
 	}
 
@@ -184,7 +184,7 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 
 	hostIDInt64 := details[common.BKHostIDField].(int64)
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, authmeta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{hostIDInt64}, authmeta.Find); shouldContinue == false {
 		return
 	}
 
@@ -226,7 +226,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	}
 
 	// check authorization
-	shouldContinue := s.verifyHostPermission(req, resp, &[]int64{hostIDInt64}, authmeta.Find)
+	shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{hostIDInt64}, authmeta.Find)
 	if shouldContinue == false {
 		return
 	}
@@ -280,7 +280,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		var err error
 		appID, err = srvData.lgc.GetDefaultAppIDWithSupplier(srvData.ctx)
 		if err != nil {
-			blog.Errorf("add host, but get default appid failed, err: %v,input:%+v,rid:%s", err, hostList, srvData.rid)
+			blog.Errorf("add host, but get default app id failed, err: %v,input:%+v,rid:%s", err, hostList, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 			return
 		}
@@ -290,15 +290,21 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
 	if err != nil {
-		blog.Errorf("add host, but get module id failed, err: %s,input:%+v,rid:%s", err.Error(), hostList, srvData.rid)
+		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	// check permission to edit business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, authmeta.Update); shouldContinue == false {
+	// check permission to register host
+	/*
+	if shouldContinue := s.verifyModulePermission(&req.Request.Header, resp, moduleID, authmeta.Update); shouldContinue == false {
 		return
 	}
+	*/
+	// check authorization to create host
+    if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{}, authmeta.Create); shouldContinue == false {
+        return
+    }
 
 	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
@@ -317,10 +323,18 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	// register hosts
 	hostIDArr := make([]int64, 0)
 	for _, h := range hostList.HostInfo {
-		hostID := h[common.BKHostIDField].(int64)
+		hostID, err := util.GetInt64ByInterface(h[common.BKHostIDField])
+		if err != nil {
+            blog.Errorf("parse host id after add host failed err: %v, rid: %s", err, srvData.rid)
+            resp.WriteError(
+                http.StatusInternalServerError, 
+                &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInvalidObjectAssociationID)},
+            )
+            return
+        }
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("register hosts to auth center failed, hostList:%+v, err:%v, rid:%s", err, hostList, srvData.rid)
 	}
 
@@ -357,7 +371,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	// check authorization
 	// is AddHostFromAgent's authentication the same with common api?
-	if shouldContinue := s.verifyBusinessPermission(req, resp, appID, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(&req.Request.Header, resp, appID, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -397,7 +411,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 			hostIDArr = append(hostIDArr, hostID)
 		}
 	}
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		// FIXME it the failure with auto retry?
 		blog.Errorf("register hosts to auth center failed, hosts:%+v, err: %v, rid:%s", hostIDArr, err, srvData.rid)
 	}
@@ -482,7 +496,7 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -510,7 +524,7 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 	}
 
 	hostIDArray := host.ExtractHostIDs()
-	if shouldContinue := s.verifyHostPermission(req, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, hostIDArray, authmeta.FindMany); shouldContinue == false {
 		return
 	}
 
@@ -587,7 +601,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// authorization check
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDs, authmeta.UpdateMany); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDs, authmeta.UpdateMany); shouldContinue == false {
 		return
 	}
 
@@ -712,7 +726,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, hostList.ApplicationID, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(&req.Request.Header, resp, hostList.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -736,7 +750,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	for hostID := range hostList.HostInfo {
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("register hosts:%+v to iam failed, err: %v", hostIDArr, err, srvData.rid)
 	}
 
@@ -827,15 +841,15 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
 	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
 
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	// step2. check permission for target business
-	if shouldContinue := s.verifyBusinessPermission(req, resp, data.ApplicationID, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(&req.Request.Header, resp, data.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
 	// step3. deregist host from iam
-	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("deregist host:%+v from iam failed, error:%v, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
@@ -907,7 +921,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	audit.SaveAudit(srvData.ctx, strconv.FormatInt(data.ApplicationID, 10), srvData.user, "host to empty module")
 
 	// regist host to iam
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("regist host:%+v to iam failed, error:%v, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
@@ -971,7 +985,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "OrgIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{srcHostID}, authmeta.Find); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{srcHostID}, authmeta.Find); shouldContinue == false {
 		return
 	}
 	// step2. verify has permission to update dst host
@@ -981,7 +995,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "DstIP")})
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &[]int64{dstHostID}, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{dstHostID}, authmeta.Update); shouldContinue == false {
 		return
 	}
 
