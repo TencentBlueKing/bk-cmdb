@@ -92,14 +92,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
 		}
 
-		if process.Config.Auth.Enable {
-			authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
-			if err != nil {
-				return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
-			}
-			process.Service.SetAuth(authcli)
-			blog.Infof("enable authcenter success")
+		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
+		if err != nil {
+			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}
+		process.Service.SetAuth(authcli)
+		blog.Infof("enable authcenter: %v", process.Config.Auth.Enable)
 
 		go func() {
 			errCh <- distribution.SubscribeChannel(subcli)

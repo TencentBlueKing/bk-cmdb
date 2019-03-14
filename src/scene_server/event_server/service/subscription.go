@@ -40,16 +40,6 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
 
-	if decision, err := s.auth.Authorize(s.ctx, &meta.AuthAttribute{}); err != nil {
-		blog.Errorf("Permission Deny for create Subcribe, %v", err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, err)})
-		return
-	} else if !decision.Authorized {
-		blog.Errorf("Permission Deny for create Subcribe, %v", decision.Reason)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAuthorizeFailed, decision.Reason)})
-		return
-	}
-
 	sub := &metadata.Subscription{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("add subscription, but decode body failed, err: %v", err)
@@ -111,6 +101,18 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		mesg, _ := json.Marshal(&sub)
 		s.cache.Publish(types.EventCacheProcessChannel, "create"+string(mesg))
 		s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
+	}
+
+	if err = s.auth.RegisterResource(s.ctx, meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}); err != nil {
+		blog.Errorf("Permission Deny for create Subcribe, %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)})
+		return
 	}
 
 	resp.WriteEntity(metadata.RspSubscriptionCreate{
@@ -304,11 +306,11 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
 		failue, err := strconv.ParseInt(val["failue"], 10, 64)
 		if nil != err {
-			blog.Errorf("get failue value error %s", err.Error())
+			blog.Warnf("get failue value error %s", err.Error())
 		}
 		total, err := strconv.ParseInt(val["total"], 10, 64)
 		if nil != err {
-			blog.Errorf("get total value error %s", err.Error())
+			blog.Warnf("get total value error %s", err.Error())
 		}
 		results[index].Statistics = &metadata.Statistics{
 			Total:   total,
