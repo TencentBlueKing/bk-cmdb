@@ -75,7 +75,11 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		}
 
 	case meta.HostInstance:
-		info.ResourceType = BizHostInstance
+		if attribute.BusinessID == 0 {
+			info.ResourceType = SysHostInstance
+		} else {
+			info.ResourceType = BizHostInstance
+		}
 
 	case meta.HostUserCustom:
 		info.ResourceType = BizCustomQuery
