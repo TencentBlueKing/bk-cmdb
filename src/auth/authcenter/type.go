@@ -46,7 +46,7 @@ type ResourceEntity struct {
 
 type ResourceID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
-	ResourceID   string         `json:"resource_id"`
+	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
 type ResourceInfo struct {
