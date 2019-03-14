@@ -63,6 +63,11 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 	if len(cfg.Address) == 0 {
 		return cfg, errors.New(`invalid "address" configuration for auth center`)
 	}
+	for i := range cfg.Address {
+		if !strings.HasSuffix(cfg.Address[i], "/") {
+			cfg.Address[i] = cfg.Address[i] + "/"
+		}
+	}
 
 	cfg.AppSecret, exist = configmap[prefix+".appSecret"]
 	if !exist {
