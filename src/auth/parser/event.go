@@ -32,10 +32,10 @@ func (ps *parseStream) eventRelated() *parseStream {
 }
 
 var (
-	findSubscribePattern   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+`)
-	createSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+`)
-	updateSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+`)
-	deleteSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+`)
+	findSubscribePattern   = regexp.MustCompile(`^/api/v3/event/subscribe/search/\S+/\d+/?$`)
+	createSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/?$`)
+	updateSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
+	deleteSubscribePattern = regexp.MustCompile(`^/api/v3/event/subscribe/\S+/\d+/\d+/?$`)
 )
 
 func (ps *parseStream) subscribe() *parseStream {

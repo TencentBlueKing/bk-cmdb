@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
@@ -170,16 +171,24 @@ func (ps *parseStream) finalizer() *parseStream {
 	if ps.err != nil {
 		return ps
 	}
-	if len(ps.Attribute.Resources) >= 0 {
+	if len(ps.Attribute.Resources) <= 0 {
 		ps.err = errors.New("unsupported resource operation")
 	}
 	return ps
 }
 
 func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
-	return reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
+	result := reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
+	if result {
+		blog.Infof("match %s %s", httpMethod, reg)
+	}
+	return result
 }
 
 func (ps *parseStream) hitPattern(pattern, httpMethod string) bool {
-	return pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
+	result := pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
+	if result {
+		blog.Infof("match %s %s", httpMethod, pattern)
+	}
+	return result
 }
