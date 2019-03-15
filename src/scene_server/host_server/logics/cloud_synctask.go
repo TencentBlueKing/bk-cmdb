@@ -701,9 +701,9 @@ func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapS
 		hostInfoMap[int64(index)][common.BKCloudIDField] = 1
 	}
 
-	succ, updateErrRow, errRow, ok := lgc.AddHost(ctx, appID, []int64{moduleID}, util.GetOwnerID(lgc.header), hostInfoMap, hostList.InputType)
+	hostIDs, succ, updateErrRow, errRow, ok := lgc.AddHost(ctx, appID, []int64{moduleID}, util.GetOwnerID(lgc.header), hostInfoMap, hostList.InputType)
 	if ok != nil {
-		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v, rid: %s", succ, updateErrRow, ok, errRow, lgc.rid)
+		blog.Errorf("add host failed, hostIDs: %+v, succ: %v, update: %v, err: %v, %v, rid: %s", hostIDs, succ, updateErrRow, ok, errRow, lgc.rid)
 		return ok
 	}
 

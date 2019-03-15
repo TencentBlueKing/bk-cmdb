@@ -13,17 +13,18 @@
 package authorize
 
 import (
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/auth/authcenter"
-    "configcenter/src/scene_server/host_server/app/options"
     "context"
     "fmt"
     "net/http"
 
+    "configcenter/src/apimachinery/util"
     "configcenter/src/auth"
     "configcenter/src/auth/meta"
     "configcenter/src/auth/parser"
+    "configcenter/src/auth/authcenter"
     "configcenter/src/common/blog"
+    "configcenter/src/common/json"
+    "configcenter/src/scene_server/host_server/app/options"
 )
 
 // HostAuthorizer manages authorize interface for host server
@@ -74,6 +75,43 @@ func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 	return iamAuthorizeRequestBody
 }
 
+// NewIamAuthorizeData new a meta.Attribute object
+func NewIamAuthorizeDataWithLayers(commonInfo *meta.CommonInfo, businessID int64,
+    resourceType meta.ResourceType, layers [][]meta.Item, action meta.Action) *meta.AuthAttribute {
+    iamAuthorizeRequestBody := &meta.AuthAttribute{
+        APIVersion: commonInfo.APIVersion,
+        BusinessID: businessID,
+        User:       commonInfo.User,
+    }
+
+    for _, layer := range layers {
+        resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, action)
+        iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, *resource)
+    }
+    return iamAuthorizeRequestBody
+}
+
+// NewResourceAttribute new a resource attribute
+func NewResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID int64, resourceType meta.ResourceType, layer []meta.Item, action meta.Action) *meta.ResourceAttribute {
+    resource := &meta.ResourceAttribute{
+        Layers: layer,
+        BusinessID:      businessID,
+        SupplierAccount: commonInfo.User.SupplierAccount,
+    }
+    
+    if len(layer) > 0 {
+        instance := layer[len(layer) - 1]
+        basic := meta.Basic{
+            Type: resourceType,
+            Action: action,
+            Name: instance.Name,
+            InstanceID: instance.InstanceID,
+        }
+        resource.Basic = basic
+    }
+    return resource
+}
+
 // NewResourceAttribute new a resource attribute
 func NewResourceAttribute(commonInfo *meta.CommonInfo, businessID int64, resourceType meta.ResourceType, instanceID int64, action meta.Action) *meta.ResourceAttribute {
 	resource := &meta.ResourceAttribute{
@@ -88,8 +126,10 @@ func NewResourceAttribute(commonInfo *meta.CommonInfo, businessID int64, resourc
 	}
 	return resource
 }
+
 // canDoResourceAction check permission for operate business
-func (ha *HostAuthorizer) canDoResourceAction(requestHeader *http.Header, resourceType meta.ResourceType, businessID int64, action meta.Action) (decision meta.Decision, err error) {
+func (ha *HostAuthorizer) canDoResourceAction(requestHeader *http.Header, resourceType meta.ResourceType,
+    businessID int64, instanceIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
 
 	commonInfo, err := parser.ParseCommonInfo(requestHeader)
 	if err != nil {
@@ -115,21 +155,57 @@ func (ha *HostAuthorizer) canDoResourceAction(requestHeader *http.Header, resour
 	return
 }
 
+// canDoResourceAction check permission for operate business
+func (ha *HostAuthorizer) CanDoResourceActionWithLayers(requestHeader *http.Header, resourceType meta.ResourceType,
+    businessID int64, layers [][]meta.Item, action meta.Action) (decision meta.Decision, err error) {
+
+    commonInfo, err := parser.ParseCommonInfo(requestHeader)
+    if err != nil {
+        decision := meta.Decision{
+            Authorized: false,
+            Reason:     fmt.Sprintf("parse common info from request failed, %s", err),
+        }
+        return decision, err
+    }
+    iamAuthorizeRequestBody := NewIamAuthorizeDataWithLayers(commonInfo, businessID, resourceType, layers, action)
+
+    decision, err = ha.authorizer.Authorize(context.Background(), iamAuthorizeRequestBody)
+    if err != nil {
+        message := fmt.Sprintf("auth interface failed, %s", err)
+        blog.Errorf(message)
+
+        decision = meta.Decision{
+            Authorized: false,
+            Reason:     message,
+        }
+        return decision, err
+    }
+    return
+}
+
 // CanDoBusinessAction check permission for operate business
-func (ha *HostAuthorizer) CanDoBusinessAction(requestHeader *http.Header, businessID int64, action meta.Action) (decision meta.Decision, err error) {
-    return ha.canDoResourceAction(requestHeader, meta.Business, businessID, action)
+func (ha *HostAuthorizer) CanDoBusinessAction(requestHeader *http.Header, businessID int64, 
+    action meta.Action) (decision meta.Decision, err error) {
+        
+    return ha.canDoResourceAction(requestHeader, meta.Business, businessID, &[]int64{businessID}, action)
 }
 
 // CanDoModuleAction check permission for operate business
-func (ha *HostAuthorizer) CanDoModuleAction(requestHeader *http.Header, businessID int64, action meta.Action) (decision meta.Decision, err error) {
-    return ha.canDoResourceAction(requestHeader, meta.ModelModule, businessID, action)
+func (ha *HostAuthorizer) CanDoModuleAction(requestHeader *http.Header, businessID int64, 
+    moduleID int64, action meta.Action) (decision meta.Decision, err error) {
+        
+    return ha.canDoResourceAction(requestHeader, meta.ModelModule, businessID, &[]int64{moduleID}, action)
 }
 
+/*
 // CanDoHostAction check whether have permission to view host snapshot
-func (ha *HostAuthorizer) CanDoHostAction(requestHeader *http.Header, businessID int64, hostIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
+func (ha *HostAuthorizer) CanDoHostAction(requestHeader *http.Header, businessID int64, 
+    hostIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
+        
     // TODO set it with right resourceType and name
-    return ha.canDoResourceAction(requestHeader, meta.HostInstance, businessID, action)
+    return ha.canDoResourceAction(requestHeader, meta.HostInstance, businessID, hostIDs, action)
 }
+*/
 
 // RegisterHosts register host to auth center
 func (ha *HostAuthorizer) RegisterHosts(requestHeader *http.Header, businessID int64, hostIDs *[]int64) error {
@@ -137,7 +213,9 @@ func (ha *HostAuthorizer) RegisterHosts(requestHeader *http.Header, businessID i
 }
 
 // registerResource register resource of resourceType type to auth center
-func (ha *HostAuthorizer) registerResource(requestHeader *http.Header, resourceType meta.ResourceType, businessID int64, instanceIDs *[]int64) error {
+func (ha *HostAuthorizer) registerResource(requestHeader *http.Header, resourceType meta.ResourceType, 
+    businessID int64, instanceIDs *[]int64) error {
+        
     // TODO make it atomic
     commonInfo, err := parser.ParseCommonInfo(requestHeader)
     if err != nil {
@@ -157,8 +235,39 @@ func (ha *HostAuthorizer) registerResource(requestHeader *http.Header, resourceT
     return nil
 }
 
+// RegisterResourceWithLayers register resource of resourceType type to auth center
+func (ha *HostAuthorizer) RegisterResourceWithLayers(requestHeader *http.Header, resourceType meta.ResourceType, 
+    businessID int64, layers *[][]meta.Item) error {
+        
+    // TODO make it atomic
+    commonInfo, err := parser.ParseCommonInfo(requestHeader)
+    if err != nil {
+        return fmt.Errorf("parse common info from request failed, %s", err)
+    }
+
+    resources := make([]meta.ResourceAttribute, 0)
+    for _, layer := range *layers {
+        resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, meta.EmptyAction)
+        resources = append(resources, *resource)
+    }
+
+    resourcesData, err := json.Marshal(resources)
+    if err != nil {
+        blog.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+        return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+    }
+    blog.Infof("auth register data: %s", resourcesData)
+    if err := ha.register.RegisterResource(context.TODO(), resources...); err != nil {
+        blog.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+        return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+    }
+    return nil
+}
+
 // deregisterResource register resource of resourceType type to auth center
-func (ha *HostAuthorizer) deregisterResource(requestHeader *http.Header, resourceType meta.ResourceType, businessID int64, instanceIDs *[]int64) error {
+func (ha *HostAuthorizer) deregisterResource(requestHeader *http.Header, resourceType meta.ResourceType, 
+    businessID int64, instanceIDs *[]int64) error {
+        
     // TODO make it atomic
     commonInfo, err := parser.ParseCommonInfo(requestHeader)
     if err != nil {
@@ -181,4 +290,30 @@ func (ha *HostAuthorizer) deregisterResource(requestHeader *http.Header, resourc
 // DeregisterHosts register host to auth center
 func (ha *HostAuthorizer) DeregisterHosts(requestHeader *http.Header, businessID int64, hostIDs *[]int64) error {
     return ha.deregisterResource(requestHeader, meta.Host, businessID, hostIDs)
+}
+
+// DeregisterHosts register host to auth center
+func (ha *HostAuthorizer) DeregisterResourceWithLayers(requestHeader *http.Header, resourceType meta.ResourceType, 
+    businessID int64, layers *[][]meta.Item) error {
+        
+    commonInfo, err := parser.ParseCommonInfo(requestHeader)
+    if err != nil {
+        return fmt.Errorf("parse common info from request failed, %+v", err)
+    }
+
+    resources := make([]meta.ResourceAttribute, 0)
+    for _, layer := range *layers {
+        resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, meta.EmptyAction)
+        resources = append(resources, *resource)
+    }
+
+    resourcesData, err := json.Marshal(resources)
+    if err != nil {
+        return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+    }
+    blog.Infof("auth register data: %s", resourcesData)
+    if err := ha.register.DeregisterResource(context.TODO(), resources...); err != nil {
+        return fmt.Errorf("auth deregister failed, resourceAttribute: %+v, error: %s", resources, err)
+    }
+    return nil
 }

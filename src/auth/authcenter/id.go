@@ -13,9 +13,9 @@
 package authcenter
 
 import (
-	"fmt"
+    "fmt"
 
-	"configcenter/src/auth/meta"
+    "configcenter/src/auth/meta"
 )
 
 func GenerateResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -62,6 +62,8 @@ func GenerateResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error)
 		return processResourceID(attribute)
 	case meta.NetDataCollector:
 		return netDataCollectorResourceID(attribute)
+	case meta.HostInstance:
+		return hostInstanceResourceID(attribute)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
 	}
@@ -174,4 +176,20 @@ func processResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) 
 func netDataCollectorResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
+}
+
+func hostInstanceResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+    resourceIDs := make([]ResourceID, 0)
+    for _, layer := range attribute.Layers {
+        iamResourceType, err := convertResourceType(attribute)
+        if err != nil {
+            return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %s, err: %+v", attribute, err)
+        }
+        resourceID := ResourceID{
+            ResourceType: *iamResourceType,
+            ResourceID: fmt.Sprintf("%d", layer.InstanceID),
+        }
+        resourceIDs = append(resourceIDs, resourceID)
+    }
+	return resourceIDs, nil
 }

@@ -23,8 +23,8 @@ import (
 )
 
 func (s *coreService) SearchMainlineModelTopo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-    detail := struct{WithDetail bool}{}
-    if err := mapstr.SetValueToStructByTags(detail, data); err != nil {
+    detail := struct{WithDetail bool `field:"with_detail"`}{}
+    if err := mapstr.SetValueToStructByTags(&detail, data); err != nil {
         blog.Errorf("decode body %+v failed, err: %v", data, err)
         return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
     }
