@@ -60,6 +60,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		topologyLatest().
 		netCollectorRelated().
 		processRelated().
+		eventRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 

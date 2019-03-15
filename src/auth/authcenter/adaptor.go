@@ -87,6 +87,9 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	case meta.Process:
 		info.ResourceType = BizProcessInstance
 
+	case meta.EventPushing:
+		info.ResourceType = SysEventPushing
+
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
 

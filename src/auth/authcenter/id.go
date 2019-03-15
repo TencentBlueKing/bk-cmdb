@@ -63,6 +63,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return processResourceID(resourceType, attribute)
 	case meta.NetDataCollector:
 		return netDataCollectorResourceID(resourceType, attribute)
+	case meta.EventPushing:
+		return eventSubscribeResourceID(attribute)
 	case meta.HostInstance:
 		return hostInstanceResourceID(resourceType, attribute)
 	default:
@@ -206,4 +208,13 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
+}
+
+func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }
