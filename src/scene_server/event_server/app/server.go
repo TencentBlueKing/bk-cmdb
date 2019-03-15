@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -34,6 +32,8 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -72,16 +72,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 		process.Service.SetDB(db)
 
+		var rpccli rpc.Client
+		if process.Config.MongoDB.Transaction == "enable" {
+			rpccli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+			if err != nil {
+				return fmt.Errorf("connect rpc server failed %s", err.Error())
+			}
+		}
+
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
 			return fmt.Errorf("connect redis server failed %s", err.Error())
 		}
 		process.Service.SetCache(cache)
-
-		rpccli, err := rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
-		if err != nil {
-			return fmt.Errorf("connect rpc server failed %s", err.Error())
-		}
 
 		subcli, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
