@@ -127,7 +127,7 @@ func (im *InstanceMainline) LoadMainlineInstances() error {
 	return nil
 }
 
-func (im *InstanceMainline) constructBizTopoInstance(withDetail bool) error {
+func (im *InstanceMainline) ConstructBizTopoInstance(withDetail bool) error {
 	// enqueue business instance to allTopoInstances, instanceMap
 	ctx := core.ContextParams{}
 	bizTopoInstance := &metadata.TopoInstance{
@@ -160,7 +160,7 @@ func (im *InstanceMainline) constructBizTopoInstance(withDetail bool) error {
 	return nil
 }
 
-func (im *InstanceMainline) organizeSetInstance(withDetail bool) error {
+func (im *InstanceMainline) OrganizeSetInstance(withDetail bool) error {
 	for _, instance := range im.setInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKSetIDField])
 		if err != nil {
@@ -187,7 +187,7 @@ func (im *InstanceMainline) organizeSetInstance(withDetail bool) error {
 	return nil
 }
 
-func (im *InstanceMainline) organizeModuleInstance(withDetail bool) error {
+func (im *InstanceMainline) OrganizeModuleInstance(withDetail bool) error {
 	for _, instance := range im.moduleInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKModuleIDField])
 		if err != nil {
@@ -214,7 +214,7 @@ func (im *InstanceMainline) organizeModuleInstance(withDetail bool) error {
 	return nil
 }
 
-func (im *InstanceMainline) organizeMainlineInstance(withDetail bool) error {
+func (im *InstanceMainline) OrganizeMainlineInstance(withDetail bool) error {
 	for _, instance := range im.mainlineInstances {
 		instanceID, err := util.GetInt64ByInterface(instance[common.BKInstIDField])
 		if err != nil {
@@ -241,7 +241,7 @@ func (im *InstanceMainline) organizeMainlineInstance(withDetail bool) error {
 	return nil
 }
 
-func (im *InstanceMainline) checkAndFillingMissingModels(withDetail bool) error {
+func (im *InstanceMainline) CheckAndFillingMissingModels(withDetail bool) error {
 	ctx := core.ContextParams{}
 	// prepare loop that make sure all node's parent are exist in allTopoInstances
 	for _, topoInstance := range im.allTopoInstances {
@@ -305,7 +305,7 @@ func (im *InstanceMainline) checkAndFillingMissingModels(withDetail bool) error 
 	return nil
 }
 
-func (im *InstanceMainline) constructInstanceTopoTree(withDetail bool) error {
+func (im *InstanceMainline) ConstructInstanceTopoTree(withDetail bool) error {
 	topoInstanceNodeMap := map[string]*metadata.TopoInstanceNode{}
 	for _, topoInstance := range im.allTopoInstances {
 		blog.V(5).Infof("topoInstance: %+v", topoInstance)

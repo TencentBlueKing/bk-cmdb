@@ -306,7 +306,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
         return
     }
 
-	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
+	hostIDs, succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v,input:%+v,rid:%s", succ, updateErrRow, err, errRow, hostList, srvData.rid)
@@ -321,21 +321,8 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	retData["success"] = succ
 
 	// register hosts
-	hostIDArr := make([]int64, 0)
-	for _, h := range hostList.HostInfo {
-		hostID, err := util.GetInt64ByInterface(h[common.BKHostIDField])
-		if err != nil {
-            blog.Errorf("parse host id after add host failed err: %v, rid: %s", err, srvData.rid)
-            resp.WriteError(
-                http.StatusInternalServerError, 
-                &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoInvalidObjectAssociationID)},
-            )
-            return
-        }
-		hostIDArr = append(hostIDArr, hostID)
-	}
-	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
-		blog.Errorf("register hosts to auth center failed, hostList:%+v, err:%v, rid:%s", err, hostList, srvData.rid)
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDs); err != nil {
+		blog.Errorf("register hosts to auth center failed, hostList:%+v, err:%v, rid:%s", err, hostIDs, srvData.rid)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(retData))
@@ -387,7 +374,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	addHost := make(map[int64]map[string]interface{})
 	addHost[1] = agents.HostInfo
 
-	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, common.BKDefaultOwnerID, addHost, "")
+	hostIDs, succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, common.BKDefaultOwnerID, addHost, "")
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v,input:%+v,rid:%s", succ, updateErrRow, err, errRow, agents, srvData.rid)
 
@@ -403,17 +390,8 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	}
 
 	// register hosts
-	hostMap, err := srvData.lgc.GetAddHostIDMap(srvData.ctx, addHost)
-	hostIDArr := make([]int64, 0)
-	for _, v := range hostMap {
-		for _, host := range v {
-			hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
-			hostIDArr = append(hostIDArr, hostID)
-		}
-	}
-	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
-		// FIXME it the failure with auto retry?
-		blog.Errorf("register hosts to auth center failed, hosts:%+v, err: %v, rid:%s", hostIDArr, err, srvData.rid)
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDs); err != nil {
+		blog.Errorf("register hosts to auth center failed, hosts:%+v, err: %v, rid:%s", hostIDs, err, srvData.rid)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
@@ -730,7 +708,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
+	hostIDs, succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
@@ -746,12 +724,8 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// register host to iam
-	hostIDArr := make([]int64, 0)
-	for hostID := range hostList.HostInfo {
-		hostIDArr = append(hostIDArr, hostID)
-	}
-	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
-		blog.Errorf("register hosts:%+v to iam failed, err: %v", hostIDArr, err, srvData.rid)
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDs); err != nil {
+		blog.Errorf("register hosts:%+v to iam failed, err: %v", hostIDs, err, srvData.rid)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))

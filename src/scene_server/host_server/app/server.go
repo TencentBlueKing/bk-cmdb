@@ -19,6 +19,7 @@ import (
     "os"
     "strconv"
     "time"
+    "errors"
 
     "configcenter/src/common"
     "configcenter/src/common/backbone"
@@ -63,7 +64,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	if false == configReady {
         blog.Infof("waiting config timeout.")
-		return fmt.Errorf("Configuration item not found")
+		return errors.New("Configuration item not found")
 	}
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
