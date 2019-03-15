@@ -45,11 +45,11 @@ func (ps *parseStream) topology() *parseStream {
 }
 
 var (
-	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+$`)
-	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+/[0-9]+$`)
-	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+/[0-9]+$`)
-	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[\S][^/]+$`)
-	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[\S][^/]+/[\S][^/]+/[0-9]+$`)
+	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
+	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
+	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) business() *parseStream {
@@ -173,11 +173,11 @@ const (
 )
 
 var (
-	deleteMainlineObjectRegexp        = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[\S][^/]+/objectids/[\S][^/]+$`)
-	findMainlineObjectTopoRegexp      = regexp.MustCompile(`^/api/v3/topo/model/[\S][^/]+$`)
-	findMainlineInstanceTopoRegexp    = regexp.MustCompile(`^/api/v3/topo/inst/[\S][^/]+/[0-9]+$`)
-	findMainineSubInstanceTopoRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/child/[\S][^/]+/[\S][^/]+/[0-9]+/[0-9]+$`)
-	findMainlineIdleFaultModuleRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[\S][^/]+/[0-9]+$`)
+	deleteMainlineObjectRegexp        = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[^\s/]+/objectids/[^\s/]+/?$`)
+	findMainlineObjectTopoRegexp      = regexp.MustCompile(`^/api/v3/topo/model/[^\s/]+/?$`)
+	findMainlineInstanceTopoRegexp    = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
+	findMainineSubInstanceTopoRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findMainlineIdleFaultModuleRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainline() *parseStream {
@@ -575,16 +575,16 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 }
 
 var (
-	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+$`)
-	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[\S][^/]+/object/[\S][^/]+$`)
-	updateObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/[0-9]+$`)
-	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/batch$`)
-	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/batch$`)
-	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/[0-9]+$`)
-	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[\S][^/]+/object/[\S][^/]+/inst/[0-9]+$`)
-	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[\S][^/]+/object/[\S][^/]+/inst/[0-9]+$`)
-	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[\S][^/]+/[0-9]+$`)
-	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[\S][^/]+/object/[\S][^/]+$`)
+	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/?$`)
+	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	updateObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
+	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
+	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
+	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
@@ -866,10 +866,10 @@ const (
 )
 
 var (
-	deleteObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+$`)
-	updateObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+$`)
-	findObjectTopologyGraphicRegexp   = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[\S][^/]+/scope_id/[\S][^/]+/action/search$`)
-	updateObjectTopologyGraphicRegexp = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[\S][^/]+/scope_id/[\S][^/]+/action/[a-z]+$`)
+	deleteObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+/?$`)
+	updateObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+/?$`)
+	findObjectTopologyGraphicRegexp   = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[^\s/]+/scope_id/[^\s/]+/action/search$`)
+	updateObjectTopologyGraphicRegexp = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[^\s/]+/scope_id/[^\s/]+/action/[a-z]+/?$`)
 )
 
 func (ps *parseStream) object() *parseStream {
@@ -1001,9 +1001,9 @@ const (
 )
 
 var (
-	deleteObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+$")
-	updateObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+$")
-	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[\S][^/]+/objects$`)
+	deleteObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+/?$")
+	updateObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+/?$")
+	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[^\s/]+/objects$`)
 )
 
 func (ps *parseStream) ObjectClassification() *parseStream {
@@ -1109,9 +1109,9 @@ const (
 )
 
 var (
-	findObjectAttributeGroupRegexp     = regexp.MustCompile(`^/api/v3/objectatt/group/property/owner/[\S][^/]+/object/[\S][^/]+$`)
-	deleteObjectAttributeGroupRegexp   = regexp.MustCompile(`^/api/v3/objectatt/group/groupid/[0-9]+$`)
-	removeAttributeAwayFromGroupRegexp = regexp.MustCompile(`^/api/v3/objectatt/group/owner/[\S][^/]+/object/[\S][^/]+/propertyids/[\S][^/]+/groupids/[\S][^/]+$`)
+	findObjectAttributeGroupRegexp     = regexp.MustCompile(`^/api/v3/objectatt/group/property/owner/[^\s/]+/object/[^\s/]+/?$`)
+	deleteObjectAttributeGroupRegexp   = regexp.MustCompile(`^/api/v3/objectatt/group/groupid/[0-9]+/?$`)
+	removeAttributeAwayFromGroupRegexp = regexp.MustCompile(`^/api/v3/objectatt/group/owner/[^\s/]+/object/[^\s/]+/propertyids/[^\s/]+/groupids/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectAttributeGroup() *parseStream {
@@ -1221,8 +1221,8 @@ const (
 )
 
 var (
-	deleteObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+$`)
-	updateObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+$`)
+	deleteObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+/?$`)
+	updateObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectAttribute() *parseStream {
@@ -1310,10 +1310,10 @@ func (ps *parseStream) objectAttribute() *parseStream {
 }
 
 var (
-	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+$`)
-	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+$`)
-	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+$`)
-	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[\S][^/]+/[0-9]+/[0-9]+$`)
+	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) ObjectModule() *parseStream {
@@ -1488,11 +1488,11 @@ func (ps *parseStream) ObjectModule() *parseStream {
 }
 
 var (
-	createSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+$`)
-	deleteSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+$`)
+	createSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/?$`)
+	deleteSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
 	deleteManySetRegexp = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch$`)
-	updateSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+$`)
-	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[\S][^/]+/[0-9]+$`)
+	updateSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
+	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) ObjectSet() *parseStream {
@@ -1638,10 +1638,10 @@ func (ps *parseStream) ObjectSet() *parseStream {
 }
 
 var (
-	createObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/action/create$`)
-	updateObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/[0-9]+/action/update$`)
-	deleteObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/[0-9]+/action/delete$`)
-	findObjectUniqueRegexp   = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/action/search$`)
+	createObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/action/create$`)
+	updateObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/[0-9]+/action/update$`)
+	deleteObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/[0-9]+/action/delete$`)
+	findObjectUniqueRegexp   = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/action/search$`)
 )
 
 func (ps *parseStream) objectUnique() *parseStream {

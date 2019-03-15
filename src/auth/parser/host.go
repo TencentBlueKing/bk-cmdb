@@ -28,11 +28,11 @@ const (
 )
 
 var (
-	updateUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[\S][^/]+/[0-9]+$`)
-	deleteUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[\S][^/]+/[0-9]+$`)
-	findUserCustomRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+$`)
-	findUserCustomDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[\S][^/]+$`)
-	findWithUserCustomRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[\S][^/]+/[0-9]+/[0-9]+$`)
+	updateUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	deleteUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	findUserCustomRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
+	findUserCustomDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
+	findWithUserCustomRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
@@ -486,9 +486,9 @@ const (
 )
 
 var (
-	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[\S][^/]+$`)
-	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[\S][^/]+$`)
-	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorite/[\S][^/]+/incr$`)
+	updateHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
+	deleteHostFavoriteRegexp   = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/?$`)
+	increaseHostFavoriteRegexp = regexp.MustCompile(`^/api/v3/hosts/favorite/[^\s/]+/incr$`)
 )
 
 func (ps *parseStream) hostFavorite() *parseStream {
