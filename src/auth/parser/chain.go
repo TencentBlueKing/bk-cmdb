@@ -32,7 +32,7 @@ type RequestContext struct {
 
 type parseStream struct {
 	RequestCtx *RequestContext
-	Attribute  *meta.AuthAttribute
+	Attribute  meta.AuthAttribute
 	err        error
 	action     meta.Action
 }
@@ -68,7 +68,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		return nil, ps.err
 	}
 
-	return ps.Attribute, nil
+	return &ps.Attribute, nil
 }
 
 func (ps *parseStream) validateAPI() *parseStream {
@@ -170,7 +170,9 @@ func (ps *parseStream) finalizer() *parseStream {
 	if ps.err != nil {
 		return ps
 	}
-	ps.err = errors.New("unsupported resource operation")
+	if len(ps.Attribute.Resources) >= 0 {
+		ps.err = errors.New("unsupported resource operation")
+	}
 	return ps
 }
 

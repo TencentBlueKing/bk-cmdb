@@ -50,7 +50,7 @@ type authClient struct {
 func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", a.Config.SystemID)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/batch-verify", a.Config.SystemID)
 	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
