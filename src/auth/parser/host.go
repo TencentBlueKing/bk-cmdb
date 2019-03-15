@@ -17,6 +17,7 @@ func (ps *parseStream) hostRelated() *parseStream {
 	}
 
 	ps.host().
+		userAPI().
 		userCustom().
 		hostFavorite()
 
@@ -24,15 +25,15 @@ func (ps *parseStream) hostRelated() *parseStream {
 }
 
 const (
-	createUserCustomPattern = "/api/v3/userapi"
+	createUserAPIPattern = "/api/v3/userapi"
 )
 
 var (
-	updateUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
-	deleteUserCustomRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
-	findUserCustomRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
-	findUserCustomDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
-	findWithUserCustomRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	findUserAPIRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
+	findUserAPIDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
+	findWithUserAPIRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
@@ -51,13 +52,13 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 	return biz.BusinessID, nil
 }
 
-func (ps *parseStream) userCustom() *parseStream {
+func (ps *parseStream) userAPI() *parseStream {
 	if ps.err != nil {
 		return ps
 	}
 
 	// create user custom query operation.
-	if ps.hitPattern(createUserCustomPattern, http.MethodPost) {
+	if ps.hitPattern(createUserAPIPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err
@@ -67,7 +68,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Create,
 				},
 			},
@@ -76,7 +77,7 @@ func (ps *parseStream) userCustom() *parseStream {
 	}
 
 	// update host user custom query operation.
-	if ps.hitRegexp(updateUserCustomRegexp, http.MethodPut) {
+	if ps.hitRegexp(updateUserAPIRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("update host user custom query, but got invalid uri")
 			return ps
@@ -90,7 +91,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Update,
 					Name:   ps.RequestCtx.Elements[4],
 				},
@@ -101,7 +102,7 @@ func (ps *parseStream) userCustom() *parseStream {
 	}
 
 	// delete host user custom query operation.
-	if ps.hitRegexp(deleteUserCustomRegexp, http.MethodDelete) {
+	if ps.hitRegexp(deleteUserAPIRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("delete host user custom query operation, but got invalid uri")
 			return ps
@@ -115,7 +116,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Delete,
 					Name:   ps.RequestCtx.Elements[4],
 				},
@@ -126,7 +127,7 @@ func (ps *parseStream) userCustom() *parseStream {
 	}
 
 	// find host user custom query operation
-	if ps.hitRegexp(findUserCustomRegexp, http.MethodPost) {
+	if ps.hitRegexp(findUserAPIRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("find host usr custom query, but got invalid uri")
 			return ps
@@ -141,7 +142,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.FindMany,
 				},
 			},
@@ -150,7 +151,7 @@ func (ps *parseStream) userCustom() *parseStream {
 	}
 
 	// find host user custom query details operation.
-	if ps.hitRegexp(findUserCustomDetailsRegexp, http.MethodGet) {
+	if ps.hitRegexp(findUserAPIDetailsRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find host user custom details query, but got invalid uri")
 			return ps
@@ -165,7 +166,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Find,
 					Name:   ps.RequestCtx.Elements[5],
 				},
@@ -175,7 +176,7 @@ func (ps *parseStream) userCustom() *parseStream {
 	}
 
 	// get data with user custom query api.
-	if ps.hitRegexp(findWithUserCustomRegexp, http.MethodGet) {
+	if ps.hitRegexp(findWithUserAPIRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 8 {
 			ps.err = errors.New("find host user custom details query, but got invalid uri")
 			return ps
@@ -191,7 +192,7 @@ func (ps *parseStream) userCustom() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostUserCustom,
+					Type:   meta.DynamicGrouping,
 					Action: meta.Find,
 					Name:   ps.RequestCtx.Elements[5],
 				},
@@ -200,6 +201,60 @@ func (ps *parseStream) userCustom() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+var (
+	saveUserCustomPattern       = `/api/v3/usercustom`
+	searchUserCustomPattern     = `/api/v3/usercustom/user/search`
+	getUserDefaultCustomPattern = `/api/v3/usercustom/default/search`
+)
+
+func (ps *parseStream) userCustom() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	// create user custom query operation.
+	if ps.hitPattern(saveUserCustomPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.UserCustom,
+					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// update host user custom query operation.
+	if ps.hitPattern(searchUserCustomPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.UserCustom,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+
+	}
+
+	// delete host user custom query operation.
+	if ps.hitPattern(getUserDefaultCustomPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.UserCustom,
+					Action: meta.Find,
+				},
+			},
+		}
+		return ps
+
+	}
 	return ps
 }
 

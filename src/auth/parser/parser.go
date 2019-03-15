@@ -33,9 +33,13 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		return nil, err
 	}
 
-	meta := new(metadata.Metadata)
-	if err := json.Unmarshal(body, meta); err != nil {
-		return nil, err
+	meta := struct {
+		Metadata metadata.Metadata `json:"metadata"`
+	}{}
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &meta); err != nil {
+			return nil, err
+		}
 	}
 
 	elements, err := urlParse(req.Request.URL.Path)
@@ -49,7 +53,7 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		URI:      req.Request.URL.Path,
 		Elements: elements,
 		Body:     body,
-		Metadata: *meta,
+		Metadata: meta.Metadata,
 	}
 
 	stream, err := newParseStream(requestContext)
@@ -107,7 +111,7 @@ func ParseAPIVersion(req *restful.Request) (string, error) {
 }
 
 // url example: /api/v3/create/model
-var urlRegex = regexp.MustCompile(`^/api/([^/]+)/([^/]+)/([^/]+)/(.*)$`)
+var urlRegex = regexp.MustCompile(`^/api/([^/]+)(/[^/]+)+/?$`)
 
 func urlParse(url string) (elements []string, err error) {
 	if !urlRegex.MatchString(url) {

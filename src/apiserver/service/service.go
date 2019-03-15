@@ -110,7 +110,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {
-			blog.Errorf("request id: %s, parse auth attribute for %v failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.RequestURI, err)
+			blog.Errorf("request id: %s, parse auth attribute for %s %s failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.Method, req.Request.URL.Path, err)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),

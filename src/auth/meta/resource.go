@@ -36,7 +36,7 @@ const (
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
-	HostUserCustom           ResourceType = "hostUserCustom"
+	UserCustom               ResourceType = "hostCustomAPI"
 	HostFavorite             ResourceType = "hostFavorite"
 	HostInstance             ResourceType = "hostInstance"
 	Process                  ResourceType = "process"
@@ -169,7 +169,7 @@ var (
 	}
 
 	HostUserCustomDescribe = ResourceDescribe{
-		Type:    HostUserCustom,
+		Type:    UserCustom,
 		Actions: []Action{Find, FindMany, Create, Update, Delete},
 	}
 

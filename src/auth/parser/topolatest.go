@@ -991,7 +991,6 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 		}
 		return ps
 	}
-
 	// find all the objects belongs to a classification
 	if ps.hitPattern(findObjectsBelongsToClassificationLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
