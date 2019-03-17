@@ -389,13 +389,10 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	}
 
 	// register hosts
-	hostMap, err := srvData.lgc.GetAddHostIDMap(srvData.ctx, addHost)
+	hostIDMap, err := srvData.lgc.GetHostIDByIP(srvData.ctx, addHost)
 	hostIDArr := make([]int64, 0)
-	for _, v := range hostMap {
-		for _, host := range v {
-			hostID := host.(map[string]interface{})[common.BKHostIDField].(int64)
-			hostIDArr = append(hostIDArr, hostID)
-		}
+	for _, hostID := range hostIDMap {
+		hostIDArr = append(hostIDArr, hostID)
 	}
 	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
 		// FIXME it the failure with auto retry?
