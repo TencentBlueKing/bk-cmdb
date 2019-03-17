@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery/discovery"
@@ -27,6 +28,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -53,6 +55,7 @@ type service struct {
 }
 
 func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+	s.enableAuth = false
 	s.enableAuth = enableAuth
 	s.engine = engine
 	s.client = httpClient
@@ -89,6 +92,7 @@ func (s *service) WebServices() []*restful.WebService {
 
 func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		fmt.Println("ready 1.....")
 		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
 			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
 			rsp := metadata.BaseResp{
@@ -96,16 +100,17 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: "invalid supplier account.",
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusBadRequest)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
 			return
 		}
 
+		fmt.Println("ready 2.....")
 		if !enableAuth {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
+		fmt.Println("ready 3.....")
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {
@@ -115,8 +120,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusBadRequest)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -129,8 +133,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
 		decision, err := authorize.Authorize(req.Request.Context(), attribute)
@@ -141,8 +144,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -153,8 +155,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusForbidden)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusForbidden, rsp, restful.MIME_JSON)
 			return
 		}
 

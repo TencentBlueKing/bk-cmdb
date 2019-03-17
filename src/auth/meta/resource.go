@@ -45,6 +45,8 @@ const (
 	Process                  ResourceType = "process"
 	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
+	DynamicGrouping          ResourceType = "dynamicGrouping"
+	EventPushing             ResourceType = "eventPushing"
 )
 
 const (
@@ -52,6 +54,7 @@ const (
 	ProcessConfigTemplate        = "processConfigTemplate"
 	ProcessConfigTemplateVersion = "processConfigTemplateVersion"
 	ProcessBoundConfig           = "processBoundConfig"
+	SystemFunctionality          = "systemFunctionality"
 
 	NetCollector = "netCollector"
 	NetDevice    = "netDevice"

@@ -99,16 +99,9 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	var err error
-	info.ResourceID, err = GenerateResourceID(attribute)
-	if err != nil {
-		return nil, err
-	}
-
 	switch resourceType {
 	case meta.Business:
 		info.ResourceType = SysBusinessInstance
-		return info, nil
 
 	case meta.Model,
 		meta.ModelUnique,
@@ -127,7 +120,11 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		info.ResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		info.ResourceType = SysModelGroup
+		if attribute.BusinessID == 0 {
+			info.ResourceType = SysModelGroup
+		} else {
+			info.ResourceType = BizModelGroup
+		}
 
 	case meta.AssociationType:
 		info.ResourceType = SysAssociationType
@@ -161,10 +158,20 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	case meta.Process:
 		info.ResourceType = BizProcessInstance
 
+	case meta.EventPushing:
+		info.ResourceType = SysEventPushing
+
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+	}
+
+	var err error
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
 	}
 
 	return info, nil
@@ -182,7 +189,7 @@ const (
 	SysModelGroup       ResourceTypeID = "sysModelGroup"
 	SysModel            ResourceTypeID = "sysModel"
 	SysInstance         ResourceTypeID = "sysInstance"
-	SysAssociationType  ResourceTypeID = "sysAssociationType "
+	SysAssociationType  ResourceTypeID = "sysAssociationType"
 )
 
 // Business Resource

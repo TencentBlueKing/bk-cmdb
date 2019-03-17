@@ -13,25 +13,24 @@
 package parser
 
 import (
-    "configcenter/src/common/blog"
     "errors"
 	"fmt"
-	"io/ioutil"
     "net/http"
     "regexp"
 	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+    "configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
 
 func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
-
-	body, err := ioutil.ReadAll(req.Request.Body)
+	body, err := util.PeekRequest(req.Request)
 	if err != nil {
 		return nil, err
 	}
