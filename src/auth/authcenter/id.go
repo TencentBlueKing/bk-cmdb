@@ -64,7 +64,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 	case meta.NetDataCollector:
 		return netDataCollectorResourceID(resourceType, attribute)
 	case meta.EventPushing:
-		return eventSubscribeResourceID(attribute)
+		return eventSubscribeResourceID(resourceType, attribute)
 	case meta.HostInstance:
 		return hostInstanceResourceID(resourceType, attribute)
 	default:
