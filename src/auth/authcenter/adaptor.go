@@ -95,80 +95,16 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 
 // ResourceTypeID is resource's type in auth center.
 func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	resourceType := attribute.Basic.Type
+    var err error
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	switch resourceType {
-	case meta.Business:
-		info.ResourceType = SysBusinessInstance
+	resourceTypeID, err := convertResourceType(attribute)
+	if err != nil {
+	    return info, err
+    }
+	info.ResourceType = *resourceTypeID
 
-	case meta.Model,
-		meta.ModelUnique,
-		meta.ModelAttribute,
-		meta.ModelAttributeGroup:
-		if attribute.BusinessID != 0 {
-			info.ResourceType = BizModel
-		} else {
-			info.ResourceType = SysModel
-		}
-
-	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
-		info.ResourceType = BizTopoInstance
-
-	case meta.MainlineModel, meta.ModelTopology:
-		info.ResourceType = SysSystemBase
-
-	case meta.ModelClassification:
-		if attribute.BusinessID == 0 {
-			info.ResourceType = SysModelGroup
-		} else {
-			info.ResourceType = BizModelGroup
-		}
-
-	case meta.AssociationType:
-		info.ResourceType = SysAssociationType
-
-	case meta.ModelAssociation:
-		return info, errors.New("model association does not support auth now")
-
-	case meta.ModelInstanceAssociation:
-		return info, errors.New("model instance association does not support  auth now")
-
-	case meta.ModelInstance:
-		if attribute.BusinessID == 0 {
-			info.ResourceType = SysInstance
-		} else {
-			info.ResourceType = BizInstance
-		}
-
-	case meta.HostInstance:
-		if attribute.BusinessID == 0 {
-			info.ResourceType = SysHostInstance
-		} else {
-			info.ResourceType = BizHostInstance
-		}
-
-	case meta.HostUserCustom:
-		info.ResourceType = BizCustomQuery
-
-	case meta.HostFavorite:
-		return info, errors.New("host favorite does not support auth now")
-
-	case meta.Process:
-		info.ResourceType = BizProcessInstance
-
-	case meta.EventPushing:
-		info.ResourceType = SysEventPushing
-
-	case meta.NetDataCollector:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
-
-	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
-	}
-
-	var err error
 	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
 	if err != nil {
 		return nil, err
