@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common/util"
 )
 
@@ -48,7 +47,7 @@ type authClient struct {
 	basicHeader http.Header
 }
 
-func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) (meta.Decision, error) {
+func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/batch-verify", a.Config.SystemID)
@@ -60,31 +59,17 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		Do().Into(resp)
 
 	if err != nil {
-		return meta.Decision{}, err
+		return nil, err
 	}
 
 	if resp.Code != 0 {
-		return meta.Decision{}, &AuthError{
+		return nil, &AuthError{
 			RequestID: resp.RequestID,
-			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message),
 		}
 	}
 
-	noAuth := make([]ResourceTypeID, 0)
-	for _, item := range resp.Data {
-		if !item.IsPass {
-			noAuth = append(noAuth, item.ResourceType)
-		}
-	}
-
-	if len(noAuth) != 0 {
-		return meta.Decision{
-			Authorized: false,
-			Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
-		}, nil
-	}
-
-	return meta.Decision{Authorized: true}, nil
+	return resp.Data, nil
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
@@ -103,10 +88,11 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-		// 1901409 is for: resource already exist, can not created repeatedly
-		if resp.Code != 1901409 {
-			return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+        // 1901409 is for: resource already exist, can not created repeatedly
+		if resp.Code == codeDuplicated {
+			return ErrDuplicated
 		}
+		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsCreated {
@@ -132,7 +118,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsDeleted {
@@ -158,7 +144,7 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsUpdated {
