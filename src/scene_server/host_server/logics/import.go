@@ -76,6 +76,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		var existInDB bool
 		var err error
 
+		// we support update host info both base on hostID and innerIP, hostID has higher priority then innerIP
 		hostIDFromInput, bHostIDInInput := host[common.BKHostIDField]
 		if bHostIDInInput == true {
 			intHostID, err = util.GetInt64ByInterface(hostIDFromInput)
