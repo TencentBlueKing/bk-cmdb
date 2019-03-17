@@ -466,10 +466,6 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
-	if err := a.auth.RegisterAssociationType(params.Context, params.Header, request); err != nil {
-		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
-		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
 
 	rsp, err := a.clientSet.CoreService().Association().CreateAssociationType(context.Background(), params.Header, &metadata.CreateAssociationKind{Data: *request})
 	if err != nil {
@@ -478,6 +474,12 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	}
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
+	request.ID = resp.Data.ID
+	if err := a.auth.RegisterAssociationType(params.Context, params.Header, request); err != nil {
+		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	}
+
 	return resp, nil
 
 }

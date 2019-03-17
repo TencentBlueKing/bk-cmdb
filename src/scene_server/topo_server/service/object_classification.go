@@ -110,8 +110,7 @@ func (s *Service) DeleteClassification(params types.ContextParams, pathParams, q
 		return nil, err
 	}
 
-	data.Remove(metadata.BKMetadata)
-
+	// data.Remove(metadata.BKMetadata)
 	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err
 }
