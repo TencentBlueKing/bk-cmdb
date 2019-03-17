@@ -62,10 +62,11 @@ func NewHostAuthorizer(tls *util.TLSClientConfig, optionConfig options.Auth) (*H
 // NewIamAuthorizeData new a meta.Attribute object
 func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 	resourceType meta.ResourceType, instanceIDs *[]int64, action meta.Action) *meta.AuthAttribute {
+	    
 	iamAuthorizeRequestBody := &meta.AuthAttribute{
-		APIVersion: commonInfo.APIVersion,
 		BusinessID: businessID,
 		User:       commonInfo.User,
+		Resources: make([]meta.ResourceAttribute, 0),
 	}
 
 	for _, instanceID := range *instanceIDs {
@@ -76,12 +77,13 @@ func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 }
 
 // NewIamAuthorizeData new a meta.Attribute object
-func NewIamAuthorizeDataWithLayers(commonInfo *meta.CommonInfo, businessID int64,
+func NewBatchResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID int64,
     resourceType meta.ResourceType, layers [][]meta.Item, action meta.Action) *meta.AuthAttribute {
+        
     iamAuthorizeRequestBody := &meta.AuthAttribute{
-        APIVersion: commonInfo.APIVersion,
         BusinessID: businessID,
         User:       commonInfo.User,
+        Resources: make([]meta.ResourceAttribute, 0),
     }
 
     for _, layer := range layers {
@@ -167,7 +169,7 @@ func (ha *HostAuthorizer) CanDoResourceActionWithLayers(requestHeader *http.Head
         }
         return decision, err
     }
-    iamAuthorizeRequestBody := NewIamAuthorizeDataWithLayers(commonInfo, businessID, resourceType, layers, action)
+    iamAuthorizeRequestBody := NewBatchResourceAttributeWithLayers(commonInfo, businessID, resourceType, layers, action)
 
     decision, err = ha.authorizer.Authorize(context.Background(), iamAuthorizeRequestBody)
     if err != nil {

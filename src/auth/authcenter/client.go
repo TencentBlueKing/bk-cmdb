@@ -13,13 +13,13 @@
 package authcenter
 
 import (
-    "context"
-    "fmt"
-    "net/http"
+	"context"
+	"fmt"
+	"net/http"
 
-    "configcenter/src/apimachinery/rest"
-    "configcenter/src/auth/meta"
-    "configcenter/src/common/util"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/util"
 )
 
 // clients contains all the client api which is used to
@@ -51,7 +51,7 @@ type authClient struct {
 func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) (meta.Decision, error) {
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", a.Config.SystemID)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/batch-verify", a.Config.SystemID)
 	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
@@ -103,7 +103,10 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		// 1901409 is for: resource already exist, can not created repeatedly
+		if resp.Code != 1901409 {
+			return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		}
 	}
 
 	if !resp.Data.IsCreated {
