@@ -23,6 +23,77 @@ import (
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
 
+func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
+    resourceType := attribute.Basic.Type
+    info := new(ResourceInfo)
+    info.ResourceName = attribute.Basic.Name
+
+    var iamResourceType ResourceTypeID
+    switch resourceType {
+    case meta.Business:
+        iamResourceType = SysBusinessInstance
+
+    case meta.Model,
+        meta.ModelUnique,
+        meta.ModelAttribute,
+        meta.ModelAttributeGroup:
+        if attribute.BusinessID != 0 {
+            iamResourceType = BizModel
+        } else {
+            iamResourceType = SysModel
+        }
+
+    case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
+        iamResourceType = BizTopoInstance
+
+    case meta.MainlineModel, meta.ModelTopology:
+        iamResourceType = SysSystemBase
+
+    case meta.ModelClassification:
+        iamResourceType = SysModelGroup
+
+    case meta.AssociationType:
+        iamResourceType = SysAssociationType
+
+    case meta.ModelAssociation:
+        return nil, errors.New("model association does not support auth now")
+
+    case meta.ModelInstanceAssociation:
+        return nil, errors.New("model instance association does not support  auth now")
+
+    case meta.ModelInstance:
+        if attribute.BusinessID == 0 {
+            iamResourceType = SysInstance
+        } else {
+            iamResourceType = BizInstance
+        }
+
+    case meta.HostInstance:
+        if attribute.BusinessID == 0 {
+            iamResourceType = SysHostInstance
+        } else {
+            iamResourceType = BizHostInstance
+        }
+
+    case meta.HostUserCustom:
+        iamResourceType = BizCustomQuery
+
+    case meta.HostFavorite:
+        return nil, errors.New("host favorite does not support auth now")
+
+    case meta.Process:
+        iamResourceType = BizProcessInstance
+
+    case meta.NetDataCollector:
+        return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+    default:
+        return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+    }
+
+    return &iamResourceType, nil
+}
+
+// ResourceTypeID is resource's type in auth center.
 func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	resourceType := attribute.Basic.Type
 	info := new(ResourceInfo)

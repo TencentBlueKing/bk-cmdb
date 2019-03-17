@@ -538,6 +538,21 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
+	
+	// check authorization
+    hostIDArr := make([]int64, 0)
+    for _, id := range strings.Split(hostIDStr, ",") {
+        hostID, err := strconv.ParseInt(id, 10, 64)
+        if err != nil {
+            blog.Errorf("update host batch, but got invalid host id[%s], err: %v,rid:%s", id, err, srvData.rid)
+            resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+            return
+        }
+        hostIDArr = append(hostIDArr, hostID)
+    }
+    if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+        return
+    }
 
 	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
 	hostIDs := make([]int64, 0)
@@ -551,7 +566,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		hostIDs = append(hostIDs, hostID)
 		conds := mapstr.New()
 		if businessMedata != nil {
-			//conds.Set(common.MetadataField, businessMedata)
+			// conds.Set(common.MetadataField, businessMedata)
 			// TODO use metadata
 		}
 		conds.Set(common.BKHostIDField, hostID)
@@ -576,11 +591,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
-	}
-
-	// authorization check
-	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDs, authmeta.UpdateMany); shouldContinue == false {
-		return
 	}
 
 	opt := &meta.UpdateOption{

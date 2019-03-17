@@ -63,7 +63,6 @@ type Basic struct {
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {
 	User       UserInfo
-	APIVersion string
 }
 
 type Decision struct {

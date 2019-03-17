@@ -72,6 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	config := hostSrv.Config.Auth
+	blog.Info("host server auth config is: %+v", config)
     authorizer, err := authorize.NewHostAuthorizer(nil, config)
     if err != nil {
         blog.Errorf("make host authorizer failed, err: %+v", err)

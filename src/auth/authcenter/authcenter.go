@@ -122,6 +122,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 	header.Set(authAppSecretHeaderKey, cfg.AppSecret)
 
 	return &AuthCenter{
+		Config: cfg,
 		authClient: &authClient{
 			client:      rest.NewRESTClient(c, ""),
 			Config:      cfg,
@@ -142,7 +143,9 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
+	blog.Info("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
+		blog.Info("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 	resources := make([]meta.ResourceAttribute, 0)
@@ -237,11 +240,13 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
+		// info.Resources = append(info.Resources, entity)
+		info.Resources = make([]ResourceEntity, 0)
 		info.Resources = append(info.Resources, entity)
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+		ac.authClient.registerResource(ctx, header, &info)
 	}
-	return ac.authClient.registerResource(ctx, header, &info)
-
+	return nil
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {

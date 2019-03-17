@@ -72,20 +72,24 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 	srvData := s.newSrvComm(*requestHeader)
 	shouldContinue = false
 
-	// check authorization
 	var businessID int64
-	layers := make([][]authmeta.Item, 0)
-	var err error
-	if len(*hostIDArr) > 0 {
-        // step1. get app id by host id
-        businessID, layers, err = s.getHostLayers(requestHeader, hostIDArr)
-        if err != nil {
-            blog.Errorf("get host layers by hostID failed, hostIDArr: %+v, err: %v", hostIDArr, err)
+	if len(*hostIDArr) == 0 {
+        decision, err := s.Authorizer.CanDoResourceActionWithLayers(requestHeader, authmeta.HostInstance, businessID, [][]authmeta.Item{}, action)
+        if decision.Authorized == false {
+            blog.Errorf("check host authorization failed, reason: %v, err: %v", decision.Reason, err)
             resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
             return
         }
+        return
 	}
 
+    // step1. get app id by host id
+    businessID, layers, err := s.getHostLayers(requestHeader, hostIDArr)
+    if err != nil {
+        blog.Errorf("get host layers by hostID failed, hostIDArr: %+v, err: %v", hostIDArr, err)
+        resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+        return
+    }
 	// step2. check authorization by call interface
 	decision, err := s.Authorizer.CanDoResourceActionWithLayers(requestHeader, authmeta.HostInstance, businessID, layers, action)
 	if decision.Authorized == false {
