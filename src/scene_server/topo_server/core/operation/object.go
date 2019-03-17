@@ -335,11 +335,6 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
-	object := obj.Object()
-	if err := o.auth.RegisterObject(params.Context, params.Header, &object); err != nil {
-		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
-
 	// check the classification
 	_, err = obj.GetClassification()
 	if nil != err {
@@ -363,6 +358,11 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to save the data(%#v), err: %s", data, err.Error())
 		return nil, err
+	}
+
+	object := obj.Object()
+	if err := o.auth.RegisterObject(params.Context, params.Header, &object); err != nil {
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	// create the default group
