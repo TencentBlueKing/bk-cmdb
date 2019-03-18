@@ -13,9 +13,11 @@
 package options
 
 import (
+	"github.com/spf13/pflag"
+
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
-	"github.com/spf13/pflag"
 )
 
 // ServerOption define option of server in flags
@@ -47,16 +49,8 @@ type Gse struct {
 	RedisPassword string
 }
 
-type Auth struct {
-    Address string
-    AppCode string
-    AppSecret string
-    Enable  bool
-}
-
 type Config struct {
 	Gse   Gse
 	Redis redis.Config
-	Auth Auth
+	Auth  authcenter.AuthConfig
 }
-

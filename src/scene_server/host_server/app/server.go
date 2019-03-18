@@ -22,6 +22,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -56,7 +57,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != hostSrv.Config.Redis.Address && hostSrv.Config.Auth.Address != "" {
+		if "" != hostSrv.Config.Redis.Address && len(hostSrv.Config.Auth.Address) != 0 {
 			configReady = true
 			break
 		}
@@ -106,6 +107,8 @@ func (h *HostServer) WebService() *restful.WebService {
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
+
 	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
 	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
 	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
@@ -118,9 +121,10 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Redis.Port = current.ConfigMap["redis.port"]
 	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
 
-	h.Config.Auth.Address = current.ConfigMap["auth.address"]
-	h.Config.Auth.AppCode = current.ConfigMap["auth.appCode"]
-	h.Config.Auth.AppSecret = current.ConfigMap["auth.appSecret"]
+	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse authcenter config failed: %v", err)
+	}
 
 	enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
 	if err == nil {

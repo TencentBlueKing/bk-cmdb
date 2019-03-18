@@ -13,15 +13,15 @@
 package parser
 
 import (
-    "errors"
+	"errors"
 	"fmt"
-    "net/http"
-    "regexp"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
-    "configcenter/src/common/blog"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -35,9 +35,13 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		return nil, err
 	}
 
-	meta := new(metadata.Metadata)
-	if err := json.Unmarshal(body, meta); err != nil {
-		return nil, err
+	meta := struct {
+		Metadata metadata.Metadata `json:"metadata"`
+	}{}
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &meta); err != nil {
+			return nil, err
+		}
 	}
 
 	elements, err := urlParse(req.Request.URL.Path)
@@ -51,7 +55,7 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		URI:      req.Request.URL.Path,
 		Elements: elements,
 		Body:     body,
-		Metadata: *meta,
+		Metadata: meta.Metadata,
 	}
 
 	stream, err := newParseStream(requestContext)
@@ -93,19 +97,19 @@ func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 func ParseAPIVersion(req *restful.Request) (string, error) {
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
-	    blog.Errorf("parse api version failed, %+v", err)
+		blog.Errorf("parse api version failed, %+v", err)
 		return "", fmt.Errorf("parse api version failed, %+v", err)
 	}
 	version := elements[1]
 	if version != "v3" {
-        blog.Errorf("parse api version failed, unsupported api version: %s", version)
+		blog.Errorf("parse api version failed, unsupported api version: %s", version)
 		return "", fmt.Errorf("parse api version failed, unsupported api version: %s", version)
 	}
 	return version, nil
 }
 
 // url example: /api/v3/create/model
-var urlRegex = regexp.MustCompile(`^/api/([^/]+)/([^/]+)/([^/]+)/(.*)$`)
+var urlRegex = regexp.MustCompile(`^/api/([^/]+)(/[^/]+)+/?$`)
 
 func urlParse(url string) (elements []string, err error) {
 	if !urlRegex.MatchString(url) {

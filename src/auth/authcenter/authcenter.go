@@ -144,7 +144,7 @@ type AuthCenter struct {
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
 	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
-		blog.Info("AuthCenter Config is disabled. config: %+v", ac.Config)
+		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 	resources := make([]meta.ResourceAttribute, 0)
@@ -273,7 +273,8 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
-		// info.Resources = append(info.Resources, entity)
+		// TODO replace register with batch createorupdate interface, currently is register one by one.
+		info.Resources = make([]ResourceEntity, 0)
 		info.Resources = append(info.Resources, entity)
 	}
 	return &info, nil
@@ -383,11 +384,11 @@ func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error
 	// TODO: this operation may be wrong, because some api filters does not
 	// fill the business id field, so these api should be normalized.
 	if r.BusinessID != 0 {
-		s.ScopeType = "biz"
+		s.ScopeType = ScopeTypeIDBiz
 		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 	} else {
-		s.ScopeType = "system"
-		s.ScopeID = "bk_cmdb"
+		s.ScopeType = ScopeTypeIDSystem
+		s.ScopeID = SystemIDCMDB
 	}
 	return s, nil
 }

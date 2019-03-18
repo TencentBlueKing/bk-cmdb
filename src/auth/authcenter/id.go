@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"strconv"
 
-    "configcenter/src/auth/meta"
+	"configcenter/src/auth/meta"
 )
 
 func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -55,14 +55,14 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAttributeResourceID(resourceType, attribute)
 	case meta.ModelUnique:
 		return modelUniqueResourceID(resourceType, attribute)
-	case meta.HostUserCustom:
+	case meta.UserCustom:
 		return hostUserCustomResourceID(resourceType, attribute)
 	case meta.HostFavorite:
 		return hostFavoriteResourceID(resourceType, attribute)
 	case meta.Process:
 		return processResourceID(resourceType, attribute)
 	case meta.NetDataCollector:
-        return netDataCollectorResourceID(resourceType, attribute)
+		return netDataCollectorResourceID(resourceType, attribute)
 	case meta.EventPushing:
 		return eventSubscribeResourceID(resourceType, attribute)
 	case meta.HostInstance:
@@ -206,21 +206,21 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 }
 
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-    resourceIDs := make([]ResourceID, 0)
-    for _, layer := range attribute.Layers {
-        iamResourceType, err := convertResourceType(attribute)
-        if err != nil {
-            return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %s, err: %+v", attribute, err)
-        }
-        resourceID := ResourceID{
-            ResourceType: *iamResourceType,
-            ResourceID:   fmt.Sprintf("%d", layer.InstanceID),
-        }
-        resourceIDs = append(resourceIDs, resourceID)
-    }
-    return resourceIDs, nil
+	resourceIDs := make([]ResourceID, 0)
+	for _, layer := range attribute.Layers {
+		iamResourceType, err := convertResourceType(attribute)
+		if err != nil {
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %+v, err: %+v", attribute, err)
+		}
+		resourceID := ResourceID{
+			ResourceType: *iamResourceType,
+			ResourceID:   fmt.Sprintf("%d", layer.InstanceID),
+		}
+		resourceIDs = append(resourceIDs, resourceID)
+	}
+	return resourceIDs, nil
 }
-    
+
 func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 	return []ResourceID{
 		{

@@ -511,7 +511,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		dstIPMap[ip] = true
 	}
 
-	blog.V(5).Infof("configData[0]:%+v, input:%+v", configDataArr[0], input, lgc.rid)
+	blog.V(5).Infof("configData[0]:%+v, input:%+v, rid: %s", configDataArr[0], input, lgc.rid)
 	moduleIDs := make([]int64, 0)
 	for _, configData := range configDataArr {
 
