@@ -200,11 +200,11 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
 				defLang := s.language.CreateDefaultCCLanguageIf(language)
 

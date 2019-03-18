@@ -38,9 +38,11 @@ const (
 	ModelUnique              ResourceType = "modelUnique"
 	HostUserCustom           ResourceType = "hostUserCustom"
 	HostFavorite             ResourceType = "hostFavorite"
+	HostInstance             ResourceType = "hostInstance"
 	Process                  ResourceType = "process"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping"
+	EventPushing             ResourceType = "eventPushing"
 )
 
 const (
@@ -48,7 +50,6 @@ const (
 	ProcessConfigTemplate        = "processConfigTemplate"
 	ProcessConfigTemplateVersion = "processConfigTemplateVersion"
 	ProcessBoundConfig           = "processBoundConfig"
-	EventPushing                 = "eventPushing"
 	SystemFunctionality          = "systemFunctionality"
 
 	NetCollector = "netCollector"
@@ -179,7 +180,7 @@ var (
 
 	ProcessDescribe = ResourceDescribe{
 		Type:    Process,
-		Actions: []Action{Create, Find, FindMany, Delete, DeleteMany, Update, UpdateMany, Create},
+		Actions: []Action{Create, Find, FindMany, Delete, DeleteMany, Update, UpdateMany},
 	}
 
 	NetDataCollectorDescribe = ResourceDescribe{

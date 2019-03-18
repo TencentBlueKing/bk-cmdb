@@ -186,7 +186,7 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of assocication kind
+	//	define the metadata of association kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 

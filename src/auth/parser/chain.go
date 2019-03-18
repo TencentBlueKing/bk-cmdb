@@ -60,6 +60,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		topologyLatest().
 		netCollectorRelated().
 		processRelated().
+		eventRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 
@@ -159,7 +160,7 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPOwnerID)
 		return ps
 	}
-	ps.Attribute.User.SupplierID = supplier
+	ps.Attribute.User.SupplierAccount = supplier
 
 	return ps
 }

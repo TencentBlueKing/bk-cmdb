@@ -34,7 +34,7 @@ import (
 func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -102,7 +102,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -190,7 +190,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -241,7 +241,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -283,7 +283,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
