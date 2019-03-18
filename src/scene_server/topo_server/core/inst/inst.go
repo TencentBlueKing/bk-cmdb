@@ -16,12 +16,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"configcenter/src/common/mapstr"
-
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/model"
@@ -123,7 +122,9 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
-
+	if cli.target.GetIsPaused() {
+		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+	}
 	if cli.target.IsCommon() {
 		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
 	}
@@ -152,7 +153,9 @@ func (cli *inst) Create() error {
 }
 
 func (cli *inst) Update(data frtypes.MapStr) error {
-
+	if cli.target.GetIsPaused() {
+		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+	}
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
 
