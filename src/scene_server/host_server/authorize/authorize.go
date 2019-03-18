@@ -24,7 +24,6 @@ import (
 	"configcenter/src/auth/parser"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
-	"configcenter/src/scene_server/host_server/app/options"
 )
 
 // HostAuthorizer manages authorize interface for host server
@@ -34,9 +33,9 @@ type HostAuthorizer struct {
 }
 
 // NewHostAuthorizer new authorizer for host server
-func NewHostAuthorizer(tls *util.TLSClientConfig, optionConfig options.Auth) (*HostAuthorizer, error) {
+func NewHostAuthorizer(tls *util.TLSClientConfig, optionConfig authcenter.AuthConfig) (*HostAuthorizer, error) {
 	config := authcenter.AuthConfig{
-		Address:   []string{optionConfig.Address},
+		Address:   optionConfig.Address,
 		AppCode:   optionConfig.AppCode,
 		AppSecret: optionConfig.AppSecret,
 		SystemID:  authcenter.SystemIDCMDB,
