@@ -26,6 +26,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
 )
 
 const (
@@ -93,6 +94,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
 func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !cfg.Enable {
 		return new(AuthCenter), nil
 	}
@@ -140,7 +142,9 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
+	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
+		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 	resources := make([]meta.ResourceAttribute, 0)
@@ -251,11 +255,13 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
+		// TODO replace register with batch createorupdate interface, currently is register one by one.
+		info.Resources = make([]ResourceEntity, 0)
 		info.Resources = append(info.Resources, entity)
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+		ac.authClient.registerResource(ctx, header, &info)
 	}
-	return ac.authClient.registerResource(ctx, header, &info)
-
+	return nil
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {

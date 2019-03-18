@@ -23,7 +23,13 @@ import (
 )
 
 func (s *coreService) SearchMainlineModelTopo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.core.TopoOperation().SearchMainlineModelTopo()
+    detail := struct{WithDetail bool `field:"with_detail"`}{}
+    if err := mapstr.SetValueToStructByTags(&detail, data); err != nil {
+        blog.Errorf("decode body %+v failed, err: %v", data, err)
+        return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
+    }
+    
+	result, err := s.core.TopoOperation().SearchMainlineModelTopo(detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline model topo failed, %+v", err)
 		return nil, fmt.Errorf("search mainline model topo failed, %+v", err)
@@ -38,11 +44,19 @@ func (s *coreService) SearchMainlineInstanceTopo(params core.ContextParams, path
 	}
 	bizID, err := strconv.ParseInt(bkBizID, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("field %s invalid, %v", common.BKAppIDField, err)
+		blog.Errorf("field %s with value:%s invalid, %v", common.BKAppIDField, bkBizID, err)
+		return nil, fmt.Errorf("field %s with valued:%s invalid, %v", common.BKAppIDField, bkBizID, err)
 	}
 
-	// TODO add parse withDetail option
-	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, false)
+    blog.V(2).Infof("decode body %+v", data)
+	detail := struct{WithDetail bool `field:"with_detail"`}{}
+    if err := mapstr.SetValueToStructByTags(&detail, data); err != nil {
+        blog.Errorf("decode body %+v failed, err: %v", data, err)
+        return nil, fmt.Errorf("decode body %+v failed, err: %v", data, err)
+    }
+    blog.V(2).Infof("decode result: %+v", detail)
+    
+	result, err := s.core.TopoOperation().SearchMainlineInstanceTopo(bizID, detail.WithDetail)
 	if err != nil {
 		blog.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)
 		return nil, fmt.Errorf("search mainline instance topo by business:%d failed, %+v", bizID, err)
