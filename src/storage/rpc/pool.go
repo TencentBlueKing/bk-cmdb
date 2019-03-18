@@ -36,16 +36,24 @@ func NewClientPool(network string, getServer types.GetServerFunc, path string) (
 		conns:     make(chan Client, 40),
 		getServer: getServer,
 	}
-	conn, err := pool.new()
-	if err != nil {
-		return nil, err
+	var err error
+	var conn Client
+	for i := 3; i > 0; i-- {
+		conn, err = pool.new()
+		if err != nil {
+			time.Sleep(time.Millisecond * 500)
+			continue
+		}
+		err = conn.Ping()
+		if err != nil {
+			conn.Close()
+			time.Sleep(time.Millisecond * 500)
+			continue
+		}
+		pool.put(conn)
+		return pool, nil
 	}
-	err = conn.Ping()
-	if err != nil {
-		return nil, err
-	}
-	pool.put(conn)
-	return pool, err
+	return nil, err
 }
 
 func (p *Pool) new() (Client, error) {
@@ -55,13 +63,13 @@ func (p *Pool) new() (Client, error) {
 		servers, err = p.getServer()
 		if err != nil {
 			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Millisecond * 200)
+			time.Sleep(time.Millisecond * 500)
 			continue
 		}
 		if len(servers) <= 0 {
 			err = fmt.Errorf("service discover returns 0 tmserver address")
 			blog.Infof("fetch tmserver address failed: %v, retry 2s later", err)
-			time.Sleep(time.Millisecond * 200)
+			time.Sleep(time.Millisecond * 500)
 			continue
 		}
 		break
