@@ -14,7 +14,7 @@ package synchronizer
 
 import (
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 )
 
 // NewWorker creates, and returns a new Worker object. Its only argument

@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"configcenter/src/common/blog"
 	"context"
 	"errors"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
 )
 
 const (
@@ -223,30 +223,48 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	registerInfo, err := ac.DryRunRegisterResource(ctx, rs...)
+	if err != nil {
+		return err
+	}
+	
+	header := http.Header{}
+	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
+	
+	entities := &registerInfo.Resources
+	for _, entity := range *entities {
+		registerInfo.Resources = make([]ResourceEntity, 0)
+		registerInfo.Resources = append(registerInfo.Resources, entity)
+		ac.authClient.registerResource(ctx, header, registerInfo)
+	}
+	return nil
+}
+
+func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
 	if !ac.Config.Enable {
-		return nil
+		return nil, nil
 	}
 
 	if len(rs) <= 0 {
-		// not resource should be register
-		return nil
+		// no resource should be register
+		return nil, nil
 	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
 	info.CreatorID = cmdbUserID
-	header := http.Header{}
+	info.Resources = make([]ResourceEntity, 0)
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {
-			return errors.New("invalid resource attribute with empty object")
+			return nil, errors.New("invalid resource attribute with empty object")
 		}
 		scope, err := ac.getScopeInfo(&r)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		rscInfo, err := adaptor(&r)
 		if err != nil {
-			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 		entity := ResourceEntity{}
 		entity.ScopeID = scope.ScopeID
@@ -256,12 +274,9 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		entity.ResourceName = rscInfo.ResourceName
 
 		// info.Resources = append(info.Resources, entity)
-		info.Resources = make([]ResourceEntity, 0)
 		info.Resources = append(info.Resources, entity)
-		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-		ac.authClient.registerResource(ctx, header, &info)
 	}
-	return nil
+	return &info, nil
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
@@ -334,6 +349,33 @@ func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttrib
 
 func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
+}
+
+func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
+	if !ac.Config.Enable {
+		return nil, nil
+	}
+
+	scopeInfo, err := ac.getScopeInfo(r)
+	if err != nil {
+		return nil, err
+	}
+	resourceType, err := convertResourceType(r)
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	resourceID, err := GenerateResourceID(*resourceType, r)
+	if err != nil {
+		return nil, err
+	}
+	searchCondition := SearchCondition{
+		ScopeInfo:       *scopeInfo,
+		ResourceType:    *resourceType,
+		ParentResources: resourceID,
+	}
+	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
+	return result, err
 }
 
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {

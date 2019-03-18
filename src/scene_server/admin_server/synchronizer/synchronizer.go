@@ -17,9 +17,9 @@ import (
 
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/synchronizer/handler"
+	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 	"configcenter/src/scene_server/auth_synchronizer/app/options"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/handler"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
 )
 
 // AuthSynchronizer stores all related resource

@@ -2,6 +2,8 @@ package authcenter
 
 import (
 	"fmt"
+
+	"configcenter/src/auth/meta"
 )
 
 // system constanst
@@ -171,3 +173,16 @@ type BaseResponse struct {
 	Result    bool   `json:"result"`
 	RequestID string `json:"request_id"`
 }
+
+type SearchCondition struct {
+	ScopeInfo
+	ResourceType ResourceTypeID
+	ParentResources []ResourceID
+}
+
+type SearchResult struct {
+	BaseResponse
+	RequestID string        `json:"request_id"`
+	Data      []meta.BackendResource `json:"data"`
+}
+

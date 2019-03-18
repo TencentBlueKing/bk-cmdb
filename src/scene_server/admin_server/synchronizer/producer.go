@@ -13,15 +13,15 @@
 package synchronizer
 
 import (
-    "context"
-    "time"
-    
+	"context"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/utils"
+	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/synchronizer/utils"
 )
 
 // Producer producer WorkRequest and enqueue it

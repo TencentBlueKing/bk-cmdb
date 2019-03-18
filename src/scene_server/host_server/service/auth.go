@@ -20,6 +20,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -85,7 +86,8 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 	}
 
 	// step1. get app id by host id
-	businessID, layers, err := s.getHostLayers(requestHeader, hostIDArr)
+	coreService := s.Engine.CoreAPI.CoreService()
+	businessID, layers, err := extensions.GetHostLayers(coreService, requestHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get host layers by hostID failed, hostIDArr: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
@@ -101,155 +103,10 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 	return true
 }
 
-func (s *Service) getInnerIPByHostIDs(rHeader http.Header, hostIDArr *[]int64) (hostIDInnerIPMap map[int64]string, err error) {
-	hostIDInnerIPMap = map[int64]string{}
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKHostIDField).In(*hostIDArr)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKHostInnerIPField, common.BKHostIDField},
-		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
-	}
-	hosts, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(
-		context.Background(), rHeader, common.BKInnerObjIDHost, query)
-	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
-	}
-	for _, host := range hosts.Data.Info {
-		hostID, e := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if e != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, e)
-			return
-		}
-		innerIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
-		hostIDInnerIPMap[hostID] = innerIP
-	}
-	return
-}
-
-// get resource layers id by hostID(layers is a data structure for call iam)
-func (s *Service) getHostLayers(requestHeader *http.Header, hostIDArr *[]int64) (
-	bkBizID int64, batchLayers [][]authmeta.Item, err error) {
-	batchLayers = make([][]authmeta.Item, 0)
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKHostIDField).In(*hostIDArr)
-	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKSetIDField, common.BKHostIDField},
-		Condition: cond.ToMapStr(),
-		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
-	}
-	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(
-		context.Background(), *requestHeader, common.BKTableNameModuleHostConfig, query)
-	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
-	}
-	blog.V(5).Infof("get host module config: %+v", result.Data.Info)
-	if len(result.Data.Info) == 0 {
-		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid",
-			hostIDArr)
-		return
-	}
-	bkBizID, err = util.GetInt64ByInterface(result.Data.Info[0][common.BKAppIDField])
-	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
-	}
-
-	bizTopoTreeRoot, err := s.Engine.CoreAPI.CoreService().Mainline().SearchMainlineInstanceTopo(
-		context.Background(), *requestHeader, bkBizID, true)
-	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
-	}
-
-	bizTopoTreeRootJSON, err := json.Marshal(bizTopoTreeRoot)
-	if err != nil {
-		err = fmt.Errorf("json encode bizTopoTreeRootJSON failed: %+v", err)
-		return
-	}
-	blog.V(5).Infof("bizTopoTreeRoot: %s", bizTopoTreeRootJSON)
-
-	dataInfo, err := json.Marshal(result.Data.Info)
-	if err != nil {
-		err = fmt.Errorf("json encode dataInfo failed: %+v", err)
-		return
-	}
-	blog.V(5).Infof("dataInfo: %s", dataInfo)
-
-	hostIDs := make([]int64, 0)
-	for _, item := range result.Data.Info {
-		hostID, e := util.GetInt64ByInterface(item[common.BKHostIDField])
-		if e != nil {
-			err = fmt.Errorf("extract hostID from host info failed, host: %+v, err: %+v", item, e)
-			return
-		}
-		hostIDs = append(hostIDs, hostID)
-	}
-	hostIDInnerIPMap, err := s.getInnerIPByHostIDs(*requestHeader, &hostIDs)
-	if err != nil {
-		err = fmt.Errorf("get host:%+v InnerIP failed, err: %+v", hostIDs, err)
-		return
-	}
-
-	for _, item := range result.Data.Info {
-		bizID, err := util.GetInt64ByInterface(item[common.BKAppIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, get bk_app_id field failed, err: %+v", item, err)
-		}
-		if bizID != bkBizID {
-			continue
-		}
-		moduleID, err := util.GetInt64ByInterface(item[common.BKModuleIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		}
-		path := bizTopoTreeRoot.TraversalFindModule(moduleID)
-		blog.V(9).Infof("traversal find module: %d result: %+v", moduleID, path)
-
-		hostID, err := util.GetInt64ByInterface(item[common.BKHostIDField])
-		if err != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", item, err)
-		}
-
-		// prepare host layer
-		var innerIP string
-		var exist bool
-		innerIP, exist = hostIDInnerIPMap[hostID]
-		if exist == false {
-			innerIP = fmt.Sprintf("host:%d", hostID)
-		}
-		hostLayer := authmeta.Item{
-			Type:       authmeta.HostInstance,
-			Name:       innerIP,
-			InstanceID: hostID,
-		}
-
-		// layers from topo instance tree
-		layers := make([]authmeta.Item, 0)
-		for i := len(path) - 1; i >= 0; i-- {
-			node := path[i]
-			item := authmeta.Item{
-				Name:       node.Name(),
-				InstanceID: node.InstanceID,
-				Type:       authmeta.GetResourceTypeByObjectType(node.ObjectID),
-			}
-			layers = append(layers, item)
-		}
-		layers = append(layers, hostLayer)
-		blog.V(9).Infof("layers from traversal find module:%d result: %+v", moduleID, layers)
-		batchLayers = append(batchLayers, layers)
-	}
-
-	return
-}
-
 func (s *Service) registerHostToCurrentBusiness(requestHeader *http.Header, hostIDArr *[]int64) error {
 	// get app id by host id
-	businessID, layers, err := s.getHostLayers(requestHeader, hostIDArr)
+	coreService := s.CoreAPI.CoreService()
+	businessID, layers, err := extensions.GetHostLayers(coreService, requestHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return fmt.Errorf("get layers by host failed, err: %+v", err)
@@ -268,7 +125,8 @@ func (s *Service) registerHostToCurrentBusiness(requestHeader *http.Header, host
 
 func (s *Service) deregisterHostFromCurrentBusiness(requestHeader *http.Header, hostIDArr *[]int64) error {
 	// get app id by host id
-	businessID, layers, err := s.getHostLayers(requestHeader, hostIDArr)
+	coreService := s.CoreAPI.CoreService()
+	businessID, layers, err := extensions.GetHostLayers(coreService, requestHeader, hostIDArr)
 	if err != nil {
 		blog.Errorf("get businessID by hostID failed, hosts:%+v, err: %v", hostIDArr, err)
 		return err
