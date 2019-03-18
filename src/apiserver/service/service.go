@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery/discovery"
@@ -20,7 +21,6 @@ import (
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
 	"configcenter/src/auth"
 	"configcenter/src/auth/parser"
-	"configcenter/src/auth/permit"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -28,13 +28,14 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
 // Service service methods
 type Service interface {
 	WebServices() []*restful.WebService
-	SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
+	SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
 // NewService create a new service instance
@@ -45,6 +46,7 @@ func NewService() Service {
 }
 
 type service struct {
+	enableAuth bool
 	engine     *backbone.Engine
 	client     HTTPClient
 	core       core.Core
@@ -52,7 +54,9 @@ type service struct {
 	authorizer auth.Authorizer
 }
 
-func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
+	s.enableAuth = false
+	s.enableAuth = enableAuth
 	s.engine = engine
 	s.client = httpClient
 	s.discovery = discovery
@@ -72,7 +76,7 @@ func (s *service) WebServices() []*restful.WebService {
 	ws := &restful.WebService{}
 
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
-		Filter(authFilter(s.authorizer, getErrFun))
+		Filter(authFilter(s.enableAuth, s.authorizer, getErrFun))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -86,8 +90,27 @@ func (s *service) WebServices() []*restful.WebService {
 	return allWebServices
 }
 
-func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		fmt.Println("ready 1.....")
+		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
+			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrCommParseAuthAttributeFailed,
+				ErrMsg: "invalid supplier account.",
+				Result: false,
+			}
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
+			return
+		}
+
+		fmt.Println("ready 2.....")
+		if !enableAuth {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		fmt.Println("ready 3.....")
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {
@@ -97,14 +120,7 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusBadRequest)
-			resp.WriteAsJson(rsp)
-			return
-		}
-
-		// check whether this request is in whitelist, so that it can be skip directly.
-		if permit.IsPermit(attribute) {
-			fchain.ProcessFilter(req, resp)
+			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -117,8 +133,7 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
 		decision, err := authorize.Authorize(req.Request.Context(), attribute)
@@ -129,8 +144,7 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusInternalServerError)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 			return
 		}
 
@@ -141,8 +155,7 @@ func authFilter(authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
 				Result: false,
 			}
-			resp.WriteHeader(http.StatusForbidden)
-			resp.WriteAsJson(rsp)
+			resp.WriteHeaderAndJson(http.StatusForbidden, rsp, restful.MIME_JSON)
 			return
 		}
 

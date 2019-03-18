@@ -17,7 +17,6 @@ import (
 	"errors"
 
 	"configcenter/src/storage/mongodb"
-
 	"configcenter/src/storage/types"
 )
 
@@ -61,6 +60,8 @@ type DB interface {
 
 	IsDuplicatedError(error) bool
 	IsNotFoundError(error) bool
+
+	Close() error
 }
 
 // Table collection operation interface

@@ -149,14 +149,14 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
 	}
-	
-	if data.ClassificationID == "" {
-        blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
-        return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
-    }
 
-    params.MetaData = &data.Metadata
-    items, err := a.SearchMainlineAssociationTopo(params, bizObj)
+	if data.ClassificationID == "" {
+		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
+	}
+
+	params.MetaData = &data.Metadata
+	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err

@@ -4,10 +4,12 @@ const preloadConfig = {
 }
 
 export function _preloadPrivilege (app) {
+    /*
     return app.$store.dispatch('userPrivilege/getUserPrivilege', {
         ...preloadConfig,
         requestId: 'get_getUserPrivilege'
     })
+    */
 }
 
 export function _preloadClassifications (app) {
@@ -63,7 +65,7 @@ export function _preloadUserList (app) {
 export default async function (app) {
     await _preloadBusiness(app)
     return Promise.all([
-        _preloadPrivilege(app),
+        // _preloadPrivilege(app),
         _preloadClassifications(app),
         _preloadUserCustom(app),
         _preloadUserList(app)
