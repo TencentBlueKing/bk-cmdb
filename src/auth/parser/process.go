@@ -34,16 +34,16 @@ func (ps *parseStream) processRelated() *parseStream {
 }
 
 var (
-	createProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+$`)
-	findProcessesInBusinessRegexp  = regexp.MustCompile(`^/api/v3/proc/search/[\S][^/]+/[0-9]+$`)
-	findProcessDetailsRegexp       = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+/[0-9]+$`)
-	deleteProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+/[0-9]+$`)
-	updateProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+/[0-9]+$`)
-	updateProcessBatchRegexp       = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+$`)
-	findModulesBindByProcessRegexp = regexp.MustCompile(`^/api/v3/proc/[\S][^/]+/[0-9]+/[0-9]+$`)
-	boundModuleToProcessRegexp     = regexp.MustCompile(`^/api/v3/proc/module/[\S][^/]+/[0-9]+/[0-9]+/[\S][^/]+$`)
-	unboundModuleToProcessRegexp   = regexp.MustCompile(`^/api/v3/proc/module/[\S][^/]+/[0-9]+/[0-9]+/[\S][^/]+$`)
-	findProcessInstanceRegexp      = regexp.MustCompile(`^/api/v3/proc/inst/[\S][^/]+/[0-9]+$`)
+	createProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/?$`)
+	findProcessesInBusinessRegexp  = regexp.MustCompile(`^/api/v3/proc/search/[^\s/]+/[0-9]+/?$`)
+	findProcessDetailsRegexp       = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	deleteProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	updateProcessRegexp            = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	updateProcessBatchRegexp       = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/?$`)
+	findModulesBindByProcessRegexp = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	boundModuleToProcessRegexp     = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
+	unboundModuleToProcessRegexp   = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
+	findProcessInstanceRegexp      = regexp.MustCompile(`^/api/v3/proc/inst/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) process() *parseStream {
@@ -305,14 +305,14 @@ func (ps *parseStream) process() *parseStream {
 }
 
 var (
-	createProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[\S][^/]+/[0-9]+$`)
-	updateProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[\S][^/]+/[0-9]+/[0-9]+$`)
-	findProcConfigTemplatesRegexp      = regexp.MustCompile(`^/api/v3/template/search/[\S][^/]+/[0-9]+$`)
-	deleteProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[\S][^/]+/[0-9]+/[0-9]+$`)
-	findProcessTemplateVersionRegexp   = regexp.MustCompile(`^/api/v3/template/version/search/[\S][^/]+/[0-9]+/[0-9]+$`)
-	createProcessTemplateVersionRegexp = regexp.MustCompile(`^/api/v3/template/version/[\S][^/]+/[0-9]+/[0-9]+$`)
-	updateProcessTemplateVersionRegexp = regexp.MustCompile(`^/api/v3/template/version/[\S][^/]+/[0-9]+/[0-9]+/[0-9]+$`)
-	previewProcessConfigRegexp         = regexp.MustCompile(`^/api/v3/proc/template/[\S][^/]+/[0-9]+/[0-9]+$`)
+	createProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[^\s/]+/[0-9]+/?$`)
+	updateProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findProcConfigTemplatesRegexp      = regexp.MustCompile(`^/api/v3/template/search/[^\s/]+/[0-9]+/?$`)
+	deleteProcConfigTemplateRegexp     = regexp.MustCompile(`^/api/v3/template/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findProcessTemplateVersionRegexp   = regexp.MustCompile(`^/api/v3/template/version/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	createProcessTemplateVersionRegexp = regexp.MustCompile(`^/api/v3/template/version/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	updateProcessTemplateVersionRegexp = regexp.MustCompile(`^/api/v3/template/version/[^\s/]+/[0-9]+/[0-9]+/[0-9]+/?$`)
+	previewProcessConfigRegexp         = regexp.MustCompile(`^/api/v3/proc/template/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) processTemplate() *parseStream {
@@ -525,10 +525,10 @@ func (ps *parseStream) processTemplate() *parseStream {
 }
 
 var (
-	findProcBoundConfigRegexp             = regexp.MustCompile(`^/api/v3/template/proc/[\S][^/]+/[0-9]+/[0-9]+$`)
-	boundTemplateToProcessRegexp          = regexp.MustCompile(`^/api/v3/template/proc/[\S][^/]+/[0-9]+/[0-9]+/[0-9]+$`)
-	unboundTemplateWithProcessRegexp      = regexp.MustCompile(`^/api/v3/template/proc/[\S][^/]+/[0-9]+/[0-9]+/[0-9]+$`)
-	unboundTemplateWithProcessBatchRegexp = regexp.MustCompile(`^/api/v3/template/proc/[\S][^/]+/[0-9]+$`)
+	findProcBoundConfigRegexp             = regexp.MustCompile(`^/api/v3/template/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	boundTemplateToProcessRegexp          = regexp.MustCompile(`^/api/v3/template/proc/[^\s/]+/[0-9]+/[0-9]+/[0-9]+/?$`)
+	unboundTemplateWithProcessRegexp      = regexp.MustCompile(`^/api/v3/template/proc/[^\s/]+/[0-9]+/[0-9]+/[0-9]+/?$`)
+	unboundTemplateWithProcessBatchRegexp = regexp.MustCompile(`^/api/v3/template/proc/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) processTemplateBound() *parseStream {

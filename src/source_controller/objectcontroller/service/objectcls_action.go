@@ -77,7 +77,6 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	defer req.Request.Body.Close()
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {

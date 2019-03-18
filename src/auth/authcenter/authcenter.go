@@ -335,11 +335,11 @@ func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error
 	// TODO: this operation may be wrong, because some api filters does not
 	// fill the business id field, so these api should be normalized.
 	if r.BusinessID != 0 {
-		s.ScopeType = "biz"
+		s.ScopeType = ScopeTypeIDBiz
 		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 	} else {
-		s.ScopeType = "system"
-		s.ScopeID = "bk_cmdb"
+		s.ScopeType = ScopeTypeIDSystem
+		s.ScopeID = SystemIDCMDB
 	}
 	return s, nil
 }

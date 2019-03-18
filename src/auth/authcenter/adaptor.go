@@ -78,7 +78,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 			info.ResourceType = BizHostInstance
 		}
 
-	case meta.HostUserCustom:
+	case meta.DynamicGrouping:
 		info.ResourceType = BizCustomQuery
 
 	case meta.HostFavorite:
