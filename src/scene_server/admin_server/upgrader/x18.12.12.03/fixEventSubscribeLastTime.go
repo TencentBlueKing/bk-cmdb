@@ -9,30 +9,32 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package x19_02_15_10
+
+package x18_12_12_03
 
 import (
 	"context"
 
-	"configcenter/src/common/blog"
+	"configcenter/src/common"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	upgrader.RegistUpgrader("x19.02.15.10", upgrade)
-}
+func fixEventSubscribeLastTime(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKOwnerIDField).Eq(common.BKDefaultOwnerID)
+	cond.Field(common.BKSubscriptionNameField).Like("process instance refresh")
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	err = fixAssociationTypeName(ctx, db, conf)
+	data := mapstr.MapStr{
+		common.LastTimeField: metadata.Now(),
+	}
+
+	err := db.Table(common.BKTableNameSubscription).Update(ctx, cond.ToMapStr(), data)
 	if err != nil {
-		blog.Errorf("[upgrade x19.02.15.10] fixAssociationTypeName error  %s", err.Error())
 		return err
 	}
-	err = fixEventSubscribeLastTime(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("[upgrade x19.02.15.10] fixEventSubscribeLastTime error  %s", err.Error())
-		return err
-	}
-	return
+	return nil
 }
