@@ -13,24 +13,26 @@
 package app
 
 import (
-    "context"
-    "fmt"
-    "github.com/emicklei/go-restful"
-    "os"
-    "strconv"
-    "time"
-    "errors"
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
 
-    "configcenter/src/common"
-    "configcenter/src/common/backbone"
-    cc "configcenter/src/common/backbone/configcenter"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/types"
-    "configcenter/src/common/version"
-    "configcenter/src/scene_server/host_server/app/options"
-    "configcenter/src/scene_server/host_server/authorize"
-    hostsvc "configcenter/src/scene_server/host_server/service"
-    "configcenter/src/storage/dal/redis"
+	"github.com/emicklei/go-restful"
+
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
+	"configcenter/src/scene_server/host_server/app/options"
+	"configcenter/src/scene_server/host_server/authorize"
+	hostsvc "configcenter/src/scene_server/host_server/service"
+	"configcenter/src/storage/dal/redis"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -55,15 +57,15 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != hostSrv.Config.Redis.Address && hostSrv.Config.Auth.Address != ""{
-            configReady = true
-		    break
+		if "" != hostSrv.Config.Redis.Address && hostSrv.Config.Auth.Address != "" {
+			configReady = true
+			break
 		}
-        blog.Infof("waiting for config ready ...")
-        time.Sleep(time.Second)
+		blog.Infof("waiting for config ready ...")
+		time.Sleep(time.Second)
 	}
 	if false == configReady {
-        blog.Infof("waiting config timeout.")
+		blog.Infof("waiting config timeout.")
 		return errors.New("Configuration item not found")
 	}
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
@@ -73,13 +75,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	config := hostSrv.Config.Auth
 	blog.Info("host server auth config is: %+v", config)
-    authorizer, err := authorize.NewHostAuthorizer(nil, config)
-    if err != nil {
-        blog.Errorf("make host authorizer failed, err: %+v", err)
-        return fmt.Errorf("make host authorizer failed, err: %+v", err)
-    }
-    service.Authorizer = *authorizer
-    
+	authorizer, err := authorize.NewHostAuthorizer(nil, config)
+	if err != nil {
+		blog.Errorf("make host authorizer failed, err: %+v", err)
+		return fmt.Errorf("make host authorizer failed, err: %+v", err)
+	}
+	service.Authorizer = *authorizer
+
 	service.Engine = engine
 	service.Config = &hostSrv.Config
 	service.CacheDB = cacheDB
@@ -116,17 +118,18 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 	h.Config.Redis.Port = current.ConfigMap["redis.port"]
 	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
-	
-    h.Config.Auth.Address = current.ConfigMap["auth.address"]
-    h.Config.Auth.AppCode = current.ConfigMap["auth.appCode"]
-    h.Config.Auth.AppSecret = current.ConfigMap["auth.appSecret"]
 
-    enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
-    if err == nil {
-        blog.Errorf("parse auth enable field failed, set default to true, err: %+v", err)
-        enable = true
-    }
-    h.Config.Auth.Enable = enable
+	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse authcenter config failed: %v", err)
+	}
+
+	enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
+	if err == nil {
+		blog.Errorf("parse auth enable field failed, set default to true, err: %+v", err)
+		enable = true
+	}
+	h.Config.Auth.Enable = enable
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
