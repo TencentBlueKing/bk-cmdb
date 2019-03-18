@@ -55,7 +55,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAttributeResourceID(resourceType, attribute)
 	case meta.ModelUnique:
 		return modelUniqueResourceID(resourceType, attribute)
-	case meta.HostUserCustom:
+	case meta.UserCustom:
 		return hostUserCustomResourceID(resourceType, attribute)
 	case meta.HostFavorite:
 		return hostFavoriteResourceID(resourceType, attribute)
