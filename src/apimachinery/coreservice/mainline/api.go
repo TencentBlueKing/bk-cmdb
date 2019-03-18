@@ -18,11 +18,11 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
-    "configcenter/src/framework/core/errors"
+	"configcenter/src/framework/core/errors"
 )
 
 func (m *mainline) SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (resp *metadata.TopoModelNode, err error) {
-    ret := new(metadata.SearchTopoModelNodeResult)
+	ret := new(metadata.SearchTopoModelNodeResult)
 	// resp = new(metadata.TopoModelNode)
 	subPath := "/read/mainline/model"
 
@@ -36,18 +36,18 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, h http.Header, w
 		WithHeaders(h).
 		Do().
 		Into(ret)
-    if ret.Result == false || ret.Code != 0{
-        return nil, errors.New(ret.ErrMsg)
-    }
-    return &ret.Data, nil
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+	return &ret.Data, nil
 }
 
 func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err error) {
 	input := map[string]bool{}
 	input["with_detail"] = withDetail
 
-    ret := new(metadata.SearchTopoInstanceNodeResult)
-    subPath := fmt.Sprintf("/read/mainline/instance/%d", bkBizID)
+	ret := new(metadata.SearchTopoInstanceNodeResult)
+	subPath := fmt.Sprintf("/read/mainline/instance/%d", bkBizID)
 	err = m.client.Post().
 		WithContext(ctx).
 		Body(input).
@@ -55,9 +55,9 @@ func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, h http.Header
 		WithHeaders(h).
 		Do().
 		Into(ret)
-	
-	if ret.Result == false || ret.Code != 0{
-	    return nil, errors.New(ret.ErrMsg)
-    }
+
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
 	return &ret.Data, nil
 }
