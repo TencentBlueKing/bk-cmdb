@@ -162,7 +162,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 		blog.Errorf("get process instance detail failed. err:%s,rid:%s", err.Error(), srvData.rid)
 	}
 	ps.addProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, srvData.header)
-	if procData.Exists(common.BKAppNameField) {
+	if procData.Exists(common.BKProcNameField) {
 		err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, appName)
 		if err != nil {
 			blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
@@ -273,7 +273,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 			return
 		}
-		if procData.Exists(common.BKAppNameField) {
+		if procData.Exists(common.BKProcNameField) {
 			err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, appName)
 			if err != nil {
 				blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
