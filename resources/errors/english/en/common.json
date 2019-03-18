@@ -38,5 +38,6 @@
     "1199040": "convert %s model field %s to %s error %s",
     "1199041": "handle %s error %s",
     "1199042": "param '%s' should be a fload number",
+    "1199045": "the model stopped to use",
     "":""
 }
