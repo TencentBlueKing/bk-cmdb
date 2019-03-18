@@ -12,16 +12,37 @@
 
 package handler
 
-import "configcenter/src/common/backbone"
+import (
+	"fmt"
+
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+)
 
 // IAMHandler sync resource to iam
 type IAMHandler struct {
 	*backbone.Engine
+	AuthConfig *authcenter.AuthConfig
+	Authorizer auth.Authorize
+}
+
+func (ih *IAMHandler) InitAuthClient() error {
+	authorize, err := auth.NewAuthorize(nil, *ih.AuthConfig)
+	if err != nil {
+		blog.Errorf("new auth client failed, err: %+v", err)
+		return fmt.Errorf("new auth client failed, err: %+v", err)
+	}
+	ih.Authorizer = authorize
+	return nil
 }
 
 // NewIAMHandler new a IAMHandler
-func NewIAMHandler(engine *backbone.Engine) *IAMHandler {
+func NewIAMHandler(engine *backbone.Engine, authConfig *authcenter.AuthConfig) *IAMHandler {
 	iamHandler := new(IAMHandler)
 	iamHandler.Engine = engine
+	iamHandler.AuthConfig = authConfig
+	iamHandler.InitAuthClient()
 	return iamHandler
 }

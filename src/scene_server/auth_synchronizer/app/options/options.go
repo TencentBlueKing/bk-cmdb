@@ -13,12 +13,13 @@
 package options
 
 import (
+	"github.com/spf13/pflag"
+
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
-	"github.com/spf13/pflag"
 )
 
 type ServerOption struct {
@@ -47,6 +48,7 @@ type Config struct {
 	DiscoverRedis   SnapRedis
 	NetcollectRedis SnapRedis
 	Esb             esbutil.EsbConfig
+	Auth            authcenter.AuthConfig
 }
 
 type SnapRedis struct {

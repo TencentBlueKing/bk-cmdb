@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -125,13 +124,6 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if err != nil {
 		blog.Warnf("parse authcenter config failed: %v", err)
 	}
-
-	enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
-	if err == nil {
-		blog.Errorf("parse auth enable field failed, set default to true, err: %+v", err)
-		enable = true
-	}
-	h.Config.Auth.Enable = enable
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
