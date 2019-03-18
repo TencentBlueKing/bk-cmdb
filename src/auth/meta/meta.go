@@ -13,9 +13,7 @@
 package meta
 
 type AuthAttribute struct {
-	// the version of this resource, which is the api version.
-	APIVersion string
-	User       UserInfo
+	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
 	BusinessID int64
