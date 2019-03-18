@@ -252,11 +252,11 @@ $color: #979ba5;
         margin: 0 0 0 4px;
         vertical-align: middle;
         border-radius: 2px;
-        color: #fff;
+        color: #282B41;
         font-size: 20px;
         font-weight: normal;
         line-height: 32px;
-        background: #e3a547;
+        background: #18B48A;
         transform: scale(0.5);
         transform-origin: left center;
     }

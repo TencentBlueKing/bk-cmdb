@@ -1,20 +1,23 @@
 .admin-view {
+    .logo {
+        color: #fff !important;
+    }
     &.nav-layout {
         .nav-wrapper {
-            background: #261a05 !important;
+            background: #333437 !important;
         }
         .classify-list {
             .classify-item {
                 &.active.is-link {
-                    background-color: #e3a547;
+                    background-color: #18B48A;
                 }
                 &.is-open {
-                    background-color: #030200;
+                    background-color: #28292C;
                 }
             }
             .model-link {
                 &.active {
-                    background: #e3a547;
+                    background: #18B48A;
                 }
             }
         }
