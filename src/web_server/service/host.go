@@ -66,7 +66,10 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //del file
+	
+	// del file
+	defer os.Remove(filePath) 
+	
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -145,7 +148,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 }
 
-//BuildDownLoadExcelTemplate build download excel template
+// BuildDownLoadExcelTemplate build download excel template
 func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
@@ -178,7 +181,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", objID))
 
-	//http.ServeFile(c.Writer, c.Request, file)
+	// http.ServeFile(c.Writer, c.Request, file)
 	c.File(file)
 	os.Remove(file)
 	return

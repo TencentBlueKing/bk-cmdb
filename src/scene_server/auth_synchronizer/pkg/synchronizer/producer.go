@@ -13,14 +13,15 @@
 package synchronizer
 
 import (
+    "context"
+    "time"
+    
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
 	"configcenter/src/scene_server/auth_synchronizer/pkg/utils"
-	"context"
-	"time"
 )
 
 // Producer producer WorkRequest and enqueue it
@@ -57,7 +58,7 @@ func (p *Producer) Start() {
 
 			if finished == false {
 				// get jobs
-				jobs := producer.generateSynchronizerJobs()
+				jobs := producer.generateJobs()
 
 				for _, job := range *jobs {
 					// pass
@@ -70,7 +71,7 @@ func (p *Producer) Start() {
 	}(p)
 }
 
-func (p *Producer) generateSynchronizerJobs() *[]meta.WorkRequest {
+func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	// split all jobs
 	jobs := make([]meta.WorkRequest, 0)
 
@@ -92,9 +93,9 @@ func (p *Producer) generateSynchronizerJobs() *[]meta.WorkRequest {
 	businessList := make([]meta.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
 		businessSimplify := meta.BusinessSimplify{
-			BKAppIDField:      business[common.BKAppIDField].(int64),
-			BKSupplierIDField: business[common.BKSupplierIDField].(int64),
-			BKOwnerIDField:    business[common.BKOwnerIDField].(int64),
+			BKAppIDField:      int64(business[common.BKAppIDField].(float64)),
+			BKSupplierIDField: int64(business[common.BKSupplierIDField].(float64)),
+			BKOwnerIDField:    business[common.BKOwnerIDField].(string),
 		}
 		// businessID := business[common.BKAppIDField].(int64)
 		// businessIDArr = append(businessIDArr, businessID)
@@ -102,7 +103,7 @@ func (p *Producer) generateSynchronizerJobs() *[]meta.WorkRequest {
 	}
 	blog.Info("list business businessList: %+v", businessList)
 
-	// TODO register businessIDArr to iam
+	// job of synchronize business host to iam
 	for _, businessSimplify := range businessList {
 		jobs = append(jobs, meta.WorkRequest{
 			ResourceType: meta.HostResource,

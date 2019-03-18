@@ -33,12 +33,10 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 	}
 	businessIDArr := make([]int64, 0)
 	for _, business := range result.Data.Info {
-		businessID := business[common.BKAppIDField].(int64)
+		businessID := int64(business[common.BKAppIDField].(float64))
 		businessIDArr = append(businessIDArr, businessID)
 	}
 	blog.Info("list business businessIDArr: %+v", businessIDArr)
-
-	// TODO register businessIDArr to iam
 
 	return nil
 }
