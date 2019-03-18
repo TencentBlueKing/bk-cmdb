@@ -218,6 +218,89 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	return meta.Decision{Authorized: true}, nil
 }
 
+func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, as ...meta.AuthAttribute) (decisions []meta.Decision, err error) {
+	if !ac.Config.Enable {
+		decisions = make([]meta.Decision, len(as), len(as))
+		for i := range decisions {
+			decisions[i].Authorized = true
+		}
+	}
+
+	// resources := make([]meta.ResourceAttribute, 0)
+	// for _, rsc := range a.Resources {
+	// 	// check whether this request is in whitelist, so that it can be skip directly.
+	// 	if !permit.IsPermit(&rsc) {
+	// 		resources = append(resources, rsc)
+	// 	}
+	// }
+
+	// if len(resources) == 0 {
+	// 	// no resources need to be authorized.
+	// 	return meta.Decision{Authorized: true}, nil
+	// }
+
+	// // there still have resource need to be authorized.
+	// // so, update the resources.
+	// a.Resources = resources
+
+	// info := &AuthBatch{
+	// 	Principal: Principal{
+	// 		Type: "user",
+	// 		ID:   a.User.UserName,
+	// 	},
+	// }
+
+	// // TODO: this operation may be wrong, because some api filters does not
+	// // fill the business id field, so these api should be normalized.
+	// if a.BusinessID != 0 {
+	// 	info.ScopeType = "biz"
+	// 	info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
+	// } else {
+	// 	info.ScopeType = "system"
+	// 	info.ScopeID = "bk_cmdb"
+	// }
+
+	// info.ResourceActions = make([]ResourceAction, 0)
+	// for _, rsc := range a.Resources {
+
+	// 	rscInfo, err := adaptor(&rsc)
+	// 	if err != nil {
+	// 		return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
+	// 	}
+
+	// 	actionID, err := adaptorAction(&rsc)
+	// 	if err != nil {
+	// 		return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
+	// 	}
+
+	// 	info.ResourceActions = append(info.ResourceActions, ResourceAction{
+	// 		ActionID:     actionID,
+	// 		ResourceInfo: *rscInfo,
+	// 	})
+	// }
+
+	// header := http.Header{}
+	// header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierAccount)
+
+	// batchresult, err := ac.authClient.verifyInList(ctx, header, info)
+
+	// noAuth := make([]ResourceTypeID, 0)
+	// for _, item := range batchresult {
+	// 	if !item.IsPass {
+	// 		noAuth = append(noAuth, item.ResourceType)
+	// 	}
+	// }
+
+	// if len(noAuth) != 0 {
+	// 	return meta.Decision{
+	// 		Authorized: false,
+	// 		Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
+	// 	}, nil
+	// }
+
+	return nil, nil
+}
+
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	if !ac.Config.Enable {
 		return nil

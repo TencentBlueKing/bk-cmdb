@@ -94,7 +94,6 @@ func (ps *parseStream) validateVersion() *parseStream {
 		ps.err = fmt.Errorf("unsupported version %s", version)
 		return ps
 	}
-	ps.Attribute.APIVersion = version
 
 	return ps
 }
