@@ -114,19 +114,17 @@ func (s *Service) getInnerIPByHostIDs(rHeader http.Header, hostIDArr *[]int64) (
 	hosts, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(
 		context.Background(), rHeader, common.BKInnerObjIDHost, query)
 	if err != nil {
-		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
-		return
+		return nil, fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 	}
 	for _, host := range hosts.Data.Info {
 		hostID, e := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if e != nil {
-			err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, e)
-			return
+			return nil, fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, e)
 		}
 		innerIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
 		hostIDInnerIPMap[hostID] = innerIP
 	}
-	return
+	return hostIDInnerIPMap, nil
 }
 
 // get resource layers id by hostID(layers is a data structure for call iam)

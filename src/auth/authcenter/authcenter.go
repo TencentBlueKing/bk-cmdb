@@ -13,7 +13,6 @@
 package authcenter
 
 import (
-	"configcenter/src/common/blog"
 	"context"
 	"errors"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
 )
 
 const (
@@ -144,7 +144,7 @@ type AuthCenter struct {
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
 	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
-		blog.Info("AuthCenter Config is disabled. config: %+v", ac.Config)
+		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 	resources := make([]meta.ResourceAttribute, 0)
@@ -255,7 +255,7 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
-		// info.Resources = append(info.Resources, entity)
+		// TODO replace register with batch createorupdate interface, currently is register one by one.
 		info.Resources = make([]ResourceEntity, 0)
 		info.Resources = append(info.Resources, entity)
 		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
