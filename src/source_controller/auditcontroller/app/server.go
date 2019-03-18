@@ -18,9 +18,8 @@ import (
 	"os"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,8 +31,6 @@ import (
 	"configcenter/src/source_controller/auditcontroller/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -44,50 +41,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %s", err.Error())
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %s", err.Error())
-	}
-
 	coreService := new(service.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_AUDITCONTROLLER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	audit := new(AuditController)
 	audit.Service = coreService
 	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Service.Engine}
-	audit.Service.Engine, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_AUDITCONTROLLER,
-		op.ServConf.ExConfig,
-		audit.onAduitConfigUpdate,
-		discover,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: audit.onAduitConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	coreService.Engine = engine
+	coreService.Logics.Engine = engine
 
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
@@ -101,6 +70,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	if false == configReady {
 		return fmt.Errorf("Failed to get configuration")
+	}
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+		return err
 	}
 
 	select {

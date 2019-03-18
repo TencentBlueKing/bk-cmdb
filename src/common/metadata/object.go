@@ -13,8 +13,6 @@
 package metadata
 
 import (
-	"time"
-
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
@@ -171,26 +169,8 @@ func (o *Object) ToMapStr() mapstr.MapStr {
 
 // MainLineObject main line object definition
 type MainLineObject struct {
-	ObjectDes     `json:",inline"`
+	Object        `json:",inline"`
 	AssociationID string `json:"bk_asst_obj_id"`
-}
-
-type ObjectDes struct {
-	ID          int        `bson:"id"                   json:"id"`
-	ObjCls      string     `bson:"bk_classification_id" json:"bk_classification_id"`
-	ObjIcon     string     `bson:"bk_obj_icon"          json:"bk_obj_icon"`
-	ObjectID    string     `bson:"bk_obj_id"            json:"bk_obj_id"`
-	ObjectName  string     `bson:"bk_obj_name"          json:"bk_obj_name"`
-	IsPre       bool       `bson:"ispre"                json:"ispre"`
-	IsPaused    bool       `bson:"bk_ispaused"          json:"bk_ispaused"`
-	Position    string     `bson:"position"             json:"position"`
-	OwnerID     string     `bson:"bk_supplier_account"  json:"bk_supplier_account"`
-	Description string     `bson:"description"          json:"description"`
-	Creator     string     `bson:"creator"              json:"creator"`
-	Modifier    string     `bson:"modifier"             json:"modifier"`
-	CreateTime  *time.Time `bson:"create_time"          json:"create_time"`
-	LastTime    *time.Time `bson:"last_time"            json:"last_time"`
-	Page        *BasePage  `bson:"-"                    json:"page,omitempty"`
 }
 
 type ObjectClsDes struct {

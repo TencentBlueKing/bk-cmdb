@@ -14,7 +14,6 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpcli "configcenter/src/common/http/httpclient"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/paraparse"

@@ -32,7 +32,7 @@ import (
 func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -63,13 +63,19 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
+	cnt, err := db.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
+	if nil != err {
+		blog.Errorf("select data failed, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
 
 	for index := range result {
 		cli.TranslateAssociationKind(defLang, result[index])
 	}
 
 	ret := &meta.SearchAssociationTypeResult{BaseResp: meta.SuccessBaseResp}
-	ret.Data.Count = len(result)
+	ret.Data.Count = int(cnt)
 	ret.Data.Info = result
 	resp.WriteEntity(ret)
 }
@@ -78,7 +84,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -144,7 +150,7 @@ func (cli *Service) CreateAssociationType(req *restful.Request, resp *restful.Re
 func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -199,7 +205,7 @@ func (cli *Service) UpdateAssociationType(req *restful.Request, resp *restful.Re
 func (cli *Service) DeleteAssociationType(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

@@ -56,7 +56,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 		processes, getErr := ps.getProcessesByModuleName(srvData.header, moduleName)
 		if getErr != nil {
-			blog.Errorf("GetProcessesByModuleName failed int GetProcessPortByApplicationID, err: %s,input:%+v,rid:%s", err.Error(), module, srvData.rid)
+			blog.Errorf("GetProcessesByModuleName failed int GetProcessPortByApplicationID, err: %s,input:%+v,rid:%s", getErr.Error(), module, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}
@@ -105,14 +105,14 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	for _, moduleHostConf := range moduleHostConfigs {
 		hostID, ok := moduleHostConf[common.BKHostIDField]
 		if !ok {
-			blog.Errorf("fail to get hostID in GetProcessPortByApplicationID. err: %s,rid:%s", err.Error(), srvData.rid)
+			blog.Errorf("fail to get hostID in GetProcessPortByApplicationID. error, field %s not found, data:%#v,rid:%s", common.BKHostIDField, moduleHostConf, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}
 
 		moduleID, ok := moduleHostConf[common.BKModuleIDField]
 		if !ok {
-			blog.Errorf("fail to get moduleID in GetProcessPortByApplicationID. err: %s,rid:%s", err.Error(), srvData.rid)
+			blog.Errorf("fail to get moduleID in GetProcessPortByApplicationID. err: field %s not found ,data:%#v,rid:%s", common.BKModuleIDField, moduleHostConf, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}
