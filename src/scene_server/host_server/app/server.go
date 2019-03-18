@@ -57,7 +57,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != hostSrv.Config.Redis.Address && hostSrv.Config.Auth.Address != "" {
+		if "" != hostSrv.Config.Redis.Address && len(hostSrv.Config.Auth.Address) != 0 {
 			configReady = true
 			break
 		}
@@ -107,6 +107,8 @@ func (h *HostServer) WebService() *restful.WebService {
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
+
 	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
 	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
 	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
