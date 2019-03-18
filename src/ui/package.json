@@ -17,6 +17,7 @@
     "axios": "^0.18.0",
     "date-fns": "^1.29.0",
     "echarts": "^4.1.0",
+    "get-value": "^3.0.1",
     "js-cookie": "^2.2.0",
     "json-beautify": "^1.0.1",
     "lodash.debounce": "^4.0.8",
