@@ -15,7 +15,7 @@ package service
 import (
 	"context"
 
-	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -33,7 +33,7 @@ type Service struct {
 	*backbone.Engine
 	db    dal.RDB
 	cache *redis.Client
-	auth  *authcenter.AuthCenter
+	auth  auth.Authorize
 	ctx   context.Context
 }
 
@@ -51,7 +51,7 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) SetAuth(auth *authcenter.AuthCenter) {
+func (s *Service) SetAuth(auth auth.Authorize) {
 	s.auth = auth
 }
 
