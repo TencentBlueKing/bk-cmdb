@@ -55,7 +55,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAttributeResourceID(resourceType, attribute)
 	case meta.ModelUnique:
 		return modelUniqueResourceID(resourceType, attribute)
-	case meta.HostUserCustom:
+	case meta.UserCustom:
 		return hostUserCustomResourceID(resourceType, attribute)
 	case meta.HostFavorite:
 		return hostFavoriteResourceID(resourceType, attribute)
@@ -210,7 +210,7 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 	for _, layer := range attribute.Layers {
 		iamResourceType, err := convertResourceType(attribute)
 		if err != nil {
-			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %s, err: %+v", attribute, err)
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %+v, err: %+v", attribute, err)
 		}
 		resourceID := ResourceID{
 			ResourceType: *iamResourceType,

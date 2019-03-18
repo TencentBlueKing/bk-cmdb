@@ -297,14 +297,14 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 
 	// check permission to register host
 	/*
-	if shouldContinue := s.verifyModulePermission(&req.Request.Header, resp, moduleID, authmeta.Update); shouldContinue == false {
-		return
-	}
+		if shouldContinue := s.verifyModulePermission(&req.Request.Header, resp, moduleID, authmeta.Update); shouldContinue == false {
+			return
+		}
 	*/
 	// check authorization to create host
-    if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{}, authmeta.Create); shouldContinue == false {
-        return
-    }
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{}, authmeta.Create); shouldContinue == false {
+		return
+	}
 
 	hostIDs, succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
@@ -538,21 +538,21 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
-	
+
 	// check authorization
-    hostIDArr := make([]int64, 0)
-    for _, id := range strings.Split(hostIDStr, ",") {
-        hostID, err := strconv.ParseInt(id, 10, 64)
-        if err != nil {
-            blog.Errorf("update host batch, but got invalid host id[%s], err: %v,rid:%s", id, err, srvData.rid)
-            resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-            return
-        }
-        hostIDArr = append(hostIDArr, hostID)
-    }
-    if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
-        return
-    }
+	hostIDArr := make([]int64, 0)
+	for _, id := range strings.Split(hostIDStr, ",") {
+		hostID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			blog.Errorf("update host batch, but got invalid host id[%s], err: %v,rid:%s", id, err, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
+			return
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+		return
+	}
 
 	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
 	hostIDs := make([]int64, 0)

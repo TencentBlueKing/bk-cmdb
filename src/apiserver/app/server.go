@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -78,6 +79,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
+
+	blog.Infof("enable authcenter: %v", authConf.Enable)
 
 	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
 	apiSvr.Core = engine

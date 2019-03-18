@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"configcenter/src/apimachinery/discovery"
@@ -76,7 +75,7 @@ func (s *service) WebServices() []*restful.WebService {
 	ws := &restful.WebService{}
 
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
-		Filter(authFilter(s.enableAuth, s.authorizer, getErrFun))
+		Filter(s.authFilter(getErrFun))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -90,9 +89,8 @@ func (s *service) WebServices() []*restful.WebService {
 	return allWebServices
 }
 
-func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		fmt.Println("ready 1.....")
 		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
 			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
 			rsp := metadata.BaseResp{
@@ -104,17 +102,15 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 			return
 		}
 
-		fmt.Println("ready 2.....")
-		if !enableAuth {
+		if !s.enableAuth {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
-		fmt.Println("ready 3.....")
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req)
 		if err != nil {
-			blog.Errorf("request id: %s, parse auth attribute failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), err)
+			blog.Errorf("request id: %s, parse auth attribute for %s %s failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.Method, req.Request.URL.Path, err)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
@@ -126,7 +122,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 
 		// check if authorize is nil or not, which means to check if the authorize instance has
 		// already been initialized or not. if not, api server should not be used.
-		if nil == authorize {
+		if nil == s.authorizer {
 			blog.Error("authorize instance has not been initialized")
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
@@ -136,7 +132,7 @@ func authFilter(enableAuth bool, authorize auth.Authorizer, errFunc func() error
 			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
-		decision, err := authorize.Authorize(req.Request.Context(), attribute)
+		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
 		if err != nil {
 			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", err)
 			rsp := metadata.BaseResp{
