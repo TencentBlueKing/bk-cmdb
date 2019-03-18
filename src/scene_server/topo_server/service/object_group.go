@@ -25,8 +25,8 @@ import (
 
 // CreateObjectGroup create a new object group
 
-func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
+func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	rsp, err := s.Core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, 
 }
 
 // UpdateObjectGroup update the object group information
-func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := &metadata.UpdateGroupCondition{}
 
@@ -45,7 +45,7 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.GroupOperation().UpdateObjectGroup(params, cond)
+	err = s.Core.GroupOperation().UpdateObjectGroup(params, cond)
 	if nil != err {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 }
 
 // DeleteObjectGroup delete the object group
-func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
 		return nil, err
@@ -62,7 +62,7 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.GroupOperation().DeleteObjectGroup(params, gid)
+	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
 	if nil != err {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 	return nil, nil
 }
 
-func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapStr, error) {
+func (s *Service) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapStr, error) {
 
 	datas := []metadata.PropertyGroupObjectAtt{}
 	err := json.Unmarshal(data, &datas)
@@ -83,7 +83,7 @@ func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.
 }
 
 // UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	datas := make([]metadata.PropertyGroupObjectAtt, 0)
 	val, exists := data.Get("origin")
@@ -93,7 +93,7 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 
 	datas, _ = val.([]metadata.PropertyGroupObjectAtt)
 
-	err := s.core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
+	err := s.Core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
 	if nil != err {
 		return nil, err
 	}
@@ -103,9 +103,9 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 
-func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
-	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
+	err := s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}
@@ -114,9 +114,9 @@ func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pat
 }
 
 // SearchGroupByObject search the groups by the object
-func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
+	return s.Core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
 }

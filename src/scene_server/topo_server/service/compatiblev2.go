@@ -26,7 +26,7 @@ import (
 )
 
 // SearchAllApp search all business
-func (s *topoService) SearchAllApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchAllApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond, err := data.MapStr("condition")
 	if nil != err {
@@ -44,11 +44,11 @@ func (s *topoService) SearchAllApp(params types.ContextParams, pathParams, query
 		gfields = fields
 	}
 
-	return s.core.CompatibleV2Operation().Business(params).SearchAllApp(gfields, cond)
+	return s.Core.CompatibleV2Operation().Business(params).SearchAllApp(gfields, cond)
 }
 
 // UpdateMultiSet update multi sets
-func (s *topoService) UpdateMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("bizID", pathParams("appid"))
@@ -74,12 +74,12 @@ func (s *topoService) UpdateMultiSet(params types.ContextParams, pathParams, que
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKSetIDField).In(setIDS)
 
-	err = s.core.CompatibleV2Operation().Set(params).UpdateMultiSet(bizID, innerData, cond)
+	err = s.Core.CompatibleV2Operation().Set(params).UpdateMultiSet(bizID, innerData, cond)
 	return nil, err
 }
 
 // DeleteMultiSet delete multi sets
-func (s *topoService) DeleteMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteMultiSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
@@ -100,12 +100,12 @@ func (s *topoService) DeleteMultiSet(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.CompatibleV2Operation().Set(params).DeleteMultiSet(bizID, setIDS)
+	err = s.Core.CompatibleV2Operation().Set(params).DeleteMultiSet(bizID, setIDS)
 	return nil, err
 }
 
 // DeleteSetHost delete hosts in some sets
-func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteSetHost(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("appid"), 10, 64)
 	if nil != err {
@@ -122,12 +122,12 @@ func (s *topoService) DeleteSetHost(params types.ContextParams, pathParams, quer
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKSetIDField).In(setIDS)
-	err = s.core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, cond)
+	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, cond)
 	return nil, err
 }
 
 // UpdateMultiModule update multi modules
-func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
@@ -147,12 +147,12 @@ func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, 
 		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, common.BKModuleIDField)
 	}
 
-	err = s.core.CompatibleV2Operation().Module(params).UpdateMultiModule(bizID, moduleIDS, innerData)
+	err = s.Core.CompatibleV2Operation().Module(params).UpdateMultiModule(bizID, moduleIDS, innerData)
 	return nil, err
 }
 
 // SearchModuleByApp search module by business
-func (s *topoService) SearchModuleByApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchModuleByApp(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
@@ -173,11 +173,11 @@ func (s *topoService) SearchModuleByApp(params types.ContextParams, pathParams, 
 	query.Limit = cond.Page.Limit
 	query.Sort = cond.Page.Sort
 
-	return s.core.CompatibleV2Operation().Module(params).SearchModuleByApp(query)
+	return s.Core.CompatibleV2Operation().Module(params).SearchModuleByApp(query)
 }
 
 // SearchModuleBySetProperty search module by set property
-func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchModuleBySetProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
@@ -191,11 +191,11 @@ func (s *topoService) SearchModuleBySetProperty(params types.ContextParams, path
 		return nil
 	})
 	cond.Field(common.BKAppIDField).Eq(bizID)
-	return s.core.CompatibleV2Operation().Module(params).SearchModuleBySetProperty(bizID, cond)
+	return s.Core.CompatibleV2Operation().Module(params).SearchModuleBySetProperty(bizID, cond)
 }
 
 // AddMultiModule add multi modules
-func (s *topoService) AddMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) AddMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := data.Int64(common.BKAppIDField)
 	if nil != err {
@@ -226,12 +226,12 @@ func (s *topoService) AddMultiModule(params types.ContextParams, pathParams, que
 		return nil
 	})
 
-	err = s.core.CompatibleV2Operation().Module(params).AddMultiModule(bizID, setID, strings.Split(moduleNameStr, ","), data)
+	err = s.Core.CompatibleV2Operation().Module(params).AddMultiModule(bizID, setID, strings.Split(moduleNameStr, ","), data)
 	return nil, err
 }
 
 // DeleteMultiModule delete multi modules
-func (s *topoService) DeleteMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteMultiModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams(common.BKAppIDField), 10, 64)
 	if nil != err {
@@ -249,6 +249,6 @@ func (s *topoService) DeleteMultiModule(params types.ContextParams, pathParams, 
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	return nil, s.core.CompatibleV2Operation().Module(params).DeleteMultiModule(inputParams.BizID, inputParams.ModuleIDS)
+	return nil, s.Core.CompatibleV2Operation().Module(params).DeleteMultiModule(inputParams.BizID, inputParams.ModuleIDS)
 
 }

@@ -25,9 +25,9 @@ import (
 )
 
 // CreateModule create a new module
-func (s *topoService) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
@@ -45,14 +45,14 @@ func (s *topoService) CreateModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	return s.core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
+	return s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 
 }
 
 // DeleteModule delete the module
-func (s *topoService) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s", err.Error())
 		return nil, err
@@ -76,14 +76,14 @@ func (s *topoService) DeleteModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
-	return nil, s.core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
+	return nil, s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
 
 }
 
 // UpdateModule update the module
-func (s *topoService) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s", err.Error())
 		return nil, err
@@ -107,13 +107,13 @@ func (s *topoService) UpdateModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
-	return nil, s.core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
+	return nil, s.Core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
 }
 
 // SearchModule search the modules
-func (s *topoService) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchModule(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
 		blog.Errorf("failed to search the module, %s", err.Error())
 		return nil, err
@@ -149,7 +149,7 @@ func (s *topoService) SearchModule(params types.ContextParams, pathParams, query
 	queryCond.Sort = page.Sort
 	queryCond.Start = page.Start
 
-	cnt, instItems, err := s.core.ModuleOperation().FindModule(params, obj, queryCond)
+	cnt, instItems, err := s.Core.ModuleOperation().FindModule(params, obj, queryCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err

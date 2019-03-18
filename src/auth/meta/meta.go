@@ -12,18 +12,6 @@
 
 package meta
 
-// system constanst
-const (
-	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
-)
-
-// ScopeTypeID constanst
-const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
-)
-
 type AuthAttribute struct {
 	// the version of this resource, which is the api version.
 	APIVersion string
@@ -39,11 +27,12 @@ type UserInfo struct {
 	// the name of this user.
 	UserName string
 	// the supplier id that this user belongs to.
-	SupplierID string
+	SupplierAccount string
 }
 
 type Item Basic
 
+// ResourceAttribute represent one iam resource
 type ResourceAttribute struct {
 	Basic
 
@@ -60,6 +49,7 @@ type Basic struct {
 	Type ResourceType
 
 	// the action that user want to do with this resource.
+	// this field should be empty when it's used in resource handle operation.
 	Action Action
 
 	// the name of the resource, which could be a bk-route, etc.
@@ -68,6 +58,11 @@ type Basic struct {
 
 	// the instance id of this resource, which could be a model's instance id.
 	InstanceID int64
+}
+
+// CommonInfo contains common field which can be extracted from restful.Request
+type CommonInfo struct {
+	User       UserInfo
 }
 
 type Decision struct {
@@ -94,7 +89,8 @@ const (
 	Find       Action = "find"
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.
-	Unknown Action = "unknown"
+	Unknown     Action = "unknown"
+	EmptyAction Action = "" // used for register resources
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
@@ -106,6 +102,10 @@ const (
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
 	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
+	TransferHost                   Action = "transferHost"
 
-	TopoModelMange Action = "topoModelMange"
+	// process actions
+	BoundModuleToProcess   Action = "boundModuleToProcess"
+	UnboundModuleToProcess Action = "unboundModelToProcess"
+	FindBoundModuleProcess Action = "findBoundModuleProcess"
 )

@@ -173,12 +173,12 @@ func (cli *classification) Update(data mapstr.MapStr) error {
 		}
 		rsp, err := cli.clientSet.CoreService().Model().UpdateModelClassification(context.Background(), cli.params.Header, &input)
 		if nil != err {
-			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
+			blog.Errorf("failed to request object controller, error info is %s", err.Error())
 			return err
 		}
 
 		if !rsp.Result {
-			blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+			blog.Errorf("failed to update the classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
 			return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
@@ -199,7 +199,7 @@ func (cli *classification) search(cond condition.Condition) ([]metadata.Classifi
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
+		blog.Errorf("failed to search the classification, error info is %s", rsp.ErrMsg)
 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

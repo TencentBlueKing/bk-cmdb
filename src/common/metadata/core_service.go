@@ -13,7 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/util"
+
+    "fmt"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
@@ -116,3 +121,109 @@ type Dimension struct {
 
 type SetOneInstanceAssociation CreateOneInstanceAssociation
 type SetManyInstanceAssociation CreateManyInstanceAssociation
+
+type TopoModelNode struct {
+	Children []*TopoModelNode
+	ObjectID string
+}
+
+type SearchTopoModelNodeResult struct {
+    BaseResp `json:",inline"`
+    Data     TopoModelNode `json:"data"`
+}
+
+// LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
+// it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
+func (tn *TopoModelNode) LeftestObjectIDList() []string {
+	objectIDs := make([]string, 0)
+	node := tn
+	for {
+		objectIDs = append(objectIDs, node.ObjectID)
+		if len(node.Children) == 0 {
+			break
+		}
+		node = node.Children[0]
+	}
+	return objectIDs
+}
+
+type TopoInstanceNode struct {
+	Children   []*TopoInstanceNode
+	ObjectID   string
+	InstanceID int64
+	Detail     map[string]interface{}
+}
+
+type SearchTopoInstanceNodeResult struct {
+    BaseResp `json:",inline"`
+    Data     TopoInstanceNode `json:"data"`
+}
+
+func (node *TopoInstanceNode) Name() string {
+	var name string
+	var exist bool
+	var val interface{}
+	switch node.ObjectID {
+	case common.BKInnerObjIDSet:
+		val, exist = node.Detail[common.BKSetNameField]
+	case common.BKInnerObjIDApp:
+		val, exist = node.Detail[common.BKAppNameField]
+	case common.BKInnerObjIDModule:
+		val, exist = node.Detail[common.BKModuleNameField]
+	default:
+		val, exist = node.Detail[common.BKInstNameField]
+	}
+
+	if exist == true {
+        name = util.GetStrByInterface(val)
+	} else {
+        blog.V(7).Infof("extract topo instance node:%+v name failed", *node)
+        name = fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+	}
+	return name
+}
+
+func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
+	if node.ObjectID == common.BKInnerObjIDModule && node.InstanceID == targetID {
+		return []*TopoInstanceNode{node}
+	}
+	for _, child := range node.Children {
+		path := child.TraversalFindModule(targetID)
+		if len(path) > 0 {
+			path = append(path, node)
+			return path
+		}
+	}
+	return []*TopoInstanceNode{}
+}
+
+/*
+// TODO we need a low cost algorithm to get host layers
+func ReversalTree(root *metadata.TopoInstanceNode, targetID int64) []*metadata.TopoInstanceNode {
+    nodesMap := map[string]*metadata.TopoInstanceNode{}
+    if _, exist := nodesMap[root.InstanceID]
+    if root.ObjectID == "module" && root.InstanceID == targetID {
+        return []*metadata.TopoInstanceNode{root}
+    }
+    for _, child := range root.Children {
+        path := traversalFind(child, targetID)
+        if len(path) > 0 {
+            path = append(path, root)
+            return path
+        }
+    }
+    return []*metadata.TopoInstanceNode{}
+}
+*/
+
+type TopoInstance struct {
+	ObjectID         string
+	InstanceID       int64
+	ParentInstanceID int64
+	Detail           map[string]interface{}
+}
+
+// Key generate a unique key for instance(as instances's of different object type maybe conflict)
+func (ti *TopoInstance) Key() string {
+	return fmt.Sprintf("%s:%d", ti.ObjectID, ti.InstanceID)
+}
