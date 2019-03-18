@@ -13,7 +13,7 @@
 package meta
 
 import (
-    "configcenter/src/common"
+	"configcenter/src/common"
 )
 
 type ResourceType string
@@ -36,11 +36,12 @@ const (
 	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
+	HostUserCustom           ResourceType = "hostUserCustom"
 	ModelClassification      ResourceType = "modelClassification"
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
-	HostUserCustom           ResourceType = "hostUserCustom"
+	UserCustom               ResourceType = "hostCustomAPI"
 	HostFavorite             ResourceType = "hostFavorite"
 	Process                  ResourceType = "process"
 	HostInstance             ResourceType = "hostInstance"
@@ -173,7 +174,7 @@ var (
 	}
 
 	HostUserCustomDescribe = ResourceDescribe{
-		Type:    HostUserCustom,
+		Type:    UserCustom,
 		Actions: []Action{Find, FindMany, Create, Update, Delete},
 	}
 
@@ -194,14 +195,14 @@ var (
 )
 
 func GetResourceTypeByObjectType(object string) ResourceType {
-    switch object {
-    case common.BKInnerObjIDApp:
-        return Business
-    case common.BKInnerObjIDSet:
-        return ModelSet
-    case common.BKInnerObjIDModule:
-        return ModelModule
-    default:
-        return Model
-    }
+	switch object {
+	case common.BKInnerObjIDApp:
+		return Business
+	case common.BKInnerObjIDSet:
+		return ModelSet
+	case common.BKInnerObjIDModule:
+		return ModelModule
+	default:
+		return Model
+	}
 }
