@@ -18,8 +18,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/utils"
+	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+	"configcenter/src/scene_server/admin_server/synchronizer/utils"
 )
 
 // HandleBusinessSync do sync all business to iam

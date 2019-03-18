@@ -18,8 +18,8 @@ import (
 	"os"
 	"runtime"
 
-    "github.com/spf13/pflag"
-	
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"

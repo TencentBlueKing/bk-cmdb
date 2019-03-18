@@ -18,6 +18,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
@@ -25,12 +27,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/scene_server/auth_synchronizer/app/options"
 	webservice "configcenter/src/scene_server/auth_synchronizer/pkg/service"
-	"configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
-	"github.com/emicklei/go-restful"
 )
 
 // Run start http service and synchroizer

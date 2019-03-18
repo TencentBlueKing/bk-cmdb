@@ -31,6 +31,7 @@ type UserInfo struct {
 }
 
 type Item Basic
+type Layers []Item
 
 // ResourceAttribute represent one iam resource
 type ResourceAttribute struct {
@@ -40,7 +41,7 @@ type ResourceAttribute struct {
 	BusinessID      int64
 	// if this object belongs to a topology, like mainline topology,
 	// layers means each object's item before this object.
-	Layers []Item
+	Layers Layers
 }
 
 // Basic defines the basic info for a resource.
@@ -58,6 +59,12 @@ type Basic struct {
 
 	// the instance id of this resource, which could be a model's instance id.
 	InstanceID int64
+}
+
+// BackendResource represent a resource in auth backend, like iam.
+type BackendResource struct{
+	ResourceType string `json:"resource_type"`
+	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
 // CommonInfo contains common field which can be extracted from restful.Request

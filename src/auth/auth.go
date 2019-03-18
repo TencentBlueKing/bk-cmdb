@@ -41,7 +41,9 @@ type ResourceHandler interface {
 	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
-	// init the authcenter
+	// list resources by condition
+	ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) 
+	// init the auth center
 	Init(ctx context.Context) error
 }
 

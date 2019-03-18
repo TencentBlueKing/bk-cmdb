@@ -13,11 +13,11 @@
 package utils
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 
-    "configcenter/src/common"
-    "configcenter/src/scene_server/auth_synchronizer/pkg/synchronizer/meta"
+	"configcenter/src/common"
+	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 )
 
 var (
@@ -35,10 +35,10 @@ func NewListBusinessAPIHeader() *http.Header {
 }
 
 func NewAPIHeaderByBusiness(businessSimplify *meta.BusinessSimplify) *http.Header {
-    header := http.Header{}
-    header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", businessSimplify.BKSupplierIDField))
-    header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
-    header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%d", businessSimplify.BKOwnerIDField))
-    header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
-    return &header
+	header := http.Header{}
+	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", businessSimplify.BKSupplierIDField))
+	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
+	header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%d", businessSimplify.BKOwnerIDField))
+	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
+	return &header
 }
