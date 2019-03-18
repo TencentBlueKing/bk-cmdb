@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -71,5 +72,10 @@ func (h *SynchronizerConfig) onHostConfigUpdate(previous, current cc.ProcessConf
 		h.Config.Esb.Addrs = current.ConfigMap[esbPrefix+".addr"]
 		h.Config.Esb.AppCode = current.ConfigMap[esbPrefix+".appCode"]
 		h.Config.Esb.AppSecret = current.ConfigMap[esbPrefix+".appSecret"]
+
+		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil {
+			blog.Warnf("parse authcenter config failed: %v", err)
+		}
 	}
 }

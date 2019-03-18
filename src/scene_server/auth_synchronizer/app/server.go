@@ -23,6 +23,7 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
@@ -57,6 +58,10 @@ func Run(ctx context.Context, serverOptions *options.ServerOption) error {
 		return fmt.Errorf("new api machinery client failed, err: %v", err)
 	}
 
+	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse authcenter config failed: %v", err)
+	}
 	serviceContainer := new(webservice.Service)
 	server := backbone.Server{
 		ListenAddr: httpServerConfig.IP,

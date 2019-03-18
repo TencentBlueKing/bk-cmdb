@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/auth/extensions"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -69,13 +70,49 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	blog.V(4).Infof("list hosts by business:%d result: %+v", businessSimplify.BKAppIDField, hostIDArr)
 
 	// step2 generate host layers
-	businessID, layers, err := extensions.GetHostLayers(coreService, header, &hostIDArr)
+	businessID, batchLayers, err := extensions.GetHostLayers(coreService, header, &hostIDArr)
 
 	// step3 generate host resource id
-	// DryRunRegisterResource
+	resources := make([]authmeta.ResourceAttribute, 0)
+	for _, layer := range batchLayers {
+		lasteItem := layer[len(layer)-1]
+		resource := authmeta.ResourceAttribute{
+			Basic: authmeta.Basic{
+				Type:       lasteItem.Type,
+				Name:       lasteItem.Name,
+				InstanceID: lasteItem.InstanceID,
+			},
+			SupplierAccount: "",
+			BusinessID:      businessID,
+			Layers:          layer[0:1],
+		}
+		resources = append(resources, resource)
+	}
+	desiredResources, err := ih.Authorizer.DryRunRegisterResource(context.Background(), resources...)
+	if err != nil {
+		blog.Errorf("synchronize host instance failed, dry run register resource faileld, err: %+v", err)
+		return err
+	}
 
 	// step4 get host by business from iam
 	// ListResources
+	item := authmeta.Item{
+		Type:       authmeta.Business,
+		InstanceID: businessID,
+	}
+	rs := &authmeta.ResourceAttribute{
+		Basic: authmeta.Basic{
+			Type: authmeta.HostInstance,
+		},
+		SupplierAccount: "",
+		BusinessID:      businessID,
+		Layers:          []authmeta.Item{item},
+	}
+	realResources, err := ih.Authorizer.ListResources(context.Background(), rs)
+	if err != nil {
+		blog.Errorf("synchronize host instance failed, DryRunRegisterResource faileld, err: %+v", err)
+		return err
+	}
 
 	// step5 diff step2 and step4 result
 
