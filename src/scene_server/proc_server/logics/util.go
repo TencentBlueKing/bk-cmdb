@@ -74,9 +74,18 @@ func (lgc *Logics) AuthCenterInstInfo(ctx context.Context, appID, instID int64, 
 		SupplierAccount: lgc.ownerID,
 		BusinessID:      appID,
 	}
-	err := lgc.auth.RegisterResource(ctx, authParameter)
+	var err error
+	switch action {
+	case authMeta.Update:
+		err = lgc.auth.UpdateResource(ctx, &authParameter)
+	case authMeta.Delete:
+		err = lgc.auth.DeregisterResource(ctx, authParameter)
+	default:
+		err = lgc.auth.RegisterResource(ctx, authParameter)
+
+	}
 	if err != nil {
-		blog.Errorf("AuthCenterInstCreateORDelete error, err:%s,input:%#v,rid:%s", err.Error(), authParameter, lgc.rid)
+		blog.Errorf("AuthCenterInstInfo error, err:%s,input:%#v,rid:%s", err.Error(), authParameter, lgc.rid)
 	}
 	return err
 }
