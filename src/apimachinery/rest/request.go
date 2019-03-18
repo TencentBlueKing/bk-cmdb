@@ -32,7 +32,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
-	commonUtil "configcenter/src/common/util"
+    commonUtil "configcenter/src/common/util"
 )
 
 // map[url]responseDataString
@@ -289,11 +289,11 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(9).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, \nresponse status: %s, response boyd: %s, rid: %s", string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			if r.peek {
-				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
+				blog.V(5).Infof("[apimachinary][peek] %s %s with body: %s, response status: %s, response body: %s", string(r.verb), url, r.body, resp.Status, body)
 			}
 
 			return result

@@ -20,12 +20,12 @@ import (
 var _ core.TopoOperation = (*topoManager)(nil)
 
 type topoManager struct {
-	dbProxy dal.RDB
+	DbProxy dal.RDB
 }
 
 // New create a new model manager instance
 func New(dbProxy dal.RDB) core.TopoOperation {
 
-	coreMgr := &topoManager{dbProxy: dbProxy}
+	coreMgr := &topoManager{DbProxy: dbProxy}
 	return coreMgr
 }

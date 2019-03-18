@@ -13,8 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"fmt"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
@@ -123,6 +127,11 @@ type TopoModelNode struct {
 	ObjectID string
 }
 
+type SearchTopoModelNodeResult struct {
+	BaseResp `json:",inline"`
+	Data     TopoModelNode `json:"data"`
+}
+
 // LeftestObjectIDList extrac leftest node's id of each level, arrange as a list
 // it's useful in model mainline topo case, as bk_mainline relationship degenerate to a list.
 func (tn *TopoModelNode) LeftestObjectIDList() []string {
@@ -143,6 +152,49 @@ type TopoInstanceNode struct {
 	ObjectID   string
 	InstanceID int64
 	Detail     map[string]interface{}
+}
+
+type SearchTopoInstanceNodeResult struct {
+	BaseResp `json:",inline"`
+	Data     TopoInstanceNode `json:"data"`
+}
+
+func (node *TopoInstanceNode) Name() string {
+	var name string
+	var exist bool
+	var val interface{}
+	switch node.ObjectID {
+	case common.BKInnerObjIDSet:
+		val, exist = node.Detail[common.BKSetNameField]
+	case common.BKInnerObjIDApp:
+		val, exist = node.Detail[common.BKAppNameField]
+	case common.BKInnerObjIDModule:
+		val, exist = node.Detail[common.BKModuleNameField]
+	default:
+		val, exist = node.Detail[common.BKInstNameField]
+	}
+
+	if exist == true {
+		name = util.GetStrByInterface(val)
+	} else {
+		blog.V(7).Infof("extract topo instance node:%+v name failed", *node)
+		name = fmt.Sprintf("%s:%d", node.ObjectID, node.InstanceID)
+	}
+	return name
+}
+
+func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
+	if node.ObjectID == common.BKInnerObjIDModule && node.InstanceID == targetID {
+		return []*TopoInstanceNode{node}
+	}
+	for _, child := range node.Children {
+		path := child.TraversalFindModule(targetID)
+		if len(path) > 0 {
+			path = append(path, node)
+			return path
+		}
+	}
+	return []*TopoInstanceNode{}
 }
 
 type TopoInstance struct {

@@ -18,30 +18,46 @@ import (
 	"net/http"
 
 	"configcenter/src/common/metadata"
+	"configcenter/src/framework/core/errors"
 )
 
-func (m *mainline) CreateManyModelClassification(ctx context.Context, h http.Header) (resp *metadata.TopoModelNode, err error) {
-	resp = new(metadata.TopoModelNode)
+func (m *mainline) SearchMainlineModelTopo(ctx context.Context, h http.Header, withDetail bool) (resp *metadata.TopoModelNode, err error) {
+	ret := new(metadata.SearchTopoModelNodeResult)
+	// resp = new(metadata.TopoModelNode)
 	subPath := "/read/mainline/model"
 
+	input := map[string]bool{}
+	input["with_detail"] = withDetail
+
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
-	return
+		Into(ret)
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+	return &ret.Data, nil
 }
 
-func (m *mainline) CreateModelClassification(ctx context.Context, h http.Header, bkBizID string) (resp *metadata.TopoInstanceNode, err error) {
-	resp = new(metadata.TopoInstanceNode)
-	subPath := fmt.Sprintf("/read/mainline/instance/%s", bkBizID)
+func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, h http.Header, bkBizID int64, withDetail bool) (resp *metadata.TopoInstanceNode, err error) {
+	input := map[string]bool{}
+	input["with_detail"] = withDetail
 
+	ret := new(metadata.SearchTopoInstanceNodeResult)
+	subPath := fmt.Sprintf("/read/mainline/instance/%d", bkBizID)
 	err = m.client.Post().
 		WithContext(ctx).
+		Body(input).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
-		Into(resp)
-	return
+		Into(ret)
+
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+	return &ret.Data, nil
 }

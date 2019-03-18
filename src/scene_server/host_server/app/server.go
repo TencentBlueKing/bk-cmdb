@@ -14,12 +14,15 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -39,8 +42,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service := new(hostsvc.Service)
-	authorizer := authorize.NewHostAuthorizer()
-	service.Authorizer = *authorizer
 	hostSrv := new(HostServer)
 
 	input := &backbone.BackboneParameter{
@@ -56,20 +57,30 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" == hostSrv.Config.Redis.Address {
-			time.Sleep(time.Second)
-		} else {
+		if "" != hostSrv.Config.Redis.Address && len(hostSrv.Config.Auth.Address) != 0 {
 			configReady = true
 			break
 		}
+		blog.Infof("waiting for config ready ...")
+		time.Sleep(time.Second)
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		blog.Infof("waiting config timeout.")
+		return errors.New("Configuration item not found")
 	}
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 	}
+
+	config := hostSrv.Config.Auth
+	blog.Info("host server auth config is: %+v", config)
+	authorizer, err := authorize.NewHostAuthorizer(nil, config)
+	if err != nil {
+		blog.Errorf("make host authorizer failed, err: %+v", err)
+		return fmt.Errorf("make host authorizer failed, err: %+v", err)
+	}
+	service.Authorizer = *authorizer
 
 	service.Engine = engine
 	service.Config = &hostSrv.Config
@@ -96,6 +107,8 @@ func (h *HostServer) WebService() *restful.WebService {
 }
 
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
+
 	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
 	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
 	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
@@ -107,6 +120,18 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]
 	h.Config.Redis.Port = current.ConfigMap["redis.port"]
 	h.Config.Redis.MasterName = current.ConfigMap["redis.user"]
+
+	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse authcenter config failed: %v", err)
+	}
+
+	enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
+	if err == nil {
+		blog.Errorf("parse auth enable field failed, set default to true, err: %+v", err)
+		enable = true
+	}
+	h.Config.Auth.Enable = enable
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

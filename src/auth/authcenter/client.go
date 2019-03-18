@@ -88,6 +88,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
+        // 1901409 is for: resource already exist, can not created repeatedly
 		if resp.Code == codeDuplicated {
 			return ErrDuplicated
 		}
