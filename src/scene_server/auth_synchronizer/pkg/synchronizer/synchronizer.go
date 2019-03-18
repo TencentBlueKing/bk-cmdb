@@ -37,9 +37,9 @@ func NewSynchronizer(ctx context.Context, config *options.Config, backbone *back
 	return &AuthSynchronizer{ctx: ctx, Config: config, Engine: backbone}
 }
 
-// Run do start synchronizer
+// Run do start synchronize
 func (d *AuthSynchronizer) Run() error {
-	blog.Infof("auth synchronizer start...")
+	blog.Infof("auth synchronize start...")
 
 	// init queue
 	d.WorkerQueue = make(chan meta.WorkRequest, 1000)
@@ -59,6 +59,6 @@ func (d *AuthSynchronizer) Run() error {
 	// init producer
 	d.Producer = NewProducer(d.Engine, d.WorkerQueue)
 	d.Producer.Start()
-	blog.Infof("auth synchronizer started")
+	blog.Infof("auth synchronize started")
 	return nil
 }

@@ -13,12 +13,12 @@
 package instances
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/core"
+    "configcenter/src/common"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/universalsql/mongo"
+    "configcenter/src/common/util"
+    "configcenter/src/source_controller/coreservice/core"
 )
 
 func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam mapstr.MapStr) (id uint64, err error) {

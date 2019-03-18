@@ -52,7 +52,7 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		sHostCond["ip"] = make(map[string]interface{})
 		condArr := make([]interface{}, 0)
 
-		//host condition
+		// host condition
 		condition := make(map[string]interface{})
 		hostCondArr := make([]interface{}, 0)
 		hostCond := make(map[string]interface{})
@@ -65,21 +65,21 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		condition["condition"] = hostCondArr
 		condArr = append(condArr, condition)
 
-		//biz conditon
+		// biz condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDApp
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//set conditon
+		// set condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDSet
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//module condition
+		// module condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDModule
 		condition["fields"] = make([]interface{}, 0)

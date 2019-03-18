@@ -61,15 +61,17 @@ func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParam
 	return nil, err
 }
 
-// SearchMainLineOBjectTopo search the main line topo
+// SearchMainLineObjectTopo search the main line topo
 func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
+    // get biz model
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to find the biz object, error info is %s", err.Error())
 		return nil, err
 	}
 
+	// get biz model related mainline models (mainline relationship model)
 	return s.core.AssociationOperation().SearchMainlineAssociationTopo(params, bizObj)
 }
 
@@ -107,7 +109,7 @@ func (s *topoService) SearchBusinessTopo(params types.ContextParams, pathParams,
 // SearchMainLineChildInstTopo search the child inst topo by a inst
 func (s *topoService) SearchMainLineChildInstTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	//{obj_id}/{app_id}/{inst_id}
+	// {obj_id}/{app_id}/{inst_id}
 	objID := pathParams("obj_id")
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {

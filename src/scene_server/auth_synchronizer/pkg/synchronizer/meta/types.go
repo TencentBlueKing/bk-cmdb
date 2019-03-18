@@ -55,5 +55,5 @@ func (h *FakeHander) HandleBusinessSync(task *WorkRequest) error {
 type BusinessSimplify struct {
 	BKAppIDField      int64
 	BKSupplierIDField int64
-	BKOwnerIDField    int64
+	BKOwnerIDField    string
 }

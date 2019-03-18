@@ -14,7 +14,7 @@ package handler
 
 import "configcenter/src/common/backbone"
 
-// IAMHandler sync resoruce to iam
+// IAMHandler sync resource to iam
 type IAMHandler struct {
 	*backbone.Engine
 }

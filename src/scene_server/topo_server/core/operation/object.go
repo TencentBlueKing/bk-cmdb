@@ -668,9 +668,11 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
 	if nil != params.MetaData {
+	    // search model from special business
 		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
 		fCond.Remove(metadata.BKMetadata)
 	} else {
+	    // search global shared model
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
