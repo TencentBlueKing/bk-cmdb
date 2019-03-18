@@ -13,15 +13,15 @@
 package parser
 
 import (
-    "errors"
+	"errors"
 	"fmt"
-    "net/http"
-    "regexp"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
-    "configcenter/src/common/blog"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -93,12 +93,12 @@ func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 func ParseAPIVersion(req *restful.Request) (string, error) {
 	elements, err := urlParse(req.Request.URL.Path)
 	if err != nil {
-	    blog.Errorf("parse api version failed, %+v", err)
+		blog.Errorf("parse api version failed, %+v", err)
 		return "", fmt.Errorf("parse api version failed, %+v", err)
 	}
 	version := elements[1]
 	if version != "v3" {
-        blog.Errorf("parse api version failed, unsupported api version: %s", version)
+		blog.Errorf("parse api version failed, unsupported api version: %s", version)
 		return "", fmt.Errorf("parse api version failed, unsupported api version: %s", version)
 	}
 	return version, nil
