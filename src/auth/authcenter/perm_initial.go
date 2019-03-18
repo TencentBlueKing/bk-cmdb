@@ -14,59 +14,32 @@ package authcenter
 
 import (
 	"context"
-	"fmt"
-	"sort"
-	"strings"
+	"net/http"
 )
 
 func (ac *AuthCenter) Init(ctx context.Context) error {
-	detail := SystemDetail{}
-	detail.System = expectSystem
-	detail.Scopes = append(detail.Scopes, struct {
-		ScopeTypeID   string         `json:"scope_type_id"`
-		ResourceTypes []ResourceType `json:"resource_types"`
-	}{
-		ScopeTypeID:   "system",
-		ResourceTypes: expectSystemResourceType,
-	})
-
-	_, err := ac.authClient.QuerySystemInfo(ctx, ac.header, SystemIDCMDB, false)
-	if err != nil && err != ErrNotFound {
+	header := http.Header{}
+	if err := ac.authClient.RegistSystem(ctx, header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
 	}
 
-	if err := ac.authClient.RegistSystem(ctx, ac.header, expectSystem); err != nil && err != ErrDuplicated {
+	if err := ac.authClient.UpdateSystem(ctx, header, System{SystemID: expectSystem.SystemID, SystemName: expectSystem.SystemName}); err != nil {
 		return err
 	}
 
-	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDSystem, expectSystemResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, header, SystemIDCMDB, ScopeTypeIDSystem, expectSystemResourceType); err != nil {
 		return err
 	}
-	if err := ac.authClient.UpsertResourceTypeBatch(ctx, ac.header, SystemIDCMDB, ScopeTypeIDBiz, expectBizResourceType); err != nil {
+	if err := ac.authClient.UpsertResourceTypeBatch(ctx, header, SystemIDCMDB, ScopeTypeIDBiz, expectBizResourceType); err != nil {
+		return err
+	}
+
+	if err := ac.authClient.registerResource(ctx, header, &expectModelGroupResourceInst); err != nil && err != ErrDuplicated {
+		return err
+	}
+	if err := ac.authClient.registerResource(ctx, header, &expectModelResourceInst); err != nil && err != ErrDuplicated {
 		return err
 	}
 
 	return nil
-}
-
-func resourceKey(res ResourceType) string {
-	return fmt.Sprintf("%s-%s-%s", res.ResourceTypeID, res.ResourceTypeName, res.ParentResourceTypeID)
-}
-
-func actionKey(actions []Action) string {
-	sort.Slice(actions, func(i, j int) bool {
-		if actions[i].ActionID < actions[j].ActionID {
-			return true
-		} else if actions[i].ActionName < actions[j].ActionName {
-			return true
-		} else {
-			return actions[i].IsRelatedResource == actions[j].IsRelatedResource
-		}
-	})
-
-	keys := []string{}
-	for _, action := range actions {
-		keys = append(keys, fmt.Sprintf("%s-%s-%v", action.ActionID, action.ActionName, action.IsRelatedResource))
-	}
-	return strings.Join(keys, ":")
 }

@@ -13,109 +13,132 @@
 package app
 
 import (
-    "context"
-    "fmt"
-    "os"
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"time"
 
-    "configcenter/src/common/version"
-    "configcenter/src/apimachinery/util"
-    "configcenter/src/apiserver/app/options"
-    "configcenter/src/apiserver/service"
-    "configcenter/src/auth"
-    "configcenter/src/auth/authcenter"
-    "configcenter/src/common/backbone"
-    cc "configcenter/src/common/backbone/configcenter"
-    "configcenter/src/common/types"
-    "github.com/emicklei/go-restful"
+	"configcenter/src/apimachinery/util"
+	"configcenter/src/apiserver/app/options"
+	"configcenter/src/apiserver/service"
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
+	"github.com/emicklei/go-restful"
 )
 
 // Run main loop function
 func Run(ctx context.Context, op *options.ServerOption) error {
-    svrInfo, err := newServerInfo(op)
-    if err != nil {
-        return fmt.Errorf("wrap server info failed, err: %v", err)
-    }
+	svrInfo, err := newServerInfo(op)
+	if err != nil {
+		return fmt.Errorf("wrap server info failed, err: %v", err)
+	}
 
-    client, err := util.NewClient(&util.TLSClientConfig{})
-    if err != nil {
-        return fmt.Errorf("new proxy client failed, err: %v", err)
-    }
+	client, err := util.NewClient(&util.TLSClientConfig{})
+	if err != nil {
+		return fmt.Errorf("new proxy client failed, err: %v", err)
+	}
 
-    svc := service.NewService()
-    ctnr := restful.NewContainer()
-    ctnr.Router(restful.CurlyRouter{})
-    ctnr.Router(restful.CurlyRouter{})
-    for _, item := range svc.WebServices() {
-        ctnr.Add(item)
-    }
+	svc := service.NewService()
+	ctnr := restful.NewContainer()
+	ctnr.Router(restful.CurlyRouter{})
+	ctnr.Router(restful.CurlyRouter{})
+	for _, item := range svc.WebServices() {
+		ctnr.Add(item)
+	}
 
-    apiSvr := new(APIServer)
-    input := &backbone.BackboneParameter{
-        ConfigUpdate: apiSvr.onApiServerConfigUpdate,
-        ConfigPath:   op.ServConf.ExConfig,
-        Regdiscv:     op.ServConf.RegDiscover,
-        SrvInfo:      svrInfo,
-    }
+	apiSvr := new(APIServer)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: apiSvr.onApiServerConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
 
-    authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
-    if err != nil {
-        return err
-    }
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
 
-    authorize, err := auth.NewAuthorize(nil, authConf)
-    if err != nil {
-        return fmt.Errorf("new authorize failed, err: %v", err)
-    }
+	if err := apiSvr.CheckForReadiness(); err != nil {
+		return err
+	}
 
-    engine, err := backbone.NewBackbone(ctx, input)
-    if err != nil {
-        return fmt.Errorf("new backbone failed, err: %v", err)
-    }
-    svc.SetConfig(engine, client, engine.Discovery(), authorize)
-    apiSvr.Core = engine
-    if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
-        return err
-    }
+	authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
+	if err != nil {
+		return err
+	}
 
-    select {
-    case <-ctx.Done():
-    }
-    return nil
+	authorize, err := auth.NewAuthorize(nil, authConf)
+	if err != nil {
+		return fmt.Errorf("new authorize failed, err: %v", err)
+	}
+
+	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
+	apiSvr.Core = engine
+	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+	}
+	return nil
 }
 
-// APIServer apiserver struct
 type APIServer struct {
-    Core   *backbone.Engine
-    Config map[string]string
+	Core        *backbone.Engine
+	Config      map[string]string
+	configReady bool
 }
 
 func (h *APIServer) onApiServerConfigUpdate(previous, current cc.ProcessConfig) {
-    h.Config = current.ConfigMap
+	h.configReady = true
+	h.Config = current.ConfigMap
+}
+
+const waitForSeconds = 180
+
+func (h *APIServer) CheckForReadiness() error {
+	for i := 1; i < waitForSeconds; i++ {
+		if !h.configReady {
+			blog.Info("waiting for api server configuration ready.")
+			time.Sleep(time.Second)
+			continue
+		}
+		return nil
+	}
+	return errors.New("wait for api server configuration timeout")
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
-    ip, err := op.ServConf.GetAddress()
-    if err != nil {
-        return nil, err
-    }
+	ip, err := op.ServConf.GetAddress()
+	if err != nil {
+		return nil, err
+	}
 
-    port, err := op.ServConf.GetPort()
-    if err != nil {
-        return nil, err
-    }
+	port, err := op.ServConf.GetPort()
+	if err != nil {
+		return nil, err
+	}
 
-    hostname, err := os.Hostname()
-    if err != nil {
-        return nil, err
-    }
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
 
-    info := &types.ServerInfo{
-        IP:       ip,
-        Port:     port,
-        HostName: hostname,
-        Scheme:   "http",
-        Version:  version.GetVersion(),
-        Pid:      os.Getpid(),
-    }
-    return info, nil
+	info := &types.ServerInfo{
+		IP:       ip,
+		Port:     port,
+		HostName: hostname,
+		Scheme:   "http",
+		Version:  version.GetVersion(),
+		Pid:      os.Getpid(),
+	}
+	return info, nil
 }

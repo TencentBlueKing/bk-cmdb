@@ -14,164 +14,207 @@ package authcenter
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 )
 
-func GenerateResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 	switch attribute.Basic.Type {
 	case meta.Business:
-		return businessResourceID(attribute)
+		return businessResourceID(resourceType, attribute)
 	case meta.Model:
-		return modelResourceID(attribute)
+		return modelResourceID(resourceType, attribute)
 	case meta.ModelModule:
-		return modelModuleResourceID(attribute)
+		return modelModuleResourceID(resourceType, attribute)
 	case meta.ModelSet:
-		return modelSetResourceID(attribute)
+		return modelSetResourceID(resourceType, attribute)
 	case meta.MainlineModel:
-		return mainlineModelResourceID(attribute)
+		return mainlineModelResourceID(resourceType, attribute)
 	case meta.MainlineModelTopology:
-		return mainlineModelTopologyResourceID(attribute)
+		return mainlineModelTopologyResourceID(resourceType, attribute)
 	case meta.MainlineInstanceTopology:
-		return mainlineInstanceTopologyResourceID(attribute)
+		return mainlineInstanceTopologyResourceID(resourceType, attribute)
 	case meta.AssociationType:
-		return associationTypeResourceID(attribute)
+		return associationTypeResourceID(resourceType, attribute)
 	case meta.ModelAssociation:
-		return modelAssociationResourceID(attribute)
+		return modelAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstanceAssociation:
-		return modelInstanceAssociationResourceID(attribute)
+		return modelInstanceAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstance:
-		return modelInstanceResourceID(attribute)
+		return modelInstanceResourceID(resourceType, attribute)
 	case meta.ModelInstanceTopology:
-		return modelInstanceTopologyResourceID(attribute)
+		return modelInstanceTopologyResourceID(resourceType, attribute)
 	case meta.ModelTopology:
-		return modelTopologyResourceID(attribute)
+		return modelTopologyResourceID(resourceType, attribute)
 	case meta.ModelClassification:
-		return modelClassificationResourceID(attribute)
+		return modelClassificationResourceID(resourceType, attribute)
 	case meta.ModelAttributeGroup:
-		return modelAttributeGroupResourceID(attribute)
+		return modelAttributeGroupResourceID(resourceType, attribute)
 	case meta.ModelAttribute:
-		return modelAttributeResourceID(attribute)
+		return modelAttributeResourceID(resourceType, attribute)
 	case meta.ModelUnique:
-		return modelUniqueResourceID(attribute)
+		return modelUniqueResourceID(resourceType, attribute)
 	case meta.HostUserCustom:
-		return hostUserCustomResourceID(attribute)
+		return hostUserCustomResourceID(resourceType, attribute)
 	case meta.HostFavorite:
-		return hostFavoriteResourceID(attribute)
+		return hostFavoriteResourceID(resourceType, attribute)
 	case meta.Process:
-		return processResourceID(attribute)
+		return processResourceID(resourceType, attribute)
 	case meta.NetDataCollector:
-		return netDataCollectorResourceID(attribute)
+		return netDataCollectorResourceID(resourceType, attribute)
+	case meta.EventPushing:
+		return eventSubscribeResourceID(resourceType, attribute)
+	case meta.HostInstance:
+		return hostInstanceResourceID(resourceType, attribute)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
 	}
 }
 
 // generate business related resource id.
-func businessResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	id := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
 
-	return nil, nil
+	return []ResourceID{id}, nil
 }
 
 // generate model's resource id, works for app model and model management
 // resource type in auth center.
-func modelResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	id := ResourceID{
+		ResourceType: resourceType,
+	}
 
-	return nil, nil
+	if attribute.BusinessID != 0 {
+		id.ResourceID = fmt.Sprintf("%d#%d", attribute.BusinessID, attribute.InstanceID)
+	} else {
+		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
+
+	return []ResourceID{id}, nil
 }
 
 // generate module resource id.
-func modelModuleResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelSetResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func mainlineModelResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func mainlineModelTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func mainlineInstanceTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func mainlineInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelAssociationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func associationTypeResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	id := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+
+	return []ResourceID{id}, nil
+}
+
+func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelInstanceAssociationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelInstanceResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelInstanceTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelTopologyResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	id := ResourceID{
+		ResourceType: resourceType,
+	}
+	if attribute.BusinessID != 0 {
+		id.ResourceID = fmt.Sprintf("%d#%d", attribute.BusinessID, attribute.InstanceID)
+	} else {
+		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
+	return []ResourceID{id}, nil
+}
+
+func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelClassificationResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelAttributeGroupResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelAttributeResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func modelUniqueResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func hostUserCustomResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func hostFavoriteResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func processResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
 	return nil, nil
 }
 
-func netDataCollectorResourceID(attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }

@@ -28,22 +28,15 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	var err error
-	info.ResourceID, err = GenerateResourceID(attribute)
-	if err != nil {
-		return nil, err
-	}
-
 	switch resourceType {
 	case meta.Business:
 		info.ResourceType = SysBusinessInstance
-		return info, nil
 
 	case meta.Model,
 		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-		if attribute.BusinessID == 0 {
+		if attribute.BusinessID != 0 {
 			info.ResourceType = BizModel
 		} else {
 			info.ResourceType = SysModel
@@ -53,11 +46,14 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		info.ResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
-		// action=拓扑层级操作
 		info.ResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		info.ResourceType = SysModelGroup
+		if attribute.BusinessID == 0 {
+			info.ResourceType = SysModelGroup
+		} else {
+			info.ResourceType = BizModelGroup
+		}
 
 	case meta.AssociationType:
 		info.ResourceType = SysAssociationType
@@ -69,14 +65,17 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 		return info, errors.New("model instance association does not support  auth now")
 
 	case meta.ModelInstance:
-		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
-			info.ResourceType = BizHostInstance
-		}
-
 		if attribute.BusinessID == 0 {
 			info.ResourceType = SysInstance
 		} else {
 			info.ResourceType = BizInstance
+		}
+
+	case meta.HostInstance:
+		if attribute.BusinessID == 0 {
+			info.ResourceType = SysHostInstance
+		} else {
+			info.ResourceType = BizHostInstance
 		}
 
 	case meta.HostUserCustom:
@@ -88,10 +87,20 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	case meta.Process:
 		info.ResourceType = BizProcessInstance
 
+	case meta.EventPushing:
+		info.ResourceType = SysEventPushing
+
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+	}
+
+	var err error
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
 	}
 
 	return info, nil
@@ -106,12 +115,10 @@ const (
 	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
 	SysHostInstance     ResourceTypeID = "sysHostInstance"
 	SysEventPushing     ResourceTypeID = "sysEventPushing"
-
-	SysModelGroup ResourceTypeID = "sysModelGroup"
-	SysModel      ResourceTypeID = "sysModel"
-	SysInstance   ResourceTypeID = "sysInstance"
-
-	SysAssociationType ResourceTypeID = "sysAssociationType "
+	SysModelGroup       ResourceTypeID = "sysModelGroup"
+	SysModel            ResourceTypeID = "sysModel"
+	SysInstance         ResourceTypeID = "sysInstance"
+	SysAssociationType  ResourceTypeID = "sysAssociationType"
 )
 
 // Business Resource
@@ -121,10 +128,9 @@ const (
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
 	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
-
-	BizModelGroup ResourceTypeID = "bizModelGroup"
-	BizModel      ResourceTypeID = "bizModel"
-	BizInstance   ResourceTypeID = "bizInstance"
+	BizModelGroup      ResourceTypeID = "bizModelGroup"
+	BizModel           ResourceTypeID = "bizModel"
+	BizInstance        ResourceTypeID = "bizInstance"
 )
 
 type ActionID string

@@ -21,7 +21,7 @@ var expectSystem = System{
 	SystemName:         SystemNameCMDB,
 	Desc:               "蓝鲸配置平台（CMDB）",
 	ReleatedScopeTypes: strings.Join([]string{ScopeTypeIDBiz, ScopeTypeIDSystem}, ";"),
-	Managers:           "system",
+	Managers:           "system;admin",
 	Creator:            "system",
 	Updater:            "system",
 }
@@ -220,6 +220,127 @@ var expectSystemResourceType = []ResourceType{
 				ActionID:          AdminEntrance,
 				ActionName:        "管理页面入口",
 				IsRelatedResource: false,
+			},
+		},
+	},
+}
+
+var expectModelGroupResourceInst = RegisterInfo{
+	CreatorID:   "system",
+	CreatorType: "user",
+	Resources: []ResourceEntity{
+		{
+			ResourceType: SysModelGroup,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_middleware"},
+			},
+			ResourceName: "中间件",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModelGroup,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_network"},
+			},
+			ResourceName: "网络",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+	},
+}
+
+var expectModelResourceInst = RegisterInfo{
+	CreatorID:   "system",
+	CreatorType: "user",
+	Resources: []ResourceEntity{
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_network"},
+				{ResourceType: SysModel, ResourceID: "bk_switch"},
+			},
+			ResourceName: "交换机",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_network"},
+				{ResourceType: SysModel, ResourceID: "bk_firewall"},
+			},
+			ResourceName: "防火墙",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_network"},
+				{ResourceType: SysModel, ResourceID: "bk_load_blance"},
+			},
+			ResourceName: "负载均衡",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_network"},
+				{ResourceType: SysModel, ResourceID: "bk_router"},
+			},
+			ResourceName: "路由器",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_middleware"},
+				{ResourceType: SysModel, ResourceID: "bk_apache"},
+			},
+			ResourceName: "apache",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_middleware"},
+				{ResourceType: SysModel, ResourceID: "bk_weblogic"},
+			},
+
+			ResourceName: "weblogic",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
+			},
+		},
+		{
+			ResourceType: SysModel,
+			ResourceID: []ResourceID{
+				{ResourceType: SysModelGroup, ResourceID: "bk_middleware"},
+				{ResourceType: SysModel, ResourceID: "bk_tomcat"},
+			},
+			ResourceName: "bk_tomcat",
+			ScopeInfo: ScopeInfo{
+				ScopeType: "system",
+				ScopeID:   SystemIDCMDB,
 			},
 		},
 	},

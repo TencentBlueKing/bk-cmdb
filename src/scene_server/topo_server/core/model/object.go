@@ -289,14 +289,6 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	return pair, nil
 }
 
-// func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
-// 	cond := condition.CreateCondition()
-// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-// 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-// 	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
-//
-// 	return o.searchObjects(true, cond)
-// }
 func (o *object) GetParentObject() ([]ObjectAssoPair, error) {
 
 	cond := condition.CreateCondition()
