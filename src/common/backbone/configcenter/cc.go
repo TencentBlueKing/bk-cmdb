@@ -14,23 +14,24 @@ package configcenter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sync"
 	"time"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/json"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 )
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, zkAddr string, procName string, confPath string, handler *CCHandler) error {
-	disc := crd.NewZkRegDiscover(zkAddr, 10*time.Second)
+func NewConfigCenter(ctx context.Context, client *zk.ZkClient, procName string, confPath string, handler *CCHandler) error {
+	disc := crd.NewZkRegDiscover(client)
 	return New(ctx, procName, confPath, disc, handler)
 }
 
@@ -80,9 +81,6 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-	if err := c.disc.Start(); err != nil {
-		return fmt.Errorf("start discover config center failed, err: %v", err)
-	}
 
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	procEvent, err := c.disc.Discover(procPath)

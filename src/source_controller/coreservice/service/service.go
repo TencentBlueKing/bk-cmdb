@@ -35,6 +35,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -80,7 +81,8 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var db dal.DB
 	var dbErr error
 	if cfg.Mongo.Transaction == "enable" {
-		db, dbErr = remote.NewWithDiscover(engin.Discover.TMServer().GetServers, cfg.Mongo)
+		blog.Infof("connecting to transaction manager")
+		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 			return
@@ -94,7 +96,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 	// connect the remote mongodb
 
-	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s))
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), mainline.New(db))
 }
 
 // WebService the web service
@@ -198,11 +200,11 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
 				defLang := s.language.CreateDefaultCCLanguageIf(language)
 

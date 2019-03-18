@@ -12,6 +12,10 @@
 
 package types
 
+import (
+	"fmt"
+)
+
 // zk path
 const (
 	CC_SERV_BASEPATH      = "/cc/services/endpoints"
@@ -138,4 +142,9 @@ type TopoServInfo struct {
 // EventServInfo topo server information
 type EventServInfo struct {
 	ServerInfo
+}
+
+// Address convert struct to host address
+func (s *ServerInfo) Address() string {
+	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }

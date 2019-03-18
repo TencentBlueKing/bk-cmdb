@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (asst *association) CreateAssociation(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error) {
+func (asst *association) CreateAssociationType(ctx context.Context, h http.Header, input *metadata.CreateAssociationKind) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/associationkind"
 
@@ -75,7 +75,7 @@ func (asst *association) SetManyAssociation(ctx context.Context, h http.Header, 
 	return
 }
 
-func (asst *association) UpdateAssociation(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
+func (asst *association) UpdateAssociationType(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error) {
 	resp = new(metadata.UpdatedOptionResult)
 	subPath := "/update/associationkind"
 
@@ -89,7 +89,7 @@ func (asst *association) UpdateAssociation(ctx context.Context, h http.Header, i
 	return
 }
 
-func (asst *association) DeleteAssociation(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
+func (asst *association) DeleteAssociationType(ctx context.Context, h http.Header, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error) {
 	resp = new(metadata.DeletedOptionResult)
 	subPath := "/delete/associationkind"
 
@@ -117,7 +117,7 @@ func (asst *association) DeleteAssociationCascade(ctx context.Context, h http.He
 	return
 }
 
-func (asst *association) ReadAssociation(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error) {
+func (asst *association) ReadAssociationType(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.SearchAssociationTypeResult, err error) {
 	resp = new(metadata.SearchAssociationTypeResult)
 	subPath := "/read/associationkind"
 
@@ -134,6 +134,20 @@ func (asst *association) ReadAssociation(ctx context.Context, h http.Header, inp
 func (asst *association) CreateModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
 	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/create/modelassociation"
+
+	err = asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
+	resp = new(metadata.CreatedOneOptionResult)
+	subPath := "/create/mainlinemodelassociation"
 
 	err = asst.client.Post().
 		WithContext(ctx).

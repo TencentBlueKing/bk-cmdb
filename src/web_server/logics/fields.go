@@ -62,7 +62,7 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 	if nil != err {
 		return nil, err
 	}
-	groups, err := lgc.getObjectGroup(objID, header)
+	groups, err := lgc.getObjectGroup(objID, header, meta)
 	if nil != err {
 		return nil, err
 	}
@@ -87,9 +87,18 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header) ([]PropertyGroup, error) {
-	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
-	condition := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadata.Metadata) ([]PropertyGroup, error) {
+	ownerID := util.GetOwnerID(header)
+    condition := mapstr.MapStr{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: common.BKDefaultOwnerID,
+		"page": mapstr.MapStr{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  common.BKPropertyGroupIndexField,
+		},
+		metadata.BKMetadata: meta,
+	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
 		blog.Errorf("get %s fields group return:%s, err:%s, rid:%s", objID, result, err.Error(), util.GetHTTPCCRequestID(header))

@@ -21,9 +21,9 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.ObjectDes, exists bool, err error) {
+func (m *modelManager) isExists(ctx core.ContextParams, cond universalsql.Condition) (oneModel *metadata.Object, exists bool, err error) {
 
-	oneModel = &metadata.ObjectDes{}
+	oneModel = &metadata.Object{}
 	err = m.dbProxy.Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(ctx, oneModel)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
 		blog.Errorf("request(%s): it is failed to execute database findone operation on the table (%#v) by the condition (%#v), error info is %s", ctx.ReqID, common.BKTableNameObjDes, cond.ToMapStr(), err.Error())

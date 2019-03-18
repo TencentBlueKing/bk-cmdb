@@ -241,6 +241,9 @@ func (o *object) GetMainlineChildObject() (Object, error) {
 		}
 
 		objItems := CreateObject(o.params, o.clientSet, rspRst)
+		if len(objItems) > 1 {
+			blog.Errorf("[model-obj] get multiple(%d) children for object(%s)", len(objItems), asst.ObjectID)
+		}
 		for _, item := range objItems {
 			// only one child in the main-line
 			return item, nil
@@ -286,14 +289,6 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	return pair, nil
 }
 
-// func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
-// 	cond := condition.CreateCondition()
-// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-// 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-// 	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
-//
-// 	return o.searchObjects(true, cond)
-// }
 func (o *object) GetParentObject() ([]ObjectAssoPair, error) {
 
 	cond := condition.CreateCondition()
@@ -351,7 +346,7 @@ func (o *object) CreateMainlineObjectAssociation(relateToObjID string) error {
 		IsPre:      &defined,
 	}
 
-	result, err := o.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
+	result, err := o.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), o.params.Header, &metadata.CreateModelAssociation{Spec: association})
 	if err != nil {
 		blog.Errorf("[model-obj] create mainline object association failed, err: %v", err)
 		return err

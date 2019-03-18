@@ -565,6 +565,7 @@ const (
 
 	// BKGseOpProcTaskDetailField gse operate process return detail
 	BKGseOpProcTaskDetailField = "detail"
+	BKGroupField               = "group"
 )
 
 const (
@@ -823,11 +824,11 @@ const (
 	BKHTTPSupplierID        = "bk_supplier_id"
 
 	// BKHTTPCCRequestID cc request id cc_request_id
-	BKHTTPCCRequestID = "CC_REQUEST_ID"
+	BKHTTPCCRequestID = "Cc_Request_Id"
 	// BKHTTPOtherRequestID esb request id  X-Bkapi-Request-Id
 	BKHTTPOtherRequestID  = "X-Bkapi-Request-Id"
-	BKHTTPCCRequestTime   = "CC_REQUEST_TIME"
-	BKHTTPCCTransactionID = "CC_TXN_ID"
+	BKHTTPCCRequestTime   = "Cc_Request_Time"
+	BKHTTPCCTransactionID = "Cc_Txn_Id"
 )
 
 type CCContextKey string
@@ -847,11 +848,6 @@ const (
 	HostOSTypeEnumWindows = "2"
 )
 
-const (
-	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
-	InstAsstIDSplit = ","
-)
-
 // integer const
 const (
 	MaxUint64  = ^uint64(0)
@@ -866,13 +862,9 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-//flag
+// flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
-const (
-	BKHTTPMIMEJSON = "application/json"
-)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -881,7 +873,7 @@ const (
 
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
-	// multiple url separeted by commas
+	// multiple url separated by commas
 	URLFilterWhiteListSuffix = "/healthz"
 
 	URLFilterWhiteListSepareteChar = ","
