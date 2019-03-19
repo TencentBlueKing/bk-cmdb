@@ -24,12 +24,13 @@ import (
 // IAMHandler sync resource to iam
 type IAMHandler struct {
 	*backbone.Engine
-	AuthConfig *authcenter.AuthConfig
+	AuthConfig authcenter.AuthConfig
 	Authorizer auth.Authorize
 }
 
 func (ih *IAMHandler) InitAuthClient() error {
-	authorize, err := auth.NewAuthorize(nil, *ih.AuthConfig)
+	blog.Infof("new auth client with config: %+v", ih.AuthConfig)
+	authorize, err := auth.NewAuthorize(nil, ih.AuthConfig)
 	if err != nil {
 		blog.Errorf("new auth client failed, err: %+v", err)
 		return fmt.Errorf("new auth client failed, err: %+v", err)
@@ -39,7 +40,7 @@ func (ih *IAMHandler) InitAuthClient() error {
 }
 
 // NewIAMHandler new a IAMHandler
-func NewIAMHandler(engine *backbone.Engine, authConfig *authcenter.AuthConfig) *IAMHandler {
+func NewIAMHandler(engine *backbone.Engine, authConfig authcenter.AuthConfig) *IAMHandler {
 	iamHandler := new(IAMHandler)
 	iamHandler.Engine = engine
 	iamHandler.AuthConfig = authConfig

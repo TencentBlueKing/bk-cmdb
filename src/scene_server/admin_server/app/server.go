@@ -30,6 +30,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
+	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"github.com/emicklei/go-restful"
@@ -91,6 +92,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 				return fmt.Errorf("new authcenter client failed: %v", err)
 			} else {
 				process.Service.SetAuthcenter(authcli)
+			}
+
+			// synchronizer used for synchronizing resources between iam and cmdb
+			sync := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, process.Core)
+			blog.Info("begin to start synchronizer ...")
+			err = sync.Run()
+			if err != nil {
+				return fmt.Errorf("run auth synchronizer routine failed %s", err.Error())
 			}
 		}
 		break

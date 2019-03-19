@@ -15,16 +15,16 @@ package synchronizer
 import (
 	"context"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/synchronizer/handler"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
-	"configcenter/src/scene_server/auth_synchronizer/app/options"
 )
 
 // AuthSynchronizer stores all related resource
 type AuthSynchronizer struct {
-	Config *options.Config
+	AuthConfig authcenter.AuthConfig
 	*backbone.Engine
 	ctx         context.Context
 	Workers     *[]Worker
@@ -33,8 +33,8 @@ type AuthSynchronizer struct {
 }
 
 // NewSynchronizer new a synchronizer object
-func NewSynchronizer(ctx context.Context, config *options.Config, backbone *backbone.Engine) *AuthSynchronizer {
-	return &AuthSynchronizer{ctx: ctx, Config: config, Engine: backbone}
+func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, backbone *backbone.Engine) *AuthSynchronizer {
+	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, Engine: backbone}
 }
 
 // Run do start synchronize
@@ -45,7 +45,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.WorkerQueue = make(chan meta.WorkRequest, 1000)
 
 	// make fake handler
-	handler := handler.NewIAMHandler(d.Engine)
+	handler := handler.NewIAMHandler(d.Engine, d.AuthConfig)
 
 	// init worker
 	workers := make([]Worker, 3)

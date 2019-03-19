@@ -41,7 +41,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	hosts, err := coreService.Instance().ReadInstance(context.Background(), *header, common.BKInnerObjIDHost, query)
+	hosts, err := coreService.Instance().ReadInstance(context.Background(), *header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessSimplify.BKAppIDField, err)
 		return fmt.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessSimplify.BKAppIDField, err)
@@ -71,6 +71,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 
 	// step2 generate host layers
 	businessID, batchLayers, err := extensions.GetHostLayers(coreService, header, &hostIDArr)
+	blog.V(5).Infof("batchLayers for business: %d is %+v", businessID, batchLayers)
 
 	// step3 generate host resource id
 	resources := make([]authmeta.ResourceAttribute, 0)
@@ -84,35 +85,35 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 			},
 			SupplierAccount: "",
 			BusinessID:      businessID,
-			Layers:          layer[0:1],
+			// Layers:          layer[0:1],
 		}
 		resources = append(resources, resource)
 	}
+	
+	blog.V(7).Infof("resources: %+v", resources)
 	desiredResources, err := ih.Authorizer.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
-		blog.Errorf("synchronize host instance failed, dry run register resource faileld, err: %+v", err)
+		blog.Errorf("synchronize host instance failed, dry run register resource failed, err: %+v", err)
 		return err
 	}
+	blog.V(5).Infof("desiredResources is: %+v", desiredResources)
 
 	// step4 get host by business from iam
 	// ListResources
-	item := authmeta.Item{
-		Type:       authmeta.Business,
-		InstanceID: businessID,
-	}
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
 			Type: authmeta.HostInstance,
 		},
 		SupplierAccount: "",
 		BusinessID:      businessID,
-		Layers:          []authmeta.Item{item},
+		// Layers:          []authmeta.Item{authmeta.Item{Type: authmeta.Business, InstanceID: businessID,}},
 	}
 	realResources, err := ih.Authorizer.ListResources(context.Background(), rs)
 	if err != nil {
-		blog.Errorf("synchronize host instance failed, DryRunRegisterResource faileld, err: %+v", err)
+		blog.Errorf("synchronize host instance failed, DryRunRegisterResource failed, err: %+v", err)
 		return err
 	}
+	blog.V(5).Infof("realResources is: %+v", realResources)
 
 	// step5 diff step2 and step4 result
 
