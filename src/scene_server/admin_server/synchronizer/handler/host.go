@@ -15,7 +15,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -35,7 +34,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	coreService := ih.CoreAPI.CoreService()
 
-	// step1 get host by business from core service
+	// step1 get instances by business from core service
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessSimplify.BKAppIDField)
 	query := &metadata.QueryCondition{
@@ -46,7 +45,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	hosts, err := coreService.Instance().ReadInstance(context.Background(), *header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
 		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessSimplify.BKAppIDField, err)
-		return fmt.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		return fmt.Errorf("get host by businessID:%d failed, err: %+v", businessSimplify.BKAppIDField, err)
 	}
 
 	if len(hosts.Data.Info) == 0 {
@@ -92,7 +91,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	}
 	blog.InfoJSON("realResources is: %s", realResources)
 
-	// init key:hit map for 
+	// init key:hit map for
 	iamResourceKeyMap := map[string]int{}
 	for _, iamResource := range realResources {
 		key := generateIAMResourceKey(iamResource)
@@ -130,7 +129,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 		resourceKey := generateCMDBResourceKey(&targetResource.Resources[0])
 		_, exist := iamResourceKeyMap[resourceKey]
 		if exist {
-			iamResourceKeyMap[resourceKey] += 1
+			iamResourceKeyMap[resourceKey]++
 		} else {
 			needRegister = append(needRegister, resource)
 		}
@@ -153,6 +152,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 			needDeregister = append(needDeregister, iamResource)
 		}
 	}
+	blog.V(5).Infof("needDeregister: %+v", needDeregister)
 	if len(needDeregister) != 0 {
 		blog.V(2).Infof("sychronizer deregister resource that only in iam, resources: %+v", needDeregister)
 		err = ih.Authorizer.RawDeregisterResource(context.Background(), scope, needDeregister...)
@@ -162,22 +162,4 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	}
 
 	return nil
-}
-
-func generateCMDBResourceKey(resource *authcenter.ResourceEntity) string {
-	resourcesIDs := make([]string, 0)
-	for _, resourceID := range resource.ResourceID {
-		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", resourceID.ResourceType, resourceID.ResourceID))
-	}
-	key := strings.Join(resourcesIDs, "-")
-	return key
-}
-
-func generateIAMResourceKey(iamResource authmeta.BackendResource) string {
-	resourcesIDs := make([]string, 0)
-	for _, iamLayer := range iamResource {
-		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", iamLayer.ResourceType, iamLayer.ResourceID))
-	}
-	key := strings.Join(resourcesIDs, "-")
-	return key
 }

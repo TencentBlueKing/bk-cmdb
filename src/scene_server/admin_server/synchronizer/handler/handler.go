@@ -14,9 +14,11 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 )
@@ -46,4 +48,22 @@ func NewIAMHandler(engine *backbone.Engine, authConfig authcenter.AuthConfig) *I
 	iamHandler.AuthConfig = authConfig
 	iamHandler.InitAuthClient()
 	return iamHandler
+}
+
+func generateCMDBResourceKey(resource *authcenter.ResourceEntity) string {
+	resourcesIDs := make([]string, 0)
+	for _, resourceID := range resource.ResourceID {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", resourceID.ResourceType, resourceID.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
+}
+
+func generateIAMResourceKey(iamResource authmeta.BackendResource) string {
+	resourcesIDs := make([]string, 0)
+	for _, iamLayer := range iamResource {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", iamLayer.ResourceType, iamLayer.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
 }
