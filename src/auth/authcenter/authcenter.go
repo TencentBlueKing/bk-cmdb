@@ -222,87 +222,100 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	return meta.Decision{Authorized: true}, nil
 }
 
-func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, as ...meta.AuthAttribute) (decisions []meta.Decision, err error) {
+func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error) {
 	if !ac.Config.Enable {
-		decisions = make([]meta.Decision, len(as), len(as))
+		decisions = make([]meta.Decision, len(resources), len(resources))
 		for i := range decisions {
 			decisions[i].Authorized = true
 		}
 	}
 
-	// resources := make([]meta.ResourceAttribute, 0)
-	// for _, rsc := range a.Resources {
-	// 	// check whether this request is in whitelist, so that it can be skip directly.
-	// 	if !permit.IsPermit(&rsc) {
-	// 		resources = append(resources, rsc)
-	// 	}
-	// }
+	header := http.Header{}
+	header.Set(AuthSupplierAccountHeaderKey, user.SupplierAccount)
 
-	// if len(resources) == 0 {
-	// 	// no resources need to be authorized.
-	// 	return meta.Decision{Authorized: true}, nil
-	// }
+	type AuthResult struct {
+		meta.ResourceAttribute
+		*meta.Decision // must use pointer
+		requestindex   int
+	}
 
-	// // there still have resource need to be authorized.
-	// // so, update the resources.
-	// a.Resources = resources
+	biz2res := map[int64][]AuthResult{}
+	decisions = make([]meta.Decision, len(resources), len(resources))
+	for i := 0; i < len(resources); i++ {
+		biz2res[resources[i].BusinessID] = append(biz2res[resources[i].BusinessID], AuthResult{ResourceAttribute: resources[i], Decision: &decisions[i]})
+	}
 
-	// info := &AuthBatch{
-	// 	Principal: Principal{
-	// 		Type: "user",
-	// 		ID:   a.User.UserName,
-	// 	},
-	// }
+	info := AuthBatch{
+		Principal: Principal{
+			Type: "user",
+			ID:   user.UserName,
+		},
+	}
+	for biz, ress := range biz2res {
+		if biz != 0 {
+			info.ScopeType = ScopeTypeIDBiz
+			info.ScopeID = strconv.FormatInt(biz, 10)
+		} else {
+			info.ScopeType = ScopeTypeIDBiz
+			info.ScopeID = SystemIDCMDB
+		}
+		requestindex := 0
+		for ressindex := range ress {
+			if permit.IsPermit(&ress[ressindex].ResourceAttribute) {
+				ress[ressindex].Decision.Authorized = true
+			} else {
+				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
+				if err != nil {
+					ress[ressindex].Decision.Authorized = false
+					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
+					continue
+				}
 
-	// // TODO: this operation may be wrong, because some api filters does not
-	// // fill the business id field, so these api should be normalized.
-	// if a.BusinessID != 0 {
-	// 	info.ScopeType = "biz"
-	// 	info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
-	// } else {
-	// 	info.ScopeType = "system"
-	// 	info.ScopeID = "bk_cmdb"
-	// }
+				actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
+				if err != nil {
+					ress[ressindex].Decision.Authorized = false
+					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
+					continue
+				}
 
-	// info.ResourceActions = make([]ResourceAction, 0)
-	// for _, rsc := range a.Resources {
+				info.ResourceActions = append(info.ResourceActions, ResourceAction{
+					ActionID:     actionID,
+					ResourceInfo: *rscInfo,
+				})
+				ress[ressindex].requestindex = requestindex
+				requestindex++
+			}
+		}
 
-	// 	rscInfo, err := adaptor(&rsc)
-	// 	if err != nil {
-	// 		return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
-	// 	}
+		batchresult, err := ac.authClient.verifyInList(ctx, header, &info)
+		if err != nil {
+			reason := fmt.Sprintf("verify failed, err: %v", err)
+			for _, res := range ress {
+				res.Authorized = false
+				res.Reason = reason
+			}
+			continue
+		}
+		for ressindex := range ress {
+			if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+				continue
+			}
+			if ress[ressindex].requestindex >= len(batchresult) {
+				ress[ressindex].Authorized = false
+				ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].requestindex, len(batchresult))
+				continue
+			}
+			if batchresult[ress[ressindex].requestindex].IsPass {
+				ress[ressindex].Authorized = true
+			} else {
+				ress[ressindex].Authorized = false
+				ress[ressindex].Reason = "permission deny"
+			}
+		}
+		info.ResourceActions = nil
+	}
 
-	// 	actionID, err := adaptorAction(&rsc)
-	// 	if err != nil {
-	// 		return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
-	// 	}
-
-	// 	info.ResourceActions = append(info.ResourceActions, ResourceAction{
-	// 		ActionID:     actionID,
-	// 		ResourceInfo: *rscInfo,
-	// 	})
-	// }
-
-	// header := http.Header{}
-	// header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierAccount)
-
-	// batchresult, err := ac.authClient.verifyInList(ctx, header, info)
-
-	// noAuth := make([]ResourceTypeID, 0)
-	// for _, item := range batchresult {
-	// 	if !item.IsPass {
-	// 		noAuth = append(noAuth, item.ResourceType)
-	// 	}
-	// }
-
-	// if len(noAuth) != 0 {
-	// 	return meta.Decision{
-	// 		Authorized: false,
-	// 		Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
-	// 	}, nil
-	// }
-
-	return nil, nil
+	return
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {

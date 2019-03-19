@@ -55,8 +55,8 @@ type ResourceInfo struct {
 }
 
 type ScopeInfo struct {
-	ScopeType string `json:"scope_type"`
-	ScopeID   string `json:"scope_id"`
+	ScopeType string `json:"scope_type,omitempty"`
+	ScopeID   string `json:"scope_id,omitempty"`
 }
 
 type ResourceResult struct {
