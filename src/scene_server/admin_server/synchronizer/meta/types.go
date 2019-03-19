@@ -56,4 +56,5 @@ type BusinessSimplify struct {
 	BKAppIDField      int64
 	BKSupplierIDField int64
 	BKOwnerIDField    string
+	BKAppNameField    string
 }
