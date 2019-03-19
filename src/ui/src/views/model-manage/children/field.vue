@@ -27,13 +27,18 @@
                         {{$tools.formatTime(item['create_time'])}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editField(item)">
+                        <span class="text-primary disabled mr10" v-if="isReadOnly">
+                            {{$t('Common["编辑"]')}}
+                        </span>
+                        <span class="text-primary mr10"
+                            v-else
+                            @click.stop="editField(item)">
                             {{$t('Common["编辑"]')}}
                         </span>
                         <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteField(item)">
                             {{$t('Common["删除"]')}}
                         </span>
-                        <span class="text-primary disabled" style="color: #3c96ff;" v-else>
+                        <span class="text-primary disabled" v-else>
                             {{$t('Common["删除"]')}}
                         </span>
                     </template>

@@ -16,12 +16,12 @@
                         <span class="group-name">{{group.info['bk_group_name']}}</span>
                         <span class="group-count">({{group.properties.length}})</span>
                         <i class="title-icon icon icon-cc-edit"
-                            v-if="authority.includes('update') && group.info['bk_group_id'] !== 'none'"
+                            v-if="authority.includes('update') && !isReadOnly && group.info['bk_group_id'] !== 'none'"
                             @click="handleEditGroupName(group)">
                         </i>
                     </template>
                 </div>
-                <div class="header-options fr" v-if="authority.includes('update')">
+                <div class="header-options fr" v-if="authority.includes('update') && !isReadOnly">
                     <i class="options-icon bk-icon icon-arrows-up"
                         v-tooltip="$t('ModelManagement[\'上移\']')"
                         :class="{disabled: index === 0 || ['none'].includes(group.info['bk_group_id'])}"
@@ -50,7 +50,7 @@
                     group: 'property',
                     animation: 150,
                     filter: '.filter-empty',
-                    disabled: !authority.includes('update')
+                    disabled: !authority.includes('update') || isReadOnly
                 }"
                 :class="{empty: !group.properties.length}"
                 @change="handleDragChange"
@@ -62,11 +62,11 @@
                     {{property['bk_property_name']}}
                 </li>
                 <template v-if="!group.properties.length">
-                    <li class="property-empty" v-if="authority.includes('update')" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
+                    <li class="property-empty" v-if="authority.includes('update') && !isReadOnly" @click="handleAddProperty(group)">{{$t('ModelManagement["立即添加"]')}}</li>
                     <li class="property-empty disabled" v-else>{{$t('ModelManagement["暂无字段"]')}}</li>
                 </template>
             </vue-draggable>
-            <template v-if="authority.includes('update')">
+            <template v-if="authority.includes('update') && !isReadOnly">
                 <div class="add-group" v-if="index === (groupedProperties.length - 2)">
                     <a class="add-group-trigger" href="javascript:void(0)"
                         v-if="!showAddGroup"
@@ -144,6 +144,15 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModel', [
+                'activeModel'
+            ]),
+            isReadOnly () {
+                if (this.activeModel) {
+                    return this.activeModel['bk_ispaused']
+                }
+                return false
+            },
             objId () {
                 return this.$route.params.modelId
             },
@@ -155,14 +164,6 @@
                     })
                 })
                 return properties
-            },
-            groupedPropertiesCount () {
-                const count = {}
-                this.groupedProperties.forEach(({group, properties}) => {
-                    const groupId = group['bk_group_id']
-                    count[groupId] = properties.length
-                })
-                return count
             },
             authority () {
                 const cantEdit = ['process', 'plat']
