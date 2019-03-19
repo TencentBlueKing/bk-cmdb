@@ -69,6 +69,10 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		}
 	}
 
+	if len(batch.ResourceActions) != len(resp.Data) {
+		return nil, fmt.Errorf("expect %d result, IAM returns %d result", len(batch.ResourceActions), len(resp.Data))
+	}
+
 	return resp.Data, nil
 }
 
@@ -88,7 +92,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-        // 1901409 is for: resource already exist, can not created repeatedly
+		// 1901409 is for: resource already exist, can not created repeatedly
 		if resp.Code == codeDuplicated {
 			return ErrDuplicated
 		}

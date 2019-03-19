@@ -31,13 +31,12 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
 
-	body := &metadata.AuthBathVerifyRequest{}
+	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
 		blog.Errorf("add subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
 	user := meta.UserInfo{
 		UserName:        util.GetUser(pheader),
 		SupplierAccount: ownerID,
@@ -45,11 +44,18 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
 
-	attrs := make([]meta.AuthAttribute, len(body.Resources), len(body.Resources))
+	attrs := make([]meta.ResourceAttribute, len(body.Resources), len(body.Resources))
 	for i, res := range body.Resources {
 		resources[i].AuthResource = res
 		attrs[i].BusinessID = res.BizID
-		attrs[i].Resources = nil
+		attrs[i].SupplierAccount = ownerID
+		attrs[i].Type = meta.ResourceType(res.ResourceType)
+		attrs[i].InstanceID = res.ResourceID
+		attrs[i].Action = meta.Action(res.Action)
+		attrs[i].SupplierAccount = ownerID
+		for _, item := range res.ParentLayers {
+			attrs[i].Layers = append(attrs[i].Layers, meta.Item{Type: meta.ResourceType(item.ResourceType), InstanceID: item.ResourceID})
+		}
 	}
 
 	verifyResults, err := s.authorizer.AuthorizeBatch(context.Background(), user, attrs...)
