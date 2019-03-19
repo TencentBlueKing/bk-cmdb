@@ -94,8 +94,10 @@ func NewBatchResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID
 
 // NewResourceAttribute new a resource attribute
 func NewResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID int64, resourceType meta.ResourceType, layer []meta.Item, action meta.Action) *meta.ResourceAttribute {
+	// parentLayers := layer[:len(layer)-1]
+	parentLayers := make([]meta.Item, 0)
 	resource := &meta.ResourceAttribute{
-		Layers:          layer,
+		Layers:          parentLayers,
 		BusinessID:      businessID,
 		SupplierAccount: commonInfo.User.SupplierAccount,
 	}
@@ -236,7 +238,9 @@ func (ha *HostAuthorizer) RegisterResourceWithLayers(requestHeader *http.Header,
 
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, layer := range *layers {
-		resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, meta.EmptyAction)
+		// TODO current version don't support register with layer
+		castrateLayer := layer[len(layer)-1:]
+		resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, castrateLayer, meta.EmptyAction)
 		resources = append(resources, *resource)
 	}
 

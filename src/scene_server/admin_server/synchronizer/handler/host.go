@@ -15,7 +15,9 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -73,54 +75,109 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	businessID, batchLayers, err := extensions.GetHostLayers(coreService, header, &hostIDArr)
 	blog.V(5).Infof("batchLayers for business: %d is %+v", businessID, batchLayers)
 
-	// step3 generate host resource id
-	resources := make([]authmeta.ResourceAttribute, 0)
-	for _, layer := range batchLayers {
-		lasteItem := layer[len(layer)-1]
-		resource := authmeta.ResourceAttribute{
-			Basic: authmeta.Basic{
-				Type:       lasteItem.Type,
-				Name:       lasteItem.Name,
-				InstanceID: lasteItem.InstanceID,
-			},
-			SupplierAccount: "",
-			BusinessID:      businessID,
-			// Layers:          layer[0:1],
-		}
-		resources = append(resources, resource)
-	}
-	
-	blog.V(7).Infof("resources: %+v", resources)
-	desiredResources, err := ih.Authorizer.DryRunRegisterResource(context.Background(), resources...)
-	if err != nil {
-		blog.Errorf("synchronize host instance failed, dry run register resource failed, err: %+v", err)
-		return err
-	}
-	blog.V(5).Infof("desiredResources is: %+v", desiredResources)
-
-	// step4 get host by business from iam
-	// ListResources
+	// step3 get host by business from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
 			Type: authmeta.HostInstance,
 		},
 		SupplierAccount: "",
 		BusinessID:      businessID,
-		// Layers:          []authmeta.Item{authmeta.Item{Type: authmeta.Business, InstanceID: businessID,}},
+		// iam don't support host layers yet.
+		// Layers:          []authmeta.Item{{Type: authmeta.Business, InstanceID: businessID,}},
 	}
 	realResources, err := ih.Authorizer.ListResources(context.Background(), rs)
 	if err != nil {
-		blog.Errorf("synchronize host instance failed, DryRunRegisterResource failed, err: %+v", err)
+		blog.Errorf("synchronize host instance failed, ListResources failed, err: %+v", err)
 		return err
 	}
-	blog.V(5).Infof("realResources is: %+v", realResources)
+	blog.InfoJSON("realResources is: %s", realResources)
 
-	// step5 diff step2 and step4 result
+	// init key:hit map for 
+	iamResourceKeyMap := map[string]int{}
+	for _, iamResource := range realResources {
+		key := generateIAMResourceKey(iamResource)
+		// init hit count 0
+		iamResourceKeyMap[key] = 0
+	}
 
 	// step6 register host not exist in iam
+	// step5 diff step2 and step4 result
+	scope := authcenter.ScopeInfo{}
+	needRegister := make([]authmeta.ResourceAttribute, 0)
+	for _, layer := range batchLayers {
+		lastItem := layer[len(layer)-1]
+		resource := authmeta.ResourceAttribute{
+			Basic: authmeta.Basic{
+				Type:       lastItem.Type,
+				Name:       lastItem.Name,
+				InstanceID: lastItem.InstanceID,
+			},
+			SupplierAccount: "",
+			BusinessID:      businessID,
+			// Layers:          layer[0:1],
+		}
+		targetResource, err := ih.Authorizer.DryRunRegisterResource(context.Background(), resource)
+		if err != nil {
+			blog.Errorf("synchronize host instance failed, dry run register resource failed, err: %+v", err)
+			return err
+		}
+		if len(targetResource.Resources) != 1 {
+			blog.Errorf("synchronize instance:%+v failed, dry run register result is: %+v", resource, targetResource)
+			continue
+		}
+		scope.ScopeID = targetResource.Resources[0].ScopeID
+		scope.ScopeType = targetResource.Resources[0].ScopeType
+		resourceKey := generateCMDBResourceKey(&targetResource.Resources[0])
+		_, exist := iamResourceKeyMap[resourceKey]
+		if exist {
+			iamResourceKeyMap[resourceKey] += 1
+		} else {
+			needRegister = append(needRegister, resource)
+		}
+	}
+	blog.V(5).Infof("iamResourceKeyMap: %+v", iamResourceKeyMap)
+	blog.V(5).Infof("needRegister: %+v", needRegister)
+	if len(needRegister) > 0 {
+		blog.V(2).Infof("sychronizer register resource that only in cmdb, resources: %+v", needRegister)
+		err = ih.Authorizer.RegisterResource(context.Background(), needRegister...)
+		if err != nil {
+			blog.ErrorJSON("sychronizer register resource that only in cmdb failed, resources: %s, err: %+v", needRegister, err)
+		}
+	}
 
-	// step7 deregister and register hosts that layers has changed
+	// step7 deregister resource id that hasn't been hit
+	needDeregister := make([]authmeta.BackendResource, 0)
+	for _, iamResource := range realResources {
+		resourceKey := generateIAMResourceKey(iamResource)
+		if iamResourceKeyMap[resourceKey] == 0 {
+			needDeregister = append(needDeregister, iamResource)
+		}
+	}
+	if len(needDeregister) != 0 {
+		blog.V(2).Infof("sychronizer deregister resource that only in iam, resources: %+v", needDeregister)
+		err = ih.Authorizer.RawDeregisterResource(context.Background(), scope, needDeregister...)
+		if err != nil {
+			blog.ErrorJSON("sychronizer deregister resource that only in iam failed, resources: %s, err: %+v", needDeregister, err)
+		}
+	}
 
-	// step8 deregister resource id that not in cmdb
 	return nil
+}
+
+func generateCMDBResourceKey(resource *authcenter.ResourceEntity) string {
+	resourcesIDs := make([]string, 0)
+	for _, resourceID := range resource.ResourceID {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", resourceID.ResourceType, resourceID.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
+}
+
+func generateIAMResourceKey(iamResource authmeta.BackendResource) string {
+	resourcesIDs := make([]string, 0)
+	for _, iamLayer := range iamResource {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", iamLayer.ResourceType, iamLayer.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
 }

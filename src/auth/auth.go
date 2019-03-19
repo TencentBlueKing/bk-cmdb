@@ -39,6 +39,8 @@ type ResourceHandler interface {
 	DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*authcenter.RegisterInfo, error)
 	// deregister a resource
 	DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
+	// deregister a resource with raw iam resource id
+	RawDeregisterResource(ctx context.Context, scope authcenter.ScopeInfo, rs ...meta.BackendResource) error
 	// update a resource's info
 	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info

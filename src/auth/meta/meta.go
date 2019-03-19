@@ -61,11 +61,13 @@ type Basic struct {
 	InstanceID int64
 }
 
-// BackendResource represent a resource in auth backend, like iam.
-type BackendResource struct{
-	ResourceType string `json:"resource_type"`
+// BackendResourceLayer represent one resource layer
+type BackendResourceLayer struct{
+	ResourceType string         `json:"resource_type"`
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
+// BackendResource represent a resource in auth backend, like iam.
+type BackendResource  []BackendResourceLayer
 
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {

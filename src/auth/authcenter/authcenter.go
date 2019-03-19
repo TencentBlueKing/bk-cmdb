@@ -194,9 +194,24 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 			return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
 		}
 
+		scope, err := ac.getScopeInfo(&rsc)
+		if err != nil {
+			return meta.Decision{}, err
+		}
+
+		entity := ResourceEntity{}
+		entity.ScopeInfo.ScopeID = scope.ScopeID
+		entity.ScopeInfo.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
+		
 		info.ResourceActions = append(info.ResourceActions, ResourceAction{
 			ActionID:     actionID,
-			ResourceInfo: *rscInfo,
+			ResourceInfo: ResourceInfo{
+				ResourceEntity: entity,
+				ResourceType: rscInfo.ResourceType,
+			},
 		})
 	}
 
@@ -268,8 +283,8 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 		entity := ResourceEntity{}
-		entity.ScopeID = scope.ScopeID
-		entity.ScopeType = scope.ScopeType
+		entity.ScopeInfo.ScopeID = scope.ScopeID
+		entity.ScopeInfo.ScopeType = scope.ScopeType
 		entity.ResourceType = rscInfo.ResourceType
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
@@ -373,7 +388,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	searchCondition := SearchCondition{
 		ScopeInfo:       *scopeInfo,
 		ResourceType:    *resourceType,
-		ParentResources: resourceID,
+		ParentResources: resourceID[:len(resourceID)-1],
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err
@@ -416,4 +431,34 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
+	}
+	info := DeregisterInfo{}
+	header := http.Header{}
+	for _, r := range rs {
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = ResourceTypeID(r[len(r)-1].ResourceType)
+		resourceID := make([]ResourceID, 0)
+		for _, item := range r {
+			resourceID = append(resourceID, ResourceID{
+				ResourceType: ResourceTypeID(item.ResourceType),
+				ResourceID: item.ResourceID,
+			})
+		}
+		entity.ResourceID = resourceID
+
+		info.Resources = append(info.Resources, entity)
+	}
+
+	return ac.authClient.deregisterResource(ctx, header, &info)
 }
