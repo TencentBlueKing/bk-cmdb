@@ -22,7 +22,7 @@
                         {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
                     </template>
                     <template v-else-if="header.id==='operation'">
-                        <template v-if="item.ispre">
+                        <template v-if="isReadOnly || item.ispre">
                             <span class="text-primary disabled mr10">
                                 {{$t('Common["编辑"]')}}
                             </span>
