@@ -206,6 +206,7 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 }
 
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	// translate all parent layers
 	resourceIDs := make([]ResourceID, 0)
 	for _, layer := range attribute.Layers {
 		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
@@ -214,10 +215,17 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 		}
 		resourceID := ResourceID{
 			ResourceType: *iamResourceType,
-			ResourceID:   fmt.Sprintf("%d", layer.InstanceID),
+			ResourceID:   strconv.FormatInt(layer.InstanceID, 10),
 		}
 		resourceIDs = append(resourceIDs, resourceID)
 	}
+	
+	// append host resource id to end
+	hostResourceID := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	resourceIDs = append(resourceIDs, hostResourceID)
 	return resourceIDs, nil
 }
 

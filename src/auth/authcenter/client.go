@@ -390,7 +390,7 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 	if err != nil {
 		return nil, fmt.Errorf("search resource with condition: %+v failed, error: %v", searchCondition, err)
 	}
-	if !resp.Result || resp.Code == 0{
+	if !resp.Result || resp.Code != 0{
 		return nil, fmt.Errorf("search resource with condition: %+v failed, message: %s, code: %v", searchCondition, resp.Message, resp.Code)
 	}
 
