@@ -208,9 +208,9 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 	resourceIDs := make([]ResourceID, 0)
 	for _, layer := range attribute.Layers {
-		iamResourceType, err := convertResourceType(attribute)
+		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
 		if err != nil {
-			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %+v, err: %+v", attribute, err)
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, layer: %+v, err: %+v", layer, err)
 		}
 		resourceID := ResourceID{
 			ResourceType: *iamResourceType,

@@ -241,12 +241,13 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 }
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
-	if !ac.Config.Enable {
+	if ac.Config.Enable == false {
+		blog.V(5).Infof("auth disabled, auth config: %+", ac.Config)
 		return nil, nil
 	}
 
 	if len(rs) <= 0 {
-		// no resource should be register
+		blog.V(5).Info("no resource should be register")
 		return nil, nil
 	}
 	info := RegisterInfo{}
@@ -273,8 +274,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
-		// TODO replace register with batch createorupdate interface, currently is register one by one.
-		info.Resources = make([]ResourceEntity, 0)
+		// TODO replace register with batch create or update interface, currently is register one by one.
 		info.Resources = append(info.Resources, entity)
 	}
 	return &info, nil
@@ -361,7 +361,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	resourceType, err := convertResourceType(r)
+	resourceType, err := convertResourceType(r.Type, r.BusinessID)
 	if err != nil {
 		return nil, err
 	}

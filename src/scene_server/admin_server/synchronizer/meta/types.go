@@ -39,16 +39,16 @@ type SyncHandler interface {
 	HandleBusinessSync(task *WorkRequest) error
 }
 
-// FakeHander impletes SyncHandler interface and do nothing
-type FakeHander struct{}
+// FakeHandler implement SyncHandler interface and do nothing
+type FakeHandler struct{}
 
-// HandleHostSync impletes SyncHandler interface
-func (h *FakeHander) HandleHostSync(task *WorkRequest) error {
+// HandleHostSync implement SyncHandler interface
+func (h *FakeHandler) HandleHostSync(task *WorkRequest) error {
 	return nil
 }
 
-// HandleBusinessSync impletes SyncHandler interface
-func (h *FakeHander) HandleBusinessSync(task *WorkRequest) error {
+// HandleBusinessSync implement SyncHandler interface
+func (h *FakeHandler) HandleBusinessSync(task *WorkRequest) error {
 	return nil
 }
 

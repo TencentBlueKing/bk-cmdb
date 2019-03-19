@@ -12,7 +12,7 @@ const (
 	SystemNameCMDB = "蓝鲸智云配置平台"
 )
 
-// ScopeTypeID constanst
+// ScopeTypeID constant
 const (
 	ScopeTypeIDSystem = "system"
 	ScopeTypeIDBiz    = "biz"
@@ -176,8 +176,8 @@ type BaseResponse struct {
 
 type SearchCondition struct {
 	ScopeInfo
-	ResourceType ResourceTypeID
-	ParentResources []ResourceID
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ParentResources []ResourceID `json:"parent_resources"`
 }
 
 type SearchResult struct {

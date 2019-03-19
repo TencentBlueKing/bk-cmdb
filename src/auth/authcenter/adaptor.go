@@ -23,11 +23,7 @@ import (
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
 
-func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
-	resourceType := attribute.Basic.Type
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
-
+func convertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
 	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
@@ -37,7 +33,7 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-		if attribute.BusinessID != 0 {
+		if businessID != 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
@@ -62,14 +58,14 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		return nil, errors.New("model instance association does not support  auth now")
 
 	case meta.ModelInstance:
-		if attribute.BusinessID == 0 {
+		if businessID == 0 {
 			iamResourceType = SysInstance
 		} else {
 			iamResourceType = BizInstance
 		}
 
 	case meta.HostInstance:
-		if attribute.BusinessID == 0 {
+		if businessID == 0 {
 			iamResourceType = SysHostInstance
 		} else {
 			iamResourceType = BizHostInstance
@@ -85,9 +81,9 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = BizProcessInstance
 
 	case meta.NetDataCollector:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
 
 	return &iamResourceType, nil
@@ -99,7 +95,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	resourceTypeID, err := convertResourceType(attribute)
+	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
 		return info, err
 	}
