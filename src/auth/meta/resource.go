@@ -12,6 +12,10 @@
 
 package meta
 
+import (
+	"configcenter/src/common"
+)
+
 type ResourceType string
 
 func (r ResourceType) String() string {
@@ -32,14 +36,15 @@ const (
 	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
+	HostUserCustom           ResourceType = "hostUserCustom"
 	ModelClassification      ResourceType = "modelClassification"
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
 	UserCustom               ResourceType = "hostCustomAPI"
 	HostFavorite             ResourceType = "hostFavorite"
-	HostInstance             ResourceType = "hostInstance"
 	Process                  ResourceType = "process"
+	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping"
 	EventPushing             ResourceType = "eventPushing"
@@ -188,3 +193,16 @@ var (
 		Actions: []Action{Find, FindMany, Update, UpdateMany, DeleteMany, Create, DeleteMany},
 	}
 )
+
+func GetResourceTypeByObjectType(object string) ResourceType {
+	switch object {
+	case common.BKInnerObjIDApp:
+		return Business
+	case common.BKInnerObjIDSet:
+		return ModelSet
+	case common.BKInnerObjIDModule:
+		return ModelModule
+	default:
+		return Model
+	}
+}

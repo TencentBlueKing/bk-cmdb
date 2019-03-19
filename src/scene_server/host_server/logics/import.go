@@ -30,26 +30,27 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
+func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
 
+	hostIDs := make([]int64, 0)
 	instance := NewImportInstance(ctx, ownerID, lgc)
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
 	}
 
 	hostIDMap, err := lgc.GetHostIDByIP(ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s", err.Error())
-		return nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
 	}
 
 	var errMsg, updateErrMsg, succMsg []string
 	logConents := make([]auditoplog.AuditLogExt, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	for index, host := range hostInfos {
@@ -81,7 +82,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		if bHostIDInInput == true {
 			intHostID, err = util.GetInt64ByInterface(hostIDFromInput)
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid host id: %v", hostIDFromInput)
+				return nil, nil, nil, nil, fmt.Errorf("invalid host id: %v", hostIDFromInput)
 			}
 		} else {
 			// try to get hostID from db
@@ -121,7 +122,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		// host info after it changed
 		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
 		// add audit log
@@ -134,6 +135,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			},
 			ExtKey: innerIP,
 		})
+		hostIDs = append(hostIDs, intHostID)
 	}
 
 	if len(logConents) > 0 {
@@ -144,15 +146,15 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		}
 		_, err := lgc.CoreAPI.AuditController().AddHostLogs(ctx, ownerID, strconv.FormatInt(appID, 10), lgc.user, lgc.header, log)
 		if err != nil {
-			return succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return hostIDs, succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return succMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
+		return hostIDs, succMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
 	}
 
-	return succMsg, updateErrMsg, errMsg, nil
+	return hostIDs, succMsg, updateErrMsg, errMsg, nil
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {

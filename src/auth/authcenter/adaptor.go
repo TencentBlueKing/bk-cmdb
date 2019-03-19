@@ -23,81 +23,88 @@ import (
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
 
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
 	resourceType := attribute.Basic.Type
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
+	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
-		info.ResourceType = SysBusinessInstance
+		iamResourceType = SysBusinessInstance
 
 	case meta.Model,
 		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
 		if attribute.BusinessID != 0 {
-			info.ResourceType = BizModel
+			iamResourceType = BizModel
 		} else {
-			info.ResourceType = SysModel
+			iamResourceType = SysModel
 		}
 
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
-		info.ResourceType = BizTopoInstance
+		iamResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
-		info.ResourceType = SysSystemBase
+		iamResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		if attribute.BusinessID == 0 {
-			info.ResourceType = SysModelGroup
-		} else {
-			info.ResourceType = BizModelGroup
-		}
+		iamResourceType = SysModelGroup
 
 	case meta.AssociationType:
-		info.ResourceType = SysAssociationType
+		iamResourceType = SysAssociationType
 
 	case meta.ModelAssociation:
-		return info, errors.New("model association does not support auth now")
+		return nil, errors.New("model association does not support auth now")
 
 	case meta.ModelInstanceAssociation:
-		return info, errors.New("model instance association does not support  auth now")
+		return nil, errors.New("model instance association does not support  auth now")
 
 	case meta.ModelInstance:
 		if attribute.BusinessID == 0 {
-			info.ResourceType = SysInstance
+			iamResourceType = SysInstance
 		} else {
-			info.ResourceType = BizInstance
+			iamResourceType = BizInstance
 		}
 
 	case meta.HostInstance:
 		if attribute.BusinessID == 0 {
-			info.ResourceType = SysHostInstance
+			iamResourceType = SysHostInstance
 		} else {
-			info.ResourceType = BizHostInstance
+			iamResourceType = BizHostInstance
 		}
 
-	case meta.DynamicGrouping:
-		info.ResourceType = BizCustomQuery
+	case meta.HostUserCustom:
+		iamResourceType = BizCustomQuery
 
 	case meta.HostFavorite:
-		return info, errors.New("host favorite does not support auth now")
+		return nil, errors.New("host favorite does not support auth now")
 
 	case meta.Process:
-		info.ResourceType = BizProcessInstance
-
-	case meta.EventPushing:
-		info.ResourceType = SysEventPushing
+		iamResourceType = BizProcessInstance
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
-
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
 	}
 
+	return &iamResourceType, nil
+}
+
+// ResourceTypeID is resource's type in auth center.
+func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	var err error
+	info := new(ResourceInfo)
+	info.ResourceName = attribute.Basic.Name
+
+	resourceTypeID, err := convertResourceType(attribute)
+	if err != nil {
+		return info, err
+	}
+	info.ResourceType = *resourceTypeID
+
 	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
 	if err != nil {
 		return nil, err

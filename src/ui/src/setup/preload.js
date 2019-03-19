@@ -4,10 +4,12 @@ const preloadConfig = {
 }
 
 export function _preloadPrivilege (app) {
+    /*
     return app.$store.dispatch('userPrivilege/getUserPrivilege', {
         ...preloadConfig,
         requestId: 'get_getUserPrivilege'
     })
+    */
 }
 
 export function _preloadClassifications (app) {
