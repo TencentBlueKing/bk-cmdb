@@ -222,7 +222,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	return meta.Decision{Authorized: true}, nil
 }
 
-func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, as ...meta.AuthAttribute) (decisions []meta.Decision, err error) {
+func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, as ...meta.AuthAttribute) (decisions []meta.Decision, err error) {
 	if !ac.Config.Enable {
 		decisions = make([]meta.Decision, len(as), len(as))
 		for i := range decisions {

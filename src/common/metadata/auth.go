@@ -13,10 +13,10 @@
 package metadata
 
 type AuthBathVerifyRequest struct {
-	Resources []AuthResources `json:"resources"`
+	Resources []AuthResource `json:"resources"`
 }
 
-type AuthResources struct {
+type AuthResource struct {
 	BizID        int64  `json:"bk_biz_id"`
 	ResourceType string `json:"resource_type"`
 	ResourceID   int64  `json:"resource_id"`
@@ -28,9 +28,9 @@ type AuthResources struct {
 }
 
 type AuthBathVerifyResult struct {
-	AuthResources
+	AuthResource
 	// the authorize decision, whether a user has been authorized or not.
-	Passed bool `json:"is_paas"`
+	Passed bool `json:"is_pass"`
 	// the detailed reason for this authorize.
 	Reason string `json:"reason"`
 }

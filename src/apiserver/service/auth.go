@@ -13,9 +13,11 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -36,9 +38,32 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resources := make([]metadata.AuthBathVerifyResult,len(body.Resources),len(body.Resources)
-
-	for _, res := range body.Resources {
-		
+	user := meta.UserInfo{
+		UserName:        util.GetUser(pheader),
+		SupplierAccount: ownerID,
 	}
+
+	resources := make([]metadata.AuthBathVerifyResult, len(body.Resources), len(body.Resources))
+
+	attrs := make([]meta.AuthAttribute, len(body.Resources), len(body.Resources))
+	for i, res := range body.Resources {
+		resources[i].AuthResource = res
+		attrs[i].BusinessID = res.BizID
+		attrs[i].Resources = nil
+	}
+
+	verifyResults, err := s.authorizer.AuthorizeBatch(context.Background(), user, attrs...)
+	if err != nil {
+		blog.Errorf("add subscription, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	for i, verifyResult := range verifyResults {
+		resources[i].Passed = verifyResult.Authorized
+		resources[i].Reason = verifyResult.Reason
+	}
+
+	resp.WriteAsJson(metadata.NewSuccessResp(resources))
+
 }
