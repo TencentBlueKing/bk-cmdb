@@ -15,8 +15,10 @@ package service
 import (
 	"net/http"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -27,7 +29,32 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 
-	if err := s.authCenter.Init(s.ctx); nil != err {
+	bizs := []metadata.BizInst{}
+	if err := s.db.Table(common.BKTableNameBaseApp).Find(condition.CreateCondition().Field("default").NotEq(1).ToMapStr()).All(s.ctx, &bizs); err != nil {
+		blog.Errorf("init authcenter error: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+		return
+	}
+
+	cls := []metadata.Classification{}
+	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &cls); err != nil {
+		blog.Errorf("init authcenter error: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+		return
+	}
+
+	models := []metadata.Object{}
+	if err := s.db.Table(common.BKTableNameObjDes).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &models); err != nil {
+		blog.Errorf("init authcenter error: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+		return
+	}
+
+	if err := s.authCenter.Init(s.ctx, meta.InitConfig{
+		Bizs:            bizs,
+		Models:          models,
+		Classifications: cls,
+	}); nil != err {
 		blog.Errorf("init authcenter error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
