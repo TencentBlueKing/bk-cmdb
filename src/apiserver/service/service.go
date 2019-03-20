@@ -137,9 +137,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
+		blog.InfoJSON("attr: %s", attribute)
 		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
 		if err != nil {
-			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", err)
+			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), err)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -150,7 +151,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !decision.Authorized {
-			blog.Errorf("request id: %s, auth failed. reason: ", err, decision.Reason)
+			blog.Errorf("request id: %s, auth failed. reason: %s ", util.GetHTTPCCRequestID(req.Request.Header), decision.Reason)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommAuthNotHavePermission,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),

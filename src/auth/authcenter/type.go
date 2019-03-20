@@ -32,14 +32,14 @@ type AuthConfig struct {
 type RegisterInfo struct {
 	CreatorType string           `json:"creator_type"`
 	CreatorID   string           `json:"creator_id"`
-	Resources   []ResourceEntity `json:"resources"`
+	Resources   []ResourceEntity `json:"resources,omitempty"`
 }
 
 type ResourceEntity struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ScopeInfo
 	ResourceName string       `json:"resource_name,omitempty"`
-	ResourceID   []ResourceID `json:"resource_id"`
+	ResourceID   []ResourceID `json:"resource_id,omitempty"`
 }
 
 type ResourceID struct {

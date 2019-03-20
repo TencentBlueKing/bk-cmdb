@@ -1002,7 +1002,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelClassification,
+					Type:   meta.Model,
 					Action: meta.FindMany,
 				},
 			},
