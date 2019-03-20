@@ -1286,7 +1286,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
-					Action: meta.Find,
+					Action: meta.FindMany,
 				},
 				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
 			},
