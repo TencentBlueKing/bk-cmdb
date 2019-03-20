@@ -113,7 +113,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		language := util.GetLanguage(req.Request.Header)
-		attribute, err := parser.ParseAttribute(req)
+		attribute, err := parser.ParseAttribute(req, s.engine)
 		if err != nil {
 			blog.Errorf("request id: %s, parse auth attribute for %s %s failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.Method, req.Request.URL.Path, err)
 			rsp := metadata.BaseResp{
@@ -140,7 +140,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		blog.InfoJSON("attr: %s", attribute)
 		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
 		if err != nil {
-			blog.Errorf("request id: %s, authorized failed, because authorize this request failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), err)
+			blog.Errorf("request id: %s, url: %s, authorized failed, because authorize this request failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.URL.Path, err)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -151,7 +151,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !decision.Authorized {
-			blog.Errorf("request id: %s, auth failed. reason: %s ", util.GetHTTPCCRequestID(req.Request.Header), decision.Reason)
+			blog.Errorf("request id: %s, url: %s, auth failed. reason: %s ", util.GetHTTPCCRequestID(req.Request.Header), req.Request.URL.Path, decision.Reason)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommAuthNotHavePermission,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
