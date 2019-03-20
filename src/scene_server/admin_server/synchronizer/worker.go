@@ -76,6 +76,10 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		w.SyncHandler.HandleBusinessSync(work)
 	case meta.HostResource:
 		w.SyncHandler.HandleHostSync(work)
+	case meta.SetResource:
+		w.SyncHandler.HandleSetSync(work)
+	case meta.ModuleResource:
+		w.SyncHandler.HandleModuleSync(work)
 	default:
 		blog.Errorf("work type:%s didn't register yet.", work.ResourceType)
 
