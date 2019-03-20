@@ -50,7 +50,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	appName, err := input.String(common.BKAppNameField)
+	procName, err := input.String(common.BKProcNameField)
 	if err != nil {
 		blog.Errorf("create process failed! get process name error, err: %v,input:%#v,rid:%s", err, input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
@@ -80,7 +80,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
 	}
 
-	err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(instID), authMeta.Create, appName)
+	err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(instID), authMeta.Create, procName)
 	if err != nil {
 		blog.Warnf("CreateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
 	}
@@ -125,10 +125,10 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
 	}
-	// change app name set value
-	appName := ""
-	if procData.Exists(common.BKAppNameField) {
-		appName, err = procData.String(common.BKAppNameField)
+	// change proc name set value
+	procName := ""
+	if procData.Exists(common.BKProcNameField) {
+		procName, err = procData.String(common.BKProcNameField)
 		if err != nil {
 			blog.Errorf("create process failed! get process name error, err: %v,input:%#v, url para:%#v,rid:%s", err, procData, req.PathParameters(), srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
@@ -163,7 +163,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	}
 	ps.addProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, srvData.header)
 	if procData.Exists(common.BKProcNameField) {
-		err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, appName)
+		err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, procName)
 		if err != nil {
 			blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
 		}
@@ -210,10 +210,10 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	var iProcIDArr []int
 	auditContentArr := make([]meta.Content, len(procIDArr))
 
-	// change app name set value
-	appName := ""
-	if procData.Exists(common.BKAppNameField) {
-		appName, err = procData.String(common.BKAppNameField)
+	// change process name set value
+	procName := ""
+	if procData.Exists(common.BKProcNameField) {
+		procName, err = procData.String(common.BKProcNameField)
 		if err != nil {
 			blog.Errorf("create process failed! get process name error, err: %v,input:%#v, url para:%#v,rid:%s", err, procData, req.PathParameters(), srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
@@ -274,7 +274,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			return
 		}
 		if procData.Exists(common.BKProcNameField) {
-			err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, appName)
+			err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, procName)
 			if err != nil {
 				blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
 			}
