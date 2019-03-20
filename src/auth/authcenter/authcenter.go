@@ -147,68 +147,12 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
-	resources := make([]meta.ResourceAttribute, 0)
-	for _, rsc := range a.Resources {
-		// check whether this request is in whitelist, so that it can be skip directly.
-		if !permit.IsPermit(&rsc) {
-			resources = append(resources, rsc)
-		}
-	}
 
-	if len(resources) == 0 {
-		// no resources need to be authorized.
-		return meta.Decision{Authorized: true}, nil
-	}
-
-	// there still have resource need to be authorized.
-	// so, update the resources.
-	a.Resources = resources
-
-	info := &AuthBatch{
-		Principal: Principal{
-			Type: "user",
-			ID:   a.User.UserName,
-		},
-	}
-
-	// TODO: this operation may be wrong, because some api filters does not
-	// fill the business id field, so these api should be normalized.
-	if a.BusinessID != 0 {
-		info.ScopeType = "biz"
-		info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
-	} else {
-		info.ScopeType = "system"
-		info.ScopeID = "bk_cmdb"
-	}
-
-	info.ResourceActions = make([]ResourceAction, 0)
-	for _, rsc := range a.Resources {
-
-		rscInfo, err := adaptor(&rsc)
-		if err != nil {
-			return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
-		}
-
-		actionID, err := adaptorAction(&rsc)
-		if err != nil {
-			return meta.Decision{}, fmt.Errorf("adaptor action failed, err: %v", err)
-		}
-
-		info.ResourceActions = append(info.ResourceActions, ResourceAction{
-			ActionID:     actionID,
-			ResourceInfo: *rscInfo,
-		})
-	}
-
-	header := http.Header{}
-	header.Set(AuthSupplierAccountHeaderKey, a.User.SupplierAccount)
-
-	batchresult, err := ac.authClient.verifyInList(ctx, header, info)
-
-	noAuth := make([]ResourceTypeID, 0)
-	for _, item := range batchresult {
-		if !item.IsPass {
-			noAuth = append(noAuth, item.ResourceType)
+	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
+	noAuth := make([]meta.ResourceType, 0)
+	for i, item := range batchresult {
+		if !item.Authorized {
+			noAuth = append(noAuth, a.Resources[i].Type)
 		}
 	}
 
@@ -235,8 +179,9 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 	type AuthResult struct {
 		meta.ResourceAttribute
-		*meta.Decision // must use pointer
-		requestindex   int
+		*meta.Decision     // must use pointer
+		exactResourceIndex int
+		anyResourceIndex   int
 	}
 
 	biz2res := map[int64][]AuthResult{}
@@ -245,7 +190,13 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		biz2res[resources[i].BusinessID] = append(biz2res[resources[i].BusinessID], AuthResult{ResourceAttribute: resources[i], Decision: &decisions[i]})
 	}
 
-	info := AuthBatch{
+	exactResourceInfo := AuthBatch{
+		Principal: Principal{
+			Type: "user",
+			ID:   user.UserName,
+		},
+	}
+	anyResourceInfo := AuthBatch{
 		Principal: Principal{
 			Type: "user",
 			ID:   user.UserName,
@@ -253,17 +204,24 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 	for biz, ress := range biz2res {
 		if biz != 0 {
-			info.ScopeType = ScopeTypeIDBiz
-			info.ScopeID = strconv.FormatInt(biz, 10)
+			exactResourceInfo.ScopeType = ScopeTypeIDBiz
+			exactResourceInfo.ScopeID = strconv.FormatInt(biz, 10)
+			anyResourceInfo.ScopeType = ScopeTypeIDBiz
+			anyResourceInfo.ScopeID = strconv.FormatInt(biz, 10)
 		} else {
-			info.ScopeType = ScopeTypeIDBiz
-			info.ScopeID = SystemIDCMDB
+			exactResourceInfo.ScopeType = ScopeTypeIDSystem
+			exactResourceInfo.ScopeID = SystemIDCMDB
+			anyResourceInfo.ScopeType = ScopeTypeIDSystem
+			anyResourceInfo.ScopeID = SystemIDCMDB
 		}
-		requestindex := 0
+		exactResourceIndex := 0
+		anyResourceIndex := 0
 		for ressindex := range ress {
 			if permit.IsPermit(&ress[ressindex].ResourceAttribute) {
+				blog.Debug("permited")
 				ress[ressindex].Decision.Authorized = true
 			} else {
+				blog.Debug("query permit %v", ress[ressindex])
 				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
 				if err != nil {
 					ress[ressindex].Decision.Authorized = false
@@ -278,41 +236,81 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 					continue
 				}
 
-				info.ResourceActions = append(info.ResourceActions, ResourceAction{
-					ActionID:     actionID,
-					ResourceInfo: *rscInfo,
-				})
-				ress[ressindex].requestindex = requestindex
-				requestindex++
+				if len(rscInfo.ResourceID) > 0 {
+					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, ResourceAction{
+						ActionID:     actionID,
+						ResourceInfo: *rscInfo,
+					})
+					ress[ressindex].exactResourceIndex = exactResourceIndex
+					exactResourceIndex++
+				} else {
+					anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, ResourceAction{
+						ActionID:     actionID,
+						ResourceInfo: *rscInfo,
+					})
+					ress[ressindex].anyResourceIndex = anyResourceIndex
+					anyResourceIndex++
+				}
+
 			}
 		}
 
-		batchresult, err := ac.authClient.verifyInList(ctx, header, &info)
-		if err != nil {
-			reason := fmt.Sprintf("verify failed, err: %v", err)
-			for _, res := range ress {
-				res.Authorized = false
-				res.Reason = reason
-			}
-			continue
-		}
-		for ressindex := range ress {
-			if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+		if len(exactResourceInfo.ResourceActions) > 0 {
+			batchresult, err := ac.authClient.verifyExactResourceBatch(ctx, header, &exactResourceInfo)
+			if err != nil {
+				reason := fmt.Sprintf("verify failed, err: %v", err)
+				for _, res := range ress {
+					res.Authorized = false
+					res.Reason = reason
+				}
 				continue
 			}
-			if ress[ressindex].requestindex >= len(batchresult) {
-				ress[ressindex].Authorized = false
-				ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].requestindex, len(batchresult))
-				continue
-			}
-			if batchresult[ress[ressindex].requestindex].IsPass {
-				ress[ressindex].Authorized = true
-			} else {
-				ress[ressindex].Authorized = false
-				ress[ressindex].Reason = "permission deny"
+			for ressindex := range ress {
+				if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+					continue
+				}
+				if ress[ressindex].exactResourceIndex >= len(batchresult) {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].exactResourceIndex, len(batchresult))
+					continue
+				}
+				if batchresult[ress[ressindex].exactResourceIndex].IsPass {
+					ress[ressindex].Authorized = true
+				} else {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = "permission deny"
+				}
 			}
 		}
-		info.ResourceActions = nil
+		if len(anyResourceInfo.ResourceActions) > 0 {
+			batchresult, err := ac.authClient.verifyAnyResourceBatch(ctx, header, &anyResourceInfo)
+			if err != nil {
+				reason := fmt.Sprintf("verify failed, err: %v", err)
+				for _, res := range ress {
+					res.Authorized = false
+					res.Reason = reason
+				}
+				continue
+			}
+			for ressindex := range ress {
+				if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+					continue
+				}
+				if ress[ressindex].anyResourceIndex >= len(batchresult) {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].anyResourceIndex, len(batchresult))
+					continue
+				}
+				if batchresult[ress[ressindex].anyResourceIndex].IsPass {
+					ress[ressindex].Authorized = true
+				} else {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = "permission deny"
+				}
+			}
+		}
+		exactResourceInfo.ResourceActions = nil
+		anyResourceInfo.ResourceActions = nil
 	}
 
 	return

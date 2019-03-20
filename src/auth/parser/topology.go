@@ -59,7 +59,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// create business, this is not a normalize api.
 	// TODO: update this api format.
-	if createBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
+	if ps.hitRegexp(createBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -73,7 +73,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// update business, this is not a normalize api.
 	// TODO: update this api format.
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("invalid update business request uri")
 			return ps
@@ -99,7 +99,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// update business enable status, this is not a normalize api.
 	// TODO: update this api format.
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("invalid update business enable status request uri")
 			return ps
@@ -125,7 +125,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// delete business, this is not a normalize api.
 	// TODO: update this api format
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodDelete {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("invalid delete business request uri")
 			return ps
@@ -151,7 +151,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// find business, this is not a normalize api.
 	// TODO: update this api format
-	if findBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
+	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -441,7 +441,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	}
 
 	// update object association operation
-	if updateObjectAssociationRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateObjectAssociationRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("update object association, but got invalid url")
 			return ps
@@ -466,7 +466,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	}
 
 	// delete object association operation
-	if deleteObjectAssociationRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodDelete {
+	if ps.hitRegexp(deleteObjectAssociationRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("delete object association, but got invalid url")
 			return ps

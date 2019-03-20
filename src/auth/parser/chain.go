@@ -179,7 +179,7 @@ func (ps *parseStream) finalizer() *parseStream {
 func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
 	result := reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
 	if result {
-		blog.Infof("match %s %s", httpMethod, reg)
+		blog.V(4).Infof("match %s %s", httpMethod, reg)
 	}
 	return result
 }
@@ -187,7 +187,7 @@ func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
 func (ps *parseStream) hitPattern(pattern, httpMethod string) bool {
 	result := pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
 	if result {
-		blog.Infof("match %s %s", httpMethod, pattern)
+		blog.V(4).Infof("match %s %s", httpMethod, pattern)
 	}
 	return result
 }

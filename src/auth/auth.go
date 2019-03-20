@@ -43,7 +43,7 @@ type ResourceHandler interface {
 	// get a resource's info
 	Get(ctx context.Context) error
 	// init the authcenter
-	Init(ctx context.Context) error
+	Init(ctx context.Context, config meta.InitConfig) error
 }
 
 // NewAuthorize is used to initialized a Authorize instance interface,
