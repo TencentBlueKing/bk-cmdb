@@ -32,6 +32,8 @@ func IsPermit(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.ModelUnique && rsc.Action == meta.FindMany:
 		return true
+	case rsc.Type == meta.ModelClassification && rsc.Action == meta.FindMany:
+		return true
 
 	case rsc.Type == meta.UserCustom:
 		return true
