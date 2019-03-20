@@ -131,18 +131,23 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodGet) {
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model.ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
@@ -1046,6 +1051,17 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model.ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
@@ -1055,14 +1071,9 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
-					Action: meta.Find,
+					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
 			},
 		}
 		return ps
