@@ -96,7 +96,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			CreatorType: "user",
 			Resources: []ResourceEntity{
 				{
-					ResourceType: SysModelGroup,
+					ResourceType: SysModel,
 					ResourceID: []ResourceID{
 						{ResourceType: SysModelGroup, ResourceID: strconv.FormatInt(clsID, 10)},
 						{ResourceType: SysModel, ResourceID: strconv.FormatInt(model.ID, 10)},
