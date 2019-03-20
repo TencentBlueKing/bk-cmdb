@@ -54,7 +54,7 @@ var (
 	createObjectUniqueLatestRegexp = regexp.MustCompile(`^/api/v3/create/objectunique/object/[^\s/]+/?$`)
 	updateObjectUniqueLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectunique/object/[^\s/]+/unique/[0-9]+/?$`)
 	deleteObjectUniqueLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectunique/object/[^\s/]+/unique/[0-9]+/?$`)
-	findObjectUniqueLatestRegexp   = regexp.MustCompile(`^/api/v3/find/objectunique/object/[^\s/]+`)
+	findObjectUniqueLatestRegexp   = regexp.MustCompile(`^/api/v3/find/objectunique/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectUniqueLatest() *parseStream {
@@ -130,7 +130,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	}
 
 	// find object unique operation.
-	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodGet) {
+	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
 		model, err := ps.getModel(ps.RequestCtx.Elements[5])
 		if err != nil {
 			ps.err = err
