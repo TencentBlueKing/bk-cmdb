@@ -21,6 +21,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
@@ -29,7 +30,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
+func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {
 	body, err := util.PeekRequest(req.Request)
 	if err != nil {
 		return nil, err
@@ -58,7 +59,7 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		Metadata: meta.Metadata,
 	}
 
-	stream, err := newParseStream(requestContext)
+	stream, err := newParseStream(requestContext, engine)
 	if err != nil {
 		return nil, err
 	}

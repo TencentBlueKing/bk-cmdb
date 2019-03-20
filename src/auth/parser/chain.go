@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
@@ -36,14 +37,15 @@ type parseStream struct {
 	Attribute  meta.AuthAttribute
 	err        error
 	action     meta.Action
+	engine     *backbone.Engine
 }
 
-func newParseStream(rc *RequestContext) (*parseStream, error) {
+func newParseStream(rc *RequestContext, engine *backbone.Engine) (*parseStream, error) {
 	if nil == rc {
 		return nil, errors.New("request context is nil")
 	}
 
-	return &parseStream{RequestCtx: rc}, nil
+	return &parseStream{RequestCtx: rc, engine: engine}, nil
 }
 
 // parse is used to parse the auth attribute from RequestContext.

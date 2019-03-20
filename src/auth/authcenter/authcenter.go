@@ -221,7 +221,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 				blog.Debug("permited")
 				ress[ressindex].Decision.Authorized = true
 			} else {
-				blog.Debug("query permit %v", ress[ressindex])
+				blog.Debug("query permit %+v", ress[ressindex])
 				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
 				if err != nil {
 					ress[ressindex].Decision.Authorized = false
