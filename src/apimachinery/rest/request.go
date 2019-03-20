@@ -32,7 +32,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
-    commonUtil "configcenter/src/common/util"
+	commonUtil "configcenter/src/common/util"
 )
 
 // map[url]responseDataString
@@ -282,19 +282,15 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
-					}
+					blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
 					return result
 				}
 				body = data
 			}
-			blog.V(9).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, \nresponse status: %s, response boyd: %s, rid: %s", string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s\nresponse status: %s, response body: %s, rid: %s", string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
-			if r.peek {
-				blog.V(5).Infof("[apimachinary][peek] %s %s with body: %s, response status: %s, response body: %s", string(r.verb), url, r.body, resp.Status, body)
-			}
+			result.Status = resp.Status
 
 			return result
 		}
@@ -322,6 +318,7 @@ type Result struct {
 	Body       []byte
 	Err        error
 	StatusCode int
+	Status     string
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -332,12 +329,14 @@ func (r *Result) Into(obj interface{}) error {
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
-			if http.StatusOK != r.StatusCode {
+			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
+	} else if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
 }

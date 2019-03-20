@@ -47,7 +47,7 @@ type authClient struct {
 	basicHeader http.Header
 }
 
-func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
+func (a *authClient) verifyExactResourceBatch(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/batch-verify", a.Config.SystemID)
@@ -69,6 +69,39 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		}
 	}
 
+	if len(batch.ResourceActions) != len(resp.Data) {
+		return nil, fmt.Errorf("expect %d result, IAM returns %d result", len(batch.ResourceActions), len(resp.Data))
+	}
+
+	return resp.Data, nil
+}
+
+func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
+	util.CopyHeader(a.basicHeader, header)
+	resp := new(BatchResult)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/any-resources-perms/batch-verify", a.Config.SystemID)
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(batch).
+		Do().Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, &AuthError{
+			RequestID: resp.RequestID,
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message),
+		}
+	}
+
+	if len(batch.ResourceActions) != len(resp.Data) {
+		return nil, fmt.Errorf("expect %d result, IAM returns %d result", len(batch.ResourceActions), len(resp.Data))
+	}
+
 	return resp.Data, nil
 }
 
@@ -88,7 +121,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-        // 1901409 is for: resource already exist, can not created repeatedly
+		// 1901409 is for: resource already exist, can not created repeatedly
 		if resp.Code == codeDuplicated {
 			return ErrDuplicated
 		}
