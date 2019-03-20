@@ -21,6 +21,8 @@ var (
 	HostResource = ResourceType("host")
 	// BusinessResource represent business resource
 	BusinessResource = ResourceType("business")
+	SetResource = ResourceType("set")
+	ModuleResource = ResourceType("module")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -37,19 +39,8 @@ type WorkRequest struct {
 type SyncHandler interface {
 	HandleHostSync(task *WorkRequest) error
 	HandleBusinessSync(task *WorkRequest) error
-}
-
-// FakeHandler implement SyncHandler interface and do nothing
-type FakeHandler struct{}
-
-// HandleHostSync implement SyncHandler interface
-func (h *FakeHandler) HandleHostSync(task *WorkRequest) error {
-	return nil
-}
-
-// HandleBusinessSync implement SyncHandler interface
-func (h *FakeHandler) HandleBusinessSync(task *WorkRequest) error {
-	return nil
+	HandleSetSync(task *WorkRequest) error
+	HandleModuleSync(task *WorkRequest) error
 }
 
 type BusinessSimplify struct {
@@ -57,4 +48,16 @@ type BusinessSimplify struct {
 	BKSupplierIDField int64
 	BKOwnerIDField    string
 	BKAppNameField    string
+}
+
+type SetSimplify struct {
+	BKAppIDField   int64
+	BKSetIDField   int64
+	BKSetNameField string
+}
+
+type ModuleSimplify struct {
+	BKAppIDField      int64
+	BKModuleIDField   int64
+	BKModuleNameField string
 }

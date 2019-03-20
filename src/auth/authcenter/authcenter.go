@@ -385,6 +385,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
+	blog.Infof("GenerateResourceID result: %+v", resourceID)
 	searchCondition := SearchCondition{
 		ScopeInfo:       *scopeInfo,
 		ResourceType:    *resourceType,

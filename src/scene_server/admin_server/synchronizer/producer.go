@@ -103,12 +103,15 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	}
 	blog.Info("list business businessList: %+v", businessList)
 
-	// job of synchronize business host to iam
-	for _, businessSimplify := range businessList {
-		jobs = append(jobs, meta.WorkRequest{
-			ResourceType: meta.HostResource,
-			Data:         businessSimplify,
-		})
+	// job of synchronize business scope resources to iam
+	resourceTypes := []meta.ResourceType{meta.HostResource, meta.SetResource, meta.ModuleResource}
+	for _, resourceType := range resourceTypes {
+		for _, businessSimplify := range businessList {
+			jobs = append(jobs, meta.WorkRequest{
+				ResourceType: resourceType,
+				Data:         businessSimplify,
+			})
+		}
 	}
 
 	return &jobs

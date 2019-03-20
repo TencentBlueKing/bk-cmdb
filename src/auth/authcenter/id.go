@@ -101,12 +101,22 @@ func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttrib
 // generate module resource id.
 func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return nil, nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("module:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
 func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return nil, nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("set:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
 func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {

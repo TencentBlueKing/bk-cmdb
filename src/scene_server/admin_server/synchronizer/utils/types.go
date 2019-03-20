@@ -38,7 +38,7 @@ func NewAPIHeaderByBusiness(businessSimplify *meta.BusinessSimplify) *http.Heade
 	header := http.Header{}
 	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", businessSimplify.BKSupplierIDField))
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)
-	header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%d", businessSimplify.BKOwnerIDField))
+	header.Add(common.BKHTTPOwnerID, fmt.Sprintf("%s", businessSimplify.BKOwnerIDField))
 	header.Add(common.BKHTTPOwner, common.BKSuperOwnerID)
 	return &header
 }
