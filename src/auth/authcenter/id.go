@@ -173,11 +173,11 @@ func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.
 	}
 	id := ResourceID{
 		ResourceType: SysModel,
-		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -187,11 +187,11 @@ func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 	}
 	id := ResourceID{
 		ResourceType: SysModel,
-		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -201,11 +201,11 @@ func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 	}
 	id := ResourceID{
 		ResourceType: SysModel,
-		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
