@@ -22,6 +22,8 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -68,23 +70,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	/*
-		authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
-		if err != nil {
-			return err
-		}
+	authConf, err := authcenter.ParseConfigFromKV("auth", apiSvr.Config)
+	if err != nil {
+		return err
+	}
 
-		authorize, err := auth.NewAuthorize(nil, authConf)
-		if err != nil {
-			return fmt.Errorf("new authorize failed, err: %v", err)
-		}
+	authorize, err := auth.NewAuthorize(nil, authConf)
+	if err != nil {
+		return fmt.Errorf("new authorize failed, err: %v", err)
+	}
 
-		blog.Infof("enable authcenter: %v", authConf.Enable)
+	blog.Infof("enable authcenter: %v", authConf.Enable)
 
-		svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
-	*/
+	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
 
-	svc.SetConfig(false, engine, client, engine.Discovery(), nil)
 	apiSvr.Core = engine
 	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
 		return err
