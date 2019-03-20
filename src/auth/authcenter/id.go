@@ -196,7 +196,12 @@ func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 }
 
 func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 	return nil, nil
 }
 
