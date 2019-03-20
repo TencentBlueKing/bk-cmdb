@@ -41,7 +41,6 @@ const (
 	CC_MODULE_CORESERVICE      = "coreservice"
 	GSE_MODULE_PROCSERVER      = "gseprocserver"
 	CC_MODULE_TXC              = "txc"
-	CC_MODULE_AUTH_SYNCHROIZER = "auth_synchroizer"
 )
 
 // AllModule all cc module
