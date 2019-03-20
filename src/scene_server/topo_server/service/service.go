@@ -192,7 +192,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 				metadata := metadata.NewMetaDataFromMap(mData)
-				data, dataErr := act.HandlerFunc(types.ContextParams{
+				handlerContext := types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
 					Lang:            defLang,
@@ -202,23 +202,21 @@ func (s *Service) Actions() []*httpserver.Action {
 					User:            user,
 					Engin:           s.Engine,
 					MetaData:        metadata,
-				},
-					req.PathParameter,
-					req.QueryParameter,
-					mData)
+				}
+				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter,  req.QueryParameter, mData)
 
-				if nil != dataErr {
-					switch e := dataErr.(type) {
-					default:
-						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
-					case errors.CCErrorCoder:
-						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
-					}
+				if dataErr == nil {
+					s.sendResponse(resp, common.CCSuccess, data)
 					return
 				}
-
-				s.sendResponse(resp, common.CCSuccess, data)
-
+				
+				switch e := dataErr.(type) {
+				case errors.CCErrorCoder:
+					s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
+				default:
+					s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
+				}
+				return
 			}})
 		}(a)
 

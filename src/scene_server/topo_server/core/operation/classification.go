@@ -13,18 +13,19 @@
 package operation
 
 import (
-	"configcenter/src/scene_server/topo_server/core/auth"
-	"context"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"context"
 )
 
 // ClassificationOperationInterface classification opoeration methods
@@ -87,13 +88,26 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 		return nil, err
 	}
 
+	// auth: check authorization
+	class := cls.Classify()
+	bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
+	if err != nil {
+		return nil, err
+	}
+	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeResourceCreate(params.Context, params.Header, bizID, meta.ModelClassification); err != nil {
+		blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
+		return nil, err
+	}
+	
 	err = cls.Create()
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s", cls, err.Error())
 		return nil, err
 	}
 
-	class := cls.Classify()
+	// auth: register new created classify
+	class = cls.Classify()
 	if err := c.auth.RegisterClassification(params.Context, params.Header, &class); err != nil {
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
@@ -119,6 +133,17 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		return err
 	}
 
+	// auth: check authorization
+	classes := make([]*metadata.Classification, 0)
+	for _, clsItem := range clsItems {
+		class := clsItem.Classify()
+		classes = append(classes, &class)
+	}
+	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
+		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
+	}
+	
 	for _, cls := range clsItems {
 		objs, err := cls.GetObjects()
 		if nil != err {
@@ -265,6 +290,13 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 		}
 	}
 
+	// auth: check authorization
+	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, &class); err != nil {
+		blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
+		return err
+	}
+	
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
