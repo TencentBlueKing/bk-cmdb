@@ -34,19 +34,12 @@ type HostAuthorizer struct {
 
 // NewHostAuthorizer new authorizer for host server
 func NewHostAuthorizer(tls *util.TLSClientConfig, optionConfig authcenter.AuthConfig) (*HostAuthorizer, error) {
-	config := authcenter.AuthConfig{
-		Address:   optionConfig.Address,
-		AppCode:   optionConfig.AppCode,
-		AppSecret: optionConfig.AppSecret,
-		SystemID:  authcenter.SystemIDCMDB,
-		Enable:    optionConfig.Enable,
-	}
-	authAuthorizer, err := auth.NewAuthorize(tls, config)
+	authAuthorizer, err := auth.NewAuthorize(tls, optionConfig)
 	if err != nil {
 		blog.Errorf("new host authorizer failed, err: %+v", err)
 		return nil, fmt.Errorf("new host authorizer failed, err: %+v", err)
 	}
-	authRegister, err := auth.NewAuthorize(tls, config)
+	authRegister, err := auth.NewAuthorize(tls, optionConfig)
 	if err != nil {
 		blog.Errorf("new host authorizer failed, err: %+v", err)
 		return nil, fmt.Errorf("new host authorizer failed, err: %+v", err)

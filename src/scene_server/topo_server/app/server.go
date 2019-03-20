@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/auth/authcenter"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +21,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,7 +35,6 @@ import (
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/remote"
-	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -58,6 +60,12 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+
+	var err error
+	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
 }
 
 // Run main function
@@ -95,7 +103,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authAPI, err := topoauth.NewTopologyAuth(server.Config.ConfigMap)
+	authAPI, err := topoauth.NewTopologyAuth(nil, server.Config.Auth)
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}

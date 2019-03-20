@@ -65,7 +65,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	if false == configReady {
 		blog.Infof("waiting config timeout.")
-		return errors.New("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {

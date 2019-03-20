@@ -13,17 +13,19 @@
 package operation
 
 import (
-	"context"
-
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"context"
 )
 
 // AttributeOperationInterface attribute operation methods
@@ -38,14 +40,16 @@ type AttributeOperationInterface interface {
 }
 
 // NewAttributeOperation create a new attribute operation instance
-func NewAttributeOperation(client apimachinery.ClientSetInterface) AttributeOperationInterface {
+func NewAttributeOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) AttributeOperationInterface {
 	return &attribute{
 		clientSet: client,
+		auth:      auth,
 	}
 }
 
 type attribute struct {
 	clientSet    apimachinery.ClientSetInterface
+	auth         *topoauth.TopoAuth
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	obj          ObjectOperationInterface
@@ -72,13 +76,20 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	}
 
 	// check the object id
-	err = a.obj.IsValidObject(params, att.Attribute().ObjectID)
+	objID := att.Attribute().ObjectID
+	err = a.obj.IsValidObject(params, objID)
 	if nil != err {
 		return nil, params.Err.New(common.CCErrTopoObjectAttributeCreateFailed, err.Error())
 	}
 
-	// check is the group exist
+	// auth: check authorization
+	authManager := extensions.NewAuthManager(a.clientSet, a.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+		blog.V(2).Infof("check authorization for create model attribute failed, err: %+v", err)
+		return nil, err
+	}
 
+	// check is the group exist
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(att.Attribute().ObjectID)
 	cond.Field(common.BKPropertyGroupIDField).Eq(att.Attribute().PropertyGroup)
@@ -127,6 +138,19 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 		return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, err.Error())
 	}
 
+	// auth: check authorization
+	var objID string
+	for idx, attrItem := range attrItems {
+		oID := attrItem.Attribute().ObjectID
+		if idx == 0 && objID != oID {
+			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, "can't attributes of multiple model per request")
+		}
+	}
+	authManager := extensions.NewAuthManager(a.clientSet, a.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
+	}
+
 	for _, attrItem := range attrItems {
 		// delete the attribute
 		rsp, err := a.clientSet.CoreService().Model().DeleteModelAttr(context.Background(), params.Header, attrItem.Attribute().ObjectID, &metadata.DeleteOption{Condition: cond.ToMapStr()})
@@ -143,6 +167,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 
 	return nil
 }
+
 func (a *attribute) FindObjectAttributeWithDetail(params types.ContextParams, cond condition.Condition) ([]*metadata.ObjAttDes, error) {
 	attrs, err := a.FindObjectAttribute(params, cond)
 	if nil != err {
@@ -197,6 +222,14 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 }
 
 func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error {
+	
+	// auth: check authorization
+	authManager := extensions.NewAuthManager(a.clientSet, a.auth.Authorizer, params.Err)
+	if err := authManager.AuthorizeByAttributeID(params.Context, params.Header, meta.Update, attID); err != nil {
+		blog.V(2).Infof("update model attribute %d failed, authorization failed, err: %+v", attID, err)
+		return err
+	}
+
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
 		Data:      data,
