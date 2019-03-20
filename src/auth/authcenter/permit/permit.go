@@ -18,33 +18,35 @@ import "configcenter/src/auth/meta"
 // so that it is not need to check permission status in auth center.
 func IsPermit(rsc *meta.ResourceAttribute) bool {
 
-	if rsc.Type == meta.ModelClassification && rsc.Action == meta.FindMany {
-		return true
-	}
+	switch {
 
-	if rsc.Type == meta.AssociationType && rsc.Action == meta.FindMany {
+	case rsc.Type == meta.ModelClassification && rsc.Action == meta.FindMany:
 		return true
-	}
 
-	if rsc.Type == meta.Model && rsc.Action == meta.FindMany {
+	case rsc.Type == meta.AssociationType && rsc.Action == meta.FindMany:
 		return true
-	}
 
-	if rsc.Type == meta.UserCustom {
+	case rsc.Type == meta.Model && rsc.Action == meta.FindMany:
 		return true
-	}
+	case rsc.Type == meta.ModelAttribute && rsc.Action == meta.FindMany:
+		return true
+	case rsc.Type == meta.ModelUnique && rsc.Action == meta.FindMany:
+		return true
+	case rsc.Type == meta.ModelAttributeGroup && rsc.Action == meta.FindMany:
+		return true
 
-	if rsc.Type == meta.ModelAssociation && rsc.Action == meta.FindMany {
+	case rsc.Type == meta.UserCustom:
 		return true
-	}
+
+	case rsc.Type == meta.ModelAssociation && rsc.Action == meta.FindMany:
+		return true
 
 	// all the model instance association related operation is all authorized for now.
-	if rsc.Type == meta.ModelInstanceAssociation {
+	case rsc.Type == meta.ModelInstanceAssociation:
 		return true
-	}
 
 	// all the network data collector related operation is all authorized for now.
-	if rsc.Type == meta.NetDataCollector {
+	case rsc.Type == meta.NetDataCollector:
 		return true
 	}
 

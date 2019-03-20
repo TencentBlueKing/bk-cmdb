@@ -74,6 +74,9 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 
 // generate business related resource id.
 func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
@@ -85,15 +88,13 @@ func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 // generate model's resource id, works for app model and model management
 // resource type in auth center.
 func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
 	}
-
-	if attribute.BusinessID != 0 {
-		id.ResourceID = fmt.Sprintf("%d#%d", attribute.BusinessID, attribute.InstanceID)
-	} else {
-		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
-	}
+	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 
 	return []ResourceID{id}, nil
 }
@@ -162,27 +163,50 @@ func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.
 	id := ResourceID{
 		ResourceType: resourceType,
 	}
-	if attribute.BusinessID != 0 {
-		id.ResourceID = fmt.Sprintf("%d#%d", attribute.BusinessID, attribute.InstanceID)
-	} else {
-		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
-	}
+	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
 func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
 func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
 func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
 func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {

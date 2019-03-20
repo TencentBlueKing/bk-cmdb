@@ -14,10 +14,14 @@ package authcenter
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
+
+	"configcenter/src/auth/meta"
 )
 
-func (ac *AuthCenter) Init(ctx context.Context) error {
+func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 	header := http.Header{}
 	if err := ac.authClient.RegistSystem(ctx, header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
@@ -34,11 +38,106 @@ func (ac *AuthCenter) Init(ctx context.Context) error {
 		return err
 	}
 
-	if err := ac.authClient.registerResource(ctx, header, &expectModelGroupResourceInst); err != nil && err != ErrDuplicated {
-		return err
+	// init model classifaction
+	clsName2ID := map[string]int64{}
+	for _, cls := range configs.Classifications {
+		bizID, _ := cls.Metadata.Label.GetBusinessID()
+		clsName2ID[fmt.Sprintf("%d:%s", bizID, cls.ClassificationID)] = cls.ID
+
+		scopeType := ScopeTypeIDSystem
+		ScopeID := SystemIDCMDB
+
+		if bizID > 0 {
+			scopeType = ScopeTypeIDBiz
+			ScopeID = strconv.FormatInt(bizID, 10)
+		}
+
+		info := RegisterInfo{
+			CreatorID:   "system",
+			CreatorType: "user",
+			Resources: []ResourceEntity{
+				{
+					ResourceType: SysModelGroup,
+					ResourceID: []ResourceID{
+						{ResourceType: SysModelGroup, ResourceID: strconv.FormatInt(cls.ID, 10)},
+					},
+					ResourceName: cls.ClassificationName,
+					ScopeInfo: ScopeInfo{
+						ScopeType: scopeType,
+						ScopeID:   ScopeID,
+					},
+				},
+			},
+		}
+
+		if err := ac.authClient.registerResource(ctx, header, &info); err != nil && err != ErrDuplicated {
+			return err
+		}
 	}
-	if err := ac.authClient.registerResource(ctx, header, &expectModelResourceInst); err != nil && err != ErrDuplicated {
-		return err
+
+	// init model description
+	for _, model := range configs.Models {
+		bizID, _ := model.Metadata.Label.GetBusinessID()
+		clsID := clsName2ID[fmt.Sprintf("%d:%s", bizID, model.ObjCls)]
+		if clsID <= 0 {
+			return fmt.Errorf("classification id not found")
+		}
+
+		scopeType := ScopeTypeIDSystem
+		ScopeID := SystemIDCMDB
+
+		if bizID > 0 {
+			scopeType = ScopeTypeIDBiz
+			ScopeID = strconv.FormatInt(bizID, 10)
+		}
+
+		info := RegisterInfo{
+			CreatorID:   "system",
+			CreatorType: "user",
+			Resources: []ResourceEntity{
+				{
+					ResourceType: SysModelGroup,
+					ResourceID: []ResourceID{
+						{ResourceType: SysModelGroup, ResourceID: strconv.FormatInt(clsID, 10)},
+						{ResourceType: SysModel, ResourceID: strconv.FormatInt(model.ID, 10)},
+					},
+					ResourceName: model.ObjectName,
+					ScopeInfo: ScopeInfo{
+						ScopeType: scopeType,
+						ScopeID:   ScopeID,
+					},
+				},
+			},
+		}
+
+		if err := ac.authClient.registerResource(ctx, header, &info); err != nil && err != ErrDuplicated {
+			return err
+		}
+	}
+
+	// init business inst
+	for _, biz := range configs.Bizs {
+		bkbiz := RegisterInfo{
+			CreatorID:   "system",
+			CreatorType: "user",
+			Resources: []ResourceEntity{
+				{
+					ResourceType: SysBusinessInstance,
+					ResourceID: []ResourceID{
+						{ResourceType: SysBusinessInstance, ResourceID: strconv.FormatInt(biz.BizID, 10)},
+					},
+					ResourceName: biz.BizName,
+					ScopeInfo: ScopeInfo{
+						ScopeType: "system",
+						ScopeID:   SystemIDCMDB,
+					},
+				},
+			},
+		}
+
+		if err := ac.authClient.registerResource(ctx, header, &bkbiz); err != nil && err != ErrDuplicated {
+			return err
+		}
 	}
 
 	return nil

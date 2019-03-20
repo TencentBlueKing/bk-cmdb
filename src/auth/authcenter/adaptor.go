@@ -23,6 +23,8 @@ import (
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
 
+var NotEnoughLayer = fmt.Errorf("not enough layer")
+
 func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
 	resourceType := attribute.Basic.Type
 	info := new(ResourceInfo)
@@ -33,10 +35,13 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 	case meta.Business:
 		iamResourceType = SysBusinessInstance
 
-	case meta.Model,
-		meta.ModelUnique,
+	case meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
+
+		fallthrough
+	case meta.Model:
+
 		if attribute.BusinessID != 0 {
 			iamResourceType = BizModel
 		} else {
