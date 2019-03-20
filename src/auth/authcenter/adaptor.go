@@ -39,13 +39,6 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
 
-		if len(attribute.Layers) < 2 {
-			return nil, NotEnoughLayer
-		}
-		attribute.Type = attribute.Layers[1].Type
-		attribute.InstanceID = attribute.Layers[1].InstanceID
-		attribute.Layers = attribute.Layers[:1]
-
 		fallthrough
 	case meta.Model:
 

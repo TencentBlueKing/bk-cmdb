@@ -163,27 +163,50 @@ func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.
 	id := ResourceID{
 		ResourceType: resourceType,
 	}
-	if attribute.BusinessID != 0 {
-		id.ResourceID = fmt.Sprintf("%d#%d", attribute.BusinessID, attribute.InstanceID)
-	} else {
-		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
-	}
+	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
 func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	return []ResourceID{id}, nil
 }
 
 func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	return []ResourceID{id}, nil
 }
 
 func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	return []ResourceID{id}, nil
 }
 
 func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
