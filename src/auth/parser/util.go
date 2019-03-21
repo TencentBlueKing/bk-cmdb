@@ -22,22 +22,25 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (ps *parseStream) getModel(modelID string) (metadata.Object, error) {
+func (ps *parseStream) getModel(modelID interface{}) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: modelID}})
 	if err != nil {
-		return metadata.Object{}, err
+		return nil, err
 	}
 
 	if !model.Result {
-		return metadata.Object{}, errors.New(model.Code, model.ErrMsg)
+		return nil, errors.New(model.Code, model.ErrMsg)
 	}
-
 	if len(model.Data.Info) <= 0 {
-		return metadata.Object{}, fmt.Errorf("model [%s] not found", modelID)
+		return nil, fmt.Errorf("model [%s] not found", modelID)
 	}
 
-	return model.Data.Info[0].Spec, nil
+	models := []metadata.Object{}
+	for _, info := range model.Data.Info {
+		models = append(models, info.Spec)
+	}
+	return models, nil
 }
 
 func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {

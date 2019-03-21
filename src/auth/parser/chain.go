@@ -34,7 +34,7 @@ type RequestContext struct {
 
 type parseStream struct {
 	RequestCtx *RequestContext
-	Attribute  []meta.ResourceAttribute
+	Attribute  meta.AuthAttribute
 	err        error
 	action     meta.Action
 	engine     *backbone.Engine

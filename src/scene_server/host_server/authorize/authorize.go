@@ -63,9 +63,8 @@ func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 	resourceType meta.ResourceType, instanceIDs *[]int64, action meta.Action) *meta.AuthAttribute {
 
 	iamAuthorizeRequestBody := &meta.AuthAttribute{
-		BusinessID: businessID,
-		User:       commonInfo.User,
-		Resources:  make([]meta.ResourceAttribute, 0),
+		User:      commonInfo.User,
+		Resources: make([]meta.ResourceAttribute, 0),
 	}
 
 	for _, instanceID := range *instanceIDs {
@@ -80,9 +79,8 @@ func NewBatchResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID
 	resourceType meta.ResourceType, layers [][]meta.Item, action meta.Action) *meta.AuthAttribute {
 
 	iamAuthorizeRequestBody := &meta.AuthAttribute{
-		BusinessID: businessID,
-		User:       commonInfo.User,
-		Resources:  make([]meta.ResourceAttribute, 0),
+		User:      commonInfo.User,
+		Resources: make([]meta.ResourceAttribute, 0),
 	}
 
 	for _, layer := range layers {

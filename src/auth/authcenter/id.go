@@ -162,7 +162,9 @@ func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.
 	id := ResourceID{
 		ResourceType: resourceType,
 	}
-	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
+	if attribute.InstanceID > 0 {
+		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
+	}
 	return []ResourceID{id}, nil
 }
 

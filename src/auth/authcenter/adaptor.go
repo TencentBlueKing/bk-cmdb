@@ -42,7 +42,7 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		fallthrough
 	case meta.Model:
 
-		if attribute.BusinessID != 0 {
+		if attribute.BusinessID > 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
@@ -55,7 +55,11 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		iamResourceType = SysModelGroup
+		if attribute.BusinessID > 0 {
+			iamResourceType = BizModelGroup
+		} else {
+			iamResourceType = SysModelGroup
+		}
 
 	case meta.AssociationType:
 		iamResourceType = SysAssociationType

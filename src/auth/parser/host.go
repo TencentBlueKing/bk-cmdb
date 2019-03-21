@@ -7,8 +7,10 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
-	"configcenter/src/common/json"
+	"configcenter/src/common"
 	"configcenter/src/framework/core/errors"
+
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -38,19 +40,11 @@ var (
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
-	type Business struct {
-		BusinessID int64
-	}
-
-	biz := new(Business)
-	if err := json.Unmarshal(ps.RequestCtx.Body, biz); err != nil {
-		return 0, err
-	}
-
-	if biz.BusinessID == 0 {
+	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+	if bizID == 0 {
 		return 0, errors.New("can not parse business id")
 	}
-	return biz.BusinessID, nil
+	return bizID, nil
 }
 
 func (ps *parseStream) userAPI() *parseStream {
