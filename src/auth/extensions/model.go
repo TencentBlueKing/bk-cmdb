@@ -16,6 +16,7 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -25,28 +26,31 @@ import (
 )
 
 // AuthorizeByObjectID authorize model by id
-func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objID string) error {
-	// auth: check authorization
-	// step1 get model by objID
-	cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objID)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, queryCond)
-	if err != nil {
-		message := fmt.Sprintf("get model by id: %s failed, err: %+v", objID, err)
-		return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
+func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objIDs ...string) error {
+	objects := make([]metadata.Object, 0)
+	for _, objID := range objIDs {
+		// step1 get model by objID
+		cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objID)
+		queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
+		resp, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, queryCond)
+		if err != nil {
+			message := fmt.Sprintf("get model by id: %s failed, err: %+v", objID, err)
+			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
+		}
+		if len(resp.Data.Info) == 0 {
+			message := fmt.Sprintf("get model by id: %s failed, not found", objID)
+			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
+		}
+		if len(resp.Data.Info) > 1 {
+			message := fmt.Sprintf("get model by id: %s failed, get multiple model", objID)
+			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
+		}
+		object := resp.Data.Info[0].Spec
+		objects = append(objects, object)
 	}
-	if len(resp.Data.Info) == 0 {
-		message := fmt.Sprintf("get model by id: %s failed, not found", objID)
-		return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-	}
-	if len(resp.Data.Info) > 1 {
-		message := fmt.Sprintf("get model by id: %s failed, get multiple model", objID)
-		return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-	}
-	object := resp.Data.Info[0].Spec
-
+	
 	// step2: check authorize
-	if err := am.AuthorizeByObject(ctx, header, action, object); err != nil {
+	if err := am.AuthorizeByObject(ctx, header, action, objects...); err != nil {
 		message := fmt.Sprintf("authorize failed, %s", err.Error())
 		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
 	}
@@ -91,18 +95,6 @@ func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header
 	return am.authorize(ctx, header, businessID, resources...)
 }
 
-func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
-	resource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Action:     meta.Create,
-			Type:       resourceType,
-		},
-		SupplierAccount: util.GetOwnerID(header),
-		BusinessID:      businessID,
-	}
-
-	return am.authorize(ctx, header, businessID, resource)
-}
 
 func (am *AuthManager) authorize(ctx context.Context, header http.Header, businessID int64, resources ...meta.ResourceAttribute) error {
 	commonInfo, err := parser.ParseCommonInfo(&header)
@@ -157,7 +149,6 @@ func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.H
 	return am.AuthorizeByObjectID(ctx, header, action, objID)
 }
 
-
 func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classes ...*metadata.Classification) error {
 	
 	// extract business id
@@ -183,9 +174,110 @@ func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header htt
 				InstanceID: class.ID,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      businessID,
+			BusinessID:      bizID,
 		}
 		resources = append(resources, resource)
 	}
+	return am.authorize(ctx, header, bizID, resources...)
+}
+
+// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
+func (am *AuthManager) AuthorizeResourceCreateByObject (ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	// step1: extract business ID from object, business ID from all objects must be identical to one value
+	var businessID int64
+	for idx, object := range objects {
+		bizID, err := object.Metadata.Label.Int64(metadata.LabelBusinessID)
+		// we should ignore metadata.LabelBusinessID field not found error
+		if err != nil && err != metadata.LabelKeyNotExistError{
+			message := fmt.Sprintf("parse biz id from model: %+v failed, err: %+v", object, err)
+			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		}
+		if idx > 0 && bizID != businessID {
+			message := fmt.Sprintf("authorization failed, get multiple business ID from objects")
+			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		}
+		businessID = bizID
+	}
+	
+	// step2 get classifications
+	classificationIDs := make([]string, 0)
+	for _, object := range objects {
+		classificationIDs = append(classificationIDs, object.ObjCls)
+	}
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKClassificationIDField).In(classificationIDs).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKClassificationIDField, &cond)
+	if err != nil {
+		blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
+		message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
+		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+	}
+	clsMap := map[string]int64{}
+	for _, cls := range result.Data.Info {
+		bkClassificationID := util.GetStrByInterface(cls[common.BKClassificationIDField])
+		id, err := util.GetInt64ByInterface(cls[common.BKFieldID])	
+		if err != nil {
+			blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
+			message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
+			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		}
+		clsMap[bkClassificationID] = id
+	}
+
+	// step3 prepare resource layers for authorization
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, object := range objects {
+		parentLayers := meta.Layers{}
+		
+		// check obj's group id in map
+		if _, exist := clsMap[object.ObjCls]; exist == false {
+			blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
+			message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
+			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		}
+		
+		// model group
+		parentLayers = append(parentLayers, meta.Item{
+			Type:       meta.Model,
+			Name:       object.ObjCls,
+			InstanceID: clsMap[object.ObjCls],
+		})
+		
+		// model
+		parentLayers = append(parentLayers, meta.Item{
+			Type:       meta.Model,
+			Name:       object.ObjectID,
+			InstanceID: object.ID,
+		})
+		
+		// instance
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Action:     action,
+				Type:       meta.ModelInstance,
+				Name:       object.ObjectName,
+				InstanceID: object.ID,
+			},
+			SupplierAccount: util.GetOwnerID(header),
+			BusinessID:      businessID,
+		}
+
+		resources = append(resources, resource)
+	}
+
 	return am.authorize(ctx, header, businessID, resources...)
+}
+
+func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
+	resource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Action:     meta.Create,
+			Type:       resourceType,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+		BusinessID:      businessID,
+	}
+
+	return am.authorize(ctx, header, businessID, resource)
 }

@@ -13,6 +13,9 @@
 package operation
 
 import (
+	"configcenter/src/auth"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"context"
 	"strconv"
 	"strings"
@@ -68,6 +71,7 @@ type BatchResult struct {
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
+	authorizer auth.Authorizer
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
@@ -94,6 +98,14 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
+
+	// auth: check authorization
+	authManager := extensions.NewAuthManager(c.clientSet, c.authorizer, params.Err)
+	if err := authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
+		blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", objectID, err)
+		return nil, err
+	}
+
 	// all the instances's name should not be same,
 	// so we need to check first.
 	instNameMap := make(map[string]struct{})
