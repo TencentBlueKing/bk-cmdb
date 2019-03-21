@@ -70,7 +70,7 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 	return nil, nil
 }
 
-func (s *Service) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapStr, error) {
+func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (mapstr.MapStr, error) {
 
 	datas := []metadata.PropertyGroupObjectAtt{}
 	err := json.Unmarshal(data, &datas)
@@ -82,8 +82,8 @@ func (s *Service) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapS
 	return result, nil
 }
 
-// UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (s *Service) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
+func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	datas := make([]metadata.PropertyGroupObjectAtt, 0)
 	val, exists := data.Get("origin")

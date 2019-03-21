@@ -165,6 +165,10 @@ func GetInstTableName(objID string) string {
 		return BKTableNameInstAsst
     case BKTableNameModuleHostConfig:
         return BKTableNameModuleHostConfig
+	case BKTableNameObjClassifiction:
+        return BKTableNameObjClassifiction
+	case BKTableNameObjAttDes:
+		return BKTableNameObjAttDes
 	default:
 		return BKTableNameBaseInst
 	}

@@ -11,30 +11,3 @@
  */
 
 package extensions
-
-import (
-	"configcenter/src/apimachinery"
-	"configcenter/src/auth"
-	"configcenter/src/common/errors"
-)
-
-type AuthManager struct {
-	clientSet  apimachinery.ClientSetInterface
-	Authorize auth.Authorize
-	// Err is used for return error messages of specific language on running
-	Err errors.DefaultCCErrorIf
-}
-
-func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize, Err errors.DefaultCCErrorIf) *AuthManager {
-	return &AuthManager{
-		clientSet:  clientSet,
-		Authorize: Authorize,
-		Err:        Err,
-	}
-}
-
-type ClassificationSimplify struct {
-	Name string
-	ID int64
-	ClassificationID string
-}
