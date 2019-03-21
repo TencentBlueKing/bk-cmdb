@@ -134,10 +134,10 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 	}
 
 	// auth: check authorization
-	classes := make([]*metadata.Classification, 0)
+	classes := make([]metadata.Classification, 0)
 	for _, clsItem := range clsItems {
 		class := clsItem.Classify()
-		classes = append(classes, &class)
+		classes = append(classes, class)
 	}
 	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
 	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
@@ -151,7 +151,8 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		class := cls.Classify()
-		if err := c.auth.DeregisterClassification(params.Context, params.Header, &class); err != nil {
+		authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
+		if err := authManager.DeregisterClassification(params.Context, params.Header, class); err != nil {
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
@@ -281,18 +282,19 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 		return err
 	}
 
+	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
 	class := cls.Classify()
 	class.ID = id
 	if len(class.ClassificationName) != 0 {
-		if err := c.auth.UpdateRegisteredClassification(params.Context, params.Header, &class); err != nil {
+		// auth: update registered classifications
+		if err := authManager.UpdateRegisteredClassification(params.Context, params.Header, class); err != nil {
 			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	}
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(c.clientSet, c.auth.Authorizer, params.Err)
-	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, &class); err != nil {
+	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
 		blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
 		return err
 	}

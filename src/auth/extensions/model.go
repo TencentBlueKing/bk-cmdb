@@ -68,9 +68,13 @@ func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.H
 	for _, obj := range objects {
 		classificationIDs = append(classificationIDs, obj.ObjCls)
 	}
-	clsMap, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
+	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+	classificationMap := map[string]metadata.Classification{}
+	for _, classification := range classifications {
+		classificationMap[classification.ClassificationID] = classification
 	}
 
 	// step2 prepare resource layers for authorization
@@ -79,7 +83,7 @@ func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.H
 		parentLayers := meta.Layers{}
 
 		// check obj's group id in map
-		if _, exist := clsMap[object.ObjCls]; exist == false {
+		if _, exist := classificationMap[object.ObjCls]; exist == false {
 			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 		}
@@ -87,8 +91,8 @@ func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.H
 		// model group
 		parentLayers = append(parentLayers, meta.Item{
 			Type:       meta.Model,
-			Name:       clsMap[object.ObjCls].ClassificationID,
-			InstanceID: clsMap[object.ObjCls].ID,
+			Name:       classificationMap[object.ObjCls].ClassificationID,
+			InstanceID: classificationMap[object.ObjCls].ID,
 		})
 
 		// model

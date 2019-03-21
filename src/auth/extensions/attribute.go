@@ -19,8 +19,10 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, header http.Header, attributeIDs ...int64) ([]metadata.Attribute, error) {
@@ -47,16 +49,145 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 	return attributes, nil
 }
 
+func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error){
+	objectIDs := make([]string, 0)
+	for _, attribute := range attributes {
+		objectIDs = append(objectIDs, attribute.ObjectID)
+	}
+
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+	}
+	objectMap := map[string]metadata.Object{}
+	for _, object := range objects {
+		objectMap[object.ObjectID] = object
+	}
+	
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
+	}
+
+	classificationIDs := make([]string, 0)
+	for _, object := range objects {
+		classificationIDs = append(classificationIDs, object.ObjCls)
+	}
+	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+	}
+	classificationMap := map[string]metadata.Classification{}
+	for _, classification := range classifications {
+		classificationMap[classification.ClassificationID] = classification
+	}
+	
+	// step2 prepare resource layers for authorization
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, attribute := range attributes {
+
+		object := objectMap[attribute.ObjectID]
+		
+		// check obj's group id in map
+		if _, exist := classificationMap[object.ObjCls]; exist == false {
+			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist")
+			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
+		}
+
+		parentLayers := meta.Layers{}
+		// model group
+		parentLayers = append(parentLayers, meta.Item{
+			Type:       meta.Model,
+			Name:       classificationMap[object.ObjCls].ClassificationID,
+			InstanceID: classificationMap[object.ObjCls].ID,
+		})
+
+		// model
+		parentLayers = append(parentLayers, meta.Item{
+			Type:       meta.Model,
+			Name:       object.ObjectID,
+			InstanceID: object.ID,
+		})
+
+		// attribute
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Action:     action,
+				Type:       meta.ModelAttribute,
+				Name:       attribute.PropertyName,
+				InstanceID: attribute.ID,
+			},
+			SupplierAccount: util.GetOwnerID(header),
+			BusinessID:      businessID,
+		}
+
+		resources = append(resources, resource)
+	}
+	return nil, nil
+}
+
+func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+	if err != nil {
+		fmt.Errorf("register model attribute failed, err: %+v", err)
+	}
+	
+	return am.Authorize.RegisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+	if err != nil {
+		fmt.Errorf("deregister model attribute failed, err: %+v", err)
+	}
+
+	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+	if err != nil {
+		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+	}
+	return am.DeregisterModelAttribute(ctx, header, attibutes...)
+}
+
+func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
+	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)
+	if err != nil {
+		fmt.Errorf("authorize model attribute failed, err: %+v", err)
+	}
+
+	return am.Authorize.RegisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+	if err != nil {
+		fmt.Errorf("update registered model attribute failed, err: %+v", err)
+	}
+
+	return am.Authorize.RegisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+	if err != nil {
+		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredModelAttribute(ctx, header, attibutes...)
+}
+
 func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
 	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)
 	}
-	
+
 	objectIDs := make([]string, 0)
 	for _, attribute := range attributes {
 		objectIDs = append(objectIDs, attribute.ObjectID)
 	}
-	
+
 	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
 }

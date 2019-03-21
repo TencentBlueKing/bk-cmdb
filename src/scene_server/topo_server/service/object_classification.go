@@ -13,11 +13,13 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"fmt"
 )
 
 // CreateClassification create a new object classification
@@ -26,6 +28,13 @@ func (s *Service) CreateClassification(params types.ContextParams, pathParams, q
 	if nil != err {
 		return nil, err
 	}
+	
+	// auth: register classification to iam
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	if err := authManager.RegisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
+		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
+	}
+	
 	return cls.ToMapStr()
 }
 
@@ -95,6 +104,16 @@ func (s *Service) UpdateClassification(params types.ContextParams, pathParams, q
 	data.Remove(metadata.BKMetadata)
 
 	err = s.Core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	// auth: register classification to iam
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	if err := authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, id); err != nil {
+		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
+	}
+
 	return nil, err
 }
 
@@ -110,6 +129,12 @@ func (s *Service) DeleteClassification(params types.ContextParams, pathParams, q
 		return nil, err
 	}
 
+	// auth: register classification to iam
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	if err := authManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
+		return nil, fmt.Errorf("deregister classification to iam failed, err: %+v", err)
+	}
+	
 	// data.Remove(metadata.BKMetadata)
 	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err

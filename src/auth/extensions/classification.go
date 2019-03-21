@@ -25,10 +25,10 @@ import (
 )
 
 /*
- * model classification
+ * model classification which used for manage models as group
  */
 
-func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Context, header http.Header, classificationIDs ...string) (map[string]metadata.Classification, error) {
+func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Context, header http.Header, classificationIDs ...string) ([]metadata.Classification, error) {
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKClassificationIDField).In(classificationIDs).ToMapStr(),
@@ -38,16 +38,38 @@ func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Con
 		blog.V(3).Infof("get classification by id failed, err: %+v", err)
 		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
 	}
-	clsMap := map[string]metadata.Classification{}
+	classifications := make([]metadata.Classification, 0)
 	for _, cls := range result.Data.Info {
 		classification := metadata.Classification{}
 		_, err = classification.Parse(cls)
 		if err != nil {
 			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
 		}
-		clsMap[classification.ClassificationID] = classification
+		classifications = append(classifications, classification)
 	}
-	return clsMap, nil
+	return classifications, nil
+}
+
+func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.Classification, error) {
+
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, &cond)
+	if err != nil {
+		blog.V(3).Infof("get classification by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
+	}
+	classifications := make([]metadata.Classification, 0)
+	for _, cls := range result.Data.Info {
+		classification := metadata.Classification{}
+		_, err = classification.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+		}
+		classifications = append(classifications, classification)
+	}
+	return classifications, nil
 }
 
 func (am *AuthManager) extractBusinessIDFromClassifications(classifications ...metadata.Classification) (int64, error) {
@@ -118,7 +140,31 @@ func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, heade
 	return nil
 }
 
-func (am *AuthManager) RegisteredClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, header http.Header, classificationIDs ...string) error {
+	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
+	if err != nil {
+		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredClassification(ctx, header, classifications...)
+}
+
+func (am *AuthManager) UpdateRegisteredClassificationByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	classifications, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredClassification(ctx, header, classifications...)
+}
+
+func (am *AuthManager) DeregisterClassificationByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	classifications, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("deregister classifications failed, get classfication by id failed, err: %+v", err)
+	}
+	return am.DeregisterClassification(ctx, header, classifications...)
+}
+
+func (am *AuthManager) RegisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
@@ -132,7 +178,7 @@ func (am *AuthManager) RegisteredClassification(ctx context.Context, header http
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) DeregisteredClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+func (am *AuthManager) DeregisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
