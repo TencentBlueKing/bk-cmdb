@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
@@ -36,14 +37,15 @@ type parseStream struct {
 	Attribute  meta.AuthAttribute
 	err        error
 	action     meta.Action
+	engine     *backbone.Engine
 }
 
-func newParseStream(rc *RequestContext) (*parseStream, error) {
+func newParseStream(rc *RequestContext, engine *backbone.Engine) (*parseStream, error) {
 	if nil == rc {
 		return nil, errors.New("request context is nil")
 	}
 
-	return &parseStream{RequestCtx: rc}, nil
+	return &parseStream{RequestCtx: rc, engine: engine}, nil
 }
 
 // parse is used to parse the auth attribute from RequestContext.
@@ -94,7 +96,6 @@ func (ps *parseStream) validateVersion() *parseStream {
 		ps.err = fmt.Errorf("unsupported version %s", version)
 		return ps
 	}
-	ps.Attribute.APIVersion = version
 
 	return ps
 }
@@ -180,7 +181,7 @@ func (ps *parseStream) finalizer() *parseStream {
 func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
 	result := reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
 	if result {
-		blog.Infof("match %s %s", httpMethod, reg)
+		blog.V(4).Infof("match %s %s", httpMethod, reg)
 	}
 	return result
 }
@@ -188,7 +189,7 @@ func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
 func (ps *parseStream) hitPattern(pattern, httpMethod string) bool {
 	result := pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
 	if result {
-		blog.Infof("match %s %s", httpMethod, pattern)
+		blog.V(4).Infof("match %s %s", httpMethod, pattern)
 	}
 	return result
 }

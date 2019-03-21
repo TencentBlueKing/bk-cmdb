@@ -19,26 +19,28 @@ import (
 	"configcenter/src/auth/meta"
 )
 
+var NotEnoughLayer = fmt.Errorf("not enough layer")
+
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
-
 func convertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
 	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
 		iamResourceType = SysBusinessInstance
 
-	case meta.Model,
-		meta.ModelUnique,
+	case meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
+
+		fallthrough
+	case meta.Model:
 		if businessID != 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
 		}
-
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
 		iamResourceType = BizTopoInstance
 

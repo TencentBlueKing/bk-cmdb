@@ -12,10 +12,12 @@
 
 package meta
 
+import (
+	"configcenter/src/common/metadata"
+)
+
 type AuthAttribute struct {
-	// the version of this resource, which is the api version.
-	APIVersion string
-	User       UserInfo
+	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
 	BusinessID int64
@@ -71,7 +73,7 @@ type BackendResource  []BackendResourceLayer
 
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {
-	User       UserInfo
+	User UserInfo
 }
 
 type Decision struct {
@@ -121,3 +123,9 @@ const (
 	// topo
 	ModelTopologyView Action = "modelTopologyView"
 )
+
+type InitConfig struct {
+	Bizs            []metadata.BizInst
+	Models          []metadata.Object
+	Classifications []metadata.Classification
+}
