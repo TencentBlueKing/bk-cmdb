@@ -65,13 +65,23 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
-					Name:   ps.RequestCtx.Elements[5],
 				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -84,6 +94,16 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
@@ -92,12 +112,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -110,6 +125,16 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
@@ -118,12 +143,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -136,7 +156,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model.ObjCls)
+		cls, err := ps.getCls(model[0].ObjCls)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -147,7 +167,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -655,7 +675,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	}
 
 	// find business instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodGet) {
+	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find business instance topology, but got invalid url")
 			return ps
@@ -672,12 +692,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.Find,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: string(meta.Business),
-					},
-				},
 			},
 		}
 		return ps
@@ -690,18 +704,23 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceTopology,
+					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
-				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1056,7 +1075,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model.ObjCls)
+		cls, err := ps.getCls(model[0].ObjCls)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1073,7 +1092,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1181,7 +1200,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model.ObjCls)
+		cls, err := ps.getCls(model[0].ObjCls)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1194,7 +1213,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1207,13 +1226,13 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
+		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
 		model, err := ps.getModel(modelEn)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model.ObjCls)
+		cls, err := ps.getCls(model[0].ObjCls)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1237,7 +1256,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: attrID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1280,27 +1299,28 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
-		model, err := ps.getModel(modelEn)
+		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
+		models, err := ps.getModel(modelCond)
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model.ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelAttribute,
-					Action: meta.FindMany,
-				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
-			},
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelAttribute,
+						Action: meta.FindMany,
+					},
+					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+				})
 		}
 		return ps
 	}

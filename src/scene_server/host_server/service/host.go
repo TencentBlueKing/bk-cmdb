@@ -19,8 +19,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
@@ -30,6 +28,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 type AppResult struct {
