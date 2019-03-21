@@ -19,7 +19,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 	ps.host().
 		userAPI().
 		userCustom().
-		hostFavorite()
+		hostFavorite().
+		resourceSync()
 
 	return ps
 }
@@ -64,9 +65,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Create,
@@ -87,9 +88,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Update,
@@ -112,9 +113,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Delete,
@@ -138,9 +139,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.FindMany,
@@ -162,9 +163,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Find,
@@ -188,12 +189,12 @@ func (ps *parseStream) userAPI() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
+					Action: meta.Excute,
 					Name:   ps.RequestCtx.Elements[5],
 				},
 			},
@@ -286,9 +287,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -322,9 +323,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
@@ -342,9 +343,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostFromModuleToResPool,
@@ -362,9 +363,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToModule,
@@ -382,9 +383,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveResPoolHostToBizIdleModule,
@@ -402,9 +403,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizFaultModule,
@@ -422,9 +423,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizIdleModule,
@@ -442,9 +443,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
@@ -464,9 +465,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.CleanHostInSetOrModule,
@@ -485,9 +486,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostsToBusinessOrModule,
@@ -505,9 +506,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -623,5 +624,42 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 		return ps
 	}
+	return ps
+}
+
+var (
+	searchSyncTask       = `/api/v3/hosts/cloud/search`
+	confirmSyncTResource = `/api/v3/hosts/cloud/searchConfirm`
+)
+
+func (ps *parseStream) resourceSync() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	if ps.hitPattern(searchSyncTask, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ResourceSync,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(confirmSyncTResource, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ResourceSync,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
