@@ -48,6 +48,8 @@ const (
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping"
 	EventPushing             ResourceType = "eventPushing"
+	AuditLog                 ResourceType = "auditlog"     // 操作审计
+	ResourceSync             ResourceType = "resourceSync" // 云资源发现
 )
 
 const (

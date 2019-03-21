@@ -116,7 +116,6 @@ func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 }
 
 func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
 	return nil, nil
 }
 
@@ -177,7 +176,7 @@ func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -191,7 +190,7 @@ func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -205,7 +204,7 @@ func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 

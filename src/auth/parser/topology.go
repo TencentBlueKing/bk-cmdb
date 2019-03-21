@@ -39,7 +39,8 @@ func (ps *parseStream) topology() *parseStream {
 		objectAttribute().
 		ObjectModule().
 		ObjectSet().
-		objectUnique()
+		objectUnique().
+		audit()
 
 	return ps
 }
@@ -238,9 +239,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline instance topology, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
 					Action: meta.Find,
@@ -263,9 +264,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
 					Action: meta.Find,
@@ -288,9 +289,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Find,
@@ -1340,9 +1341,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
 					Action: meta.Create,
@@ -1384,9 +1385,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
 					Action:     meta.Delete,
@@ -1428,9 +1429,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("update module, but got invalid module id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
 					Action:     meta.Update,
@@ -1466,9 +1467,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("find module, but got invalid set id %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
 					Action: meta.FindMany,
@@ -1512,9 +1513,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("create set, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.Create,
@@ -1542,9 +1543,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
 					Action:     meta.Delete,
@@ -1567,9 +1568,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set list, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.DeleteMany,
@@ -1597,9 +1598,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("update set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
 					Action:     meta.Update,
@@ -1622,9 +1623,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("find set, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.FindMany,
@@ -1728,6 +1729,31 @@ func (ps *parseStream) objectUnique() *parseStream {
 						Type: meta.Model,
 						Name: ps.RequestCtx.Elements[5],
 					},
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	searchAuditlog = `/api/v3/audit/search`
+)
+
+func (ps *parseStream) audit() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	// add object unique operation.
+	if ps.hitPattern(searchAuditlog, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.FindMany,
 				},
 			},
 		}

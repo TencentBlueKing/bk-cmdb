@@ -65,6 +65,8 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 
 	case meta.ModelInstanceAssociation:
 		return nil, errors.New("model instance association does not support  auth now")
+	case meta.MainlineModelTopology:
+		iamResourceType = SysSystemBase
 
 	case meta.ModelInstance:
 		if attribute.BusinessID == 0 {
@@ -88,6 +90,10 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance
+	case meta.EventPushing:
+		iamResourceType = SysEventPushing
+	case meta.DynamicGrouping:
+		iamResourceType = BizCustomQuery
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
@@ -186,6 +192,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
 		}
+		if r.Basic.Type == meta.MainlineModelTopology {
+			return ModelTopologyOperation, nil
+		}
+
 	}
 
 	if r.Basic.Type == meta.Process {
