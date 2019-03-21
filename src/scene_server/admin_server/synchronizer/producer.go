@@ -13,6 +13,7 @@
 package synchronizer
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"time"
 
@@ -61,7 +62,6 @@ func (p *Producer) Start() {
 				jobs := producer.generateJobs()
 
 				for _, job := range *jobs {
-					// pass
 					p.WorkerQueue <- job
 				}
 				finished = true
@@ -89,16 +89,26 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		blog.Errorf("list business failed, err: %v", err)
 		return &jobs
 	}
-	// businessIDArr := make([]int64, 0)
+	
 	businessList := make([]meta.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
-		businessSimplify := meta.BusinessSimplify{
-			BKAppIDField:      int64(business[common.BKAppIDField].(float64)),
-			BKSupplierIDField: int64(business[common.BKSupplierIDField].(float64)),
-			BKOwnerIDField:    business[common.BKOwnerIDField].(string),
+		bizID, err := util.GetInt64ByInterface(business[common.BKAppIDField])
+		if err != nil {
+			blog.Errorf("parse business id from business %+v failed, err: %+v", business, err)
+			continue
 		}
-		// businessID := business[common.BKAppIDField].(int64)
-		// businessIDArr = append(businessIDArr, businessID)
+		
+		supplierID, err := util.GetInt64ByInterface(business[common.BKSupplierIDField])
+		if err != nil {
+			blog.Errorf("parse supplier id from business %+v failed, err: %+v", business, err)
+			continue
+		}
+		
+		businessSimplify := meta.BusinessSimplify{
+			BKAppIDField:      bizID,
+			BKSupplierIDField: supplierID,
+			BKOwnerIDField:    util.GetStrByInterface(business[common.BKOwnerIDField]),
+		}
 		businessList = append(businessList, businessSimplify)
 	}
 	blog.Info("list business businessList: %+v", businessList)

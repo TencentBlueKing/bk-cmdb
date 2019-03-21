@@ -17,6 +17,9 @@ import (
 	"strconv"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -31,14 +34,18 @@ type GraphicsOperationInterface interface {
 	SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
 
-func NewGraphics(client apimachinery.ClientSetInterface) GraphicsOperationInterface {
-	return &graphics{clientSet: client}
+func NewGraphics(client apimachinery.ClientSetInterface, authorizer auth.Authorizer) GraphicsOperationInterface {
+	return &graphics{
+		clientSet: client,
+		authorizer: authorizer,
+	}
 }
 
 type graphics struct {
 	clientSet apimachinery.ClientSetInterface
 	obj       ObjectOperationInterface
 	asst      AssociationOperationInterface
+	authorizer auth.Authorizer
 }
 
 func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface) {
@@ -162,6 +169,17 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 			datas[index].SetMetaData(*params.MetaData)
 		}
 	}
+
+	// check authorization
+	objectIDs := make([]string, 0)
+	for _, data := range datas {
+		objectIDs = append(objectIDs, data.ObjID)
+	}
+	authManager := extensions.NewAuthManager(g.clientSet, g.authorizer, params.Err)
+	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyView, objectIDs...); err != nil {
+		return err
+	}
+
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v", err.Error())

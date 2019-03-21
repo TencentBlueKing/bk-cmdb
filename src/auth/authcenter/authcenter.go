@@ -262,7 +262,7 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
 	if ac.Config.Enable == false {
-		blog.V(5).Infof("auth disabled, auth config: %+", ac.Config)
+		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
 		return nil, nil
 	}
 

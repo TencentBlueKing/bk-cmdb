@@ -117,4 +117,7 @@ const (
 	BoundModuleToProcess   Action = "boundModuleToProcess"
 	UnboundModuleToProcess Action = "unboundModelToProcess"
 	FindBoundModuleProcess Action = "findBoundModuleProcess"
+	
+	// topo
+	ModelTopologyView Action = "modelTopologyView"
 )
