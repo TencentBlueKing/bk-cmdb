@@ -78,7 +78,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -105,7 +105,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -132,7 +132,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -164,7 +164,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -186,7 +186,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
