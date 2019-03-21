@@ -253,7 +253,7 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 		}
 		resourceIDs = append(resourceIDs, resourceID)
 	}
-	
+
 	// append host resource id to end
 	hostResourceID := ResourceID{
 		ResourceType: resourceType,
