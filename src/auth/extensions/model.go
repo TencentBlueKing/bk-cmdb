@@ -14,7 +14,6 @@ package extensions
 
 import (
 	"configcenter/src/auth/meta"
-	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -25,232 +24,80 @@ import (
 	"net/http"
 )
 
-// AuthorizeByObjectID authorize model by id
-func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objIDs ...string) error {
+func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, objIDs ...string) ([]metadata.Object, error) {
+	// get model by objID
+	cond := condition.CreateCondition().Field(common.BKObjIDField).In(objIDs)
+	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, queryCond)
+	if err != nil {
+		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objIDs, err)
+	}
+	if len(resp.Data.Info) == 0 {
+		return nil, fmt.Errorf("get model by id: %+v failed, not found", objIDs)
+	}
+	if len(resp.Data.Info) != len(objIDs) {
+		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objIDs)
+	}
+
 	objects := make([]metadata.Object, 0)
-	for _, objID := range objIDs {
-		// step1 get model by objID
-		cond := condition.CreateCondition().Field(common.BKObjIDField).Eq(objID)
-		queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-		resp, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, queryCond)
-		if err != nil {
-			message := fmt.Sprintf("get model by id: %s failed, err: %+v", objID, err)
-			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-		}
-		if len(resp.Data.Info) == 0 {
-			message := fmt.Sprintf("get model by id: %s failed, not found", objID)
-			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-		}
-		if len(resp.Data.Info) > 1 {
-			message := fmt.Sprintf("get model by id: %s failed, get multiple model", objID)
-			return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-		}
-		object := resp.Data.Info[0].Spec
-		objects = append(objects, object)
+	for _, item := range resp.Data.Info {
+		objects = append(objects, item.Spec)
 	}
-	
-	// step2: check authorize
-	if err := am.AuthorizeByObject(ctx, header, action, objects...); err != nil {
-		message := fmt.Sprintf("authorize failed, %s", err.Error())
-		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-	}
-	return nil
+	return objects, nil
 }
 
-// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	
-	// step1: extract business ID from object, business ID from all objects must be identical to one value
+func (am *AuthManager) extractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
 	var businessID int64
 	for idx, object := range objects {
 		bizID, err := object.Metadata.Label.Int64(metadata.LabelBusinessID)
 		// we should ignore metadata.LabelBusinessID field not found error
-		if err != nil && err != metadata.LabelKeyNotExistError{
-			message := fmt.Sprintf("parse biz id from model: %+v failed, err: %+v", object, err)
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		if err != nil && err != metadata.LabelKeyNotExistError {
+			return 0, fmt.Errorf("parse biz id from model: %+v failed, err: %+v", object, err)
 		}
 		if idx > 0 && bizID != businessID {
-			message := fmt.Sprintf("authorization failed, get multiple business ID from objects")
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+			return 0, fmt.Errorf("authorization failed, get multiple business ID from objects")
 		}
 		businessID = bizID
 	}
-
-	resources := make([]meta.ResourceAttribute, 0)
-	for _, object := range objects {
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Action:     action,
-				Type:       meta.Model,
-				Name:       object.ObjectName,
-				InstanceID: object.ID,
-			},
-			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      businessID,
-		}
-
-		resources = append(resources, resource)
-	}
-
-	return am.authorize(ctx, header, businessID, resources...)
+	return businessID, nil
 }
 
-
-func (am *AuthManager) authorize(ctx context.Context, header http.Header, businessID int64, resources ...meta.ResourceAttribute) error {
-	commonInfo, err := parser.ParseCommonInfo(&header)
-	if err != nil {
-		return fmt.Errorf("authentication failed, parse user info from header failed, %+v", err)
-	}
-	authAttribute := &meta.AuthAttribute{
-		User:       commonInfo.User,
-		BusinessID: businessID,
-		Resources:  resources,
-	}
-
-	decision, err := am.Authorizer.Authorize(ctx, authAttribute)
-	if err != nil {
-		return fmt.Errorf("authorize failed, err: %+v", err)
-	}
-	if decision.Authorized == false {
-		return fmt.Errorf("authorize failed, reason: %s", decision.Reason)
-	}
-
-	return nil
-}
-
-func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attID int64) error {
-	// auth: check authorization
-	queryCondition := &metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(attID).ToMapStr(),
-	}
-	response, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, queryCondition)
-	if nil != err {
-		message := fmt.Sprintf("get model attribute by id:%d failed, err: %s", attID, err.Error())
-		return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-	}
-	if !response.Result {
-		message := fmt.Sprintf("get model attribute by id:%d failed, err: %s", attID, response.ErrMsg)
-		return am.Err.Errorf(common.CCErrCommAuthorizeFailed, message)
-	}
-	
-	// result count must be exactly one
-	searchResult := response.Data.Info
-	if len(searchResult) == 0 {
-		message := fmt.Sprintf("target attribute:%d not found.", attID)
-		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-	}
-	if len(searchResult) >= 1 {
-		message := fmt.Sprintf("target attribute:%d found multiple.", attID)
-		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-	}
-	
-	// check authorize by low level
-	objID := searchResult[0].Spec.ObjectID
-	return am.AuthorizeByObjectID(ctx, header, action, objID)
-}
-
-func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classes ...*metadata.Classification) error {
-	
-	// extract business id
-	var bizID int64
-	for idx, class := range classes {
-		businessID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
-		if err != nil {
-			return fmt.Errorf("extract business id from classify: %+v failed, err: %+v", class, err)
-		}
-		if idx != 0 && bizID != businessID {
-			return fmt.Errorf("classes:%+v own to multiple business", classes)
-		}
-		bizID = businessID
-	}
-	
-	// make auth resources
-	resources := make([]meta.ResourceAttribute, 0)
-	for _, class := range classes {
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Type:       meta.ModelClassification,
-				Name:       class.ClassificationName,
-				InstanceID: class.ID,
-			},
-			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      bizID,
-		}
-		resources = append(resources, resource)
-	}
-	return am.authorize(ctx, header, bizID, resources...)
-}
-
-// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeResourceCreateByObject (ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	// step1: extract business ID from object, business ID from all objects must be identical to one value
-	var businessID int64
-	for idx, object := range objects {
-		bizID, err := object.Metadata.Label.Int64(metadata.LabelBusinessID)
-		// we should ignore metadata.LabelBusinessID field not found error
-		if err != nil && err != metadata.LabelKeyNotExistError{
-			message := fmt.Sprintf("parse biz id from model: %+v failed, err: %+v", object, err)
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-		}
-		if idx > 0 && bizID != businessID {
-			message := fmt.Sprintf("authorization failed, get multiple business ID from objects")
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-		}
-		businessID = bizID
-	}
-	
-	// step2 get classifications
+func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, businessID int64, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
+	// step1 get classifications
 	classificationIDs := make([]string, 0)
-	for _, object := range objects {
-		classificationIDs = append(classificationIDs, object.ObjCls)
+	for _, obj := range objects {
+		classificationIDs = append(classificationIDs, obj.ObjCls)
 	}
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKClassificationIDField).In(classificationIDs).ToMapStr(),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKClassificationIDField, &cond)
+	clsMap, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
 	if err != nil {
-		blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
-		message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
-		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-	}
-	clsMap := map[string]int64{}
-	for _, cls := range result.Data.Info {
-		bkClassificationID := util.GetStrByInterface(cls[common.BKClassificationIDField])
-		id, err := util.GetInt64ByInterface(cls[common.BKFieldID])	
-		if err != nil {
-			blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
-			message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
-		}
-		clsMap[bkClassificationID] = id
+		return nil, fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
 
-	// step3 prepare resource layers for authorization
+	// step2 prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, object := range objects {
 		parentLayers := meta.Layers{}
-		
+
 		// check obj's group id in map
 		if _, exist := clsMap[object.ObjCls]; exist == false {
-			blog.V(3).Infof("authorization failed, get classification by object failed, err: %+v", err)
-			message := fmt.Sprintf("authorization failed, get classification by object failed, err: %+v", err)
-			return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist")
+			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 		}
-		
+
 		// model group
 		parentLayers = append(parentLayers, meta.Item{
 			Type:       meta.Model,
-			Name:       object.ObjCls,
-			InstanceID: clsMap[object.ObjCls],
+			Name:       clsMap[object.ObjCls].ClassificationID,
+			InstanceID: clsMap[object.ObjCls].ID,
 		})
-		
+
 		// model
 		parentLayers = append(parentLayers, meta.Item{
 			Type:       meta.Model,
 			Name:       object.ObjectID,
 			InstanceID: object.ID,
 		})
-		
+
 		// instance
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
@@ -265,6 +112,50 @@ func (am *AuthManager) AuthorizeResourceCreateByObject (ctx context.Context, hea
 
 		resources = append(resources, resource)
 	}
+	return resources, nil
+}
+
+// AuthorizeByObjectID authorize model by id
+func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objIDs ...string) error {
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objIDs...)
+	if err != nil {
+		return fmt.Errorf("get model by id failed, err: %+v", err)
+	}
+
+	return am.AuthorizeByObject(ctx, header, action, objects...)
+}
+
+// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
+func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+
+	// step1: extract business ID from object, business ID from all objects must be identical to one value
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		message := fmt.Sprintf("authorize failed, %+v", err.Error())
+		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+	}
+
+	// step2: make resources from objects
+	resources, err := am.makeResourcesByObjects(ctx, header, action, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+
+	return am.authorize(ctx, header, businessID, resources...)
+}
+
+// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
+func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	// step1: extract business ID from object, business ID from all objects must be identical to one value
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("authrize create instance failed, extract business id from models failed, err: %+v", err)
+	}
+
+	resources, err := am.makeResourcesByObjects(ctx, header, action, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
 
 	return am.authorize(ctx, header, businessID, resources...)
 }
@@ -272,12 +163,58 @@ func (am *AuthManager) AuthorizeResourceCreateByObject (ctx context.Context, hea
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
-			Action:     meta.Create,
-			Type:       resourceType,
+			Action: meta.Create,
+			Type:   resourceType,
 		},
 		SupplierAccount: util.GetOwnerID(header),
 		BusinessID:      businessID,
 	}
 
 	return am.authorize(ctx, header, businessID, resource)
+}
+
+func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
+	}
+
+	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+
+	if err := am.Authorize.RegisterResource(ctx, resources...); err != nil {
+		return fmt.Errorf("deregister models failed, err: %+v", err)
+	}
+	return nil
+}
+
+func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
+	}
+
+	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+
+	if err := am.Authorize.DeregisterResource(ctx, resources...); err != nil {
+		return fmt.Errorf("deregister models failed, err: %+v", err)
+	}
+	return nil
+}
+
+func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	return am.RegisterObject(ctx, header, objects...)
+}
+
+func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, objectIDs ...string) error {
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	if err != nil {
+		return fmt.Errorf("deregister mainline model failed, get model by id failed, err: %+v", err)
+	}
+	return am.DeregisterObject(ctx, header, objects...)
 }
