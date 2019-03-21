@@ -54,3 +54,21 @@ func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
 	}
 	return model.Data.Info[0], nil
 }
+
+func (ps *parseStream) getAttributeGroup(cond interface{}) ([]metadata.Group, error) {
+	mspstrCond, err := mapstr.NewFromInterface(cond)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := ps.engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), ps.RequestCtx.Header,
+		metadata.QueryCondition{Condition: mspstrCond})
+	if err != nil {
+		return nil, err
+	}
+
+	if !groups.Result {
+		return nil, errors.New(groups.Code, groups.ErrMsg)
+	}
+
+	return groups.Data.Info, nil
+}

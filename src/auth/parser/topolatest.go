@@ -22,6 +22,7 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 
 	"github.com/tidwall/gjson"
 )
@@ -1044,12 +1045,21 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 	if ps.err != nil {
 		return ps
 	}
-
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
+		}
+		model, err := ps.getModel(gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value())
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
@@ -1058,6 +1068,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Create,
 				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1104,14 +1115,33 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelClassification,
-					Action: meta.Update,
-				},
-			},
+		groups, err := ps.getAttributeGroup(gjson.GetBytes(ps.RequestCtx.Body, "condition").Value())
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, group := range groups {
+			model, err := ps.getModel(group.ObjectID)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			cls, err := ps.getCls(model[0].ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:       meta.ModelAttributeGroup,
+						Action:     meta.Update,
+						InstanceID: group.ID,
+					},
+					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				})
 		}
 		return ps
 	}
@@ -1133,6 +1163,23 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
+
+		groups, err := ps.getAttributeGroup(mapstr.MapStr{"id": groupID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		model, err := ps.getModel(groups[0].ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		cls, err := ps.getCls(model[0].ObjCls)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				BusinessID: bizID,
@@ -1141,6 +1188,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: groupID,
 				},
+				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps

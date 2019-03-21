@@ -185,7 +185,13 @@ const (
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
-
+	if r.Basic.Type == meta.ModelAttributeGroup ||
+		r.Basic.Type == meta.ModelUnique ||
+		r.Basic.Type == meta.ModelAttribute {
+		if r.Action == meta.Delete || r.Action == meta.Update {
+			return Edit, nil
+		}
+	}
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
