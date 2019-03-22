@@ -143,54 +143,6 @@ func (ta *TopoAuth) RegisterClassification(ctx context.Context, header http.Head
 	return nil
 }
 
-func (ta *TopoAuth) RegisterAssociationType(ctx context.Context, header http.Header, kind *metadata.AssociationKind) error {
-	resource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Type:       meta.AssociationType,
-			Name:       kind.AssociationKindID,
-			InstanceID: kind.ID,
-		},
-		SupplierAccount: util.GetOwnerID(header),
-	}
-
-	if err := ta.Authorizer.RegisterResource(ctx, resource); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ta *TopoAuth) UpdateAssociationType(ctx context.Context, header http.Header, kindID int64, kindName string) error {
-	resource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Type:       meta.AssociationType,
-			Name:       kindName,
-			InstanceID: kindID,
-		},
-		SupplierAccount: util.GetOwnerID(header),
-	}
-
-	if err := ta.Authorizer.UpdateResource(ctx, &resource); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ta *TopoAuth) DeregisterAssociationType(ctx context.Context, header http.Header, assoTypeID int64) error {
-	resource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Type:       meta.AssociationType,
-			InstanceID: assoTypeID,
-		},
-		SupplierAccount: util.GetOwnerID(header),
-	}
-
-	if err := ta.Authorizer.DeregisterResource(ctx, resource); err != nil {
-		return err
-	}
-	return nil
-}
 
 func (ta *TopoAuth) RegisterBusiness(ctx context.Context, header http.Header, bizName string, id int64) error {
 	resource := meta.ResourceAttribute{

@@ -54,7 +54,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 	
 	// auth: register mainline object
 	object := ret.Object()
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.RegisterMainlineObject(params.Context, params.Header, object); err != nil {
 		message := fmt.Sprintf("register mainline model to iam failed, err: %+v", err)
 		blog.V(2).Info(message)
@@ -74,7 +74,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	objID := pathParams("bk_obj_id")
 
 	// auth: deregister mainline object
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, objID); err != nil {
 		message := fmt.Sprintf("deregister mainline model failed, err: %+v", err)
 		blog.V(2).Info(message)

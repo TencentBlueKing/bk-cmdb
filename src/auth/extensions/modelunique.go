@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -25,39 +26,39 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, header http.Header, attributeIDs ...int64) ([]metadata.Attribute, error) {
+func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http.Header, uniqueIDs ...int64) ([]metadata.ObjectUnique, error) {
 	// get model by objID
-	cond := condition.CreateCondition().Field(common.BKFieldID).In(attributeIDs)
+	cond := condition.CreateCondition().Field(common.BKFieldID).In(uniqueIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjAttDes, queryCond)
+	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjUnique, queryCond)
 	if err != nil {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, err: %+v", attributeIDs, err)
+		return nil, fmt.Errorf("get model unique by id: %+v failed, err: %+v", uniqueIDs, err)
 	}
 	if len(resp.Data.Info) == 0 {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, not found", attributeIDs)
+		return nil, fmt.Errorf("get model unique by id: %+v failed, not found", uniqueIDs)
 	}
-	if len(resp.Data.Info) != len(attributeIDs) {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, get %d, expect %d", attributeIDs, len(resp.Data.Info), len(attributeIDs))
+	if len(resp.Data.Info) != len(uniqueIDs) {
+		return nil, fmt.Errorf("get model unique by id: %+v failed, get %d, expect %d", uniqueIDs, len(resp.Data.Info), len(uniqueIDs))
 	}
 
-	attributes := make([]metadata.Attribute, 0)
+	uniques := make([]metadata.ObjectUnique, 0)
 	for _, item := range resp.Data.Info {
-		attribute := metadata.Attribute{}
-		attribute.Parse(item)
-		attributes = append(attributes, attribute)
+		unique := metadata.ObjectUnique{}
+		unique.Parse(item)
+		uniques = append(uniques, unique)
 	}
-	return attributes, nil
+	return uniques, nil
 }
 
-func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error) {
+func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...metadata.ObjectUnique) ([]meta.ResourceAttribute, error) {
 	objectIDs := make([]string, 0)
-	for _, attribute := range attributes {
-		objectIDs = append(objectIDs, attribute.ObjectID)
+	for _, unique := range uniques {
+		objectIDs = append(objectIDs, unique.ObjID)
 	}
 
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+		return nil, fmt.Errorf("register model unique failed, get related models failed, err: %+v", err)
 	}
 	objectMap := map[string]metadata.Object{}
 	for _, object := range objects {
@@ -66,7 +67,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 
 	businessID, err := am.extractBusinessIDFromObjects(objects...)
 	if err != nil {
-		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
+		return nil, fmt.Errorf("make auth resource for model unique failed, err: %+v", err)
 	}
 
 	classificationIDs := make([]string, 0)
@@ -75,7 +76,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 	}
 	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+		return nil, fmt.Errorf("register model unique failed, get related models failed, err: %+v", err)
 	}
 	classificationMap := map[string]metadata.Classification{}
 	for _, classification := range classifications {
@@ -84,9 +85,9 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 
 	// step2 prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
-	for _, attribute := range attributes {
+	for _, unique := range uniques {
 
-		object := objectMap[attribute.ObjectID]
+		object := objectMap[unique.ObjID]
 
 		// check obj's group id in map
 		if _, exist := classificationMap[object.ObjCls]; exist == false {
@@ -109,13 +110,13 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 			InstanceID: object.ID,
 		})
 
-		// attribute
+		// unique
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.ModelAttribute,
-				Name:       attribute.PropertyName,
-				InstanceID: attribute.ID,
+				Type:       meta.ModelUnique,
+				Name:       strconv.FormatUint(unique.ID, 10),
+				InstanceID: int64(unique.ID),
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
@@ -126,8 +127,8 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 	return nil, nil
 }
 
-func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
+	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("register model attribute failed, err: %+v", err)
 	}
@@ -135,8 +136,8 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
+	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("deregister model attribute failed, err: %+v", err)
 	}
@@ -144,16 +145,16 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
 	}
 	return am.DeregisterModelAttribute(ctx, header, attibutes...)
 }
 
-func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
-	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)
+func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...metadata.ObjectUnique) error {
+	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
 	if err != nil {
 		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
 	}
@@ -161,8 +162,8 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
-	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
+func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
+	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, err: %+v", err)
 	}
@@ -170,22 +171,22 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredModelAttribute(ctx, header, attibutes...)
 }
 
-func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
-	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+func (am *AuthManager) AuthorizeByUniqueID(ctx context.Context, header http.Header, action meta.Action, uniqueIDs ...int64) error {
+	uniques, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
 	if err != nil {
-		return fmt.Errorf("get attributes by id failed, err: %+v", err)
+		return fmt.Errorf("get uniques by id failed, err: %+v", err)
 	}
 
 	objectIDs := make([]string, 0)
-	for _, attribute := range attributes {
+	for _, attribute := range uniques {
 		objectIDs = append(objectIDs, attribute.ObjectID)
 	}
 

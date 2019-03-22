@@ -1,0 +1,185 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.,
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the ",License",); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package extensions
+
+import (
+	"configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"context"
+	"fmt"
+	"net/http"
+)
+
+/*
+ * instance represent common instances here
+ */
+
+func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(businessIDs).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	if err != nil {
+		blog.V(3).Infof("get instances by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
+	}
+	instances := make([]BusinessSimplify, 0)
+	for _, cls := range result.Data.Info {
+		instance := BusinessSimplify{}
+		_, err = instance.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+		}
+		instances = append(instances, instance)
+	}
+	return instances, nil
+}
+
+func (am *AuthManager) collectBusinessByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]BusinessSimplify, error) {
+
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	if err != nil {
+		blog.V(3).Infof("get classification by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
+	}
+	instances := make([]BusinessSimplify, 0)
+	for _, cls := range result.Data.Info {
+		classification := BusinessSimplify{}
+		_, err = classification.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+		}
+		instances = append(instances, classification)
+	}
+	return instances, nil
+}
+
+func (am *AuthManager) makeResourcesByBusiness(header http.Header, action meta.Action, businesses ...BusinessSimplify) []meta.ResourceAttribute {
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, business := range businesses {
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Action:     action,
+				Type:       meta.Business,
+				Name:       business.BKAppNameField,
+				InstanceID: business.BKAppIDField,
+			},
+			SupplierAccount: util.GetOwnerID(header),
+			BusinessID:      business.BKAppIDField,
+		}
+
+		resources = append(resources, resource)
+	}
+	return resources
+}
+
+func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error){
+	var bizID int64
+	for idx, business := range businesses {
+		if idx == 0 && business.BKAppIDField != bizID {
+			return 0, fmt.Errorf("get multiple business id from businesses")
+		}
+		bizID = business.BKAppIDField
+	}
+	return bizID, nil
+}
+
+func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
+
+	// extract business id
+	bizID, err := am.extractBusinessIDFromBusinesses(businesses...)
+	if err != nil {
+		return fmt.Errorf("authorize instances failed, extract business id from instance failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.makeResourcesByBusiness(header, action, businesses...)
+
+	return am.authorize(ctx, header, bizID, resources...)
+}
+
+func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	// make auth resources
+	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+
+	for _, resource := range resources {
+		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredInstances(ctx, header, instances...)
+}
+
+func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredInstances(ctx, header, instances...)
+}
+
+func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+	}
+	return am.DeregisterClassification(ctx, header, instances...)
+}
+
+func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	// make auth resources
+	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+
+	return am.Authorize.RegisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	if err != nil {
+		return fmt.Errorf("get businesses by id failed, err: %+v", err)
+	}
+	return am.RegisterBusinesses(ctx, header, businesses...)
+}
+
+func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	// make auth resources
+	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+
+	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	if err != nil {
+		return fmt.Errorf("get businesses by id failed, err: %+v", err)
+	}
+	return am.DeregisterBusinesses(ctx, header, businesses...)
+}
+

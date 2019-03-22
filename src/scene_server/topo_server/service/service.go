@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,7 +32,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
 	"github.com/emicklei/go-restful"
@@ -42,7 +42,7 @@ type Service struct {
 	Txn      dal.DB
 	Core     core.Core
 	Config   options.Config
-	Auth     *topoauth.TopoAuth
+	Authorize     auth.Authorize
 	Error    errors.CCErrorIf
 	Language language.CCLanguageIf
 	actions  []action

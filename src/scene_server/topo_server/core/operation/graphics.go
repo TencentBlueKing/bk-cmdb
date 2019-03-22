@@ -34,10 +34,10 @@ type GraphicsOperationInterface interface {
 	SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
 
-func NewGraphics(client apimachinery.ClientSetInterface, authorizer auth.Authorizer) GraphicsOperationInterface {
+func NewGraphics(client apimachinery.ClientSetInterface, authorize auth.Authorize) GraphicsOperationInterface {
 	return &graphics{
 		clientSet: client,
-		authorizer: authorizer,
+		authorize: authorize,
 	}
 }
 
@@ -45,7 +45,7 @@ type graphics struct {
 	clientSet apimachinery.ClientSetInterface
 	obj       ObjectOperationInterface
 	asst      AssociationOperationInterface
-	authorizer auth.Authorizer
+	authorize auth.Authorize
 }
 
 func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface) {
@@ -175,7 +175,7 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 	for _, data := range datas {
 		objectIDs = append(objectIDs, data.ObjID)
 	}
-	authManager := extensions.NewAuthManager(g.clientSet, g.authorizer, params.Err)
+	authManager := extensions.NewAuthManager(g.clientSet, g.authorize, params.Err)
 	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyView, objectIDs...); err != nil {
 		return err
 	}

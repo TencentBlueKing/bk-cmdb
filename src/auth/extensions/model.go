@@ -194,6 +194,23 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 	return nil
 }
 
+func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
+	}
+
+	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+	}
+	
+	if err := am.updateResources(ctx, resources...); err != nil {
+		return fmt.Errorf("deregister models failed, err: %+v", err)
+	}
+	return nil
+}
+
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
 	businessID, err := am.extractBusinessIDFromObjects(objects...)
 	if err != nil {
