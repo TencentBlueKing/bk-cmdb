@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/framework/core/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -23,6 +22,7 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	metatype "configcenter/src/common/metadata"
+	"configcenter/src/framework/core/errors"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -143,7 +143,9 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 
 // CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
-
+	if data.AsstKindID == common.AssociationKindMainline {
+		return nil, params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		blog.Errorf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		return nil, params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
@@ -265,6 +267,10 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 	if len(result.Data) > 1 {
 		blog.Errorf("[operation-asst] delete association with id[%d], but got multiple association", associationID)
 		return params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
+	}
+
+	if result.Data[0].AsstKindID == common.AssociationKindMainline {
+		return params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
 	}
 
 	// find instance(s) belongs to this association
