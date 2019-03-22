@@ -67,8 +67,10 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return eventSubscribeResourceID(resourceType, attribute)
 	case meta.HostInstance:
 		return hostInstanceResourceID(resourceType, attribute)
+	case meta.DynamicGrouping:
+		return dynamicGroupingResourceID(resourceType, attribute)
 	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
+		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
 }
 
@@ -221,8 +223,14 @@ func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 }
 
 func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: BizProcessInstance,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	return []ResourceID{id}, nil
 }
 
 func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -247,6 +255,21 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 }
 
 func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
+}
+
+func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	return []ResourceID{
 		{
 			ResourceType: resourceType,
