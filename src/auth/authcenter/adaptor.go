@@ -86,9 +86,6 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 			iamResourceType = BizHostInstance
 		}
 
-	case meta.HostUserCustom:
-		iamResourceType = BizCustomQuery
-
 	case meta.HostFavorite:
 		return nil, errors.New("host favorite does not support auth now")
 
@@ -191,6 +188,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		if r.Action == meta.Delete || r.Action == meta.Update {
 			return Edit, nil
 		}
+	}
+	if r.Action == meta.Archive {
+		return Archive, nil
 	}
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {

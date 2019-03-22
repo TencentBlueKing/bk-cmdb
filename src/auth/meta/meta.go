@@ -86,6 +86,7 @@ const (
 	UpdateMany Action = "updateMany"
 	Delete     Action = "delete"
 	DeleteMany Action = "deleteMany"
+	Archive    Action = "archive"
 	Find       Action = "find"
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.

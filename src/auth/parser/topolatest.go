@@ -445,14 +445,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
 	findObjectInstanceLatestRegexp            = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
-	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/inst/object/[^\s/]+/inst/[0-9]+/?$`)
-	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/inst/object/[^\s/]+/?$`)
-	deleteObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/deletemany/inst/object/[^\s/]+/?$`)
-	deleteObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/delete/inst/object/[^\s/]+/inst/[0-9]+/?$`)
+	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
+	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
+	deleteObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/deletemany/instance/object/[^\s/]+/?$`)
+	deleteObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyLatestRegexp  = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
-	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/inst/object/[^\s/]+/?$`)
+	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {

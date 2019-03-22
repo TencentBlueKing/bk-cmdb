@@ -27,13 +27,10 @@ func (ps *parseStream) hostRelated() *parseStream {
 	return ps
 }
 
-const (
-	createUserAPIPattern = "/api/v3/userapi"
-)
-
 var (
-	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
-	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	createUserAPIPattern     = "/api/v3/userapi"
+	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
+	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
 	findUserAPIRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
 	findUserAPIDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
 	findWithUserAPIRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)

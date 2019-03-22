@@ -166,6 +166,26 @@ func (ps *parseStream) business() *parseStream {
 		return ps
 	}
 
+	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					Action:     meta.Archive,
+					InstanceID: bizID,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
