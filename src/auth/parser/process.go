@@ -43,6 +43,7 @@ var (
 	findModulesBindByProcessRegexp = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	boundModuleToProcessRegexp     = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
 	unboundModuleToProcessRegexp   = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
+	findboundModuleToProcessRegexp = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findProcessInstanceRegexp      = regexp.MustCompile(`^/api/v3/proc/inst/[^\s/]+/[0-9]+/?$`)
 )
 
@@ -272,6 +273,32 @@ func (ps *parseStream) process() *parseStream {
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.UnboundModuleToProcess,
+					InstanceID: procID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find bound a module with a process.
+	if ps.hitRegexp(findboundModuleToProcessRegexp, http.MethodGet) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("unbound module to process, but got invalid business id: %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		procID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("unbound module to process, but got invalid process id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Action:     meta.FindBoundModuleProcess,
 					InstanceID: procID,
 				},
 			},
