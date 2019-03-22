@@ -17,6 +17,7 @@ import (
 	"configcenter/src/auth/extensions"
 	"configcenter/src/auth/meta"
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -131,6 +132,9 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 		instNameMap[name] = struct{}{}
 	}
+	
+	updatedInstanceIDs := make([]int64, 0)
+	createdInstanceIDs := make([]int64, 0)
 
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
@@ -142,7 +146,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		if item.GetValues().Exists(obj.GetInstIDFieldName()) {
+		exist := item.GetValues().Exists(obj.GetInstIDFieldName())
+		if exist {
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
@@ -150,6 +155,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
+			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
 				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
@@ -186,6 +192,27 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+		
+		instanceID, err := item.GetInstID()
+		if err != nil {
+			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v", err)
+			continue
+		}
+		if exist == false {
+			createdInstanceIDs = append(createdInstanceIDs, instanceID)
+		}
+	}
+
+	// auth register new created
+	if err := authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
+		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
+		return nil, err
+	}
+
+	// auth update registered instances
+	if err := authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
+		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
+		return nil, err
 	}
 
 	return results, nil
@@ -236,6 +263,19 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
 		return nil, err
 	}
+	
+	instanceID, err := item.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, err: %+v", err)
+	}
+	
+	// auth: register instances to iam
+	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
+	if err := authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
+		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
+		return nil, err
+	}
+
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 
