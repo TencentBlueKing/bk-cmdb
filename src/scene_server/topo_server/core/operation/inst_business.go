@@ -13,7 +13,8 @@
 package operation
 
 import (
-	"configcenter/src/scene_server/topo_server/core/auth"
+	"configcenter/src/auth"
+	"configcenter/src/auth/extensions"
 	"context"
 	"strings"
 
@@ -41,16 +42,16 @@ type BusinessOperationInterface interface {
 }
 
 // NewBusinessOperation create a business instance
-func NewBusinessOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) BusinessOperationInterface {
+func NewBusinessOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) BusinessOperationInterface {
 	return &business{
 		clientSet: client,
-		auth:      auth,
+		authorize:      authorize,
 	}
 }
 
 type business struct {
 	clientSet apimachinery.ClientSetInterface
-	auth      *topoauth.TopoAuth
+	authorize      auth.Authorize
 	inst      InstOperationInterface
 	set       SetOperationInterface
 	module    ModuleOperationInterface
@@ -156,7 +157,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
-	if err := b.auth.RegisterBusiness(params.Context, params.Header, bizName, bizID); err != nil {
+	authManager := extensions.NewAuthManager(b.clientSet, b.authorize, params.Err)
+	if err := authManager.RegisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
 		blog.Errorf("create business: %s, but register business resource failed, err: %v", bizName, err)
 		return bizInst, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
@@ -224,7 +226,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error {
-	if err := b.auth.DeregisterBusiness(params.Context, params.Header, bizID); err != nil {
+	authManager := extensions.NewAuthManager(b.clientSet, b.authorize, params.Err)
+	if err := authManager.DeregisterBusinessByRawID(params.Context, params.Header, bizID); err != nil {
 		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v", bizID, err)
 		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
@@ -345,7 +348,8 @@ func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr
 			return params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		if err := b.auth.UpdateBusiness(params.Context, params.Header, bizName, bizID); err != nil {
+		authManager := extensions.NewAuthManager(b.clientSet, b.authorize, params.Err)
+		if err := authManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
 			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v", bizName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}

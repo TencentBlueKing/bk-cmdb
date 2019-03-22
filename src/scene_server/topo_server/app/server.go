@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/emicklei/go-restful"
-	
+
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -31,7 +31,6 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/remote"
@@ -103,7 +102,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authAPI, err := topoauth.NewTopologyAuth(nil, server.Config.Auth)
+	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
+	// authAPI, err := topoauth.NewTopologyAuth(nil, server.Config.Auth)
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
@@ -111,8 +111,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	server.Service = &service.Service{
 		Language: engine.Language,
 		Engine:   engine,
-		Auth:     authAPI,
-		Core:     core.New(engine.CoreAPI, authAPI),
+		Authorize:     authorize,
+		Core:     core.New(engine.CoreAPI, authorize),
 		Error:    engine.CCErr,
 		Txn:      txn,
 		Config:   server.Config,

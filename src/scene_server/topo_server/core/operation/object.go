@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/auth"
 	"context"
 	"fmt"
 	"strconv"
@@ -25,7 +26,6 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	topoauth "configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -48,16 +48,16 @@ type ObjectOperationInterface interface {
 }
 
 // NewObjectOperation create a new object operation instance
-func NewObjectOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) ObjectOperationInterface {
+func NewObjectOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) ObjectOperationInterface {
 	return &object{
 		clientSet: client,
-		auth:      auth,
+		authorize:      authorize,
 	}
 }
 
 type object struct {
 	clientSet    apimachinery.ClientSetInterface
-	auth         *topoauth.TopoAuth
+	authorize         auth.Authorize
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
@@ -362,7 +362,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	}
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(o.clientSet, o.auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(o.clientSet, o.authorize, params.Err)
 	businessID, err := obj.Object().Metadata.Label.GetBusinessID()
 	if err != nil && err != metadata.LabelKeyNotExistError {
 		blog.Errorf("create model failed, get business field from model: %+v meta failed, err: %+v", obj.Object(), err)
@@ -381,7 +381,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 
 	// auth: register model to iam
 	object := obj.Object()
-	if err := o.auth.RegisterObject(params.Context, params.Header, &object); err != nil {
+	if err := authManager.RegisterObject(params.Context, params.Header, object); err != nil {
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
@@ -532,7 +532,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
 	}
-	authManager := extensions.NewAuthManager(o.clientSet, o.auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(o.clientSet, o.authorize, params.Err)
 	if err := authManager.AuthorizeByObject(params.Context, params.Header, meta.Update, objects...); err != nil {
 		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
 		return err
@@ -540,7 +540,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 
 	for _, obj := range objs {
 		object := obj.Object()
-		if err := o.auth.DeregisterObject(params.Context, params.Header, &object); err != nil {
+		if err := authManager.DeregisterObject(params.Context, params.Header, object); err != nil {
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 		// check if is can be deleted
@@ -746,7 +746,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	object := obj.Object()
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(o.clientSet, o.auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(o.clientSet, o.authorize, params.Err)
 	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
 		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
 		return err
@@ -754,7 +754,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 
 	if len(object.ObjectName) != 0 {
 		// need to update object in auth.
-		if err := o.auth.UpdateRegisteredObject(params.Context, params.Header, &object); err != nil {
+		if err := authManager.UpdateRegisteredObjects(params.Context, params.Header, object); err != nil {
 			blog.Errorf("update object %s, but update to auth failed, err: %v", object.ObjectName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}

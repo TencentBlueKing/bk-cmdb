@@ -42,3 +42,12 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 
 	return nil
 }
+
+func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.ResourceAttribute) error {
+	for _, resource := range resources {
+		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
+			return nil
+		}
+	}
+	return nil
+}

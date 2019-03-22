@@ -32,7 +32,7 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 
 	// auth: register resource
 	attribute := attr.Attribute()
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.RegisterModelAttribute(params.Context, params.Header, *attribute); err != nil {
 		return nil, fmt.Errorf("register model attribute to auth failed, err: %+v", err)
 	}
@@ -69,7 +69,7 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)
 
 	// auth: update registered resource
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.UpdateRegisteredModelAttributeByID(params.Context, params.Header, id); err != nil {
 		return nil, fmt.Errorf("update registered model attribute to auth failed, err: %+v", err)
 	}
@@ -97,7 +97,7 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	// auth: update registered resource
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
 		return nil, fmt.Errorf("update registered model attribute to auth failed, err: %+v", err)
 	}

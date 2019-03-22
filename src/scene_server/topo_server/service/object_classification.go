@@ -30,7 +30,7 @@ func (s *Service) CreateClassification(params types.ContextParams, pathParams, q
 	}
 	
 	// auth: register classification to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.RegisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
 		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
 	}
@@ -109,7 +109,7 @@ func (s *Service) UpdateClassification(params types.ContextParams, pathParams, q
 	}
 
 	// auth: register classification to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, id); err != nil {
 		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
 	}
@@ -130,7 +130,7 @@ func (s *Service) DeleteClassification(params types.ContextParams, pathParams, q
 	}
 
 	// auth: register classification to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Auth.Authorizer, params.Err)
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
 	if err := authManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
 		return nil, fmt.Errorf("deregister classification to iam failed, err: %+v", err)
 	}

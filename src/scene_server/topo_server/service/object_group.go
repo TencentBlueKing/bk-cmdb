@@ -13,7 +13,9 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -31,6 +33,11 @@ func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, quer
 		return nil, err
 	}
 
+	// auth: register attribute group
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
+	if err := authManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
+		return nil, fmt.Errorf("register attribute group to iam failed, err: %+v", err)
+	}
 	return rsp.ToMapStr()
 }
 
@@ -49,7 +56,37 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	if nil != err {
 		return nil, err
 	}
+	
+	// query attribute groups with given condition, so that update them to iam after updated
+	searchCondition := condition.CreateCondition()
+	if cond.Condition.ID != 0 {
+		searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
+	}
+	if cond.Condition.GroupID != "" {
+		searchCondition.Field(common.BKPropertyGroupIDField).Eq(cond.Condition.GroupID)
+	}
+	if cond.Condition.ObjID != "" {
+		searchCondition.Field(common.BKObjIDField).Eq(cond.Condition.ObjID)
+	}
+	queryCond := metadata.QueryCondition{
+		Condition: searchCondition.ToMapStr(),
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCond)
+	if err != nil {
+		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+	}
+	attributeGroups := make([]metadata.Group, 0)
+	for _, item := range result.Data.Info {
+		ag := metadata.Group{}
+		ag.Parse(item)
+		attributeGroups = append(attributeGroups, ag)
+	}
 
+	// auth: register attribute group
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
+	if err := authManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
@@ -67,6 +104,11 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 		return nil, err
 	}
 
+	// auth: deregister attribute group
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
+	if err := authManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
+		return nil, fmt.Errorf("deregister attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
@@ -110,6 +152,30 @@ func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathPar
 		return nil, err
 	}
 
+	// query attribute groups with given condition, so that update them to iam after updated
+	searchCondition := condition.CreateCondition()
+	searchCondition.Field(common.BKObjIDField).Eq(pathParams("bk_object_id"))
+	searchCondition.Field(common.BKPropertyIDField).Eq(pathParams("property_id"))
+	searchCondition.Field(common.BKPropertyGroupIDField).Eq(pathParams("group_id"))
+	queryCondition := metadata.QueryCondition{
+		Condition: searchCondition.ToMapStr(),
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCondition)
+	if err != nil {
+		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+	}
+	attributeGroups := make([]metadata.Group, 0)
+	for _, item := range result.Data.Info {
+		ag := metadata.Group{}
+		ag.Parse(item)
+		attributeGroups = append(attributeGroups, ag)
+	}
+
+	// auth: deregister attribute group
+	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
+	if err := authManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
