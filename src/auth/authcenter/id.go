@@ -132,6 +132,9 @@ func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.Res
 }
 
 func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
@@ -161,11 +164,12 @@ func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 }
 
 func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
-	}
-	if attribute.InstanceID > 0 {
-		id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 	return []ResourceID{id}, nil
 }

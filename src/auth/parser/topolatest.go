@@ -220,12 +220,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// update association kind operation
 	if ps.hitRegexp(updateAssociationKindLatestRegexp, http.MethodPut) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("update association kind, but got invalid url")
-			return ps
-		}
-
-		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
@@ -245,12 +240,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 
 	// delete association kind operation
 	if ps.hitRegexp(deleteAssociationKindLatestRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("delete association kind, but got invalid url")
-			return ps
-		}
-
-		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		kindID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete association kind, but got invalid kind id %s", ps.RequestCtx.Elements[5])
 			return ps
