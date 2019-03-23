@@ -72,3 +72,21 @@ func (ps *parseStream) getAttributeGroup(cond interface{}) ([]metadata.Group, er
 
 	return groups.Data.Info, nil
 }
+
+func (ps *parseStream) getModelAssociation(id int64) (metadata.Association, error) {
+	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadModelAssociation(context.Background(), ps.RequestCtx.Header,
+		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKFieldID: id}})
+	if err != nil {
+		return metadata.Association{}, err
+	}
+
+	if !asst.Result {
+		return metadata.Association{}, errors.New(asst.Code, asst.ErrMsg)
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return metadata.Association{}, fmt.Errorf("model association [%d] not found", id)
+	}
+
+	return asst.Data.Info[0], nil
+}
