@@ -557,11 +557,16 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	cond := map[string][]int64{
-		common.BKAppIDField: []int64{data.AppID},
+	cond := make(map[string][]int64, 0)
+	if data.AppID != 0 {
+		cond[common.BKAppIDField] = []int64{data.AppID}
 	}
 	if len(data.HostID) > 0 {
 		cond[common.BKHostIDField] = data.HostID
+	}
+	if len(cond) == 0 {
+		resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
 	}
 
 	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
