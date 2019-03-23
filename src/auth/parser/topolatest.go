@@ -268,7 +268,7 @@ const (
 )
 
 var (
-	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/object/association/[0-9]+/?$`)
+	updateObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/update/objectassociation/[0-9]+/?$`)
 	deleteObjectAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/delete/objectassociation/[0-9]+/?$`)
 )
 
@@ -294,8 +294,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get object id in metadata failed, err: %v", err)
-			return ps
+			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
@@ -330,6 +329,11 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// update object association operation
 	if ps.hitRegexp(updateObjectAssociationLatestRegexp, http.MethodPut) {
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+		}
+
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("update object association, but got invalid url")
 			return ps
@@ -340,21 +344,48 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			ps.err = fmt.Errorf("update object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.ModelAssociation,
-					Action:     meta.Update,
-					InstanceID: assoID,
-				},
-			},
+		asst, err := ps.getModelAssociation(assoID)
+		if err != nil {
+			ps.err = err
+			return ps
 		}
+
+		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+			asst.ObjectID,
+			asst.AsstObjID,
+		}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       meta.Model,
+						Action:     meta.Update,
+						InstanceID: model.ID,
+					},
+					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
+					BusinessID: bizID,
+				})
+		}
+
 		return ps
 	}
 
 	// delete object association operation
 	if ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+		}
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("delete object association, but got invalid url")
 			return ps
@@ -366,14 +397,37 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.ModelAssociation,
-					Action:     meta.Delete,
-					InstanceID: assoID,
-				},
-			},
+		asst, err := ps.getModelAssociation(assoID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+			asst.ObjectID,
+			asst.AsstObjID,
+		}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       meta.Model,
+						Action:     meta.Update,
+						InstanceID: model.ID,
+					},
+					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
+					BusinessID: bizID,
+				})
 		}
 		return ps
 	}
