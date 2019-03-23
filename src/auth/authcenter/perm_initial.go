@@ -46,10 +46,12 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 
 		scopeType := ScopeTypeIDSystem
 		ScopeID := SystemIDCMDB
+		groupType := SysModelGroup
 
 		if bizID > 0 {
 			scopeType = ScopeTypeIDBiz
 			ScopeID = strconv.FormatInt(bizID, 10)
+			groupType = BizModelGroup
 		}
 
 		info := RegisterInfo{
@@ -57,9 +59,9 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			CreatorType: "user",
 			Resources: []ResourceEntity{
 				{
-					ResourceType: SysModelGroup,
+					ResourceType: groupType,
 					ResourceID: []ResourceID{
-						{ResourceType: SysModelGroup, ResourceID: strconv.FormatInt(cls.ID, 10)},
+						{ResourceType: groupType, ResourceID: strconv.FormatInt(cls.ID, 10)},
 					},
 					ResourceName: cls.ClassificationName,
 					ScopeInfo: ScopeInfo{
@@ -85,10 +87,14 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 
 		scopeType := ScopeTypeIDSystem
 		ScopeID := SystemIDCMDB
+		groupType := SysModelGroup
+		modelType := SysModel
 
 		if bizID > 0 {
 			scopeType = ScopeTypeIDBiz
 			ScopeID = strconv.FormatInt(bizID, 10)
+			groupType = BizModelGroup
+			modelType = BizModel
 		}
 
 		info := RegisterInfo{
@@ -96,10 +102,10 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			CreatorType: "user",
 			Resources: []ResourceEntity{
 				{
-					ResourceType: SysModel,
+					ResourceType: modelType,
 					ResourceID: []ResourceID{
-						{ResourceType: SysModelGroup, ResourceID: strconv.FormatInt(clsID, 10)},
-						{ResourceType: SysModel, ResourceID: strconv.FormatInt(model.ID, 10)},
+						{ResourceType: groupType, ResourceID: strconv.FormatInt(clsID, 10)},
+						{ResourceType: modelType, ResourceID: strconv.FormatInt(model.ID, 10)},
 					},
 					ResourceName: model.ObjectName,
 					ScopeInfo: ScopeInfo{

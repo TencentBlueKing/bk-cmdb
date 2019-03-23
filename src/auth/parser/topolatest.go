@@ -292,13 +292,38 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.ModelAssociation,
-					Action: meta.Create,
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			ps.err = fmt.Errorf("find object instance, but get object id in metadata failed, err: %v", err)
+			return ps
+		}
+
+		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+			gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value(),
+			gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstObjIDField).Value(),
+		}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:       meta.Model,
+						Action:     meta.Update,
+						InstanceID: model.ID,
+					},
+					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
 				},
-			},
+			)
 		}
 		return ps
 	}
