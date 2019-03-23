@@ -149,8 +149,35 @@ func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *
 }
 
 func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+
+	groupType := SysModelGroup
+	modelType := SysModel
+	if attribute.BusinessID > 0 {
+		groupType = BizModelGroup
+		modelType = BizModel
+	}
+
+	return []ResourceID{
+		{
+			ResourceType: groupType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
+		},
+		{
+			ResourceType: modelType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[1].InstanceID, 10),
+		},
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }
 
 func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {

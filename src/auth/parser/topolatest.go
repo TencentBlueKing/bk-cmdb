@@ -344,7 +344,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			ps.err = fmt.Errorf("update object association, but got invalid association id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		asst, err := ps.getModelAssociation(assoID)
+		asst, err := ps.getModelAssociation(mapstr.MapStr{common.BKFieldID: assoID})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -397,7 +397,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		asst, err := ps.getModelAssociation(assoID)
+		asst, err := ps.getModelAssociation(mapstr.MapStr{common.BKFieldID: assoID})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -450,7 +450,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 const (
 	findObjectInstanceAssociationLatestPattern   = "/api/v3/find/instassociation"
-	createObjectInstanceAssociationLatestPattern = "/api/v3/inst/association/action/create"
+	createObjectInstanceAssociationLatestPattern = "/api/v3/create/instassociation"
 )
 
 var (
@@ -477,13 +477,49 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create object's instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstanceAssociation,
-					Action: meta.Create,
-				},
-			},
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+		}
+		asst, err := ps.getModelAssociation(mapstr.MapStr{common.AssociationObjAsstIDField: gjson.GetBytes(ps.RequestCtx.Body, common.AssociationObjAsstIDField).String()})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+			asst.ObjectID,
+			asst.AsstObjID,
+		}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			var instID int64
+			if model.ObjectID == asst.ObjectID {
+				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int()
+			} else {
+				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: instID,
+					},
+					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+					BusinessID: bizID,
+				})
 		}
 		return ps
 	}
@@ -496,15 +532,50 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				Basic: meta.Basic{
-					Type:       meta.ModelInstanceAssociation,
-					Action:     meta.Delete,
-					InstanceID: assoID,
-				},
-			},
+		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
+		asst, err := ps.getInstAssociation(mapstr.MapStr{common.BKFieldID: assoID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+			asst.ObjectID,
+			asst.AsstObjectID,
+		}})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			cls, err := ps.getCls(model.ObjCls)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			var instID int64
+			if model.ObjectID == asst.ObjectID {
+				instID = asst.InstID
+			} else {
+				instID = asst.AsstInstID
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.Update,
+						InstanceID: instID,
+					},
+					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+					BusinessID: bizID,
+				})
+		}
+
 		return ps
 	}
 
