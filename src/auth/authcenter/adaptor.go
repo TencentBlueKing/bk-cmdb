@@ -73,14 +73,14 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = SysSystemBase
 
 	case meta.ModelInstance:
-		if attribute.BusinessID == 0 {
+		if attribute.BusinessID <= 0 {
 			iamResourceType = SysInstance
 		} else {
 			iamResourceType = BizInstance
 		}
 
 	case meta.HostInstance:
-		if attribute.BusinessID == 0 {
+		if attribute.BusinessID <= 0 {
 			iamResourceType = SysHostInstance
 		} else {
 			iamResourceType = BizHostInstance

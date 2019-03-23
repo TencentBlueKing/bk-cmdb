@@ -592,7 +592,7 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 	}
 
 	// bound a template to a process
-	if ps.hitRegexp(boundModuleToProcessRegexp, http.MethodPut) {
+	if ps.hitRegexp(boundTemplateToProcessRegexp, http.MethodPut) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("bound process config templates, but got invalid business id: %s", ps.RequestCtx.Elements[5])
