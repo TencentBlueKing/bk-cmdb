@@ -17,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -53,8 +52,7 @@ func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams 
 	}
 	
 	// auth: register set
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
+	if err := s.AuthManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
 		return nil, fmt.Errorf("create set failed, %+v", err)
 	}
 	return set, nil
@@ -83,8 +81,7 @@ func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
 	
 	// auth: register set
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
 		return nil, fmt.Errorf("deregister sets from iam failed, %+v", err)
 	}
 	return nil, err
@@ -123,8 +120,7 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 	}
 	
 	// auth: deregister set
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
 		return nil, fmt.Errorf("deregister set from iam failed, %+v", err)
 	}
 	return nil, nil
@@ -157,8 +153,7 @@ func (s *Service) UpdateSet(params types.ContextParams, pathParams, queryParams 
 	}
 
 	// auth: update register set
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredSetByID(params.Context, params.Header, setID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredSetByID(params.Context, params.Header, setID); err != nil {
 		return nil, fmt.Errorf("update registered set failed, %+v", err)
 	}
 	return nil, nil

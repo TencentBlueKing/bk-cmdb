@@ -17,7 +17,6 @@ import (
 	"strconv"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -34,10 +33,10 @@ type GraphicsOperationInterface interface {
 	SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
 
-func NewGraphics(client apimachinery.ClientSetInterface, authorize auth.Authorize) GraphicsOperationInterface {
+func NewGraphics(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) GraphicsOperationInterface {
 	return &graphics{
 		clientSet: client,
-		authorize: authorize,
+		authManager: authManager,
 	}
 }
 
@@ -45,7 +44,7 @@ type graphics struct {
 	clientSet apimachinery.ClientSetInterface
 	obj       ObjectOperationInterface
 	asst      AssociationOperationInterface
-	authorize auth.Authorize
+	authManager *extensions.AuthManager
 }
 
 func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface) {
@@ -175,8 +174,7 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 	for _, data := range datas {
 		objectIDs = append(objectIDs, data.ObjID)
 	}
-	authManager := extensions.NewAuthManager(g.clientSet, g.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyView, objectIDs...); err != nil {
+	if err := g.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyView, objectIDs...); err != nil {
 		return err
 	}
 

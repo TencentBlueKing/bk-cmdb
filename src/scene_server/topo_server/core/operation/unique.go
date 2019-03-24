@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/auth"
 	"context"
 	"fmt"
 
@@ -36,23 +35,22 @@ type UniqueOperationInterface interface {
 }
 
 // NewUniqueOperation create a new group operation instance
-func NewUniqueOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) UniqueOperationInterface {
+func NewUniqueOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) UniqueOperationInterface {
 	return &unique{
 		clientSet: client,
-		authorize:      authorize,
+		authManager: authManager,
 	}
 }
 
 type unique struct {
 	clientSet apimachinery.ClientSetInterface
-	authorize         auth.Authorize
+	authManager *extensions.AuthManager
 }
 
 func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
 	
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
 		blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", objectID, err)
 		return nil, err
 	}
@@ -77,7 +75,7 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 	
 	// auth: register unique to iam
 	uniqueid := int64(resp.Data.Created.ID)
-	if err := authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, uniqueid); err != nil {
+	if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, uniqueid); err != nil {
 		return nil, fmt.Errorf("register model attribute unique to iam failed, err: %+v", err)
 	}
 	return &metadata.RspID{ID: int64(resp.Data.Created.ID)}, nil
@@ -86,8 +84,7 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 func (a *unique) Update(params types.ContextParams, objectID string, id uint64, request *metadata.UpdateUniqueRequest) (err error) {
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
 		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v", id, objectID, err)
 		return err
 	}
@@ -105,7 +102,7 @@ func (a *unique) Update(params types.ContextParams, objectID string, id uint64, 
 	}
 	
 	// auth: update register to iam
-	if err := authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
+	if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
 		blog.V(2).Infof("update unique %d for model %s failed, authorization failed, err: %+v", id, objectID, err)
 		return err
 	}
@@ -115,8 +112,7 @@ func (a *unique) Update(params types.ContextParams, objectID string, id uint64, 
 func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) (err error) {
 	
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
 		blog.V(2).Infof("delete unique %d for model %s failed, authorization failed, %+v", id, objectID, err)
 		return err
 	}
@@ -130,7 +126,7 @@ func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) 
 		return params.Err.New(resp.Code, resp.ErrMsg)
 	}
 	// auth: deregister to iam
-	if err := authManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
+	if err := a.authManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
 		blog.V(2).Infof("deregister unique %d for model %s failed, authorization failed, err: %+v", id, objectID, err)
 		return err
 	}

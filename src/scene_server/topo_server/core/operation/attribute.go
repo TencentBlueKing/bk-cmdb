@@ -14,7 +14,6 @@ package operation
 
 import (
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -40,16 +39,16 @@ type AttributeOperationInterface interface {
 }
 
 // NewAttributeOperation create a new attribute operation instance
-func NewAttributeOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) AttributeOperationInterface {
+func NewAttributeOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AttributeOperationInterface {
 	return &attribute{
 		clientSet: client,
-		authorize:      authorize,
+		authManager: authManager,
 	}
 }
 
 type attribute struct {
 	clientSet    apimachinery.ClientSetInterface
-	authorize         auth.Authorize
+	authManager *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	obj          ObjectOperationInterface
@@ -83,8 +82,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	}
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
 		blog.V(2).Infof("check authorization for create model attribute failed, err: %+v", err)
 		return nil, err
 	}
@@ -146,8 +144,7 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, "can't attributes of multiple model per request")
 		}
 	}
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
 		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
 	}
 
@@ -224,8 +221,7 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error {
 	
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.AuthorizeByAttributeID(params.Context, params.Header, meta.Update, attID); err != nil {
+	if err := a.authManager.AuthorizeByAttributeID(params.Context, params.Header, meta.Update, attID); err != nil {
 		blog.V(2).Infof("update model attribute %d failed, authorization failed, err: %+v", attID, err)
 		return err
 	}

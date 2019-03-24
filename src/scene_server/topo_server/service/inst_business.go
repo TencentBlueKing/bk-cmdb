@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"fmt"
 	"strconv"
 
@@ -46,8 +45,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 	}
 	
 	// auth: register business to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
 		return nil, fmt.Errorf("register business failed, err: %+v", err)
 	}
 	
@@ -70,8 +68,7 @@ func (s *Service) DeleteBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	// auth: deregister business to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
+	if err := s.AuthManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
 		return nil, fmt.Errorf("deregister business failed, err: %+v", err)
 	}
 
@@ -99,8 +96,7 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	// auth: update registered business to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
 		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
 	}
 	
@@ -255,8 +251,7 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 	}
 
 	// auth: register business to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
 		return nil, fmt.Errorf("register business failed, err: %+v", err)
 	}
 

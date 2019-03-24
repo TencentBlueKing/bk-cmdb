@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -69,16 +68,16 @@ type AssociationOperationInterface interface {
 }
 
 // NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) AssociationOperationInterface {
+func NewAssociationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AssociationOperationInterface {
 	return &association{
 		clientSet: client,
-		authorize:      authorize,
+		authManager: authManager,
 	}
 }
 
 type association struct {
 	clientSet    apimachinery.ClientSetInterface
-	authorize         auth.Authorize
+	authManager *extensions.AuthManager
 	cls          ClassificationOperationInterface
 	obj          ObjectOperationInterface
 	grp          GroupOperationInterface
@@ -476,8 +475,7 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.RegisterAssociationTypeByID(params.Context, params.Header, request.ID); err != nil {
+	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, request.ID); err != nil {
 		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
@@ -488,8 +486,7 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 
 func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	if len(request.AsstName) != 0 {
-		authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-		if err := authManager.UpdateAssociationTypeByID(params.Context, params.Header, asstTypeID); err != nil {
+		if err := a.authManager.UpdateAssociationTypeByID(params.Context, params.Header, asstTypeID); err != nil {
 			blog.Errorf("update association type %s, but got update resource to auth failed, err: %v", request.AsstName, err)
 			return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
@@ -510,8 +507,7 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, r
 }
 
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error) {
-	authManager := extensions.NewAuthManager(a.clientSet, a.authorize, params.Err)
-	if err := authManager.DeregisterAssociationTypeByIDs(params.Context, params.Header, asstTypeID); err != nil {
+	if err := a.authManager.DeregisterAssociationTypeByIDs(params.Context, params.Header, asstTypeID); err != nil {
 		blog.Errorf("delete association type id: %d, but deregister from auth failed, err: %v", asstTypeID, err)
 		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}

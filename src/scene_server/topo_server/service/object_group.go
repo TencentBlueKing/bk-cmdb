@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -34,8 +33,7 @@ func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, quer
 	}
 
 	// auth: register attribute group
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
+	if err := s.AuthManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
 		return nil, fmt.Errorf("register attribute group to iam failed, err: %+v", err)
 	}
 	return rsp.ToMapStr()
@@ -83,8 +81,7 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	}
 
 	// auth: register attribute group
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+	if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
 		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
 	}
 	return nil, nil
@@ -105,8 +102,7 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 	}
 
 	// auth: deregister attribute group
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
+	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
 		return nil, fmt.Errorf("deregister attribute group to iam failed, err: %+v", err)
 	}
 	return nil, nil
@@ -172,8 +168,7 @@ func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathPar
 	}
 
 	// auth: deregister attribute group
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+	if err := s.AuthManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
 		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
 	}
 	return nil, nil
