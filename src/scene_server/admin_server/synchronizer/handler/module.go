@@ -18,19 +18,19 @@ import (
 	"strings"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 	"configcenter/src/scene_server/admin_server/synchronizer/utils"
 )
 
 // HandleModuleSync do sync module of one business
 func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
-	businessSimplify := task.Data.(meta.BusinessSimplify)
+	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	coreService := ih.CoreAPI.CoreService()
 
@@ -54,31 +54,15 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 	}
 
 	// extract modules
-	moduleArr := make([]meta.ModuleSimplify, 0)
+	moduleArr := make([]extensions.ModuleSimplify, 0)
 	for _, instance := range instances.Data.Info {
-		val, exist := instance[common.BKModuleIDField]
-		if exist == false {
-			continue
-		}
-		idVal, err := util.GetInt64ByInterface(val)
+		moduleSimplify := extensions.ModuleSimplify{}
+		_, err := moduleSimplify.Parse(instance)
 		if err != nil {
-			blog.V(2).Infof("synchronize task skip module:%+v, as parse moduleID field failed, err: %+v", instance, err)
+			blog.Errorf("parse module: %+v simplify infomation failed, err: %+v", instance, err)
 			continue
 		}
-
-		var nameVal interface{}
-		var name string
-		nameVal, exist = instance[common.BKModuleNameField]
-		if exist == false {
-			name = fmt.Sprintf("module:%d", idVal)
-		} else {
-			name = util.GetStrByInterface(nameVal)
-		}
-		moduleArr = append(moduleArr, meta.ModuleSimplify{
-			BKAppIDField:   businessSimplify.BKAppIDField,
-			BKModuleIDField:   idVal,
-			BKModuleNameField: name,
-		})
+		moduleArr = append(moduleArr, moduleSimplify)
 	}
 
 	blog.V(4).Infof("list modules by business:%d result: %+v", businessSimplify.BKAppIDField, moduleArr)

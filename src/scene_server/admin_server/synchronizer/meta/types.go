@@ -42,22 +42,3 @@ type SyncHandler interface {
 	HandleSetSync(task *WorkRequest) error
 	HandleModuleSync(task *WorkRequest) error
 }
-
-type BusinessSimplify struct {
-	BKAppIDField      int64
-	BKSupplierIDField int64
-	BKOwnerIDField    string
-	BKAppNameField    string
-}
-
-type SetSimplify struct {
-	BKAppIDField   int64
-	BKSetIDField   int64
-	BKSetNameField string
-}
-
-type ModuleSimplify struct {
-	BKAppIDField      int64
-	BKModuleIDField   int64
-	BKModuleNameField string
-}
