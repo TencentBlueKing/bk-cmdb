@@ -22,3 +22,24 @@ extensions 被设计成一种松散的组织方式，各种资源类型之间尽
 	+ `BusinessSimply` 以及 `SetSimply` 等类用于从db数据中提取extension模块必要的数据
 - 其它`.go`文件为对接其它各个场景的接口封装，比如 `host.go` 封装了对主机的注册鉴权等相关接口及实现。
 
+
+## special resource id design
+### host
+#### Resource_id format
+- common format: `business/{business}:set/{set}:module/{module}:host/{host_id}`
+
+
+#### Authorization for add host
+- resource_id: `business/{business}:set/{set}:module/{module}:host`
+- action: transferhost
+
+####  Authorization for update/read/delete host
+- resource_id: `business/{business}:set/{set}:module/{module}:host/{host_id}`
+- action: update/read/delete
+
+
+#### Deal with one host belong to multiple modules
+- respect as multiple iam resource
+- ex: host_id belong to module1 and module 2, then there will be two resource
+    + resource_id: `business/{business}:set/{set}:module/{module1}:host/{host_id}`
+    + resource_id: `business/{business}:set/{set}:module/{module2}:host/{host_id}`

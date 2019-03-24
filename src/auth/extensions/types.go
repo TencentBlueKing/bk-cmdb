@@ -172,3 +172,18 @@ func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 
 	return is, err
 }
+
+type PlatSimplify struct {
+	BKCloudIDField   int64  `json:"bk_cloud_id"`
+	BKCloudNameField string `json:"bk_cloud_name"`
+}
+
+func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}

@@ -48,6 +48,7 @@ const (
 	NetDataCollector         ResourceType = "netDataCollector"
 	DynamicGrouping          ResourceType = "dynamicGrouping"
 	EventPushing             ResourceType = "eventPushing"
+	Plat             ResourceType = "plat"
 )
 
 const (
