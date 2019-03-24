@@ -13,6 +13,8 @@
 package app
 
 import (
+	"configcenter/src/auth"
+	"configcenter/src/auth/extensions"
 	"context"
 	"errors"
 	"fmt"
@@ -29,7 +31,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/authorize"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
 )
@@ -74,13 +75,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	config := hostSrv.Config.Auth
 	blog.Info("host server auth config is: %+v", config)
-	authorizer, err := authorize.NewHostAuthorizer(nil, config)
+	authorizer, err := auth.NewAuthorize(nil, config)
 	if err != nil {
-		blog.Errorf("make host authorizer failed, err: %+v", err)
-		return fmt.Errorf("make host authorizer failed, err: %+v", err)
+		blog.Errorf("new host authorizer failed, err: %+v", err)
+		return fmt.Errorf("new host authorizer failed, err: %+v", err)
 	}
-	service.Authorizer = *authorizer
-
+	authManager := extensions.NewAuthManager(engine.CoreAPI, authorizer)
+	service.AuthManager = authManager
 	service.Engine = engine
 	service.Config = &hostSrv.Config
 	service.CacheDB = cacheDB

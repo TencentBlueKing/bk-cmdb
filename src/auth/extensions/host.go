@@ -287,6 +287,18 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
+func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
+	}
+	return am.AuthorizeByHosts(ctx, header, action, hosts...)
+}
+
+func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
+	return am.AuthorizeResourceCreate(ctx, header, bizID, meta.HostInstance)
+}
+
 func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
 	// extract business id
 	bizID, err := am.extractBusinessIDFromHosts(hosts...)
