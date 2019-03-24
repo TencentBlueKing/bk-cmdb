@@ -13,10 +13,10 @@
 package synchronizer
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -90,24 +90,12 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		return &jobs
 	}
 	
-	businessList := make([]meta.BusinessSimplify, 0)
+	businessList := make([]extensions.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
-		bizID, err := util.GetInt64ByInterface(business[common.BKAppIDField])
-		if err != nil {
-			blog.Errorf("parse business id from business %+v failed, err: %+v", business, err)
+		businessSimplify := extensions.BusinessSimplify{}
+		if _, err := businessSimplify.Parse(business); err != nil {
+			blog.Errorf("parse business %+v simplify information failed, err: %+v", business, err)
 			continue
-		}
-		
-		supplierID, err := util.GetInt64ByInterface(business[common.BKSupplierIDField])
-		if err != nil {
-			blog.Errorf("parse supplier id from business %+v failed, err: %+v", business, err)
-			continue
-		}
-		
-		businessSimplify := meta.BusinessSimplify{
-			BKAppIDField:      bizID,
-			BKSupplierIDField: supplierID,
-			BKOwnerIDField:    util.GetStrByInterface(business[common.BKOwnerIDField]),
 		}
 		businessList = append(businessList, businessSimplify)
 	}

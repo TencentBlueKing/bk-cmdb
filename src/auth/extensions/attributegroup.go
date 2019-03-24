@@ -26,6 +26,9 @@ import (
 )
 
 func (am *AuthManager) collectAttributesGroupByAttributeIDs(ctx context.Context, header http.Header, agIDs ...int64) ([]metadata.Group, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	agIDs = util.IntArrayUnique(agIDs)
+
 	// get attribute group by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(agIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}

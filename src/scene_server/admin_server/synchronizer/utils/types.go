@@ -16,8 +16,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 )
 
 var (
@@ -34,7 +34,7 @@ func NewListBusinessAPIHeader() *http.Header {
 	return &header
 }
 
-func NewAPIHeaderByBusiness(businessSimplify *meta.BusinessSimplify) *http.Header {
+func NewAPIHeaderByBusiness(businessSimplify *extensions.BusinessSimplify) *http.Header {
 	header := http.Header{}
 	header.Add(common.BKHTTPSupplierID, fmt.Sprintf("%d", businessSimplify.BKSupplierIDField))
 	header.Add(common.BKHTTPHeaderUser, SynchronizeDefaultUser)

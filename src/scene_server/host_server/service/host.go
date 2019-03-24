@@ -376,7 +376,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	// check authorization
 	// is AddHostFromAgent's authentication the same with common api?
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByBusinessIDs(srvData.ctx, req.Request.Header, authmeta.Update, appID); err != nil {
+	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, appID); err != nil {
 		blog.Errorf("check business authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -869,7 +869,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	// step2. check permission for target business
-	if err := s.AuthManager.AuthorizeByBusinessIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
+	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
 		blog.Errorf("check business authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return

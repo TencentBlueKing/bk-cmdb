@@ -30,6 +30,9 @@ import (
  */
 
 func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	platIDs = util.IntArrayUnique(platIDs)
+
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKSubAreaField).In(platIDs).ToMapStr(),

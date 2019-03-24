@@ -107,7 +107,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check business authorization
-	if err := s.AuthManager.AuthorizeByBusinessIDs(srvData.ctx, req.Request.Header, authmeta.Update, params.ApplicationID); err != nil {
+	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, params.ApplicationID); err != nil {
 		blog.Errorf("check business authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return

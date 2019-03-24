@@ -25,6 +25,9 @@ import (
 )
 
 func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.AssociationKind, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	ids = util.IntArrayUnique(ids)
+	
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(ids)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
