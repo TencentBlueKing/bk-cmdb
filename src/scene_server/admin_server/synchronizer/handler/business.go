@@ -13,6 +13,7 @@
 package handler
 
 import (
+	"configcenter/src/auth/extensions"
 	"context"
 
 	"configcenter/src/auth/authcenter"
@@ -35,14 +36,15 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 	}
 
 	// step1 get busineses from core service
-	businessList := make([]meta.BusinessSimplify, 0)
+	businessList := make([]extensions.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
-		businessSimplify := meta.BusinessSimplify{
-			BKAppIDField:      int64(business[common.BKAppIDField].(float64)),
-			BKSupplierIDField: int64(business[common.BKSupplierIDField].(float64)),
-			BKOwnerIDField:    business[common.BKOwnerIDField].(string),
-			BKAppNameField:    business[common.BKAppNameField].(string),
+		businessSimplify := extensions.BusinessSimplify{}
+		_, err := businessSimplify.Parse(business)
+		if err != nil {
+			blog.Errorf("parse business %+v simplify infomation failed, err: %+v", business, err)
+			continue
 		}
+		
 		// businessID := business[common.BKAppIDField].(int64)
 		// businessIDArr = append(businessIDArr, businessID)
 		businessList = append(businessList, businessSimplify)

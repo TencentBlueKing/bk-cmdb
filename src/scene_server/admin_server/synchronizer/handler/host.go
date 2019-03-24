@@ -30,7 +30,7 @@ import (
 
 // HandleHostSync do sync host of one business
 func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
-	businessSimplify := task.Data.(meta.BusinessSimplify)
+	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	coreService := ih.CoreAPI.CoreService()
 

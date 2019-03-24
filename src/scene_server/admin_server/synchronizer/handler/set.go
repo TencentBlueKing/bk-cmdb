@@ -18,19 +18,19 @@ import (
 	"strings"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
 	"configcenter/src/scene_server/admin_server/synchronizer/utils"
 )
 
 // HandleSetSync do sync set of one business
 func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
-	businessSimplify := task.Data.(meta.BusinessSimplify)
+	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 	coreService := ih.CoreAPI.CoreService()
 
@@ -54,31 +54,15 @@ func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
 	}
 
 	// extract sets
-	setArr := make([]meta.SetSimplify, 0)
+	setArr := make([]extensions.SetSimplify, 0)
 	for _, instance := range instances.Data.Info {
-		val, exist := instance[common.BKSetIDField]
-		if exist == false {
-			continue
-		}
-		idVal, err := util.GetInt64ByInterface(val)
+		setSimplify := extensions.SetSimplify{}
+		_, err := setSimplify.Parse(instance)
 		if err != nil {
-			blog.V(2).Infof("synchronize task skip set:%+v, as parse setID field failed, err: %+v", instance, err)
+			blog.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
 			continue
 		}
-
-		var nameVal interface{}
-		var name string
-		nameVal, exist = instance[common.BKSetNameField]
-		if exist == false {
-			name = fmt.Sprintf("set:%d", idVal)
-		} else {
-			name = util.GetStrByInterface(nameVal)
-		}
-		setArr = append(setArr, meta.SetSimplify{
-			BKAppIDField:   businessSimplify.BKAppIDField,
-			BKSetIDField:   idVal,
-			BKSetNameField: name,
-		})
+		setArr = append(setArr, setSimplify)
 	}
 
 	blog.V(4).Infof("list sets by business:%d result: %+v", businessSimplify.BKAppIDField, setArr)
