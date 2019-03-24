@@ -29,6 +29,9 @@ import (
  */
 
 func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	businessIDs = util.IntArrayUnique(businessIDs)
+
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(businessIDs).ToMapStr(),
@@ -46,28 +49,6 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
 		}
 		instances = append(instances, instance)
-	}
-	return instances, nil
-}
-
-func (am *AuthManager) collectBusinessByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]BusinessSimplify, error) {
-
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
-	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
-	}
-	instances := make([]BusinessSimplify, 0)
-	for _, cls := range result.Data.Info {
-		classification := BusinessSimplify{}
-		_, err = classification.Parse(cls)
-		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
-		}
-		instances = append(instances, classification)
 	}
 	return instances, nil
 }
@@ -183,3 +164,10 @@ func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http
 	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
+func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	if err != nil {
+		return fmt.Errorf("get businesses by id failed, err: %+v", err)
+	}
+	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+}

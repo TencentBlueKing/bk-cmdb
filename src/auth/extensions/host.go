@@ -182,6 +182,9 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 }
 
 func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	hostIDs = util.IntArrayUnique(hostIDs)
+
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
 	}

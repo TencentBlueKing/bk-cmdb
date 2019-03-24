@@ -26,6 +26,9 @@ import (
 )
 
 func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, header http.Header, attributeIDs ...int64) ([]metadata.Attribute, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	attributeIDs = util.IntArrayUnique(attributeIDs)
+
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(attributeIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}

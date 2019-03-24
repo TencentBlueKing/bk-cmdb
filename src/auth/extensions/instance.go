@@ -29,6 +29,9 @@ import (
  */
 
 func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header http.Header, instanceIDs ...string) ([]InstanceSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	instanceIDs = util.StrArrayUnique(instanceIDs)
+
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(instanceIDs).ToMapStr(),
@@ -51,6 +54,9 @@ func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header
 }
 
 func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]InstanceSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	ids = util.IntArrayUnique(ids)
+
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
