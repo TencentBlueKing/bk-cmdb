@@ -29,11 +29,10 @@ type AuthManager struct {
 	Err errors.DefaultCCErrorIf
 }
 
-func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize, Err errors.DefaultCCErrorIf) *AuthManager {
+func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize) *AuthManager {
 	return &AuthManager{
 		clientSet: clientSet,
 		Authorize: Authorize,
-		Err:       Err,
 	}
 }
 
@@ -138,7 +137,6 @@ func (is *SetSimplify) Parse(data mapstr.MapStr) (*SetSimplify, error) {
 	return is, err
 }
 
-// Parse load the data from mapstr attribute into ObjectUnique instance
 type ModuleSimplify struct {
 	BKAppIDField      int64  `json:"bk_biz_id"`
 	BKModuleIDField   int64  `json:"bk_module_id"`
@@ -147,6 +145,25 @@ type ModuleSimplify struct {
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
 func (is *ModuleSimplify) Parse(data mapstr.MapStr) (*ModuleSimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}
+
+type HostSimplify struct {
+	BKAppIDField      int64  `json:"bk_biz_id"`
+	BKModuleIDField   int64  `json:"bk_module_id"`
+	BKSetIDField   int64  `json:"bk_set_id"`
+	BKHostIDField   int64  `json:"bk_host_id"`
+	BKHostNameField string `json:"bk_host_name"`
+	BKHostInnerIPField string `json:"bk_host_innerip"`
+}
+
+func (is *HostSimplify) Parse(data mapstr.MapStr) (*HostSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {

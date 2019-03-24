@@ -13,8 +13,9 @@
 package operation
 
 import (
+	"context"
+	
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -25,7 +26,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"context"
 )
 
 // ClassificationOperationInterface classification opoeration methods
@@ -41,16 +41,16 @@ type ClassificationOperationInterface interface {
 }
 
 // NewClassificationOperation create a new classification operation instance
-func NewClassificationOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) ClassificationOperationInterface {
+func NewClassificationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ClassificationOperationInterface {
 	return &classification{
 		clientSet: client,
-		authorize:      authorize,
+		authManager: authManager,
 	}
 }
 
 type classification struct {
 	clientSet    apimachinery.ClientSetInterface
-	authorize         auth.Authorize
+	authManager *extensions.AuthManager
 	asst         AssociationOperationInterface
 	obj          ObjectOperationInterface
 	modelFactory model.Factory
@@ -94,8 +94,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	if err != nil {
 		return nil, err
 	}
-	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
-	if err := authManager.AuthorizeResourceCreate(params.Context, params.Header, bizID, meta.ModelClassification); err != nil {
+	if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, bizID, meta.ModelClassification); err != nil {
 		blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
 		return nil, err
 	}
@@ -108,7 +107,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 
 	// auth: register new created classify
 	class = cls.Classify()
-	if err := authManager.RegisterClassification(params.Context, params.Header, class); err != nil {
+	if err := c.authManager.RegisterClassification(params.Context, params.Header, class); err != nil {
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
@@ -139,8 +138,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		class := clsItem.Classify()
 		classes = append(classes, class)
 	}
-	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
-	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
+	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
 		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
 	}
 	
@@ -151,7 +149,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		}
 
 		class := cls.Classify()
-		if err := authManager.DeregisterClassification(params.Context, params.Header, class); err != nil {
+		if err := c.authManager.DeregisterClassification(params.Context, params.Header, class); err != nil {
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
@@ -281,19 +279,18 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 		return err
 	}
 
-	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
 	class := cls.Classify()
 	class.ID = id
 	if len(class.ClassificationName) != 0 {
 		// auth: update registered classifications
-		if err := authManager.UpdateRegisteredClassification(params.Context, params.Header, class); err != nil {
+		if err := c.authManager.UpdateRegisteredClassification(params.Context, params.Header, class); err != nil {
 			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	}
 
 	// auth: check authorization
-	if err := authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
+	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
 		blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
 		return err
 	}

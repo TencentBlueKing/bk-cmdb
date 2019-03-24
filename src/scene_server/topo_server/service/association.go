@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"context"
 	"fmt"
 	"strconv"
@@ -54,8 +53,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 	
 	// auth: register mainline object
 	object := ret.Object()
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterMainlineObject(params.Context, params.Header, object); err != nil {
+	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, object); err != nil {
 		message := fmt.Sprintf("register mainline model to iam failed, err: %+v", err)
 		blog.V(2).Info(message)
 		return ret, params.Err.Errorf(common.CCErrCommRegistResourceToIAMFailed, message)
@@ -74,8 +72,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	objID := pathParams("bk_obj_id")
 
 	// auth: deregister mainline object
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, objID); err != nil {
+	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, objID); err != nil {
 		message := fmt.Sprintf("deregister mainline model failed, err: %+v", err)
 		blog.V(2).Info(message)
 		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, message)

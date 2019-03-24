@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/auth"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -42,7 +42,7 @@ type Service struct {
 	Txn      dal.DB
 	Core     core.Core
 	Config   options.Config
-	Authorize     auth.Authorize
+	AuthManager *extensions.AuthManager
 	Error    errors.CCErrorIf
 	Language language.CCLanguageIf
 	actions  []action

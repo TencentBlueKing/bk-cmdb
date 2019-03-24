@@ -13,7 +13,6 @@
 package app
 
 import (
-	"configcenter/src/auth/authcenter"
 	"context"
 	"errors"
 	"fmt"
@@ -23,6 +22,8 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -108,11 +109,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
 
+	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
 	server.Service = &service.Service{
 		Language: engine.Language,
 		Engine:   engine,
-		Authorize:     authorize,
-		Core:     core.New(engine.CoreAPI, authorize),
+		AuthManager: authManager,
+		Core:     core.New(engine.CoreAPI, authManager),
 		Error:    engine.CCErr,
 		Txn:      txn,
 		Config:   server.Config,

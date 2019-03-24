@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -179,4 +179,180 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 		hostIDInnerIPMap[hostID] = innerIP
 	}
 	return
+}
+
+func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
+	if err != nil {
+		blog.V(3).Infof("get hosts by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
+	}
+	hosts := make([]HostSimplify, 0)
+	for _, cls := range result.Data.Info {
+		host := HostSimplify{}
+		_, err = host.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get hosts by object failed, err: %+v", err)
+		}
+		hosts = append(hosts, host)
+	}
+	
+	// inject business,set,module info to HostSimplify
+	hostModulecond := condition.CreateCondition()
+	hostModulecond.Field(common.BKHostIDField).In(hostIDs)
+	query := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKSetIDField, common.BKHostIDField},
+		Condition: hostModulecond.ToMapStr(),
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	}
+	hostModuleresult, err := am.clientSet.CoreService().Instance().ReadInstance(
+		ctx, header, common.BKTableNameModuleHostConfig, query)
+	if err != nil {
+		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
+		return nil, err
+	}
+	blog.V(5).Infof("get host module config: %+v", hostModuleresult.Data.Info)
+	if len(result.Data.Info) == 0 {
+		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
+		return nil, err
+	}
+	hostModuleMap := map[int64]HostSimplify{}
+	for _, cls := range hostModuleresult.Data.Info {
+		host := HostSimplify{}
+		_, err = host.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get hosts by object failed, err: %+v", err)
+		}
+		hostModuleMap[host.BKHostIDField] = host
+	}
+	for _, host := range hosts {
+		hostModule, exist := hostModuleMap[host.BKHostIDField]
+		if exist == false {
+			return nil, fmt.Errorf("hostID:%+d doesn't exist in any module", host.BKHostIDField)
+		}
+		host.BKAppIDField = hostModule.BKAppIDField
+		host.BKSetIDField = hostModule.BKSetIDField
+		host.BKModuleIDField = hostModule.BKModuleIDField
+	}
+	
+	return hosts, nil
+}
+
+func (am *AuthManager) extractBusinessIDFromHosts(hosts ...HostSimplify) (int64, error) {
+	var businessID int64
+	for idx, host := range hosts {
+		bizID := host.BKAppIDField
+		// we should ignore metadata.LabelBusinessID field not found error
+		if idx > 0 && bizID != businessID {
+			return 0, fmt.Errorf("authorization failed, get multiple business ID from hosts")
+		}
+		businessID = bizID
+	}
+	return businessID, nil
+}
+
+func (am *AuthManager) makeResourcesByHosts(header http.Header, action meta.Action, businessID int64, hosts ...HostSimplify) []meta.ResourceAttribute {
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, host := range hosts {
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Action:     action,
+				Type:       meta.Model,
+				Name:       host.BKHostInnerIPField,
+				InstanceID: host.BKHostIDField,
+			},
+			SupplierAccount: util.GetOwnerID(header),
+			BusinessID:      businessID,
+		}
+
+		resources = append(resources, resource)
+	}
+	return resources
+}
+
+func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
+
+	// extract business id
+	bizID, err := am.extractBusinessIDFromHosts(hosts...)
+	if err != nil {
+		return fmt.Errorf("authorize hosts failed, extract business id from hosts failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.makeResourcesByHosts(header, action, bizID, hosts...)
+
+	return am.authorize(ctx, header, bizID, resources...)
+}
+
+func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+	// extract business id
+	bizID, err := am.extractBusinessIDFromHosts(hosts...)
+	if err != nil {
+		return fmt.Errorf("authorize hosts failed, extract business id from hosts failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+
+	for _, resource := range resources {
+		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (am *AuthManager) UpdateRegisteredHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return fmt.Errorf("update registered hosts failed, get hosts by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredHosts(ctx, header, hosts...)
+}
+
+func (am *AuthManager) DeregisterHostsByID(ctx context.Context, header http.Header, ids ...int64) error {
+	hosts, err := am.collectHostByHostIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("deregister hosts failed, get hosts by id failed, err: %+v", err)
+	}
+	return am.DeregisterHosts(ctx, header, hosts...)
+}
+
+func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+	// extract business id
+	bizID, err := am.extractBusinessIDFromHosts(hosts...)
+	if err != nil {
+		return fmt.Errorf("register hosts failed, extract business id from hosts failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+
+	return am.Authorize.RegisterResource(ctx, resources...)
+}
+
+func (am *AuthManager) RegisterHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return fmt.Errorf("register host failed, get hosts by id failed, err: %+v", err)
+	}
+	return am.RegisterHosts(ctx, header, hosts...)
+}
+
+func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+
+	// extract business id
+	bizID, err := am.extractBusinessIDFromHosts(hosts...)
+	if err != nil {
+		return fmt.Errorf("deregister hosts failed, extract business id from hosts failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+
+	return am.Authorize.DeregisterResource(ctx, resources...)
 }

@@ -13,15 +13,14 @@
 package operation
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -52,10 +51,10 @@ type InstOperationInterface interface {
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, authorize auth.Authorize) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
 	return &commonInst{
 		clientSet: client,
-		authorize: authorize,
+		authManager: authManager,
 	}
 }
 
@@ -73,7 +72,7 @@ type BatchResult struct {
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
-	authorize auth.Authorize
+	authManager *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
@@ -102,8 +101,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	object := obj.Object()
 
 	// auth: check authorization
-	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
-	if err := authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
+	if err := c.authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
 		blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", object.ID, err)
 		return nil, err
 	}
@@ -204,13 +202,13 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	// auth register new created
-	if err := authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
 		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
 
 	// auth update registered instances
-	if err := authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
+	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
 		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
 		return nil, err
 	}
@@ -270,8 +268,7 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 	
 	// auth: register instances to iam
-	authManager := extensions.NewAuthManager(c.clientSet, c.authorize, params.Err)
-	if err := authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
 		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}

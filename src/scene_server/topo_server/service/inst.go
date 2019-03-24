@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"fmt"
 	"strconv"
 	"strings"
@@ -89,8 +88,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 	
@@ -117,8 +115,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterInstanceByRawID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, instID); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
@@ -154,8 +151,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instanceIDs...); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instanceIDs...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
@@ -191,8 +187,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instID); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 

@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"fmt"
 	"strconv"
 	"strings"
@@ -58,8 +57,7 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 	}
 	
 	// auth: register module to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
+	if err := s.AuthManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
 		return nil, fmt.Errorf("register module failed, err: %+v", err)
 	}
 	
@@ -99,8 +97,7 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 	}
 
 	// auth: deregister module to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
+	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
 		return nil, fmt.Errorf("deregister module failed, err: %+v", err)
 	}
 	return nil, nil
@@ -139,8 +136,7 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 	}
 
 	// auth: update registered module to iam
-	authManager := extensions.NewAuthManager(s.Engine.CoreAPI, s.Authorize, params.Err)
-	if err := authManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
 		return nil, fmt.Errorf("update registered module failed, err: %+v", err)
 	}
 	
