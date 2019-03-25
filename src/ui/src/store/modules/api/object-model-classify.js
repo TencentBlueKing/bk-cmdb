@@ -94,28 +94,6 @@ const getters = {
         const authority = rootGetters['userPrivilege/privilege']
         const collectionKey = 'bk_collection'
         const collection = []
-        const specialCollecton = [{
-            id: 'biz',
-            path: '/business',
-            icon: 'icon-cc-business',
-            i18n: 'Nav["业务"]',
-            authorized: true
-        }, {
-            id: 'resource',
-            path: '/resource',
-            icon: 'icon-cc-host-free-pool',
-            i18n: 'Nav["主机"]',
-            authorized: rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
-        }]
-        specialCollecton.forEach(special => {
-            const isCollected = rootGetters['userCustom/usercustom'][`is_${special.id}_collected`]
-            if (isCollected || isCollected === undefined) {
-                collection.push({
-                    ...special,
-                    classificationId: collectionKey
-                })
-            }
-        })
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
         const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
         collectedModelIds.forEach(modelId => {
@@ -141,7 +119,9 @@ const getters = {
             STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
                 navigation.authorized = false
             })
-
+            // 基础资源->主机/ 权限控制
+            const resourceAuthorized = STATIC_NAVIGATION['bk_basic_resources'].children.find(navigation => navigation.id === 'resource')
+            if (resourceAuthorized.authorized) resourceAuthorized.authorized = false
             const systemConfig = authority['sys_config']
             const backConfig = systemConfig['back_config'] || []
             const globalConfig = systemConfig['global_busi'] || []
