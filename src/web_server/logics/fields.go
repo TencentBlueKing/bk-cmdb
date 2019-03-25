@@ -56,7 +56,7 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
@@ -68,16 +68,20 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 	}
 
 	ret := make(map[string]Property)
-	index := 0
+	indexCustom := 0
+	indexOthers := len(customFields)
 
 	for _, group := range groups {
 		for _, field := range fields {
 			if field.Group == group.ID {
 				if util.InStrArr(filterFields, field.ID) {
 					field.NotExport = true
+				} else if util.InStrArr(customFields, field.ID) {
+					field.ExcelColIndex = indexCustom
+					indexCustom++
 				} else {
-					field.ExcelColIndex = index
-					index++
+					field.ExcelColIndex = indexOthers
+					indexOthers++
 				}
 				ret[field.ID] = field
 

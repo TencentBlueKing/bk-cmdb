@@ -196,7 +196,7 @@ func buildExcelPrimaryStr(property PropertyPrimaryVal) string {
 //BuildExcelTemplate  return httpcode, error
 func (lgc *Logics) BuildExcelTemplate(objID, filename string, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) error {
 	filterFields := getFilterFields(objID)
-	fields, err := lgc.GetObjFieldIDs(objID, filterFields, header, meta)
+	fields, err := lgc.GetObjFieldIDs(objID, filterFields, nil, header, meta)
 	if err != nil {
 		blog.Errorf("get %s fields error:%s", objID, err.Error())
 		return err
@@ -336,6 +336,11 @@ func GetAssociationExcelData(sheet *xlsx.Sheet, firstRow int) map[int]metadata.E
 //GetFilterFields 不需要展示字段
 func GetFilterFields(objID string) []string {
 	return getFilterFields(objID)
+}
+
+//GetCustomFields 用户展示字段export时优先排序
+func GetCustomFields(filterFields []string, customFieldsStr string) []string {
+	return getCustomFields(filterFields, customFieldsStr)
 }
 
 func getAssociationExcelOperateFlag(op string) metadata.ExcelAssocationOperate {
