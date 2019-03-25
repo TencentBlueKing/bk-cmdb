@@ -499,7 +499,7 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 	hostIDArray := host.ExtractHostIDs()
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, *hostIDArray...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+		blog.Errorf("check host authorization failed, err: %+v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
