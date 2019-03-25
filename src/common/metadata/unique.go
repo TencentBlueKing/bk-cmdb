@@ -13,10 +13,11 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"fmt"
 	"sort"
 	"strings"
+
+	"configcenter/src/common/mapstr"
 )
 
 type ObjectUnique struct {

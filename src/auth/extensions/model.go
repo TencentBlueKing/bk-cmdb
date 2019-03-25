@@ -13,15 +13,16 @@
 package extensions
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"context"
-	"fmt"
-	"net/http"
 )
 
 func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, objIDs ...string) ([]metadata.Object, error) {
