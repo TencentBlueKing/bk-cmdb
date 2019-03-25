@@ -13,8 +13,6 @@
 package app
 
 import (
-	"configcenter/src/auth"
-	"configcenter/src/auth/extensions"
 	"context"
 	"errors"
 	"fmt"
@@ -23,7 +21,9 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"

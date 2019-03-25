@@ -13,10 +13,10 @@
 package handler
 
 import (
-	"configcenter/src/auth/extensions"
 	"context"
 
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"

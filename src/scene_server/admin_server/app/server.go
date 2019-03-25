@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
@@ -33,7 +35,6 @@ import (
 	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
