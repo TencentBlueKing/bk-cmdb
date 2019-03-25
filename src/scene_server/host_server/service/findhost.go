@@ -13,31 +13,29 @@
 package service
 
 import (
-	"encoding/json"
-	"net/http"
+    "encoding/json"
+    "net/http"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    meta "configcenter/src/common/metadata"
+    "github.com/emicklei/go-restful"
 )
 
 func (s *Service) FindModuleHost(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+    srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	body := new(meta.HostModuleFind)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
-		blog.Errorf("find host failed with decode body err: %#v", err)
+		blog.Errorf("find host failed with decode body err: %#v, rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	host, err := s.Logics.FindHostByModuleIDs(pheader, body, false)
+	host, err := srvData.lgc.FindHostByModuleIDs(srvData.ctx, body, false)
 	if err != nil {
-		blog.Errorf("find host failed, err: %#v", err)
+		blog.Errorf("find host failed, err: %#v, input:%#v, rid:%s", err, body, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
 		return
 	}
