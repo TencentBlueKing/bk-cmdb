@@ -7,8 +7,10 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
-	"configcenter/src/common/json"
+	"configcenter/src/common"
 	"configcenter/src/framework/core/errors"
+
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
@@ -19,37 +21,27 @@ func (ps *parseStream) hostRelated() *parseStream {
 	ps.host().
 		userAPI().
 		userCustom().
-		hostFavorite()
+		hostFavorite().
+		cloudResourceSync()
 
 	return ps
 }
 
-const (
-	createUserAPIPattern = "/api/v3/userapi"
-)
-
 var (
-	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
-	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[^\s/]+/[0-9]+/?$`)
+	createUserAPIPattern     = "/api/v3/userapi"
+	updateUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
+	deleteUserAPIRegexp      = regexp.MustCompile(`^/api/v3/userapi/[0-9]+/[^\s/]+/?$`)
 	findUserAPIRegexp        = regexp.MustCompile(`^/api/v3/userapi/search/[0-9]+/?$`)
 	findUserAPIDetailsRegexp = regexp.MustCompile(`^/api/v3/userapi/detail/[0-9]+/[^\s/]+/?$`)
 	findWithUserAPIRegexp    = regexp.MustCompile(`^/api/v3/userapi/data/[0-9]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
-	type Business struct {
-		BusinessID int64
-	}
-
-	biz := new(Business)
-	if err := json.Unmarshal(ps.RequestCtx.Body, biz); err != nil {
-		return 0, err
-	}
-
-	if biz.BusinessID == 0 {
+	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
+	if bizID == 0 {
 		return 0, errors.New("can not parse business id")
 	}
-	return biz.BusinessID, nil
+	return bizID, nil
 }
 
 func (ps *parseStream) userAPI() *parseStream {
@@ -64,9 +56,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Create,
@@ -87,9 +79,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Update,
@@ -112,9 +104,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("update host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Delete,
@@ -138,9 +130,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.FindMany,
@@ -162,9 +154,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			ps.err = fmt.Errorf("find host user custom query details failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
 					Action: meta.Find,
@@ -188,12 +180,12 @@ func (ps *parseStream) userAPI() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
+					Action: meta.Excute,
 					Name:   ps.RequestCtx.Elements[5],
 				},
 			},
@@ -286,9 +278,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -322,9 +314,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
@@ -342,9 +334,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostFromModuleToResPool,
@@ -362,9 +354,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToModule,
@@ -382,9 +374,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveResPoolHostToBizIdleModule,
@@ -402,9 +394,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizFaultModule,
@@ -422,9 +414,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToBizIdleModule,
@@ -442,9 +434,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
@@ -464,9 +456,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.CleanHostInSetOrModule,
@@ -485,9 +477,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostsToBusinessOrModule,
@@ -505,9 +497,9 @@ func (ps *parseStream) host() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -623,5 +615,42 @@ func (ps *parseStream) hostFavorite() *parseStream {
 
 		return ps
 	}
+	return ps
+}
+
+var (
+	searchSyncTask       = `/api/v3/hosts/cloud/search`
+	confirmSyncTResource = `/api/v3/hosts/cloud/searchConfirm`
+)
+
+func (ps *parseStream) cloudResourceSync() *parseStream {
+	if ps.err != nil {
+		return ps
+	}
+
+	if ps.hitPattern(searchSyncTask, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ResourceSync,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(confirmSyncTResource, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ResourceSync,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
