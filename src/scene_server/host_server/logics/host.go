@@ -395,7 +395,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 	}
 	if len(newHostIDArr) == 0 {
 		if len(exceptionArr) > 0 {
-			return exceptionArr, lgc.ccErr.Error(common.CCErrDeleteHOstFromBusiness)
+			return exceptionArr, lgc.ccErr.Error(common.CCErrDeleteHostFromBusiness)
 		}
 		return nil, nil
 	}
@@ -442,7 +442,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 
 	}
 	if len(exceptionArr) > 0 {
-		return exceptionArr, lgc.ccErr.Error(common.CCErrDeleteHOstFromBusiness)
+		return exceptionArr, lgc.ccErr.Error(common.CCErrDeleteHostFromBusiness)
 	}
 	return nil, nil
 }
