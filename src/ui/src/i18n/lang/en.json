@@ -192,7 +192,6 @@
         "配置": "Configuration",
         "失败": "Fail",
         "总量": "Total",
-        "新增推送": "Add Push",
         "请输入推送名称": "Please enter a push name",
         "请输入系统名称": "Please enter the system name",
         "请输入URL": "Please enter http(s)://",
@@ -235,7 +234,7 @@
         "角色名称": "Role name",
         "成员": "Member",
         "操作": "Operate",
-        "新增角色": "Add Role",
+        "新建角色": "Create Role",
         "编辑角色": "Modify Role",
         "角色名": "Name",
         "没有创建角色": "Do not create roles",
@@ -297,7 +296,7 @@
         "字段分组": "Field Group",
         "保留模型和相应实例，隐藏关联关系": "Keep the model and all its instance",
         "删除模型和其下所有实例，此动作不可逆，请谨慎操作": "Delete a model and all its instances, this action is not reversible, please be careful",
-        "新增模型": "Add Model",
+        "新建模型": "Create Model",
         "请输入字段名称": "Please enter field name",
         "请输入ID": "Enter ID",
         "请输入关键词": "Enter key word",
@@ -311,7 +310,6 @@
         "名称": "Name",
         "点击切换": "Modify",
         "所属分组": "Direction",
-        "新增关联类型": "New association type",
         "编辑关联类型": "Modify association type",
         "源->目标描述": "Source to target description",
         "目标->源描述": "Target to source description",
@@ -429,7 +427,7 @@
     },
     "CustomQuery": {
         "自定义查询": "Dynamic Group",
-        "新增查询": "Add Group",
+        "新建查询": "Create Group",
         "编辑查询": "Update Group",
         "预览查询": "Preview Group",
         "名称": "Name",
@@ -452,7 +450,6 @@
     "ProcessManagement": {
         "进程": "Process",
         "进程管理": "Process Manage",
-        "新增进程": "New Process",
         "编辑进程": "Modify Process",
         "进程名称搜索": "Process Name Search",
         "更多属性": "More Properties",
@@ -531,7 +528,6 @@
         "请勿选择已分配主机": "Please do not select assigned host"
     },
     "Inst": {
-        "立即创建": "Add",
         "快速查询": "Quick Search",
         "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}kb",
         "点击上传": "click upload",

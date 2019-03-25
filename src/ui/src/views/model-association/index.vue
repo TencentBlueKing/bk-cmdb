@@ -4,7 +4,7 @@
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="createRelation">
-                {{$t('ModelManagement["新增关联类型"]')}}
+                {{$t('Common["新建"]')}}
             </bk-button>
             <label class="search-input">
                 <i class="bk-icon icon-search" @click="searchRelation"></i>

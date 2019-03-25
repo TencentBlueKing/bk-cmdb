@@ -4,7 +4,7 @@
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="showModelDialog(false)">
-                {{$t('ModelManagement["新增模型"]')}}
+                {{$t('ModelManagement["新建模型"]')}}
             </bk-button>
             <bk-button type="default"
                 :disabled="!authority.includes('update')"

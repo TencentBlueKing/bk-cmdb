@@ -1,7 +1,7 @@
 <template>
     <div class="push-wrapper">
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
+            <bk-button type="primary" @click="createPush">{{$t('Common["新建"]')}}</bk-button>
         </div>
         <cmdb-table
             rowCursor="default"
@@ -25,7 +25,7 @@
                 <div class="empty-info" slot="data-empty">
                     <p>{{$t("Common['暂时没有数据']")}}</p>
                     <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
-                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("EventPush['新增推送']")}}</bk-button>
+                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("Common['新建']")}}</bk-button>
                 </div>
         </cmdb-table>
         <cmdb-slider
