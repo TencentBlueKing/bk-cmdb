@@ -17,7 +17,7 @@ export default {
             parent: NAV_COLLECT
         },
         auth: {
-            view: [G_R_BUSINESS],
+            view: G_R_BUSINESS,
             operation: [
                 G_C_BUSINESS,
                 G_U_BUSINESS,

@@ -312,6 +312,7 @@ const hasAuthority = to => {
 router.beforeEach(async (to, from, next) => {
     try {
         const store = router.app.$store
+        console.log(store)
         if (to.name !== 'statusError') {
             store.commit('setGlobalLoading', true)
             await cancelRequest()
