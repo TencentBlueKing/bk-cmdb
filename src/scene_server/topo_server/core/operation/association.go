@@ -22,7 +22,6 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	metatype "configcenter/src/common/metadata"
-	"configcenter/src/framework/core/errors"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -203,7 +202,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	}
 
 	if len(rspAsst.Data) == 0 {
-		return nil, errors.New("create association failed.")
+		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 
 	return &rspAsst.Data[0], nil
@@ -275,9 +274,7 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 
 	// find instance(s) belongs to this association
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(result.Data[0].ObjectID)
-	cond.Field(common.AssociatedObjectIDField).Eq(result.Data[0].AsstObjID)
+	cond.Field(common.AssociationObjAsstIDField).Eq(result.Data[0].AssociationName)
 	query := metadata.QueryInput{Condition: cond.ToMapStr()}
 	insts, err := a.SearchInstAssociation(params, &query)
 	if err != nil {
