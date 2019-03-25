@@ -548,6 +548,79 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	}
 }
 
+// GetHostModuleRelation  query host and module relation,
+// hostID can emtpy
+func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.HostModuleRelationParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	cond := make(map[string][]int64, 0)
+	if data.AppID != 0 {
+		cond[common.BKAppIDField] = []int64{data.AppID}
+	}
+	if len(data.HostID) > 0 {
+		cond[common.BKHostIDField] = data.HostID
+	}
+	if len(cond) == 0 {
+		resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
+	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
+	if err != nil {
+		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), cond, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(configArr))
+	return
+}
+
+// TransferHostAcrossBusiness  Transfer host across business,
+// delete old business  host and module reltaion
+func (s *Service) TransferHostAcrossBusiness(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.TransferHostAcrossBusinessParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	err := srvData.lgc.TransferHostAcrossBusiness(srvData.ctx, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
+	if err != nil {
+		blog.Errorf("TransferHostAcrossBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}
+
+// DeleteHostFromBusiness delete host from business
+// dangerous operation
+func (s *Service) DeleteHostFromBusiness(req *restful.Request, resp *restful.Response) {
+
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.DeleteHostFromBizParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("DeleteHostFromBizParameter failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	exceptionArr, err := srvData.lgc.DeleteHostFromBusiness(srvData.ctx, data.AppID, data.HostIDArr)
+	if err != nil {
+		blog.Errorf("DeleteHostFromBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err, Data: exceptionArr})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}
+
 func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
     pheader := req.Request.Header
     srvData := s.newSrvComm(pheader )
