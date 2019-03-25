@@ -42,8 +42,10 @@ func Init(opt *option.Options) error {
 		go func() {
 			defer cc.Stop()
 			err := cc.Start()
-			log.Errorf("configure center module start failed!. err:%s", err.Error())
-			errCh <- err
+			if err != nil {
+				log.Errorf("configure center module start failed!. err:%s", err.Error())
+				errCh <- err
+			}
 		}()
 
 		go func() {

@@ -1,5 +1,5 @@
 <template>
-    <div class="form-bool" @click="handleChange">
+    <div :class="['form-bool', {disabled}]" @click="handleChange">
         <input class="form-bool-input" type="checkbox"
             ref="input"
             :class="{
@@ -77,6 +77,9 @@
         },
         methods: {
             handleChange () {
+                if (this.disabled) {
+                    return false
+                }
                 this.localChecked = this.localChecked ? this.falseValue : this.trueValue
                 this.$emit('click')
             }
@@ -92,6 +95,9 @@
         white-space: nowrap;
         cursor: pointer;
         font-size: 0;
+        &.disabled {
+            cursor: not-allowed;
+        }
     }
     .form-bool-input{
         display: inline-block;
