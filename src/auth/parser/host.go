@@ -22,7 +22,7 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userAPI().
 		userCustom().
 		hostFavorite().
-		resourceSync()
+		cloudResourceSync()
 
 	return ps
 }
@@ -623,7 +623,7 @@ var (
 	confirmSyncTResource = `/api/v3/hosts/cloud/searchConfirm`
 )
 
-func (ps *parseStream) resourceSync() *parseStream {
+func (ps *parseStream) cloudResourceSync() *parseStream {
 	if ps.err != nil {
 		return ps
 	}

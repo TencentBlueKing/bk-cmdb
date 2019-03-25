@@ -22,9 +22,9 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (ps *parseStream) getModel(modelID interface{}) ([]metadata.Object, error) {
+func (ps *parseStream) getModel(cond mapstr.MapStr) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: modelID}})
+		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (ps *parseStream) getModel(modelID interface{}) ([]metadata.Object, error) 
 		return nil, errors.New(model.Code, model.ErrMsg)
 	}
 	if len(model.Data.Info) <= 0 {
-		return nil, fmt.Errorf("model [%s] not found", modelID)
+		return nil, fmt.Errorf("model [%+v] not found", cond)
 	}
 
 	models := []metadata.Object{}
