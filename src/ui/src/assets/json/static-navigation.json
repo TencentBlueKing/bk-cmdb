@@ -136,7 +136,7 @@
     },
     "bk_basic_resources": {
         "i18n": "Nav['基础资源']",
-        "icon": "icon-cc-nav-authority",
+        "icon": "icon-cc-basic-resource",
         "id": "bk_basic_resources",
         "name": "基础资源",
         "classificationId": "bk_basic_resources",
