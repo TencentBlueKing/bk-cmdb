@@ -2,8 +2,6 @@ package authcenter
 
 import (
 	"fmt"
-
-	"configcenter/src/common/metadata"
 )
 
 // system constanst
@@ -34,19 +32,19 @@ type AuthConfig struct {
 type RegisterInfo struct {
 	CreatorType string           `json:"creator_type"`
 	CreatorID   string           `json:"creator_id"`
-	Resources   []ResourceEntity `json:"resources"`
+	Resources   []ResourceEntity `json:"resources,omitempty"`
 }
 
 type ResourceEntity struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ScopeInfo
 	ResourceName string       `json:"resource_name,omitempty"`
-	ResourceID   []ResourceID `json:"resource_id"`
+	ResourceID   []ResourceID `json:"resource_id,omitempty"`
 }
 
 type ResourceID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
-	ResourceID   string         `json:"resource_id"`
+	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
 type ResourceInfo struct {
@@ -57,12 +55,12 @@ type ResourceInfo struct {
 }
 
 type ScopeInfo struct {
-	ScopeType string `json:"scope_type"`
-	ScopeID   string `json:"scope_id"`
+	ScopeType string `json:"scope_type,omitempty"`
+	ScopeID   string `json:"scope_id,omitempty"`
 }
 
 type ResourceResult struct {
-	metadata.BaseResp
+	BaseResponse
 	RequestID string       `json:"request_id"`
 	Data      ResultStatus `json:"data"`
 }
@@ -100,7 +98,7 @@ type AuthBatch struct {
 }
 
 type BatchResult struct {
-	metadata.BaseResp
+	BaseResponse
 	RequestID string        `json:"request_id"`
 	Data      []BatchStatus `json:"data"`
 }
@@ -147,9 +145,9 @@ type System struct {
 }
 
 type ResourceType struct {
-	ResourceTypeID       ResourceTypeID `json:"resource_type_id"`
+	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
-	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type_id"`
+	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
 	Actions              []Action       `json:"actions"`
 }
 
@@ -168,8 +166,8 @@ type SystemDetail struct {
 }
 
 type BaseResponse struct {
-	Code      int
-	Message   string
-	Result    bool
-	RequestID string
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	Result    bool   `json:"result"`
+	RequestID string `json:"request_id"`
 }

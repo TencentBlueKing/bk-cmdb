@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"net/http"
 	"time"
@@ -119,6 +120,15 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+func (sh SearchHost) ExtractHostIDs() *[]int64 {
+	hostIDArray := make([]int64, 0)
+	for _, h := range sh.Info {
+		hostIDStr := int64(h["host"].(mapstr.MapStr)[common.BKHostIDField].(float64))
+		hostIDArray = append(hostIDArray, hostIDStr)
+	}
+	return &hostIDArray
 }
 
 type SearchHostResult struct {

@@ -21,7 +21,7 @@ var expectSystem = System{
 	SystemName:         SystemNameCMDB,
 	Desc:               "蓝鲸配置平台（CMDB）",
 	ReleatedScopeTypes: strings.Join([]string{ScopeTypeIDBiz, ScopeTypeIDSystem}, ";"),
-	Managers:           "system",
+	Managers:           "system;admin",
 	Creator:            "system",
 	Updater:            "system",
 }
@@ -219,6 +219,11 @@ var expectSystemResourceType = []ResourceType{
 			{
 				ActionID:          AdminEntrance,
 				ActionName:        "管理页面入口",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          ModelTopologyView,
+				ActionName:        "模型拓扑视图",
 				IsRelatedResource: false,
 			},
 		},

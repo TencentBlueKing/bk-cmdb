@@ -10,4 +10,22 @@
  * limitations under the License.
  */
 
-package auth
+package mainline
+
+import (
+	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
+)
+
+var _ core.TopoOperation = (*topoManager)(nil)
+
+type topoManager struct {
+	DbProxy dal.RDB
+}
+
+// New create a new model manager instance
+func New(dbProxy dal.RDB) core.TopoOperation {
+
+	coreMgr := &topoManager{DbProxy: dbProxy}
+	return coreMgr
+}
