@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/framework/core/errors"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -143,7 +142,9 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 
 // CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
-
+	if data.AsstKindID == common.AssociationKindMainline {
+		return nil, params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		blog.Errorf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		return nil, params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
@@ -201,7 +202,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 	}
 
 	if len(rspAsst.Data) == 0 {
-		return nil, errors.New("create association failed.")
+		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 
 	return &rspAsst.Data[0], nil
@@ -267,11 +268,13 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 		return params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
+	if result.Data[0].AsstKindID == common.AssociationKindMainline {
+		return params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
+
 	// find instance(s) belongs to this association
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.BKObjIDField).Eq(result.Data[0].ObjectID)
-	cond.Field(common.AssociatedObjectIDField).Eq(result.Data[0].AsstObjID)
+	cond.Field(common.AssociationObjAsstIDField).Eq(result.Data[0].AssociationName)
 	query := metadata.QueryInput{Condition: cond.ToMapStr()}
 	insts, err := a.SearchInstAssociation(params, &query)
 	if err != nil {
