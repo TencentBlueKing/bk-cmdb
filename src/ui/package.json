@@ -70,6 +70,7 @@
     "postcss-import": "11.0.0",
     "postcss-loader": "2.0.8",
     "postcss-url": "7.2.1",
+    "progress-bar-webpack-plugin": "1.12.1",
     "read-pkg": "4.0.1",
     "resolve-url-loader": "2.3.0",
     "rimraf": "2.6.0",
@@ -100,6 +101,6 @@
   "readme": "ERROR: No README data found!",
   "_id": "bk-cmdb-ui@1.0.0",
   "peerDependencies": {
-    "vue": "2.5.13"
+    "vue": "2.5.22"
   }
 }

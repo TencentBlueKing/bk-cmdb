@@ -13,14 +13,14 @@
 package logics
 
 import (
-	"net/http"
-
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
+    "context"
+    
+    "configcenter/src/common"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
 )
 
-func (lgc *Logics) FindHostByModuleIDs(pheader http.Header, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {
+func (lgc *Logics) FindHostByModuleIDs(ctx context.Context, data *metadata.HostModuleFind, isDetail bool) (*metadata.SearchHost, error) {
 	retHostInfo := &metadata.SearchHost{
 		Info: make([]mapstr.MapStr, 0),
 	}
@@ -38,7 +38,7 @@ func (lgc *Logics) FindHostByModuleIDs(pheader http.Header, data *metadata.HostM
 
 	hostSearchParam.Condition = []metadata.SearchCondition{moduleFindCond, setFindCond, bizFindCond}
 
-	findHostInst := NewSearchHost(lgc, pheader, hostSearchParam)
+	findHostInst := NewSearchHost(ctx, lgc, hostSearchParam)
 	findHostInst.ParseCondition()
 
 	err = findHostInst.SearchHostByConds()

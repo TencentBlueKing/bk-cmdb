@@ -118,11 +118,11 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
-	if cli.target.GetIsPaused() {
+	if cli.target.Object().IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
 	}
 	if cli.target.IsCommon() {
-		cli.datas.Set(common.BKObjIDField, cli.target.GetID())
+		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
 	}
 
 	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
@@ -144,7 +144,7 @@ func (cli *inst) Create() error {
 }
 
 func (cli *inst) Update(data mapstr.MapStr) error {
-	if cli.target.GetIsPaused() {
+	if cli.target.Object().IsPaused {
 		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
 	}
 	instIDName := cli.target.GetInstIDFieldName()

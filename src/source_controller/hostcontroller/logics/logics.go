@@ -17,10 +17,9 @@ import (
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 	"net/http"
-
-	"net/http"
+	
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -355,16 +354,16 @@ func (lgc *Logics) TransferHostToDefaultModuleConfig(ctx context.Context, input 
 		blog.Errorf("TransferHostToDefaultModuleConfig  GetHostIDModuleIDMapsByHostID , input:%#v, condition%#v, err: %v,rid:%s", input, moduleCond.ToMapStr(), err, rid)
 		return err
 	}
-	ec := eventclient.NewEventContextByReq(header, lgc.Cache)
+
 	for hostID, moduleID := range hostIDModuleIDMap {
-		_, err := lgc.DelSingleHostModuleRelation(ctx, ec, hostID, moduleID, input.ApplicationID, ownerID)
+		_, err := lgc.DelSingleHostModuleRelation(ctx, header, hostID, moduleID, input.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("TransferHostToDefaultModuleConfig  DelSingleHostModuleRelation , input:%#v, hostID:%v,moduleID:%v, err: %v,rid:%s", input, hostID, moduleID, err, rid)
 			return err
 		}
 	}
 	for _, hostID := range input.HostID {
-		_, err := lgc.AddSingleHostModuleRelation(ctx, ec, hostID, input.ModuleID, input.ApplicationID, ownerID)
+		_, err := lgc.AddSingleHostModuleRelation(ctx, header, hostID, input.ModuleID, input.ApplicationID, ownerID)
 		if nil != err {
 			blog.Errorf("TransferHostToDefaultModuleConfig  AddSingleHostModuleRelation , input:%#v, hostID:%v, err: %v,rid:%s", input, hostID, err, rid)
 			return err

@@ -40,7 +40,7 @@
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
-                return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`] 
+                return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
             authority () {
                 return this.$store.getters['userPrivilege/modelAuthority']('biz')
