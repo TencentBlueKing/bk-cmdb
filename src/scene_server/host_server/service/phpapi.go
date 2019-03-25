@@ -13,11 +13,13 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -47,6 +49,23 @@ func (s *Service) UpdateHost(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+
+	// check authorization
+	hostCondition := map[string]interface{}{
+		common.BKHostInnerIPField: input["condition"].(map[string]interface{})[common.BKHostInnerIPField],
+		common.BKCloudIDField:     input["condition"].(map[string]interface{})[common.BKCloudIDField],
+	}
+	phpapi := srvData.lgc.NewPHPAPI()
+	_, hostIDArr, err := phpapi.GetHostMapByCond(context.Background(), hostCondition)
+	if err != nil {
+		blog.Errorf("UpdateHost update host, GetHostMapByCond failed, appID:%d, input:%+v, error:%s,rid:%s", appID, input, err, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+		return
+	}
+
 	data, httpCode, errMsg := srvData.lgc.UpdateHost(srvData.ctx, input, appID)
 
 	if nil != errMsg {
@@ -75,6 +94,16 @@ func (s *Service) UpdateHostByAppID(req *restful.Request, resp *restful.Response
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
 		blog.Errorf("updateHostByAppID , but decode body failed, err: %v,input:%+v,rid:%s", err, input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	hostIDArr, httpCode, err := srvData.lgc.FindHostIDsByAppID(srvData.ctx, input, appID)
+	if err != nil {
+		blog.Errorf("updateHostByAppID update host, appID:%d, input:%+v, error:%s,rid:%s", appID, input, err, srvData.rid)
+		resp.WriteError(httpCode, &meta.RespError{Msg: err})
+		return
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
 		return
 	}
 
@@ -145,6 +174,11 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     hostData,
@@ -183,6 +217,11 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	if nil != err {
 		blog.Errorf("HostSearchByConds error : %v, input:%+v,rid:%s", err, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
 		return
 	}
 
@@ -232,6 +271,16 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, host := range hostData {
+		hostID := host[common.BKHostIDField].(int64)
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     hostData,
@@ -275,6 +324,16 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 		return
 	}
 
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, host := range hostData {
+		hostID := host[common.BKHostIDField].(int64)
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     hostData,
@@ -312,6 +371,16 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 	if nil != err {
 		blog.Errorf("HostSearchByModuleID get host module config error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, host := range hostData {
+		hostID := host[common.BKHostIDField].(int64)
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
 		return
 	}
 
@@ -375,7 +444,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
 		return
 	}
-	blog.V(5).Infof("HostSearchByProperty ApplicationID: %s, SetID: %v,input:%+v,rid:%s", appID, setIDArr, input, srvData.rid)
+	blog.V(5).Infof("HostSearchByProperty ApplicationID: %v, SetID: %v, input:%+v, rid:%s", appID, setIDArr, input, srvData.rid)
 
 	condition := map[string][]int64{
 		common.BKAppIDField: []int64{appID},
@@ -396,6 +465,16 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
 		return
 	}
+
+	hostIDArr := make([]int64, 0)
+	for _, host := range hostData {
+		hostID := host[common.BKHostIDField].(int64)
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     hostData,
@@ -431,6 +510,36 @@ func (s *Service) GetIPAndProxyByCompany(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "PlatID")})
 		return
 	}
+
+	// check authorization
+	param := &meta.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.Ips},
+			common.BKCloudIDField:     platIDInt,
+		},
+		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField},
+	}
+	phpapi := srvData.lgc.NewPHPAPI()
+	hosts, err := phpapi.GetHostByCond(srvData.ctx, param)
+	if nil != err {
+		blog.Errorf("GetIPAndProxyByCompany get ip failed, input:%+v, err:%v, rid:%s", input, err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "ip")})
+		return
+	}
+	hostIDArr := make([]int64, 0)
+	for _, host := range hosts {
+		hostID, err := host.Int64(common.BKHostIDField)
+		if nil != err {
+			blog.Errorf("GetIPAndProxyByCompany get ip failed, input:%+v, err:%v, rid:%s", input, err, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "ip")})
+			return
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resData, err := srvData.lgc.GetIPAndProxyByCompany(srvData.ctx, input.Ips, platIDInt, appIDInt)
 	if nil != err {
 		blog.Errorf("GetIPAndProxyByCompany error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
@@ -466,6 +575,12 @@ func (s *Service) UpdateCustomProperty(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "HostID")})
 		return
 	}
+
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{hostID}, authmeta.Update); shouldContinue == false {
+		return
+	}
+
 	propertyJson, ok := input["property"].(string)
 	if false == ok && "" == propertyJson {
 		blog.Errorf("UpdateCustomPropertyinput not found property, input:%+v,rid:%s", input, srvData.rid)
@@ -536,6 +651,12 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		})
 		return
 	}
+
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIdArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	// 根据主机hostId获取app_id,module_id,set_id
 	configCon := map[string][]int64{
 		common.BKHostIDField: hostIdArr,
@@ -562,6 +683,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 		setIdArr = append(setIdArr, item[common.BKSetIDField])
 		moduleIdArr = append(moduleIdArr, item[common.BKModuleIDField])
 	}
+	// SetHostData is not a good name
 	hostMapArr, err := phpapi.SetHostData(srvData.ctx, configArr, hostArr) //phpapilogic.SetHostData(req, configArr, hostArr)
 	if nil != err {
 		blog.Errorf("GetHostAppByCompanyId setHostData err:%s, input:%+v", err.Error(), input)
@@ -635,6 +757,11 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostNotFound)})
 		return
 	}
+
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &[]int64{hostID}, authmeta.Delete); shouldContinue == false {
+		return
+	}
+
 	param := make(common.KvMap)
 	param[common.BKAppIDField] = appID
 	param[common.BKHostIDField] = hostID
@@ -758,6 +885,14 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	}
 	blog.V(5).Infof("GetGitServerIp hostArr:%v, input:%+v,rid:%s", hostArr, input, srvData.rid)
 
+	hostIDArr := make([]int64, 0)
+	for _, config := range configData {
+		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
+		return
+	}
+
 	resp.WriteEntity(meta.Response{
 		BaseResp: meta.SuccessBaseResp,
 		Data:     hostArr,
@@ -777,15 +912,25 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("GetPlat http reply error. err code:%d, err msg:%s,rid:%s", res.Code, res.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(res.Code, res.ErrMsg)})
 
-	} else {
-		resp.WriteEntity(meta.Response{
-			BaseResp: meta.SuccessBaseResp,
-			Data:     res.Data,
-		})
+	}
+	platIDArr := make([]int64, 0)
+	for _, item := range res.Data.Info {
+		platID := item[common.BKCloudIDField].(int64)
+		platIDArr = append(platIDArr, platID)
+	}
+	// check authorization
+	if shouldContinue := s.verifyPlatPermission(&req.Request.Header, resp, &platIDArr, authmeta.Find); shouldContinue == false {
+		return
 	}
 
+	resp.WriteEntity(meta.Response{
+		BaseResp: meta.SuccessBaseResp,
+		Data:     res.Data,
+	})
 }
 
+// CreatePlat create a plat instance
+// available fields for body are last_time, bk_cloud_name, bk_supplier_account, bk_cloud_id, create_time
 func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	input := make(map[string]interface{})
@@ -812,6 +957,11 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// check authorization
+	if shouldContinue := s.verifyCreatePlatPermission(&req.Request.Header, resp); shouldContinue == false {
+		return
+	}
+
 	instInfo := &meta.CreateModelInstance{
 		Data: mapstr.NewFromMap(input),
 	}
@@ -825,7 +975,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 
 	if false == res.Result {
 		blog.Errorf("GetPlat error.err code:%d,err msg:%s,input:%+v,rid:%s", res.Code, res.ErrMsg, input, srvData.rid)
-		resp.WriteHeaderAndJson(http.StatusInternalServerError, res, common.BKHTTPMIMEJSON)
+		resp.WriteHeaderAndJson(http.StatusInternalServerError, res, "application/json")
 
 	}
 	resp.WriteEntity(meta.Response{
@@ -863,9 +1013,14 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// only empty plat could be delete
 	if 0 < hostRes.Data.Count {
 		blog.Errorf("DelPlat plat [%d] has host data, can not delete,rid:%s", platID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoHasHostCheckFailed)})
+		return
+	}
+
+	if shouldContinue := s.verifyPlatPermission(&req.Request.Header, resp, &[]int64{platID}, authmeta.Delete); shouldContinue == false {
 		return
 	}
 
@@ -901,6 +1056,24 @@ func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
 	if nil != err {
 		blog.Errorf("GetAgentStatus error :%s,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
+
+	// check authorization
+	configCon := map[string][]int64{
+		common.BKAppIDField: []int64{appID},
+	}
+	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
+	if nil != err {
+		blog.Errorf("GetAgentStatus error. err:%v, input:%+v, rid:%s", err, appID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
+		return
+	}
+	hostIDArr := make([]int64, 0)
+	for _, config := range configData {
+		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+	}
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Find); shouldContinue == false {
 		return
 	}
 
@@ -944,6 +1117,11 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
 		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+	}
+
+	// check authorization
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.Update); shouldContinue == false {
+		return
 	}
 
 	query := new(meta.QueryInput)

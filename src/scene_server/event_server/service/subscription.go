@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -100,6 +101,18 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 		mesg, _ := json.Marshal(&sub)
 		s.cache.Publish(types.EventCacheProcessChannel, "create"+string(mesg))
 		s.cache.Del(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(sub.SubscriptionID))
+	}
+
+	if err = s.auth.RegisterResource(s.ctx, meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Name:       sub.SubscriptionName,
+			Type:       meta.EventPushing,
+			InstanceID: sub.SubscriptionID,
+		},
+	}); err != nil {
+		blog.Errorf("Permission Deny for create Subcribe, %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommRegistResourceToIAMFailed, err)})
+		return
 	}
 
 	resp.WriteEntity(metadata.RspSubscriptionCreate{
@@ -293,11 +306,11 @@ func (s *Service) Query(req *restful.Request, resp *restful.Response) {
 		val := s.cache.HGetAll(types.EventCacheDistCallBackCountPrefix + fmt.Sprint(results[index].SubscriptionID)).Val()
 		failue, err := strconv.ParseInt(val["failue"], 10, 64)
 		if nil != err {
-			blog.Errorf("get failue value error %s", err.Error())
+			blog.Warnf("get failue value error %s", err.Error())
 		}
 		total, err := strconv.ParseInt(val["total"], 10, 64)
 		if nil != err {
-			blog.Errorf("get total value error %s", err.Error())
+			blog.Warnf("get total value error %s", err.Error())
 		}
 		results[index].Statistics = &metadata.Statistics{
 			Total:   total,

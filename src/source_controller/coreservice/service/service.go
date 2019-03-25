@@ -36,6 +36,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/association"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -96,6 +97,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 	// connect the remote mongodb
 
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), mainline.New(db))
 	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), datasynchronize.New(db, s))
 }
 
@@ -200,11 +202,11 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 
-				ownerID := util.GetActionOnwerID(req)
-				user := util.GetActionUser(req)
+				ownerID := util.GetOwnerID(req.Request.Header)
+				user := util.GetUser(req.Request.Header)
 
 				// get the language
-				language := util.GetActionLanguage(req)
+				language := util.GetLanguage(req.Request.Header)
 
 				defLang := s.language.CreateDefaultCCLanguageIf(language)
 

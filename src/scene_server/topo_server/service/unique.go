@@ -23,7 +23,7 @@ import (
 )
 
 // CreateObjectUnique create a new object unique
-func (s *topoService) CreateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.CreateUniqueRequest{}
 
 	if err := data.MarshalJSONInto(request); err != nil {
@@ -33,7 +33,7 @@ func (s *topoService) CreateObjectUnique(params types.ContextParams, pathParams,
 
 	objectID := pathParams(common.BKObjIDField)
 
-	id, err := s.core.UniqueOperation().Create(params, objectID, request)
+	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v", objectID, err, data)
 		return nil, err
@@ -42,7 +42,7 @@ func (s *topoService) CreateObjectUnique(params types.ContextParams, pathParams,
 }
 
 // UpdateObjectUnique update a object unique
-func (s *topoService) UpdateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	request := &metadata.UpdateUniqueRequest{}
 
 	if err := data.MarshalJSONInto(request); err != nil {
@@ -58,7 +58,7 @@ func (s *topoService) UpdateObjectUnique(params types.ContextParams, pathParams,
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.UniqueOperation().Update(params, objectID, id, request)
+	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
 		return nil, err
@@ -67,7 +67,7 @@ func (s *topoService) UpdateObjectUnique(params types.ContextParams, pathParams,
 }
 
 // DeleteObjectUnique delete a object unique
-func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objectID := pathParams(common.BKObjIDField)
 	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 	}
 	data.Remove(metadata.BKMetadata)
 
-	uniques, err := s.core.UniqueOperation().Search(params, objectID)
+	uniques, err := s.Core.UniqueOperation().Search(params, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
-	err = s.core.UniqueOperation().Delete(params, objectID, id)
+	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
 		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v", objectID, id, err)
 		return nil, err
@@ -94,9 +94,9 @@ func (s *topoService) DeleteObjectUnique(params types.ContextParams, pathParams,
 }
 
 // SearchObjectUnique search object uniques
-func (s *topoService) SearchObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	objectID := pathParams(common.BKObjIDField)
-	uniques, err := s.core.UniqueOperation().Search(params, objectID)
+	uniques, err := s.Core.UniqueOperation().Search(params, objectID)
 	if err != nil {
 		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v", objectID, err)
 		return nil, err

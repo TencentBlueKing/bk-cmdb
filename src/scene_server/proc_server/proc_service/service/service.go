@@ -16,6 +16,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -32,9 +35,6 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -56,8 +56,8 @@ type ProcServer struct {
 	EsbServ            esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
-	resHandler         auth.ResourceHandler
-	auth               auth.Authorizer
+	Auth               auth.Authorize
+	ConfigMap          map[string]string
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -72,7 +72,7 @@ func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig),
+		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig, s.Auth),
 	}
 }
 
@@ -231,5 +231,5 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
 		}
 	}
-
+	ps.ConfigMap = current.ConfigMap
 }

@@ -108,6 +108,12 @@ func (s *coreService) initInstanceAssociation() {
 	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instanceassociation", HandlerFunc: s.DeleteInstanceAssociation})
 }
 
+func (s *coreService) initMainline() {
+	// add handler for model topo and business topo
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/mainline/model", HandlerFunc: s.SearchMainlineModelTopo})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/mainline/instance/{bk_biz_id}", HandlerFunc: s.SearchMainlineInstanceTopo})
+}
+
 func (s *coreService) initService() {
 	s.initHealth()
 	s.initModelClassification()
@@ -118,4 +124,5 @@ func (s *coreService) initService() {
 	s.initModelInstances()
 	s.initInstanceAssociation()
 	s.initDataSynchronize()
+	s.initMainline()
 }

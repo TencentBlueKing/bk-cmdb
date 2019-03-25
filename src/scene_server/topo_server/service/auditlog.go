@@ -18,7 +18,7 @@ import (
 )
 
 // AuditQuery search audit logs
-func (s *topoService) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	return s.core.AuditOperation().Query(params, data)
+	return s.Core.AuditOperation().Query(params, data)
 }

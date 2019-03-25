@@ -92,8 +92,8 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 }
 
 func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadata.Metadata) ([]PropertyGroup, error) {
-	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
-	condition := mapstr.MapStr{
+	ownerID := util.GetOwnerID(header)
+    condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
 		common.BKOwnerIDField: common.BKDefaultOwnerID,
 		"page": mapstr.MapStr{

@@ -62,18 +62,18 @@ func (lgc *Logics) UpdateHost(ctx context.Context, input map[string]interface{},
 
 	dstPlat, ok := mapData[common.BKSubAreaField]
 	if !ok {
-		blog.Errorf("params data.bk_cloud_id is require, input::%+v,rid:%s", input, lgc.rid)
+		blog.Errorf("params data.bk_cloud_id is require, input:%+v, rid:%s", input, lgc.rid)
 		return nil, http.StatusBadRequest, lgc.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKSubAreaField)
 
 	}
 
 	innerIP, ok := input["condition"].(map[string]interface{})[common.BKHostInnerIPField]
 	if !ok {
-		blog.Errorf("params data.bk_ihost_innerip is require, input::%+v,rid:%s", input, lgc.rid)
+		blog.Errorf("params data.bk_ihost_innerip is require, input:%+v, rid:%s", input, lgc.rid)
 		return nil, http.StatusBadRequest, lgc.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKHostInnerIPField)
 	}
 
-	// dst host exist return souccess, hongsong tiyi
+	// dst host exist return success
 	dstHostCondition := map[string]interface{}{
 		common.BKHostInnerIPField: innerIP,
 		common.BKCloudIDField:     dstPlat,
@@ -103,6 +103,81 @@ func (lgc *Logics) UpdateHost(ctx context.Context, input map[string]interface{},
 
 	return res, 0, nil
 
+}
+
+// FindHostIDsByAppID is just a copy from which used for verify hostID before update host
+func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHostParams, appID int64) ([]int64, int, error) {
+
+	blog.V(5).Infof("updateHostByAppID http body data: %+v, rid:%s", input, lgc.rid)
+
+	phpapi := lgc.NewPHPAPI()
+
+	moduleInfo, err := phpapi.GetDefaultModules(ctx, int(appID))
+
+	if nil != err {
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
+	}
+
+	defaultModuleID, err := moduleInfo.Int64(common.BKModuleIDField)
+	if nil != err {
+		blog.Errorf("getDefaultModules input: %v, error:%v, module:%v", input, err, moduleInfo)
+		return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoModuleSelectFailed)
+	}
+	hostIDArr := make([]int64, 0)
+	for _, pro := range input.ProxyList {
+		proMap := pro.(map[string]interface{})
+		var hostID int64
+		innerIP := proMap[common.BKHostInnerIPField]
+		hostData, err := phpapi.GetHostByIPAndSource(ctx, innerIP.(string), input.CloudID)
+		if nil != err {
+			return nil, http.StatusInternalServerError, err
+		}
+
+		blog.V(5).Infof("hostData:%v, rid:%s", hostData, lgc.rid)
+		if len(hostData) == 0 {
+			platID, ok := proMap[common.BKCloudIDField]
+			if ok {
+				platConds := mapstr.MapStr{
+					common.BKCloudIDField: platID,
+				}
+
+				bl, err := lgc.IsPlatExist(ctx, platConds)
+				if nil != err {
+					return nil, http.StatusInternalServerError, err
+				}
+				if !bl {
+					blog.Errorf("is exist plat  not foud platid :%v, input:%+v,rid:%s", platID, input, lgc.rid)
+					return nil, http.StatusInternalServerError, lgc.ccErr.Error(common.CCErrTopoCloudNotFound)
+				}
+			}
+			proMap["import_from"] = common.HostAddMethodAgent
+			blog.V(5).Infof("procMap:%v, input:%+v,rid:%s", proMap, input, lgc.rid)
+			hostIDNew, err := phpapi.AddHost(ctx, proMap)
+			if nil != err {
+				return nil, http.StatusInternalServerError, err
+			}
+
+			hostID = hostIDNew
+
+			blog.V(5).Infof("addHost success, hostID: %d, input:%v,rid:%s", hostID, input, lgc.rid)
+			err = phpapi.AddModuleHostConfig(ctx, hostID, int64(appID), []int64{defaultModuleID})
+			if nil != err {
+				return nil, http.StatusInternalServerError, err
+			}
+
+		} else {
+			hostID, err = hostData[0].Int64(common.BKHostIDField)
+			if nil != err {
+				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
+				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+			}
+
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+
+	return hostIDArr, 0, nil
 }
 
 func (lgc *Logics) UpdateHostByAppID(ctx context.Context, input *meta.UpdateHostParams, appID int64) (interface{}, int, error) {
@@ -436,7 +511,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		dstIPMap[ip] = true
 	}
 
-	blog.V(5).Infof("configData[0]:%+v, input:%+v", configDataArr[0], input, lgc.rid)
+	blog.V(5).Infof("configData[0]:%+v, input:%+v, rid: %s", configDataArr[0], input, lgc.rid)
 	moduleIDs := make([]int64, 0)
 	for _, configData := range configDataArr {
 
