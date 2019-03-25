@@ -36,18 +36,19 @@ const (
 	ModelInstance            ResourceType = "modelInstance"
 	ModelInstanceTopology    ResourceType = "modelInstanceTopology"
 	ModelTopology            ResourceType = "modelTopology"
-	HostUserCustom           ResourceType = "hostUserCustom"
 	ModelClassification      ResourceType = "modelClassification"
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
-	UserCustom               ResourceType = "hostCustomAPI"
 	HostFavorite             ResourceType = "hostFavorite"
 	Process                  ResourceType = "process"
 	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
-	DynamicGrouping          ResourceType = "dynamicGrouping"
+	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组
 	EventPushing             ResourceType = "eventPushing"
+	AuditLog                 ResourceType = "auditlog"     // 操作审计
+	ResourceSync             ResourceType = "resourceSync" // 云资源发现
+	UserCustom               ResourceType = "usercustom"   // 用户自定义
 )
 
 const (

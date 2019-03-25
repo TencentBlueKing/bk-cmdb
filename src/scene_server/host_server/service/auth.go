@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,6 +25,8 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // verifyBusinessPermission will write response directly if authorized forbidden
@@ -81,7 +81,7 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
 			return
 		}
-		return
+		return true
 	}
 
 	// step1. get app id by host id
@@ -89,14 +89,14 @@ func (s *Service) verifyHostPermission(requestHeader *http.Header, resp *restful
 	if err != nil {
 		blog.Errorf("get host layers by hostID failed, hostIDArr: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-		return
+		return false
 	}
 	// step2. check authorization by call interface
 	decision, err := s.Authorizer.CanDoResourceActionWithLayers(requestHeader, authmeta.HostInstance, businessID, layers, action)
 	if decision.Authorized == false {
 		blog.Errorf("check host authorization failed, reason: %v, err: %v", decision.Reason, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
-		return
+		return false
 	}
 	return true
 }

@@ -78,7 +78,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -105,7 +105,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -132,13 +132,18 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
 			{
 				ActionID:          BindModule,
 				ActionName:        "绑定到模块",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          BindModuleQuery,
+				ActionName:        "绑定模块查询",
 				IsRelatedResource: true,
 			},
 		},
@@ -164,7 +169,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},
@@ -186,7 +191,7 @@ var expectBizResourceType = []ResourceType{
 				IsRelatedResource: true,
 			},
 			{
-				ActionID:          Delete,
+				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: true,
 			},

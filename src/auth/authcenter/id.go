@@ -67,8 +67,10 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return eventSubscribeResourceID(resourceType, attribute)
 	case meta.HostInstance:
 		return hostInstanceResourceID(resourceType, attribute)
+	case meta.DynamicGrouping:
+		return dynamicGroupingResourceID(resourceType, attribute)
 	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Type)
+		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
 }
 
@@ -116,7 +118,6 @@ func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 }
 
 func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
 	return nil, nil
 }
 
@@ -131,6 +132,9 @@ func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.Res
 }
 
 func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
@@ -145,8 +149,35 @@ func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *
 }
 
 func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 
-	return nil, nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+
+	groupType := SysModelGroup
+	modelType := SysModel
+	if attribute.BusinessID > 0 {
+		groupType = BizModelGroup
+		modelType = BizModel
+	}
+
+	return []ResourceID{
+		{
+			ResourceType: groupType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
+		},
+		{
+			ResourceType: modelType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[1].InstanceID, 10),
+		},
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }
 
 func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -160,10 +191,13 @@ func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 }
 
 func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	id := ResourceID{
 		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
-	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -177,7 +211,7 @@ func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -191,7 +225,7 @@ func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -205,7 +239,7 @@ func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
-	id.ResourceID = strconv.FormatInt(attribute.Layers[0].InstanceID, 10)
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
 	return []ResourceID{id}, nil
 }
 
@@ -220,13 +254,14 @@ func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 }
 
 func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-	return []ResourceID{
-		{
-			ResourceType: resourceType,
-			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
-		},
-	}, nil
-	return nil, nil
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: BizProcessInstance,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	return []ResourceID{id}, nil
 }
 
 func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -251,6 +286,21 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 }
 
 func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
+}
+
+func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 	return []ResourceID{
 		{
 			ResourceType: resourceType,
