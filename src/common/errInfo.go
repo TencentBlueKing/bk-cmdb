@@ -320,10 +320,8 @@ const (
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
-	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
-	CCErrorTopoAssociationKindMainlineUnavailable = 1199043
-	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
-	CCErrorTopoAssociationKindInconsistent = 1199044
+    // CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1199045
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -593,6 +591,11 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// synchronize data coreservice  11139xx
+	CCErrCoreServiceSyncError = 1113900
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
@@ -613,6 +616,10 @@ const (
 
 	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
 	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
+
+	// synchronize_server 1114xxx
+
+	CCErrSynchronizeError = 1114001
 
 	/** TODO: 以下错误码需要改造 **/
 

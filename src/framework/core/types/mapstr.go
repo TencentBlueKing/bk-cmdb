@@ -13,13 +13,14 @@
 package types
 
 import (
-	"configcenter/src/framework/core/log"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"time"
+
+	"configcenter/src/framework/core/log"
 )
 
 // Get return the origin value by the key

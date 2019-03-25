@@ -82,7 +82,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	// 根据AppID获取AppInfo
 	appInfoMap, err := ps.getAppInfoByID(appID, srvData.header)
 	if err != nil {
-		blog.Errorf("getAppInfoByID failed in GetProcessPortByApplicationID. err: %s", err.Error())
+		blog.Errorf("getAppInfoByID failed . err: %s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}

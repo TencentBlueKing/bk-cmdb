@@ -333,6 +333,9 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
+	// ExportCustomFields the use custom display columns
+	ExportCustomFields = "export_custom_fields"
+
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
 
@@ -950,7 +953,8 @@ const (
 )
 
 const (
-	BKProcInstanceOpUser = "proc instance user"
+	BKProcInstanceOpUser             = "proc instance user"
+	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 )
 
 const (
@@ -1000,4 +1004,30 @@ const (
 
 const (
 	BKBizDefault = "bizdefault"
+)
+
+const (
+	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
+	MetaDataSynchronizeVersionField = "metadata_sync_version"
+
+	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
+	SynchronizeSignPrefix = "sync_blueking"
+
+	/* synchronize model description classify*/
+
+	// SynchronizeModelTypeClassification synchroneize model classification
+	SynchronizeModelTypeClassification = "model_classification"
+	// SynchronizeModelTypeAttribute synchroneize model attribute
+	SynchronizeModelTypeAttribute = "model_attribute"
+	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
+	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
+	// SynchronizeModelTypeBase synchroneize model attribute group
+	SynchronizeModelTypeBase = "model"
+	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
+	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
+
+	/* synchronize instance assoication sign*/
+
+	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
+	SynchronizeAssociationTypeModelHost = "module_host"
 )

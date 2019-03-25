@@ -13,19 +13,20 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "strconv"
+    "strings"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
+    "configcenter/src/common"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/util"
+    hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *restful.Response) {
@@ -488,7 +489,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	}
 
 	if 0 == appID || 0 == moduleID {
-		//get default app
+		// get default app
 		ownerAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, data.OwnerID)
 		if err != nil {
 			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, srvData.rid)
@@ -501,7 +502,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 			return
 		}
 
-		//get idle module
+		// get idle module
 		mConds := mapstr.New()
 		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
@@ -548,92 +549,83 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 }
 
 func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
-	srvData := s.newSrvComm(req.Request.Header)
+    pheader := req.Request.Header
+    srvData := s.newSrvComm(pheader )
+    defErr := srvData.ccErr
+    ctx := srvData.ctx
+    rid :=srvData.rid
+    conf := new(metadata.DefaultModuleHostConfigParams)
+    if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
+        blog.Errorf("move host to module %s failed with decode body err: %v,rid: %s", moduleName, err,rid)
+        resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
 
-	conf := new(metadata.DefaultModuleHostConfigParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
-		blog.Errorf("move host to module %s failed with decode body err: %v,rid:%s", moduleName, err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
+    conds := make(map[string]interface{})
+    moduleNameLogKey := "idle"
+    if common.DefaultResModuleName == moduleName {
+        //空闲机
+        moduleNameLogKey = "idle"
+        conds[common.BKDefaultField] = common.DefaultResModuleFlag
+        conds[common.BKModuleNameField] = common.DefaultResModuleName
+    } else {
+        //故障机器
+        moduleNameLogKey = "fault"
+        conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
+        conds[common.BKModuleNameField] = common.DefaultFaultModuleName
+    }
+    conds[common.BKAppIDField] = conf.ApplicationID
+    moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
+    if err != nil {
+        blog.Errorf("move host to module %s, get module id err: %v", moduleName, err)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
+        return
+    }
 
-	conds := mapstr.New()
-	moduleNameLogKey := "idle"
-	if common.DefaultResModuleName == moduleName {
-		//空闲机
-		moduleNameLogKey = "idle"
-		conds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-		conds.Set(common.BKModuleNameField, common.DefaultResModuleName)
-	} else {
-		//故障机器
-		moduleNameLogKey = "fault"
-		conds.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
-		conds.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
-	}
-	conds.Set(common.BKAppIDField, conf.ApplicationID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
-	if err != nil {
-		blog.Errorf("move host to module %s, get module id err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
-		return
-	}
+    audit := srvData.lgc.NewHostModuleLog( conf.HostID)
+    if err := audit.WithPrevious(srvData.ctx); err != nil {
+        blog.Errorf("move host to module %s, get prev module host config failed, err: %v", moduleName, err)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+        return
+    }
 
-	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
-	if err := audit.WithPrevious(srvData.ctx); err != nil {
-		blog.Errorf("move host to module %s, get prev module host config failed, err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-		return
-	}
+    notExistHostID, err := srvData.lgc.ExistHostIDSInApp(ctx, conf.ApplicationID, conf.HostID)
+    if err != nil {
+        blog.Errorf("moveHostToModuleByName ExistHostIDSInApp error, err:%s,input:%#v,rid:%s", err.Error(), conf, rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+        return
+    }
+    if len(notExistHostID) > 0 {
+        blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %#v, not exist in app:%#v,rid:%s", conf.ApplicationID, conf.HostID, notExistHostID, rid)
+        notTipStrHostID := ""
+        for _, hostID := range notExistHostID {
+            notTipStrHostID = fmt.Sprintf("%s,%s", notTipStrHostID, hostID)
+        }
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostNotINAPP, strings.Trim(notTipStrHostID, ","))})
+        return
+    }
+    transferInput := &metadata.TransferHostToDefaultModuleConfig{
+        ApplicationID: conf.ApplicationID,
+        HostID:        conf.HostID,
+        ModuleID:      moduleID,
+    }
+    result, err := s.CoreAPI.HostController().Module().TransferHostToDefaultModule(ctx, pheader, transferInput)
+    if err != nil {
+        blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+        return
+    }
+    if !result.Result {
+        blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, result, rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+        return
+    }
 
-	for _, hostID := range conf.HostID {
-		exist, err := srvData.lgc.IsHostExistInApp(srvData.ctx, conf.ApplicationID, hostID)
-		if err != nil {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", conf.ApplicationID, hostID, err.Error())
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-			return
-		}
-
-		if !exist {
-			blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %v,input:%+v,rid:%s", conf.ApplicationID, hostID, conf, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostNotINAPP, hostID)})
-			return
-		}
-
-		opt := metadata.ModuleHostConfigParams{
-			ApplicationID: conf.ApplicationID,
-			HostID:        hostID,
-		}
-		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName DelModuleHostConfig http do error. err: %v,input:%+v,param:%+v,rid:%s", err, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("moveHostToModuleByName DelModuleHostConfig http response error. err coe:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-
-		opt.ModuleID = []int64{moduleID}
-		result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName AddModuleHostConfig http do error. err: %v,input:%+v,param:%+v,rid:%s", err, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("moveHostToModuleByName AddModuleHostConfig http response error. err coe:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-
-	}
-
-	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), srvData.user, "host to "+moduleNameLogKey+" module"); err != nil {
-		blog.Errorf("move host to module %s, save audit log failed, err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-		return
-	}
-	resp.WriteEntity(metadata.NewSuccessResp(nil))
+    user := util.GetUser(pheader)
+    if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), user, "host to "+moduleNameLogKey+" module"); err != nil {
+        blog.Errorf("move host to module %s, save audit log failed, err: %v, rid: %s", moduleName, err, rid)
+        resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+        return
+    }
+    resp.WriteEntity(metadata.NewSuccessResp(nil))
 }

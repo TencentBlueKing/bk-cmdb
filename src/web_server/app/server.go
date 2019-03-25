@@ -123,9 +123,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	select {
-	case <-ctx.Done():
-	}
+	select {}
 	return nil
 
 }
