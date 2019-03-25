@@ -231,15 +231,17 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		}
 		hostModuleMap[host.BKHostIDField] = host
 	}
-	for _, host := range hosts {
+	blog.V(9).Infof("hostModuleMap: %+v", hostModuleMap)
+	for idx, host := range hosts {
 		hostModule, exist := hostModuleMap[host.BKHostIDField]
 		if exist == false {
 			return nil, fmt.Errorf("hostID:%+d doesn't exist in any module", host.BKHostIDField)
 		}
-		host.BKAppIDField = hostModule.BKAppIDField
-		host.BKSetIDField = hostModule.BKSetIDField
-		host.BKModuleIDField = hostModule.BKModuleIDField
+		hosts[idx].BKAppIDField = hostModule.BKAppIDField
+		hosts[idx].BKSetIDField = hostModule.BKSetIDField
+		hosts[idx].BKModuleIDField = hostModule.BKModuleIDField
 	}
+	blog.V(9).Infof("hosts: %+v", hosts)
 	
 	return hosts, nil
 }
@@ -263,7 +265,7 @@ func (am *AuthManager) makeResourcesByHosts(header http.Header, action meta.Acti
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Model,
+				Type:       meta.HostInstance,
 				Name:       host.BKHostInnerIPField,
 				InstanceID: host.BKHostIDField,
 			},
@@ -273,6 +275,7 @@ func (am *AuthManager) makeResourcesByHosts(header http.Header, action meta.Acti
 
 		resources = append(resources, resource)
 	}
+	blog.V(9).Infof("host resources for iam: %+v", resources)
 	return resources
 }
 
