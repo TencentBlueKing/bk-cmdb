@@ -66,7 +66,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -95,7 +95,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -126,7 +126,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -152,7 +152,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -297,10 +297,10 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 
-		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
 			gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value(),
 			gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstObjIDField).Value(),
-		}})
+		}}})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -350,10 +350,10 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
 			asst.ObjectID,
 			asst.AsstObjID,
-		}})
+		}}})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -403,10 +403,10 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 			return ps
 		}
 
-		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
 			asst.ObjectID,
 			asst.AsstObjID,
-		}})
+		}}})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -487,10 +487,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
 			asst.ObjectID,
 			asst.AsstObjID,
-		}})
+		}}})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -541,10 +541,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		models, err := ps.getModel(mapstr.MapStr{common.BKDBIN: []interface{}{
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
 			asst.ObjectID,
 			asst.AsstObjectID,
-		}})
+		}}})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -602,7 +602,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceLatestRegexp, http.MethodPost) {
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -630,7 +630,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = errors.New("search object instance, but got invalid url")
 			return ps
 		}
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -665,7 +665,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -696,7 +696,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -733,7 +733,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -768,7 +768,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -891,7 +891,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1237,7 +1237,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
-		model, err := ps.getModel(gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value())
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1267,7 +1267,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(ps.RequestCtx.Elements[5])
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1308,7 +1308,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 		}
 
 		for _, group := range groups {
-			model, err := ps.getModel(group.ObjectID)
+			model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: group.ObjectID})
 			if err != nil {
 				ps.err = err
 				return ps
@@ -1356,7 +1356,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		model, err := ps.getModel(groups[0].ObjectID)
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: groups[0].ObjectID})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1429,7 +1429,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).String()
-		model, err := ps.getModel(modelEn)
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: modelEn})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1461,7 +1461,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		}
 
 		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
-		model, err := ps.getModel(modelEn)
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: modelEn})
 		if err != nil {
 			ps.err = err
 			return ps
@@ -1534,7 +1534,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 		}
 
 		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
-		models, err := ps.getModel(modelCond)
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: modelCond})
 		if err != nil {
 			ps.err = err
 			return ps

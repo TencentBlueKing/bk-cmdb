@@ -175,7 +175,7 @@ var (
 	}
 
 	HostUserCustomDescribe = ResourceDescribe{
-		Type:    DynamicGrouping,
+		Type:    UserCustom,
 		Actions: []Action{Find, FindMany, Create, Update, Delete},
 	}
 
