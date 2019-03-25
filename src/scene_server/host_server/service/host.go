@@ -466,7 +466,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
-	audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 
 	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
 	hostIDs := make([]int64, 0)
@@ -487,6 +486,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 		}
 
+		audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(id, hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", id, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
@@ -517,6 +517,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	logLastConents := make([]auditoplog.AuditLogExt, 0)
 	for _, hostID := range hostIDs {
+		audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(strconv.FormatInt(hostID, 10), hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", hostID, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
