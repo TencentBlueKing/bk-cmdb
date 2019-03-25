@@ -12,8 +12,8 @@
 
 package common
 
-//CC error number defined in this file
-//Errno name is composed of the following format CCErr[XXX]
+// CC error number defined in this file
+// Errno name is composed of the following format CCErr[XXX]
 const (
 
 	// the system code
@@ -320,6 +320,10 @@ const (
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
+    // CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+    CCErrorTopoAssociationKindMainlineUnavailable = 1199043
+    // CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+    CCErrorTopoAssociationKindInconsistent = 1199044
     // CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1199045
 
