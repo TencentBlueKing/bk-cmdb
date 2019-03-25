@@ -20,7 +20,6 @@
         name: 'cmdb-form-date-range',
         props: {
             value: {
-                type: Array,
                 default () {
                     return []
                 }
@@ -77,7 +76,8 @@
                 this.setLocalSelected()
             },
             localSelected (localSelected, oldSelected) {
-                if (localSelected.join(this.separator) !== this.value.join(this.separator)) {
+                const value = Array.isArray(this.value) ? this.value : []
+                if (localSelected.join(this.separator) !== value.join(this.separator)) {
                     this.$emit('input', [...localSelected])
                     this.$emit('on-change', [...localSelected], [...oldSelected])
                 }
@@ -88,8 +88,9 @@
         },
         methods: {
             setLocalSelected () {
-                if (this.localSelected.join(this.separator) !== this.value.join(this.separator)) {
-                    this.localSelected = [...this.value]
+                const value = Array.isArray(this.value) ? this.value : []
+                if (this.localSelected.join(this.separator) !== value.join(this.separator)) {
+                    this.localSelected = [...value]
                 }
             },
             handleChange (oldValue, newValue) {

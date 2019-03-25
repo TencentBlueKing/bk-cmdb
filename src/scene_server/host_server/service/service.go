@@ -137,6 +137,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 
+	ws.Route(ws.POST("/findmany/modulehost").To(s.FindModuleHost))
+
 	// cloud sync
 	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))
 	ws.Route(ws.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))

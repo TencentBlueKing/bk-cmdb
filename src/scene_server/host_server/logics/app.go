@@ -14,6 +14,7 @@ package logics
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"configcenter/src/common"
@@ -115,8 +116,39 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 	return true, nil
 }
 
-func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
+// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
+func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64, header http.Header) ([]int64, error) {
+    defErr := lgc.ccErr
+	conf := map[string][]int64{
+		common.BKAppIDField:  []int64{appID},
+		common.BKHostIDField: hostIDArray,
+	}
 
+	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, conf)
+	if err != nil {
+		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, lgc.rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("ExistHostIDSInApp http reply error. err code:%d,err msg:%s, input:%#v,rid:%s", result.Code, result.ErrMsg, conf, lgc.rid)
+		return nil, defErr.New(result.Code, result.ErrMsg)
+	}
+	hostIDMap := make(map[int64]bool, 0)
+	for _, row := range result.Data {
+		hostIDMap[row.HostID] = true
+	}
+	var notExistHOstID []int64
+	for _, hostID := range hostIDArray {
+		_, ok := hostIDMap[hostID]
+		if !ok {
+			notExistHOstID = append(notExistHOstID, hostID)
+		}
+	}
+
+	return notExistHOstID, nil
+}
+
+func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
