@@ -224,6 +224,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 				blog.Debug("query permit %+v", ress[ressindex])
 				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
 				if err != nil {
+					blog.Fatalf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
 					ress[ressindex].Decision.Authorized = false
 					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
 					continue
@@ -231,6 +232,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 				actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
 				if err != nil {
+					blog.Fatalf("adaptor resource action failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
 					ress[ressindex].Decision.Authorized = false
 					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
 					continue

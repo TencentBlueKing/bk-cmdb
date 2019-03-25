@@ -35,7 +35,7 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 		return err
 	}
 
-	// step1 get busineses from core service
+	// step1 get business from core service
 	businessList := make([]extensions.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
 		businessSimplify := extensions.BusinessSimplify{}
@@ -45,8 +45,6 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 			continue
 		}
 		
-		// businessID := business[common.BKAppIDField].(int64)
-		// businessIDArr = append(businessIDArr, businessID)
 		businessList = append(businessList, businessSimplify)
 	}
 	blog.Info("list business businessList: %+v", businessList)

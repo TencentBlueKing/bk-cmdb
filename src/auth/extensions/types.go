@@ -101,17 +101,18 @@ type BusinessSimplify struct {
 	BKAppNameField    string `field:"bk_biz_name"`
 	BKSupplierIDField int64  `field:"bk_supplier_id"`
 	BKOwnerIDField    string `field:"bk_supplier_account"`
+	IsDefault    int64 `field:"default"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
-func (is *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, error) {
+func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, error) {
 
-	err := mapstr.SetValueToStructByTags(is, data)
+	err := mapstr.SetValueToStructByTags(business, data)
 	if nil != err {
 		return nil, err
 	}
-
-	return is, err
+	
+	return business, err
 }
 
 type SetSimplify struct {
