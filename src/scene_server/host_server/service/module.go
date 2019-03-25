@@ -573,8 +573,8 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	// register host to new business
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
+		blog.Errorf("register hosts to iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -656,8 +656,8 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		return
 	}
 	// auth: deregister hosts
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
+		blog.Errorf("deregister host from iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -683,7 +683,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	if 0 == len(errmsg) {
 		// auth: check authorization
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
-			blog.Errorf("check host authorization failed, err: %v", err)
+			blog.Errorf("register hosts to iam failed, err: %v", err)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 			return
 		}
@@ -794,7 +794,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+		blog.Errorf("register hosts to iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}

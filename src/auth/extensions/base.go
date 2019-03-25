@@ -21,6 +21,22 @@ import (
 	"configcenter/src/auth/parser"
 )
 
+// correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
+// it's an ugly design here, but it's the cheapest way to set business to 0 for all default resources.
+func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header, businessID int64) (int64, error) {
+	
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return 0, fmt.Errorf("get business:%d detailed failed, err: %+v", businessID, err)
+	}
+	business := businesses[0]
+	
+	if business.IsDefault == 1 {
+		return 0, nil
+	}
+	return business.BKAppIDField, nil
+}
+
 func (am *AuthManager) authorize(ctx context.Context, header http.Header, businessID int64, resources ...meta.ResourceAttribute) error {
 	commonInfo, err := parser.ParseCommonInfo(&header)
 	if err != nil {

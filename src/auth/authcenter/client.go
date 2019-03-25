@@ -151,6 +151,11 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 		return err
 	}
 
+	// 1901404: resource not exists
+	if resp.Code == 1901404 {
+		return nil
+	}
+	
 	if resp.Code != 0 {
 		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}

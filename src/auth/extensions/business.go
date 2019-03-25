@@ -13,19 +13,20 @@
 package extensions
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"context"
-	"fmt"
-	"net/http"
 )
 
 /*
- * instance represent common instances here
+ * business related auth interface
  */
 
 func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
@@ -34,9 +35,9 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 
 
 	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(businessIDs).ToMapStr(),
+		Condition: condition.CreateCondition().Field(common.BKAppIDField).In(businessIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
 		blog.V(3).Infof("get instances by id failed, err: %+v", err)
 		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
@@ -84,7 +85,6 @@ func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSim
 }
 
 func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
-
 	// extract business id
 	bizID, err := am.extractBusinessIDFromBusinesses(businesses...)
 	if err != nil {

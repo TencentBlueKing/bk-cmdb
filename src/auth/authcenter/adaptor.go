@@ -214,10 +214,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
+		meta.TransferHost,
 		meta.MoveHostToModule:
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
 			return ModuleTransfer, nil
-		}
 
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool
