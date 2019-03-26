@@ -350,16 +350,15 @@ const (
 	CCErrorAsstInstIsNotExist           = 1101072
 	CCErrorInstToAsstIsNotExist         = 1101073
 	CCErrorInstHasAsst                  = 1101074
-	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
-	CCErrorTopoAssociationKindMainlineUnavailable = 1001075
-	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
-	CCErrorTopoAssociationKindInconsistent = 1001076
-	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1001077
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
-
+	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
+	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+	CCErrorTopoAssociationKindInconsistent = 1101083
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1101084
 	// objectcontroller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
