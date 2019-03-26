@@ -7,6 +7,13 @@ import {
     G_HOST_ASSIGN
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_C_HOST,
+    G_U_HOST,
+    G_D_HOST,
+    G_HOST_ASSIGN
+}
+
 export default {
     name: 'resource',
     path: '/resource',
@@ -19,12 +26,7 @@ export default {
         },
         auth: {
             view: G_R_HOST,
-            operation: [
-                G_C_HOST,
-                G_U_HOST,
-                G_D_HOST,
-                G_HOST_ASSIGN
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

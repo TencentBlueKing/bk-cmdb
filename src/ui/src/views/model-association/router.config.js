@@ -5,6 +5,12 @@ import {
     G_D_RELATION
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_C_RELATION,
+    G_U_RELATION,
+    G_D_RELATION
+}
+
 export default {
     name: 'modelAssociation',
     path: '/model/association',
@@ -17,11 +23,7 @@ export default {
         },
         auth: {
             view: '',
-            operation: [
-                G_C_RELATION,
-                G_U_RELATION,
-                G_D_RELATION
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

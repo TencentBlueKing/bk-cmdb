@@ -2,7 +2,7 @@
     <div class="relation-wrapper">
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.G_C_RELATION)"
                 @click="createRelation">
                 {{$t('ModelManagement["新增关联类型"]')}}
             </bk-button>
@@ -23,22 +23,24 @@
                 {{item['bk_asst_name'] || '--'}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <template v-if="item.ispre">
-                    <span class="text-primary disabled mr10">
-                        {{$t('Common["编辑"]')}}
-                    </span>
-                    <span class="text-primary disabled">
-                        {{$t('Common["删除"]')}}
-                    </span>
-                </template>
-                <template v-else>
-                    <span class="text-primary mr10" @click.stop="editRelation(item)">
-                        {{$t('Common["编辑"]')}}
-                    </span>
-                    <span class="text-primary" @click.stop="deleteRelation(item)">
-                        {{$t('Common["删除"]')}}
-                    </span>
-                </template>
+                <span class="text-primary disabled mr10"
+                    v-if="item.ispre || !$isAuthorized(OPERATION.G_U_RELATION)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary mr10"
+                    v-else
+                    @click.stop="editRelation(item)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary disabled"
+                    v-if="item.ispre || !$isAuthorized(OPERATION.G_D_RELATION)">
+                    {{$t('Common["删除"]')}}
+                </span>
+                <span class="text-primary"
+                    v-else
+                    @click.stop="deleteRelation(item)">
+                    {{$t('Common["删除"]')}}
+                </span>
             </template>
         </cmdb-table>
         <cmdb-slider
@@ -52,8 +54,8 @@
                 :isEdit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"
-                @cancel="slider.isShow = false"
-            ></the-relation>
+                @cancel="slider.isShow = false">
+            </the-relation>
         </cmdb-slider>
     </div>
 </template>
@@ -61,12 +63,14 @@
 <script>
     import theRelation from './_detail'
     import { mapGetters, mapActions } from 'vuex'
+    import { OPERATION } from './router.config'
     export default {
         components: {
             theRelation
         },
         data () {
             return {
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -135,13 +139,11 @@
                     })
                 }
                 return params
-            },
-            authority () {
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
-            if (!this.authority.includes('update')) {
+            const updateAuth = this.$isAuthorized(this.OPERATION.G_U_RELATION)
+            if (!updateAuth) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))

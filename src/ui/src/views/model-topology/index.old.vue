@@ -144,6 +144,7 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
+    import { OPERATION } from './router.config'
     const NAV_WIDTH = 200
     const TOOLBAR_HEIHGT = 50
     export default {
@@ -154,6 +155,7 @@
         },
         data () {
             return {
+                OPERATION,
                 specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {

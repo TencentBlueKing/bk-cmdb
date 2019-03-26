@@ -56,6 +56,7 @@ const router = new Router({
         business,
         businessModel,
         customQuery,
+        eventpush,
         history,
         hosts,
         ...model,
