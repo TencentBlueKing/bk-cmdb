@@ -104,12 +104,22 @@ func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttrib
 // generate module resource id.
 func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return nil, nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("module:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
 func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return nil, nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("set:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
 func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
@@ -270,18 +280,26 @@ func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.Res
 }
 
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	// translate all parent layers
 	resourceIDs := make([]ResourceID, 0)
 	for _, layer := range attribute.Layers {
-		iamResourceType, err := convertResourceType(attribute)
+		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
 		if err != nil {
-			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %+v, err: %+v", attribute, err)
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, layer: %+v, err: %+v", layer, err)
 		}
 		resourceID := ResourceID{
 			ResourceType: *iamResourceType,
-			ResourceID:   fmt.Sprintf("%d", layer.InstanceID),
+			ResourceID:   strconv.FormatInt(layer.InstanceID, 10),
 		}
 		resourceIDs = append(resourceIDs, resourceID)
 	}
+
+	// append host resource id to end
+	hostResourceID := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	resourceIDs = append(resourceIDs, hostResourceID)
 	return resourceIDs, nil
 }
 

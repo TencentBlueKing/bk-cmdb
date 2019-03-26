@@ -2,6 +2,8 @@ package authcenter
 
 import (
 	"fmt"
+
+	"configcenter/src/auth/meta"
 )
 
 // system constanst
@@ -10,7 +12,7 @@ const (
 	SystemNameCMDB = "蓝鲸智云配置平台"
 )
 
-// ScopeTypeID constanst
+// ScopeTypeID constant
 const (
 	ScopeTypeIDSystem = "system"
 	ScopeTypeIDBiz    = "biz"
@@ -171,3 +173,16 @@ type BaseResponse struct {
 	Result    bool   `json:"result"`
 	RequestID string `json:"request_id"`
 }
+
+type SearchCondition struct {
+	ScopeInfo
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ParentResources []ResourceID `json:"parent_resources"`
+}
+
+type SearchResult struct {
+	BaseResponse
+	RequestID string        `json:"request_id"`
+	Data      []meta.BackendResource `json:"data"`
+}
+

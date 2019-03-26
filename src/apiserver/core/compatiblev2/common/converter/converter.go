@@ -865,17 +865,17 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 
 		switch itemMap[common.BKObjIDField] {
 		case common.BKInnerObjIDApp:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["Level"] = 3
 			dataTemp["ApplicationID"] = strInstId
 			dataTemp["ApplicationName"] = itemMap[common.BKInstNameField]
 			appID = itemMap[common.BKInstIDField]
 		case common.BKInnerObjIDSet:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["SetID"] = strInstId
 			dataTemp["SetName"] = itemMap[common.BKInstNameField]
 		case common.BKInnerObjIDModule:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["ApplicationID"] = appIdStr
 			dataTemp["ModuleID"] = itemMap[common.BKInstIDField]
 			dataTemp["ModuleName"] = itemMap[common.BKInstNameField]

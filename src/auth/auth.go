@@ -36,12 +36,18 @@ type Authorizer interface {
 type ResourceHandler interface {
 	// register a resource
 	RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
+	// register a resource
+	DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*authcenter.RegisterInfo, error)
 	// deregister a resource
 	DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
+	// deregister a resource with raw iam resource id
+	RawDeregisterResource(ctx context.Context, scope authcenter.ScopeInfo, rs ...meta.BackendResource) error
 	// update a resource's info
 	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
+	// list resources by condition
+	ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error)
 	// init the authcenter
 	Init(ctx context.Context, config meta.InitConfig) error
 }

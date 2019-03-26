@@ -20,6 +20,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emicklei/go-restful"
+
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -28,11 +32,9 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/remote"
-	"github.com/emicklei/go-restful"
 )
 
 // TopoServer the topo server
@@ -58,6 +60,12 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+
+	var err error
+	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
+	}
 }
 
 // Run main function
@@ -95,16 +103,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authAPI, err := topoauth.NewTopologyAuth(server.Config.ConfigMap)
+	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
 
+	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
 	server.Service = &service.Service{
 		Language: engine.Language,
 		Engine:   engine,
-		Auth:     authAPI,
-		Core:     core.New(engine.CoreAPI, authAPI),
+		AuthManager: authManager,
+		Core:     core.New(engine.CoreAPI, authManager),
 		Error:    engine.CCErr,
 		Txn:      txn,
 		Config:   server.Config,
@@ -128,6 +137,7 @@ func (t *TopoServer) CheckForReadiness() error {
 			time.Sleep(time.Second)
 			continue
 		}
+		blog.Info("topology server configuration ready.")
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")

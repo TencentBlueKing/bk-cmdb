@@ -80,8 +80,12 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 	return nil
 }
 
+// SearchMainlineAssociationTopo get mainline topo of special model
+// result is a list with targetObj as head, so if you want a full topo, target must be biz model.
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
+    // foundObjIDMap used as a map to detect whether found model is already in,
+    // so that we can detect infinite loop.
 	foundObjIDMap := make(map[string]bool)
 	results := make([]*metadata.MainlineObjectTopo, 0)
 	for {
