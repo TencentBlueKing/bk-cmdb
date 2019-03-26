@@ -553,6 +553,8 @@ const (
 	CCErrHostGetResourceFail = 1110053
 	// CCErrHostModuleNotExist get %s module not found
 	CCErrHostModuleNotExist = 1110054
+	// CCErrDeleteHostFromBusiness Delete the host under the business
+	CCErrDeleteHostFromBusiness = 1110055
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001

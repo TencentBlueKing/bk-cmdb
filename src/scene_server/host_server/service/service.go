@@ -107,6 +107,12 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/hosts/batch").To(s.UpdateHostBatch))
 	ws.Route(ws.PUT("/hosts/property/clone").To(s.CloneHostProperty))
 	ws.Route(ws.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
+	// get host module relation in app
+	ws.Route(ws.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
+	// transfer host to other business
+	ws.Route(ws.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
+	//  delete host from business
+	ws.Route(ws.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
 
 	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
 	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
