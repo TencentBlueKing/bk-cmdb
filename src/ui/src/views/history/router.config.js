@@ -1,6 +1,6 @@
 import {
     D_R_MODEL
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'history',

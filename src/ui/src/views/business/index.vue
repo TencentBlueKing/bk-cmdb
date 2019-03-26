@@ -2,7 +2,7 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!authority.includes('update') || !isAdminView"
+                :disabled="!$isAuthorized(OPERATION.G_C_BUSINESS) || !isAdminView"
                 @click="handleCreate">
                 {{$t("Inst['立即创建']")}}
             </bk-button>
@@ -58,13 +58,14 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
+                        :edit-disabled="!$isAuthorized(OPERATION.G_U_BUSINESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.G_D_BUSINESS)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -113,6 +114,7 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -121,6 +123,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {

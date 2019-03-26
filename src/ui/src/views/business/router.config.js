@@ -1,10 +1,16 @@
-import { NAV_COLLECT } from '@/types/nav'
+import { NAV_COLLECT } from '@/dictionary/nav'
 import {
     G_C_BUSINESS,
     G_U_BUSINESS,
     G_D_BUSINESS,
     G_R_BUSINESS
-} from '@/types/auth'
+} from '@/dictionary/auth'
+
+export const OPERATION = {
+    G_C_BUSINESS,
+    G_U_BUSINESS,
+    G_D_BUSINESS
+}
 
 export default {
     name: 'business',
@@ -18,11 +24,7 @@ export default {
         },
         auth: {
             view: G_R_BUSINESS,
-            operation: [
-                G_C_BUSINESS,
-                G_U_BUSINESS,
-                G_D_BUSINESS
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

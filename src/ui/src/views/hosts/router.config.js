@@ -1,9 +1,9 @@
-import { NAV_BUSINESS_RESOURCE } from '@/types/nav'
+import { NAV_BUSINESS_RESOURCE } from '@/dictionary/nav'
 import {
     B_R_HOST,
     B_U_HOST,
     B_HOST_TO_RESOURCE
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'hosts',

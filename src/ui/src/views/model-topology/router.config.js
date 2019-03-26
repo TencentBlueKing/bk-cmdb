@@ -1,10 +1,10 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     G_SYSTEM_TOPOLOGY,
     G_C_RELATION,
     G_U_RELATION,
     G_D_RELATION
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'modelTopology',

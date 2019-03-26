@@ -3,7 +3,7 @@ const preloadConfig = {
     cancelWhenRouteChange: false
 }
 
-export function getStaticViewAuth (app) {
+export function getViewAuth (app) {
     const viewAuthorities = []
     app.$router.options.routes.forEach(route => {
         const meta = route.meta || {}
@@ -17,7 +17,7 @@ export function getStaticViewAuth (app) {
             })
         }
     })
-    return app.$store.dispatch('auth/getStaticViewAuth', viewAuthorities)
+    return app.$store.dispatch('auth/getViewAuth', viewAuthorities)
 }
 
 export function getClassifications (app) {
@@ -71,7 +71,7 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    await getStaticViewAuth(app)
+    await getViewAuth(app)
     await getBusiness(app)
     return Promise.all([
         getClassifications(app),

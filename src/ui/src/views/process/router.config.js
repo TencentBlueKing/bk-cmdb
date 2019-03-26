@@ -1,11 +1,11 @@
-import { NAV_BUSINESS_RESOURCE } from '@/types/nav'
+import { NAV_BUSINESS_RESOURCE } from '@/dictionary/nav'
 import {
     B_R_PROCESS,
     B_C_PROCESS,
     B_U_PROCESS,
     B_D_PROCESS,
     B_PROCESS_BIND_MODULE
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'process',

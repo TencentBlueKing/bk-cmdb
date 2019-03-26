@@ -1,14 +1,9 @@
-import { mapGetters } from 'vuex'
-import getValue from 'get-value'
 export default {
-    computed: {
-        $auth () {
-            return this.$store.getters['auth/auth']
-        }
-    },
     methods: {
-        $hasAuth (type) {
-            return getValue(this.$auth, type, { default: false })
+        $isAuthorized (auth) {
+            console.log(auth)
+            const [ type, action ] = auth.split('.')
+            return this.$store.getters['auth/isAuthorized'](type, action)
         }
     }
 }
