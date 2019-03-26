@@ -53,6 +53,7 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 }
 
 func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error) {
+	blog.V(9).Infof("makeResourceByAttributes input: %+v", attributes)
 	objectIDs := make([]string, 0)
 	for _, attribute := range attributes {
 		objectIDs = append(objectIDs, attribute.ObjectID)
@@ -67,7 +68,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 		objectMap[object.ObjectID] = object
 	}
 
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
 	}
@@ -122,14 +123,21 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
+			Layers:          parentLayers,
 		}
 
 		resources = append(resources, resource)
 	}
-	return nil, nil
+
+	blog.V(9).Infof("makeResourceByAttributes output: %+v", resources)
+	return resources, nil
 }
 
 func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+	
 	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
 	if err != nil {
 		return fmt.Errorf("register model attribute failed, err: %+v", err)
@@ -139,6 +147,10 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+	
 	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
 	if err != nil {
 		return fmt.Errorf("deregister model attribute failed, err: %+v", err)
@@ -148,14 +160,26 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+
+	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
 	}
-	return am.DeregisterModelAttribute(ctx, header, attibutes...)
+	return am.DeregisterModelAttribute(ctx, header, attributes...)
 }
 
 func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
+	if am.RegisterModelAttributeEnabled == false {
+		objectIDs := make([]string, 0)
+		for _, attribute := range attributes {
+			objectIDs = append(objectIDs, attribute.ObjectID)
+		}
+		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
+	}
+
 	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)
 	if err != nil {
 		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
@@ -165,6 +189,10 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+
 	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, err: %+v", err)
@@ -174,14 +202,22 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+
+	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredModelAttribute(ctx, header, attibutes...)
+	return am.UpdateRegisteredModelAttribute(ctx, header, attributes...)
 }
 
 func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+	if am.RegisterModelAttributeEnabled == false {
+		return nil
+	}
+
 	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)

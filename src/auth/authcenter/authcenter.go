@@ -324,6 +324,10 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 		return nil
 	}
 
+	if len(rs) == 0 {
+		return errors.New("no resource to be registered")
+	}
+	
 	registerInfo, err := ac.DryRunRegisterResource(ctx, rs...)
 	if err != nil {
 		return err

@@ -68,7 +68,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		objectMap[object.ObjectID] = object
 	}
 
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return nil, fmt.Errorf("make auth resource for model unique failed, err: %+v", err)
 	}
@@ -133,7 +133,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
-		return fmt.Errorf("register model attribute failed, err: %+v", err)
+		return fmt.Errorf("register model unique failed, err: %+v", err)
 	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
@@ -142,24 +142,24 @@ func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Head
 func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
-		return fmt.Errorf("deregister model attribute failed, err: %+v", err)
+		return fmt.Errorf("deregister model unique failed, err: %+v", err)
 	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
 
 func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
+	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
-		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
 	}
-	return am.DeregisterModelAttribute(ctx, header, attibutes...)
+	return am.DeregisterModelUnique(ctx, header, uniques...)
 }
 
 func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...metadata.ObjectUnique) error {
 	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
 	if err != nil {
-		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
+		return fmt.Errorf("authorize model unique failed, err: %+v", err)
 	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
@@ -168,30 +168,70 @@ func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Hea
 func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...metadata.ObjectUnique) error {
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
-		return fmt.Errorf("update registered model attribute failed, err: %+v", err)
+		return fmt.Errorf("update registered model unique failed, err: %+v", err)
 	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
 func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
+	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
-		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredModelAttribute(ctx, header, attibutes...)
+	return am.UpdateRegisteredModelUnique(ctx, header, uniques...)
 }
 
 func (am *AuthManager) AuthorizeByUniqueID(ctx context.Context, header http.Header, action meta.Action, uniqueIDs ...int64) error {
-	uniques, err := am.collectAttributesByAttributeIDs(ctx, header, uniqueIDs...)
+	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("get uniques by id failed, err: %+v", err)
 	}
 
 	objectIDs := make([]string, 0)
-	for _, attribute := range uniques {
-		objectIDs = append(objectIDs, attribute.ObjectID)
+	for _, unique := range uniques {
+		objectIDs = append(objectIDs, unique.ObjID)
 	}
 
 	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+}
+
+func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...metadata.ObjectUnique) error {
+	objectIDs := make([]string, 0)
+	for _, unique := range uniques {
+		objectIDs = append(objectIDs, unique.ObjID)
+	}
+	
+	if am.RegisterModelUniqueEnabled == false {
+		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
+	}
+	
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	if err != nil {
+		return fmt.Errorf("get model by id failed, err: %+v", err)
+	}
+	
+	bizID, err := am.ExtractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("extract business id from model failed, err: %+v", err)
+	}
+	
+	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
+	if err != nil {
+		return fmt.Errorf("make auth resource from model uniques failed, err: %+v", err)
+	}
+	
+	return am.authorize(ctx, header, bizID, resources...)
+}
+
+func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, header http.Header, objectID string) error {
+	return am.AuthorizeByObjectID(ctx, header, meta.Update, objectID)
+}
+
+func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
+	if err != nil {
+		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
+	}
+	return am.RegisterModelUnique(ctx, header, uniques...)
 }

@@ -28,6 +28,28 @@ import (
 /*
  * business related auth interface
  */
+func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
+	condition := metadata.QueryCondition{}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &condition)
+	if err != nil {
+		blog.Errorf("list business failed, err: %v", err)
+		return nil, err
+	}
+
+	// step1 get business from core service
+	businessList := make([]BusinessSimplify, 0)
+	for _, business := range result.Data.Info {
+		businessSimplify := BusinessSimplify{}
+		_, err := businessSimplify.Parse(business)
+		if err != nil {
+			blog.Errorf("parse business %+v simplify information failed, err: %+v", business, err)
+			continue
+		}
+
+		businessList = append(businessList, businessSimplify)
+	}
+	return businessList, nil
+}
 
 func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -54,7 +76,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	return instances, nil
 }
 
-func (am *AuthManager) makeResourcesByBusiness(header http.Header, action meta.Action, businesses ...BusinessSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action, businesses ...BusinessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, business := range businesses {
 		resource := meta.ResourceAttribute{
@@ -92,14 +114,14 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByBusiness(header, action, businesses...)
+	resources := am.MakeResourcesByBusiness(header, action, businesses...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
 	// make auth resources
-	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -136,7 +158,7 @@ func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header htt
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
 	// make auth resources
-	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -151,7 +173,7 @@ func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.H
 
 func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
 	// make auth resources
-	resources := am.makeResourcesByBusiness(header, meta.EmptyAction, businesses...)
+	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }

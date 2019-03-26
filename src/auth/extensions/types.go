@@ -16,7 +16,6 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth"
 	"configcenter/src/common"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -25,14 +24,17 @@ import (
 type AuthManager struct {
 	clientSet apimachinery.ClientSetInterface
 	Authorize auth.Authorize
-	// Err is used for return error messages of specific language on running
-	Err errors.DefaultCCErrorIf
+	
+	RegisterModelAttributeEnabled bool
+	RegisterModelUniqueEnabled bool
 }
 
 func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize) *AuthManager {
 	return &AuthManager{
 		clientSet: clientSet,
 		Authorize: Authorize,
+		RegisterModelAttributeEnabled: false,
+		RegisterModelUniqueEnabled: true,
 	}
 }
 

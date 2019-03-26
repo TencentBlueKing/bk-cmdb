@@ -13,6 +13,7 @@
 package extensions
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -181,28 +182,51 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 	return
 }
 
-func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
-	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
-	hostIDs = util.IntArrayUnique(hostIDs)
-
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
+func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]HostSimplify, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(businessID)
+	query := &metadata.QueryCondition{
+		Fields:    []string{common.BKHostInnerIPField, common.BKHostIDField},
+		Condition: cond.ToMapStr(),
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
+	hosts, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
-		blog.V(3).Infof("get hosts by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
+		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessID, err)
+		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
 	}
-	hosts := make([]HostSimplify, 0)
-	for _, cls := range result.Data.Info {
-		host := HostSimplify{}
-		_, err = host.Parse(cls)
+
+	// extract hostID
+	hostIDArr := make([]int64, 0)
+	for _, host := range hosts.Data.Info {
+		hostIDVal, exist := host[common.BKHostIDField]
+		if exist == false {
+			continue
+		}
+		hostID, err := util.GetInt64ByInterface(hostIDVal)
 		if err != nil {
+			blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v", host, err)
+			continue
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+
+	blog.V(4).Infof("list hosts by business:%d result: %+v", businessID, hostIDArr)
+	return am.constructHostFromSearchResult(ctx, header, hosts.Data.Info)
+}
+
+func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr, )([]HostSimplify, error){
+	hostIDs := make([]int64, 0)
+	hosts := make([]HostSimplify, 0)
+	for _, cls := range rawData {
+		host := HostSimplify{}
+		if _, err := host.Parse(cls); err != nil {
 			return nil, fmt.Errorf("get hosts by object failed, err: %+v", err)
 		}
 		hosts = append(hosts, host)
+		hostIDs = append(hostIDs, host.BKHostIDField)
 	}
-	
+
 	// inject business,set,module info to HostSimplify
 	hostModuleCondition := condition.CreateCondition()
 	hostModuleCondition.Field(common.BKHostIDField).In(hostIDs)
@@ -211,14 +235,13 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		Condition: hostModuleCondition.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
-	hostModuleResult, err := am.clientSet.CoreService().Instance().ReadInstance(
-		ctx, header, common.BKTableNameModuleHostConfig, query)
+	hostModuleResult, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
 		return nil, err
 	}
 	blog.V(5).Infof("get host module config: %+v", hostModuleResult.Data.Info)
-	if len(result.Data.Info) == 0 {
+	if len(rawData) == 0 {
 		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
 		return nil, err
 	}
@@ -242,8 +265,23 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		hosts[idx].BKModuleIDField = hostModule.BKModuleIDField
 	}
 	blog.V(9).Infof("hosts: %+v", hosts)
-	
 	return hosts, nil
+}
+
+func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	hostIDs = util.IntArrayUnique(hostIDs)
+
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
+	if err != nil {
+		blog.V(3).Infof("get hosts by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
+	}
+	
+	return am.constructHostFromSearchResult(ctx, header, result.Data.Info)
 }
 
 func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) (int64, error) {
@@ -259,7 +297,7 @@ func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header ht
 	return am.correctBusinessID(ctx, header, businessID)
 }
 
-func (am *AuthManager) makeResourcesByHosts(header http.Header, action meta.Action, businessID int64, hosts ...HostSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByHosts(header http.Header, action meta.Action, businessID int64, hosts ...HostSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, host := range hosts {
 		resource := meta.ResourceAttribute{
@@ -323,9 +361,9 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	if err != nil {
 		return fmt.Errorf("authorize hosts failed, extract business id from hosts failed, err: %+v", err)
 	}
-	
+
 	// make auth resources
-	resources := am.makeResourcesByHosts(header, action, bizID, hosts...)
+	resources := am.MakeResourcesByHosts(header, action, bizID, hosts...)
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
@@ -335,6 +373,29 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
 	}
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
+}
+
+func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) ([]meta.ResourceAttribute, error) {
+	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	if err != nil {
+		return nil, fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
+	}
+	// extract business id
+	bizID, err := am.extractBusinessIDFromHosts(ctx, header, hosts...)
+	if err != nil {
+		return nil, fmt.Errorf("authorize hosts failed, extract business id from hosts failed, err: %+v", err)
+	}
+
+	// make auth resources
+	resources := am.MakeResourcesByHosts(header, action, bizID, hosts...)
+	
+	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
+	if err != nil {
+		blog.Errorf("dry dun register failed, err: %+v", err)
+		return nil, err
+	}
+	blog.InfoJSON("realResources is: %s", realResources)
+	return resources, nil
 }
 
 func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
@@ -349,7 +410,7 @@ func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.He
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -384,7 +445,7 @@ func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, ho
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -406,7 +467,7 @@ func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, 
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
+	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, bizID, hosts...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }

@@ -29,6 +29,36 @@ import (
  * module instance
  */
 
+func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]ModuleSimplify, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(businessID)
+	query := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField, common.BKModuleIDField, common.BKModuleNameField},
+		Condition: cond.ToMapStr(),
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	}
+	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v", businessID, err)
+		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
+	}
+
+	// extract modules
+	moduleArr := make([]ModuleSimplify, 0)
+	for _, instance := range instances.Data.Info {
+		moduleSimplify := ModuleSimplify{}
+		_, err := moduleSimplify.Parse(instance)
+		if err != nil {
+			blog.Errorf("parse module: %+v simplify information failed, err: %+v", instance, err)
+			continue
+		}
+		moduleArr = append(moduleArr, moduleSimplify)
+	}
+
+	blog.V(4).Infof("list modules by business:%d result: %+v", businessID, moduleArr)
+	return moduleArr, nil
+}
+
 func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http.Header, moduleIDs ...int64) ([]ModuleSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	moduleIDs = util.IntArrayUnique(moduleIDs)
@@ -67,7 +97,7 @@ func (am *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (
 	return businessID, nil
 }
 
-func (am *AuthManager) makeResourcesByModule(header http.Header, action meta.Action, businessID int64, modules ...ModuleSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64, modules ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, module := range modules {
 		resource := meta.ResourceAttribute{
@@ -95,7 +125,7 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByModule(header, action, bizID, modules...)
+	resources := am.MakeResourcesByModule(header, action, bizID, modules...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -108,7 +138,7 @@ func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.H
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
+	resources := am.MakeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -144,7 +174,7 @@ func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, m
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
+	resources := am.MakeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -166,7 +196,7 @@ func (am *AuthManager) DeregisterModule(ctx context.Context, header http.Header,
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
+	resources := am.MakeResourcesByModule(header, meta.EmptyAction, bizID, modules...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
