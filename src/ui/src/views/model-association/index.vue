@@ -70,7 +70,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新增关联类型"]'),
+                    title: this.$t('ModelManagement["新建关联类型"]'),
                     relation: {}
                 },
                 searchText: '',
@@ -183,7 +183,7 @@
                 this.table.list.splice()
             },
             createRelation () {
-                this.slider.title = this.$t('ModelManagement["新增关联类型"]')
+                this.slider.title = this.$t('ModelManagement["新建关联类型"]')
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
