@@ -67,7 +67,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		objectMap[object.ObjectID] = object
 	}
 
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
 	}

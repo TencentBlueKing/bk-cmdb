@@ -16,14 +16,45 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
+
+func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]metadata.Object, error) {
+	condCheckModel := mongo.NewCondition()
+	if businessID != 0 {
+		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
+		_, labelCond := metaCond.Embed(metadata.BKLabel)
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: businessID})
+	}
+	cond := condCheckModel.ToMapStr()
+	if businessID == 0 {
+		cond.Merge(metadata.BizLabelNotExist)
+	}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	}
+	models, err := am.clientSet.CoreService().Model().ReadModel(context.Background(), header, query)
+	if err != nil {
+		blog.Errorf("get models by business %d failed, err: %+v", businessID, err)
+		return nil, fmt.Errorf("get models by business %d failed, err: %+v", businessID, err)
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, model := range models.Data.Info {
+		objects = append(objects, model.Spec)
+	}
+
+	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
+	return objects, nil
+}
 
 func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, objIDs ...string) ([]metadata.Object, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -47,10 +78,14 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	for _, item := range resp.Data.Info {
 		objects = append(objects, item.Spec)
 	}
+
+	if len(objects) != len(objIDs) {
+		return nil, fmt.Errorf("collect models failed, input len: %d, output len: %d", len(objIDs), len(objects))
+	}
 	return objects, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
+func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
 	var businessID int64
 	for idx, object := range objects {
 		bizID, err := object.Metadata.Label.Int64(metadata.LabelBusinessID)
@@ -66,7 +101,7 @@ func (am *AuthManager) extractBusinessIDFromObjects(objects ...metadata.Object) 
 	return businessID, nil
 }
 
-func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, businessID int64, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
+func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, businessID int64, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
 	// step1 get classifications
 	classificationIDs := make([]string, 0)
 	for _, obj := range objects {
@@ -99,18 +134,11 @@ func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.H
 			InstanceID: classificationMap[object.ObjCls].ID,
 		})
 
-		// model
-		parentLayers = append(parentLayers, meta.Item{
-			Type:       meta.Model,
-			Name:       object.ObjectID,
-			InstanceID: object.ID,
-		})
-
 		// instance
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.ModelInstance,
+				Type:       meta.Model,
 				Name:       object.ObjectName,
 				InstanceID: object.ID,
 			},
@@ -120,6 +148,8 @@ func (am *AuthManager) makeResourcesByObjects(ctx context.Context, header http.H
 
 		resources = append(resources, resource)
 	}
+
+	blog.V(9).Infof("MakeResourcesByObjects: %+v", resources)
 	return resources, nil
 }
 
@@ -137,14 +167,13 @@ func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Head
 func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
 
 	// step1: extract business ID from object, business ID from all objects must be identical to one value
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
-		message := fmt.Sprintf("authorize failed, %+v", err.Error())
-		return am.Err.New(common.CCErrCommAuthorizeFailed, message)
+		return fmt.Errorf("authorize failed, %+v", err.Error())
 	}
 
 	// step2: make resources from objects
-	resources, err := am.makeResourcesByObjects(ctx, header, action, businessID, objects...)
+	resources, err := am.MakeResourcesByObjects(ctx, header, action, businessID, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
@@ -155,12 +184,12 @@ func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
 	// step1: extract business ID from object, business ID from all objects must be identical to one value
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return fmt.Errorf("authrize create instance failed, extract business id from models failed, err: %+v", err)
 	}
 
-	resources, err := am.makeResourcesByObjects(ctx, header, action, businessID, objects...)
+	resources, err := am.MakeResourcesByObjects(ctx, header, action, businessID, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
@@ -171,8 +200,8 @@ func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, head
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
-			Action: meta.Create,
 			Type:   resourceType,
+			Action: meta.Create,
 		},
 		SupplierAccount: util.GetOwnerID(header),
 		BusinessID:      businessID,
@@ -182,12 +211,12 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
 	}
 
-	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
@@ -199,16 +228,16 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 }
 
 func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
 	}
 
-	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
-	
+
 	if err := am.updateResources(ctx, resources...); err != nil {
 		return fmt.Errorf("deregister models failed, err: %+v", err)
 	}
@@ -216,12 +245,12 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 }
 
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
-	businessID, err := am.extractBusinessIDFromObjects(objects...)
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return fmt.Errorf("extract business id from objects failed, err: %+v", err)
 	}
 
-	resources, err := am.makeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}

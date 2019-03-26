@@ -123,7 +123,7 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
-		blog.Warnf("parse authcenter config failed: %v", err)
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
 }
 

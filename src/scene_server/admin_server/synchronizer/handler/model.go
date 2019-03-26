@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
@@ -23,24 +24,32 @@ import (
 )
 
 // HandleSetSync do sync set of one business
-func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
+func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
 	businessID := businessSimplify.BKAppIDField
-	setArr, err := ih.authManager.CollectSetByBusinessID(context.Background(), *header, businessID)
+	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
+	
 	if err != nil {
-		blog.Errorf("get set by business id:%d failed, err: %+v", businessID, err)
-		return err
+		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 	}
-	resources := ih.authManager.MakeResourcesBySet(*header, authmeta.EmptyAction, businessID, setArr...)
+	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
+	
+	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, businessID, objects...)
+	if err != nil {
+		blog.Errorf("make iam resource from models failed, err: %+v", err)
+		return nil
+	}
 
-	// step2 get set by business from iam
+	// step2 get models from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
-			Type: authmeta.ModelSet,
+			Type: authmeta.Model,
 		},
+		SupplierAccount: "",
 		BusinessID:      businessSimplify.BKAppIDField,
 		Layers: make([]authmeta.Item, 0),
 	}

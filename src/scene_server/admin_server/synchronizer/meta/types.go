@@ -23,6 +23,8 @@ var (
 	BusinessResource = ResourceType("business")
 	SetResource = ResourceType("set")
 	ModuleResource = ResourceType("module")
+	ModelResource = ResourceType("model")
+	InstanceResource = ResourceType("instance")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -32,6 +34,7 @@ type ResourceType string
 type WorkRequest struct {
 	ResourceType ResourceType
 	Data         interface{}
+	Header interface{}
 	Delay        time.Duration
 }
 
@@ -41,4 +44,6 @@ type SyncHandler interface {
 	HandleBusinessSync(task *WorkRequest) error
 	HandleSetSync(task *WorkRequest) error
 	HandleModuleSync(task *WorkRequest) error
+	HandleModelSync(task *WorkRequest) error
+	HandleInstanceSync(task *WorkRequest) error
 }

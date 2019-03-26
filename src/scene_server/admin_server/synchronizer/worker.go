@@ -80,6 +80,10 @@ func (w *Worker) doWork(work *meta.WorkRequest) error {
 		w.SyncHandler.HandleSetSync(work)
 	case meta.ModuleResource:
 		w.SyncHandler.HandleModuleSync(work)
+	case meta.ModelResource:
+		w.SyncHandler.HandleModelSync(work)
+	case meta.InstanceResource:
+		w.SyncHandler.HandleInstanceSync(work)
 	default:
 		blog.Errorf("work type:%s didn't register yet.", work.ResourceType)
 

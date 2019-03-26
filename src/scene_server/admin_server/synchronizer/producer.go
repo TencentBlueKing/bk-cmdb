@@ -16,9 +16,9 @@ import (
 	"context"
 	"time"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
@@ -27,17 +27,19 @@ import (
 
 // Producer producer WorkRequest and enqueue it
 type Producer struct {
-	*backbone.Engine
+	clientSet apimachinery.ClientSetInterface
+	authManager *extensions.AuthManager
 	ID          int
 	WorkerQueue chan meta.WorkRequest
 	QuitChan    chan bool
 }
 
 // NewProducer make a producer
-func NewProducer(engine *backbone.Engine, workerQueue chan meta.WorkRequest) *Producer {
+func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
-		Engine:      engine,
+		clientSet: clientSet,
+		authManager: authManager,
 		ID:          0,
 		WorkerQueue: workerQueue,
 		QuitChan:    make(chan bool),
@@ -84,7 +86,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	// list all business
 	header := utils.NewListBusinessAPIHeader()
 	condition := metadata.QueryCondition{}
-	result, err := p.CoreAPI.CoreService().Instance().ReadInstance(context.TODO(), *header, common.BKInnerObjIDApp, &condition)
+	result, err := p.clientSet.CoreService().Instance().ReadInstance(context.TODO(), *header, common.BKInnerObjIDApp, &condition)
 	if err != nil {
 		blog.Errorf("list business failed, err: %v", err)
 		return &jobs
@@ -102,7 +104,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 	blog.Info("list business businessList: %+v", businessList)
 
 	// job of synchronize business scope resources to iam
-	resourceTypes := []meta.ResourceType{meta.HostResource, meta.SetResource, meta.ModuleResource}
+	resourceTypes := []meta.ResourceType{meta.HostResource, meta.SetResource, meta.ModuleResource, meta.ModelResource}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
 			jobs = append(jobs, meta.WorkRequest{
@@ -112,5 +114,18 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 	}
 
+	for _, business := range businessList {
+		header := utils.NewListBusinessAPIHeader()
+		objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
+		if err != nil {
+			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
+			continue
+		}
+		jobs = append(jobs, meta.WorkRequest{
+			ResourceType: meta.InstanceResource,
+			Data:         objects,
+			Header: *header,
+		})
+	}
 	return &jobs
 }

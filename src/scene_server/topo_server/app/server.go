@@ -104,7 +104,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
-	// authAPI, err := topoauth.NewTopologyAuth(nil, server.Config.Auth)
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
@@ -138,6 +137,7 @@ func (t *TopoServer) CheckForReadiness() error {
 			time.Sleep(time.Second)
 			continue
 		}
+		blog.Info("topology server configuration ready.")
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")

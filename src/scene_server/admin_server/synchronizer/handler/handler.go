@@ -16,37 +16,25 @@ import (
 	"fmt"
 	"strings"
 
-	"configcenter/src/auth"
+	"configcenter/src/apimachinery"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 )
 
 // IAMHandler sync resource to iam
 type IAMHandler struct {
-	*backbone.Engine
-	AuthConfig authcenter.AuthConfig
-	Authorizer auth.Authorize
+	clientSet apimachinery.ClientSetInterface
+	authManager *extensions.AuthManager
 }
 
-func (ih *IAMHandler) InitAuthClient() error {
-	blog.Infof("new auth client with config: %+v", ih.AuthConfig)
-	authorize, err := auth.NewAuthorize(nil, ih.AuthConfig)
-	if err != nil {
-		blog.Errorf("new auth client failed, err: %+v", err)
-		return fmt.Errorf("new auth client failed, err: %+v", err)
-	}
-	ih.Authorizer = authorize
-	return nil
-}
 
 // NewIAMHandler new a IAMHandler
-func NewIAMHandler(engine *backbone.Engine, authConfig authcenter.AuthConfig) *IAMHandler {
-	iamHandler := new(IAMHandler)
-	iamHandler.Engine = engine
-	iamHandler.AuthConfig = authConfig
-	iamHandler.InitAuthClient()
+func NewIAMHandler(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager) *IAMHandler {
+	iamHandler := &IAMHandler{
+		authManager: authManager,
+		clientSet: clientSet,
+	}
 	return iamHandler
 }
 

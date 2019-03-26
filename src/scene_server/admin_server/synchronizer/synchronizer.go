@@ -14,8 +14,11 @@ package synchronizer
 
 import (
 	"context"
+	"fmt"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/synchronizer/handler"
@@ -45,19 +48,26 @@ func (d *AuthSynchronizer) Run() error {
 	d.WorkerQueue = make(chan meta.WorkRequest, 1000)
 
 	// make fake handler
-	handler := handler.NewIAMHandler(d.Engine, d.AuthConfig)
+	blog.Infof("new auth client with config: %+v", d.AuthConfig)
+	authorize, err := auth.NewAuthorize(nil, d.AuthConfig)
+	if err != nil {
+		blog.Errorf("new auth client failed, err: %+v", err)
+		return fmt.Errorf("new auth client failed, err: %+v", err)
+	}
+	authManager := extensions.NewAuthManager(d.Engine.CoreAPI, authorize)
+	workerHandler := handler.NewIAMHandler(d.Engine.CoreAPI, authManager)
 
 	// init worker
 	workers := make([]Worker, 3)
 	for w := 1; w <= 3; w++ {
-		worker := NewWorker(w, d.WorkerQueue, handler)
+		worker := NewWorker(w, d.WorkerQueue, workerHandler)
 		workers = append(workers, *worker)
 		worker.Start()
 	}
 	d.Workers = &workers
 
 	// init producer
-	d.Producer = NewProducer(d.Engine, d.WorkerQueue)
+	d.Producer = NewProducer(d.Engine.CoreAPI, authManager, d.WorkerQueue)
 	d.Producer.Start()
 	blog.Infof("auth synchronize started")
 	return nil

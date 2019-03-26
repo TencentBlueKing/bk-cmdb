@@ -29,10 +29,30 @@ import (
  * instance represent common instances here
  */
 
+func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header http.Header, objectID string) ([]InstanceSimplify, error) {
+	cond := metadata.QueryCondition{
+		Condition: condition.CreateCondition().Field(common.BKObjIDField).Eq(objectID).ToMapStr(),
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	if err != nil {
+		blog.V(3).Infof("get instances by model id %s failed, err: %+v", objectID, err)
+		return nil, fmt.Errorf("get instances by model id %s failed, err: %+v", objectID, err)
+	}
+	instances := make([]InstanceSimplify, 0)
+	for _, cls := range result.Data.Info {
+		instance := InstanceSimplify{}
+		_, err = instance.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+		}
+		instances = append(instances, instance)
+	}
+	return instances, nil
+}
+
 func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header http.Header, instanceIDs ...string) ([]InstanceSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	instanceIDs = util.StrArrayUnique(instanceIDs)
-
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(instanceIDs).ToMapStr(),
@@ -92,13 +112,13 @@ func (am *AuthManager) extractBusinessIDFromInstances(classifications ...Instanc
 	return businessID, nil
 }
 
-func (am *AuthManager) makeResourcesByInstances(header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByInstances(header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, instance := range instances {
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Model,
+				Type:       meta.ModelInstance,
 				Name:       instance.Name,
 				InstanceID: instance.ID,
 			},
@@ -120,7 +140,7 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByInstances(header, action, bizID, instances...)
+	resources := am.MakeResourcesByInstances(header, action, bizID, instances...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -133,7 +153,7 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -199,7 +219,7 @@ func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }

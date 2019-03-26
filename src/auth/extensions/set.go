@@ -29,6 +29,36 @@ import (
  * set instance
  */
 
+func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]SetSimplify, error) {
+	cond := condition.CreateCondition()
+	cond.Field(common.BKAppIDField).Eq(businessID)
+	query := &metadata.QueryCondition{
+		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
+		Condition: cond.ToMapStr(),
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	}
+	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("get set:%+v by businessID:%d failed, err: %+v", businessID, err)
+		return nil, fmt.Errorf("get set by businessID:%d failed, err: %+v", businessID, err)
+	}
+
+	// extract sets
+	setArr := make([]SetSimplify, 0)
+	for _, instance := range instances.Data.Info {
+		setSimplify := SetSimplify{}
+		_, err := setSimplify.Parse(instance)
+		if err != nil {
+			blog.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
+			continue
+		}
+		setArr = append(setArr, setSimplify)
+	}
+
+	blog.V(4).Infof("list sets by business:%d result: %+v", businessID, setArr)
+	return setArr, nil
+}
+
 func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify, error) {
 
 	cond := metadata.QueryCondition{
@@ -64,13 +94,13 @@ func (am *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, er
 	return businessID, nil
 }
 
-func (am *AuthManager) makeResourcesBySet(header http.Header, action meta.Action, businessID int64, sets ...SetSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64, sets ...SetSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, set := range sets {
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Model,
+				Type:       meta.ModelSet,
 				Name:       set.BKSetNameField,
 				InstanceID: set.BKSetIDField,
 			},
@@ -92,7 +122,7 @@ func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, a
 	}
 
 	// make auth resources
-	resources := am.makeResourcesBySet(header, action, bizID, sets...)
+	resources := am.MakeResourcesBySet(header, action, bizID, sets...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -105,7 +135,7 @@ func (am *AuthManager) UpdateRegisteredSet(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.makeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
+	resources := am.MakeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -141,7 +171,7 @@ func (am *AuthManager) RegisterSet(ctx context.Context, header http.Header, sets
 	}
 
 	// make auth resources
-	resources := am.makeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
+	resources := am.MakeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -163,7 +193,7 @@ func (am *AuthManager) DeregisterSet(ctx context.Context, header http.Header, se
 	}
 
 	// make auth resources
-	resources := am.makeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
+	resources := am.MakeResourcesBySet(header, meta.EmptyAction, bizID, sets...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
