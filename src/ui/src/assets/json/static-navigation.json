@@ -10,13 +10,36 @@
         "authorized": true,
         "order": 1
     },
+    "bk_basic_resources": {
+        "i18n": "Nav['基础资源']",
+        "icon": "icon-cc-basic-resource",
+        "id": "bk_basic_resources",
+        "name": "基础资源",
+        "classificationId": "bk_basic_resources",
+        "order": 2,
+        "children": [{
+            "i18n": "Nav['业务']",
+            "path": "/business",
+            "id": "biz",
+            "name": "业务",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }, {
+            "i18n": "Nav['主机']",
+            "path": "/resource",
+            "id": "resource",
+            "name": "主机",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }]
+    },
     "bk_business_resource": {
         "i18n": "Nav['业务资源']",
         "icon": "icon-cc-nav-resource",
         "id": "bk_business_resource",
         "name": "业务资源",
         "classificationId": "bk_business_resource",
-        "order": 2,
+        "order": 3,
         "children": [{
             "i18n": "Nav['业务主机']",
             "path": "/hosts",
@@ -57,7 +80,7 @@
         "id": "bk_audit_analysis",
         "name": "审计与分析",
         "classificationId": "bk_audit_analysis",
-        "order": 3,
+        "order": 4,
         "children": [{
             "i18n": "Nav['操作审计']",
             "path": "/auditing",
@@ -73,7 +96,7 @@
         "id": "bk_authority",
         "name": "权限控制",
         "classificationId": "bk_authority",
-        "order": 4,
+        "order": 5,
         "children": [{
             "i18n": "Nav['业务权限管理']",
             "path": "/authority/business",
@@ -96,7 +119,7 @@
         "id": "bk_ci_model",
         "name": "权限控制",
         "classificationId": "bk_ci_model",
-        "order": 5,
+        "order": 6,
         "children": [{
             "i18n": "Nav['模型']",
             "path": "/model",
@@ -132,29 +155,6 @@
             "name": "事件推送",
             "authorized": true,
             "classificationId": "bk_ci_model"
-        }]
-    },
-    "bk_basic_resources": {
-        "i18n": "Nav['基础资源']",
-        "icon": "icon-cc-basic-resource",
-        "id": "bk_basic_resources",
-        "name": "基础资源",
-        "classificationId": "bk_basic_resources",
-        "order": 6,
-        "children": [{
-            "i18n": "Nav['业务']",
-            "path": "/business",
-            "id": "biz",
-            "name": "业务",
-            "authorized": true,
-            "classificationId": "bk_basic_resources"
-        }, {
-            "i18n": "Nav['主机']",
-            "path": "/resource",
-            "id": "resource",
-            "name": "主机",
-            "authorized": true,
-            "classificationId": "bk_basic_resources"
         }]
     },
     "bk_collection": {
