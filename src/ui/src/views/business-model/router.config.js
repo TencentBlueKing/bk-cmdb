@@ -1,5 +1,5 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
-import { G_SYSTEM_TOPOLOGY } from '@/types/auth'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
+import { G_SYSTEM_TOPOLOGY } from '@/dictionary/auth'
 
 export default {
     name: 'businessModel',

@@ -1,11 +1,11 @@
-import { NAV_COLLECT } from '@/types/nav'
+import { NAV_COLLECT } from '@/dictionary/nav'
 import {
     G_C_HOST,
     G_U_HOST,
     G_D_HOST,
     G_R_HOST,
     G_HOST_ASSIGN
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'resource',

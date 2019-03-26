@@ -1,9 +1,8 @@
-import { NAV_AUDIT_ANALYSE } from '@/types/nav'
-import { G_R_AUDIT } from '@/types/auth'
+import { NAV_AUDIT_ANALYSE } from '@/dictionary/nav'
 
 export default {
     name: 'audit',
-    path: '/audit',
+    path: '/auditing',
     component: () => import('./index.vue'),
     meta: {
         menu: {
@@ -12,7 +11,7 @@ export default {
             parent: NAV_AUDIT_ANALYSE
         },
         auth: {
-            view: G_R_AUDIT,
+            view: '',
             operation: []
         }
     }

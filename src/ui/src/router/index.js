@@ -58,7 +58,7 @@ const router = new Router({
         customQuery,
         history,
         hosts,
-        model,
+        ...model,
         modelAssociation,
         modelTopology,
         process,
@@ -75,25 +75,30 @@ const getAuthMeta = (auth, to) => {
     return { type, action }
 }
 
-const checkAuth = async to => {
+const getAuth = to => {
     const auth = to.meta.auth || {}
     const view = auth.view
-    if (!view) {
-        return Promise.resolve(true)
-    }
     const operation = Array.isArray(auth.operation) ? auth.operation : []
-    const authParams = [view, ...operation].map(auth => {
+    const authTypes = view ? [view, ...operation] : [...operation]
+    const authParams = authTypes.map(auth => {
         const authMeta = getAuthMeta(auth, to)
         return {
             resource_type: authMeta.type,
             action: authMeta.action
         }
     })
-    const $store = router.app.$store
-    const authList = await $store.dispatch('auth/getAuthList', authParams)
+    return router.app.$store.dispatch('auth/getOperationAuth', authParams)
+}
+
+const isViewAuthorized = to => {
+    const auth = to.meta.auth || {}
+    const view = auth.view
+    if (!view) {
+        return true
+    }
     const authMeta = getAuthMeta(view, to)
-    const viewAuth = $store.getters['auth/checkAuth'](authMeta.type, authMeta.action)
-    return viewAuth
+    const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.type, authMeta.action)
+    return viewAuth || true
 }
 
 const cancelRequest = () => {
@@ -114,8 +119,9 @@ router.beforeEach((to, from, next) => {
                 setLoading(true)
                 await cancelRequest()
                 await preload(router.app)
-                const authorized = await checkAuth(to)
-                if (authorized) {
+                const auth = await getAuth(to)
+                const viewAuth = isViewAuthorized(to)
+                if (viewAuth) {
                     next()
                 } else {
                     next({ name: '403' })

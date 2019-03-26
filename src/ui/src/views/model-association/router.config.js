@@ -1,10 +1,9 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     G_C_RELATION,
-    G_R_RELATION,
     G_U_RELATION,
     G_D_RELATION
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'modelAssociation',
@@ -17,7 +16,7 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: G_R_RELATION,
+            view: '',
             operation: [
                 G_C_RELATION,
                 G_U_RELATION,

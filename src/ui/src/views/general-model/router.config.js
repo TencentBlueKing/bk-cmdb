@@ -1,10 +1,10 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     D_C_MODEL,
     D_R_MODEL,
     D_U_MODEL,
     D_D_MODEL
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'generalModel',

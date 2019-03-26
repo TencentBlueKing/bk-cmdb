@@ -1,14 +1,14 @@
 import $http from '@/api'
 
 const state = {
-    authList: [],
-    staticViewAuth: []
+    operation: [],
+    view: []
 }
 
 const getters = {
-    authList: state => state.authList,
-    checkAuth: state => (type, action) => {
-        const auth = state.authList.find(auth => {
+    operation: state => state.operation,
+    isAuthorized: state => (type, action) => {
+        const auth = state.operation.find(auth => {
             return auth.resource_type === type && auth.action === action
         })
         return (auth || {}).is_pass
@@ -16,30 +16,31 @@ const getters = {
 }
 
 const actions = {
-    async getAuthList ({commit}, list = []) {
+    async getOperationAuth ({commit}, list = []) {
         const authList = await $http.post('auth/verify', {
             resources: list
         })
-        commit('setAuthList', authList)
+        commit('setOperationAuth', authList)
         return authList
     },
-    async getStaticViewAuth ({ commit }, list) {
-        const staticViewAuth = await $http.post('auth/verify', {
+    async getViewAuth ({ commit }, list) {
+        const viewAuth = await $http.post('auth/verify', {
             resources: list
         }, {
             fromCache: true,
             cancelWhenRouteChange: false
         })
-        commit('setStaticViewAuth', staticViewAuth)
+        commit('setViewAuth', viewAuth)
+        return viewAuth
     }
 }
 
 const mutations = {
-    setAuthList (state, list) {
-        state.authList = list
+    setOperationAuth (state, operationAuth) {
+        state.operation = operationAuth
     },
-    setStaticViewAuth (state, staticViewAuth) {
-        state.staticViewAuth = staticViewAuth
+    setViewAuth (state, viewAuth) {
+        state.view = viewAuth
     }
 }
 

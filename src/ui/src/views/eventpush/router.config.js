@@ -1,10 +1,10 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     G_C_EVENT,
     G_U_EVENT,
     G_D_EVENT,
     G_R_EVENT
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
 export default {
     name: 'eventpush',

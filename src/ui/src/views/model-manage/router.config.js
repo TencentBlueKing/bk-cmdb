@@ -1,15 +1,14 @@
-import { NAV_MODEL_MANAGEMENT } from '@/types/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     G_C_MODEL_GROUP,
     G_U_MODEL_GROUP,
     G_D_MODEL_GROUP,
     G_C_MODEL,
-    G_R_MODEL,
     G_U_MODEL,
     G_D_MODEL
-} from '@/types/auth'
+} from '@/dictionary/auth'
 
-export default {
+export default [{
     name: 'model',
     path: '/model',
     component: () => import('./index.vue'),
@@ -20,7 +19,7 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: G_R_MODEL,
+            view: '',
             operation: [
                 G_C_MODEL_GROUP,
                 G_U_MODEL_GROUP,
@@ -31,4 +30,20 @@ export default {
             ]
         }
     }
-}
+}, {
+    name: 'modelDetails',
+    path: '/model/details/:modelId',
+    component: () => import('./children/index.vue'),
+    meta: {
+        menu: {
+            id: 'modelDetails'
+        },
+        auth: {
+            view: '',
+            operation: [
+                G_U_MODEL,
+                G_D_MODEL
+            ]
+        }
+    }
+}]
