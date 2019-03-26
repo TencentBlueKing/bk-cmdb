@@ -92,7 +92,7 @@
 	"1001067":"preset unique constrains could not be delete",
 	"1001068":"model could not have multiple must check unique",
 	"1001069":"model unique constrains should have more than one",
-    "1199043":"bk_mainline association type can't use in this scene",
-    "1199044":"association type inconsistent with caller method",
+    "1001070":"bk_mainline association type can't use in this scene",
+    "1001071":"association type inconsistent with caller method",
 	"": "" 
 }
