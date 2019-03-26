@@ -6,10 +6,16 @@ import {
     G_D_RELATION
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_C_RELATION,
+    G_U_RELATION,
+    G_D_RELATION
+}
+
 export default {
     name: 'modelTopology',
     path: '/model/topology',
-    component: () => import('./index.vue'),
+    component: () => import('./index.old.vue'),
     meta: {
         menu: {
             id: 'modelTopology',
@@ -18,11 +24,7 @@ export default {
         },
         auth: {
             view: G_SYSTEM_TOPOLOGY,
-            operation: [
-                G_C_RELATION,
-                G_U_RELATION,
-                G_D_RELATION
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

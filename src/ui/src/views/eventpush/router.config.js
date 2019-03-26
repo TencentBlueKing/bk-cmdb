@@ -6,6 +6,12 @@ import {
     G_R_EVENT
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_C_EVENT,
+    G_U_EVENT,
+    G_D_EVENT
+}
+
 export default {
     name: 'eventpush',
     path: '/eventpush',
@@ -18,11 +24,7 @@ export default {
         },
         auth: {
             view: G_R_EVENT,
-            operation: [
-                G_C_EVENT,
-                G_U_EVENT,
-                G_D_EVENT
-            ]
+            operation: Object.keys(OPERATION)
         }
     }
 }

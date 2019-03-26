@@ -81,10 +81,10 @@ export const G_R_HOST = 'sysHostInstance.get'
 export const G_HOST_ASSIGN = 'sysHostInstance.moduleTransfer'
 
 // 事件推送
-export const G_C_EVENT = 'sysEventPushing.create'
-export const G_U_EVENT = 'sysEventPushing.edit'
-export const G_D_EVENT = 'sysEventPushing.delete'
-export const G_R_EVENT = 'sysEventPushing.get'
+export const G_C_EVENT = 'eventPushing.create'
+export const G_U_EVENT = 'eventPushing.update'
+export const G_D_EVENT = 'eventPushing.delete'
+export const G_R_EVENT = 'eventPushing.findMany'
 
 // 操作审计
 export const G_R_AUDIT = 'xxxx'

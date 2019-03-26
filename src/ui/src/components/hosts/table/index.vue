@@ -181,6 +181,8 @@
     import cmdbHostStatus from '@/components/hosts/status/status'
     import cmdbHostQuickSearch from './_quick-search.vue'
     import cmdbHostTopo from './_host-topo.vue'
+    import { OPERATION as HOST_OPERATION } from '@/views/hosts/router.config'
+    import { OPERATION as RESOURCE_OPERATION } from '@/views/resource/router.config'
     export default {
         components: {
             cmdbHostsFilter,
@@ -220,6 +222,10 @@
         },
         data () {
             return {
+                OPERATION: {
+                    ...HOST_OPERATION,
+                    ...RESOURCE_OPERATION
+                },
                 properties: {
                     biz: [],
                     host: [],

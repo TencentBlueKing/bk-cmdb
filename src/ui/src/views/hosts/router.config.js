@@ -5,6 +5,11 @@ import {
     B_HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    B_U_HOST,
+    B_HOST_TO_RESOURCE
+}
+
 export default {
     name: 'hosts',
     path: '/hosts',
@@ -17,10 +22,7 @@ export default {
         },
         auth: {
             view: B_R_HOST,
-            operation: [
-                B_U_HOST,
-                B_HOST_TO_RESOURCE
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }
