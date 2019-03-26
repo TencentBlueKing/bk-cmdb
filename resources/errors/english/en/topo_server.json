@@ -98,7 +98,8 @@
     "1101072":"the association inst is not exist",
     "1101073":"the  inst to asst  is not exist",
     "1101074":"the inst has association",
-    "1199043":"bk_mainline association type can't use in this scene",
-    "1199044":"association type inconsistent with caller method",
+    "1001075":"bk_mainline association type can't use in this scene",
+    "1001076":"association type inconsistent with caller method",
+    "1001077": "the model stopped to use",
 	"": ""
 }
