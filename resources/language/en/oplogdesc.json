@@ -34,5 +34,8 @@
      "auditlog_update set": "Modify the cluster",
      "auditlog_create module": "Create module",
      "auditlog_delete module": "Delete module",
-     "auditlog_update module": "Update module information"
+     "auditlog_update module": "Update module information",
+     "autitlog_host to other bussiness module":"Transfer host across business",
+     "auditlog_delete host from business":"Delete the host under the business",
+     "":""
 }

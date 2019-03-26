@@ -98,6 +98,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	pheader := c.Request.Header
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
 	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
 	if err != nil {
@@ -110,7 +111,9 @@ func (s *Service) ExportHost(c *gin.Context) {
 	file = xlsx.NewFile()
 
 	objID := common.BKInnerObjIDHost
-	fields, err := s.Logics.GetObjFieldIDs(objID, logics.GetFilterFields(objID), c.Request.Header, metadata.Metadata{})
+	filterFields := logics.GetFilterFields(objID)
+	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, metadata.Metadata{})
 	if nil != err {
 		blog.Errorf("ExportHost get %s field error:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

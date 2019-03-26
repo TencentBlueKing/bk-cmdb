@@ -404,7 +404,7 @@ def main(argv):
     "cmdb_eventserver":60009,"cmdb_hostcontroller":50002,\
     "cmdb_hostserver":60001,"cmdb_objectcontroller":50001,"cmdb_coreservice":50009,\
     "cmdb_proccontroller":50003,"cmdb_procserver":60003,"cmdb_tmserver":60008,\
-    "cmdb_toposerver":60002,"cmdb_webserver":8083}
+    "cmdb_toposerver":60002,"cmdb_webserver":8083,"cmdb_synchronizeserver":60010}
     try:
         opts, _ = getopt.getopt(argv,"hd:D:r:p:x:s:m:P:X:S:u:U:a:l:"\
         ,["help","discovery=","database=","redis_ip=","redis_port="\

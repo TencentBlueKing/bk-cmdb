@@ -20,8 +20,6 @@ type AuthAttribute struct {
 	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
-	BusinessID int64
-
 	Resources []ResourceAttribute
 }
 
@@ -97,11 +95,14 @@ const (
 	UpdateMany Action = "updateMany"
 	Delete     Action = "delete"
 	DeleteMany Action = "deleteMany"
+	Archive    Action = "archive"
 	Find       Action = "find"
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
+
+	Excute Action = "excute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
