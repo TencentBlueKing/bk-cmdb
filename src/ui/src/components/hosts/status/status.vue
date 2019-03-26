@@ -59,7 +59,13 @@
                     </div>
                 </div>
             </div>
-            <p class="box-text">{{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}</p>
+            <p class="box-text">
+                {{$t('HostResourcePool[\'当前主机没有安装 Agent 或者 Agent 已经离线\']')}}
+                <a href="javascript:void(0)" @click="openAgentApp">
+                    <i class="icon-cc-skip"></i>
+                    {{$t("HostResourcePool['点此进入节点管理']")}}
+                </a>
+            </p>
         </div>
     </div>
 </template>
@@ -192,6 +198,18 @@
                         }]
                     }]
                 })
+            },
+            openAgentApp () {
+                let agentAppUrl = window.Site.agent
+                if (agentAppUrl) {
+                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
+                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                    } else {
+                        window.open(agentAppUrl)
+                    }
+                } else {
+                    this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
+                }
             }
         }
     }
@@ -318,6 +336,9 @@
         .box-text{
             width: 100%;
             text-align: center;
+            a {
+                color: #3c96ff;
+            }
         }
     }
     @-webkit-keyframes light {

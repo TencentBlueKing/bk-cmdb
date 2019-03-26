@@ -58,7 +58,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 
 		processes, getErr := ps.getProcessesByModuleName(forward, moduleName)
 		if getErr != nil {
-			blog.Errorf("GetProcessesByModuleName failed int GetProcessPortByApplicationID, err: %s", err.Error())
+			blog.Errorf("GetProcessesByModuleName failed int GetProcessPortByApplicationID, err: %s", getErr.Error())
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}
@@ -84,7 +84,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	// 根据AppID获取AppInfo
 	appInfoMap, err := ps.getAppInfoByID(appID, forward)
 	if err != nil {
-		blog.Errorf("getAppInfoByID failed in GetProcessPortByApplicationID. err: %s", err.Error())
+		blog.Errorf("getAppInfoByID failed . err: %s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 		return
 	}
@@ -109,14 +109,14 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	for _, moduleHostConf := range moduleHostConfigs {
 		hostID, ok := moduleHostConf[common.BKHostIDField]
 		if !ok {
-			blog.Errorf("fail to get hostID in GetProcessPortByApplicationID. err: %s", err.Error())
+			blog.Errorf("fail to get hostID in GetProcessPortByApplicationID. error, field %s not found, data:%#v", common.BKHostIDField, moduleHostConf)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}
 
 		moduleID, ok := moduleHostConf[common.BKModuleIDField]
 		if !ok {
-			blog.Errorf("fail to get moduleID in GetProcessPortByApplicationID. err: %s", err.Error())
+			blog.Errorf("fail to get hostID in GetProcessPortByApplicationID. error, field %s not found, data:%#v", common.BKModuleIDField, moduleHostConf)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
 			return
 		}

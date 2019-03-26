@@ -174,7 +174,7 @@ func (g *group) Update(data frtypes.MapStr) error {
 		}
 
 		if common.CCSuccess != rsp.Code {
-			blog.Errorf("[model-grp]failed to update the group(%s), error info is %s", grpItem.GroupID, err.Error())
+			blog.Errorf("[model-grp]failed to update the group(%s), err: %s", grpItem.GroupID, rsp.ErrMsg)
 			return g.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 		}
 

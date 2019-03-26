@@ -176,7 +176,7 @@ func (lgc *Logics) getOperateProcInstanceData(ctx context.Context, procOp *metad
 	for _, procInfo := range procInfoArr {
 		procID, procIDErr := procInfo.Int64(common.BKProcessIDField)
 		if procIDErr != nil {
-			blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %s, logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
+			blog.Warnf("OperateProcInstanceByGse getProcessByProcID failed. err: %s, logID:%s", procIDErr.Error(), util.GetHTTPCCRequestID(header))
 			continue
 		}
 		procInfoMap[procID] = procInfo

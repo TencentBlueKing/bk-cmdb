@@ -44,7 +44,9 @@ func (th *TxnHandler) Run() (err error) {
 	}()
 
 	blog.Info("transaction handle process started")
+	th.wg.Add(1)
 	go th.fetchTimeout()
+	th.wg.Add(1)
 	go th.watchTransaction()
 outer:
 	for txnID := range th.commited {
@@ -71,7 +73,6 @@ outer:
 }
 
 func (th *TxnHandler) watchTransaction() {
-	th.wg.Add(1)
 	defer th.wg.Done()
 	if th.rc == nil {
 		return
@@ -94,7 +95,6 @@ func (th *TxnHandler) watchTransaction() {
 }
 
 func (th *TxnHandler) fetchTimeout() {
-	th.wg.Add(1)
 	defer th.wg.Done()
 	ticker := util.NewTicker(time.Second * 60)
 	opt := redis.ZRangeBy{

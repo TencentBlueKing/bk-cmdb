@@ -129,6 +129,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 
 	h.Service.Instance = instance
 	h.Service.Logics.Instance = instance
+	h.Service.Logics.Cache = cache
 
 	h.Cache = cache
 	h.Service.Cache = cache

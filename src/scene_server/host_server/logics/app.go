@@ -107,6 +107,41 @@ func (lgc *Logics) IsHostExistInApp(appID, hostID int64, pheader http.Header) (b
 	return true, nil
 }
 
+// ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
+func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64, header http.Header) ([]int64, error) {
+	// v3.3.x TODO lgc.rid
+	rid := util.GetHTTPCCRequestID(header)
+	// v3.3.x TODO lgc.ccErr
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	conf := map[string][]int64{
+		common.BKAppIDField:  []int64{appID},
+		common.BKHostIDField: hostIDArray,
+	}
+
+	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, conf)
+	if err != nil {
+		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("ExistHostIDSInApp http reply error. err code:%d,err msg:%s, input:%#v,rid:%s", result.Code, result.ErrMsg, conf, rid)
+		return nil, defErr.New(result.Code, result.ErrMsg)
+	}
+	hostIDMap := make(map[int64]bool, 0)
+	for _, row := range result.Data {
+		hostIDMap[row.HostID] = true
+	}
+	var notExistHOstID []int64
+	for _, hostID := range hostIDArray {
+		_, ok := hostIDMap[hostID]
+		if !ok {
+			notExistHOstID = append(notExistHOstID, hostID)
+		}
+	}
+
+	return notExistHOstID, nil
+}
+
 func (lgc *Logics) GetSingleApp(pheader http.Header, cond interface{}) (mapstr.MapStr, error) {
 	query := &metadata.QueryInput{
 		Condition: cond,

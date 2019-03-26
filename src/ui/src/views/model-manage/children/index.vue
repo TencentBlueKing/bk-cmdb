@@ -3,7 +3,7 @@
         <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
-                    <template v-if="authority.includes('update')">
+                    <template v-if="authority.includes('update') && !isReadOnly">
                         <div class="icon-box" @click="isIconListShow = true">
                             <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: activeModel['ispre']}]"></i>
                             <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
@@ -103,7 +103,7 @@
 </template>
 
 <script>
-    import thePropertyGroup from './_property-group.vue'
+    import thePropertyGroup from './group.vue'
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'

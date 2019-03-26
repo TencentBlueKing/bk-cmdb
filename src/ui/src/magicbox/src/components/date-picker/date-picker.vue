@@ -278,9 +278,9 @@
                     this.firstTime = false
                 } else {
                     time = [
-                        this.formatTime(this.BkDate.currentTime.hour),
-                        this.formatTime(this.BkDate.currentTime.minute),
-                        this.formatTime(this.BkDate.currentTime.second)
+                        this.formatValue(this.BkDate.currentTime.hour),
+                        this.formatValue(this.BkDate.currentTime.minute),
+                        this.formatValue(this.BkDate.currentTime.second)
                     ]
                 }
                 return time
@@ -354,11 +354,11 @@
                 if (this.timer) {
                     // selectedTime = ` ${this.formatValue(this.BkDate.currentTime.hour)}:${this.formatValue(this.BkDate.currentTime.minute)}:${this.formatValue(this.BkDate.currentTime.second)}`
                     selectedTime = ' '
-                        + this.formatTime(this.BkDate.currentTime.hour)
+                        + this.formatValue(this.BkDate.currentTime.hour)
                         + ':'
-                        + this.formatTime(this.BkDate.currentTime.minute)
+                        + this.formatValue(this.BkDate.currentTime.minute)
                         + ':'
-                        + this.formatTime(this.BkDate.currentTime.second)
+                        + this.formatValue(this.BkDate.currentTime.second)
                 } else {
                     selectedTime = ''
                 }
@@ -367,9 +367,6 @@
 
             formatValue (value) {
                 return parseInt(value) < 10 ? '0' + value : value
-            },
-            formatTime (value) {
-                return value
             },
 
             // 高亮显示已选日期

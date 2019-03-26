@@ -446,7 +446,7 @@
         "查询定义": "Group Definition",
         "确认要删除": "Confirm to delete {name}?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
-        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Dynamic Group, click the button below to add"
+        "动态分组空数据提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
     "ProcessManagement": {
         "进程": "Process",
