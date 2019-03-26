@@ -13,6 +13,7 @@
 package app
 
 import (
+	"configcenter/src/framework/core/errors"
 	"context"
 	"fmt"
 	"os"
@@ -69,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return errors.New("Configuration item not found")
 	}
 
 	redisAddress := webSvr.Config.Session.Host
@@ -123,9 +124,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	select {
-	case <-ctx.Done():
-	}
+	select {}
 	return nil
 
 }

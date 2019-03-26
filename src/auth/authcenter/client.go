@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common/util"
 )
 
@@ -48,10 +47,10 @@ type authClient struct {
 	basicHeader http.Header
 }
 
-func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch *AuthBatch) (meta.Decision, error) {
-	util.CopyHeader(header, a.basicHeader)
+func (a *authClient) verifyExactResourceBatch(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
+	util.CopyHeader(a.basicHeader, header)
 	resp := new(BatchResult)
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/verify", a.Config.SystemID)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources-perms/batch-verify", a.Config.SystemID)
 	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
@@ -60,35 +59,54 @@ func (a *authClient) verifyInList(ctx context.Context, header http.Header, batch
 		Do().Into(resp)
 
 	if err != nil {
-		return meta.Decision{}, err
+		return nil, err
 	}
 
 	if resp.Code != 0 {
-		return meta.Decision{}, &AuthError{
+		return nil, &AuthError{
 			RequestID: resp.RequestID,
-			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg),
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message),
 		}
 	}
 
-	noAuth := make([]ResourceTypeID, 0)
-	for _, item := range resp.Data {
-		if !item.IsPass {
-			noAuth = append(noAuth, item.ResourceType)
+	if len(batch.ResourceActions) != len(resp.Data) {
+		return nil, fmt.Errorf("expect %d result, IAM returns %d result", len(batch.ResourceActions), len(resp.Data))
+	}
+
+	return resp.Data, nil
+}
+
+func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Header, batch *AuthBatch) ([]BatchStatus, error) {
+	util.CopyHeader(a.basicHeader, header)
+	resp := new(BatchResult)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/any-resources-perms/batch-verify", a.Config.SystemID)
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(batch).
+		Do().Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, &AuthError{
+			RequestID: resp.RequestID,
+			Reason:    fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message),
 		}
 	}
 
-	if len(noAuth) != 0 {
-		return meta.Decision{
-			Authorized: false,
-			Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
-		}, nil
+	if len(batch.ResourceActions) != len(resp.Data) {
+		return nil, fmt.Errorf("expect %d result, IAM returns %d result", len(batch.ResourceActions), len(resp.Data))
 	}
 
-	return meta.Decision{Authorized: true}, nil
+	return resp.Data, nil
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-register", a.Config.SystemID)
 	err := a.client.Post().
@@ -103,7 +121,11 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		// 1901409 is for: resource already exist, can not created repeatedly
+		if resp.Code == codeDuplicated {
+			return ErrDuplicated
+		}
+		return &AuthError{RequestID: resp.RequestID, Reason: fmt.Errorf("register resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsCreated {
@@ -114,7 +136,7 @@ func (a *authClient) registerResource(ctx context.Context, header http.Header, i
 }
 
 func (a *authClient) deregisterResource(ctx context.Context, header http.Header, info *DeregisterInfo) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-delete", a.Config.SystemID)
 	err := a.client.Delete().
@@ -129,7 +151,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsDeleted {
@@ -140,7 +162,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 }
 
 func (a *authClient) updateResource(ctx context.Context, header http.Header, info *UpdateInfo) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources", a.Config.SystemID)
 	err := a.client.Put().
@@ -155,7 +177,7 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 	}
 
 	if resp.Code != 0 {
-		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.ErrMsg)}
+		return &AuthError{resp.RequestID, fmt.Errorf("update resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
 
 	if !resp.Data.IsUpdated {
@@ -166,7 +188,7 @@ func (a *authClient) updateResource(ctx context.Context, header http.Header, inf
 }
 
 func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, systemID string, detail bool) (*SystemDetail, error) {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", systemID)
 
 	resp := struct {
@@ -200,7 +222,7 @@ func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, sy
 }
 
 func (a *authClient) RegistSystem(ctx context.Context, header http.Header, system System) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	const url = "/bkiam/api/v1/perm-model/systems"
 	resp := struct {
 		BaseResponse
@@ -228,7 +250,7 @@ func (a *authClient) RegistSystem(ctx context.Context, header http.Header, syste
 }
 
 func (a *authClient) UpdateSystem(ctx context.Context, header http.Header, system System) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s", system.SystemID)
 	resp := struct {
 		BaseResponse
@@ -253,7 +275,7 @@ func (a *authClient) UpdateSystem(ctx context.Context, header http.Header, syste
 }
 
 func (a *authClient) InitSystemBatch(ctx context.Context, header http.Header, detail SystemDetail) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	const url = "/bkiam/api/v1/perm-model/systems/init"
 	resp := BaseResponse{}
 
@@ -274,7 +296,7 @@ func (a *authClient) InitSystemBatch(ctx context.Context, header http.Header, de
 }
 
 func (a *authClient) RegistResourceTypeBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-register", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -297,7 +319,7 @@ func (a *authClient) RegistResourceTypeBatch(ctx context.Context, header http.He
 }
 
 func (a *authClient) UpdateResourceTypeBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-update", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -320,7 +342,7 @@ func (a *authClient) UpdateResourceTypeBatch(ctx context.Context, header http.He
 }
 
 func (a *authClient) UpdateResourceTypeActionBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-type-actions/batch-update", systemID, scopeType)
 	resp := BaseResponse{}
 
@@ -343,11 +365,11 @@ func (a *authClient) UpdateResourceTypeActionBatch(ctx context.Context, header h
 }
 
 func (a *authClient) UpsertResourceTypeBatch(ctx context.Context, header http.Header, systemID, scopeType string, resources []ResourceType) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/batch-upsert", systemID, scopeType)
 	resp := BaseResponse{}
 
-	err := a.client.Put().
+	err := a.client.Post().
 		SubResource(url).
 		WithContext(ctx).
 		WithHeaders(header).
@@ -366,7 +388,7 @@ func (a *authClient) UpsertResourceTypeBatch(ctx context.Context, header http.He
 }
 
 func (a *authClient) DeleteResourceType(ctx context.Context, header http.Header, systemID, scopeType, resourceType string) error {
-	util.CopyHeader(header, a.basicHeader)
+	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/scope-types/%s/resource-types/%s", systemID, scopeType, resourceType)
 	resp := BaseResponse{}
 

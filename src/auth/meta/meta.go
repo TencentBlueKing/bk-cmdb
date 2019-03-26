@@ -12,14 +12,14 @@
 
 package meta
 
+import (
+	"configcenter/src/common/metadata"
+)
+
 type AuthAttribute struct {
-	// the version of this resource, which is the api version.
-	APIVersion string
-	User       UserInfo
+	User UserInfo
 	// the business id that this resource belongs to, but it's not necessary for
 	// a resource that does not belongs to a business.
-	BusinessID int64
-
 	Resources []ResourceAttribute
 }
 
@@ -27,7 +27,7 @@ type UserInfo struct {
 	// the name of this user.
 	UserName string
 	// the supplier id that this user belongs to.
-	SupplierID string
+	SupplierAccount string
 }
 
 type Item Basic
@@ -49,6 +49,7 @@ type Basic struct {
 	Type ResourceType
 
 	// the action that user want to do with this resource.
+	// this field should be empty when it's used in resource handle operation.
 	Action Action
 
 	// the name of the resource, which could be a bk-route, etc.
@@ -61,8 +62,7 @@ type Basic struct {
 
 // CommonInfo contains common field which can be extracted from restful.Request
 type CommonInfo struct {
-	User       UserInfo
-	APIVersion string
+	User UserInfo
 }
 
 type Decision struct {
@@ -86,11 +86,14 @@ const (
 	UpdateMany Action = "updateMany"
 	Delete     Action = "delete"
 	DeleteMany Action = "deleteMany"
+	Archive    Action = "archive"
 	Find       Action = "find"
 	FindMany   Action = "findMany"
 	// unknown action, which is also unsupported actions.
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
+
+	Excute Action = "excute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
@@ -109,3 +112,9 @@ const (
 	UnboundModuleToProcess Action = "unboundModelToProcess"
 	FindBoundModuleProcess Action = "findBoundModuleProcess"
 )
+
+type InitConfig struct {
+	Bizs            []metadata.BizInst
+	Models          []metadata.Object
+	Classifications []metadata.Classification
+}

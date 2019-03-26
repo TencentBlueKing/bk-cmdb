@@ -14,6 +14,7 @@ package core
 
 import (
 	"configcenter/src/apimachinery"
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -57,21 +58,21 @@ type core struct {
 }
 
 // New create a core manager
-func New(client apimachinery.ClientSetInterface) Core {
+func New(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) Core {
 
 	// health
 	healthOpeartion := operation.NewHealthOperation(client)
 
 	// create insts
 	attributeOperation := operation.NewAttributeOperation(client)
-	classificationOperation := operation.NewClassificationOperation(client)
+	classificationOperation := operation.NewClassificationOperation(client, auth)
 	groupOperation := operation.NewGroupOperation(client)
-	objectOperation := operation.NewObjectOperation(client)
+	objectOperation := operation.NewObjectOperation(client, auth)
 	instOperation := operation.NewInstOperation(client)
 	moduleOperation := operation.NewModuleOperation(client)
 	setOperation := operation.NewSetOperation(client)
-	businessOperation := operation.NewBusinessOperation(client)
-	associationOperation := operation.NewAssociationOperation(client)
+	businessOperation := operation.NewBusinessOperation(client, auth)
+	associationOperation := operation.NewAssociationOperation(client, auth)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
 	graphics := operation.NewGraphics(client)
 	identifier := operation.NewIdentifier(client)

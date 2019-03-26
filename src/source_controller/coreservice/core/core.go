@@ -13,6 +13,7 @@
 package core
 
 import (
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -35,7 +36,7 @@ type ModelClassification interface {
 	SetManyModelClassification(ctx ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetDataResult, error)
 	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error)
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
-	DeleteModelClassificaiton(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	DeleteModelClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
@@ -116,9 +117,18 @@ type InstanceAssociation interface {
 	DeleteInstanceAssociation(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 }
 
+// DataSynchronize manager data synchronize interface
+type DataSynchronizeOperation interface {
+	SynchronizeInstanceAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	SynchronizeModelAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	SynchronizeAssociationAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
+	Find(ctx ContextParams, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
+	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
+}
+
 // TopoOperation methods
 type TopoOperation interface {
-	SearchMainlineModelTopo() (*metadata.TopoModelNode, error)
+	SearchMainlineModelTopo(withDetail bool) (*metadata.TopoModelNode, error)
 	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
@@ -135,21 +145,24 @@ type Core interface {
 	InstanceOperation() InstanceOperation
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
+	DataSynchronizeOperation() DataSynchronizeOperation
 }
 
 type core struct {
-	model        ModelOperation
-	instance     InstanceOperation
-	associaction AssociationOperation
+	model           ModelOperation
+	instance        InstanceOperation
+	associaction    AssociationOperation
+	dataSynchronize DataSynchronizeOperation
 	topo         TopoOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, topo TopoOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation) Core {
 	return &core{
-		model:        model,
-		instance:     instance,
-		associaction: association,
+		model:           model,
+		instance:        instance,
+		associaction:    association,
+		dataSynchronize: dataSynchronize,
 		topo:         topo,
 	}
 }
@@ -168,4 +181,8 @@ func (m *core) AssociationOperation() AssociationOperation {
 
 func (m *core) TopoOperation() TopoOperation {
 	return m.topo
+}
+
+func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
+	return m.dataSynchronize
 }

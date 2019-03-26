@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/scene_server/topo_server/core/auth"
 	"context"
 	"strings"
 
@@ -40,14 +41,16 @@ type BusinessOperationInterface interface {
 }
 
 // NewBusinessOperation create a business instance
-func NewBusinessOperation(client apimachinery.ClientSetInterface) BusinessOperationInterface {
+func NewBusinessOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) BusinessOperationInterface {
 	return &business{
 		clientSet: client,
+		auth:      auth,
 	}
 }
 
 type business struct {
 	clientSet apimachinery.ClientSetInterface
+	auth      *topoauth.TopoAuth
 	inst      InstOperationInterface
 	set       SetOperationInterface
 	module    ModuleOperationInterface
@@ -77,7 +80,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
-			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
+			blog.Errorf("create business failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
 		if !asstRsp.Result {
@@ -88,7 +91,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
-			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
+			blog.Errorf("create business failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 		}
 		if !existAsstRsp.Result {
@@ -116,7 +119,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			}
 			if nil != err {
-				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
+				blog.Errorf("create business failed to copy default assts, error info is %s", err.Error())
 				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 			}
 			if !createAsstRsp.Result {
@@ -133,6 +136,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		}
 		data[common.BKSupplierIDField] = supplierID
 	}
+
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())
@@ -141,8 +145,20 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 	bizID, err := bizInst.GetInstID()
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		blog.Errorf("create business failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	// register business to auth
+	bizName, err := data.String(common.BKAppNameField)
+	if err != nil {
+		blog.Errorf("create business, but got invalid business name. err: %v", err)
+		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
+	}
+
+	if err := b.auth.RegisterBusiness(params.Context, params.Header, bizName, bizID); err != nil {
+		blog.Errorf("create business: %s, but register business resource failed, err: %v", bizName, err)
+		return bizInst, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
 	// create set
@@ -160,13 +176,13 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 	setInst, err := b.set.CreateSet(params, objSet, bizID, setData)
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		blog.Errorf("create business failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
 	setID, err := setInst.GetInstID()
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		blog.Errorf("create business failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
@@ -186,7 +202,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		blog.Errorf("create business failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
@@ -200,7 +216,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {
-		blog.Errorf("[operation-biz] failed to create business, error info is %s", err.Error())
+		blog.Errorf("create business failed to create business, error info is %s", err.Error())
 		return bizInst, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
@@ -208,6 +224,10 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, bizID int64) error {
+	if err := b.auth.DeregisterBusiness(params.Context, params.Header, bizID); err != nil {
+		blog.Errorf("delete business: %d, but deregister business from auth failed, err: %v", bizID, err)
+		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	}
 
 	setObj, err := b.obj.FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
@@ -318,9 +338,20 @@ func (b *business) GetInternalModule(params types.ContextParams, obj model.Objec
 }
 
 func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr, obj model.Object, bizID int64) error {
+	if biz, exist := data.Get(common.BKAppNameField); exist {
+		bizName, err := data.String(common.BKAppNameField)
+		if err != nil {
+			blog.Errorf("update business, but got invalid business name: %v, id: %d", biz, bizID)
+			return params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
+
+		if err := b.auth.UpdateBusiness(params.Context, params.Header, bizName, bizID); err != nil {
+			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v", bizName, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+	}
 
 	innerCond := condition.CreateCondition()
-
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.UpdateInst(params, data, obj, innerCond, bizID)
