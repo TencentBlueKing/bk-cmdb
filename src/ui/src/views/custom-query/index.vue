@@ -2,7 +2,7 @@
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.B_C_CUSTOM_QUERY)"
                 @click="showUserAPISlider('create')">
                 {{$t("CustomQuery['新增查询']")}}
             </bk-button>
@@ -11,16 +11,16 @@
             </div>
         </div>
         <cmdb-table
-        class="api-table"
-        :loading="$loading('searchCustomQuery')"
-        :header="table.header"
-        :list="table.list"
-        :pagination.sync="table.pagination"
-        :wrapperMinusHeight="220"
-        @handlePageChange="handlePageChange"
-        @handleSizeChange="handleSizeChange"
-        @handleSortChange="handleSortChange"
-        @handleRowClick="showUserAPIDetails">
+            class="api-table"
+            :loading="$loading('searchCustomQuery')"
+            :header="table.header"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :wrapperMinusHeight="220"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange"
+            @handleSortChange="handleSortChange"
+            @handleRowClick="showUserAPIDetails">
             <template slot="create_time" slot-scope="{item}">
                 {{$tools.formatTime(item['create_time'])}}
             </template>
@@ -40,7 +40,6 @@
             :beforeClose="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
-                :authority="authority"
                 :id="slider.id"
                 :bizId="bizId"
                 :type="slider.type"
@@ -56,12 +55,14 @@
 <script>
     import { mapActions, mapGetters } from 'vuex'
     import vDefine from './define'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             vDefine
         },
         data () {
             return {
+                OPERATION,
                 filter: {
                     name: ''
                 },
@@ -100,8 +101,7 @@
                     type: 'create',
                     id: null,
                     title: this.$t("CustomQuery['新增查询']")
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {

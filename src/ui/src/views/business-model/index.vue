@@ -53,10 +53,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
-            authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
-            }
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView'])
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
@@ -89,7 +86,7 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model

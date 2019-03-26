@@ -24,7 +24,7 @@
                 <input type="text" class="cmdb-form-input" 
                 v-model.trim="name"
                 :name="$t('CustomQuery[\'查询名称\']')"
-                :disabled="!authority.includes('update')"
+                :disabled="!editable"
                 v-validate="'required|max:15'">
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
@@ -36,7 +36,7 @@
                     <div class="text-content"
                         :class="{
                             open: attribute.isShow,
-                            disabled: !authority.includes('update')
+                            disabled: !editable
                         }"
                         @click="toggleContentSelector(true)">
                         <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
@@ -54,7 +54,7 @@
                         display-key="bk_property_name"
                         :selected.sync="attribute.selected"
                         :multiSelect="true"
-                        :disabled="!authority.includes('update')">
+                        :disabled="!editable">
                     </bk-selector>
                 </div>
             </div>
@@ -63,38 +63,38 @@
                     <label class="filter-label">
                         {{property.objName}} - {{property.propertyName}}
                     </label>
-                    <div class="filter-content clearfix" :class="{disabled: !authority.includes('update')}">
+                    <div class="filter-content clearfix" :class="{disabled: !editable}">
                         <filter-field-operator class="filter-field-operator fl"
                             v-if="!['date', 'time'].includes(property.propertyType)"
                             :type="getOperatorType(property)"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.operator">
                         </filter-field-operator>
                         <cmdb-form-enum class="filter-field-value filter-field-enum fl"
                             v-if="property.propertyType === 'enum'"
                             :allow-clear="true"
                             :options="getEnumOptions(property)"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.value">
                         </cmdb-form-enum>
                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
                             v-else-if="property.propertyType === 'bool'"
                             v-model="property.value"
-                            :disabled="!authority.includes('update')">
+                            :disabled="!editable">
                         </cmdb-form-bool-input>
                         <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
                             v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
                             v-model="property.value"
-                            :disabled="!authority.includes('update')">
+                            :disabled="!editable">
                         </cmdb-form-associate-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.value">
                         </component>
                         <i class="userapi-delete fr bk-icon icon-close"
-                            v-if="authority.includes('update')"
+                            v-if="editable"
                             @click="deleteUserProperty(property, index)">
                         </i>
                     </div>
@@ -102,7 +102,7 @@
             </ul>
             <div class="userapi-new">
                 <button class="userapi-new-btn"
-                    :disabled="!authority.includes('update')"
+                    :disabled="!editable"
                     @click="toggleUserAPISelector(true)">
                     {{$t("CustomQuery['新增查询条件']")}}
                 </button>
@@ -128,7 +128,7 @@
                 <bk-button type="primary" class="userapi-btn"
                     v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
                     :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !authority.includes('update')"
+                    :disabled="errors.any() || !editable"
                     @click="saveUserAPI">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -138,7 +138,7 @@
                 <bk-button type="danger" class="userapi-btn button-delete"
                     v-if="type === 'update'"
                     :loading="$loading('deleteCustomQuery')"
-                    :disabled="!authority.includes('delete')"
+                    :disabled="!editable"
                     @click="deleteUserAPI">
                     {{$t("Common['删除']")}}
                 </bk-button>
@@ -158,6 +158,7 @@
     import { mapActions, mapGetters } from 'vuex'
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             filterFieldOperator,
@@ -172,12 +173,6 @@
             },
             id: {
                 default: ''
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {
@@ -252,6 +247,14 @@
             ...mapGetters([
                 'supplierAccount'
             ]),
+            editable () {
+                if (this.type === 'create') {
+                    return this.$isAuthorized(OPERATION.B_C_CUSTOM_QUERY)
+                } else if (this.type === 'update') {
+                    return this.$isAuthorized(OPERATION.B_U_CUSTOM_QUERY)
+                }
+                return true
+            },
             selectedName () {
                 let nameList = []
                 this.attribute.selected.map(propertyId => {
@@ -676,7 +679,7 @@
                 })
             },
             toggleContentSelector (isShow) {
-                if (this.authority.includes('update')) {
+                if (this.editable) {
                     this.$refs.content.open = isShow
                     this.attribute.isShow = isShow
                 }

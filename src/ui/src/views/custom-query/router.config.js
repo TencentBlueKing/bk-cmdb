@@ -6,6 +6,12 @@ import {
     B_R_CUSTOM_QUERY
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    B_C_CUSTOM_QUERY,
+    B_U_CUSTOM_QUERY,
+    B_D_CUSTOM_QUERY
+}
+
 export default {
     name: 'customQuery',
     path: '/custom-query',
@@ -18,11 +24,7 @@ export default {
         },
         auth: {
             view: B_R_CUSTOM_QUERY,
-            operation: [
-                B_C_CUSTOM_QUERY,
-                B_U_CUSTOM_QUERY,
-                B_D_CUSTOM_QUERY
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

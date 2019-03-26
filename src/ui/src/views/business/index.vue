@@ -71,11 +71,11 @@
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -84,7 +84,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :authority="authority"
+                        :disabled="!$isAuthorized(OPERATION.G_U_BUSINESS)"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -174,8 +174,14 @@
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
-            authority () {
-                return this.$store.getters['userPrivilege/modelAuthority']('biz')
+            saveDisabled () {
+                const type = this.attribute.type
+                if (type === 'create') {
+                    return this.$isAuthorized(this.OPERATION.G_C_BUSINESS)
+                } else if (type === 'update') {
+                    return this.$isAuthorized(this.OPERATION.G_U_BUSINESS)
+                }
+                return true
             }
         },
         watch: {
