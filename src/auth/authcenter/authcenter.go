@@ -149,17 +149,17 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 	}
 
 	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
-	noAuth := make([]meta.ResourceType, 0)
+	noAuth := make([]string, 0)
 	for i, item := range batchresult {
 		if !item.Authorized {
-			noAuth = append(noAuth, a.Resources[i].Type)
+			noAuth = append(noAuth, fmt.Sprintf("resource [%v] permission deny by reason: %s", a.Resources[i].Type, item.Reason))
 		}
 	}
 
-	if len(noAuth) != 0 {
+	if len(noAuth) > 0 {
 		return meta.Decision{
 			Authorized: false,
-			Reason:     fmt.Sprintf("resource [%v] do not have permission", noAuth),
+			Reason:     fmt.Sprintf("%v", noAuth),
 		}, nil
 	}
 
@@ -203,7 +203,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		},
 	}
 	for biz, ress := range biz2res {
-		if biz != 0 {
+		if biz > 0 {
 			exactResourceInfo.ScopeType = ScopeTypeIDBiz
 			exactResourceInfo.ScopeID = strconv.FormatInt(biz, 10)
 			anyResourceInfo.ScopeType = ScopeTypeIDBiz
@@ -238,18 +238,17 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 					continue
 				}
 
+				resourceAction := ResourceAction{
+					ActionID:     actionID,
+					ResourceInfo: *rscInfo,
+				}
+				blog.Debug("query param %+v", resourceAction)
 				if len(rscInfo.ResourceID) > 0 {
-					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, ResourceAction{
-						ActionID:     actionID,
-						ResourceInfo: *rscInfo,
-					})
+					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
 					ress[ressindex].exactResourceIndex = exactResourceIndex
 					exactResourceIndex++
 				} else {
-					anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, ResourceAction{
-						ActionID:     actionID,
-						ResourceInfo: *rscInfo,
-					})
+					anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
 					ress[ressindex].anyResourceIndex = anyResourceIndex
 					anyResourceIndex++
 				}
@@ -492,7 +491,7 @@ func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
 	// fill the business id field, so these api should be normalized.
-	if r.BusinessID != 0 {
+	if r.BusinessID > 0 {
 		s.ScopeType = ScopeTypeIDBiz
 		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 	} else {

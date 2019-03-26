@@ -318,7 +318,9 @@ const (
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
-	// association kind has already been instantiated
+    // CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1199045
+
 	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -551,6 +553,8 @@ const (
 	CCErrHostGetResourceFail = 1110053
 	// CCErrHostModuleNotExist get %s module not found
 	CCErrHostModuleNotExist = 1110054
+	// CCErrDeleteHostFromBusiness Delete the host under the business
+	CCErrDeleteHostFromBusiness = 1110055
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -592,6 +596,11 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// synchronize data coreservice  11139xx
+	CCErrCoreServiceSyncError = 1113900
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
@@ -612,6 +621,10 @@ const (
 
 	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
 	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
+
+	// synchronize_server 1114xxx
+
+	CCErrSynchronizeError = 1114001
 
 	/** TODO: 以下错误码需要改造 **/
 

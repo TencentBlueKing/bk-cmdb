@@ -15,12 +15,12 @@ package discovery
 import (
 	"strings"
 	"sync"
+	"errors"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
-	"configcenter/src/framework/core/errors"
 )
 
 func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server, error) {

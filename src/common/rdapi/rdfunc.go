@@ -74,6 +74,19 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 	}
 }
 
+func HTTPRequestIDFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		generateHttpHeaderRID(req, resp)
+		if 1 < len(fchain.Filters) {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
 func createAPIRspStr(errcode int, info string) (string, error) {
 
 	var rsp metadata.Response

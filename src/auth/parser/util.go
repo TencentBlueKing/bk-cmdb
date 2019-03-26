@@ -22,22 +22,25 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (ps *parseStream) getModel(modelID string) (metadata.Object, error) {
+func (ps *parseStream) getModel(cond mapstr.MapStr) ([]metadata.Object, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModel(context.Background(), ps.RequestCtx.Header,
-		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKObjIDField: modelID}})
+		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
-		return metadata.Object{}, err
+		return nil, err
 	}
 
 	if !model.Result {
-		return metadata.Object{}, errors.New(model.Code, model.ErrMsg)
+		return nil, errors.New(model.Code, model.ErrMsg)
 	}
-
 	if len(model.Data.Info) <= 0 {
-		return metadata.Object{}, fmt.Errorf("model [%s] not found", modelID)
+		return nil, fmt.Errorf("model [%+v] not found", cond)
 	}
 
-	return model.Data.Info[0].Spec, nil
+	models := []metadata.Object{}
+	for _, info := range model.Data.Info {
+		models = append(models, info.Spec)
+	}
+	return models, nil
 }
 
 func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
@@ -50,4 +53,58 @@ func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
 		return metadata.Classification{}, fmt.Errorf("model classification [%s] not found", clsID)
 	}
 	return model.Data.Info[0], nil
+}
+
+func (ps *parseStream) getAttributeGroup(cond interface{}) ([]metadata.Group, error) {
+	mspstrCond, err := mapstr.NewFromInterface(cond)
+	if err != nil {
+		return nil, err
+	}
+	groups, err := ps.engine.CoreAPI.CoreService().Model().ReadAttributeGroupByCondition(context.Background(), ps.RequestCtx.Header,
+		metadata.QueryCondition{Condition: mspstrCond})
+	if err != nil {
+		return nil, err
+	}
+
+	if !groups.Result {
+		return nil, errors.New(groups.Code, groups.ErrMsg)
+	}
+
+	return groups.Data.Info, nil
+}
+
+func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) (metadata.Association, error) {
+	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadModelAssociation(context.Background(), ps.RequestCtx.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return metadata.Association{}, err
+	}
+
+	if !asst.Result {
+		return metadata.Association{}, errors.New(asst.Code, asst.ErrMsg)
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return metadata.Association{}, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	return asst.Data.Info[0], nil
+}
+
+func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst, error) {
+	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadInstAssociation(context.Background(), ps.RequestCtx.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return metadata.InstAsst{}, err
+	}
+
+	if !asst.Result {
+		return metadata.InstAsst{}, errors.New(asst.Code, asst.ErrMsg)
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return metadata.InstAsst{}, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	return asst.Data.Info[0], nil
 }

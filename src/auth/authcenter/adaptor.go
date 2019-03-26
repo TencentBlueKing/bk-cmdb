@@ -36,7 +36,7 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 
 		fallthrough
 	case meta.Model:
-		if businessID != 0 {
+		if businessID > 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
@@ -48,7 +48,11 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		iamResourceType = SysModelGroup
+		if businessID > 0 {
+			iamResourceType = BizModelGroup
+		} else {
+			iamResourceType = SysModelGroup
+		}
 
 	case meta.AssociationType:
 		iamResourceType = SysAssociationType
@@ -58,29 +62,32 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 
 	case meta.ModelInstanceAssociation:
 		return nil, errors.New("model instance association does not support  auth now")
+	case meta.MainlineModelTopology:
+		iamResourceType = SysSystemBase
 
 	case meta.ModelInstance:
-		if businessID == 0 {
+		if businessID <= 0 {
 			iamResourceType = SysInstance
 		} else {
 			iamResourceType = BizInstance
 		}
 
 	case meta.HostInstance:
-		if businessID == 0 {
+		if businessID <= 0 {
 			iamResourceType = SysHostInstance
 		} else {
 			iamResourceType = BizHostInstance
 		}
-
-	case meta.HostUserCustom:
-		iamResourceType = BizCustomQuery
 
 	case meta.HostFavorite:
 		return nil, errors.New("host favorite does not support auth now")
 
 	case meta.Process:
 		iamResourceType = BizProcessInstance
+	case meta.EventPushing:
+		iamResourceType = SysEventPushing
+	case meta.DynamicGrouping:
+		iamResourceType = BizCustomQuery
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
@@ -168,7 +175,16 @@ const (
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
-
+	if r.Basic.Type == meta.ModelAttributeGroup ||
+		r.Basic.Type == meta.ModelUnique ||
+		r.Basic.Type == meta.ModelAttribute {
+		if r.Action == meta.Delete || r.Action == meta.Update {
+			return Edit, nil
+		}
+	}
+	if r.Action == meta.Archive {
+		return Archive, nil
+	}
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
@@ -179,6 +195,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
 		}
+		if r.Basic.Type == meta.MainlineModelTopology {
+			return ModelTopologyOperation, nil
+		}
+
 	}
 
 	if r.Basic.Type == meta.Process {

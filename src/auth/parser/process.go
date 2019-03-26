@@ -43,6 +43,7 @@ var (
 	findModulesBindByProcessRegexp = regexp.MustCompile(`^/api/v3/proc/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	boundModuleToProcessRegexp     = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
 	unboundModuleToProcessRegexp   = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
+	findboundModuleToProcessRegexp = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findProcessInstanceRegexp      = regexp.MustCompile(`^/api/v3/proc/inst/[^\s/]+/[0-9]+/?$`)
 )
 
@@ -58,9 +59,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("create process, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.Create,
@@ -79,9 +80,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("create process, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.FindMany,
@@ -106,9 +107,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("find process detail, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.FindMany,
@@ -134,9 +135,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("delete process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.DeleteMany,
@@ -162,9 +163,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("update process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Update,
@@ -184,9 +185,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("update process batch, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.UpdateMany,
@@ -211,9 +212,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("find modules bounded by process, but got invalid process id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.FindMany,
@@ -239,9 +240,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("bound module to process, but got invalid process id: %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.BoundModuleToProcess,
@@ -266,12 +267,38 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("unbound module to process, but got invalid process id: %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.UnboundModuleToProcess,
+					InstanceID: procID,
+				},
+			},
+		}
+		return ps
+	}
+
+	// find bound a module with a process.
+	if ps.hitRegexp(findboundModuleToProcessRegexp, http.MethodGet) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("unbound module to process, but got invalid business id: %s", ps.RequestCtx.Elements[5])
+			return ps
+		}
+
+		procID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("unbound module to process, but got invalid process id: %s", ps.RequestCtx.Elements[6])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:       meta.Process,
+					Action:     meta.FindBoundModuleProcess,
 					InstanceID: procID,
 				},
 			},
@@ -287,9 +314,9 @@ func (ps *parseStream) process() *parseStream {
 			ps.err = fmt.Errorf("find process instance details, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.FindMany,
@@ -327,9 +354,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("create process config template, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.Create,
@@ -354,9 +381,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("update process config template, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Update,
@@ -376,9 +403,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("find process config templates, but got invalid business id: %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.FindMany,
@@ -403,9 +430,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("delete process config template, but got invalid template id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Delete,
@@ -430,9 +457,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("get process config template version, but got invalid template id: %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.FindMany,
@@ -452,9 +479,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("create process config templates version, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.Create,
@@ -479,9 +506,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("update process config template version, but got invalid version id: %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Create,
@@ -507,9 +534,9 @@ func (ps *parseStream) processTemplate() *parseStream {
 			ps.err = fmt.Errorf("preview process config template, but got invalid template id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Find,
@@ -549,9 +576,9 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			ps.err = fmt.Errorf("find bound process config template, but got invalid process id: %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
 					Action:     meta.Find,
@@ -565,15 +592,15 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 	}
 
 	// bound a template to a process
-	if ps.hitRegexp(boundModuleToProcessRegexp, http.MethodPut) {
+	if ps.hitRegexp(boundTemplateToProcessRegexp, http.MethodPut) {
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("bound process config templates, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.Create,
@@ -592,9 +619,9 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			ps.err = fmt.Errorf("unbound process config templates, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.Delete,
@@ -613,9 +640,9 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			ps.err = fmt.Errorf("unbound process config templates batch, but got invalid business id: %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Process,
 					Action: meta.DeleteMany,
