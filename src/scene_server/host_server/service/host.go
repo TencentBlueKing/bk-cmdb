@@ -501,11 +501,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
             resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
             return 
         }
-		if err := audit.WithPrevious(srvData.ctx, id, hostFields); err != nil {
-			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v,rid:%s", id, err, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
-			return
-		}
+
 		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
 	}
 
