@@ -282,6 +282,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	pheader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := common.BKDefaultOwnerID
+	rid := util.GetHTTPCCRequestID(pheader)
 
 	agents := new(meta.AddHostFromAgentHostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(&agents); err != nil {
@@ -297,9 +298,14 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	}
 
 	appID, err := s.GetDefaultAppID(ownerID, pheader)
-	if 0 == appID || nil != err {
+	if nil != err {
 		blog.Errorf("add host from agent, but got invalid appid, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, err.Error())})
+		return
+	}
+	if 0 == appID {
+		blog.Errorf("add host from agent, but got invalid default appid, err: %v,ownerID:%s,input:%+v,rid:%s", err, ownerID, agents, rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, "bussiness not found")})
 		return
 	}
 
@@ -460,7 +466,6 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
-	audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 
 	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
 	hostIDs := make([]int64, 0)
@@ -481,6 +486,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 		}
 
+		audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(id, hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", id, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
@@ -511,6 +517,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	logLastConents := make([]auditoplog.AuditLogExt, 0)
 	for _, hostID := range hostIDs {
+		audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(strconv.FormatInt(hostID, 10), hostFields); err != nil {
 			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", hostID, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})

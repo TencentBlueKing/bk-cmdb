@@ -29,7 +29,7 @@
     "1199029": "Function return value format problem",
     "1199030": "HTTP POST parsing failed",
     "1199031": "'%s' initialization failed",
-    "1199032": "params needs to be a string",
+    "1199032": "param '%s' should be a string",
     "1199033": "Failed to get field property, error: %s",
     "1199034": "'%s' data type should be enum",
     "1199035": " %s exceed the limit %d",
@@ -37,5 +37,7 @@
     "1199039": "%s field does not exist in %s",
     "1199040": "convert %s model field %s to %s error %s",
     "1199041": "handle %s error %s",
+    "1199042": "param '%s' should be a fload number",
+    "1199045": "the model stopped to use",
     "":""
 }

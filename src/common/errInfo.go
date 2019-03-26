@@ -305,6 +305,8 @@ const (
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1199045
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032

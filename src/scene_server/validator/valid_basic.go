@@ -370,7 +370,7 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 
 //validFloat
 func (valid *ValidMap) validFloat(val interface{}, key string) error {
-	if nil == val {
+	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
@@ -380,7 +380,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 
 	value, err := util.GetFloat64ByInterface(val)
 	if nil != err {
-		blog.Error("params should be float")
+		blog.Error("params should be float, but found [%#v]", val)
 		return valid.errif.Errorf(common.CCErrCommParamsNeedFloat, key)
 	}
 
@@ -411,7 +411,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 // validEnum valid enum
 func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	// validate require
-	if nil == val {
+	if nil == val || val == "" {
 		if valid.require[key] {
 			blog.Error("params can not be null")
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)

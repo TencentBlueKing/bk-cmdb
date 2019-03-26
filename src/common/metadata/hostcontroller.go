@@ -204,3 +204,10 @@ type AddConfigQuery struct {
 	Name       string `json:"name,omitempty"`
 	CreateUser string `json:"create_user,omitempty"`
 }
+
+// TransferHostToDefaultModuleConfig transfer host to default module
+type TransferHostToDefaultModuleConfig struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	ModuleID      int64   `json:"bk_module_id"`
+	HostID        []int64 `json:"bk_host_id"`
+}
