@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -29,6 +30,7 @@ import (
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	
 	objID := pathParams("bk_obj_id")
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -85,6 +87,11 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 
+	// auth: deregister resources
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
+		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
+	}
+	
 	return nil, s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
 }
 
@@ -107,6 +114,11 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	// auth: deregister resources
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, instID); err != nil {
+		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
+	}
+
 	err = s.Core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
 	return nil, err
 }
@@ -126,8 +138,9 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 		return nil, err
 	}
 
+	instanceIDs := make([]int64, 0)
 	for _, item := range updateCondition.Update {
-
+		instanceIDs = append(instanceIDs, item.InstID)
 		cond := condition.CreateCondition()
 		cond.Field(obj.GetInstIDFieldName()).Eq(item.InstID)
 		err = s.Core.InstOperation().UpdateInst(params, item.InstInfo, obj, cond, item.InstID)
@@ -135,6 +148,11 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 			blog.Errorf("[api-inst] failed to update the object(%s) inst (%d),the data (%#v), error info is %s", obj.Object().ObjectID, item.InstID, data, err.Error())
 			return nil, err
 		}
+	}
+
+	// auth: deregister resources
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instanceIDs...); err != nil {
+		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
 	return nil, nil
@@ -166,6 +184,11 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	if nil != err {
 		blog.Errorf("[api-inst] failed to update the object(%s) inst (%s),the data (%#v), error info is %s", obj.Object().ObjectID, pathParams("inst_id"), data, err.Error())
 		return nil, err
+	}
+
+	// auth: deregister resources
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instID); err != nil {
+		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
 	return nil, err

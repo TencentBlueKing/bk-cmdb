@@ -15,6 +15,7 @@ package service
 import (
 	"strconv"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -33,11 +34,26 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 
 	objectID := pathParams(common.BKObjIDField)
 
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
+		blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
+		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	}
+	
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v", objectID, err, data)
 		return nil, err
 	}
+
+	uniqueID := id.ID
+	
+	// auth: register model unique
+	if err := s.AuthManager.RegisterModuleUniqueByID(params.Context, params.Header, uniqueID); err != nil {
+		blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v", uniqueID, err)
+		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	}
+	
 	return id, nil
 }
 
@@ -58,10 +74,20 @@ func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, que
 
 	data.Remove(metadata.BKMetadata)
 
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+		blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	}
 	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
 		return nil, err
+	}
+	// auth: update registered model unique
+	if err := s.AuthManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
+		blog.Errorf("update register model unique to iam failed, uniqueID: %d, err: %+v", id, err)
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 	return nil, nil
 }
@@ -85,11 +111,24 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+		blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	}
+	
 	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
 		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v", objectID, id, err)
 		return nil, err
 	}
+	
+	// auth: update registered model unique
+	if err := s.AuthManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
+		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v", id, err)
+		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	}
+	
 	return nil, nil
 }
 
@@ -101,5 +140,12 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 		blog.Errorf("[SearchObjectUnique] search for [%s] failed: %v", objectID, err)
 		return nil, err
 	}
+
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByUnique(params.Context, params.Header, meta.Update, uniques...); err != nil {
+		blog.Errorf("update model unique failed, authorization failed, unique: %+v, err: %+v", uniques, err)
+		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	}
+	
 	return uniques, nil
 }

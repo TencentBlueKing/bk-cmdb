@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common/util"
 )
 
@@ -150,6 +151,11 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 		return err
 	}
 
+	// 1901404: resource not exists
+	if resp.Code == 1901404 {
+		return nil
+	}
+	
 	if resp.Code != 0 {
 		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
@@ -405,4 +411,26 @@ func (a *authClient) DeleteResourceType(ctx context.Context, header http.Header,
 	}
 
 	return nil
+}
+
+func (a *authClient) ListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) (result []meta.BackendResource, err error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/search", a.Config.SystemID)
+	
+	resp := new(SearchResult)
+
+	err = a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(searchCondition).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("search resource with condition: %+v failed, error: %v", searchCondition, err)
+	}
+	if !resp.Result || resp.Code != 0{
+		return nil, fmt.Errorf("search resource with condition: %+v failed, message: %s, code: %v", searchCondition, resp.Message, resp.Code)
+	}
+
+	return resp.Data, nil
 }
