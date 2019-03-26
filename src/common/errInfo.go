@@ -305,8 +305,6 @@ const (
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
-	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1199045
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
@@ -338,15 +336,15 @@ const (
 	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
-	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
-	CCErrorTopoAssociationKindMainlineUnavailable = 1001070
-	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
-	CCErrorTopoAssociationKindInconsistent = 1001071
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
-
+	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
+	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+	CCErrorTopoAssociationKindInconsistent = 1101083
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1101084
 	// objectcontroller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
