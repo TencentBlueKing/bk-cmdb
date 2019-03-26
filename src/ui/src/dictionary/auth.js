@@ -18,10 +18,10 @@ export const B_D_INST = 'bizInstance.delete'
 export const B_R_INST = 'bizInstance.get'
 
 // 动态分组
-export const B_C_CUSTOM_QUERY = 'bizCustomQuery.create'
-export const B_U_CUSTOM_QUERY = 'bizCustomQuery.edit'
-export const B_D_CUSTOM_QUERY = 'bizCustomQuery.delete'
-export const B_R_CUSTOM_QUERY = 'bizCustomQuery.get'
+export const B_C_CUSTOM_QUERY = 'dynamicGrouping.create'
+export const B_U_CUSTOM_QUERY = 'dynamicGrouping.update'
+export const B_D_CUSTOM_QUERY = 'dynamicGrouping.delete'
+export const B_R_CUSTOM_QUERY = 'dynamicGrouping.findMany'
 
 // 进程管理
 export const B_C_PROCESS = 'bizProcessInstance.create'
@@ -68,10 +68,10 @@ export const G_U_RELATION = 'sysAssociationType.edit'
 export const G_D_RELATION = 'sysAssociationType.delete'
 
 // 业务
-export const G_C_BUSINESS = 'sysBusinessInstance.create'
-export const G_U_BUSINESS = 'sysBusinessInstance.edit'
-export const G_D_BUSINESS = 'sysBusinessInstance.delete'
-export const G_R_BUSINESS = 'sysBusinessInstance.get'
+export const G_C_BUSINESS = 'business.create'
+export const G_U_BUSINESS = 'business.update'
+export const G_D_BUSINESS = 'business.delete'
+export const G_R_BUSINESS = 'business.findMany'
 
 // 主机
 export const G_C_HOST = 'sysHostInstance.create'
@@ -90,7 +90,7 @@ export const G_R_EVENT = 'sysEventPushing.get'
 export const G_R_AUDIT = 'xxxx'
 
 // 系统基础
-export const G_SYSTEM_TOPOLOGY = 'sysSystemBase.modelTopologyOperation'
+export const G_SYSTEM_TOPOLOGY = 'mainlineObjectTopology.find'
 export const G_SYSTEM_MANAGEMENT = 'sysSystemBase.adminEntrance'
 export const G_SYSTEM_MODEL_GRAPHICS = 'sysSystemBase.modelTopologyView'
 
