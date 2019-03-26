@@ -253,3 +253,29 @@ type CloudSyncRedisPendingStop struct {
 	TaskID  int64  `json:"bk_task_id"`
 	OwnerID string `json:"bk_supplier_account"`
 }
+
+// TransferHostAcrossBusinessParameter Transfer host across business request parameter
+type TransferHostAcrossBusinessParameter struct {
+	SrcAppID       int64   `json:"src_bk_biz_id"`
+	DstAppID       int64   `json:"dst_bk_biz_id"`
+	HostID         int64   `json:"bk_host_id"`
+	DstModuleIDArr []int64 `json:"bk_module_ids"`
+}
+
+// HostModuleRelationParameter host and module  relation parameter
+type HostModuleRelationParameter struct {
+	AppID  int64   `json:"bk_biz_id"`
+	HostID []int64 `json:"bk_host_id"`
+}
+
+// DeleteHostFromBizParameter delete host from business
+type DeleteHostFromBizParameter struct {
+	AppID     int64   `json:"bk_biz_id"`
+	HostIDArr []int64 `json:"bk_host_ids"`
+}
+
+// OperaterException synchronize result
+type OperaterException struct {
+	BaseResp `json:",inline"`
+	Data     []ExceptionResult `json:"data"`
+}
