@@ -336,6 +336,7 @@ const (
 	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
