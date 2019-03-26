@@ -23,75 +23,103 @@ import (
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
 
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+var NotEnoughLayer = fmt.Errorf("not enough layer")
+
+func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
 	resourceType := attribute.Basic.Type
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	var err error
-	info.ResourceID, err = GenerateResourceID(attribute)
-	if err != nil {
-		return nil, err
-	}
-
+	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
-		info.ResourceType = SysBusinessInstance
-		return info, nil
+		iamResourceType = SysBusinessInstance
 
-	case meta.Model,
-		meta.ModelUnique,
+	case meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-		if attribute.BusinessID == 0 {
-			info.ResourceType = BizModel
+
+		fallthrough
+	case meta.Model:
+
+		if attribute.BusinessID > 0 {
+			iamResourceType = BizModel
 		} else {
-			info.ResourceType = SysModel
+			iamResourceType = SysModel
 		}
 
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
-		info.ResourceType = BizTopoInstance
+		iamResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
-		// action=拓扑层级操作
-		info.ResourceType = SysSystemBase
+		iamResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		info.ResourceType = SysModelGroup
+		if attribute.BusinessID > 0 {
+			iamResourceType = BizModelGroup
+		} else {
+			iamResourceType = SysModelGroup
+		}
 
 	case meta.AssociationType:
-		info.ResourceType = SysAssociationType
+		iamResourceType = SysAssociationType
 
 	case meta.ModelAssociation:
-		return info, errors.New("model association does not support auth now")
+		return nil, errors.New("model association does not support auth now")
 
 	case meta.ModelInstanceAssociation:
-		return info, errors.New("model instance association does not support  auth now")
+		return nil, errors.New("model instance association does not support  auth now")
+	case meta.MainlineModelTopology:
+		iamResourceType = SysSystemBase
 
 	case meta.ModelInstance:
-		if attribute.Basic.Name == meta.Host && attribute.Basic.Action == meta.MoveHostsToBusinessOrModule {
-			info.ResourceType = BizHostInstance
-		}
-
-		if attribute.BusinessID == 0 {
-			info.ResourceType = SysInstance
+		if attribute.BusinessID <= 0 {
+			iamResourceType = SysInstance
 		} else {
-			info.ResourceType = BizInstance
+			iamResourceType = BizInstance
 		}
 
-	case meta.HostUserCustom:
-		info.ResourceType = BizCustomQuery
+	case meta.HostInstance:
+		if attribute.BusinessID <= 0 {
+			iamResourceType = SysHostInstance
+		} else {
+			iamResourceType = BizHostInstance
+		}
 
 	case meta.HostFavorite:
-		return info, errors.New("host favorite does not support auth now")
+		return nil, errors.New("host favorite does not support auth now")
 
 	case meta.Process:
-		info.ResourceType = BizProcessInstance
+		iamResourceType = BizProcessInstance
+	case meta.EventPushing:
+		iamResourceType = SysEventPushing
+	case meta.DynamicGrouping:
+		iamResourceType = BizCustomQuery
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+	}
+
+	return &iamResourceType, nil
+}
+
+// ResourceTypeID is resource's type in auth center.
+func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+	var err error
+	info := new(ResourceInfo)
+	info.ResourceName = attribute.Basic.Name
+
+	resourceTypeID, err := convertResourceType(attribute)
+	if err != nil {
+		return info, err
+	}
+	info.ResourceType = *resourceTypeID
+
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
 	}
 
 	return info, nil
@@ -106,12 +134,10 @@ const (
 	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
 	SysHostInstance     ResourceTypeID = "sysHostInstance"
 	SysEventPushing     ResourceTypeID = "sysEventPushing"
-
-	SysModelGroup ResourceTypeID = "sysModelGroup"
-	SysModel      ResourceTypeID = "sysModel"
-	SysInstance   ResourceTypeID = "sysInstance"
-
-	SysAssociationType ResourceTypeID = "sysAssociationType "
+	SysModelGroup       ResourceTypeID = "sysModelGroup"
+	SysModel            ResourceTypeID = "sysModel"
+	SysInstance         ResourceTypeID = "sysInstance"
+	SysAssociationType  ResourceTypeID = "sysAssociationType"
 )
 
 // Business Resource
@@ -121,10 +147,9 @@ const (
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
 	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
-
-	BizModelGroup ResourceTypeID = "bizModelGroup"
-	BizModel      ResourceTypeID = "bizModel"
-	BizInstance   ResourceTypeID = "bizInstance"
+	BizModelGroup      ResourceTypeID = "bizModelGroup"
+	BizModel           ResourceTypeID = "bizModel"
+	BizInstance        ResourceTypeID = "bizInstance"
 )
 
 type ActionID string
@@ -157,7 +182,16 @@ const (
 )
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
-
+	if r.Basic.Type == meta.ModelAttributeGroup ||
+		r.Basic.Type == meta.ModelUnique ||
+		r.Basic.Type == meta.ModelAttribute {
+		if r.Action == meta.Delete || r.Action == meta.Update {
+			return Edit, nil
+		}
+	}
+	if r.Action == meta.Archive {
+		return Archive, nil
+	}
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
@@ -168,6 +202,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
 		}
+		if r.Basic.Type == meta.MainlineModelTopology {
+			return ModelTopologyOperation, nil
+		}
+
 	}
 
 	if r.Basic.Type == meta.Process {

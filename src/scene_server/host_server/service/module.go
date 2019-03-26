@@ -13,20 +13,21 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "strconv"
+    "strings"
 
-	"github.com/emicklei/go-restful"
+    "github.com/emicklei/go-restful"
 
-	authmeta "configcenter/src/auth/meta"
+    authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/mapstr"
+    "configcenter/src/common/metadata"
+    "configcenter/src/common/util"
+    hutil "configcenter/src/scene_server/host_server/util"
 )
 
 // AddHostMultiAppModuleRelation transfer host to module (cross business transfer)
@@ -107,13 +108,13 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// check authorization
-	if shouldContinue := s.verifyBusinessPermission(req, resp, params.ApplicationID, authmeta.Update); shouldContinue == false {
+	if shouldContinue := s.verifyBusinessPermission(&req.Request.Header, resp, params.ApplicationID, authmeta.Update); shouldContinue == false {
 		return
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("deregister host:%+v from current business failed, [%v], err:%v, rid:%s", err.Error(), srvData.rid)
 	}
 
@@ -210,7 +211,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModule), Data: detail})
 	}
 
-	if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("register host:%+v to current business failed, [%v], err:%v, rid:%s", hostIDArr, err.Error(), srvData.rid)
 	}
 
@@ -256,7 +257,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &config.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &config.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 
@@ -398,10 +399,10 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to iam failed, error:%v, rid:%v", conf.HostID, err, srvData.rid)
 	}
 
@@ -423,7 +424,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to iam failed, error:%v, rid:%v", conf.HostID, err, srvData.rid)
 	}
 
@@ -528,10 +529,10 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	audit.WithPrevious(srvData.ctx)
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v from business:%d failed. err: %v, rid:%s", conf.HostID, appID, err, srvData.rid)
 	}
 
@@ -547,7 +548,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	// register host to new business
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v from business:%d failed. err: %v, rid:%s", conf.HostID, appID, err, srvData.rid)
 	}
 
@@ -578,7 +579,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	}
 
 	if 0 == appID || 0 == moduleID {
-		//get default app
+		// get default app
 		ownerAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, data.OwnerID)
 		if err != nil {
 			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, srvData.rid)
@@ -591,7 +592,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 			return
 		}
 
-		//get idle module
+		// get idle module
 		mConds := mapstr.New()
 		mConds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
 		mConds.Set(common.BKModuleNameField, common.DefaultResModuleName)
@@ -621,10 +622,10 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
-	if shouldContinue := s.verifyHostPermission(req, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &hostIDArr, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
-	if err := s.deregisterHostFromCurrentBusiness(req, &hostIDArr); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 		blog.Errorf("deregister host:%+v failed, error:%s, rid:%s", hostIDArr, err, srvData.rid)
 	}
 
@@ -647,7 +648,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 	}
 	if 0 == len(errmsg) {
-		if err := s.registerHostToCurrentBusiness(req, &hostIDArr); err != nil {
+		if err := s.registerHostToCurrentBusiness(&req.Request.Header, &hostIDArr); err != nil {
 			blog.Errorf("register host:%+v failed, error:%s, rid:%s", hostIDArr, err, srvData.rid)
 		}
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -659,50 +660,126 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	}
 }
 
-func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
+// GetHostModuleRelation  query host and module relation,
+// hostID can emtpy
+func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-
-	conf := new(metadata.DefaultModuleHostConfigParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
-		blog.Errorf("move host to module %s failed with decode body err: %v,rid:%s", moduleName, err, srvData.rid)
+	data := new(metadata.HostModuleRelationParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	conds := mapstr.New()
-	moduleNameLogKey := "idle"
-	if common.DefaultResModuleName == moduleName {
-		//空闲机
-		moduleNameLogKey = "idle"
-		conds.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-		conds.Set(common.BKModuleNameField, common.DefaultResModuleName)
-	} else {
-		//故障机器
-		moduleNameLogKey = "fault"
-		conds.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
-		conds.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
+	cond := make(map[string][]int64, 0)
+	if data.AppID != 0 {
+		cond[common.BKAppIDField] = []int64{data.AppID}
 	}
-	conds.Set(common.BKAppIDField, conf.ApplicationID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
+	if len(data.HostID) > 0 {
+		cond[common.BKHostIDField] = data.HostID
+	}
+	if len(cond) == 0 {
+		resp.WriteEntity(metadata.NewSuccessResp(nil))
+		return
+	}
+
+	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)
 	if err != nil {
-		blog.Errorf("move host to module %s, get module id err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
+		blog.Errorf("GetHostModuleRelation logcis err:%s,cond:%#v,rid:%s", err.Error(), cond, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
 		return
 	}
+	resp.WriteEntity(metadata.NewSuccessResp(configArr))
+	return
+}
 
-	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
-	if err := audit.WithPrevious(srvData.ctx); err != nil {
-		blog.Errorf("move host to module %s, get prev module host config failed, err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+// TransferHostAcrossBusiness  Transfer host across business,
+// delete old business  host and module reltaion
+func (s *Service) TransferHostAcrossBusiness(req *restful.Request, resp *restful.Response) {
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.TransferHostAcrossBusinessParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("Transfer host across business failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
+	err := srvData.lgc.TransferHostAcrossBusiness(srvData.ctx, data.SrcAppID, data.DstAppID, data.HostID, data.DstModuleIDArr)
+	if err != nil {
+		blog.Errorf("TransferHostAcrossBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}
+
+// DeleteHostFromBusiness delete host from business
+// dangerous operation
+func (s *Service) DeleteHostFromBusiness(req *restful.Request, resp *restful.Response) {
+
+	srvData := s.newSrvComm(req.Request.Header)
+	data := new(metadata.DeleteHostFromBizParameter)
+	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
+		blog.Errorf("DeleteHostFromBizParameter failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	exceptionArr, err := srvData.lgc.DeleteHostFromBusiness(srvData.ctx, data.AppID, data.HostIDArr)
+	if err != nil {
+		blog.Errorf("DeleteHostFromBusiness logcis err:%s,input:%#v,rid:%s", err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err, Data: exceptionArr})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+	return
+}
+
+func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
+    pheader := req.Request.Header
+    srvData := s.newSrvComm(pheader )
+    defErr := srvData.ccErr
+    ctx := srvData.ctx
+    rid :=srvData.rid
+    conf := new(metadata.DefaultModuleHostConfigParams)
+    if err := json.NewDecoder(req.Request.Body).Decode(&conf); err != nil {
+        blog.Errorf("move host to module %s failed with decode body err: %v,rid: %s", moduleName, err,rid)
+        resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+        return
+    }
+
+    conds := make(map[string]interface{})
+    moduleNameLogKey := "idle"
+    if common.DefaultResModuleName == moduleName {
+        //空闲机
+        moduleNameLogKey = "idle"
+        conds[common.BKDefaultField] = common.DefaultResModuleFlag
+        conds[common.BKModuleNameField] = common.DefaultResModuleName
+    } else {
+        //故障机器
+        moduleNameLogKey = "fault"
+        conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
+        conds[common.BKModuleNameField] = common.DefaultFaultModuleName
+    }
+    conds[common.BKAppIDField] = conf.ApplicationID
+    moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
+    if err != nil {
+        blog.Errorf("move host to module %s, get module id err: %v", moduleName, err)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
+        return
+    }
+
+    audit := srvData.lgc.NewHostModuleLog( conf.HostID)
+    if err := audit.WithPrevious(srvData.ctx); err != nil {
+        blog.Errorf("move host to module %s, get prev module host config failed, err: %v", moduleName, err)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+        return
+    }
 
 	// check authorization
-	if shouldContinue := s.verifyHostPermission(req, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
+	if shouldContinue := s.verifyHostPermission(&req.Request.Header, resp, &conf.HostID, authmeta.TransferHost); shouldContinue == false {
 		return
 	}
 	// deregister host
-	if err := s.deregisterHostFromCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.deregisterHostFromCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("deregister host:%+v to business:%d failed, err: %v, rid:%s", conf.HostID, err, srvData.rid)
 	}
 
@@ -748,11 +825,42 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
 			return
 		}
+    notExistHostID, err := srvData.lgc.ExistHostIDSInApp(ctx, conf.ApplicationID, conf.HostID)
+    if err != nil {
+        blog.Errorf("moveHostToModuleByName ExistHostIDSInApp error, err:%s,input:%#v,rid:%s", err.Error(), conf, rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
+        return
+    }
+    if len(notExistHostID) > 0 {
+        blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %#v, not exist in app:%#v,rid:%s", conf.ApplicationID, conf.HostID, notExistHostID, rid)
+        notTipStrHostID := ""
+        for _, hostID := range notExistHostID {
+            notTipStrHostID = fmt.Sprintf("%s,%s", notTipStrHostID, hostID)
+        }
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostNotINAPP, strings.Trim(notTipStrHostID, ","))})
+        return
+    }
+    transferInput := &metadata.TransferHostToDefaultModuleConfig{
+        ApplicationID: conf.ApplicationID,
+        HostID:        conf.HostID,
+        ModuleID:      moduleID,
+    }
+    tResult, err := s.CoreAPI.HostController().Module().TransferHostToDefaultModule(ctx, pheader, transferInput)
+    if err != nil {
+        blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+        return
+    }
+    if !tResult.Result {
+        blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, tResult, rid)
+        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+        return
+    }
 
 	}
 
 	// register host
-	if err := s.registerHostToCurrentBusiness(req, &conf.HostID); err != nil {
+	if err := s.registerHostToCurrentBusiness(&req.Request.Header, &conf.HostID); err != nil {
 		blog.Errorf("register host:%+v to business:%d failed, err: %v, rid:%s", conf.HostID, err, srvData.rid)
 	}
 

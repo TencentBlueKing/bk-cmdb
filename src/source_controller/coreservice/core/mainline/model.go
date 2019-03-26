@@ -13,60 +13,18 @@
 package mainline
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/source_controller/coreservice/core"
-	"fmt"
+    "fmt"
+    
+    "configcenter/src/common/blog"
+    "configcenter/src/common/metadata"
 )
 
 // SearchMainlineModelTopo get topo tree of model on mainline
-func (m *topoManager) SearchMainlineModelTopo() (*metadata.TopoModelNode, error) {
-	// TODO support withDetail option
-	// step1: get all model associations
-	mongoCondition := mongo.NewCondition()
-	mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
-
-	ctx := core.ContextParams{}
-	associations := make([]mapstr.MapStr, 0)
-	err := m.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, &associations)
-	if err != nil {
-		blog.Errorf("query topo model mainline association from db failed, %+v", err)
-		return nil, fmt.Errorf("query topo model mainline association from db failed, %+v", err)
-	}
-	blog.V(2).Infof("get topo model mainline associations result: %+v", associations)
-
-	// step2: construct a tree fro associations
-	var bizTopoModelNode *metadata.TopoModelNode
-	topoModelNodeMap := map[string]*metadata.TopoModelNode{}
-	for _, association := range associations {
-		blog.V(5).Infof("association: %+v", association)
-		parentObjectID := association[common.AssociatedObjectIDField].(string)
-		if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
-			topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
-				ObjectID: parentObjectID,
-				Children: []*metadata.TopoModelNode{},
-			}
-		}
-
-		parentTopoModelNode := topoModelNodeMap[parentObjectID]
-
-		// extract tree root node pointer
-		if parentObjectID == common.BKInnerObjIDApp {
-			bizTopoModelNode = parentTopoModelNode
-		}
-
-		childObjectID := association[common.BKObjIDField].(string)
-		if _, exist := topoModelNodeMap[childObjectID]; exist == false {
-			topoModelNodeMap[childObjectID] = &metadata.TopoModelNode{
-				ObjectID: childObjectID,
-				Children: []*metadata.TopoModelNode{},
-			}
-		}
-		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
-	}
-	blog.V(2).Infof("bizTopoModelNode: %+v", bizTopoModelNode)
-	return bizTopoModelNode, nil
+func (m *topoManager) SearchMainlineModelTopo(withDetail bool) (*metadata.TopoModelNode, error) {
+    obj, err := NewModelMainline(m.DbProxy)
+    if err != nil {
+        blog.Errorf("new model mainline failed, err: %+v", err)
+        return nil, fmt.Errorf("new model mainline failed, err: %+v", err)
+    }
+    return obj.GetRoot(withDetail)
 }

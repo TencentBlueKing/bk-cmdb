@@ -333,6 +333,9 @@ const (
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
 
+	// ExportCustomFields the use custom display columns
+	ExportCustomFields = "export_custom_fields"
+
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
 
@@ -848,11 +851,6 @@ const (
 	HostOSTypeEnumWindows = "2"
 )
 
-const (
-	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
-	InstAsstIDSplit = ","
-)
-
 // integer const
 const (
 	MaxUint64  = ^uint64(0)
@@ -867,13 +865,9 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-//flag
+// flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
-const (
-	BKHTTPMIMEJSON = "application/json"
-)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -882,7 +876,7 @@ const (
 
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
-	// multiple url separeted by commas
+	// multiple url separated by commas
 	URLFilterWhiteListSuffix = "/healthz"
 
 	URLFilterWhiteListSepareteChar = ","
@@ -950,7 +944,8 @@ const (
 )
 
 const (
-	BKProcInstanceOpUser = "proc instance user"
+	BKProcInstanceOpUser             = "proc instance user"
+	BKSynchronizeDataTaskDefaultUser = "synchronize task user"
 )
 
 const (
@@ -1000,4 +995,30 @@ const (
 
 const (
 	BKBizDefault = "bizdefault"
+)
+
+const (
+	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
+	MetaDataSynchronizeVersionField = "metadata_sync_version"
+
+	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
+	SynchronizeSignPrefix = "sync_blueking"
+
+	/* synchronize model description classify*/
+
+	// SynchronizeModelTypeClassification synchroneize model classification
+	SynchronizeModelTypeClassification = "model_classification"
+	// SynchronizeModelTypeAttribute synchroneize model attribute
+	SynchronizeModelTypeAttribute = "model_attribute"
+	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
+	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
+	// SynchronizeModelTypeBase synchroneize model attribute group
+	SynchronizeModelTypeBase = "model"
+	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
+	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
+
+	/* synchronize instance assoication sign*/
+
+	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
+	SynchronizeAssociationTypeModelHost = "module_host"
 )

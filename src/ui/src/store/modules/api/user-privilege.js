@@ -152,9 +152,11 @@ const actions = {
      * @return {promises} promises 对象
      */
     getUserPrivilege ({ commit, state, dispatch, rootGetters }, httpConfig) {
+        /*
         return $http.get(`topo/privilege/user/detail/${rootGetters.supplierAccount}/${rootGetters.userName}`, httpConfig).then(privilege => {
             commit('setUserPrivilege', privilege)
         })
+        */
     },
 
     /**

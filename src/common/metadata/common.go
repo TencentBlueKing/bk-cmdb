@@ -39,11 +39,12 @@ type RespError struct {
 func (r *RespError) Error() string {
 	br := new(Response)
 	br.Code = r.ErrCode
-	br.ErrMsg = r.Msg.Error()
 	if nil != r.Msg {
 		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
 			br.Code = ccErr.GetCode()
 			br.ErrMsg = ccErr.Error()
+		} else {
+			br.ErrMsg = r.Msg.Error()
 		}
 	}
 	br.Data = r.Data
@@ -77,10 +78,17 @@ type MapArrayResponse struct {
 // ResponseInstData
 type ResponseInstData struct {
 	BaseResp `json:",inline"`
-	Data     struct {
+	Data     InstDataInfo `json:"data"`
+	/*struct {
 		Count int             `json:"count"`
 		Info  []mapstr.MapStr `json:"info"`
-	} `json:"data"`
+	} `json:"data"`*/
+}
+
+// InstDataInfo response instance data result Data field
+type InstDataInfo struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 type ResponseDataMapStr struct {

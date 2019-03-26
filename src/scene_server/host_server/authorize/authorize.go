@@ -15,13 +15,15 @@ package authorize
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	restful "github.com/emicklei/go-restful"
-
+	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 )
 
 // HostAuthorizer manages authorize interface for host server
@@ -31,30 +33,86 @@ type HostAuthorizer struct {
 }
 
 // NewHostAuthorizer new authorizer for host server
-func NewHostAuthorizer() *HostAuthorizer {
-	authorizer := new(HostAuthorizer)
-	return authorizer
+func NewHostAuthorizer(tls *util.TLSClientConfig, optionConfig authcenter.AuthConfig) (*HostAuthorizer, error) {
+	config := authcenter.AuthConfig{
+		Address:   optionConfig.Address,
+		AppCode:   optionConfig.AppCode,
+		AppSecret: optionConfig.AppSecret,
+		SystemID:  authcenter.SystemIDCMDB,
+		Enable:    optionConfig.Enable,
+	}
+	authAuthorizer, err := auth.NewAuthorize(tls, config)
+	if err != nil {
+		blog.Errorf("new host authorizer failed, err: %+v", err)
+		return nil, fmt.Errorf("new host authorizer failed, err: %+v", err)
+	}
+	authRegister, err := auth.NewAuthorize(tls, config)
+	if err != nil {
+		blog.Errorf("new host authorizer failed, err: %+v", err)
+		return nil, fmt.Errorf("new host authorizer failed, err: %+v", err)
+	}
+	authorizer := &HostAuthorizer{
+		authorizer: authAuthorizer,
+		register:   authRegister,
+	}
+	return authorizer, nil
 }
 
 // NewIamAuthorizeData new a meta.Attribute object
 func NewIamAuthorizeData(commonInfo *meta.CommonInfo, businessID int64,
 	resourceType meta.ResourceType, instanceIDs *[]int64, action meta.Action) *meta.AuthAttribute {
+
 	iamAuthorizeRequestBody := &meta.AuthAttribute{
-		APIVersion: commonInfo.APIVersion,
-		BusinessID: businessID,
-		User:       commonInfo.User,
+		User:      commonInfo.User,
+		Resources: make([]meta.ResourceAttribute, 0),
 	}
 
 	for _, instanceID := range *instanceIDs {
-		resource := NewResoruceAttribute(commonInfo, businessID, resourceType, instanceID, action)
+		resource := NewResourceAttribute(commonInfo, businessID, resourceType, instanceID, action)
 		iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, *resource)
 	}
 	return iamAuthorizeRequestBody
 }
 
-// NewResoruceAttribute new a resource attribute
-func NewResoruceAttribute(commonInfo *meta.CommonInfo, businessID int64,
-	resourceType meta.ResourceType, instanceID int64, action meta.Action) *meta.ResourceAttribute {
+// NewIamAuthorizeData new a meta.Attribute object
+func NewBatchResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID int64,
+	resourceType meta.ResourceType, layers [][]meta.Item, action meta.Action) *meta.AuthAttribute {
+
+	iamAuthorizeRequestBody := &meta.AuthAttribute{
+		User:      commonInfo.User,
+		Resources: make([]meta.ResourceAttribute, 0),
+	}
+
+	for _, layer := range layers {
+		resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, action)
+		iamAuthorizeRequestBody.Resources = append(iamAuthorizeRequestBody.Resources, *resource)
+	}
+	return iamAuthorizeRequestBody
+}
+
+// NewResourceAttribute new a resource attribute
+func NewResourceAttributeWithLayers(commonInfo *meta.CommonInfo, businessID int64, resourceType meta.ResourceType, layer []meta.Item, action meta.Action) *meta.ResourceAttribute {
+	resource := &meta.ResourceAttribute{
+		Layers:          layer,
+		BusinessID:      businessID,
+		SupplierAccount: commonInfo.User.SupplierAccount,
+	}
+
+	if len(layer) > 0 {
+		instance := layer[len(layer)-1]
+		basic := meta.Basic{
+			Type:       resourceType,
+			Action:     action,
+			Name:       instance.Name,
+			InstanceID: instance.InstanceID,
+		}
+		resource.Basic = basic
+	}
+	return resource
+}
+
+// NewResourceAttribute new a resource attribute
+func NewResourceAttribute(commonInfo *meta.CommonInfo, businessID int64, resourceType meta.ResourceType, instanceID int64, action meta.Action) *meta.ResourceAttribute {
 	resource := &meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:       resourceType,
@@ -63,15 +121,16 @@ func NewResoruceAttribute(commonInfo *meta.CommonInfo, businessID int64,
 			Action:     action,
 		},
 		BusinessID:      businessID,
-		SupplierAccount: commonInfo.User.SupplierID,
+		SupplierAccount: commonInfo.User.SupplierAccount,
 	}
 	return resource
 }
 
-// CanDoBusinessAction check permission for operate business
-func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID int64, action meta.Action) (decision meta.Decision, err error) {
+// canDoResourceAction check permission for operate business
+func (ha *HostAuthorizer) canDoResourceAction(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, instanceIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
 
-	commonInfo, err := parser.ParseCommonInfo(req)
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
 	if err != nil {
 		decision := meta.Decision{
 			Authorized: false,
@@ -79,99 +138,169 @@ func (ha *HostAuthorizer) CanDoBusinessAction(req *restful.Request, businessID i
 		}
 		return decision, err
 	}
-	iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Business, &[]int64{businessID}, action)
+	iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, resourceType, &[]int64{businessID}, action)
 
 	decision, err = ha.authorizer.Authorize(context.Background(), iamAuthorizeRequestBody)
 	if err != nil {
-		message := fmt.Sprintf("auth interface failed, %s", err)
-		blog.Errorf(message)
+		blog.Errorf("auth interface failed, %s", err)
 
 		decision = meta.Decision{
 			Authorized: false,
-			Reason:     message,
+			Reason:     fmt.Sprintf("auth interface failed, %s", err),
 		}
-		return decision, err
+		return decision, fmt.Errorf("auth interface failed, %s", err)
 	}
 	return
 }
 
-// CanDoHostAction check whether have permission to view host snapshot
-func (ha *HostAuthorizer) CanDoHostAction(req *restful.Request, businessID int64, hostIDs *[]int64, action meta.Action) (decision meta.Decision, err error) {
-	commonInfo, err := parser.ParseCommonInfo(req)
+// canDoResourceAction check permission for operate business
+func (ha *HostAuthorizer) CanDoResourceActionWithLayers(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, layers [][]meta.Item, action meta.Action) (decision meta.Decision, err error) {
+
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
 	if err != nil {
 		decision := meta.Decision{
 			Authorized: false,
 			Reason:     fmt.Sprintf("parse common info from request failed, %s", err),
 		}
-		return decision, nil
+		return decision, err
 	}
-
-	iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Host, hostIDs, action)
+	iamAuthorizeRequestBody := NewBatchResourceAttributeWithLayers(commonInfo, businessID, resourceType, layers, action)
 
 	decision, err = ha.authorizer.Authorize(context.Background(), iamAuthorizeRequestBody)
 	if err != nil {
-		message := fmt.Sprintf("auth interface failed, %s", err)
-		blog.Errorf(message)
+		blog.Errorf("auth interface failed, %+v", err)
 
 		decision = meta.Decision{
 			Authorized: false,
-			Reason:     message,
+			Reason:     fmt.Sprintf("auth interface failed, %+v", err),
 		}
-		return decision, err
+		return decision, fmt.Errorf("auth interface failed, %+v", err)
 	}
 	return
+}
+
+// CanDoBusinessAction check permission for operate business
+func (ha *HostAuthorizer) CanDoBusinessAction(requestHeader *http.Header, businessID int64,
+	action meta.Action) (decision meta.Decision, err error) {
+
+	return ha.canDoResourceAction(requestHeader, meta.Business, businessID, &[]int64{businessID}, action)
+}
+
+// CanDoModuleAction check permission for operate business
+func (ha *HostAuthorizer) CanDoModuleAction(requestHeader *http.Header, businessID int64,
+	moduleID int64, action meta.Action) (decision meta.Decision, err error) {
+
+	return ha.canDoResourceAction(requestHeader, meta.ModelModule, businessID, &[]int64{moduleID}, action)
 }
 
 // RegisterHosts register host to auth center
-func (ha *HostAuthorizer) RegisterHosts(req *restful.Request, businessID int64, hostIDs *[]int64) error {
+func (ha *HostAuthorizer) RegisterHosts(requestHeader *http.Header, businessID int64, hostIDs *[]int64) error {
+	return ha.registerResource(requestHeader, meta.HostInstance, businessID, hostIDs)
+}
+
+// registerResource register resource of resourceType type to auth center
+func (ha *HostAuthorizer) registerResource(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, instanceIDs *[]int64) error {
+
 	// TODO make it atomic
-	commonInfo, err := parser.ParseCommonInfo(req)
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
 	if err != nil {
 		return fmt.Errorf("parse common info from request failed, %s", err)
 	}
 
-	/*
-		// TODO what action should i use for register resource
-		// batch register hosts
-		iamAuthorizeRequestBody := NewIamAuthorizeData(commonInfo, businessID, meta.Host, hostIDs, "")
-		err = ha.register.Register(context.Background(), iamAuthorizeRequestBody)
-		if err != nil {
-			blog.Errorf("auth register hosts failed, iamAuthorizeRequestBody=%v, error: %s", iamAuthorizeRequestBody, err)
-		}
-	*/
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, instanceID := range *instanceIDs {
+		resource := NewResourceAttribute(commonInfo, businessID, resourceType, instanceID, meta.EmptyAction)
+		resources = append(resources, *resource)
+	}
 
-	// register host one by one
-	for _, hostID := range *hostIDs {
-		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
-		err := ha.register.RegisterResource(context.Background(), *resource)
-		if err == nil {
-			blog.Debug("auth register success, resourceAttribute=%v", resource)
-			continue
-		}
+	if err := ha.register.RegisterResource(context.TODO(), resources...); err != nil {
+		blog.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+		return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+	}
+	return nil
+}
 
-		blog.Errorf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
-		return err
+// RegisterResourceWithLayers register resource of resourceType type to auth center
+func (ha *HostAuthorizer) RegisterResourceWithLayers(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, layers *[][]meta.Item) error {
+
+	// TODO make it atomic
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
+	if err != nil {
+		return fmt.Errorf("parse common info from request failed, %s", err)
+	}
+
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, layer := range *layers {
+		resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, meta.EmptyAction)
+		resources = append(resources, *resource)
+	}
+
+	resourcesData, err := json.Marshal(resources)
+	if err != nil {
+		blog.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+		return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+	}
+	blog.Infof("auth register data: %s", resourcesData)
+	if err := ha.register.RegisterResource(context.TODO(), resources...); err != nil {
+		blog.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+		return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+	}
+	return nil
+}
+
+// deregisterResource register resource of resourceType type to auth center
+func (ha *HostAuthorizer) deregisterResource(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, instanceIDs *[]int64) error {
+
+	// TODO make it atomic
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
+	if err != nil {
+		return fmt.Errorf("parse common info from request failed, %s", err)
+	}
+
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, instanceID := range *instanceIDs {
+		resource := NewResourceAttribute(commonInfo, businessID, resourceType, instanceID, meta.EmptyAction)
+		resources = append(resources, *resource)
+	}
+
+	if err := ha.register.DeregisterResource(context.TODO(), resources...); err != nil {
+		blog.Errorf("auth deregister failed, resourceAttribute: %+v, error: %s", resources, err)
+		return fmt.Errorf("auth deregister failed, resourceAttribute: %+v, error: %s", resources, err)
 	}
 	return nil
 }
 
 // DeregisterHosts register host to auth center
-func (ha *HostAuthorizer) DeregisterHosts(req *restful.Request, businessID int64, hostIDs *[]int64) error {
-	commonInfo, err := parser.ParseCommonInfo(req)
+func (ha *HostAuthorizer) DeregisterHosts(requestHeader *http.Header, businessID int64, hostIDs *[]int64) error {
+	return ha.deregisterResource(requestHeader, meta.Host, businessID, hostIDs)
+}
+
+// DeregisterHosts register host to auth center
+func (ha *HostAuthorizer) DeregisterResourceWithLayers(requestHeader *http.Header, resourceType meta.ResourceType,
+	businessID int64, layers *[][]meta.Item) error {
+
+	commonInfo, err := parser.ParseCommonInfo(requestHeader)
 	if err != nil {
-		return fmt.Errorf("parse common info from request failed, %s", err)
+		return fmt.Errorf("parse common info from request failed, %+v", err)
 	}
 
-	for _, hostID := range *hostIDs {
-		resource := NewResoruceAttribute(commonInfo, businessID, meta.Host, hostID, meta.EmptyAction)
-		err := ha.register.RegisterResource(context.Background(), *resource)
-		if err == nil {
-			blog.Debug("auth register success, resourceAttribute=%v", resource)
-			continue
-		}
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, layer := range *layers {
+		resource := NewResourceAttributeWithLayers(commonInfo, businessID, resourceType, layer, meta.EmptyAction)
+		resources = append(resources, *resource)
+	}
 
-		blog.Errorf("auth register failed, resourceAttribute=%v, error: %s", resource, err)
-		return err
+	resourcesData, err := json.Marshal(resources)
+	if err != nil {
+		return fmt.Errorf("auth register failed, resourceAttribute: %+v, error: %s", resources, err)
+	}
+	blog.Infof("auth register data: %s", resourcesData)
+	if err := ha.register.DeregisterResource(context.TODO(), resources...); err != nil {
+		return fmt.Errorf("auth deregister failed, resourceAttribute: %+v, error: %s", resources, err)
 	}
 	return nil
 }

@@ -76,8 +76,8 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	//restful.DefaultRequestContentType(restful.MIME_JSON)
-	//restful.DefaultResponseContentType(restful.MIME_JSON)
+	// restful.DefaultRequestContentType(restful.MIME_JSON)
+	// restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.DELETE("/hosts/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
@@ -90,8 +90,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	//ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
-	//ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
+	// ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
+	// ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
 	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
@@ -107,6 +107,12 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/hosts/batch").To(s.UpdateHostBatch))
 	ws.Route(ws.PUT("/hosts/property/clone").To(s.CloneHostProperty))
 	ws.Route(ws.POST("/hosts/modules/idle/set").To(s.MoveSetHost2IdleModule))
+	// get host module relation in app
+	ws.Route(ws.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
+	// transfer host to other business
+	ws.Route(ws.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
+	//  delete host from business
+	ws.Route(ws.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
 
 	ws.Route(ws.POST("/userapi").To(s.AddUserCustomQuery))
 	ws.Route(ws.PUT("/userapi/{bk_biz_id}/{id}").To(s.UpdateUserCustomQuery))
@@ -138,6 +144,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/plat").To(s.CreatePlat))
 	ws.Route(ws.DELETE("/plat/{bk_cloud_id}").To(s.DelPlat))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
+
+	ws.Route(ws.POST("/findmany/modulehost").To(s.FindModuleHost))
 
 	// cloud sync
 	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))

@@ -32,7 +32,7 @@ import (
 // GetImportInsts get insts from excel file
 func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, header, meta)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}

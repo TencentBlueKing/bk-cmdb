@@ -155,36 +155,6 @@ func (a *APIResource) ParseConf(data []byte) (map[string]string, error) {
 	return ccapiConfig.Configmap, nil
 }
 
-/*
-TODO:will delete
-// GetDataCli get data cli
-func (a *APIResource) GetDataCli(config map[string]string, dType string) error {
-	host := config[dType+".host"]
-	port := config[dType+".port"]
-	user := config[dType+".usr"]
-	pwd := config[dType+".pwd"]
-	dbName := config[dType+".database"]
-	mechanism := config[dType+".mechanism"]
-	dataCli, err := dbclient.NewDB(host, port, user, pwd, mechanism, dbName, dType)
-	if err != nil {
-		return err
-	}
-	err = dataCli.Open()
-	if err != nil {
-		return err
-	}
-	if dType == storage.DI_MYSQL {
-		a.MetaCli = dataCli
-	} else if dType == storage.DI_REDIS {
-		a.CacheCli = dataCli
-	} else {
-		a.InstCli = dataCli
-	}
-
-	return nil
-}
-*/
-
 // CreateAPIRspStr create api rsp str
 func (a *APIResource) CreateAPIRspStr(errcode int, info interface{}) (string, error) {
 	rsp := BKAPIRsp{
@@ -227,7 +197,6 @@ func (a *APIResource) CreateAPIRspErrStrWithData(errcode int, strmsg, errdata in
 	return string(s), err
 }
 
-//CreateBKAPIRspStr create blueking api rsp str
 func (a *APIResource) CreateBKAPIRspStr(errcode int, info interface{}) (string, error) {
 	rsp := BKAPIRsp{
 		Result:  true,
