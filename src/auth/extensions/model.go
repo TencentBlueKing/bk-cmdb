@@ -16,7 +16,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
+	"strconv"
+	
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -31,7 +32,7 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 	if businessID != 0 {
 		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
 		_, labelCond := metaCond.Embed(metadata.BKLabel)
-		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: businessID})
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: strconv.FormatInt(businessID, 10)})
 	}
 	cond := condCheckModel.ToMapStr()
 	if businessID == 0 {

@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	authmeta "configcenter/src/auth/meta"
@@ -65,12 +66,8 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)
 		return nil
 	}
-	
-	err = ih.diffAndSync(rs, resources)
-	if err != nil {
-		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)
-		return nil
-	}
 
-	return nil
+	taskName := fmt.Sprintf("sync instance for business: %d model: %s", bizID, object.ObjectID)
+	iamIDPrefix := ""
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }

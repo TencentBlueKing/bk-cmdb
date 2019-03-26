@@ -14,7 +14,8 @@ package handler
 
 import (
 	"context"
-	
+	"fmt"
+
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -29,12 +30,20 @@ func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
 
 	// step1 get instances by business from core service
 	businessID := businessSimplify.BKAppIDField
-	setArr, err := ih.authManager.CollectSetByBusinessID(context.Background(), *header, businessID)
+	sets, err := ih.authManager.CollectSetByBusinessID(context.Background(), *header, businessID)
 	if err != nil {
 		blog.Errorf("get set by business id:%d failed, err: %+v", businessID, err)
 		return err
 	}
-	resources := ih.authManager.MakeResourcesBySet(*header, authmeta.EmptyAction, businessID, setArr...)
+	if len(sets) == 0 {
+		blog.Infof("no set found for business: %d", businessID)
+		return nil
+	}
+	resources := ih.authManager.MakeResourcesBySet(*header, authmeta.EmptyAction, businessID, sets...)
+	if len(resources) == 0 && len(sets) > 0 {
+		blog.Errorf("make iam resource for sets %+v return empty", sets)
+		return nil
+	}
 
 	// step2 get set by business from iam
 	rs := &authmeta.ResourceAttribute{
@@ -44,6 +53,8 @@ func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
 		BusinessID:      businessSimplify.BKAppIDField,
 		Layers: make([]authmeta.Item, 0),
 	}
-	
-	return ih.diffAndSync(rs, resources)
+
+	taskName := fmt.Sprintf("sync set for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := "set"
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }

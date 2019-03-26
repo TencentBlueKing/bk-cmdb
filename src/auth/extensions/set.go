@@ -33,7 +33,6 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKSetNameField},
 		Condition: cond.ToMapStr(),
 		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
 	}
@@ -44,7 +43,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	}
 
 	// extract sets
-	setArr := make([]SetSimplify, 0)
+	sets := make([]SetSimplify, 0)
 	for _, instance := range instances.Data.Info {
 		setSimplify := SetSimplify{}
 		_, err := setSimplify.Parse(instance)
@@ -52,11 +51,11 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 			blog.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
 			continue
 		}
-		setArr = append(setArr, setSimplify)
+		sets = append(sets, setSimplify)
 	}
 
-	blog.V(4).Infof("list sets by business:%d result: %+v", businessID, setArr)
-	return setArr, nil
+	blog.V(4).Infof("list sets by business:%d result: %+v", businessID, sets)
+	return sets, nil
 }
 
 func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify, error) {
