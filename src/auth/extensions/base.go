@@ -44,7 +44,6 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 	}
 	authAttribute := &meta.AuthAttribute{
 		User:       commonInfo.User,
-		BusinessID: businessID,
 		Resources:  resources,
 	}
 
