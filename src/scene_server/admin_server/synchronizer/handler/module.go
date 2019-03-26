@@ -14,7 +14,8 @@ package handler
 
 import (
 	"context"
-	
+	"fmt"
+
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -34,7 +35,15 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 		blog.Errorf("collect module by business id failed, err: %+v", err)
 		return err
 	}
+	if len(modules) == 0 {
+		blog.Infof("no modules found for business: %d", bizID)
+		return nil
+	}
 	resources := ih.authManager.MakeResourcesByModule(*header, authmeta.EmptyAction, bizID, modules...)
+	if len(resources) == 0 && len(modules) > 0 {
+		blog.Errorf("make iam resource for modules %+v return empty", modules)
+		return nil
+	}
 	
 	// step2 get modules by business from iam
 	rs := &authmeta.ResourceAttribute{
@@ -46,5 +55,7 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 		Layers: make([]authmeta.Item, 0),
 	}
 
-	return ih.diffAndSync(rs, resources)
+	taskName := fmt.Sprintf("sync module for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := "module"
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }

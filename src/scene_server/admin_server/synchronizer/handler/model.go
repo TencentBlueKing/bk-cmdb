@@ -53,6 +53,8 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 		BusinessID:      businessSimplify.BKAppIDField,
 		Layers: make([]authmeta.Item, 0),
 	}
-	
-	return ih.diffAndSync(rs, resources)
+
+	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := ""
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }

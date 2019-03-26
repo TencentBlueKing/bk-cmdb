@@ -121,11 +121,13 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
 			continue
 		}
-		jobs = append(jobs, meta.WorkRequest{
-			ResourceType: meta.InstanceResource,
-			Data:         objects,
-			Header: *header,
-		})
+		for _, object := range objects {
+			jobs = append(jobs, meta.WorkRequest{
+				ResourceType: meta.InstanceResource,
+				Data:         object,
+				Header:       *header,
+			})
+		}
 	}
 	return &jobs
 }

@@ -13,13 +13,8 @@
 package handler
 
 import (
-	"fmt"
-	"strings"
-
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
-	authmeta "configcenter/src/auth/meta"
 )
 
 // IAMHandler sync resource to iam
@@ -36,22 +31,4 @@ func NewIAMHandler(clientSet apimachinery.ClientSetInterface, authManager *exten
 		clientSet: clientSet,
 	}
 	return iamHandler
-}
-
-func generateCMDBResourceKey(resource *authcenter.ResourceEntity) string {
-	resourcesIDs := make([]string, 0)
-	for _, resourceID := range resource.ResourceID {
-		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", resourceID.ResourceType, resourceID.ResourceID))
-	}
-	key := strings.Join(resourcesIDs, "-")
-	return key
-}
-
-func generateIAMResourceKey(iamResource authmeta.BackendResource) string {
-	resourcesIDs := make([]string, 0)
-	for _, iamLayer := range iamResource {
-		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", iamLayer.ResourceType, iamLayer.ResourceID))
-	}
-	key := strings.Join(resourcesIDs, "-")
-	return key
 }

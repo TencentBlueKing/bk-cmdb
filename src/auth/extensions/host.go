@@ -197,7 +197,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	}
 
 	// extract hostID
-	hostIDArr := make([]int64, 0)
+	hostIDs := make([]int64, 0)
 	for _, host := range hosts.Data.Info {
 		hostIDVal, exist := host[common.BKHostIDField]
 		if exist == false {
@@ -208,11 +208,11 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 			blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v", host, err)
 			continue
 		}
-		hostIDArr = append(hostIDArr, hostID)
+		hostIDs = append(hostIDs, hostID)
 	}
 
-	blog.V(4).Infof("list hosts by business:%d result: %+v", businessID, hostIDArr)
-	return am.constructHostFromSearchResult(ctx, header, hosts.Data.Info)
+	blog.V(4).Infof("list hosts by business:%d result: %+v", businessID, hostIDs)
+	return am.collectHostByHostIDs(ctx, header, hostIDs...)
 }
 
 func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr, )([]HostSimplify, error){

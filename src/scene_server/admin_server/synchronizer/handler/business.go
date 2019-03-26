@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -24,14 +25,18 @@ import (
 // HandleBusinessSync do sync all business to iam
 func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 	header := utils.NewListBusinessAPIHeader()
-	businessList, err := ih.authManager.CollectAllBusiness(context.Background(), *header)
+	businesses, err := ih.authManager.CollectAllBusiness(context.Background(), *header)
 	if err != nil {
 		blog.Errorf("collect business failed, err: %+v", err)
 		return err
 	}
 	
-	blog.Info("list business businessList: %+v", businessList)
-	resources := ih.authManager.MakeResourcesByBusiness(*header, authmeta.EmptyAction, businessList...)
+	if len(businesses) == 0 {
+		blog.Info("no business found")
+	}
+	
+	blog.Info("list business businessList: %+v", businesses)
+	resources := ih.authManager.MakeResourcesByBusiness(*header, authmeta.EmptyAction, businesses...)
 
 	// step2 get businesses from iam
 	rs := &authmeta.ResourceAttribute{
@@ -39,6 +44,8 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 			Type: authmeta.Business,
 		},
 	}
-	
-	return ih.diffAndSync(rs, resources)
+
+	taskName := fmt.Sprintf("sync all business")
+	iamIDPrefix := ""
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }

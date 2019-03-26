@@ -14,6 +14,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	
 	"configcenter/src/auth/authcenter"
@@ -21,39 +22,57 @@ import (
 	"configcenter/src/common/blog"
 )
 
-func (ih *IAMHandler) diffAndSync(ra *authmeta.ResourceAttribute, resources []authmeta.ResourceAttribute) error {
+func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string) ([]authmeta.BackendResource, error) {
 	iamResources, err := ih.authManager.Authorize.ListResources(context.Background(), ra)
 	if err != nil {
-		blog.Errorf("synchronize set instance failed, ListResources failed, err: %+v", err)
-		return err
+		blog.Errorf("synchronize failed, ListResources failed, task: %s, err: %+v", taskName, err)
+		return nil, err
 	}
-
+	
 	realResources := make([]authmeta.BackendResource, 0)
-	for _, iamResources := range iamResources {
-		if strings.Contains(iamResources[len(iamResources)-1].ResourceID, "set") {
-			realResources = append(realResources, iamResources)
+	for _, iamResource := range iamResources {
+		if len(iamResource) == 0 {
+			continue
+		}
+		if len(iamIDPrefix) == 0 {
+			continue
+		}
+		if strings.HasPrefix(iamResource[len(iamResource)-1].ResourceID, iamIDPrefix) {
+			realResources = append(realResources, iamResource)
 		}
 	}
-	blog.InfoJSON("realResources is: %s", realResources)
+	blog.InfoJSON("task: %s, realResources is: %s", taskName, realResources)
+	return realResources, nil
+}
 
+func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute) error {
+	iamResources, err := ih.getIamResources(taskName, ra, iamIDPrefix)
+	if err != nil {
+		blog.Errorf("task: %s, get iam resources failed, err: %+v", taskName, err)
+		return fmt.Errorf("get iam resources failed, err: %+v", err)
+	}
+	
 	scope := authcenter.ScopeInfo{}
 	needRegister := make([]authmeta.ResourceAttribute, 0)
 	// init key:hit map for
 	iamResourceKeyMap := map[string]int{}
-	for _, iamResource := range realResources {
+	iamResourceMap := map[string]authmeta.BackendResource{}
+	for _, iamResource := range iamResources {
 		key := generateIAMResourceKey(iamResource)
 		// init hit count 0
 		iamResourceKeyMap[key] = 0
+		iamResourceMap[key] = iamResource
 	}
-	
+
+	// needUpdate := make([]authmeta.BackendResource, 0)
 	for _, resource := range resources {
 		targetResource, err := ih.authManager.Authorize.DryRunRegisterResource(context.Background(), resource)
 		if err != nil {
-			blog.Errorf("synchronize set instance failed, dry run register resource failed, err: %+v", err)
+			blog.Errorf("task: %s, synchronize set instance failed, dry run register resource failed, err: %+v", taskName, err)
 			return err
 		}
 		if len(targetResource.Resources) != 1 {
-			blog.Errorf("synchronize instance:%+v failed, dry run register result is: %+v", resource, targetResource)
+			blog.Errorf("task: %s, synchronize instance:%+v failed, dry run register result is: %+v", taskName, resource, targetResource)
 			continue
 		}
 		scope.ScopeID = targetResource.Resources[0].ScopeID
@@ -62,23 +81,31 @@ func (ih *IAMHandler) diffAndSync(ra *authmeta.ResourceAttribute, resources []au
 		_, exist := iamResourceKeyMap[resourceKey]
 		if exist {
 			iamResourceKeyMap[resourceKey]++
+			// TODO compare name and decide whether need update
+			// iamResource := iamResourceMap[resourceKey]
+			// resource.Name != iamResource[len(iamResource) - 1].ResourceName
 		} else {
 			needRegister = append(needRegister, resource)
 		}
 	}
-	blog.V(5).Infof("iamResourceKeyMap: %+v", iamResourceKeyMap)
-	blog.V(5).Infof("needRegister: %+v", needRegister)
+	blog.InfoJSON("task: %s, iamResourceKeyMap: %s", taskName, iamResourceKeyMap)
+	blog.InfoJSON("task: %s, needRegister: %s", taskName, needRegister)
+	
 	if len(needRegister) > 0 {
-		blog.V(2).Infof("sychronizer register resource that only in cmdb, resources: %+v", needRegister)
+		blog.InfoJSON("synchronize register resource that only in cmdb, resources: %s", needRegister)
 		err = ih.authManager.Authorize.RegisterResource(context.Background(), needRegister...)
 		if err != nil {
-			blog.ErrorJSON("sychronizer register resource that only in cmdb failed, resources: %s, err: %+v", needRegister, err)
+			blog.ErrorJSON("synchronize register resource that only in cmdb failed, resources: %s, err: %+v", needRegister, err)
 		}
 	}
 
-	// step7 deregister resource id that hasn't been hit
+	// deregister resource id that hasn't been hit
+	if len(resources) == 0 {
+		blog.Info("cmdb resource not found of current category, skip deregister resource for safety.")
+		return nil
+	}
 	needDeregister := make([]authmeta.BackendResource, 0)
-	for _, iamResource := range realResources {
+	for _, iamResource := range iamResources {
 		resourceKey := generateIAMResourceKey(iamResource)
 		if iamResourceKeyMap[resourceKey] == 0 {
 			needDeregister = append(needDeregister, iamResource)
@@ -86,11 +113,29 @@ func (ih *IAMHandler) diffAndSync(ra *authmeta.ResourceAttribute, resources []au
 	}
 	blog.V(5).Infof("needDeregister: %+v", needDeregister)
 	if len(needDeregister) != 0 {
-		blog.V(2).Infof("sychronize deregister resource that only in iam, resources: %+v", needDeregister)
+		blog.V(2).Infof("task: %s, synchronize deregister resource that only in iam, resources: %+v", taskName, needDeregister)
 		err = ih.authManager.Authorize.RawDeregisterResource(context.Background(), scope, needDeregister...)
 		if err != nil {
-			blog.ErrorJSON("sychronize deregister resource that only in iam failed, resources: %s, err: %+v", needDeregister, err)
+			blog.ErrorJSON("task: %s, synchronize deregister resource that only in iam failed, resources: %s, err: %+v", taskName, needDeregister, err)
 		}
 	}
 	return nil
+}
+
+func generateCMDBResourceKey(resource *authcenter.ResourceEntity) string {
+	resourcesIDs := make([]string, 0)
+	for _, resourceID := range resource.ResourceID {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", resourceID.ResourceType, resourceID.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
+}
+
+func generateIAMResourceKey(iamResource authmeta.BackendResource) string {
+	resourcesIDs := make([]string, 0)
+	for _, iamLayer := range iamResource {
+		resourcesIDs = append(resourcesIDs, fmt.Sprintf("%s:%s", iamLayer.ResourceType, iamLayer.ResourceID))
+	}
+	key := strings.Join(resourcesIDs, "-")
+	return key
 }

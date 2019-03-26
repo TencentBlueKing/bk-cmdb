@@ -103,7 +103,7 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Model,
+				Type:       meta.ModelModule,
 				Name:       module.BKModuleNameField,
 				InstanceID: module.BKModuleIDField,
 			},

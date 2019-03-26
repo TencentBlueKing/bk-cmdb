@@ -14,7 +14,8 @@ package handler
 
 import (
 	"context"
-	
+	"fmt"
+
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -41,9 +42,10 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 		Basic: authmeta.Basic{
 			Type: authmeta.HostInstance,
 		},
-		SupplierAccount: "",
 		BusinessID:      bizID,
 	}
 
-	return ih.diffAndSync(rs, resources)
+	taskName := fmt.Sprintf("sync host for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := ""
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }
