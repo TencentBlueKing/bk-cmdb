@@ -10,14 +10,28 @@
         "authorized": true,
         "order": 1
     },
-    "bk_collection": {
-        "i18n": "Nav['我的收藏']",
-        "icon": "icon-cc-nav-collection",
-        "id": "bk_collection",
-        "name": "我的收藏",
-        "classificationId": "bk_collection",
+    "bk_basic_resources": {
+        "i18n": "Nav['基础资源']",
+        "icon": "icon-cc-basic-resource",
+        "id": "bk_basic_resources",
+        "name": "基础资源",
+        "classificationId": "bk_basic_resources",
         "order": 2,
-        "children": []
+        "children": [{
+            "i18n": "Nav['业务']",
+            "path": "/business",
+            "id": "biz",
+            "name": "业务",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }, {
+            "i18n": "Nav['主机']",
+            "path": "/resource",
+            "id": "resource",
+            "name": "主机",
+            "authorized": true,
+            "classificationId": "bk_basic_resources"
+        }]
     },
     "bk_business_resource": {
         "i18n": "Nav['业务资源']",
@@ -142,5 +156,14 @@
             "authorized": true,
             "classificationId": "bk_ci_model"
         }]
+    },
+    "bk_collection": {
+        "i18n": "Nav['我的收藏']",
+        "icon": "icon-cc-nav-collection",
+        "id": "bk_collection",
+        "name": "我的收藏",
+        "classificationId": "bk_collection",
+        "order": 7,
+        "children": []
     }
 }

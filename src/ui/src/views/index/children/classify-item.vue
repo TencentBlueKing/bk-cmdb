@@ -12,6 +12,7 @@
                 <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
+                    v-if="!(['biz', 'resource'].includes(model['bk_obj_id']))"
                     :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
                     @click.prevent.stop="toggleCustomNavigation(model)">
                 </i>
@@ -49,19 +50,7 @@
                 return usefulNavigation
             },
             collectedCount () {
-                const specialModel = ['biz']
-                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
-                    specialModel.push('resource')
-                }
-                let specialCollectedCount = 0
-                specialModel.forEach(objId => {
-                    const collectedKey = `is_${objId}_collected`
-                    const isCollected = this.usercustom[collectedKey]
-                    if (isCollected || isCollected === undefined) {
-                        specialCollectedCount++
-                    }
-                })
-                return this.usefulNavigation.length + specialCollectedCount
+                return this.usefulNavigation.length
             }
         },
         methods: {
@@ -79,44 +68,26 @@
                 return `/general-model/${model['bk_obj_id']}`
             },
             isCollected (model) {
-                if (['biz', 'resource'].includes(model['bk_obj_id'])) {
-                    const collectedKey = `is_${model['bk_obj_id']}_collected`
-                    const isCollected = this.usercustom[collectedKey]
-                    return isCollected || isCollected === undefined
-                }
                 return this.customNavigation.includes(model['bk_obj_id'])
             },
             toggleCustomNavigation (model) {
                 let isAdd = false
                 let promise
-                if (['biz', 'resource'].includes(model['bk_obj_id'])) {
-                    const collectedKey = `is_${model['bk_obj_id']}_collected`
-                    const isCollected = this.usercustom[collectedKey]
-                    isAdd = !(isCollected || isCollected === undefined)
-                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
-                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
-                    } else {
-                        promise = this.$store.dispatch('userCustom/saveUsercustom', {
-                            [collectedKey]: isAdd
-                        })
-                    }
+                let newCustom
+                let oldCustom = this.customNavigation
+                if (oldCustom.includes(model['bk_obj_id'])) {
+                    newCustom = oldCustom.filter(id => id !== model['bk_obj_id'])
                 } else {
-                    let newCustom
-                    let oldCustom = this.customNavigation
-                    if (oldCustom.includes(model['bk_obj_id'])) {
-                        newCustom = oldCustom.filter(id => id !== model['bk_obj_id'])
-                    } else {
-                        isAdd = true
-                        newCustom = [...oldCustom, model['bk_obj_id']]
-                    }
-                    if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
-                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
-                        return false
-                    }
-                    promise = this.$store.dispatch('userCustom/saveUsercustom', {
-                        [this.classifyNavigationKey]: newCustom
-                    })
+                    isAdd = true
+                    newCustom = [...oldCustom, model['bk_obj_id']]
                 }
+                if (isAdd && this.collectedCount >= this.maxCustomNavigationCount) {
+                    this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                    return false
+                }
+                promise = this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.classifyNavigationKey]: newCustom
+                })
                 promise.then(() => {
                     this.$http.cancel('post_searchUsercustom')
                     this.$success(isAdd ? this.$t('Index["添加导航成功"]') : this.$t('Index["取消导航成功"]'))

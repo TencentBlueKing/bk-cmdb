@@ -59,7 +59,7 @@
         },
         computed: {
             title () {
-                return this.type === 'create' ? this.$t('Permission["新增角色"]') : this.$t('Permission["编辑角色"]')
+                return this.type === 'create' ? this.$t('Permission["新建角色"]') : this.$t('Permission["编辑角色"]')
             },
             params () {
                 let params = {
