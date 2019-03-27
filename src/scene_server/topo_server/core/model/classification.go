@@ -81,12 +81,12 @@ func (cli *classification) GetObjects() ([]Object, error) {
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectObjects(context.Background(), cli.params.Header, cond.ToMapStr())
 
 	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request the object controller, err: %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the classification(%s) object, error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+		blog.Errorf("failed to search the classification(%s) object, err: %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
@@ -139,12 +139,12 @@ func (cli *classification) Create() error {
 
 	rsp, err := cli.clientSet.ObjectController().Meta().CreateClassification(context.Background(), cli.params.Header, &cli.cls)
 	if nil != err {
-		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request object controller, err: %s", err.Error())
 		return err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("faield to create classification(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+		blog.Errorf("faield to create classification(%s), err: %s", cli.cls.ClassificationID, rsp.ErrMsg)
 		return cli.params.Err.Error(rsp.Code)
 	}
 
@@ -186,12 +186,12 @@ func (cli *classification) Update(data frtypes.MapStr) error {
 
 		rsp, err := cli.clientSet.ObjectController().Meta().UpdateClassification(context.Background(), item.ID, cli.params.Header, data)
 		if nil != err {
-			blog.Errorf("failed to resuest object controller, error info is %s", err.Error())
+			blog.Errorf("failed to request object controller, err: %s", err.Error())
 			return err
 		}
 
 		if common.CCSuccess != rsp.Code {
-			blog.Errorf("faile to update the classificaiotn(%s), error info is %s", cli.cls.ClassificationID, rsp.ErrMsg)
+			blog.Errorf("faile to update the classificaiotn(%s), err: %s", cli.cls.ClassificationID, rsp.ErrMsg)
 			return cli.params.Err.Error(rsp.Code)
 		}
 
@@ -205,12 +205,12 @@ func (cli *classification) search(cond condition.Condition) ([]metadata.Classifi
 
 	rsp, err := cli.clientSet.ObjectController().Meta().SelectClassifications(context.Background(), cli.params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request the object controller, err: %s", err.Error())
 		return nil, err
 	}
 
 	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
+		blog.Errorf("failed to search the classificaiont, err: %s", rsp.ErrMsg)
 		return nil, cli.params.Err.Error(rsp.Code)
 	}
 
