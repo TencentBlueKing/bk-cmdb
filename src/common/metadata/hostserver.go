@@ -13,10 +13,13 @@
 package metadata
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"net/http"
 	"time"
+	
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 type DeleteHostBatchOpt struct {
@@ -125,8 +128,21 @@ type SearchHost struct {
 func (sh SearchHost) ExtractHostIDs() *[]int64 {
 	hostIDArray := make([]int64, 0)
 	for _, h := range sh.Info {
-		hostIDStr := int64(h["host"].(mapstr.MapStr)[common.BKHostIDField].(float64))
-		hostIDArray = append(hostIDArray, hostIDStr)
+		if _, exist := h["host"]; exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host field.", h)
+			continue
+		}
+		hostID, exist := h["host"].(mapstr.MapStr)[common.BKHostIDField]
+		if exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host.bk_host_id field.", h)
+			continue
+		}
+		id, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.ErrorJSON("unexpected error, host: %s host.bk_host_id field is not integer.", h)
+			continue
+		}
+		hostIDArray = append(hostIDArray, id)
 	}
 	return &hostIDArray
 }
