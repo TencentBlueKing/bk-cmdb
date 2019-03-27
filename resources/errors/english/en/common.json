@@ -40,6 +40,5 @@
     "1199042": "param '%s' should be a fload number",
     "1199043": "The field value check does not pass, %s",
     "1199044": "not all success",
-    "1199045": "the model stopped to use",
     "":""
 }
