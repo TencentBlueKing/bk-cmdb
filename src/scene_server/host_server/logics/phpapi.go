@@ -91,7 +91,6 @@ func (lgc *Logics) UpdateHost(input map[string]interface{}, appID int64, header 
 		return nil, 0, nil
 	}
 
-	blog.V(5).Infof(" input %s")
 	hostCondition := map[string]interface{}{
 		common.BKHostInnerIPField: input["condition"].(map[string]interface{})[common.BKHostInnerIPField],
 		common.BKCloudIDField:     input["condition"].(map[string]interface{})[common.BKCloudIDField],
