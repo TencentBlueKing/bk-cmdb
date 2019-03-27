@@ -119,9 +119,6 @@ const getters = {
             STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
                 navigation.authorized = false
             })
-            // 基础资源->主机/ 权限控制
-            const resourceAuthorized = STATIC_NAVIGATION['bk_basic_resources'].children.find(navigation => navigation.id === 'resource')
-            if (resourceAuthorized.authorized) resourceAuthorized.authorized = false
             const systemConfig = authority['sys_config']
             const backConfig = systemConfig['back_config'] || []
             const globalConfig = systemConfig['global_busi'] || []
@@ -130,6 +127,9 @@ const getters = {
                 const navigation = _getNavigationById(id)
                 navigation.authorized = backConfig.includes(id)
             })
+            // 基础资源->主机/ 权限控制
+            const resourceAuthorized = _getNavigationById('resource')
+            resourceAuthorized.authorized = globalConfig.includes('resource')
         }
         const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
         return navigation.sort((A, B) => A.order - B.order)
