@@ -6,19 +6,19 @@
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
-                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
                     {{$t('ModelManagement["新增模型"]')}}
                 </bk-button>
                 <bk-button type="primary"
                     v-else
                     v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
-                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
                     {{$t('ModelManagement["新增模型"]')}}
                 </bk-button>
                 <bk-button type="default"
-                    :disabled="!authority.includes('update') || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL_GROUP) || modelType === 'disabled'"
                     @click="showGroupDialog(false)">
                     {{$t('ModelManagement["新建分组"]')}}
                 </bk-button>
@@ -46,11 +46,15 @@
                 <div class="group-title">
                     <span>{{classification['bk_classification_name']}}</span>
                     <span class="number">({{classification['bk_objects'].length}})</span>
-                    <template v-if="authority.includes('update') && isEditable(classification)">
+                    <template v-if="isEditable(classification)">
                         <i class="icon-cc-edit text-primary"
-                        @click="showGroupDialog(true, classification)"></i>
+                            v-if="$isAuthorized(OPERATION.G_U_MODEL_GROUP)"
+                            @click="showGroupDialog(true, classification)">
+                        </i>
                         <i class="icon-cc-del text-primary"
-                        @click="deleteGroup(classification)"></i>
+                            v-if="$isAuthorized(OPERATION.G_D_MODEL_GROUP)"
+                            @click="deleteGroup(classification)">
+                        </i>
                     </template>
                 </div>
                 <ul class="model-list clearfix" >
@@ -135,6 +139,7 @@
     import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import {addMainScrollListener, removeMainScrollListener} from '@/utils/main-scroller'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             theModel,
@@ -143,6 +148,7 @@
         },
         data () {
             return {
+                OPERATION,
                 scrollHandler: null,
                 scrollTop: 0,
                 groupDialog: {
@@ -198,12 +204,6 @@
             },
             currentClassifications () {
                 return this.modelType === 'enable' ? this.enableClassifications : this.disabledClassifications
-            },
-            authority () {
-                if (this.isAdminView || this.isBusinessSelected) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
             }
         },
         created () {

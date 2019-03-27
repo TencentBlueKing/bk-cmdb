@@ -2,17 +2,17 @@ import { NAV_COLLECT } from '@/dictionary/nav'
 import {
     G_C_BUSINESS,
     G_U_BUSINESS,
-    G_D_BUSINESS,
-    G_R_BUSINESS
+    G_R_BUSINESS,
+    G_BUSINESS_ARCHIVE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     G_C_BUSINESS,
     G_U_BUSINESS,
-    G_D_BUSINESS
+    G_BUSINESS_ARCHIVE
 }
 
-export default {
+export default [{
     name: 'business',
     path: '/business',
     component: () => import('./index.vue'),
@@ -27,4 +27,14 @@ export default {
             operation: Object.values(OPERATION)
         }
     }
-}
+}, {
+    name: 'businessHistory',
+    path: '/history/biz',
+    component: () => import('./archived.vue'),
+    meta: {
+        auth: {
+            view: '',
+            operation: [G_BUSINESS_ARCHIVE]
+        }
+    }
+}]

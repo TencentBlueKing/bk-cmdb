@@ -8,6 +8,15 @@ import {
     G_D_MODEL
 } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_C_MODEL_GROUP,
+    G_U_MODEL_GROUP,
+    G_D_MODEL_GROUP,
+    G_C_MODEL,
+    G_U_MODEL,
+    G_D_MODEL
+}
+
 export default [{
     name: 'model',
     path: '/model',
@@ -20,14 +29,7 @@ export default [{
         },
         auth: {
             view: '',
-            operation: [
-                G_C_MODEL_GROUP,
-                G_U_MODEL_GROUP,
-                G_D_MODEL_GROUP,
-                G_C_MODEL,
-                G_U_MODEL,
-                G_D_MODEL
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }, {
@@ -41,8 +43,8 @@ export default [{
         auth: {
             view: '',
             operation: [
-                G_U_MODEL,
-                G_D_MODEL
+                OPERATION.G_U_MODEL,
+                OPERATION.G_D_MODEL
             ]
         }
     }

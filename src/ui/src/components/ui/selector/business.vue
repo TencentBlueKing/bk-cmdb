@@ -75,7 +75,8 @@
                 return this.$store.dispatch('objectBiz/searchBusiness', {
                     config: {
                         requestId: 'post_searchBusiness_$ne_disabled',
-                        fromCache: true
+                        fromCache: true,
+                        cancelWhenRouterChange: false
                     }
                 }).then(business => {
                     this.$store.commit('objectBiz/setBusiness', business.info)

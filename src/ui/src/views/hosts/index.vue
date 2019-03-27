@@ -6,6 +6,11 @@
             @on-refresh="handleRefresh">
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
+            delete-disabled
+            :edit-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
+            :save-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
+            :transfer-resource-disabled="!$isAuthorized(OPERATION.B_HOST_TO_RESOURCE)"
+            :transfer-disabled="!$isAuthorized(OPERATION.B_TOPO_TRANSFER_HOST)"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>
@@ -16,6 +21,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbHostsTable from '@/components/hosts/table'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsFilter,
@@ -23,6 +29,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: {
                     biz: [],
                     host: [],
