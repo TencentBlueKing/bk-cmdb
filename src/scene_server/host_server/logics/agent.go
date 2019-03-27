@@ -160,7 +160,9 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 
 	ret["timezone"] = country + "/" + city
 	ret["rcvRate"], ret["sendRate"], err = getSnapNetInfo(js.Get("net").Get("dev"), unitMB)
-	// $dataNetDev = !empty($data['net']['dev']) ? $data['net']['dev'] : array();*/
+	if err != nil {
+		return nil, err
+	}
 	return ret, nil
 
 }
