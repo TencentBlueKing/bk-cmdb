@@ -47,13 +47,17 @@ func (lgc *Logics) GetResoulePoolModuleID(pheader http.Header, condition interfa
 	return result.Data.Info[0].Int64(common.BKModuleIDField)
 }
 
-func (lgc *Logics) GetModuleByModuleID(pheader http.Header, appID, moduleID int64) ([]mapstr.MapStr, error) {
+// GetNormalModuleByModuleID find normal module info by moduleID
+// return only non-predfined modules, idle module, fault etc not return
+func (lgc *Logics) GetNormalModuleByModuleID(pheader http.Header, appID, moduleID int64) ([]mapstr.MapStr, error) {
+	conf := hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data()
+	conf[common.BKDefaultField] = 0
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     1,
 		Sort:      common.BKModuleIDField,
 		Fields:    common.BKModuleIDField,
-		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
+		Condition: conf,
 	}
 
 	result, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, pheader, query)

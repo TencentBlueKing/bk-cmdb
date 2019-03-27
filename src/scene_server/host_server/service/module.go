@@ -49,7 +49,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		return
 	}
 
-	module, err := s.Logics.GetModuleByModuleID(pheader, params.ApplicationID, params.ModuleID)
+	module, err := s.Logics.GetNormalModuleByModuleID(pheader, params.ApplicationID, params.ModuleID)
 	if err != nil {
 		blog.Errorf("add host multiple app module relation, but get module[%v] failed, err: %v", params.ModuleID, err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoModuleSelectFailed)})
@@ -174,7 +174,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	for _, moduleID := range config.ModuleID {
-		module, err := s.Logics.GetModuleByModuleID(pheader, config.ApplicationID, moduleID)
+		module, err := s.Logics.GetNormalModuleByModuleID(pheader, config.ApplicationID, moduleID)
 		if err != nil {
 			blog.Errorf("add host and module relation, but get module with id[%d] failed, err: %v", moduleID, err)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoModuleSelectFailed)})
