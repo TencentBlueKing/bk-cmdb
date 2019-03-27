@@ -378,7 +378,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		// delete relation in default app module
 		_, err := s.Logics.DelSingleHostModuleRelation(ctx, ec, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
-			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
+			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
 			return
 		}
