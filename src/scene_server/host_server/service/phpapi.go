@@ -374,7 +374,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
 		return
 	}
-	blog.V(5).Infof("HostSearchByProperty ApplicationID: %s, SetID: %v\n", appID, setIDArr)
+	blog.V(5).Infof("HostSearchByProperty ApplicationID: %d, SetID: %v\n", appID, setIDArr)
 
 	condition := map[string][]int64{
 		common.BKAppIDField: []int64{appID},

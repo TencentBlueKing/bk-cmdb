@@ -48,7 +48,7 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 	d := &discover{
 		servers: make(map[string]Interface),
 	}
-	for component, _ := range types.AllModule {
+	for component := range types.AllModule {
 		if component == types.CC_MODULE_WEBSERVER {
 			continue
 		}
