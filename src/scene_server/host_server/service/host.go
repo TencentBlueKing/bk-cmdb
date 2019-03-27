@@ -34,15 +34,15 @@ import (
 )
 
 type AppResult struct {
-	Result  bool        `json:result`
-	Code    int         `json:code`
-	Message interface{} `json:message`
-	Data    DataInfo    `json:data`
+	Result  bool        `json:"result"`
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+	Data    DataInfo    `json:"data"`
 }
 
 type DataInfo struct {
-	Count int                      `json:count`
-	Info  []map[string]interface{} `json:info`
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
@@ -68,8 +68,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		iHostIDArr = append(iHostIDArr, iHostID)
 	}
 
-	condition := make(map[string]interface{})
-	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(ownerID).Data()
+	condition := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(ownerID).Data()
 	query := meta.QueryInput{Condition: condition}
 	query.Limit = 1
 	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
@@ -269,7 +268,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: defErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
@@ -330,7 +329,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: defErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
@@ -538,7 +537,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	log := common.KvMap{common.BKContentField: logLastConents, common.BKOpDescField: "update host", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	aResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pheader, log)
 	if err != nil || (err == nil && !aResult.Result) {
-		blog.Errorf("update host batch, but add host[%s] audit failed, err: %v, %v", hostIDs, err, aResult.ErrMsg)
+		blog.Errorf("update host batch, but add host[%v] audit failed, err: %v, %v", hostIDs, err, aResult.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
@@ -615,7 +614,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: defErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return

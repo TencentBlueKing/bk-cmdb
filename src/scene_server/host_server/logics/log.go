@@ -219,7 +219,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 
 		preModule := make([]interface{}, 0)
 		var preApp interface{}
-		for moduleID, _ := range preMap[instID] {
+		for moduleID := range preMap[instID] {
 			preModule = append(preModule, moduleMap[moduleID])
 			preApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID
