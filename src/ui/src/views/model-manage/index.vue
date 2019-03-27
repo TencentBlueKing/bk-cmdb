@@ -4,7 +4,7 @@
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="showModelDialog(false)">
-                {{$t('ModelManagement["新增模型"]')}}
+                {{$t('ModelManagement["新建模型"]')}}
             </bk-button>
             <bk-button type="default"
                 :disabled="!authority.includes('update')"
@@ -103,7 +103,7 @@
             :quick-close="false"
             :is-show.sync="modelDialog.isShow">
             <div slot="content" class="dialog-content">
-                <p class="title">{{$t('ModelManagement["新增模型"]')}}</p>
+                <p class="title">{{$t('ModelManagement["新建模型"]')}}</p>
                 <div class="content clearfix">
                     <div class="content-left" @click="modelDialog.isIconListShow = true">
                         <div class="icon-wrapper">
