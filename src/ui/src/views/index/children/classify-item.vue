@@ -12,7 +12,7 @@
                 <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
-                    v-if="!(model['bk_obj_id'] === 'biz' || model['bk_obj_id'] === 'resource')"
+                    v-if="!(['biz', 'resource'].includes(model['bk_obj_id']))"
                     :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
                     @click.prevent.stop="toggleCustomNavigation(model)">
                 </i>
