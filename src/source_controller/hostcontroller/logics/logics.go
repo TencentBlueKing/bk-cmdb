@@ -145,7 +145,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, ec *eventcli
 	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 	err = lgc.Instance.Table(common.BKTableNameModuleHostConfig).Insert(ctx, moduleHostConfig) //.Insert(common.BKTableNameModuleHostConfig, moduleHostConfig)
 	if err != nil {
-		blog.Errorf("add single host module relation, add module host relation error:", err.Error())
+		blog.Errorf("add single host module relation, add module host relation error: %v", err)
 		return false, err
 	}
 
