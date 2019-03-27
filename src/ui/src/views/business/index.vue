@@ -65,7 +65,7 @@
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
                         :edit-disabled="!$isAuthorized(OPERATION.G_U_BUSINESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.G_D_BUSINESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.G_BUSINESS_ARCHIVE)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>

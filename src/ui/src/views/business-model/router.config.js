@@ -1,6 +1,10 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import { G_SYSTEM_TOPOLOGY } from '@/dictionary/auth'
 
+export const OPERATION = {
+    G_SYSTEM_TOPOLOGY
+}
+
 export default {
     name: 'businessModel',
     path: '/model/business',
@@ -12,8 +16,8 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: G_SYSTEM_TOPOLOGY,
-            operation: []
+            view: '',
+            operation: Object.values(OPERATION)
         }
     }
 }

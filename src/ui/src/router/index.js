@@ -17,6 +17,7 @@ import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
 import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
+import topology from '@/views/topology/router.config'
 
 Vue.use(Router)
 
@@ -53,7 +54,7 @@ const router = new Router({
         ...statusRouter,
         index,
         audit,
-        business,
+        ...business,
         businessModel,
         customQuery,
         eventpush,
@@ -63,7 +64,8 @@ const router = new Router({
         modelAssociation,
         modelTopology,
         process,
-        resource
+        resource,
+        topology
     ]
 })
 

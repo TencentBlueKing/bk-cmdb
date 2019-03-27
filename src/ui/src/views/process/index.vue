@@ -3,13 +3,13 @@
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
-                :disabled="!table.checked.length || !authority.includes('update')" 
+                :disabled="!table.checked.length || !$isAuthorized(OPERATION.B_U_PROCESS)" 
                 @click="handleMultipleEdit">
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
             <bk-button class="process-btn" type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.B_C_PROCESS)"
                 @click="handleCreate">
                 {{$t("ProcessManagement['新增进程']")}}
             </bk-button>
@@ -37,36 +37,36 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
+                        :edit-disabled="!$isAuthorized(OPERATION.B_U_PROCESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.B_D_PROCESS)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update'] ? 'B_U_PROCESS' : 'B_C_PROCESS')"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
+                        :save-disabled="!$isAuthorized(OPERATION.B_U_PROCESS)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
                 <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
-                        :authority="authority"
                         :processId="attribute.inst.details['bk_process_id']"
-                        :bizId="bizId"
-                    ></v-module>
+                        :bizId="bizId">
+                    </v-module>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
@@ -83,6 +83,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
     import vModule from './module'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
@@ -90,6 +91,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 slider: {
                     show: false,
@@ -120,8 +122,7 @@
                     checked: [],
                     defaultSort: '-bk_process_id',
                     sort: '-bk_process_id'
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {

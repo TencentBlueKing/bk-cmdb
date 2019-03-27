@@ -3,7 +3,7 @@
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
                 <bk-button class="edit-button" type="primary"
-                    :disabled="!authority.includes('update')"
+                    :disabled="!$isAuthorized(OPERATION.G_U_MODEL)"
                     @click="editTopo">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
@@ -19,7 +19,6 @@
                 <i class="bk-icon icon-plus" @click="zoomIn" v-tooltip="$t('ModelManagement[\'放大\']')"></i>
                 <i class="bk-icon icon-minus" @click="zoomOut" v-tooltip="$t('ModelManagement[\'缩小\']')"></i>
                 <i class="icon-cc-setting"
-                    v-if="authority.includes('update')"
                     v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
@@ -282,12 +281,6 @@
                     })
                     return classify
                 })
-            },
-            authority () {
-                if (this.isAdminView || this.isBusinessSelected) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
             }
         },
         watch: {
@@ -760,7 +753,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({nodes: {fixed: true}})
-                if (this.authority.includes('update')) {
+                if (this.$isAuthorized(OPERATION.G_U_MODEL)) {
                     this.initPosition()
                 }
                 this.addListener()

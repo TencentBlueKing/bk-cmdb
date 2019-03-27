@@ -1,15 +1,11 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     G_SYSTEM_TOPOLOGY,
-    G_C_RELATION,
-    G_U_RELATION,
-    G_D_RELATION
+    G_U_MODEL
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_C_RELATION,
-    G_U_RELATION,
-    G_D_RELATION
+    G_U_MODEL
 }
 
 export default {
@@ -23,7 +19,7 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: G_SYSTEM_TOPOLOGY,
+            view: '',
             operation: Object.values(OPERATION)
         }
     }

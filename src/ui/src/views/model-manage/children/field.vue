@@ -2,7 +2,7 @@
     <div class="model-field-wrapper">
         <div>
             <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !authority.includes('update')"
+                :disabled="isReadOnly || !updateAuth"
                 @click="createField">
                 {{$t('ModelManagement["新建字段"]')}}
             </bk-button>
@@ -63,12 +63,14 @@
 <script>
     import theFieldDetail from './field-detail'
     import { mapActions, mapGetters } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theFieldDetail
         },
         data () {
             return {
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEditField: false,
@@ -132,15 +134,13 @@
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.objId)) {
-                    return []
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(OPERATION.G_U_MODEL)
             }
         },
         watch: {
@@ -150,7 +150,7 @@
         },
         created () {
             this.initFieldList()
-            if (!this.authority.includes('update')) {
+            if (!this.updateAuth) {
                 this.table.header.pop()
             }
         },
@@ -160,7 +160,7 @@
                 'deleteObjectAttribute'
             ]),
             isFieldEditable (item) {
-                if (this.isReadOnly) {
+                if (this.isReadOnly || this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {

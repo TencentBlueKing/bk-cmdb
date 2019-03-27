@@ -1,29 +1,34 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/nav'
 import {
-    B_R_HOST,
+    B_C_TOPO,
+    B_U_TOPO,
+    B_D_TOPO,
+    B_TOPO_TRANSFER_HOST,
     B_U_HOST,
-    B_HOST_TO_RESOURCE,
-    B_TOPO_TRANSFER_HOST
+    B_HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
+    B_C_TOPO,
+    B_U_TOPO,
+    B_D_TOPO,
+    B_TOPO_TRANSFER_HOST,
     B_U_HOST,
-    B_HOST_TO_RESOURCE,
-    B_TOPO_TRANSFER_HOST
+    B_HOST_TO_RESOURCE
 }
 
 export default {
-    name: 'hosts',
-    path: '/hosts',
+    name: 'topology',
+    path: '/topology',
     component: () => import('./index.vue'),
     meta: {
         menu: {
-            id: 'hosts',
-            i18n: 'Nav["主机查询"]',
+            id: 'topology',
+            i18n: 'Nav["业务拓扑"]',
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {
-            view: B_R_HOST,
+            view: '',
             operation: Object.values(OPERATION)
         }
     }

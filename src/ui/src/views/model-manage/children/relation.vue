@@ -1,7 +1,7 @@
 <template>
     <div class="model-relation-wrapper">
         <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !authority.includes('update')"
+            :disabled="isReadOnly || !updateAuth"
             @click="createRelation">
             {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
@@ -68,6 +68,7 @@
 <script>
     import theRelationDetail from './relation-detail'
     import { mapGetters, mapActions } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theRelationDetail
@@ -124,19 +125,17 @@
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
                 if (cantEdit.includes(this.$route.params.modelId)) {
-                    return []
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(OPERATION.G_U_MODEL)
             }
         },
         created () {
-            if (!this.authority.includes('update')) {
+            if (!this.updateAuth) {
                 this.table.header.pop()
             }
             this.searchRelationList()

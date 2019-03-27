@@ -2,20 +2,20 @@
 // B_(C/R/U/D) 对应的CRUD权限
 
 // 模型分组
-export const B_C_MODEL_GROUP = 'bizModelGroup.create'
-export const B_U_MODEL_GROUP = 'bizModelGroup.edit'
-export const B_D_MODEL_GROUP = 'bizModelGroup.delete'
+export const B_C_MODEL_GROUP = 'modelAttributeGroup.create'
+export const B_U_MODEL_GROUP = 'modelAttributeGroup.edit'
+export const B_D_MODEL_GROUP = 'modelAttributeGroup.delete'
 
 // 模型
-export const B_C_MODEL = 'bizModel.create'
-export const B_U_MODEL = 'bizModel.edit'
-export const B_D_MODEL = 'bizModel.delete'
+export const B_C_MODEL = 'model.create'
+export const B_U_MODEL = 'model.edit'
+export const B_D_MODEL = 'model.delete'
 
 // 实例
-export const B_C_INST = 'bizInstance.create'
-export const B_U_INST = 'bizInstance.edit'
-export const B_D_INST = 'bizInstance.delete'
-export const B_R_INST = 'bizInstance.get'
+export const B_C_INST = 'modelInstance.create'
+export const B_U_INST = 'modelInstance.edit'
+export const B_D_INST = 'modelInstance.delete'
+export const B_R_INST = 'modelInstance.findMany'
 
 // 动态分组
 export const B_C_CUSTOM_QUERY = 'dynamicGrouping.create'
@@ -24,19 +24,20 @@ export const B_D_CUSTOM_QUERY = 'dynamicGrouping.delete'
 export const B_R_CUSTOM_QUERY = 'dynamicGrouping.findMany'
 
 // 进程管理
-export const B_C_PROCESS = 'bizProcessInstance.create'
-export const B_U_PROCESS = 'bizProcessInstance.edit'
-export const B_D_PROCESS = 'bizProcessInstance.delete'
-export const B_R_PROCESS = 'bizProcessInstance.get'
-export const B_PROCESS_BIND_MODULE = 'bizProcessInstance.bindModule'
-export const B_PROCESS_SEARCH_MODULE = 'bizProcessInstance.bindModuleQuery'
+export const B_C_PROCESS = 'process.create'
+export const B_U_PROCESS = 'process.edit'
+export const B_D_PROCESS = 'process.delete'
+export const B_R_PROCESS = 'process.get'
+export const B_PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
+export const B_PROCESS_UNBIND_MODULE = 'process.unboundModelToProcess'
+export const B_PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
 // 业务拓扑
-export const B_C_TOPO = 'bizTopoInstance.create'
-export const B_U_TOPO = 'bizTopoInstance.edit'
-export const B_D_TOPO = 'bizTopoInstance.delete'
-export const B_R_TOPO = 'bizTopoInstance.get'
-export const B_TOPO_TRANSFER_HOST = 'bizTopoInstance.hostTransfer'
+export const B_C_TOPO = 'mainlineInstanceTopology.create'
+export const B_U_TOPO = 'mainlineInstanceTopology.edit'
+export const B_D_TOPO = 'mainlineInstanceTopology.delete'
+export const B_R_TOPO = 'mainlineInstanceTopology.findMany'
+export const B_TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
 
 // 主机管理
 export const B_U_HOST = 'bizHostInstance.edit'
@@ -70,8 +71,8 @@ export const G_D_RELATION = 'sysAssociationType.delete'
 // 业务
 export const G_C_BUSINESS = 'business.create'
 export const G_U_BUSINESS = 'business.update'
-export const G_D_BUSINESS = 'business.delete'
 export const G_R_BUSINESS = 'business.findMany'
+export const G_BUSINESS_ARCHIVE = 'business.archive'
 
 // 主机
 export const G_C_HOST = 'sysHostInstance.create'

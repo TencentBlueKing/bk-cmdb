@@ -4,8 +4,18 @@ import {
     B_C_PROCESS,
     B_U_PROCESS,
     B_D_PROCESS,
-    B_PROCESS_BIND_MODULE
+    B_PROCESS_BIND_MODULE,
+    B_PROCESS_UNBIND_MODULE
 } from '@/dictionary/auth'
+
+export const OPERATION = {
+    B_R_PROCESS,
+    B_C_PROCESS,
+    B_U_PROCESS,
+    B_D_PROCESS,
+    B_PROCESS_BIND_MODULE,
+    B_PROCESS_UNBIND_MODULE
+}
 
 export default {
     name: 'process',
@@ -19,12 +29,7 @@ export default {
         },
         auth: {
             view: B_R_PROCESS,
-            operation: [
-                B_C_PROCESS,
-                B_U_PROCESS,
-                B_D_PROCESS,
-                B_PROCESS_BIND_MODULE
-            ]
+            operation: Object.values(OPERATION)
         }
     }
 }

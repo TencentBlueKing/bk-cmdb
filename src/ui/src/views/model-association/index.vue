@@ -112,15 +112,6 @@
             }
         },
         computed: {
-            ...mapGetters('objectModel', [
-                'activeModel'
-            ]),
-            isReadOnly () {
-                if (this.activeModel) {
-                    return this.activeModel['bk_ispaused']
-                }
-                return false
-            },
             searchParams () {
                 let params = {
                     page: {

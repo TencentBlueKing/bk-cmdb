@@ -17,7 +17,7 @@
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="canAddLevel(model)"
+                    v-if="createAuth && canAddLevel(model)"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -34,7 +34,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
-
+    import { OPERATION } from './router.config.js'
     const NODE_MARGIN = 62
 
     export default {
@@ -43,6 +43,7 @@
         },
         data () {
             return {
+                OPERATION,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
                 innerModel: ['biz', 'set', 'module', 'host'],
@@ -53,7 +54,10 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView'])
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
+            createAuth () {
+                return this.$isAuthorized(OPERATION.G_SYSTEM_TOPOLOGY)
+            }
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
