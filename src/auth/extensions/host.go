@@ -356,6 +356,9 @@ func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, 
 	return nil
 }
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
+	if len(hosts) == 0 {
+		return nil
+	}
 	// extract business id
 	bizID, err := am.extractBusinessIDFromHosts(ctx, header, hosts...)
 	if err != nil {
@@ -368,6 +371,9 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
+	if len(hostIDs) == 0 {
+		return nil
+	}
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
