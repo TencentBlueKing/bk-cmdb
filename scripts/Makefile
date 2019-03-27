@@ -16,7 +16,7 @@ ARCH?=$(shell uname -m)
 BUILDTIME?=$(shell date +%Y-%m-%dT%T%z)
 GITHASH?=$(shell git rev-parse HEAD)
 # BRANCH?=$(shell git rev-parse --abbrev-ref HEAD)
-BRANCH=$(shell name=$$(git symbolic-ref -q --short HEAD); \
+BRANCH?=$(shell name=$$(git symbolic-ref -q --short HEAD); \
 if [[ -z $${name} ]]; then \
     tag=$$(git describe --all --tags --exact-match 2>/dev/null | awk -F '/' '{print $$NF}'); \
     branch=$$(git branch -a --contains $${tag} | grep -v "HEAD" | awk -F '/' '{print $$NF}'); \
