@@ -228,7 +228,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 		curModule := make([]interface{}, 0)
 		var curApp interface{}
 
-		for moduleID, _ := range curMap[instID] {
+		for moduleID := range curMap[instID] {
 			curModule = append(curModule, moduleMap[moduleID])
 			curApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID

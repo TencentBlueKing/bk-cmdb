@@ -213,12 +213,12 @@ func (lgc *Logics) EnterIP(pheader http.Header, ownerID string, appID, moduleID 
 		}
 		bl, hasErr := lgc.IsHostExistInApp(appID, hostID, pheader)
 		if nil != hasErr {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", appID, hostID, hasErr.Error())
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%d}, error:%s", appID, hostID, hasErr.Error())
 			return ccErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 
 		}
 		if false == bl {
-			blog.Errorf("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}", appID, hostID)
+			blog.Errorf("Host does not belong to the current application; error, params:{appid:%d, hostid:%d}", appID, hostID)
 			return ccErr.Errorf(common.CCErrHostNotINAPP, hostID)
 		}
 
