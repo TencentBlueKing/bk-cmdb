@@ -28,15 +28,16 @@ import (
 )
 
 var (
-	createObjectInstanceRegexp    = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/?$`)
-	deleteObjectInstanceRegexp    = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	updateObjectInstanceRegexp    = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
-	searchObjectInstanceRegexp    = regexp.MustCompile(`.*/inst/search/[^\s/]+/[^\s/]+/?$`)
-	searchObjectInstAndAssoRegexp = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
-	instSearchRegexp              = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
-	getInstRegexp                 = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/[0-9]+/?$`)
-	exportObjectInstanceRegexp    = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/export/?$`)
-	importObjectInstanceRegexp    = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/import/?$`)
+	createObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/?$`)
+	deleteObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	deleteObjectInstanceBatchRegexp = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/batch/?$`)
+	updateObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	searchObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/search/[^\s/]+/[^\s/]+/?$`)
+	searchObjectInstAndAssoRegexp   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
+	instSearchRegexp                = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	getInstRegexp                   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/[0-9]+/?$`)
+	exportObjectInstanceRegexp      = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/export/?$`)
+	importObjectInstanceRegexp      = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/import/?$`)
 )
 
 // validModelConfigPrivi valid model inst privilege
@@ -77,6 +78,9 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 		objName = pathArr[len(pathArr)-2]
 
 	case exportObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-2]
+
+	case deleteObjectInstanceBatchRegexp.MatchString(pathStr) && method == http.MethodDelete:
 		objName = pathArr[len(pathArr)-2]
 
 	}
