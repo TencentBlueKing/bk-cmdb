@@ -7,10 +7,10 @@
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
             delete-disabled
-            :edit-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
-            :save-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
-            :transfer-resource-disabled="!$isAuthorized(OPERATION.B_HOST_TO_RESOURCE)"
-            :transfer-disabled="!$isAuthorized(OPERATION.B_TOPO_TRANSFER_HOST)"
+            :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
+            :transfer-disabled="!$isAuthorized(OPERATION.TOPO_TRANSFER_HOST)"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>

@@ -2,7 +2,7 @@
     <div class="push-wrapper">
         <div class="btn-wrapper clearfix">
             <bk-button type="primary"
-                :disabled="!$isAuthorized(OPERATION.G_C_EVENT)"
+                :disabled="!$isAuthorized(OPERATION.C_EVENT)"
                 @click="createPush">
                 {{$t('EventPush["新增推送"]')}}
             </bk-button>
@@ -24,13 +24,13 @@
                 </template>
                 <template slot="setting" slot-scope="{ item }">
                     <span class="text-primary mr20"
-                        v-if="$isAuthorized(OPERATION.G_U_EVENT)"
+                        v-if="$isAuthorized(OPERATION.U_EVENT)"
                         @click.stop="editPush(item)">
                         {{$t('Common["编辑"]')}}
                     </span>
                     <span class="text-primary disabled mr20" v-else>{{$t('Common["编辑"]')}}</span>
                     <span class="text-danger"
-                        v-if="$isAuthorized(OPERATION.G_D_EVENT)"
+                        v-if="$isAuthorized(OPERATION.D_EVENT)"
                         @click.stop="deleteConfirm(item)">
                         {{$t('Common["删除"]')}}
                     </span>
@@ -41,7 +41,7 @@
                     <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
                     <bk-button class="process-btn"
                         type="primary"
-                        :disabled="!$isAuthorized(OPERATION.G_C_EVENT)"
+                        :disabled="!$isAuthorized(OPERATION.C_EVENT)"
                         @click="createPush">
                         {{$t("EventPush['新增推送']")}}
                     </bk-button>

@@ -1,15 +1,15 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    B_C_CUSTOM_QUERY,
-    B_U_CUSTOM_QUERY,
-    B_D_CUSTOM_QUERY,
-    B_R_CUSTOM_QUERY
+    C_CUSTOM_QUERY,
+    U_CUSTOM_QUERY,
+    D_CUSTOM_QUERY,
+    R_CUSTOM_QUERY
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    B_C_CUSTOM_QUERY,
-    B_U_CUSTOM_QUERY,
-    B_D_CUSTOM_QUERY
+    C_CUSTOM_QUERY,
+    U_CUSTOM_QUERY,
+    D_CUSTOM_QUERY
 }
 
 const path = '/custom-query'
@@ -27,7 +27,7 @@ export default {
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {
-            view: B_R_CUSTOM_QUERY,
+            view: R_CUSTOM_QUERY,
             operation: Object.values(OPERATION)
         }
     }

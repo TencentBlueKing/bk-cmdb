@@ -2,7 +2,7 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!$isAuthorized(OPERATION.G_C_BUSINESS) || !isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_BUSINESS) || !isAdminView"
                 @click="handleCreate">
                 {{$t("Inst['立即创建']")}}
             </bk-button>
@@ -64,8 +64,8 @@
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
-                        :edit-disabled="!$isAuthorized(OPERATION.G_U_BUSINESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.G_BUSINESS_ARCHIVE)"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -84,7 +84,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :disabled="!$isAuthorized(OPERATION.G_U_BUSINESS)"
+                        :disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -177,9 +177,9 @@
             saveDisabled () {
                 const type = this.attribute.type
                 if (type === 'create') {
-                    return this.$isAuthorized(this.OPERATION.G_C_BUSINESS)
+                    return this.$isAuthorized(this.OPERATION.C_BUSINESS)
                 } else if (type === 'update') {
-                    return this.$isAuthorized(this.OPERATION.G_U_BUSINESS)
+                    return this.$isAuthorized(this.OPERATION.U_BUSINESS)
                 }
                 return true
             }

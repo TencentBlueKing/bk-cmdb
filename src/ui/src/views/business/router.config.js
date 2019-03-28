@@ -1,15 +1,15 @@
 import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
-    G_C_BUSINESS,
-    G_U_BUSINESS,
-    G_R_BUSINESS,
-    G_BUSINESS_ARCHIVE
+    C_BUSINESS,
+    U_BUSINESS,
+    R_BUSINESS,
+    BUSINESS_ARCHIVE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_C_BUSINESS,
-    G_U_BUSINESS,
-    G_BUSINESS_ARCHIVE
+    C_BUSINESS,
+    U_BUSINESS,
+    BUSINESS_ARCHIVE
 }
 
 const businessPath = '/business'
@@ -28,7 +28,7 @@ export default [{
             parent: NAV_BASIC_RESOURCE
         },
         auth: {
-            view: G_R_BUSINESS,
+            view: R_BUSINESS,
             operation: Object.values(OPERATION)
         }
     }
@@ -39,7 +39,7 @@ export default [{
     meta: {
         auth: {
             view: '',
-            operation: [G_BUSINESS_ARCHIVE]
+            operation: [BUSINESS_ARCHIVE]
         }
     }
 }]

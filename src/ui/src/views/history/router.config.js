@@ -1,5 +1,6 @@
 import {
-    D_R_MODEL
+    R_INST,
+    GET_MODEL_INST_AUTH_META
 } from '@/dictionary/auth'
 
 export default {
@@ -8,7 +9,8 @@ export default {
     component: () => import('./index.vue'),
     meta: {
         auth: {
-            view: D_R_MODEL,
+            view: R_INST,
+            meta: GET_MODEL_INST_AUTH_META,
             operation: []
         },
         dynamicParams: ['objId']

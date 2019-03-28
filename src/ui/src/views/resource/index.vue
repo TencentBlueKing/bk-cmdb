@@ -19,21 +19,21 @@
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
-            :edit-disabled="!$isAuthorized(OPERATION.G_U_HOST)"
-            :delete-disabled="!$isAuthorized(OPERATION.G_D_HOST)"
-            :save-disabled="!$isAuthorized(OPERATION.G_U_HOST)"
+            :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :delete-disabled="!$isAuthorized(OPERATION.D_HOST)"
+            :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
                     <bk-button class="options-button" type="primary" style="margin-left: 0"
-                        :disabled="!$isAuthorized(OPERATION.G_C_HOST)"
+                        :disabled="!$isAuthorized(OPERATION.C_HOST)"
                         @click="importInst.show = true">
                         {{$t('HostResourcePool[\'导入主机\']')}}
                     </bk-button>
                     <cmdb-selector class="options-business-selector"
                         :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.G_HOST_ASSIGN)"
+                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.HOST_ASSIGN)"
                         :list="business"
                         :auto-select="false"
                         setting-key="bk_biz_id"
@@ -42,12 +42,12 @@
                         @on-selected="handleAssignHosts">
                     </cmdb-selector>
                     <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.G_U_HOST)"
+                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_HOST)"
                         @click="handleMultipleEdit">
                         {{$t('BusinessTopology[\'修改\']')}}
                     </bk-button>
                     <bk-button class="options-button options-button-delete" type="default"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.G_D_HOST)"
+                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_HOST)"
                         @click="handleMultipleDelete">
                         {{$t('Common[\'删除\']')}}
                     </bk-button>

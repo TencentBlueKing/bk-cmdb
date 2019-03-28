@@ -140,7 +140,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.G_U_MODEL)
+                return editable && this.$isAuthorized(OPERATION.U_MODEL)
             }
         },
         watch: {

@@ -20,6 +20,11 @@ import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 
+import {
+    GET_AUTH_META,
+    GET_MODEL_INST_AUTH_META
+} from '@/dictionary/auth'
+
 Vue.use(Router)
 
 const statusRouter = [
@@ -39,7 +44,7 @@ const statusRouter = [
 ]
 
 const router = new Router({
-    mode: 'history',
+    mode: 'hash',
     routes: [
         {
             path: '*',
@@ -53,6 +58,7 @@ const router = new Router({
             }
         },
         ...statusRouter,
+        ...generalModel,
         index,
         audit,
         ...business,
@@ -66,33 +72,30 @@ const router = new Router({
         modelTopology,
         process,
         resource,
-        topology,
-        generalModel
+        topology
     ]
 })
 
-const getAuthMeta = (auth, to) => {
-    if (typeof auth === 'function') {
-        const dynamicParams = to.meta.dynamicParams || []
-        auth = auth.apply(null, dynamicParams.map(param => to.params[param]))
+const getAuthMeta = (type, to, meta) => {
+    if (meta === GET_MODEL_INST_AUTH_META) {
+        const models = router.app.$store.getters['objectModelClassify/models']
+        return GET_MODEL_INST_AUTH_META(to.params.objId, type, models)
     }
-    const [type, action] = auth.split('.')
-    return { type, action }
+    return GET_AUTH_META(type)
 }
 
 const getAuth = to => {
     const auth = to.meta.auth || {}
     const view = auth.view
     const operation = Array.isArray(auth.operation) ? auth.operation : []
-    const authTypes = view ? [view, ...operation] : [...operation]
-    const authParams = authTypes.map(auth => {
-        const authMeta = getAuthMeta(auth, to)
-        return {
-            resource_type: authMeta.type,
-            action: authMeta.action
-        }
-    })
-    return router.app.$store.dispatch('auth/getOperationAuth', authParams)
+    const operationAuthMeta = operation.map(type => getAuthMeta(type, to, auth.meta))
+    if (view) {
+        operationAuthMeta.push(getAuthMeta(view, to, auth.meta))
+    }
+    if (operationAuthMeta.length) {
+        return router.app.$store.dispatch('auth/getOperationAuth', operationAuthMeta)
+    }
+    return Promise.resolve([])
 }
 
 const isViewAuthorized = to => {
@@ -101,8 +104,9 @@ const isViewAuthorized = to => {
     if (!view) {
         return true
     }
-    const authMeta = getAuthMeta(view, to)
-    const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.type, authMeta.action)
+    const authMeta = getAuthMeta(view, to, auth.meta)
+    console.log(authMeta)
+    const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.resource_type, authMeta.action)
     return viewAuth || true
 }
 

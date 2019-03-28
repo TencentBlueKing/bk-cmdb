@@ -61,10 +61,10 @@
         },
         computed: {
             bindModuleAuth () {
-                return this.$isAuthorized(OPERATION.B_PROCESS_BIND_MODULE)
+                return this.$isAuthorized(OPERATION.PROCESS_BIND_MODULE)
             },
             unbindModuleAuth () {
-                return this.$isAuthorized(OPERATION.B_PROCESS_UNBIND_MODULE)
+                return this.$isAuthorized(OPERATION.PROCESS_UNBIND_MODULE)
             }
         },
         methods: {

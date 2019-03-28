@@ -1,14 +1,14 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
-    G_C_RELATION,
-    G_U_RELATION,
-    G_D_RELATION
+    C_RELATION,
+    U_RELATION,
+    D_RELATION
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_C_RELATION,
-    G_U_RELATION,
-    G_D_RELATION
+    C_RELATION,
+    U_RELATION,
+    D_RELATION
 }
 
 const path = '/model/association'

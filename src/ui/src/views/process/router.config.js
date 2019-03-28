@@ -1,20 +1,20 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    B_R_PROCESS,
-    B_C_PROCESS,
-    B_U_PROCESS,
-    B_D_PROCESS,
-    B_PROCESS_BIND_MODULE,
-    B_PROCESS_UNBIND_MODULE
+    R_PROCESS,
+    C_PROCESS,
+    U_PROCESS,
+    D_PROCESS,
+    PROCESS_BIND_MODULE,
+    PROCESS_UNBIND_MODULE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    B_R_PROCESS,
-    B_C_PROCESS,
-    B_U_PROCESS,
-    B_D_PROCESS,
-    B_PROCESS_BIND_MODULE,
-    B_PROCESS_UNBIND_MODULE
+    R_PROCESS,
+    C_PROCESS,
+    U_PROCESS,
+    D_PROCESS,
+    PROCESS_BIND_MODULE,
+    PROCESS_UNBIND_MODULE
 }
 
 const path = '/process'
@@ -32,7 +32,7 @@ export default {
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {
-            view: B_R_PROCESS,
+            view: R_PROCESS,
             operation: Object.values(OPERATION)
         }
     }

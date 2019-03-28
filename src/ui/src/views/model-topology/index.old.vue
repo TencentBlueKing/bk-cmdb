@@ -3,7 +3,7 @@
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
                 <bk-button class="edit-button" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.G_U_MODEL)"
+                    :disabled="!$isAuthorized(OPERATION.U_MODEL)"
                     @click="editTopo">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>
@@ -753,7 +753,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({nodes: {fixed: true}})
-                if (this.$isAuthorized(OPERATION.G_U_MODEL)) {
+                if (this.$isAuthorized(OPERATION.U_MODEL)) {
                     this.initPosition()
                 }
                 this.addListener()

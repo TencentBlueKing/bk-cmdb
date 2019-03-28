@@ -1,15 +1,15 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    B_R_HOST,
-    B_U_HOST,
-    B_HOST_TO_RESOURCE,
-    B_TOPO_TRANSFER_HOST
+    R_HOST,
+    U_HOST,
+    HOST_TO_RESOURCE,
+    TOPO_TRANSFER_HOST
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    B_U_HOST,
-    B_HOST_TO_RESOURCE,
-    B_TOPO_TRANSFER_HOST
+    U_HOST,
+    HOST_TO_RESOURCE,
+    TOPO_TRANSFER_HOST
 }
 
 const path = '/hosts'
@@ -27,7 +27,7 @@ export default {
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {
-            view: B_R_HOST,
+            view: R_HOST,
             operation: Object.values(OPERATION)
         }
     }

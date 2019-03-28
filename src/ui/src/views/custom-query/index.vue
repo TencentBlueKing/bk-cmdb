@@ -2,7 +2,7 @@
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
-                :disabled="!$isAuthorized(OPERATION.B_C_CUSTOM_QUERY)"
+                :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
                 @click="showUserAPISlider('create')">
                 {{$t("CustomQuery['新增查询']")}}
             </bk-button>
