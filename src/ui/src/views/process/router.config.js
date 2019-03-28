@@ -1,4 +1,4 @@
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/nav'
+import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     B_R_PROCESS,
     B_C_PROCESS,
@@ -17,14 +17,18 @@ export const OPERATION = {
     B_PROCESS_UNBIND_MODULE
 }
 
+const path = '/process'
+
 export default {
     name: 'process',
-    path: '/process',
+    path: path,
     component: () => import('./index.vue'),
     meta: {
         menu: {
             id: 'process',
             i18n: 'Nav["进程管理"]',
+            path: path,
+            order: 3,
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {

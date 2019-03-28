@@ -1,4 +1,4 @@
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/nav'
+import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     B_C_TOPO,
     B_U_TOPO,
@@ -17,14 +17,18 @@ export const OPERATION = {
     B_HOST_TO_RESOURCE
 }
 
+const path = '/topology'
+
 export default {
     name: 'topology',
-    path: '/topology',
+    path: path,
     component: () => import('./index.vue'),
     meta: {
         menu: {
             id: 'topology',
             i18n: 'Nav["业务拓扑"]',
+            path: path,
+            order: 2,
             parent: NAV_BUSINESS_RESOURCE
         },
         auth: {

@@ -1,4 +1,3 @@
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
 import {
     D_C_MODEL,
     D_R_MODEL,
@@ -6,23 +5,28 @@ import {
     D_D_MODEL
 } from '@/dictionary/auth'
 
+const prefix = '/general-model/'
+const param = 'objId'
+
+export const GET_MODEL_PATH = modelId => {
+    return prefix + modelId
+}
+
+export const OPERATION = {
+    D_C_MODEL,
+    D_U_MODEL,
+    D_D_MODEL
+}
+
 export default {
     name: 'generalModel',
-    path: '/general-model/:objId',
+    path: `${prefix}:${param}`,
     component: () => import('./index.vue'),
     meta: {
-        menu: {
-            id: 'generalModel',
-            parent: NAV_COLLECT
-        },
         auth: {
             view: D_R_MODEL,
-            operation: [
-                D_C_MODEL,
-                D_U_MODEL,
-                D_D_MODEL
-            ]
+            operation: Object.values(OPERATION)
         },
-        dynamicParams: ['objId']
+        dynamicParams: [param]
     }
 }

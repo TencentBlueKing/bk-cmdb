@@ -176,6 +176,7 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -185,6 +186,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {
