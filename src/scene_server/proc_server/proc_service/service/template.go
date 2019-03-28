@@ -83,7 +83,6 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcCreateTemplateFail)})
 	}
 
-	var logContents []auditoplog.AuditLogExt
 	logContent := auditoplog.AuditLogExt{
 		ID: templateID,
 		Content: meta.Content{
@@ -92,7 +91,6 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 			Headers: tempFields,
 		},
 	}
-	logContents = append(logContents, logContent)
 
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "create template", common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
@@ -137,7 +135,7 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 	}
 	logger := ps.Logics.NewTemplate(pHeader, ownerID)
 	if err := logger.WithPrevious(templateID, tempFields); err != nil {
-		blog.Errorf("delete template, but get temp[%s] pre data for audit failed, err: %v", templateID, err)
+		blog.Errorf("delete template, but get temp[%d] pre data for audit failed, err: %v", templateID, err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
 	}
@@ -158,7 +156,7 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "delete template", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
 	if err != nil || !result.Result {
-		blog.Errorf("delete config template failed, but [%s] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
+		blog.Errorf("delete config template failed, but [%d] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}

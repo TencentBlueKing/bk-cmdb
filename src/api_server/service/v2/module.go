@@ -71,18 +71,18 @@ func (s *Service) getModulesByApp(req *restful.Request, resp *restful.Response) 
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, params)
 	if err != nil {
-		blog.Errorf("getModulesByApp   error:%v, input:%+v,rid", err, formData, rid)
+		blog.Errorf("getModulesByApp   error:%v, input:%#v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
-		blog.Errorf("getModulesByApp  http response errror.  err code:%s, err msg:%s, input:%+v,rid", result.Code, result.ErrMsg, formData, rid)
+		blog.Errorf("getModulesByApp  http response errror.  err code:%s, err msg:%s, input:%#v,rid:%s", result.Code, result.ErrMsg, formData, rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	resDataV2, err := converter.ResToV2ForModuleMapList(result.Data)
 	if err != nil {
-		blog.Errorf("convert module res to v2 error:%v, input:%+v,rid:%s", err, formData, rid)
+		blog.Errorf("convert module res to v2 error:%v, input:%#v,rid:%s", err, formData, rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

@@ -58,14 +58,14 @@ func (phpapi *PHPAPI) UpdateHostMain(hostCondition, data map[string]interface{},
 	})
 
 	if nil != err {
-		return "", errors.New(fmt.Sprintf("GetConfigByCond error:%v", err))
+		return "", fmt.Errorf("GetConfigByCond error:%v", err)
 	}
 
 	lenOfConfigData := len(configData)
 
 	if lenOfConfigData == 0 {
 		blog.Errorf("not expected config lenth: appid:%d, hostid:%d", appID, hostIDArr[0])
-		return "", errors.New(fmt.Sprintf("not expected config length: %d", lenOfConfigData))
+		return "", fmt.Errorf("not expected config length: %d", lenOfConfigData)
 	}
 
 	hostID := configData[0][common.BKHostIDField]
@@ -117,7 +117,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(hostID, appID int64, moduleIDs []int64
 
 	res, err := phpapi.logic.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), phpapi.header, data)
 	if nil != err {
-		blog.Errorf("AddModuleHostConfig http do error:url:%s, error:%s", err.Error())
+		blog.Errorf("AddModuleHostConfig http do error. cond:%#v, error:%s", data, err.Error())
 		return err
 	}
 
