@@ -12,7 +12,6 @@ export default {
             view: R_INST,
             meta: GET_MODEL_INST_AUTH_META,
             operation: []
-        },
-        dynamicParams: ['objId']
+        }
     }
 }

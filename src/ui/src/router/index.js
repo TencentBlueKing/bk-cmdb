@@ -105,9 +105,8 @@ const isViewAuthorized = to => {
         return true
     }
     const authMeta = getAuthMeta(view, to, auth.meta)
-    console.log(authMeta)
     const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.resource_type, authMeta.action)
-    return viewAuth || true
+    return viewAuth
 }
 
 const cancelRequest = () => {
