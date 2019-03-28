@@ -247,7 +247,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 	input.Condition = condition
 
 	var dataInfo []mapstr.MapStr
-	cnt := 0
+	var cnt int
 	switch objID {
 	case common.BKInnerObjIDHost:
 		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(context.Background(), forward, input)

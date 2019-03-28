@@ -166,7 +166,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 			_, ok = moduleNameCountMap[moduleName]
 			if ok {
 				// already existed. The number of occurrentces plus one
-				moduleNameCountMap[moduleName] += 1
+				moduleNameCountMap[moduleName]++
 				continue
 			} else {
 				moduleNameCountMap[moduleName] = 1

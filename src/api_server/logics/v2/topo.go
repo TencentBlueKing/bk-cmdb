@@ -161,6 +161,10 @@ func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[str
 	resMap := make(map[string]interface{})
 
 	err = json.Unmarshal([]byte(res), &resMap)
+	if err != nil {
+		blog.Errorf("json Unmarshal data:%s, err:%s", res, err.Error())
+		return nil, err
+	}
 	if resMap["result"].(bool) {
 
 		resMapData, ok := resMap["data"].(map[string]interface{})
@@ -374,7 +378,7 @@ func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (b
 		return false, err
 	}
 	if false == result.Result {
-		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", result.ErrMsg)
+		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s ", result.ErrMsg)
 		return false, fmt.Errorf(result.ErrMsg)
 	}
 

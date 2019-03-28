@@ -26,13 +26,14 @@ import (
 func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) errors.CCError {
 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
 	hostLockResult, err := lgc.CoreAPI.HostController().Host().LockHost(ctx, header, input)
 	if nil != err {
-		blog.Errorf("lock host, http request error, error:%s,logID:%s", err.Error())
+		blog.Errorf("lock host, http request error, error:%s,logID:%s", err.Error(), rid)
 		return defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {
-		blog.Errorf("lock host, add host lock  error, error code:%d error message:%s,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("lock host, add host lock  error, error code:%d error message:%s,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, rid)
 		return defErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
 	}
 	return nil
@@ -44,7 +45,7 @@ func (lgc *Logics) UnlockHost(ctx context.Context, header http.Header, input *me
 
 	hostUnlockResult, err := lgc.CoreAPI.HostController().Host().UnlockHost(ctx, header, input)
 	if nil != err {
-		blog.Errorf("unlock host, http request error, error:%s,logID:%s", err.Error())
+		blog.Errorf("unlock host, http request error, error:%s,logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostUnlockResult.Result {
@@ -59,7 +60,7 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, header http.Header, input 
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	hostLockResult, err := lgc.CoreAPI.HostController().Host().QueryHostLock(ctx, header, input)
 	if nil != err {
-		blog.Errorf("query lock host, http request error, error:%s,logID:%s", err.Error())
+		blog.Errorf("query lock host, http request error, error:%s,logID:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {

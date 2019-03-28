@@ -560,8 +560,8 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 	if "" != resDataV3 {
 		resDataArrV3, ok := resDataV3.([]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForHostDataList not array data :%+v", data)
-			return nil, errors.New(fmt.Sprintf("data is not array %+v", resDataV3))
+			blog.Errorf("ResToV2ForHostDataList not array data :%#v", data)
+			return nil, fmt.Errorf("data is not array %#v", resDataV3)
 		}
 		var operators []string
 		var bakOperators []string
@@ -942,29 +942,10 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 			protocal = ""
 		}
 	}
-	bindIP, ok := itemMap[common.BKBindIP].(string)
-	if false == ok {
-		bindIP = ""
-	} else {
-		switch bindIP {
-		case "1":
-			bindIP = "127.0.0.1"
-		case "2":
-			bindIP = "0.0.0.0"
-		case "3":
-			bindIP = defLang.Language("apiv2_process_bind_innerip") //"第一内网IP"
-		case "4":
-			bindIP = defLang.Language("apiv2_process_bind_outerip") //"第一公网IP"
-		default:
-			bindIP = ""
-		}
-	}
 
 	intAtuotimeGap, err := util.GetIntByInterface(itemMap["auto_time_gap"])
 	atuotimeGap := ""
-	if nil != err {
-		atuotimeGap = ""
-	} else {
+	if err == nil {
 		atuotimeGap = fmt.Sprintf("%d", intAtuotimeGap)
 	}
 

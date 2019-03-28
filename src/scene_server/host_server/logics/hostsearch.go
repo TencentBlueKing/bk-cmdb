@@ -315,7 +315,7 @@ func (sh *searchHost) fetchHostCloudCacheInfo() (map[int64]*InstNameAsst, error)
 		cloudIDMap[cloudID] = true
 	}
 	var cloudIDArr []int64
-	for cloudID, _ := range cloudIDMap {
+	for cloudID := range cloudIDMap {
 		cloudIDArr = append(cloudIDArr, cloudID)
 	}
 	queryInput := &metadata.QueryInput{}

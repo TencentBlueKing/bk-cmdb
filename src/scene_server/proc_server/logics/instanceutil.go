@@ -109,8 +109,6 @@ func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Hea
 		}
 	}
 
-	return nil
-
 }
 
 // setProcInstDetallStatusUnregister modify process instance status to unregister in cmdb table
