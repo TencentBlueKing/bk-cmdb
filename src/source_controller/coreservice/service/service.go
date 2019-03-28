@@ -190,6 +190,16 @@ func (s *coreService) sendCompleteResponse(resp *restful.Response, errorCode int
 
 }
 
+func (s *coreService)addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc)  {
+	actionObject := action{
+		Method:                     method,
+		Path:                       path,
+		HandlerFunc:                handlerFunc,
+		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+	}
+	s.actions = append(s.actions, actionObject)
+}
+
 // Actions return the all actions
 func (s *coreService) Actions() []*httpserver.Action {
 
