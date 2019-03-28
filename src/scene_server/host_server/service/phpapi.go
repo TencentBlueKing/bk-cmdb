@@ -880,31 +880,6 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 	}
 }
 
-func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
-
-	// 获取AppID
-	pathParams := req.PathParameters()
-	appID, err := util.GetInt64ByInterface(pathParams["appid"])
-	if nil != err {
-		blog.Errorf("GetAgentStatus error :%s", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
-		return
-	}
-
-	res, err := s.Logics.GetAgentStatus(appID, &s.Config.Gse, req.Request.Header)
-	if nil != err {
-		blog.Errorf("GetAgentStatus error :%v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
-		return
-	}
-	resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     res,
-	})
-
-}
-
 func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful.Response) {
 
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
