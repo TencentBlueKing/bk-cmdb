@@ -98,6 +98,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	ownerID := c.Param(common.BKOwnerIDField)
 	objID := c.Param(common.BKObjIDField)
 	instIDStr := c.PostForm(common.BKInstIDField)
+	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
 	inputJson := c.PostForm(metadata.BKMetadata)
 	metaInfo := metadata.Metadata{}
@@ -122,7 +123,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	file = xlsx.NewFile()
 
-	fields, err := s.Logics.GetObjFieldIDs(objID, nil, pheader, metaInfo)
+	customFields := logics.GetCustomFields(nil, customFieldsStr)
+	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
 	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())

@@ -160,7 +160,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	err = cli.UpdateObjByCondition(ctx, db, objType, data, condition)
 	if err != nil {
 		blog.Errorf("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 

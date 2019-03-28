@@ -116,6 +116,10 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	if ok {
 		f.msg.RequestID = opt.RequestID
+		f.msg.TxnID = opt.TxnID
+	}
+	if f.TxnID != "" {
+		f.msg.TxnID = f.TxnID
 	}
 
 	// call

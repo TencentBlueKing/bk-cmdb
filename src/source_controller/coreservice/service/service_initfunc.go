@@ -92,6 +92,7 @@ func (s *coreService) initAssociationKind() {
 func (s *coreService) initModelAssociation() {
 
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/modelassociation", HandlerFunc: s.CreateModelAssociation})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/mainlinemodelassociation", HandlerFunc: s.CreateMainlineModelAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/modelassociation", HandlerFunc: s.SetModelAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/modelassociation", HandlerFunc: s.UpdateModelAssociation})
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/modelassociation", HandlerFunc: s.SearchModelAssociation})
@@ -116,4 +117,5 @@ func (s *coreService) initService() {
 	s.initModelAssociation()
 	s.initModelInstances()
 	s.initInstanceAssociation()
+	s.initDataSynchronize()
 }

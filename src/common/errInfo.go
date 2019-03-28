@@ -353,7 +353,12 @@ const (
 
 	CCErrTopoMulueIDNotfoundFailed = 1101080
 	CCErrTopoBkAppNotAllowedDelete = 1101081
-
+	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
+	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+	CCErrorTopoAssociationKindInconsistent = 1101083
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1101084
 	// objectcontroller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
@@ -535,6 +540,8 @@ const (
 	CCErrHostGetResourceFail = 1110053
 	// CCErrHostModuleNotExist get %s module not found
 	CCErrHostModuleNotExist = 1110054
+	// CCErrDeleteHostFromBusiness Delete the host under the business
+	CCErrDeleteHostFromBusiness = 1110055
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -576,6 +583,11 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// synchronize data coreservice  11139xx
+	CCErrCoreServiceSyncError = 1113900
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
@@ -596,6 +608,10 @@ const (
 
 	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
 	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
+
+	// synchronize_server 1114xxx
+
+	CCErrSynchronizeError = 1114001
 
 	/** TODO: 以下错误码需要改造 **/
 

@@ -12,10 +12,12 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/mongodb/mongo-go-driver/bson/bsoncodec"
 	"github.com/mongodb/mongo-go-driver/mongo/options"
 	"github.com/mongodb/mongo-go-driver/mongo/readpref"
 	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/mongodb/mongo-go-driver/x/bsonx/bsoncore"
 	"github.com/mongodb/mongo-go-driver/x/mongo/driver/session"
 	"github.com/mongodb/mongo-go-driver/x/mongo/driver/topology"
 	"github.com/mongodb/mongo-go-driver/x/mongo/driver/uuid"
@@ -36,7 +38,7 @@ func Find(
 	pool *session.Pool,
 	registry *bsoncodec.Registry,
 	opts ...*options.FindOptions,
-) (command.Cursor, error) {
+) (*BatchCursor, error) {
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {
@@ -167,12 +169,13 @@ func Find(
 		cmd.Opts = append(cmd.Opts, sortElem)
 	}
 
-	c, err := cmd.RoundTrip(ctx, desc, ss, conn)
+	res, err := cmd.RoundTrip(ctx, desc, conn)
 	if err != nil {
 		closeImplicitSession(cmd.Session)
+		return nil, err
 	}
 
-	return c, err
+	return NewBatchCursor(bsoncore.Document(res), cmd.Session, cmd.Clock, ss.Server, cmd.CursorOpts...)
 }
 
 // legacyFind handles the dispatch and execution of a find operation against a pre-3.2 server.
@@ -183,7 +186,7 @@ func legacyFind(
 	ss *topology.SelectedServer,
 	conn connection.Connection,
 	opts ...*options.FindOptions,
-) (command.Cursor, error) {
+) (*BatchCursor, error) {
 	query := wiremessage.Query{
 		FullCollectionName: cmd.NS.DB + "." + cmd.NS.Collection,
 	}
@@ -269,12 +272,15 @@ func legacyFind(
 		cursorBatchSize = int32(*query.BatchSize)
 	}
 
-	c, err := ss.BuildLegacyCursor(cmd.NS, reply.CursorID, reply.Documents, cursorLimit, cursorBatchSize)
-	if err != nil {
-		return nil, err
+	// TODO(GODRIVER-617): When the wiremessage package is updated, we should ensure we can get all
+	// of the documents as a single slice instead of having to reslice.
+	ds := new(bsoncore.DocumentSequence)
+	ds.Style = bsoncore.SequenceStyle
+	for _, doc := range reply.Documents {
+		ds.Data = append(ds.Data, doc...)
 	}
 
-	return c, nil
+	return NewLegacyBatchCursor(cmd.NS, reply.CursorID, ds, cursorLimit, cursorBatchSize, ss.Server)
 }
 
 func createLegacyOptionsDoc(fo *options.FindOptions, registry *bsoncodec.Registry) (bsonx.Doc, error) {

@@ -66,14 +66,19 @@ func (s *topoService) SetConfig(cfg options.Config, engin *backbone.Engine) {
 	s.engin = engin
 
 	var dbErr error
-	s.tx, dbErr = mongo.NewWithDiscover(engin.
-		Discover.
+	tx, dbErr := mongo.NewWithDiscover(engin.
+		ServiceManageInterface.
 		TMServer().
 		GetServers, cfg.Mongo)
 	if dbErr != nil {
 		blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
 		return
 	}
+
+	if s.tx != nil {
+		s.tx.Close()
+	}
+	s.tx = tx
 }
 
 // SetOperation set the operation

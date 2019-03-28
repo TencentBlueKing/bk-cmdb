@@ -100,6 +100,6 @@ func (cli *Attribute) ToMapStr() mapstr.MapStr {
 
 // ObjAttDes 对象模型属性
 type ObjAttDes struct {
-	Attribute         `json:",inline"`
+	Attribute         `json:",inline" bson:",inline"`
 	PropertyGroupName string `json:"bk_property_group_name"`
 }

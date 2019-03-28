@@ -16,7 +16,6 @@ import (
 	"plugin"
 	"strings"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -39,7 +38,7 @@ var CacheCli *redis.Client
 var LoginPlg *plugin.Plugin
 
 //ValidLogin   valid the user login status
-func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
+func ValidLogin(config options.Config) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		pathArr := strings.Split(c.Request.URL.Path, "/")
@@ -74,7 +73,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
-				servers, err := disc.ApiServer().GetServers()
+				servers, err := Engine.Discovery().ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
 					blog.Fatal("api server addr not right")
 				}
