@@ -217,42 +217,42 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		exactResourceIndex := 0
 		anyResourceIndex := 0
 		for ressindex := range ress {
-			if permit.IsPermit(&ress[ressindex].ResourceAttribute) {
-				blog.Debug("permited")
+			resourceAttribute := &ress[ressindex].ResourceAttribute
+			if permit.ShouldSkipAuthorize(resourceAttribute) {
+				blog.V(5).Infof("skip authorization for: %+v", resourceAttribute)
 				ress[ressindex].Decision.Authorized = true
+				continue
+			}
+			blog.Debug("query permit %+v", ress[ressindex])
+			rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.Fatalf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
+				continue
+			}
+
+			actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.ErrorJSON("adaptor resource action failed, resource: %s, err: %s", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
+				continue
+			}
+
+			resourceAction := ResourceAction{
+				ActionID:     actionID,
+				ResourceInfo: *rscInfo,
+			}
+			blog.Debug("query param %+v", resourceAction)
+			if len(rscInfo.ResourceID) > 0 {
+				exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].exactResourceIndex = exactResourceIndex
+				exactResourceIndex++
 			} else {
-				blog.Debug("query permit %+v", ress[ressindex])
-				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
-				if err != nil {
-					blog.Fatalf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
-					ress[ressindex].Decision.Authorized = false
-					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
-					continue
-				}
-
-				actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
-				if err != nil {
-					blog.Fatalf("adaptor resource action failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
-					ress[ressindex].Decision.Authorized = false
-					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
-					continue
-				}
-
-				resourceAction := ResourceAction{
-					ActionID:     actionID,
-					ResourceInfo: *rscInfo,
-				}
-				blog.Debug("query param %+v", resourceAction)
-				if len(rscInfo.ResourceID) > 0 {
-					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
-					ress[ressindex].exactResourceIndex = exactResourceIndex
-					exactResourceIndex++
-				} else {
-					anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
-					ress[ressindex].anyResourceIndex = anyResourceIndex
-					anyResourceIndex++
-				}
-
+				anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].anyResourceIndex = anyResourceIndex
+				anyResourceIndex++
 			}
 		}
 
@@ -302,12 +302,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].anyResourceIndex, len(batchresult))
 					continue
 				}
-				if batchresult[ress[ressindex].anyResourceIndex].IsPass {
-					ress[ressindex].Authorized = true
-				} else {
+				if batchresult[ress[ressindex].anyResourceIndex].IsPass == false {
 					ress[ressindex].Authorized = false
 					ress[ressindex].Reason = "permission deny"
+					continue
 				}
+				ress[ressindex].Authorized = true
 			}
 		}
 		exactResourceInfo.ResourceActions = nil
@@ -326,7 +326,7 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 	if len(rs) == 0 {
 		return errors.New("no resource to be registered")
 	}
-	
+
 	registerInfo, err := ac.DryRunRegisterResource(ctx, rs...)
 	if err != nil {
 		return err
