@@ -143,6 +143,27 @@ const (
 	TypeStreamClose
 )
 
+func (t MessageType) String() string {
+	switch t {
+	case TypeRequest:
+		return "TypeRequest"
+	case TypeResponse:
+		return "TypeResponse"
+	case TypeStream:
+		return "TypeStream"
+	case TypeError:
+		return "TypeError"
+	case TypeClose:
+		return "TypeClose"
+	case TypePing:
+		return "TypePing"
+	case TypeStreamClose:
+		return "TypeStreamClose"
+	default:
+		return "UNKNOW"
+	}
+}
+
 const (
 	readBufferSize  = 8096
 	writeBufferSize = 8096

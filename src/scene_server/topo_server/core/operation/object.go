@@ -128,6 +128,10 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 				continue
 			}
 
+			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
+				continue
+			}
+
 			if targetAttr.PropertyID == common.BKChildStr || targetAttr.PropertyID == common.BKInstParentStr {
 				continue
 			}

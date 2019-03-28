@@ -51,12 +51,12 @@ func (s *set) hasHost(bizID int64, setIDS []int64) (bool, error) {
 
 	rsp, err := s.client.HostController().Module().GetModulesHostConfig(context.Background(), s.params.Header, cond)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
 		return false, s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to search the host module configures, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set]  failed to search the host module configures, err: %s", rsp.ErrMsg)
 		return false, s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -72,12 +72,12 @@ func (s *set) deleteModules(bizID int64, setIDS []int64) error {
 	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDModule, s.params.Header, cond.ToMapStr())
 
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", err.Error())
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to delete module by the condition(%#v), error info is %s", cond.ToMapStr(), rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set]  failed to delete module by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -92,12 +92,12 @@ func (s *set) UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Con
 
 	rsp, err := s.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, input)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", rsp.ErrMsg)
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to update the set, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set]  failed to update the set, err: %s", err.Error())
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -109,7 +109,7 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 	// checkout host
 	existsHost, err := s.hasHost(bizID, setIDS)
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] faield to check host, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] faield to check host, err: %s", err.Error())
 		return err
 	}
 
@@ -130,12 +130,12 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 
 	rsp, err := s.client.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, cond.ToMapStr())
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] faield to check host, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] faield to check host, err: %s", err.Error())
 		return err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set]  failed to delete the sets by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
+		blog.Errorf("[compatiblev2-set]  failed to delete the sets by the condition(%#v), err: %s", cond.ToMapStr(), rsp.ErrMsg)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -146,12 +146,12 @@ func (s *set) DeleteSetHost(bizID int64, cond condition.Condition) error {
 	rsp, err := s.client.ObjectController().OpenAPI().DeleteSetHost(context.Background(), s.params.Header, cond.ToMapStr())
 
 	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, error info is %s", err.Error())
+		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s", err.Error())
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, error info is %s", rsp.ErrMsg)
+		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s", rsp.ErrMsg)
 		return s.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	return nil

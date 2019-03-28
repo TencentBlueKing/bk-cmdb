@@ -18,14 +18,14 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/auditcontroller/app"
 	"configcenter/src/source_controller/auditcontroller/app/options"
-
-	"github.com/spf13/pflag"
 )
 
 func main() {

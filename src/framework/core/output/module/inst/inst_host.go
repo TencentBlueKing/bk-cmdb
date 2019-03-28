@@ -243,7 +243,7 @@ func (cli *host) search() ([]model.Attribute, []types.MapStr, error) {
 			cond.Field(attrItem.GetID()).Eq(attrVal)
 		}
 	}
-	//log.Infof("the condition:%#v", cond.ToMapStr())
+
 	// search by condition
 	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().SearchHost(cond)
 	return attrs, items, err
@@ -270,7 +270,7 @@ func (cli *host) IsExists() (bool, error) {
 		cond.Field(attrItem.GetID()).Eq(cli.datas[attrItem.GetID()])
 
 	}
-	//log.Infof("host search condition:%s %d", string(cond.ToMapStr().ToJSON()), 0)
+
 	items, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().SearchHost(cond)
 	if nil != err {
 		return false, err
@@ -279,14 +279,12 @@ func (cli *host) IsExists() (bool, error) {
 	return 0 != len(items), nil
 }
 func (cli *host) Create() error {
-	//log.Infof("the create host:%#v", cli.datas)
-	//log.Infof("create the exists:%s %d", string(cli.datas.ToJSON()), 0)
 	if exists, err := cli.IsExists(); nil != err {
 		return err
 	} else if exists {
 		return nil
 	}
-	//log.Infof("the create host:%#v", cli.datas)
+
 	ids, err := client.GetClient().CCV3(client.Params{SupplierAccount: cli.target.GetSupplierAccount()}).Host().CreateHostBatch(cli.bizID, cli.moduleIDS, cli.datas)
 	if nil != err {
 		return err

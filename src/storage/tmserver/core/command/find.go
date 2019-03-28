@@ -39,6 +39,7 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 
 	msg := types.OPFindOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err
@@ -50,7 +51,14 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 	opt.Limit = int64(msg.Limit)
 	//opt.Sort = msg.Sort
 
-	err := d.dbProxy.Collection(msg.Collection).Find(ctx, msg.Selector, &opt, &reply.Docs)
+	var targetCol mongodb.CollectionInterface
+	if nil != ctx.Session {
+		targetCol = ctx.Session.Collection(msg.Collection)
+	} else {
+		targetCol = d.dbProxy.Collection(msg.Collection)
+	}
+
+	err := targetCol.Find(ctx, msg.Selector, &opt, &reply.Docs)
 	if nil == err {
 		reply.Success = true
 	} else {
@@ -74,6 +82,7 @@ func (d *findAndModify) Execute(ctx core.ContextParams, decoder rpc.Request) (*t
 
 	msg := types.OPFindAndModifyOperation{}
 	reply := &types.OPReply{}
+	reply.RequestID = ctx.Header.RequestID
 	if err := decoder.Decode(&msg); nil != err {
 		reply.Message = err.Error()
 		return reply, err

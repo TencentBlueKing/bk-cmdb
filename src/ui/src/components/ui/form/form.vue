@@ -1,46 +1,41 @@
 <template>
     <div class="form-layout">
-        <div class="form-groups">
+        <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
                     :key="groupIndex"
                     v-if="checkGroupAvailable(groupedProperties[groupIndex])">
-                    <h3 class="group-name">{{group['bk_group_name']}}</h3>
-                    <ul class="property-list clearfix">
-                        <li class="property-item fl"
-                            v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                            v-if="checkEditable(property)"
-                            :key="propertyIndex">
-                            <div class="property-name">
-                                <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
-                                <i class="property-name-tooltips bk-icon icon-info-circle-shape" v-if="property['placeholder']" v-tooltip="htmlEncode(property['placeholder'])"></i>
-                            </div>
-                            <div class="property-value">
-                                <component class="form-component"
-                                    v-if="property['bk_property_type'] === 'enum'"
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="checkDisabled(property)"
-                                    :options="property.option || []"
-                                    :data-vv-name="property['bk_property_id']"
-                                    :data-vv-as="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                 <component class="form-component"
-                                    v-else
-                                    :is="`cmdb-form-${property['bk_property_type']}`"
-                                    :class="{error: errors.has(property['bk_property_id'])}"
-                                    :disabled="checkDisabled(property)"
-                                    :data-vv-name="property['bk_property_id']"
-                                    :data-vv-as="property['bk_property_name']"
-                                    v-validate="getValidateRules(property)"
-                                    v-model.trim="values[property['bk_property_id']]">
-                                </component>
-                                <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
-                            </div>
-                        </li>
-                    </ul>
+                    <cmdb-collapse
+                        :label="group['bk_group_name']"
+                        :collapse.sync="groupState[group['bk_group_id']]">
+                        <ul class="property-list clearfix">
+                            <li class="property-item fl"
+                                v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
+                                v-if="checkEditable(property)"
+                                :key="propertyIndex">
+                                <div class="property-name">
+                                    <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
+                                    <i class="property-name-tooltips icon-cc-tips"
+                                        v-if="property['placeholder']"
+                                        v-tooltip="htmlEncode(property['placeholder'])">
+                                    </i>
+                                </div>
+                                <div class="property-value">
+                                    <component class="form-component"
+                                        :is="`cmdb-form-${property['bk_property_type']}`"
+                                        :class="{error: errors.has(property['bk_property_id'])}"
+                                        :disabled="checkDisabled(property)"
+                                        :options="property.option || []"
+                                        :data-vv-name="property['bk_property_id']"
+                                        :data-vv-as="property['bk_property_name']"
+                                        v-validate="getValidateRules(property)"
+                                        v-model.trim="values[property['bk_property_id']]">
+                                    </component>
+                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </cmdb-collapse>
                 </div>
             </template>
         </div>
@@ -98,7 +93,10 @@
             return {
                 values: {},
                 refrenceValues: {},
-                scrollbar: false
+                scrollbar: false,
+                groupState: {
+                    none: true
+                }
             }
         },
         computed: {
@@ -132,10 +130,10 @@
             this.initValues()
         },
         mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
             checkScrollbar () {
@@ -208,7 +206,16 @@
                 this.$validator.validateAll().then(result => {
                     if (result) {
                         this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                    } else {
+                        this.uncollapseGroup()
                     }
+                })
+            },
+            uncollapseGroup () {
+                this.errors.items.forEach(item => {
+                    const property = this.properties.find(property => property['bk_property_id'] === item.field)
+                    const group = property['bk_property_group']
+                    this.groupState[group] = false
                 })
             },
             handleCancel () {
@@ -275,7 +282,7 @@
                 width: 16px;
                 height: 16px;
                 font-size: 16px;
-                color: #ffb400;
+                color: #c3cdd7;
             }
             .property-value{
                 height: 36px;

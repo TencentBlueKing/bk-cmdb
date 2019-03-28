@@ -112,13 +112,13 @@ func newNode(objID string) *Node {
 
 // result: map[parentkey]map[childkey]node
 func (n *Node) walk(walkfunc func(node *Node) error) error {
-	if err := walkfunc(n); nil != err {
-		return err
-	}
 	for _, child := range n.Childs {
 		if err := child.walk(walkfunc); nil != err {
 			return err
 		}
+	}
+	if err := walkfunc(n); nil != err {
+		return err
 	}
 	return nil
 }

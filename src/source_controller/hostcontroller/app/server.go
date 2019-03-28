@@ -18,9 +18,6 @@ import (
 	"os"
 	"time"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -45,51 +42,23 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	discover, err := discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("connect zookeeper [%s] failed: %v", op.ServConf.RegDiscover, err)
-	}
-
-	c := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c, discover)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	coreService := new(service.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_HOSTCONTROLLER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	hostCtrl := new(HostController)
 	hostCtrl.Service = coreService
 	coreService.Logics = &logics.Logics{Instance: nil}
 
-	hostCtrl.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_HOSTCONTROLLER,
-		op.ServConf.ExConfig,
-		hostCtrl.onHostConfigUpdate,
-		discover,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: hostCtrl.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+
+	hostCtrl.Core = engine
 
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
@@ -105,6 +74,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	coreService.Logics.Engine = coreService.Core
+	if err := backbone.StartServer(ctx, coreService.Core, restful.NewContainer().Add(coreService.WebService())); err != nil {
+		return err
+	}
 	select {
 	case <-ctx.Done():
 		break
@@ -138,6 +110,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 
 	h.Service.Instance = instance
 	h.Service.Logics.Instance = instance
+	h.Service.Logics.Cache = cache
 	h.Service.Logics.EventC = ec
 
 	h.Cache = cache

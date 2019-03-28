@@ -98,5 +98,11 @@
     "1101072":"the association inst is not exist",
     "1101073":"the  inst to asst  is not exist",
     "1101074":"the inst has association",
-  "": "" 
+	"1101080":"topo module not found",
+	"1101081":"delete topo app forbbiden",
+	"1101082": "bk_mainline association type can't use in this scene",
+	"1101083":"association type inconsistent with caller method",
+	"1101084": "the model stopped to use",
+
+	"": ""
 }

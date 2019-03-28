@@ -14,7 +14,6 @@ package discovery
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -24,7 +23,7 @@ import (
 	"configcenter/src/framework/core/errors"
 )
 
-func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (Interface, error) {
+func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
 		return nil, eventErr
@@ -41,7 +40,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (Interfa
 }
 
 type server struct {
-	sync.Mutex
+	sync.RWMutex
 	index        int
 	path         string
 	servers      []string
@@ -49,8 +48,8 @@ type server struct {
 }
 
 func (s *server) GetServers() ([]string, error) {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	num := len(s.servers)
 	if num == 0 {
@@ -64,6 +63,17 @@ func (s *server) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+// IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
+func (s *server) IsMaster(strAddrs string) bool {
+	s.RLock()
+	defer s.RUnlock()
+	if 0 < len(s.servers) {
+		return s.servers[0] == strAddrs
+	}
+	return false
+
 }
 
 func (s *server) run() {
@@ -103,9 +113,8 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		scheme := "http"
-		if server.Scheme == "https" {
-			scheme = "https"
+		if server.Scheme != "https" {
+			server.Scheme = "http"
 		}
 
 		if server.Port == 0 {
@@ -118,7 +127,7 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		host := fmt.Sprintf("%s://%s:%d", scheme, server.IP, server.Port)
+		host := server.Address()
 		newSvr = append(newSvr, host)
 	}
 

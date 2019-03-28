@@ -145,6 +145,20 @@ func (asst *association) CreateModelAssociation(ctx context.Context, h http.Head
 	return
 }
 
+func (asst *association) CreateMainlineModelAssociation(ctx context.Context, h http.Header, input *metadata.CreateModelAssociation) (resp *metadata.CreatedOneOptionResult, err error) {
+	resp = new(metadata.CreatedOneOptionResult)
+	subPath := "/create/mainlinemodelassociation"
+
+	err = asst.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
 func (asst *association) SetModelAssociation(ctx context.Context, h http.Header, input *metadata.SetModelAssociation) (resp *metadata.SetOptionResult, err error) {
 	resp = new(metadata.SetOptionResult)
 	subPath := "/set/modelassociation"

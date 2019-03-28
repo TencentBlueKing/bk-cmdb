@@ -449,3 +449,25 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 		Data:     result,
 	})
 }
+
+func (s *Service) TransferHostToDefaultModuleConfig(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	input := new(meta.TransferHostToDefaultModuleConfig)
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("move host to resourece pool failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err := s.Logics.TransferHostToDefaultModuleConfig(ctx, input, header)
+	if err != nil {
+		blog.Errorf("TransferHostToDefaultModuleConfig error. err:%v, input:%#v,rid:%s", err, input, rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(meta.NewSuccessResp(nil))
+}

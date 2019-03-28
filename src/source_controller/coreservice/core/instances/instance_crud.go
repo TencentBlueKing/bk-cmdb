@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -33,7 +35,10 @@ func (m *instanceManager) save(ctx core.ContextParams, objID string, inputParam 
 	if !util.IsInnerObject(objID) {
 		inputParam[common.BKObjIDField] = objID
 	}
+	ts := time.Now()
 	inputParam.Set(common.BKOwnerIDField, ctx.SupplierAccount)
+	inputParam.Set(common.CreateTimeField, ts)
+	inputParam.Set(common.LastTimeField, ts)
 	err = m.dbProxy.Table(tableName).Insert(ctx, inputParam)
 	return id, err
 }
@@ -47,6 +52,8 @@ func (m *instanceManager) update(ctx core.ContextParams, objID string, data maps
 	if nil != err {
 		return cnt, err
 	}
+	ts := time.Now()
+	data.Set(common.LastTimeField, ts)
 	data.Remove(common.BKObjIDField)
 	err = m.dbProxy.Table(tableName).Update(ctx, cond, data)
 	return cnt, err

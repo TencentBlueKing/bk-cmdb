@@ -30,7 +30,7 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
 	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
@@ -51,6 +51,8 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client)
 	go func() {
 		chErr <- ih.StartHandleInsts()
 	}()
+
+	go cleanOutdateEvents(cache)
 
 	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
 	go func() {
@@ -88,7 +90,7 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 	}
 
 	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 
@@ -103,7 +105,7 @@ type DistHandler struct {
 }
 
 type TxnHandler struct {
-	rc          *rpc.Client
+	rc          rpc.Client
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
