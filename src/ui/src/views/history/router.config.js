@@ -7,9 +7,6 @@ export default {
     path: '/history/:objId',
     component: () => import('./index.vue'),
     meta: {
-        menu: {
-            id: 'history'
-        },
         auth: {
             view: D_R_MODEL,
             operation: []

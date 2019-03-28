@@ -1,4 +1,4 @@
-import { NAV_MODEL_MANAGEMENT } from '@/dictionary/nav'
+import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
     G_C_MODEL_GROUP,
     G_U_MODEL_GROUP,
@@ -17,14 +17,18 @@ export const OPERATION = {
     G_D_MODEL
 }
 
+const modelPath = '/model'
+
 export default [{
     name: 'model',
-    path: '/model',
+    path: modelPath,
     component: () => import('./index.vue'),
     meta: {
         menu: {
             id: 'model',
             i18n: 'Nav["模型"]',
+            path: modelPath,
+            order: 1,
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
@@ -37,9 +41,6 @@ export default [{
     path: '/model/details/:modelId',
     component: () => import('./children/index.vue'),
     meta: {
-        menu: {
-            id: 'modelDetails'
-        },
         auth: {
             view: '',
             operation: [

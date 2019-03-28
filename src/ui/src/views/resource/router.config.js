@@ -1,4 +1,4 @@
-import { NAV_COLLECT } from '@/dictionary/nav'
+import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
     G_C_HOST,
     G_U_HOST,
@@ -14,15 +14,19 @@ export const OPERATION = {
     G_HOST_ASSIGN
 }
 
+const path = '/resource'
+
 export default {
     name: 'resource',
-    path: '/resource',
+    path: path,
     component: () => import('./index.vue'),
     meta: {
         menu: {
             id: 'resource',
             i18n: 'Nav["主机"]',
-            parent: NAV_COLLECT
+            path: path,
+            order: 2,
+            parent: NAV_BASIC_RESOURCE
         },
         auth: {
             view: G_R_HOST,

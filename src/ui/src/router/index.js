@@ -18,6 +18,7 @@ import modelTopology from '@/views/model-topology/router.config'
 import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
+import generalModel from '@/views/general-model/router.config'
 
 Vue.use(Router)
 
@@ -65,7 +66,8 @@ const router = new Router({
         modelTopology,
         process,
         resource,
-        topology
+        topology,
+        generalModel
     ]
 })
 

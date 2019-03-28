@@ -1,4 +1,4 @@
-import { NAV_COLLECT } from '@/dictionary/nav'
+import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
     G_C_BUSINESS,
     G_U_BUSINESS,
@@ -12,15 +12,20 @@ export const OPERATION = {
     G_BUSINESS_ARCHIVE
 }
 
+const businessPath = '/business'
+const historyPath = '/history/biz'
+
 export default [{
     name: 'business',
-    path: '/business',
+    path: businessPath,
     component: () => import('./index.vue'),
     meta: {
         menu: {
             id: 'business',
             i18n: 'Nav["业务"]',
-            parent: NAV_COLLECT
+            path: businessPath,
+            order: 1,
+            parent: NAV_BASIC_RESOURCE
         },
         auth: {
             view: G_R_BUSINESS,
@@ -29,7 +34,7 @@ export default [{
     }
 }, {
     name: 'businessHistory',
-    path: '/history/biz',
+    path: historyPath,
     component: () => import('./archived.vue'),
     meta: {
         auth: {

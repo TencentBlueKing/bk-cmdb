@@ -13,40 +13,40 @@
                     {{$t('Nav["后台管理"]')}}
                 </span>
             </div>
-            <ul class="classify-list">
-                <li class="classify-item"
-                    v-for="(classify, index) in navigations"
+            <ul class="menu-list">
+                <li class="menu-item"
+                    v-for="(menu, index) in menus"
                     :class="{
-                        active: isClassifyActive(classify),
-                        'is-open': openedClassify === classify.id,
-                        'is-link': classify.hasOwnProperty('path')
+                        active: activeMenu === menu.id,
+                        'is-open': openedMenu === menu.id,
+                        'is-link': menu.path
                     }">
-                    <h3 class="classify-info clearfix"
-                        :class="{'classify-link': classify.hasOwnProperty('path')}"
-                        @click="handleClassifyClick(classify)">
-                        <i :class="['classify-icon', classify.icon]"></i>
-                        <span class="classify-name">{{classify.i18n ? $t(classify.i18n) : classify.name}}</span>
+                    <h3 class="menu-info clearfix"
+                        :class="{'menu-link': menu.path}"
+                        @click="handleMenuClick(menu)">
+                        <i :class="['menu-icon', menu.icon]"></i>
+                        <span class="menu-name">{{menu.i18n ? $t(menu.i18n) : menu.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
-                            v-if="classify.children && classify.children.length"
-                            :class="{open: classify.id === openedClassify}">
+                            v-if="menu.submenu && menu.submenu.length"
+                            :class="{open: menu.id === openedMenu}">
                         </i>
                     </h3>
-                    <div class="classify-models" 
-                        v-if="classify.children && classify.children.length"
-                        :style="getClassifyModelsStyle(classify)">
-                        <router-link class="model-link" exact
-                            v-for="(model, modelIndex) in classify.children"
+                    <div class="menu-submenu" 
+                        v-if="menu.submenu && menu.submenu.length"
+                        :style="getMenuModelsStyle(menu)">
+                        <router-link class="submenu-link" exact
+                            v-for="(submenu, submenuIndex) in menu.submenu"
                             :class="{
-                                active: isRouterActive(model),
-                                collection: classify.id === 'bk_collection'
+                                active: activeMenu === submenu.id,
+                                collection: menu.id === NAV_COLLECT
                             }"
-                            :key="modelIndex"
-                            :to="model.path"
-                            :title="model.i18n ? $t(model.i18n) : model.name">
-                            {{model.i18n ? $t(model.i18n) : model.name}}
+                            :key="submenuIndex"
+                            :to="submenu.path"
+                            :title="submenu.i18n ? $t(submenu.i18n) : submenu.name">
+                            {{submenu.i18n ? $t(submenu.i18n) : submenu.name}}
                             <i class="bk-icon icon-close"
-                                v-if="classify.id === 'bk_collection'"
-                                @click.stop.prevent="handleDeleteCollection(model)">
+                                v-if="menu.id === NAV_COLLECT"
+                                @click.stop.prevent="handleDeleteCollection(submenu)">
                             </i>
                         </router-link>
                     </div>
@@ -66,73 +66,88 @@
 </template>
 <script>
 import { mapGetters } from 'vuex'
+import MENU, { NAV_COLLECT } from '@/dictionary/menu'
+import MODEL_ROUTER_CONFIG, { GET_MODEL_PATH } from '@/views/general-model/router.config'
 export default {
     data () {
         return {
+            NAV_COLLECT,
             routerLinkHeight: 42,
-            openedClassify: null,
+            openedMenu: null,
+            activeMenu: null,
             timer: null
         }
     },
     computed: {
         ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
-        ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
-        fixedClassifyId () {
-            return [...this.staticClassifyId, 'bk_organization']
+        collectMenus () {
+            const collectMenus = []
+            const collectedModelIds = this.usercustom[this.classifyNavigationKey] || []
+            const getModelById = this.$store.getters['objectModelClassify/getModelById']
+            collectedModelIds.forEach((modelId, index) => {
+                const model = getModelById(modelId)
+                if (model) {
+                    collectMenus.push({
+                        id: model.bk_obj_id,
+                        name: model.bk_obj_name,
+                        path: GET_MODEL_PATH(modelId),
+                        order: index
+                    })
+                }
+            })
+            return collectMenus
+        },
+        menus () {
+            const menus = this.$tools.clone(MENU)
+            const routes = this.$router.options.routes
+            const isAuthorized = this.$store.getters['auth/isAuthorized']
+            routes.forEach(route => {
+                const meta = (route.meta || {})
+                const auth = meta.auth || {}
+                const menu = meta.menu
+                if (menu) {
+                    const authorized = auth.view ? isAuthorized(...auth.view.split('.')) : true
+                    if (authorized) {
+                        if (menu.parent) {
+                            const parent = menus.find(parent => parent.id === menu.parent) || {}
+                            const submenu = parent.submenu || []
+                            submenu.push(menu)
+                        } else {
+                            const parent = menus.find(parent => parent.id === menu.id) || {}
+                            Object.assign(parent, menu)
+                        }
+                    }
+                }
+            })
+            const collectMenu = menus.find(menu => menu.id === NAV_COLLECT) || {}
+            const collectSubmenu = collectMenu.submenu || []
+            Array.prototype.push.apply(collectSubmenu, this.collectMenus)
+            const availableMenus = menus.filter(menu => {
+                return menu.path ||
+                    (Array.isArray(menu.submenu) && menu.submenu.length)
+            })
+            availableMenus.forEach(menu => {
+                if (Array.isArray(menu.submenu)) {
+                    menu.submenu.sort((prev, next) => prev.order - next.order)
+                }
+            })
+            return availableMenus
         },
         unfold () {
             return this.navStick || !this.navFold
         },
-        // 当前导航对应的分类ID
-        activeClassifyId () {
-            return this.$classify.classificationId
-        },
-        navigations () {
-            const navigations = this.$tools.clone(this.authorizedNavigation)
-            if (this.admin) {
-                if (this.isAdminView) {
-                    return navigations.filter(classify => classify.classificationId !== 'bk_business_resource')
-                }
-                return navigations
-            }
-            navigations.forEach(classify => {
-                classify.children = classify.children.filter(child => child.authorized)
-            })
-            return navigations.filter(classify => {
-                return (classify.hasOwnProperty('path') && classify.authorized) || classify.children.length
-            })
-        },
         // 展开的分类子菜单高度
-        openedClassifyHeight () {
-            const openedClassify = this.navigations.find(classify => classify.id === this.openedClassify)
-            if (openedClassify) {
-                const modelsCount = openedClassify.children.length
-                return modelsCount * this.routerLinkHeight
+        openedMenuHeight () {
+            const openedMenu = this.menus.find(menu => menu.id === this.openedMenu)
+            if (openedMenu) {
+                const submenuCount = (openedMenu.submenu || []).length
+                return submenuCount * this.routerLinkHeight
             }
             return 0
         }
     },
-    watch: {
-        activeClassifyId (id) {
-            this.openedClassify = id
-        }
-    },
     methods: {
-        isClassifyActive (classify) {
-            const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
-            return classify.path === path || this.activeClassifyId === classify.id
-        },
-        isActiveClosed (classify) {
-            return this.activeClassifyId === classify.id &&
-                (this.openedClassify === null || !this.unfold)
-        },
-        isAvailableClassify (classify) {
-            if (classify.hasOwnProperty('path')) {
-                return true
-            }
-            return classify.children.some(sub => sub.authorized)
-        },
         handleMouseEnter () {
             if (this.timer) {
                 clearTimeout(this.timer)
@@ -145,28 +160,24 @@ export default {
             }, 300)
         },
         // 分类点击事件
-        handleClassifyClick (classify) {
-            this.checkPath(classify)
-            this.toggleClassify(classify)
+        handleMenuClick (menu) {
+            this.checkPath(menu)
+            this.toggleMenu(menu)
         },
-        isRouterActive (model) {
-            const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
-            return model.path === path
-        },
-        getClassifyModelsStyle (classify) {
+        getMenuModelsStyle (menu) {
             return {
-                height: (this.unfold && classify.id === this.openedClassify) ? this.openedClassifyHeight + 'px' : 0
+                height: (this.unfold && menu.id === this.openedMenu) ? this.openedMenuHeight + 'px' : 0
             }
         },
         // 被点击的有对应的路由，则跳转
-        checkPath (classify) {
-            if (classify.hasOwnProperty('path')) {
-                this.$router.push({path: classify.path})
+        checkPath (menu) {
+            if (menu.path) {
+                this.$router.push({path: menu.path})
             }
         },
         // 切换展开的分类
-        toggleClassify (classify) {
-            this.openedClassify = classify.id === this.openedClassify ? null : classify.id
+        toggleMenu (menu) {
+            this.openedMenu = menu.id === this.openedMenu ? null : menu.id
         },
         // 切换导航展开固定
         toggleNavStick () {
@@ -176,16 +187,10 @@ export default {
             })
         },
         handleDeleteCollection (model) {
-            if (['biz', 'resource'].includes(model.id)) {
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [`is_${model.id}_collected`]: false
-                })
-            } else {
-                const customNavigation = this.usercustom[this.classifyNavigationKey] || []
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
-                })
-            }
+            const customNavigation = this.usercustom[this.classifyNavigationKey] || []
+            this.$store.dispatch('userCustom/saveUsercustom', {
+                [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
+            })
         }
     }
 }
@@ -262,7 +267,7 @@ $color: #979ba5;
     }
 }
 
-.classify-list {
+.menu-list {
     height: calc(100% - 120px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -279,7 +284,7 @@ $color: #979ba5;
         }
     }
 
-    .classify-item {
+    .menu-item {
         position: relative;
         transition: background-color $duration $cubicBezier;
 
@@ -288,12 +293,12 @@ $color: #979ba5;
         }
         &.active.is-link {
             background-color: #3a84ff;
-            .classify-icon,
-            .classify-name {
+            .menu-icon,
+            .menu-name {
                 color: #fff;
             }
         }
-        .classify-info {
+        .menu-info {
             margin: 0;
             padding: 0;
             height: 42px;
@@ -305,7 +310,7 @@ $color: #979ba5;
             cursor: pointer;
         }
 
-        .classify-icon {
+        .menu-icon {
             display: inline-block;
             vertical-align: top;
             margin: 13px 26px 13px 22px;
@@ -313,7 +318,7 @@ $color: #979ba5;
             color: rgba(255, 255, 255, .8);
         }
 
-        .classify-name {
+        .menu-name {
             display: inline-block;
             width: calc(100% - 120px);
             vertical-align: top;
@@ -335,13 +340,13 @@ $color: #979ba5;
     }
 }
 
-.classify-models {
+.menu-submenu {
     height: 0;
     line-height: 42px;
     font-size: 14px;
     overflow: hidden;
     transition: height $duration $cubicBezier;
-    .model-link {
+    .submenu-link {
         position: relative;
         display: block;
         padding: 0 0 0 64px;
