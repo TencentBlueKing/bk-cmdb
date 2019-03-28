@@ -372,16 +372,16 @@ func (o *object) SetMainlineParentObject(objID string) error {
 		asst.ObjectID = o.obj.ObjectID
 		asst.AsstObjID = objID
 
-		rsp, err := o.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), o.params.Header, asst)
+		ossRsp, err := o.clientSet.ObjectController().Meta().CreateMainlineObjectAssociation(context.Background(), o.params.Header, asst)
 
 		if nil != err {
 			blog.Errorf("[model-obj] failed to request the object controller, error info is %s", err.Error())
 			return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
-		if common.CCSuccess != rsp.Code {
-			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", rsp.ErrMsg)
-			return o.params.Err.Error(rsp.Code)
+		if common.CCSuccess != ossRsp.Code {
+			blog.Errorf("[model-obj] failed to set the main line association parent, error info is %s", ossRsp.ErrMsg)
+			return o.params.Err.Error(ossRsp.Code)
 		}
 
 		return nil
