@@ -25,11 +25,10 @@ export default [{
     component: () => import('./index.vue'),
     meta: {
         auth: {
-            view: R_INST,
+            view: '',
             meta: GET_MODEL_INST_AUTH_META,
             operation: Object.values(OPERATION)
-        },
-        dynamicParams: [param]
+        }
     }
 }, {
     path: GET_MODEL_PATH('host'),
