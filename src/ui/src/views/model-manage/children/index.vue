@@ -51,7 +51,7 @@
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
-                            v-if="tab.active==='field' && $isAuthorized(OPERATION.G_U_MODEL)"
+                            v-if="tab.active==='field' && $isAuthorized(OPERATION.U_MODEL)"
                             :class="{'disabled': isReadOnly}">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('ModelManagement["导入"]')}}</span>
@@ -148,7 +148,7 @@
             isShowOperationButton () {
                 return (this.isAdminView || !this.isPublicModel) &&
                 !this.activeModel['ispre'] &&
-                this.$isAuthorized(OPERATION.G_U_MODEL)
+                this.$isAuthorized(OPERATION.U_MODEL)
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -157,7 +157,7 @@
                 return false
             },
             isEditable () {
-                const updateAuth = this.$isAuthorized(OPERATION.G_U_MODEL)
+                const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
                 return updateAuth && this.isReadOnly && this.isPublicModel
             },
             modelParams () {
@@ -181,7 +181,7 @@
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
-                return this.$isAuthorized(OPERATION.G_U_MODEL) &&
+                return this.$isAuthorized(OPERATION.U_MODEL) &&
                     !this.isMainLine &&
                     !cantImport.includes(this.$route.params.modelId)
             }

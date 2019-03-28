@@ -2,7 +2,7 @@
     <div class="relation-wrapper">
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!$isAuthorized(OPERATION.G_C_RELATION)"
+                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
                 @click="createRelation">
                 {{$t('ModelManagement["新增关联类型"]')}}
             </bk-button>
@@ -24,7 +24,7 @@
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary disabled mr10"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.G_U_RELATION)">
+                    v-if="item.ispre || !$isAuthorized(OPERATION.U_RELATION)">
                     {{$t('Common["编辑"]')}}
                 </span>
                 <span class="text-primary mr10"
@@ -33,7 +33,7 @@
                     {{$t('Common["编辑"]')}}
                 </span>
                 <span class="text-primary disabled"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.G_D_RELATION)">
+                    v-if="item.ispre || !$isAuthorized(OPERATION.D_RELATION)">
                     {{$t('Common["删除"]')}}
                 </span>
                 <span class="text-primary"
@@ -133,7 +133,7 @@
             }
         },
         created () {
-            const updateAuth = this.$isAuthorized(this.OPERATION.G_U_RELATION)
+            const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
             if (!updateAuth) {
                 this.table.header.pop()
             }

@@ -6,19 +6,19 @@
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
-                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL) || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
                     {{$t('ModelManagement["新增模型"]')}}
                 </bk-button>
                 <bk-button type="primary"
                     v-else
                     v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
-                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL) || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
                     {{$t('ModelManagement["新增模型"]')}}
                 </bk-button>
                 <bk-button type="default"
-                    :disabled="!$isAuthorized(OPERATION.G_C_MODEL_GROUP) || modelType === 'disabled'"
+                    :disabled="!$isAuthorized(OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                     @click="showGroupDialog(false)">
                     {{$t('ModelManagement["新建分组"]')}}
                 </bk-button>
@@ -48,11 +48,11 @@
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
                         <i class="icon-cc-edit text-primary"
-                            v-if="$isAuthorized(OPERATION.G_U_MODEL_GROUP)"
+                            v-if="$isAuthorized(OPERATION.U_MODEL_GROUP)"
                             @click="showGroupDialog(true, classification)">
                         </i>
                         <i class="icon-cc-del text-primary"
-                            v-if="$isAuthorized(OPERATION.G_D_MODEL_GROUP)"
+                            v-if="$isAuthorized(OPERATION.D_MODEL_GROUP)"
                             @click="deleteGroup(classification)">
                         </i>
                     </template>

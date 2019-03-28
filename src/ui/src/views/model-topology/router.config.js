@@ -1,11 +1,11 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
-    G_SYSTEM_TOPOLOGY,
-    G_U_MODEL
+    SYSTEM_TOPOLOGY,
+    U_MODEL
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_U_MODEL
+    U_MODEL
 }
 
 const path = '/model/topology'

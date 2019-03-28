@@ -1,8 +1,8 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
-import { G_SYSTEM_TOPOLOGY } from '@/dictionary/auth'
+import { SYSTEM_TOPOLOGY } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_SYSTEM_TOPOLOGY
+    SYSTEM_TOPOLOGY
 }
 
 const path = '/model/business'

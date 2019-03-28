@@ -1,20 +1,20 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
-    G_C_MODEL_GROUP,
-    G_U_MODEL_GROUP,
-    G_D_MODEL_GROUP,
-    G_C_MODEL,
-    G_U_MODEL,
-    G_D_MODEL
+    C_MODEL_GROUP,
+    U_MODEL_GROUP,
+    D_MODEL_GROUP,
+    C_MODEL,
+    U_MODEL,
+    D_MODEL
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_C_MODEL_GROUP,
-    G_U_MODEL_GROUP,
-    G_D_MODEL_GROUP,
-    G_C_MODEL,
-    G_U_MODEL,
-    G_D_MODEL
+    C_MODEL_GROUP,
+    U_MODEL_GROUP,
+    D_MODEL_GROUP,
+    C_MODEL,
+    U_MODEL,
+    D_MODEL
 }
 
 const modelPath = '/model'
@@ -44,8 +44,8 @@ export default [{
         auth: {
             view: '',
             operation: [
-                OPERATION.G_U_MODEL,
-                OPERATION.G_D_MODEL
+                OPERATION.U_MODEL,
+                OPERATION.D_MODEL
             ]
         }
     }

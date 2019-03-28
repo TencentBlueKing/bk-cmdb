@@ -48,7 +48,7 @@
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
             archiveAuth () {
-                return this.$isAuthorized(OPERATION.G_BUSINESS_ARCHIVE)
+                return this.$isAuthorized(OPERATION.BUSINESS_ARCHIVE)
             }
         },
         async created () {

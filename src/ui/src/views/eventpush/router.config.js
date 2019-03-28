@@ -1,15 +1,15 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
-    G_C_EVENT,
-    G_U_EVENT,
-    G_D_EVENT,
-    G_R_EVENT
+    C_EVENT,
+    U_EVENT,
+    D_EVENT,
+    R_EVENT
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    G_C_EVENT,
-    G_U_EVENT,
-    G_D_EVENT
+    C_EVENT,
+    U_EVENT,
+    D_EVENT
 }
 
 const path = '/eventpush'
@@ -27,7 +27,7 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: G_R_EVENT,
+            view: R_EVENT,
             operation: Object.keys(OPERATION)
         }
     }

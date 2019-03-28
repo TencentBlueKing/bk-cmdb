@@ -55,10 +55,10 @@
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
                         delete-disabled
-                        :save-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
-                        :edit-disabled="!$isAuthorized(OPERATION.B_U_HOST)"
-                        :transfer-disabled="!$isAuthorized(OPERATION.B_TOPO_TRANSFER_HOST)"
-                        :transfer-resource-disabled="!$isAuthorized(OPERATION.B_HOST_TO_RESOURCE)"
+                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :transfer-disabled="!$isAuthorized(OPERATION.TOPO_TRANSFER_HOST)"
+                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"

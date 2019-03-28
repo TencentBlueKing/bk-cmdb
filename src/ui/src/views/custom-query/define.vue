@@ -249,9 +249,9 @@
             ]),
             editable () {
                 if (this.type === 'create') {
-                    return this.$isAuthorized(OPERATION.B_C_CUSTOM_QUERY)
+                    return this.$isAuthorized(OPERATION.C_CUSTOM_QUERY)
                 } else if (this.type === 'update') {
-                    return this.$isAuthorized(OPERATION.B_U_CUSTOM_QUERY)
+                    return this.$isAuthorized(OPERATION.U_CUSTOM_QUERY)
                 }
                 return true
             },

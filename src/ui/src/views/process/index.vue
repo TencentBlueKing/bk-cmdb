@@ -3,13 +3,13 @@
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
-                :disabled="!table.checked.length || !$isAuthorized(OPERATION.B_U_PROCESS)" 
+                :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)" 
                 @click="handleMultipleEdit">
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
             <bk-button class="process-btn" type="primary"
-                :disabled="!$isAuthorized(OPERATION.B_C_PROCESS)"
+                :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
                 @click="handleCreate">
                 {{$t("ProcessManagement['新增进程']")}}
             </bk-button>
@@ -40,8 +40,8 @@
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-disabled="!$isAuthorized(OPERATION.B_U_PROCESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.B_D_PROCESS)"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.D_PROCESS)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -50,14 +50,14 @@
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update'] ? 'B_U_PROCESS' : 'B_C_PROCESS')"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update'] ? 'U_PROCESS' : 'C_PROCESS')"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
-                        :save-disabled="!$isAuthorized(OPERATION.B_U_PROCESS)"
+                        :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>

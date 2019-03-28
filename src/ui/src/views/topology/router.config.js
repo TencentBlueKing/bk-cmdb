@@ -1,20 +1,20 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    B_C_TOPO,
-    B_U_TOPO,
-    B_D_TOPO,
-    B_TOPO_TRANSFER_HOST,
-    B_U_HOST,
-    B_HOST_TO_RESOURCE
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    TOPO_TRANSFER_HOST,
+    U_HOST,
+    HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    B_C_TOPO,
-    B_U_TOPO,
-    B_D_TOPO,
-    B_TOPO_TRANSFER_HOST,
-    B_U_HOST,
-    B_HOST_TO_RESOURCE
+    C_TOPO,
+    U_TOPO,
+    D_TOPO,
+    TOPO_TRANSFER_HOST,
+    U_HOST,
+    HOST_TO_RESOURCE
 }
 
 const path = '/topology'

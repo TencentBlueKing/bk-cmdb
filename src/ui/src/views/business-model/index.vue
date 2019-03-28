@@ -56,7 +56,7 @@
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
             createAuth () {
-                return this.$isAuthorized(OPERATION.G_SYSTEM_TOPOLOGY)
+                return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {
