@@ -31,7 +31,7 @@ import (
 )
 
 // CreateMainlineObjectAssociation used for create association of type bk_mainline, as it can only create by special method,
-// for example add a level to business modle
+// for example add a level to business model
 func (cli *Service) CreateMainlineObjectAssociation(req *restful.Request, resp *restful.Response) {
 	// bk_maineline is a inner association type that can only create in special case,
 	// so we separate bk_mainline association type creation with a independent method,
