@@ -4,7 +4,7 @@
             <bk-button type="primary"
                 :disabled="!authority.includes('update')"
                 @click="createRelation">
-                {{$t('ModelManagement["新增关联类型"]')}}
+                {{$t('Common["新建"]')}}
             </bk-button>
             <label class="search-input">
                 <i class="bk-icon icon-search" @click="searchRelation"></i>
@@ -70,7 +70,7 @@
                 slider: {
                     isShow: false,
                     isEdit: false,
-                    title: this.$t('ModelManagement["新增关联类型"]'),
+                    title: this.$t('ModelManagement["新建关联类型"]'),
                     relation: {}
                 },
                 searchText: '',
@@ -183,7 +183,7 @@
                 this.table.list.splice()
             },
             createRelation () {
-                this.slider.title = this.$t('ModelManagement["新增关联类型"]')
+                this.slider.title = this.$t('ModelManagement["新建关联类型"]')
                 this.slider.isEdit = false
                 this.slider.isShow = true
             },
