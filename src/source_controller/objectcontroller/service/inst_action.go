@@ -292,14 +292,13 @@ func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Respons
 		blog.Errorf("create event error, could not retrieve data: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 		return
-	} else {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-		err := ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
-		if err != nil {
-			blog.Errorf("create event error:%v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
-			return
-		}
+	}
+	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
+	err = ec.InsertEvent(metadata.EventTypeInstData, objType, metadata.EventActionCreate, origindata, nil)
+	if err != nil {
+		blog.Errorf("create event error:%v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
+		return
 	}
 
 	info := make(map[string]int)
