@@ -141,10 +141,10 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 							}
 							if child.ObjID == common.BKInnerObjIDModule {
 								// if should delete module then check whether it has host
-								modulehostcondition := map[string]interface{}{
+								moduleHostCondition := map[string]interface{}{
 									common.BKModuleIDField: childID,
 								}
-								count, err := db.Table(common.BKTableNameModuleHostConfig).Find(modulehostcondition).Count(ctx)
+								count, err := db.Table(common.BKTableNameModuleHostConfig).Find(moduleHostCondition).Count(ctx)
 								if nil != err {
 									return fmt.Errorf("get host count error: %s", err.Error())
 								}
@@ -153,20 +153,20 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 								}
 							}
 
-							deleteconition := map[string]interface{}{
+							deleteCondition := map[string]interface{}{
 								common.GetInstIDField(child.ObjID): childID,
 							}
 							switch child.ObjID {
 							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 							default:
-								deleteconition[common.BKObjIDField] = child.ObjID
+								deleteCondition[common.BKObjIDField] = child.ObjID
 							}
-							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
+							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteCondition)
 							if !opt.dryrun {
 
-								err = db.Table(common.GetInstTableName(child.ObjID)).Delete(ctx, deleteconition)
+								err = db.Table(common.GetInstTableName(child.ObjID)).Delete(ctx, deleteCondition)
 								if nil != err {
-									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
+									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteCondition, err.Error())
 								}
 							}
 							return nil
@@ -226,12 +226,12 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 			}
 
 			// add missing module
-			for _, modulename := range topo.Modules {
-				if inSlice(modulename, curTopo.Modules) {
+			for _, moduleName := range topo.Modules {
+				if inSlice(moduleName, curTopo.Modules) {
 					continue
 				}
 				procmod := ProModule{}
-				procmod.ModuleName = modulename
+				procmod.ModuleName = moduleName
 				procmod.BizID = bizID
 				procmod.ProcessID = procID
 				procmod.OwnerID = opt.OwnerID
@@ -243,20 +243,20 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 					}
 				}
 			}
-			// delete unused moduel map
-			for _, curmodule := range curTopo.Modules {
-				if inSlice(curmodule, topo.Modules) {
+			// delete unused module map
+			for _, curModule := range curTopo.Modules {
+				if inSlice(curModule, topo.Modules) {
 					continue
 				}
-				delcondition := map[string]interface{}{
-					common.BKModuleNameField: curmodule,
+				delCondition := map[string]interface{}{
+					common.BKModuleNameField: curModule,
 					common.BKProcessIDField:  procID,
 				}
-				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delCondition)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delCondition)
 					if nil != err {
-						return fmt.Errorf("delete process module by %+v, error: %v", delcondition, err)
+						return fmt.Errorf("delete process module by %+v, error: %v", delCondition, err)
 					}
 				}
 			}
@@ -274,15 +274,15 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
 				}
 			}
-			for _, modulename := range topo.Modules {
-				procmod := ProModule{}
-				procmod.ModuleName = modulename
-				procmod.BizID = bizID
-				procmod.ProcessID = nid
-				procmod.OwnerID = opt.OwnerID
+			for _, moduleName := range topo.Modules {
+				procMod := ProModule{}
+				procMod.ModuleName = moduleName
+				procMod.BizID = bizID
+				procMod.ProcessID = nid
+				procMod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procMod)
 					if nil != err {
 						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
 					}
@@ -294,21 +294,21 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 	// remove unused process
 	for key, proc := range curProcs {
 		if tarProcs[key] == nil {
-			delcondition := map[string]interface{}{
+			delCondition := map[string]interface{}{
 				common.BKProcessIDField: proc.Data[common.BKProcessIDField],
 			}
-			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delCondition)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameBaseProcess).Delete(ctx, delcondition)
+				err = db.Table(common.BKTableNameBaseProcess).Delete(ctx, delCondition)
 				if nil != err {
-					return fmt.Errorf("delete process by %+v, error: %s", delcondition, err.Error())
+					return fmt.Errorf("delete process by %+v, error: %s", delCondition, err.Error())
 				}
 			}
-			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delCondition)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+				err = db.Table(common.BKTableNameProcModule).Delete(ctx, delCondition)
 				if nil != err {
-					return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+					return fmt.Errorf("delete process module by %+v, error: %s", delCondition, err.Error())
 				}
 			}
 		}
@@ -549,7 +549,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 	parentID := ipt.parentID
 	bizID := ipt.bizID
 	setID := ipt.setID
-	for _, child := range node.Childs {
+	for _, child := range node.Children {
 		if err := ipt.walk(true, child); nil != err {
 			return err
 		}

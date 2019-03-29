@@ -31,15 +31,15 @@ type option struct {
 
 // Node topo node define
 type Node struct {
-	ObjID   string                 `json:"bk_obj_id,omitempty"`
-	Data    map[string]interface{} `json:"data,omitempty"`
-	Childs  []*Node                `json:"childs,omitempty"`
-	nodekey string
-	mark    string
+	ObjID    string                 `json:"bk_obj_id,omitempty"`
+	Data     map[string]interface{} `json:"data,omitempty"`
+	Children []*Node                `json:"childs,omitempty"`
+	nodeKey  string
+	mark     string
 }
 
 func (n *Node) getChildObjID() string {
-	for _, child := range n.Childs {
+	for _, child := range n.Children {
 		return child.ObjID
 	}
 	return ""
@@ -53,20 +53,20 @@ func (n *Node) getInstID() (uint64, error) {
 	return id, nil
 }
 
-func (n *Node) getChildInstNames() (instnames []string) {
-	instnamefield := n.getChildInstNameField()
-	for _, child := range n.Childs {
-		name, ok := child.Data[instnamefield].(string)
+func (n *Node) getChildInstNames() (instNames []string) {
+	instNameField := n.getChildInstNameField()
+	for _, child := range n.Children {
+		name, ok := child.Data[instNameField].(string)
 		if !ok {
-			blog.Errorf("child has no instname field %#v", child.Data[instnamefield])
+			blog.Errorf("child has no inst name field %#v", child.Data[instNameField])
 			continue
 		}
-		instnames = append(instnames, name)
+		instNames = append(instNames, name)
 	}
 	return
 }
 func (n *Node) getChildInstNameField() string {
-	for _, child := range n.Childs {
+	for _, child := range n.Children {
 		return common.GetInstNameField(child.ObjID)
 	}
 	return ""
@@ -107,12 +107,12 @@ func getInt64(v interface{}) (uint64, error) {
 }
 
 func newNode(objID string) *Node {
-	return &Node{ObjID: objID, Data: map[string]interface{}{}, Childs: []*Node{}}
+	return &Node{ObjID: objID, Data: map[string]interface{}{}, Children: []*Node{}}
 }
 
 // result: map[parentkey]map[childkey]node
 func (n *Node) walk(walkFunc func(node *Node) error) error {
-	for _, child := range n.Childs {
+	for _, child := range n.Children {
 		if err := child.walk(walkFunc); nil != err {
 			return err
 		}
