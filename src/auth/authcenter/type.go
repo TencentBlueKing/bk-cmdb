@@ -171,3 +171,29 @@ type BaseResponse struct {
 	Result    bool   `json:"result"`
 	RequestID string `json:"request_id"`
 }
+
+func (br BaseResponse) ErrorString() string {
+	return fmt.Sprintf("request id: %s, error code: %d, message: %s", br.RequestID, br.Code, br.Message)
+}
+
+type ListAuthorizedResources struct {
+	Principal   `json:",inline"`
+	ScopeInfo   `json:",inline"`
+	TypeActions []TypeAction `json:"resource_types_actions"`
+}
+
+type TypeAction struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+}
+
+type ListAuthorizedResourcesResult struct {
+	BaseResponse
+	Data []AuthorizedResource `json:"data"`
+}
+
+type AuthorizedResource struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceIDs  [][]ResourceID `json:"resource_ids"`
+}

@@ -161,6 +161,7 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 
 	// apiserver 1100XXX
+	CCErrGetAuthorizedAppListFromAuthFailed = 1100001
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
@@ -318,7 +319,7 @@ const (
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
-    // CCErrorTopoModleStopped means model have been stopped to use
+	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1199045
 
 	CCErrorTopoAssociationKindHasBeenUsed          = 1101060

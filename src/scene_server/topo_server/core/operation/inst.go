@@ -735,7 +735,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					switch t := objCondition.Value.(type) {
 					case string:
 						instCond[objCondition.Field] = map[string]interface{}{
-							common.BKDBEQ: gparams.SpeceialCharChange(t),
+							common.BKDBEQ: gparams.SpecialCharChange(t),
 						}
 					default:
 						instCond[objCondition.Field] = objCondition.Value

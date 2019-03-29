@@ -43,6 +43,8 @@ type ApiServerClientInterface interface {
 	SearchAssociationInst(ctx context.Context, h http.Header, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	SearchInsts(ctx context.Context, h http.Header, objID string, cond condition.Condition) (resp *metadata.ResponseInstData, err error)
 	ImportAssociation(ctx context.Context, h http.Header, objID string, input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
+
+	GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (resp *metadata.InstDataInfo, err error)
 }
 
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {
