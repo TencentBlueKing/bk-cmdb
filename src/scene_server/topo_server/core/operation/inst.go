@@ -90,8 +90,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	var rowErr map[int64]error
 	results := &BatchResult{}
-	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
-		return results, nil
+	if batchInfo.InputType != common.InputTypeExcel {
+		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
+	}
+	if batchInfo.BatchInfo == nil {
+		return results, fmt.Errorf("BatchInfo empty")
 	}
 
 	for errIdx, err := range rowErr {
@@ -102,7 +105,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	// auth: check authorization
 	if err := c.authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
-		blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", object.ID, err)
+		blog.V(2).Infof("create unique for model %d failed, authorization failed, err: %+v", object.ID, err)
 		return nil, err
 	}
 

@@ -30,7 +30,7 @@ import (
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	
+
 	objID := pathParams("bk_obj_id")
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -91,7 +91,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
-	
+
 	return nil, s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
 }
 
@@ -130,6 +130,18 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	if err := data.MarshalJSONInto(updateCondition); nil != err {
 		blog.Errorf("[api-inst] failed to parse the input data(%v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	// check inst_id field to be not empty, is dangerous for empty inst_id field, which will update or delete all instance
+	for idx, item := range updateCondition.Update {
+		if item.InstID == 0 {
+			return nil, fmt.Errorf("%d's update item's field `inst_id` emtpy", idx)
+		}
+	}
+	for idx, instID := range updateCondition.Delete.InstID {
+		if instID == 0 {
+			return nil, fmt.Errorf("%d's delete item's field `inst_id` emtpy", idx)
+		}
 	}
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
