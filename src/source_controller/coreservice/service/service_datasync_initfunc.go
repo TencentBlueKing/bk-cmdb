@@ -18,9 +18,9 @@ import (
 
 func (s *coreService) initDataSynchronize() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/synchronize/instance", HandlerFunc: s.SynchronizeInstance})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/synchronize/model", HandlerFunc: s.SynchronizeModel})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/synchronize/association", HandlerFunc: s.SynchronizeAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/synchronize", HandlerFunc: s.SynchronizeFind})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/clear/synchronize/data", HandlerFunc: s.SynchronizeClearData})
+	s.addAction(http.MethodPost, "/set/synchronize/instance", s.SynchronizeInstance, nil)
+	s.addAction(http.MethodPost, "/set/synchronize/model", s.SynchronizeModel, nil)
+	s.addAction(http.MethodPost, "/set/synchronize/association", s.SynchronizeAssociation, nil)
+	s.addAction(http.MethodPost, "/read/synchronize", s.SynchronizeFind, nil)
+	s.addAction(http.MethodDelete, "/clear/synchronize/data", s.SynchronizeClearData, nil)
 }
