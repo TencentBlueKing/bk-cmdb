@@ -53,7 +53,7 @@ type InstOperationInterface interface {
 // NewInstOperation create a new inst operation instance
 func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
 	return &commonInst{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
@@ -72,7 +72,7 @@ type BatchResult struct {
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
+	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
@@ -130,7 +130,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 		instNameMap[name] = struct{}{}
 	}
-	
+
 	updatedInstanceIDs := make([]int64, 0)
 	createdInstanceIDs := make([]int64, 0)
 
@@ -190,7 +190,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
-		
+
 		instanceID, err := item.GetInstID()
 		if err != nil {
 			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v", err)
@@ -261,18 +261,17 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
 		return nil, err
 	}
-	
+
 	instanceID, err := item.GetInstID()
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, err: %+v", err)
 	}
-	
+
 	// auth: register instances to iam
 	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
 		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
-
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 

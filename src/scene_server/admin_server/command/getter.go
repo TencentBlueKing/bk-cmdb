@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -76,10 +77,13 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		}
 
 		if result.BizTopo != nil {
-			result.BizTopo.walk(func(node *Node) error {
+			err := result.BizTopo.walk(func(node *Node) error {
 				node.Data = util.CopyMap(node.Data, keys[node.ObjID], []string{common.BKInstParentStr})
 				return nil
 			})
+			if err != nil {
+				blog.Errorf("walk through biz topo failed, err: %+v", err)
+			}
 		}
 
 		if result.ProcTopos != nil {

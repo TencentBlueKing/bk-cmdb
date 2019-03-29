@@ -79,7 +79,9 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 
 		// walk blueking biz and get difference
 		ipt := newImporter(ctx, db, opt)
-		ipt.walk(true, tar.BizTopo)
+		if err := ipt.walk(true, tar.BizTopo); err != nil {
+			blog.Errorf("walk biz topo failed, err: %+v", err)
+		}
 
 		// walk to create new node
 		err := tar.BizTopo.walk(func(node *Node) error {
@@ -515,7 +517,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			default:
 				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
-			shouldDelete := []map[string]interface{}{}
+			shouldDelete := make([]map[string]interface{}, 0)
 			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
 			if nil != err {
 				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
