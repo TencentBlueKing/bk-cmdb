@@ -141,14 +141,14 @@ func getTree(ctx context.Context, db dal.RDB, root *Node, pcmap map[string]*meta
 	}
 
 	for _, child := range childs {
-		root.Childs = append(root.Childs, &Node{ObjID: asst.ObjectID, Data: child})
+		root.Children = append(root.Children, &Node{ObjID: asst.ObjectID, Data: child})
 	}
 
 	child := pcmap[asst.ObjectID]
 	if child == nil {
 		return nil
 	}
-	for _, child := range root.Childs {
+	for _, child := range root.Children {
 		err = getTree(ctx, db, child, pcmap)
 		if nil != err {
 			return err
