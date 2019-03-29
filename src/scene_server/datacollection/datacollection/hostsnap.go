@@ -44,6 +44,7 @@ var (
 	maxconcurrent   = runtime.NumCPU()
 )
 
+// HostSnap handle the hostsnapshot messages
 type HostSnap struct {
 	id           string
 	hostChanName []string
@@ -72,11 +73,13 @@ type HostSnap struct {
 	wg *sync.WaitGroup
 }
 
+// Cache stores the cache
 type Cache struct {
 	cache map[bool]*HostCache
 	flag  bool
 }
 
+// NewHostSnap returns a new HostSnap instance
 func NewHostSnap(ctx context.Context, chanName []string, maxSize int, redisCli, snapCli *redis.Client, db dal.RDB) *HostSnap {
 	if 0 == maxSize {
 		maxSize = 100
@@ -104,6 +107,7 @@ func NewHostSnap(ctx context.Context, chanName []string, maxSize int, redisCli, 
 	return hostSnapInstance
 }
 
+// Start start the snap
 func (h *HostSnap) Start() {
 
 	go func() {
@@ -115,6 +119,7 @@ func (h *HostSnap) Start() {
 	}()
 }
 
+// Run run the analyse
 func (h *HostSnap) Run() {
 	defer func() {
 		syserr := recover()
@@ -533,7 +538,9 @@ func (h *HostSnap) subChan(snapcli *redis.Client, chanName []string) {
 		h.subscribing = false
 		close(closeChan)
 		blog.Infof("subChan Close")
-		subChan.Unsubscribe(chanName...)
+		if err = subChan.Unsubscribe(chanName...); err != nil {
+			blog.Warnf("close subChan failed: %v", err)
+		}
 	}()
 
 	var ts = time.Now()
@@ -659,6 +666,7 @@ func (h *HostSnap) fetch() *HostCache {
 	return hostcache
 }
 
+// HostInst store a host inst
 type HostInst struct {
 	sync.RWMutex
 	data map[string]interface{}
@@ -677,6 +685,7 @@ func (h *HostInst) set(key string, value interface{}) {
 	h.Unlock()
 }
 
+// HostCache which stores the cache
 type HostCache struct {
 	sync.RWMutex
 	data map[string]*HostInst

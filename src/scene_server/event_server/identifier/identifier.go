@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -29,6 +27,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
+
+	redis "gopkg.in/redis.v5"
 )
 
 var delayTime = time.Second * 30
@@ -62,7 +62,7 @@ func (ih *IdentifierHandler) handleInstFieldChange(e *metadata.EventInstCtx, dif
 	hostIdentify := e.EventInst
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
-	hostIdentify.ObjType = "hostidentifier"
+	hostIdentify.ObjType = objectTypeIdentifier
 	hostIdentify.Action = metadata.EventActionUpdate
 
 	for dataIndex := range e.Data {
@@ -119,7 +119,7 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 	hostIdentify := e.EventInst
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
-	hostIdentify.ObjType = "hostidentifier"
+	hostIdentify.ObjType = objectTypeIdentifier
 	hostIdentify.Action = metadata.EventActionUpdate
 
 	go func() {
@@ -161,13 +161,15 @@ func (ih *IdentifierHandler) handleModuleTransfer(e *metadata.EventInstCtx) {
 	}()
 }
 
+const objectTypeIdentifier = "hostidentifier"
+
 func (ih *IdentifierHandler) handleBindProcess(e *metadata.EventInstCtx) {
 	blog.InfoJSON("identifier: handle inst %s", e)
 
 	hostIdentify := e.EventInst
 	hostIdentify.Data = nil
 	hostIdentify.EventType = metadata.EventTypeRelation
-	hostIdentify.ObjType = "hostidentifier"
+	hostIdentify.ObjType = objectTypeIdentifier
 	hostIdentify.Action = metadata.EventActionUpdate
 
 	go func() {
@@ -228,9 +230,9 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 
 		if formdb {
 			for _, hostID := range hosIDs[index:leftIndex] {
-				inst, err := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
-				if err != nil {
-					blog.Errorf("identifier: getCache error %+v", err)
+				inst, getCacheErr := getCache(ih.ctx, ih.cache, ih.db, common.BKInnerObjIDHost, hostID, true)
+				if getCacheErr != nil {
+					blog.Errorf("identifier: getCache error %+v", getCacheErr)
 					continue
 				}
 				if nil == inst {
@@ -251,7 +253,7 @@ func (ih *IdentifierHandler) handleRelatedInst(hostIdentify metadata.EventInst, 
 				idens = make([]interface{}, len(hostIDKeys))
 				for index := range idens {
 					// simulate that redis returns all nil
-					idens[index] = "nil"
+					idens[index] = nilstr
 				}
 			}
 			for identIndex := range idens {
@@ -333,7 +335,7 @@ func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []i
 			}
 			// get module ids
 			relations = []metadata.ModuleHost{}
-			cond := condition.CreateCondition().Field(common.BKAppIDField).Eq(proc2module[0].AppID).Field(common.BKModuleNameField).In(modulenames)
+			cond = condition.CreateCondition().Field(common.BKAppIDField).Eq(proc2module[0].AppID).Field(common.BKModuleNameField).In(modulenames)
 			if err = ih.db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).Fields(common.BKModuleIDField).All(ih.ctx, &relations); err != nil {
 				return nil, err
 			}
@@ -442,7 +444,7 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 	var err error
 	ret := cache.Get(getInstCacheKey(objType, instID)).Val()
 	inst := Inst{objType: objType, instID: instID, ident: &HostIdentifier{}, data: map[string]interface{}{}}
-	if "" == ret || "nil" == ret || fromdb {
+	if "" == ret || nilstr == ret || fromdb {
 		blog.Infof("objType %s, instID %d not in cache, fetch it from db", objType, instID)
 		getobjCondition := map[string]interface{}{
 			common.GetInstIDField(objType): instID,
@@ -462,12 +464,12 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 			if err = db.Table(common.BKTableNameModuleHostConfig).Find(moduleHostCond).All(ctx, &relations); err != nil {
 				return nil, err
 			}
-			for _, rela := range relations {
-				hostmoduleids = append(hostmoduleids, rela.ModuleID)
-				inst.ident.Module[strconv.FormatInt(rela.ModuleID, 10)] = &Module{
-					SetID:    rela.SetID,
-					ModuleID: rela.ModuleID,
-					BizID:    rela.AppID,
+			for _, relate := range relations {
+				hostmoduleids = append(hostmoduleids, relate.ModuleID)
+				inst.ident.Module[strconv.FormatInt(relate.ModuleID, 10)] = &Module{
+					SetID:    relate.SetID,
+					ModuleID: relate.ModuleID,
+					BizID:    relate.AppID,
 				}
 			}
 			inst.data["associations"] = inst.ident.Module
@@ -578,11 +580,13 @@ func (ih *IdentifierHandler) handleInstLoop() error {
 	}
 }
 
+const nilstr = "nil"
+
 func (ih *IdentifierHandler) popEventInst() *metadata.EventInstCtx {
 
 	eventstrs := ih.cache.BRPop(time.Second*60, types.EventCacheEventQueueDuplicateKey).Val()
 
-	if 0 >= len(eventstrs) || "nil" == eventstrs[1] || "" == eventstrs[1] {
+	if 0 >= len(eventstrs) || nilstr == eventstrs[1] || "" == eventstrs[1] {
 		return nil
 	}
 
@@ -648,13 +652,13 @@ func (ih *IdentifierHandler) fetchHostCache() {
 	for _, ident := range hosts {
 		ident.Module = map[string]*Module{}
 		hostprocs := map[int64]bool{}
-		for _, rela := range relationMap[ident.HostID] {
-			ident.Module[strconv.FormatInt(rela.ModuleID, 10)] = &Module{
-				SetID:    rela.SetID,
-				ModuleID: rela.ModuleID,
-				BizID:    rela.AppID,
+		for _, relate := range relationMap[ident.HostID] {
+			ident.Module[strconv.FormatInt(relate.ModuleID, 10)] = &Module{
+				SetID:    relate.SetID,
+				ModuleID: relate.ModuleID,
+				BizID:    relate.AppID,
 			}
-			if module, ok := modulesMap[rela.ModuleID]; ok {
+			if module, ok := modulesMap[relate.ModuleID]; ok {
 				for _, procid := range proc2modulesMap[module.ModuleName] {
 					hostprocs[procid] = true
 				}

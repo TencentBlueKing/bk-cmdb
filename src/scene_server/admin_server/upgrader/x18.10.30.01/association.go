@@ -200,6 +200,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
 	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
 	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
+	if err != nil {
+		return err
+	}
 
 	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())

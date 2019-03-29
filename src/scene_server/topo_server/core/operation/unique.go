@@ -78,7 +78,7 @@ func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) 
 func (a *unique) Search(params types.ContextParams, objectID string) (objectUniques []metadata.ObjectUnique, err error) {
 	resp, err := a.clientSet.ObjectController().Unique().Search(context.Background(), params.Header, objectID)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] search for %s, %#v failed %v", objectID, err)
+		blog.Errorf("[UniqueOperation] search for %s, failed %v", objectID, err)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 	if !resp.Result {

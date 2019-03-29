@@ -32,7 +32,6 @@ import (
 )
 
 var sLoginURL string
-var checkUrl string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
