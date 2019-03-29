@@ -19,17 +19,12 @@ import (
 	"configcenter/src/auth/meta"
 )
 
+var NotEnoughLayer = fmt.Errorf("not enough layer")
+
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
-
-var NotEnoughLayer = fmt.Errorf("not enough layer")
-
-func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, error) {
-	resourceType := attribute.Basic.Type
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
-
+func convertResourceType(resourceType meta.ResourceType, businessID int64) (*ResourceTypeID, error) {
 	var iamResourceType ResourceTypeID
 	switch resourceType {
 	case meta.Business:
@@ -41,13 +36,11 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 
 		fallthrough
 	case meta.Model:
-
-		if attribute.BusinessID > 0 {
+		if businessID > 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
 		}
-
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
 		iamResourceType = BizTopoInstance
 
@@ -55,7 +48,7 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = SysSystemBase
 
 	case meta.ModelClassification:
-		if attribute.BusinessID > 0 {
+		if businessID > 0 {
 			iamResourceType = BizModelGroup
 		} else {
 			iamResourceType = SysModelGroup
@@ -73,14 +66,14 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = SysSystemBase
 
 	case meta.ModelInstance:
-		if attribute.BusinessID <= 0 {
+		if businessID <= 0 {
 			iamResourceType = SysInstance
 		} else {
 			iamResourceType = BizInstance
 		}
 
 	case meta.HostInstance:
-		if attribute.BusinessID <= 0 {
+		if businessID <= 0 {
 			iamResourceType = SysHostInstance
 		} else {
 			iamResourceType = BizHostInstance
@@ -97,9 +90,9 @@ func convertResourceType(attribute *meta.ResourceAttribute) (*ResourceTypeID, er
 		iamResourceType = BizCustomQuery
 
 	case meta.NetDataCollector:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", attribute.Basic.Type)
+		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
 
 	return &iamResourceType, nil
@@ -111,7 +104,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 	info := new(ResourceInfo)
 	info.ResourceName = attribute.Basic.Name
 
-	resourceTypeID, err := convertResourceType(attribute)
+	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
 		return info, err
 	}
@@ -241,10 +234,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
+		meta.TransferHost,
 		meta.MoveHostToModule:
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return ModuleTransfer, nil
-		}
+		return ModuleTransfer, nil
 
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool
