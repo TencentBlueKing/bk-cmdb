@@ -21,11 +21,11 @@ type Metric struct {
 
 func newMetric(m MetricInterf) (*Metric, error) {
 	if m == nil {
-		return nil, errors.New("metric is nil.")
+		return nil, errors.New("metric is nil")
 	}
 	meta := m.GetMeta()
 	if len(meta.Name) == 0 {
-		return nil, errors.New("metric name is null.")
+		return nil, errors.New("metric name is null")
 	}
 
 	if len(meta.Help) == 0 {

@@ -715,7 +715,7 @@ func (h *HostSnap) healthCheck(closeChan chan struct{}) {
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			channelstatus := 0
+			var channelstatus int
 			if err := h.snapCli.Ping().Err(); err != nil {
 				channelstatus = common.CCErrHostGetSnapshotChannelClose
 				blog.Errorf("snap redis server connection error: %s", err.Error())

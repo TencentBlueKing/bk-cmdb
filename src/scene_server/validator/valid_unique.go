@@ -47,7 +47,7 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 			case metadata.UinqueKeyKindProperty:
 				property, ok := valid.idToProperty[int64(key.ID)]
 				if !ok {
-					blog.Errorf("[validCreateUnique] find [%s] property [%d] error %v", valid.objID, key.ID)
+					blog.Errorf("[validCreateUnique] find [%s] property [%d] error not found", valid.objID, key.ID)
 					return valid.errif.Errorf(common.CCErrTopoObjectPropertyNotFound, key.ID)
 				}
 				uniquekeys[property.PropertyID] = true
