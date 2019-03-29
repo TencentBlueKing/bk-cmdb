@@ -216,10 +216,10 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 			}
 
 			topo.Data[common.BKProcessIDField] = procID
-			condition := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
+			cond := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
 			// fmt.Printf("--- \033[36mupdate process by %+v, data: %+v\033[0m\n", condition, topo.Data)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameBaseProcess).Update(ctx, condition, topo.Data)
+				err = db.Table(common.BKTableNameBaseProcess).Update(ctx, cond, topo.Data)
 				if nil != err {
 					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
 				}
