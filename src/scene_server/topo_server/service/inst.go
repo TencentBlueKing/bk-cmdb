@@ -13,18 +13,19 @@
 package service
 
 import (
-    "strconv"
-    "strings"
+	"fmt"
+	"strconv"
+	"strings"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/condition"
-    "configcenter/src/common/mapstr"
-    frtypes "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    paraparse "configcenter/src/common/paraparse"
-    "configcenter/src/scene_server/topo_server/core/operation"
-    "configcenter/src/scene_server/topo_server/core/types"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
+	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	paraparse "configcenter/src/common/paraparse"
+	"configcenter/src/scene_server/topo_server/core/operation"
+	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // CreateInst create a new inst
@@ -118,6 +119,18 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 	if err := data.MarshalJSONInto(updateCondition); nil != err {
 		blog.Errorf("[api-inst] failed to parse the input data(%v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	// check inst_id field to be not empty, is dangerous for empty inst_id field, which will update or delete all instance
+	for idx, item := range updateCondition.Update {
+		if item.InstID == 0 {
+			return nil, fmt.Errorf("%d's update item's field `inst_id` emtpy", idx)
+		}
+	}
+	for idx, instID := range updateCondition.Delete.InstID {
+		if instID == 0 {
+			return nil, fmt.Errorf("%d's delete item's field `inst_id` emtpy", idx)
+		}
 	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
