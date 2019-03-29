@@ -312,15 +312,15 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	return
 }
 
-func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]string, error) {
+func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
 	info := &ListAuthorizedResources{
 		Principal: Principal{
 			Type: cmdbUser,
 			ID:   user.UserName,
 		},
 		ScopeInfo: ScopeInfo{
-			ScopeType: SystemIDCMDB,
-			ScopeID:   string(SysBusinessInstance),
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
 		},
 		TypeActions: []TypeAction{
 			{
@@ -328,6 +328,7 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 				ResourceType: SysBusinessInstance,
 			},
 		},
+		DataType: "array",
 	}
 
 	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
@@ -335,11 +336,15 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 		return nil, err
 	}
 
-	businessIDs := make([]string, 0)
+	businessIDs := make([]int64, 0)
 	for _, apps := range appList {
 		for _, appRsc := range apps.ResourceIDs {
 			for _, app := range appRsc {
-				businessIDs = append(businessIDs, app.ResourceID)
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
 			}
 		}
 	}

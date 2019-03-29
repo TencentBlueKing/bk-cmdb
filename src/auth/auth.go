@@ -29,7 +29,7 @@ type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 	AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error)
-	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]string, error)
+	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
 }
 
 // ResourceHandler is used to handle the resources register to authorize center.
