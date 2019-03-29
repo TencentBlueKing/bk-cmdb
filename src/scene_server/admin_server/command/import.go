@@ -13,7 +13,6 @@
 package command
 
 import (
-	"configcenter/src/common/blog"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
@@ -230,14 +230,14 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 				if inSlice(moduleName, curTopo.Modules) {
 					continue
 				}
-				procmod := ProModule{}
-				procmod.ModuleName = moduleName
-				procmod.BizID = bizID
-				procmod.ProcessID = procID
-				procmod.OwnerID = opt.OwnerID
-				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
+				procMod := ProModule{}
+				procMod.ModuleName = moduleName
+				procMod.BizID = bizID
+				procMod.ProcessID = procID
+				procMod.OwnerID = opt.OwnerID
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procMod)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procMod)
 					if nil != err {
 						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
 					}
