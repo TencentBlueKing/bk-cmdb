@@ -46,16 +46,16 @@ func Parse(args []string) error {
 	)
 
 	// set flags
-	bkbizfs := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
-	bkbizfs.BoolVar(&dryRunFlag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
-	bkbizfs.BoolVar(&exportFlag, "export", false, "export flag")
-	bkbizfs.BoolVar(&miniFlag, "mini", false, "mini flag, only export required fields")
-	bkbizfs.BoolVar(&importFlag, "import", false, "import flag")
-	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
-	bkbizfs.StringVar(&filePath, "file", "", "export/import filepath")
-	bkbizfs.StringVar(&configPosition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
-	bkbizfs.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
-	err := bkbizfs.Parse(args[1:])
+	cmdFlags := pflag.NewFlagSet(bkbizCmdName, pflag.ExitOnError)
+	cmdFlags.BoolVar(&dryRunFlag, "dryrun", false, "dryrun flag, if this flag seted, we will just print what we will do but not execute to db")
+	cmdFlags.BoolVar(&exportFlag, "export", false, "export flag")
+	cmdFlags.BoolVar(&miniFlag, "mini", false, "mini flag, only export required fields")
+	cmdFlags.BoolVar(&importFlag, "import", false, "import flag")
+	cmdFlags.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
+	cmdFlags.StringVar(&filePath, "file", "", "export/import filepath")
+	cmdFlags.StringVar(&configPosition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
+	cmdFlags.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
+	err := cmdFlags.Parse(args[1:])
 	if err != nil {
 		return err
 	}
