@@ -53,8 +53,8 @@ func (n *Node) getInstID() (uint64, error) {
 	return id, nil
 }
 
-func (n *Node) getChilDInstNames() (instnames []string) {
-	instnamefield := n.getChilDInstNameField()
+func (n *Node) getChildInstNames() (instnames []string) {
+	instnamefield := n.getChildInstNameField()
 	for _, child := range n.Childs {
 		name, ok := child.Data[instnamefield].(string)
 		if !ok {
@@ -65,7 +65,7 @@ func (n *Node) getChilDInstNames() (instnames []string) {
 	}
 	return
 }
-func (n *Node) getChilDInstNameField() string {
+func (n *Node) getChildInstNameField() string {
 	for _, child := range n.Childs {
 		return common.GetInstNameField(child.ObjID)
 	}
