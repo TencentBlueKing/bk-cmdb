@@ -510,7 +510,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 
 			childCondition := condition.CreateCondition()
 			childCondition.Field(common.BKInstParentStr).Eq(instID)
-			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
+			childCondition.Field(node.getChildInstNameField()).NotIn(node.getChildInstNames())
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 				childCondition.Field(common.BKDefaultField).NotGt(0)
