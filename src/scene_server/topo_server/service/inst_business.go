@@ -154,7 +154,6 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())

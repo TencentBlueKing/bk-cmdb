@@ -72,7 +72,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		resources[i].Reason = verifyResult.Reason
 	}
 
-	resp.WriteAsJson(metadata.NewSuccessResp(resources))
+	resp.WriteEntity(metadata.NewSuccessResp(resources))
 
 }
 
@@ -109,5 +109,5 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	resp.WriteAsJson(metadata.NewSuccessResp(result.Data))
+	resp.WriteEntity(metadata.NewSuccessResp(result.Data))
 }
