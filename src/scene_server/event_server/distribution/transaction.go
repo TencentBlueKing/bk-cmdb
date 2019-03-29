@@ -49,15 +49,15 @@ func (th *TxnHandler) Run() (err error) {
 	th.wg.Add(1)
 	go th.watchTransaction()
 outer:
-	for txnID := range th.commited {
-		blog.V(4).Infof("transaction %v commited", txnID)
+	for txnID := range th.committed {
+		blog.V(4).Infof("transaction %v committed", txnID)
 		for {
 			err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
 			if ccredis.IsNilErr(err) {
 				break
 			}
 			if err != nil {
-				blog.Warnf("move commited event to event queue failed: %v, we will try again later", err)
+				blog.Warnf("move committed event to event queue failed: %v, we will try again later", err)
 				continue outer
 			}
 		}
@@ -130,8 +130,8 @@ func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
 		switch txn.Status {
 		case daltypes.TxStatusOnProgress:
 			continue
-		case daltypes.TxStatusCommited:
-			th.commited <- txn.TxnID
+		case daltypes.TxStatusCommitted:
+			th.committed <- txn.TxnID
 		case daltypes.TxStatusAborted, daltypes.TxStatusException:
 			droped = append(droped, txn.TxnID)
 		default:

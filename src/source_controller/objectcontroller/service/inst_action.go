@@ -172,7 +172,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 				var ok bool
 				realObjType, ok = originData[common.BKObjIDField].(string)
 				if !ok {
-					blog.Errorf("create event error: there is no bk_obj_type exist,originData: %#v", err, originData)
+					blog.Errorf("create event error: there is no bk_obj_type exist,originData: %#v", originData)
 					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 					return
 				}

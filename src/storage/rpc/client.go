@@ -13,7 +13,6 @@
 package rpc
 
 import (
-	"sync/atomic"
 	"bufio"
 	"errors"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"configcenter/src/common/blog"
@@ -33,19 +33,17 @@ var (
 	opPingTimeout = 20 * time.Second
 )
 
-const commanLimit = 40
-
 //Client replica client
 type Client struct {
-	send     chan *Message
-	seq      uint32
+	send         chan *Message
+	seq          uint32
 	messageMutex sync.RWMutex
-	messages map[uint32]*Message
-	stream   *streamstore
-	wire     Wire
-	peerAddr string
-	err      error
-	codec    Codec
+	messages     map[uint32]*Message
+	stream       *streamstore
+	wire         Wire
+	peerAddr     string
+	err          error
+	codec        Codec
 
 	request  Message
 	response Message
@@ -292,13 +290,13 @@ func (c *Client) handleResponse(resp *Message) {
 			return
 		}
 
-		delete(c.messages, resp.seq) 
+		delete(c.messages, resp.seq)
 		c.messageMutex.Unlock()
 
 		req.typz = resp.typz
 		req.Data = resp.Data
 		close(req.complete)
-	}else{
+	} else {
 		c.messageMutex.Unlock()
 	}
 }

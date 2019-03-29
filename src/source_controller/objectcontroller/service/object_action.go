@@ -123,7 +123,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjDes).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select object by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object by condition(%+v), error is %v", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
 		return
 	}

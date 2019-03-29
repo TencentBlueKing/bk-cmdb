@@ -49,7 +49,7 @@ type TxStatus int
 // TxStatus enumerations
 const (
 	TxStatusOnProgress TxStatus = iota + 1
-	TxStatusCommited
+	TxStatusCommitted
 	TxStatusAborted
 	TxStatusException
 )

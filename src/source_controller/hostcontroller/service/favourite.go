@@ -165,7 +165,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 
 	err = s.Instance.Table(common.BKTableNameHostFavorite).Delete(ctx, query)
 	if nil != err {
-		blog.Errorf("delete host favorites with id[%s] failed, err: %v, params:%v", err, query)
+		blog.Errorf("delete host favorites with id[%s] failed, err: %v, params:%v", id, err, query)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFavouriteDeleteFail)})
 		return
 	}

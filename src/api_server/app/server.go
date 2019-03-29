@@ -17,8 +17,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/app/options"
 	apisvc "configcenter/src/api_server/service"
 	"configcenter/src/api_server/service/v3"
@@ -29,6 +27,8 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -96,7 +96,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	v3Service.Engine = engine
 	apiSvr.Core = engine
 	select {}
-	return nil
 }
 
 type APIServer struct {

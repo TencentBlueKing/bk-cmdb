@@ -55,7 +55,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
 	if err != nil {
-		blog.Errorf("get host by id[%s] failed, err: %v", hostID, err)
+		blog.Errorf("get host by id[%d] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}

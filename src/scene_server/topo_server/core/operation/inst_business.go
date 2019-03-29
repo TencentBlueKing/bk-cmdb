@@ -75,7 +75,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		defaultOwnerHeader := util.CopyHeader(params.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
+		var asstRsp *metadata.QueryObjectAssociationResult
+		asstRsp, err = b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -86,7 +87,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		expectAssts := asstRsp.Data
 		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, expectAssts)
 
-		existAsstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, asstQuery)
+		var existAsstRsp *metadata.QueryObjectAssociationResult
+		existAsstRsp, err = b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, asstQuery)
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())

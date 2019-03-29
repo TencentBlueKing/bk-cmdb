@@ -14,13 +14,11 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
@@ -76,15 +74,4 @@ func (lgc *Logics) AutoInputV3Field(params mapstr.MapStr, objId, user string, he
 	}
 
 	return params, nil
-}
-
-// httpRequest http request
-func httpRequest(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-	reply, err := httpClient.POST(url, header, params)
-	return string(reply), err
 }
