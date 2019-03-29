@@ -49,6 +49,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 			blog.Errorf("failed to create a new %s, %s", objID, err.Error())
 			return nil, err
 		}
+		blog.V(5).Infof("create instances with batch method, result: %+v", setInst)
 		return setInst, nil
 	}
 
@@ -99,6 +100,7 @@ func (s *topoService) DeleteInst(params types.ContextParams, pathParams, queryPa
 	err = s.core.InstOperation().DeleteInstByInstID(params, obj, []int64{instID}, true)
 	return nil, err
 }
+
 func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("obj_id")

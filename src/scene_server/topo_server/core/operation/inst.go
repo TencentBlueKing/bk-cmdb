@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -90,8 +91,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	var rowErr map[int64]error
 	results := &BatchResult{}
-	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
-		return results, nil
+	if batchInfo.InputType != common.InputTypeExcel {
+		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
+	}
+	if batchInfo.BatchInfo == nil {
+		return results, fmt.Errorf("BatchInfo empty")
 	}
 
 	assObjectInt := NewAsstObjectInst(params.Header, params.Engin, params.SupplierAccount, nil)
@@ -100,13 +104,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	if nil != err {
 		blog.Error("failed to read the object att, error is %s ", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommSearchPropertyFailed, err.Error())
-		//return fmt.Errorf("get host assocate object  property failure, error:%s", err.Error())
 	}
 	rowErr, err = assObjectInt.InitInstFromData(*batchInfo.BatchInfo)
 	if nil != err {
 		blog.Error("failed to read the object att, error is %s ", err.Error())
 		return nil, params.Err.Error(common.CCErrTopoInstSelectFailed)
-		//return fmt.Errorf("get host assocate object instance data failure, error:%s", err.Error()), nil, nil, nil
 	}
 
 	for errIdx, err := range rowErr {
@@ -120,8 +122,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
-
-		//fmt.Println("input:", colInput)
 
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
@@ -151,7 +151,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 						continue
 					}
 				}
-
 			}
 		}
 
@@ -162,13 +161,21 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 			continue
 		}
+		instID, err := item.GetInstID()
+		if nil != err {
+			blog.Errorf("[operation-inst] unexpected error, create or update instance success, but get instant id failed, err: %+v", err.Error())
+			results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
+			continue
+		}
+		results.Success = append(results.Success, strconv.FormatInt(instID, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 		if err := c.setInstAsst(params, obj, item); nil != err {
 			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
 			return nil, err
 		}
-	} // end foreach batchinfo
+	} // end foreach batchInfo
 
+	blog.V(5).Infof("create batch instances, result: %+v", results)
 	return results, nil
 }
 
