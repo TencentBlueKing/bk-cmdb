@@ -500,9 +500,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 		}
 
-		// fetch datas that should delete
+		// fetch data that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
-			childtablename := common.GetInstTableName(node.getChildObjID())
+			childTableName := common.GetInstTableName(node.getChildObjID())
 			instID, err := node.getInstID()
 			if nil != err {
 				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
@@ -518,7 +518,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
 			shouldDelete := make([]map[string]interface{}, 0)
-			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
+			err = ipt.db.Table(childTableName).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
 			if nil != err {
 				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
 			}
