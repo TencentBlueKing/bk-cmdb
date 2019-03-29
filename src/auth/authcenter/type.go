@@ -180,6 +180,8 @@ type ListAuthorizedResources struct {
 	Principal   `json:",inline"`
 	ScopeInfo   `json:",inline"`
 	TypeActions []TypeAction `json:"resource_types_actions"`
+	// array or string
+	DataType string `json:"resource_data_type"`
 }
 
 type TypeAction struct {

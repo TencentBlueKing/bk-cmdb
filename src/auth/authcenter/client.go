@@ -412,9 +412,8 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/authorized-resources/search", SystemIDCMDB)
 	resp := ListAuthorizedResourcesResult{}
 
-	err := a.client.Delete().
+	err := a.client.Post().
 		SubResource(url).
-		WithContext(ctx).
 		WithContext(ctx).
 		WithHeaders(a.basicHeader).
 		Body(body).
