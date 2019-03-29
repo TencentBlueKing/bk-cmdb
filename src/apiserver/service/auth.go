@@ -20,7 +20,9 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -72,4 +74,40 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	resp.WriteAsJson(metadata.NewSuccessResp(resources))
 
+}
+
+func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+
+	userInfo := meta.UserInfo{
+		UserName:        util.GetUser(pheader),
+		SupplierAccount: util.GetOwnerID(pheader),
+	}
+
+	appIDList, err := s.authorizer.GetAuthorizedBusinessList(req.Request.Context(), userInfo)
+	if err != nil {
+		blog.Errorf("get user: %s authorized business list failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		return
+	}
+
+	input := params.SearchParams{
+		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{"$in": appIDList}},
+	}
+
+	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount, req.Request.Header, &input)
+	if err != nil {
+		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		return
+	}
+
+	if !result.Result {
+		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, result.ErrMsg)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		return
+	}
+
+	resp.WriteAsJson(metadata.NewSuccessResp(result.Data))
 }

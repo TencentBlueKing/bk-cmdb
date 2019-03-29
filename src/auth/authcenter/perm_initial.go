@@ -38,7 +38,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 		return err
 	}
 
-	// init model classifaction
+	// init model classification
 	clsName2ID := map[string]int64{}
 	for _, cls := range configs.Classifications {
 		bizID, _ := cls.Metadata.Label.GetBusinessID()

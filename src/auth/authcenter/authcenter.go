@@ -218,10 +218,8 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		anyResourceIndex := 0
 		for ressindex := range ress {
 			if permit.IsPermit(&ress[ressindex].ResourceAttribute) {
-				blog.Debug("permited")
 				ress[ressindex].Decision.Authorized = true
 			} else {
-				blog.Debug("query permit %+v", ress[ressindex])
 				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
 				if err != nil {
 					ress[ressindex].Decision.Authorized = false
@@ -240,7 +238,6 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 					ActionID:     actionID,
 					ResourceInfo: *rscInfo,
 				}
-				blog.Debug("query param %+v", resourceAction)
 				if len(rscInfo.ResourceID) > 0 {
 					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
 					ress[ressindex].exactResourceIndex = exactResourceIndex
@@ -313,6 +310,41 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 
 	return
+}
+
+func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]string, error) {
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: SystemIDCMDB,
+			ScopeID:   string(SysBusinessInstance),
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+	}
+
+	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]string, 0)
+	for _, apps := range appList {
+		for _, appRsc := range apps.ResourceIDs {
+			for _, app := range appRsc {
+				businessIDs = append(businessIDs, app.ResourceID)
+			}
+		}
+	}
+
+	return businessIDs, nil
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
