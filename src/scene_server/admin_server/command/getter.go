@@ -62,8 +62,8 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 			return nil, err
 		}
 		proctopo := &ProcessTopo{
-			BizName: opt.bizName,
-			Procs:   procmodules,
+			BizName:   opt.bizName,
+			Processes: procmodules,
 		}
 		result.ProcTopos = proctopo
 	}
@@ -83,7 +83,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		}
 
 		if result.ProcTopos != nil {
-			for _, proc := range result.ProcTopos.Procs {
+			for _, proc := range result.ProcTopos.Processes {
 				proc.Data = util.CopyMap(proc.Data, append(keys[common.BKInnerObjIDProc], "bind_ip", "port", "protocol", "bk_func_name", "work_path", "bk_start_param_regex"), []string{common.BKInstParentStr, common.BKAppIDField, common.BKOwnerIDField})
 			}
 		}
