@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -59,6 +60,7 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 
 	return setInst.ToMapStr(), nil
 }
+
 func (s *topoService) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, pathParams("obj_id"))
@@ -105,6 +107,18 @@ func (s *topoService) UpdateInsts(params types.ContextParams, pathParams, queryP
 	if err := data.MarshalJSONInto(updateCondition); nil != err {
 		blog.Errorf("[api-inst] failed to parse the input data(%v), error info is %s", data, err.Error())
 		return nil, err
+	}
+
+	// check inst_id field to be not empty, is dangerous for empty inst_id field, which will update or delete all instance
+	for idx, item := range updateCondition.Update {
+		if item.InstID == 0 {
+			return nil, fmt.Errorf("%d's update item's field `inst_id` emtpy", idx)
+		}
+	}
+	for idx, instID := range updateCondition.Delete.InstID {
+		if instID == 0 {
+			return nil, fmt.Errorf("%d's delete item's field `inst_id` emtpy", idx)
+		}
 	}
 
 	obj, err := s.core.ObjectOperation().FindSingleObject(params, objID)
