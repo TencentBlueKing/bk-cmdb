@@ -319,8 +319,6 @@ const (
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
-	// CCErrorTopoModleStopped means model have been stopped to use
-	CCErrorTopoModleStopped = 1199045
 
 	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
 	CCErrTopoAppDeleteFailed                       = 1001031
@@ -371,6 +369,8 @@ const (
 	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
 	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
 	CCErrorTopoAssociationKindInconsistent = 1101083
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1101084
 
 	// objectcontroller 1102XXX
 

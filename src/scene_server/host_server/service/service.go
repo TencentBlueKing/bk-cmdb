@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"context"
 	"net/http"
 
@@ -30,16 +31,15 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/authorize"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc       discovery.DiscoveryInterface
-	CacheDB    *redis.Client
-	Authorizer authorize.HostAuthorizer
+	disc        discovery.DiscoveryInterface
+	CacheDB     *redis.Client
+	AuthManager *extensions.AuthManager
 }
 
 type srvComm struct {

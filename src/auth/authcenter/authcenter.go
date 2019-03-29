@@ -217,37 +217,42 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		exactResourceIndex := 0
 		anyResourceIndex := 0
 		for ressindex := range ress {
-			if permit.IsPermit(&ress[ressindex].ResourceAttribute) {
+			resourceAttribute := &ress[ressindex].ResourceAttribute
+			if permit.ShouldSkipAuthorize(resourceAttribute) {
+				blog.V(5).Infof("skip authorization for: %+v", resourceAttribute)
 				ress[ressindex].Decision.Authorized = true
+				continue
+			}
+			blog.Debug("query permit %+v", ress[ressindex])
+			rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.Fatalf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
+				continue
+			}
+
+			actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.ErrorJSON("adaptor resource action failed, resource: %s, err: %s", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
+				continue
+			}
+
+			resourceAction := ResourceAction{
+				ActionID:     actionID,
+				ResourceInfo: *rscInfo,
+			}
+			blog.Debug("query param %+v", resourceAction)
+			if len(rscInfo.ResourceID) > 0 {
+				exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].exactResourceIndex = exactResourceIndex
+				exactResourceIndex++
 			} else {
-				rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
-				if err != nil {
-					ress[ressindex].Decision.Authorized = false
-					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
-					continue
-				}
-
-				actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
-				if err != nil {
-					ress[ressindex].Decision.Authorized = false
-					ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
-					continue
-				}
-
-				resourceAction := ResourceAction{
-					ActionID:     actionID,
-					ResourceInfo: *rscInfo,
-				}
-				if len(rscInfo.ResourceID) > 0 {
-					exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
-					ress[ressindex].exactResourceIndex = exactResourceIndex
-					exactResourceIndex++
-				} else {
-					anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
-					ress[ressindex].anyResourceIndex = anyResourceIndex
-					anyResourceIndex++
-				}
-
+				anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].anyResourceIndex = anyResourceIndex
+				anyResourceIndex++
 			}
 		}
 
@@ -297,12 +302,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].anyResourceIndex, len(batchresult))
 					continue
 				}
-				if batchresult[ress[ressindex].anyResourceIndex].IsPass {
-					ress[ressindex].Authorized = true
-				} else {
+				if batchresult[ress[ressindex].anyResourceIndex].IsPass == false {
 					ress[ressindex].Authorized = false
 					ress[ressindex].Reason = "permission deny"
+					continue
 				}
+				ress[ressindex].Authorized = true
 			}
 		}
 		exactResourceInfo.ResourceActions = nil
@@ -353,45 +358,70 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
-	if !ac.Config.Enable {
+	if ac.Config.Enable == false {
+		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
 		return nil
 	}
 
+	if len(rs) == 0 {
+		return errors.New("no resource to be registered")
+	}
+
+	registerInfo, err := ac.DryRunRegisterResource(ctx, rs...)
+	if err != nil {
+		return err
+	}
+
+	header := http.Header{}
+	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
+
+	entities := &registerInfo.Resources
+	for _, entity := range *entities {
+		registerInfo.Resources = make([]ResourceEntity, 0)
+		registerInfo.Resources = append(registerInfo.Resources, entity)
+		ac.authClient.registerResource(ctx, header, registerInfo)
+	}
+	return nil
+}
+
+func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
+	if ac.Config.Enable == false {
+		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
+		return nil, nil
+	}
+
 	if len(rs) <= 0 {
-		// not resource should be register
-		return nil
+		blog.V(5).Info("no resource should be register")
+		return nil, nil
 	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
 	info.CreatorID = cmdbUserID
-	header := http.Header{}
+	info.Resources = make([]ResourceEntity, 0)
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {
-			return errors.New("invalid resource attribute with empty object")
+			return nil, errors.New("invalid resource attribute with empty object")
 		}
 		scope, err := ac.getScopeInfo(&r)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		rscInfo, err := adaptor(&r)
 		if err != nil {
-			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
 		}
 		entity := ResourceEntity{}
-		entity.ScopeID = scope.ScopeID
-		entity.ScopeType = scope.ScopeType
+		entity.ScopeInfo.ScopeID = scope.ScopeID
+		entity.ScopeInfo.ScopeType = scope.ScopeType
 		entity.ResourceType = rscInfo.ResourceType
 		entity.ResourceID = rscInfo.ResourceID
 		entity.ResourceName = rscInfo.ResourceName
 
-		// TODO replace register with batch createorupdate interface, currently is register one by one.
-		info.Resources = make([]ResourceEntity, 0)
+		// TODO replace register with batch create or update interface, currently is register one by one.
 		info.Resources = append(info.Resources, entity)
-		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-		ac.authClient.registerResource(ctx, header, &info)
 	}
-	return nil
+	return &info, nil
 }
 
 func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
@@ -466,6 +496,37 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
+func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
+	if !ac.Config.Enable {
+		return nil, nil
+	}
+
+	scopeInfo, err := ac.getScopeInfo(r)
+	if err != nil {
+		return nil, err
+	}
+	resourceType, err := convertResourceType(r.Type, r.BusinessID)
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	resourceID, err := GenerateResourceID(*resourceType, r)
+	if err != nil {
+		return nil, err
+	}
+	if len(resourceID) == 0 {
+		return nil, fmt.Errorf("generate resource id failed, return empty")
+	}
+	blog.Infof("GenerateResourceID result: %+v", resourceID)
+	searchCondition := SearchCondition{
+		ScopeInfo:       *scopeInfo,
+		ResourceType:    *resourceType,
+		ParentResources: resourceID[:len(resourceID)-1],
+	}
+	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
+	return result, err
+}
+
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
@@ -503,4 +564,34 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
+	}
+	info := DeregisterInfo{}
+	header := http.Header{}
+	for _, r := range rs {
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = ResourceTypeID(r[len(r)-1].ResourceType)
+		resourceID := make([]ResourceID, 0)
+		for _, item := range r {
+			resourceID = append(resourceID, ResourceID{
+				ResourceType: ResourceTypeID(item.ResourceType),
+				ResourceID:   item.ResourceID,
+			})
+		}
+		entity.ResourceID = resourceID
+
+		info.Resources = append(info.Resources, entity)
+	}
+
+	return ac.authClient.deregisterResource(ctx, header, &info)
 }

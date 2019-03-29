@@ -187,6 +187,8 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 	return models, nil
 }
 
+// GetMainlineParentObject get mainline relationship model
+// the parent not exactly mean parent in a tree case
 func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
