@@ -20,17 +20,6 @@ export const OPERATION = {
 }
 
 export default [{
-    name: 'generalModel',
-    path: `${prefix}:${param}`,
-    component: () => import('./index.vue'),
-    meta: {
-        auth: {
-            view: '',
-            meta: GET_MODEL_INST_AUTH_META,
-            operation: Object.values(OPERATION)
-        }
-    }
-}, {
     path: GET_MODEL_PATH('host'),
     redirect: {
         name: 'resource'
@@ -49,5 +38,16 @@ export default [{
     path: GET_MODEL_PATH('plat'),
     redirect: {
         name: '404'
+    }
+}, {
+    name: 'generalModel',
+    path: `${prefix}:${param}`,
+    component: () => import('./index.vue'),
+    meta: {
+        auth: {
+            view: '',
+            meta: GET_MODEL_INST_AUTH_META,
+            operation: Object.values(OPERATION)
+        }
     }
 }]
