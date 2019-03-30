@@ -3,18 +3,18 @@
 
 // 模型分组
 export const C_MODEL_GROUP = 'modelClassification.create'
-export const U_MODEL_GROUP = 'modelClassification.edit'
+export const U_MODEL_GROUP = 'modelClassification.update'
 export const D_MODEL_GROUP = 'modelClassification.delete'
 
 // 模型
 export const C_MODEL = 'model.create'
-export const R_MODEL = 'modelInstance.findMany'
-export const U_MODEL = 'model.edit'
+export const R_MODEL = 'model.findMany'
+export const U_MODEL = 'model.update'
 export const D_MODEL = 'model.delete'
 
 // 实例
 export const C_INST = 'modelInstance.create'
-export const U_INST = 'modelInstance.edit'
+export const U_INST = 'modelInstance.update'
 export const D_INST = 'modelInstance.delete'
 export const R_INST = 'modelInstance.findMany'
 
@@ -26,7 +26,7 @@ export const R_CUSTOM_QUERY = 'dynamicGrouping.findMany'
 
 // 进程管理
 export const C_PROCESS = 'process.create'
-export const U_PROCESS = 'process.edit'
+export const U_PROCESS = 'process.update'
 export const D_PROCESS = 'process.delete'
 export const R_PROCESS = 'process.findMany'
 export const PROCESS_BIND_MODULE = 'process.boundModuleToProcess'
@@ -35,7 +35,7 @@ export const PROCESS_SEARCH_MODULE = 'process.findBoundModuleProcess'
 
 // 业务拓扑
 export const C_TOPO = 'mainlineInstanceTopology.create'
-export const U_TOPO = 'mainlineInstanceTopology.edit'
+export const U_TOPO = 'mainlineInstanceTopology.update'
 export const D_TOPO = 'mainlineInstanceTopology.delete'
 export const R_TOPO = 'mainlineInstanceTopology.findMany'
 export const TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
@@ -43,7 +43,7 @@ export const TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
 // 主机管理
 export const C_HOST = 'hostInstance.create'
 export const R_HOST = 'hostInstance.findMany'
-export const U_HOST = 'hostInstance.edit'
+export const U_HOST = 'hostInstance.update'
 export const D_HOST = 'hostInstance.delete'
 export const HOST_TO_RESOURCE = 'hostInstance.moduleTransfer'
 export const HOST_ASSIGN = 'hostInstance.moduleTransfer'
@@ -53,7 +53,7 @@ export const HOST_ASSIGN = 'hostInstance.moduleTransfer'
 
 // 关联类型
 export const C_RELATION = 'associationType.create'
-export const U_RELATION = 'associationType.edit'
+export const U_RELATION = 'associationType.update'
 export const D_RELATION = 'associationType.delete'
 
 // 业务
