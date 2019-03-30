@@ -317,6 +317,46 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	return
 }
 
+func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+		DataType: "array",
+	}
+
+	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, apps := range appList {
+		for _, appRsc := range apps.ResourceIDs {
+			for _, app := range appRsc {
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
+}
+
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)

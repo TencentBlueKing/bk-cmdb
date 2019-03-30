@@ -215,7 +215,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	return am.collectHostByHostIDs(ctx, header, hostIDs...)
 }
 
-func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr, )([]HostSimplify, error){
+func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) ([]HostSimplify, error) {
 	hostIDs := make([]int64, 0)
 	hosts := make([]HostSimplify, 0)
 	for _, cls := range rawData {
@@ -280,7 +280,7 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		blog.V(3).Infof("get hosts by id failed, err: %+v", err)
 		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
 	}
-	
+
 	return am.constructHostFromSearchResult(ctx, header, result.Data.Info)
 }
 
@@ -394,7 +394,7 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 
 	// make auth resources
 	resources := am.MakeResourcesByHosts(header, action, bizID, hosts...)
-	
+
 	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
 		blog.Errorf("dry dun register failed, err: %+v", err)

@@ -21,9 +21,9 @@ var (
 	HostResource = ResourceType("host")
 	// BusinessResource represent business resource
 	BusinessResource = ResourceType("business")
-	SetResource = ResourceType("set")
-	ModuleResource = ResourceType("module")
-	ModelResource = ResourceType("model")
+	SetResource      = ResourceType("set")
+	ModuleResource   = ResourceType("module")
+	ModelResource    = ResourceType("model")
 	InstanceResource = ResourceType("instance")
 )
 
@@ -34,7 +34,7 @@ type ResourceType string
 type WorkRequest struct {
 	ResourceType ResourceType
 	Data         interface{}
-	Header interface{}
+	Header       interface{}
 	Delay        time.Duration
 }
 

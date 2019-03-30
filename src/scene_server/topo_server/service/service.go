@@ -38,14 +38,14 @@ import (
 )
 
 type Service struct {
-	Engine   *backbone.Engine
-	Txn      dal.DB
-	Core     core.Core
-	Config   options.Config
+	Engine      *backbone.Engine
+	Txn         dal.DB
+	Core        core.Core
+	Config      options.Config
 	AuthManager *extensions.AuthManager
-	Error    errors.CCErrorIf
-	Language language.CCLanguageIf
-	actions  []action
+	Error       errors.CCErrorIf
+	Language    language.CCLanguageIf
+	actions     []action
 }
 
 // WebService the web service
@@ -59,7 +59,8 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	// TODO: {version} need to replaced by v3
+	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -203,13 +204,13 @@ func (s *Service) Actions() []*httpserver.Action {
 					Engin:           s.Engine,
 					MetaData:        metadata,
 				}
-				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter,  req.QueryParameter, mData)
+				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
 
 				if dataErr == nil {
 					s.sendResponse(resp, common.CCSuccess, data)
 					return
 				}
-				
+
 				switch e := dataErr.(type) {
 				case errors.CCErrorCoder:
 					s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)

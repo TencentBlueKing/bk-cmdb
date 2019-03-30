@@ -30,7 +30,7 @@ import (
 
 // CreateInst create a new inst
 func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	
+
 	objID := pathParams("bk_obj_id")
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
@@ -91,7 +91,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
-	
+
 	return nil, s.Core.InstOperation().DeleteInstByInstID(params, obj, deleteCondition.Delete.InstID, true)
 }
 

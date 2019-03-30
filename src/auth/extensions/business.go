@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -54,7 +54,6 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	businessIDs = util.IntArrayUnique(businessIDs)
-
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).In(businessIDs).ToMapStr(),
@@ -95,7 +94,7 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 	return resources
 }
 
-func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error){
+func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error) {
 	var bizID int64
 	for idx, business := range businesses {
 		if idx == 0 && business.BKAppIDField != bizID {

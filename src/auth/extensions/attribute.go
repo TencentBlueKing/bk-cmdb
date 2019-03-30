@@ -137,7 +137,7 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
-	
+
 	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
 	if err != nil {
 		return fmt.Errorf("register model attribute failed, err: %+v", err)
@@ -150,7 +150,7 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
-	
+
 	resources, err := am.makeResourceByAttributes(ctx, header, meta.EmptyAction, attributes...)
 	if err != nil {
 		return fmt.Errorf("deregister model attribute failed, err: %+v", err)
