@@ -15,6 +15,7 @@ export const GET_MODEL_PATH = modelId => {
 
 export const OPERATION = {
     C_INST,
+    R_INST,
     U_INST,
     D_INST
 }
