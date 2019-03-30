@@ -7,6 +7,7 @@ import {
 } from '@/dictionary/auth'
 
 export const OPERATION = {
+    R_BUSINESS,
     C_BUSINESS,
     U_BUSINESS,
     BUSINESS_ARCHIVE
