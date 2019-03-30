@@ -30,6 +30,10 @@ export function getClassifications (app) {
     })
 }
 
+export function getAuthorizedBusiness (app) {
+    return app.$store.dispatch('objectBiz/getAuthorizedBusiness')
+}
+
 export function getBusiness (app) {
     return app.$store.dispatch('objectBiz/searchBusiness', {
         params: {
@@ -71,11 +75,14 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    await getViewAuth(app)
-    await getBusiness(app)
+    await Promise.all([
+        getViewAuth(app),
+        getAuthorizedBusiness(app)
+    ])
     return Promise.all([
         getClassifications(app),
         getUserCustom(app),
+        getBusiness(app),
         getUserList(app)
     ])
 }

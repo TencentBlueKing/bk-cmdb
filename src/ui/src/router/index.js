@@ -118,11 +118,11 @@ const cancelRequest = () => {
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 router.beforeEach((to, from, next) => {
-    const isStatusPage = statusRouter.some(status => status.name === to.name)
-    if (isStatusPage) {
-        next()
-    } else {
-        router.app.$nextTick(async () => {
+    router.app.$nextTick(async () => {
+        const isStatusPage = statusRouter.some(status => status.name === to.name)
+        if (isStatusPage) {
+            next()
+        } else {
             try {
                 setLoading(true)
                 await cancelRequest()
@@ -135,11 +135,12 @@ router.beforeEach((to, from, next) => {
                     next({ name: '403' })
                 }
             } catch (e) {
+                setLoading(false)
                 console.log(e)
                 next({name: 'error'})
             }
-        })
-    }
+        }
+    })
 })
 
 router.afterEach((to, from) => {

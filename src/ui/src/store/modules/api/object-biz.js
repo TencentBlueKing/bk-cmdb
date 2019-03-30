@@ -13,20 +13,89 @@ import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
-    bizId: null
+    bizId: null,
+    authorizedBusiness: []
 }
 
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
-    privilegeBusiness: (state, getters, rootState, rootGetters) => {
-        if (rootGetters.admin) return state.business
-        const privilege = (jsCookie.get('bk_privi_biz_id') || '').split('-')
-        return state.business.filter(business => privilege.includes(business['bk_biz_id'].toString()))
-    }
+    authorizedBusiness: state => state.authorizedBusiness
 }
 
 const actions = {
+    getAuthorizedBusiness ({ commit }) {
+        return Promise.resolve([{
+            'bk_biz_developer': '',
+            'bk_biz_id': 2,
+            'bk_biz_maintainer': 'admin',
+            'bk_biz_name': '蓝鲸',
+            'bk_biz_productor': '',
+            'bk_biz_tester': '',
+            'bk_supplier_account': '0',
+            'bk_supplier_id': 0,
+            'create_time': '2019-03-06T21:48:21.181+08:00',
+            'default': 0,
+            'language': '1',
+            'last_time': '2019-03-06T21:48:21.181+08:00',
+            'life_cycle': '2',
+            'operator': '',
+            'time_zone': 'Asia/Shanghai'
+        },
+        {
+            'bk_biz_developer': '',
+            'bk_biz_id': 3,
+            'bk_biz_maintainer': 'admin',
+            'bk_biz_name': '适当放松的',
+            'bk_biz_productor': '',
+            'bk_biz_tester': '',
+            'bk_supplier_account': '0',
+            'bk_supplier_id': 0,
+            'default': 0,
+            'language': '1',
+            'life_cycle': '2',
+            'operator': '',
+            'time_zone': 'Asia/Shanghai'
+        },
+        {
+            'bk_biz_developer': '',
+            'bk_biz_id': 4,
+            'bk_biz_maintainer': 'admin',
+            'bk_biz_name': 'breezeli',
+            'bk_biz_productor': '',
+            'bk_biz_tester': '',
+            'bk_supplier_account': '0',
+            'bk_supplier_id': 0,
+            'default': 0,
+            'language': '1',
+            'life_cycle': '2',
+            'operator': '',
+            'time_zone': 'Asia/Shanghai'
+        },
+        {
+            'bk_biz_developer': '',
+            'bk_biz_id': 6,
+            'bk_biz_maintainer': 'admin',
+            'bk_biz_name': 'test1',
+            'bk_biz_productor': '',
+            'bk_biz_tester': '',
+            'bk_supplier_account': '0',
+            'bk_supplier_id': 0,
+            'default': 0,
+            'language': '1',
+            'life_cycle': '2',
+            'operator': '',
+            'time_zone': 'Asia/Shanghai'
+        }])
+        // return $http.get('auth/business-list', {
+        //     requestId: 'getAuthorizedBusiness',
+        //     fromCache: true,
+        //     cancelWhenRouteChange: false
+        // }).then(list => {
+        //     commit('setAuthorizedBusiness', list)
+        //     return list
+        // })
+    },
     /**
      * 添加业务
      * @param {Function} commit store commit mutation hander
@@ -126,6 +195,9 @@ const mutations = {
     },
     setBizId (state, bizId) {
         state.bizId = bizId
+    },
+    setAuthorizedBusiness (state, list) {
+        state.authorizedBusiness = list
     }
 }
 

@@ -1,8 +1,8 @@
 <template>
-    <bk-selector
-        :list="privilegeBusiness"
+    <bk-selector style="text-align: left;"
+        :list="authorizedBusiness"
         :selected.sync="localSelected"
-        :searchable="privilegeBusiness.length > 5"
+        :searchable="authorizedBusiness.length > 5"
         :disabled="disabled"
         setting-key="bk_biz_id"
         display-key="bk_biz_name"
@@ -25,11 +25,12 @@
         },
         data () {
             return {
+                authorizedBusiness: [],
                 localSelected: ''
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness', 'bizId'])
+            ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
             localSelected (localSelected, prevSelected) {
@@ -60,8 +61,8 @@
             this.$http.deleteHeader('bk_biz_id')
         },
         async created () {
-            await this.getPrivilegeBusiness()
-            if (this.privilegeBusiness.length) {
+            this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
+            if (this.authorizedBusiness.length) {
                 this.setLocalSelected()
             } else {
                 this.$error(this.$t('Common["您没有业务权限"]'))
@@ -71,25 +72,13 @@
             this.$http.deleteHeader('bk_biz_id')
         },
         methods: {
-            getPrivilegeBusiness () {
-                return this.$store.dispatch('objectBiz/searchBusiness', {
-                    config: {
-                        requestId: 'post_searchBusiness_$ne_disabled',
-                        fromCache: true,
-                        cancelWhenRouterChange: false
-                    }
-                }).then(business => {
-                    this.$store.commit('objectBiz/setBusiness', business.info)
-                    return business
-                })
-            },
             setLocalSelected () {
                 const selected = this.value || parseInt(window.localStorage.getItem('selectedBusiness'))
-                const exist = this.privilegeBusiness.some(business => business['bk_biz_id'] === selected)
+                const exist = this.authorizedBusiness.some(business => business['bk_biz_id'] === selected)
                 if (exist) {
                     this.localSelected = selected
-                } else if (this.privilegeBusiness.length) {
-                    this.localSelected = this.privilegeBusiness[0]['bk_biz_id']
+                } else if (this.authorizedBusiness.length) {
+                    this.localSelected = this.authorizedBusiness[0]['bk_biz_id']
                 }
                 this.$store.commit('objectBiz/setBizId', this.localSelected)
             }
