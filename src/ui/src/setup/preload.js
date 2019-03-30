@@ -3,16 +3,24 @@ const preloadConfig = {
     cancelWhenRouteChange: false
 }
 
-export function _preloadPrivilege (app) {
-    /*
-    return app.$store.dispatch('userPrivilege/getUserPrivilege', {
-        ...preloadConfig,
-        requestId: 'get_getUserPrivilege'
+export function getViewAuth (app) {
+    const viewAuthorities = []
+    app.$router.options.routes.forEach(route => {
+        const meta = route.meta || {}
+        const auth = meta.auth || {}
+        const view = auth.view || ''
+        if (view && (typeof view !== 'function')) {
+            const [ type ] = view.split('.')
+            viewAuthorities.push({
+                resource_type: type,
+                action: 'read'
+            })
+        }
     })
-    */
+    return app.$store.dispatch('auth/getViewAuth', viewAuthorities)
 }
 
-export function _preloadClassifications (app) {
+export function getClassifications (app) {
     return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
         params: app.$injectMetadata(),
         config: {
@@ -22,7 +30,11 @@ export function _preloadClassifications (app) {
     })
 }
 
-export function _preloadBusiness (app) {
+export function getAuthorizedBusiness (app) {
+    return app.$store.dispatch('objectBiz/getAuthorizedBusiness')
+}
+
+export function getBusiness (app) {
     return app.$store.dispatch('objectBiz/searchBusiness', {
         params: {
             'fields': ['bk_biz_id', 'bk_biz_name'],
@@ -42,7 +54,7 @@ export function _preloadBusiness (app) {
     })
 }
 
-export function _preloadUserCustom (app) {
+export function getUserCustom (app) {
     return app.$store.dispatch('userCustom/searchUsercustom', {
         config: {
             ...preloadConfig,
@@ -52,7 +64,7 @@ export function _preloadUserCustom (app) {
     })
 }
 
-export function _preloadUserList (app) {
+export function getUserList (app) {
     return app.$store.dispatch('getUserList').then(list => {
         window.CMDB_USER_LIST = list
         app.$store.commit('setUserList', list)
@@ -63,11 +75,14 @@ export function _preloadUserList (app) {
 }
 
 export default async function (app) {
-    await _preloadBusiness(app)
+    await Promise.all([
+        getViewAuth(app),
+        getAuthorizedBusiness(app)
+    ])
     return Promise.all([
-        // _preloadPrivilege(app),
-        _preloadClassifications(app),
-        _preloadUserCustom(app),
-        _preloadUserList(app)
+        getClassifications(app),
+        getUserCustom(app),
+        getBusiness(app),
+        getUserList(app)
     ])
 }

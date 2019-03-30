@@ -86,7 +86,8 @@
                 default () {
                     return []
                 }
-            }
+            },
+            transferResourceDisabled: Boolean
         },
         data () {
             return {
@@ -179,7 +180,7 @@
                             'bk_inst_name': module['bk_module_name']
                         }
                     })
-                    this.tree.data = [{
+                    const treeData = [{
                         'default': 0,
                         'bk_obj_id': 'module',
                         'bk_obj_name': this.$t('HostResourcePool["资源池"]'),
@@ -191,6 +192,10 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
+                    if (this.transferResourceDisabled) {
+                        treeData.shift()
+                    }
+                    this.tree.data = treeData
                 })
             },
             setSelectedModuleStates () {

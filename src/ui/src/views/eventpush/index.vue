@@ -1,7 +1,11 @@
 <template>
     <div class="push-wrapper">
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
+            <bk-button type="primary"
+                :disabled="!$isAuthorized(OPERATION.C_EVENT)"
+                @click="createPush">
+                {{$t('EventPush["新增推送"]')}}
+            </bk-button>
         </div>
         <cmdb-table
             rowCursor="default"
@@ -19,13 +23,28 @@
                     {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
                 </template>
                 <template slot="setting" slot-scope="{ item }">
-                    <span class="text-primary mr20" @click.stop="editPush(item)">{{$t('Common["编辑"]')}}</span>
-                    <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
+                    <span class="text-primary mr20"
+                        v-if="$isAuthorized(OPERATION.U_EVENT)"
+                        @click.stop="editPush(item)">
+                        {{$t('Common["编辑"]')}}
+                    </span>
+                    <span class="text-primary disabled mr20" v-else>{{$t('Common["编辑"]')}}</span>
+                    <span class="text-danger"
+                        v-if="$isAuthorized(OPERATION.D_EVENT)"
+                        @click.stop="deleteConfirm(item)">
+                        {{$t('Common["删除"]')}}
+                    </span>
+                    <span class="text-danger disabled" v-else>{{$t('Common["删除"]')}}</span>
                 </template>
                 <div class="empty-info" slot="data-empty">
                     <p>{{$t("Common['暂时没有数据']")}}</p>
                     <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
-                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("EventPush['新增推送']")}}</bk-button>
+                    <bk-button class="process-btn"
+                        type="primary"
+                        :disabled="!$isAuthorized(OPERATION.C_EVENT)"
+                        @click="createPush">
+                        {{$t("EventPush['新增推送']")}}
+                    </bk-button>
                 </div>
         </cmdb-table>
         <cmdb-slider
@@ -49,9 +68,11 @@
     import { formatTime } from '@/utils/tools'
     import vPushDetail from './push-detail'
     import { mapActions } from 'vuex'
+    import { OPERATION } from './router.config.js'
     export default {
         data () {
             return {
+                OPERATION,
                 curPush: {},
                 table: {
                     header: [{
