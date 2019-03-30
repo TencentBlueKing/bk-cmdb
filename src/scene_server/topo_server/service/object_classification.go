@@ -27,12 +27,12 @@ func (s *Service) CreateClassification(params types.ContextParams, pathParams, q
 	if nil != err {
 		return nil, err
 	}
-	
+
 	// auth: register classification to iam
 	if err := s.AuthManager.RegisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
 		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
 	}
-	
+
 	return cls.ToMapStr()
 }
 
@@ -130,7 +130,7 @@ func (s *Service) DeleteClassification(params types.ContextParams, pathParams, q
 	if err := s.AuthManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
 		return nil, fmt.Errorf("deregister classification to iam failed, err: %+v", err)
 	}
-	
+
 	// data.Remove(metadata.BKMetadata)
 	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err

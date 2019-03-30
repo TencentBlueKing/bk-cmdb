@@ -14,7 +14,7 @@ package operation
 
 import (
 	"context"
-	
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/auth/meta"
@@ -43,14 +43,14 @@ type ClassificationOperationInterface interface {
 // NewClassificationOperation create a new classification operation instance
 func NewClassificationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ClassificationOperationInterface {
 	return &classification{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type classification struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
+	authManager  *extensions.AuthManager
 	asst         AssociationOperationInterface
 	obj          ObjectOperationInterface
 	modelFactory model.Factory
@@ -98,7 +98,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 		blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
 		return nil, err
 	}
-	
+
 	err = cls.Create()
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to save the classification(%#v), error info is %s", cls, err.Error())
@@ -141,7 +141,7 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
 		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
 	}
-	
+
 	for _, cls := range clsItems {
 		objs, err := cls.GetObjects()
 		if nil != err {
@@ -294,7 +294,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 		blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
 		return err
 	}
-	
+
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())

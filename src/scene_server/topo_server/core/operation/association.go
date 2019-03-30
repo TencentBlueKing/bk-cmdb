@@ -70,14 +70,14 @@ type AssociationOperationInterface interface {
 // NewAssociationOperation create a new association operation instance
 func NewAssociationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AssociationOperationInterface {
 	return &association{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type association struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
+	authManager  *extensions.AuthManager
 	cls          ClassificationOperationInterface
 	obj          ObjectOperationInterface
 	grp          GroupOperationInterface
@@ -201,7 +201,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-	
 
 	return data, nil
 }

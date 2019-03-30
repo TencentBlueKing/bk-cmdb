@@ -49,14 +49,14 @@ type ObjectOperationInterface interface {
 // NewObjectOperation create a new object operation instance
 func NewObjectOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ObjectOperationInterface {
 	return &object{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type object struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
+	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
@@ -327,17 +327,17 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
 		return nil, err
 	}
-	
+
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
-	} 
+	}
 	// auth: check authorization
 	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Find, objects...); err != nil {
 		blog.V(2).Infof("authorization failed, err: %+v", objects, err)
 		return nil, err
 	}
-	
+
 	for _, item := range objs {
 		return item, nil
 	}
@@ -376,7 +376,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		blog.Errorf("create model failed, get business field from model: %+v meta failed, err: %+v", obj.Object(), err)
 		return nil, params.Err.Errorf(common.CCErrCommAuthorizeFailed, "get business field from model meta failed")
 	}
-	
+
 	// auth: check authorization
 	if err := o.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.Model); err != nil {
 		blog.V(2).Infof("create model %s failed, authorization failed, err: %+v", obj.Object(), err)
@@ -543,13 +543,13 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
 	}
-	
+
 	// auth: check authorization
 	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Delete, objects...); err != nil {
 		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
 		return err
 	}
-	
+
 	for _, obj := range objs {
 		object := obj.Object()
 		// check if is can be deleted
@@ -602,7 +602,7 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		}
 
 	}
-	
+
 	// auth: deregister models
 	if err := o.authManager.DeregisterObject(params.Context, params.Header, objects...); err != nil {
 		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())

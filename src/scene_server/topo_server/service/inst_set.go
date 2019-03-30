@@ -45,12 +45,12 @@ func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	setID, err := set.GetInstID()
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error, create set success, but get id field failed")
 	}
-	
+
 	// auth: register set
 	if err := s.AuthManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
 		return nil, fmt.Errorf("create set failed, %+v", err)
@@ -79,7 +79,7 @@ func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams
 	}
 
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
-	
+
 	// auth: register set
 	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
 		return nil, fmt.Errorf("deregister sets from iam failed, %+v", err)
@@ -114,11 +114,11 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 	}
 
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("delete sets failed, %+v", err)
 	}
-	
+
 	// auth: deregister set
 	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
 		return nil, fmt.Errorf("deregister set from iam failed, %+v", err)

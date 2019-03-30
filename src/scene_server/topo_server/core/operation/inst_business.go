@@ -43,18 +43,18 @@ type BusinessOperationInterface interface {
 // NewBusinessOperation create a business instance
 func NewBusinessOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) BusinessOperationInterface {
 	return &business{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type business struct {
-	clientSet apimachinery.ClientSetInterface
+	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
-	inst      InstOperationInterface
-	set       SetOperationInterface
-	module    ModuleOperationInterface
-	obj       ObjectOperationInterface
+	inst        InstOperationInterface
+	set         SetOperationInterface
+	module      ModuleOperationInterface
+	obj         ObjectOperationInterface
 }
 
 func (b *business) SetProxy(set SetOperationInterface, module ModuleOperationInterface, inst InstOperationInterface, obj ObjectOperationInterface) {

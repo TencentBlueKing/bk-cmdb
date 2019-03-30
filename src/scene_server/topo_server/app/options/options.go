@@ -14,7 +14,7 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	
+
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -28,7 +28,7 @@ type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
 	Mongo                mongo.Config
 	ConfigMap            map[string]string
-	Auth  authcenter.AuthConfig
+	Auth                 authcenter.AuthConfig
 }
 
 func NewServerOption() *ServerOption {

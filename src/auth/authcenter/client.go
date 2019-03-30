@@ -14,6 +14,7 @@ package authcenter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -36,8 +37,8 @@ const (
 
 // Error define
 var (
-	ErrDuplicated = fmt.Errorf("Duplicated item")
-	ErrNotFound   = fmt.Errorf("Not Found")
+	ErrDuplicated = errors.New("Duplicated item")
+	ErrNotFound   = errors.New("Not Found")
 )
 
 type authClient struct {
@@ -155,7 +156,7 @@ func (a *authClient) deregisterResource(ctx context.Context, header http.Header,
 	if resp.Code == 1901404 {
 		return nil
 	}
-	
+
 	if resp.Code != 0 {
 		return &AuthError{resp.RequestID, fmt.Errorf("deregister resource failed, error code: %d, message: %s", resp.Code, resp.Message)}
 	}
@@ -221,7 +222,7 @@ func (a *authClient) QuerySystemInfo(ctx context.Context, header http.Header, sy
 		if resp.Code == codeNotFound {
 			return nil, ErrNotFound
 		}
-		return nil, fmt.Errorf("query system info for [%s] failed, message: %s, code: %v", systemID, resp.Message, resp.Code)
+		return nil, fmt.Errorf("query system info for [%s] failed, err: %v", systemID, resp.ErrorString())
 	}
 
 	return &resp.Data, nil
@@ -249,7 +250,7 @@ func (a *authClient) RegistSystem(ctx context.Context, header http.Header, syste
 		if resp.Code == codeDuplicated {
 			return ErrDuplicated
 		}
-		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist system info for [%s] failed, err: %v", system.SystemID, resp.ErrorString())
 	}
 
 	return nil
@@ -274,7 +275,7 @@ func (a *authClient) UpdateSystem(ctx context.Context, header http.Header, syste
 	}
 
 	if !resp.Result {
-		return fmt.Errorf("regist system info for [%s] failed, message: %s, code: %v", system.SystemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist system info for [%s] failed, err: %v", system.SystemID, resp.ErrorString())
 	}
 
 	return nil
@@ -295,7 +296,7 @@ func (a *authClient) InitSystemBatch(ctx context.Context, header http.Header, de
 		return fmt.Errorf("init system resource failed, error: %v", err)
 	}
 	if !resp.Result {
-		return fmt.Errorf("init system resource failed, message: %s, code: %v", resp.Message, resp.Code)
+		return fmt.Errorf("init system resource failed, err: %v", resp.ErrorString())
 	}
 
 	return nil
@@ -318,7 +319,7 @@ func (a *authClient) RegistResourceTypeBatch(ctx context.Context, header http.He
 		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
 	}
 	if !resp.Result {
-		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist resource %+v for [%s] failed, err: %v", resources, systemID, resp.ErrorString())
 	}
 
 	return nil
@@ -341,7 +342,7 @@ func (a *authClient) UpdateResourceTypeBatch(ctx context.Context, header http.He
 		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
 	}
 	if !resp.Result {
-		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist resource %+v for [%s] failed, err: %v", resources, systemID, resp.ErrorString())
 	}
 
 	return nil
@@ -364,7 +365,7 @@ func (a *authClient) UpdateResourceTypeActionBatch(ctx context.Context, header h
 		return fmt.Errorf("regist resource %+v for [%s] failed, error: %v", resources, systemID, err)
 	}
 	if !resp.Result {
-		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resources, systemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist resource %+v for [%s] failed, err: %v", resources, systemID, resp.ErrorString())
 	}
 
 	return nil
@@ -407,16 +408,36 @@ func (a *authClient) DeleteResourceType(ctx context.Context, header http.Header,
 		return fmt.Errorf("delete resource type %+v for [%s] failed, error: %v", resourceType, systemID, err)
 	}
 	if !resp.Result {
-		return fmt.Errorf("regist resource %+v for [%s] failed, message: %s, code: %v", resourceType, systemID, resp.Message, resp.Code)
+		return fmt.Errorf("regist resource %+v for [%s] failed, err: %v", resourceType, systemID, resp.ErrorString())
 	}
 
 	return nil
 }
 
+func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAuthorizedResources) ([]AuthorizedResource, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/authorized-resources/search", SystemIDCMDB)
+	resp := ListAuthorizedResourcesResult{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(a.basicHeader).
+		Body(body).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", err)
+	}
+	if !resp.Result {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", resp.ErrorString())
+	}
+
+	return resp.Data, nil
+}
+
 func (a *authClient) ListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) (result []meta.BackendResource, err error) {
 	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/search", a.Config.SystemID)
-	
+
 	resp := new(SearchResult)
 
 	err = a.client.Post().
@@ -428,7 +449,7 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 	if err != nil {
 		return nil, fmt.Errorf("search resource with condition: %+v failed, error: %v", searchCondition, err)
 	}
-	if !resp.Result || resp.Code != 0{
+	if !resp.Result || resp.Code != 0 {
 		return nil, fmt.Errorf("search resource with condition: %+v failed, message: %s, code: %v", searchCondition, resp.Message, resp.Code)
 	}
 

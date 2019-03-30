@@ -43,12 +43,12 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error, create business success, but get id failed, err: %+v", err)
 	}
-	
+
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
 		return nil, fmt.Errorf("register business failed, err: %+v", err)
 	}
-	
+
 	return business, nil
 }
 
@@ -99,7 +99,7 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
 		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
 	}
-	
+
 	return nil, nil
 }
 
@@ -154,7 +154,6 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -244,7 +243,7 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 	if err != nil {
 		return nil, fmt.Errorf("create business failed, err: %+v", err)
 	}
-	
+
 	businessID, err := business.GetInstID()
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err)

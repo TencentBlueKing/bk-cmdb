@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	
+
 	"configcenter/src/auth/authcenter"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -28,7 +28,7 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 		blog.Errorf("synchronize failed, ListResources failed, task: %s, err: %+v", taskName, err)
 		return nil, err
 	}
-	
+
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
 		if len(iamResource) == 0 {
@@ -51,7 +51,7 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 		blog.Errorf("task: %s, get iam resources failed, err: %+v", taskName, err)
 		return fmt.Errorf("get iam resources failed, err: %+v", err)
 	}
-	
+
 	scope := authcenter.ScopeInfo{}
 	needRegister := make([]authmeta.ResourceAttribute, 0)
 	// init key:hit map for
@@ -90,7 +90,7 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 	}
 	blog.InfoJSON("task: %s, iamResourceKeyMap: %s", taskName, iamResourceKeyMap)
 	blog.InfoJSON("task: %s, needRegister: %s", taskName, needRegister)
-	
+
 	if len(needRegister) > 0 {
 		blog.InfoJSON("synchronize register resource that only in cmdb, resources: %s", needRegister)
 		err = ih.authManager.Authorize.RegisterResource(context.Background(), needRegister...)

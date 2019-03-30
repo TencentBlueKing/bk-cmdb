@@ -15,7 +15,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	
+
 	"configcenter/src/auth/extensions"
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
@@ -31,13 +31,13 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	// step1 get instances by business from core service
 	businessID := businessSimplify.BKAppIDField
 	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
-	
+
 	if err != nil {
 		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 	}
 	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
-	
+
 	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, businessID, objects...)
 	if err != nil {
 		blog.Errorf("make iam resource from models failed, err: %+v", err)
@@ -51,7 +51,7 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 		},
 		SupplierAccount: "",
 		BusinessID:      businessSimplify.BKAppIDField,
-		Layers: make([]authmeta.Item, 0),
+		Layers:          make([]authmeta.Item, 0),
 	}
 
 	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)

@@ -50,7 +50,7 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
 		}
 	}
-	
+
 	// auth: register mainline object
 	object := ret.Object()
 	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, object); err != nil {
@@ -77,7 +77,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 		blog.V(2).Info(message)
 		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, message)
 	}
-	
+
 	err = s.Core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
 
 	if err != nil {
