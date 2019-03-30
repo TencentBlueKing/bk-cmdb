@@ -1,7 +1,7 @@
 <template>
     <div>
         <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !authority.includes('update')"
+            :disabled="isReadOnly || !updateAuth"
             @click="createVerification">
             {{$t('ModelManagement["新建校验"]')}}
         </bk-button>
@@ -57,6 +57,7 @@
 <script>
     import theVerificationDetail from './verification-detail'
     import { mapActions, mapGetters } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theVerificationDetail
@@ -96,19 +97,17 @@
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
                 if (cantEdit.includes(this.$route.params.modelId)) {
-                    return []
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(OPERATION.U_MODEL)
             }
         },
         async created () {
-            if (!this.authority.includes('update')) {
+            if (!this.updateAuth) {
                 this.table.header.pop()
             }
             this.initAttrList()

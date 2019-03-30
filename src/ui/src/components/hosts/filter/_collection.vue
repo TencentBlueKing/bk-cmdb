@@ -79,7 +79,7 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['authorizedBusiness'])
         },
         watch: {
             filter: {
@@ -112,7 +112,7 @@
                 }).then(data => {
                     this.list = data.info.filter(collection => {
                         const info = JSON.parse(collection.info)
-                        return this.privilegeBusiness.some(business => business['bk_biz_id'] === info['bk_biz_id'])
+                        return this.authorizedBusiness.some(business => business['bk_biz_id'] === info['bk_biz_id'])
                     })
                     this.setFilteredList()
                 })

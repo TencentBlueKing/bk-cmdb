@@ -17,7 +17,7 @@
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="canAddLevel(model)"
+                    v-if="createAuth && canAddLevel(model)"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -34,7 +34,7 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
-
+    import { OPERATION } from './router.config.js'
     const NODE_MARGIN = 62
 
     export default {
@@ -43,6 +43,7 @@
         },
         data () {
             return {
+                OPERATION,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
                 innerModel: ['biz', 'set', 'module', 'host'],
@@ -54,8 +55,8 @@
         },
         computed: {
             ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
-            authority () {
-                return this.admin ? ['search', 'update', 'delete'] : []
+            createAuth () {
+                return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {
@@ -89,7 +90,7 @@
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {
-                return this.isAdminView && this.authority.includes('update') && !['set', 'module', 'host'].includes(model['bk_obj_id'])
+                return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
                 this.addLevel.parent = model
