@@ -76,7 +76,7 @@ func (f *Exception) Write(ctx context.Context, exceptions []metadata.ExceptionRe
 		line, _ := json.Marshal(exception)
 		_, err := f.file.Write(line)
 		if err != nil {
-			blog.Errorf("Exception Write file %s error, err: %s, task:s,", f.fileName, err.Error(), f.taskID)
+			blog.Errorf("Exception Write file %s error, err: %s, taskID:%s", f.fileName, err.Error(), f.taskID)
 			return err
 		}
 		f.file.Write(ln)
