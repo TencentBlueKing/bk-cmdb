@@ -22,7 +22,7 @@ import (
 )
 
 func (ps *parseStream) eventRelated() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -39,7 +39,7 @@ var (
 )
 
 func (ps *parseStream) subscribe() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 

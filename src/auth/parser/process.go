@@ -22,7 +22,7 @@ import (
 )
 
 func (ps *parseStream) processRelated() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -48,7 +48,7 @@ var (
 )
 
 func (ps *parseStream) process() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -343,7 +343,7 @@ var (
 )
 
 func (ps *parseStream) processTemplate() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -559,7 +559,7 @@ var (
 )
 
 func (ps *parseStream) processTemplateBound() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
