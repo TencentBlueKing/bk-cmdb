@@ -7,6 +7,7 @@ import {
 } from '@/dictionary/auth'
 
 export const OPERATION = {
+    R_CUSTOM_QUERY,
     C_CUSTOM_QUERY,
     U_CUSTOM_QUERY,
     D_CUSTOM_QUERY

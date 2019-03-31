@@ -87,6 +87,12 @@ export const GET_AUTH_META = auth => {
 export const GET_MODEL_INST_AUTH_META = (modelId, auth, models = []) => {
     const meta = GET_AUTH_META(auth)
     const model = models.find(model => model.bk_obj_id === modelId) || {}
+    const modelLabel = (model.metadata || {}).label || {}
+    if (modelLabel.hasOwnProperty('bk_biz_id')) {
+        Object.assign(meta, {
+            bk_biz_id: modelLabel.bk_biz_id
+        })
+    }
     return Object.assign(meta, {
         parent_layers: [{
             resource_type: 'model',

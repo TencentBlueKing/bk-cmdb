@@ -11,7 +11,7 @@ export default {
         auth: {
             view: R_INST,
             meta: GET_MODEL_INST_AUTH_META,
-            operation: []
+            operation: [R_INST]
         }
     }
 }

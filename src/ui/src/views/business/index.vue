@@ -177,9 +177,9 @@
             saveDisabled () {
                 const type = this.attribute.type
                 if (type === 'create') {
-                    return this.$isAuthorized(this.OPERATION.C_BUSINESS)
+                    return !this.$isAuthorized(this.OPERATION.C_BUSINESS)
                 } else if (type === 'update') {
-                    return this.$isAuthorized(this.OPERATION.U_BUSINESS)
+                    return !this.$isAuthorized(this.OPERATION.U_BUSINESS)
                 }
                 return true
             }
