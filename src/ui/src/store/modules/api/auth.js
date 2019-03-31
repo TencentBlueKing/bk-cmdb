@@ -7,8 +7,9 @@ const state = {
 
 const getters = {
     operation: state => state.operation,
-    isAuthorized: state => (type, action) => {
-        const auth = state.operation.find(auth => {
+    isAuthorized: state => (type, action, isView = false) => {
+        const authList = isView ? state.view : state.operation
+        const auth = authList.find(auth => {
             return auth.resource_type === type && auth.action === action
         })
         return (auth || {}).is_pass
@@ -27,6 +28,7 @@ const actions = {
         const viewAuth = await $http.post('auth/verify', {
             resources: list
         }, {
+            requestId: 'getViewAuth',
             fromCache: true,
             cancelWhenRouteChange: false
         })

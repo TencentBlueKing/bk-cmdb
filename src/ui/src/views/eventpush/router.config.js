@@ -8,6 +8,7 @@ import {
 
 export const OPERATION = {
     C_EVENT,
+    R_EVENT,
     U_EVENT,
     D_EVENT
 }
