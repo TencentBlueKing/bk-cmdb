@@ -29,7 +29,8 @@ export default {
             i18n: 'Nav["业务拓扑"]',
             path: path,
             order: 2,
-            parent: NAV_BUSINESS_RESOURCE
+            parent: NAV_BUSINESS_RESOURCE,
+            adminView: false
         },
         auth: {
             view: '',
