@@ -29,7 +29,8 @@ export default {
             i18n: 'Nav["进程管理"]',
             path: path,
             order: 3,
-            parent: NAV_BUSINESS_RESOURCE
+            parent: NAV_BUSINESS_RESOURCE,
+            adminView: false
         },
         auth: {
             view: R_PROCESS,

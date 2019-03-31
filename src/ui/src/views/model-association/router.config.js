@@ -23,7 +23,8 @@ export default {
             i18n: 'Nav["关联类型"]',
             path: path,
             order: 4,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            adminView: true
         },
         auth: {
             view: '',
