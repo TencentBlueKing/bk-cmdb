@@ -39,7 +39,7 @@ type DiscoveryInterface interface {
 	HostCtrl() Interface
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
-	GseProcServ() Interface
+	GseProcServer() Interface
 	CoreService() Interface
 	ServiceManageInterface
 }
@@ -118,7 +118,7 @@ func (d *discover) ProcCtrl() Interface {
 	return d.servers[types.CC_MODULE_PROCCONTROLLER]
 }
 
-func (d *discover) GseProcServ() Interface {
+func (d *discover) GseProcServer() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
 }
 

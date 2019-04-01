@@ -106,13 +106,13 @@ type BatchResult struct {
 }
 
 type ResourceAction struct {
-	ResourceInfo
-	ActionID ActionID `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ActionID     ActionID       `json:"action_id"`
 }
 
 type BatchStatus struct {
-	ActionID string `json:"action_id"`
-	ResourceInfo
+	ActionID     string         `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
 	// for authorize confirm use, define if a user have
 	// the permission to this request.
 	IsPass bool `json:"is_pass"`
@@ -196,6 +196,7 @@ type ListAuthorizedResources struct {
 	TypeActions []TypeAction `json:"resource_types_actions"`
 	// array or string
 	DataType string `json:"resource_data_type"`
+	Exact    bool   `json:"is_exact_resource"`
 }
 
 type TypeAction struct {

@@ -35,7 +35,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
-		blog.Errorf("add subscription, but decode body failed, err: %v", err)
+		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -62,8 +62,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	verifyResults, err := s.authorizer.AuthorizeBatch(context.Background(), user, attrs...)
 	if err != nil {
-		blog.Errorf("add subscription, but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 		return
 	}
 
@@ -73,7 +73,6 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
-
 }
 
 func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Response) {
@@ -88,7 +87,7 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 	appIDList, err := s.authorizer.GetAuthorizedBusinessList(req.Request.Context(), userInfo)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
@@ -99,13 +98,13 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount, req.Request.Header, &input)
 	if err != nil {
 		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
 	if !result.Result {
 		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 

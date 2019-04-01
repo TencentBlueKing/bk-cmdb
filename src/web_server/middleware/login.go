@@ -75,7 +75,11 @@ func ValidLogin(config options.Config) gin.HandlerFunc {
 			if path1 == "api" {
 				servers, err := Engine.Discovery().ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
-					blog.Fatal("api server addr not right")
+					blog.Errorf("no apiserver can be used, err: %v", err)
+					c.JSON(401, gin.H{
+						"status": "no api server can be used.",
+					})
+					c.Abort()
 				}
 				url := servers[0]
 				httpclient.ProxyHttp(c, url)
