@@ -86,7 +86,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	ID := req.PathParameter("id")
 
 	if "" == ID || "0" == ID {
-		blog.Errorf("update host favourite failed, with id  %id", ID)
+		blog.Errorf("update host favourite failed, with id  %v", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -120,7 +120,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	user := util.GetUser(pheader)
 	ID := req.PathParameter("id")
 	if "" == ID || "0" == ID {
-		blog.Errorf("delete host favourite failed, with id  %id", ID)
+		blog.Errorf("delete host favourite failed, with id  %v", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -141,7 +141,7 @@ func (s *Service) IncrHostFavouritesCount(req *restful.Request, resp *restful.Re
 	user := util.GetUser(pheader)
 	ID := req.PathParameter("id")
 	if "" == ID || "0" == ID {
-		blog.Errorf("delete host favourite failed, with id  %id", ID)
+		blog.Errorf("delete host favourite failed, with id  %v", ID)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}

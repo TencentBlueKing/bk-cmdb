@@ -82,7 +82,7 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 			zkRD.RegisterAndWatch(path, data)
 			return
 		}
-		watchCtx, _ := context.WithCancel(zkRD.rootCxt)
+		watchCtx := zkRD.rootCxt
 
 		_, _, watchEvn, err := zkRD.zkcli.ExistW(newPath)
 		if err != nil {
@@ -115,16 +115,16 @@ func (zkRD *ZkRegDiscv) GetServNodes(path string) ([]string, error) {
 //Discover watch the children
 func (zkRD *ZkRegDiscv) Discover(path string) (<-chan *DiscoverEvent, error) {
 	fmt.Printf("begin to discover by watch children of path(%s)\n", path)
-	discvCtx, _ := context.WithCancel(zkRD.rootCxt)
+	discvCtx := zkRD.rootCxt
 
 	env := make(chan *DiscoverEvent, 1)
 
-	go zkRD.loopDiscover(path, discvCtx, env)
+	go zkRD.loopDiscover(discvCtx, path, env)
 
 	return env, nil
 }
 
-func (zkRD *ZkRegDiscv) loopDiscover(path string, discvCtx context.Context, env chan *DiscoverEvent) {
+func (zkRD *ZkRegDiscv) loopDiscover(discvCtx context.Context, path string, env chan *DiscoverEvent) {
 	for {
 		_, watchEnv, err := zkRD.zkcli.WatchChildren(path)
 		if err != nil {

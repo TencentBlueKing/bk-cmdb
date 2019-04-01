@@ -18,14 +18,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/xid"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/mongobyc"
 	"configcenter/src/storage/server/app/options"
 	"configcenter/src/storage/types"
+
+	"github.com/rs/xid"
 )
 
 type TxnManager struct {
@@ -240,7 +240,7 @@ func (tm *TxnManager) Commit(txnID string) error {
 	if nil != txnerr {
 		session.Txninst.Status = types.TxStatusException
 	} else {
-		session.Txninst.Status = types.TxStatusCommited
+		session.Txninst.Status = types.TxStatusCommitted
 	}
 	tm.eventChan <- session.Txninst
 

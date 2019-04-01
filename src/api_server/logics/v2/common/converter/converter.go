@@ -772,20 +772,20 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 			}
 		} else if common.BKProtocol == key || "Protocol" == key {
 			//v2 api erturn use protocol name
-			protocal, ok := val.(string)
+			protocol, ok := val.(string)
 			if false == ok {
-				protocal = ""
+				protocol = ""
 			} else {
-				switch protocal {
+				switch protocol {
 				case "1":
-					protocal = "TCP"
+					protocol = "TCP"
 				case "2":
-					protocal = "UDP"
+					protocol = "UDP"
 				default:
-					protocal = ""
+					protocol = ""
 				}
 			}
-			mapItem[key] = protocal
+			mapItem[key] = protocol
 		} else if key == "osType" {
 
 			switch realVal := val.(type) {
@@ -929,17 +929,17 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 	default:
 		updateTime = ""
 	}
-	protocal, ok := itemMap[common.BKProtocol].(string)
+	protocol, ok := itemMap[common.BKProtocol].(string)
 	if false == ok {
-		protocal = ""
+		protocol = ""
 	} else {
-		switch protocal {
+		switch protocol {
 		case "1":
-			protocal = "TCP"
+			protocol = "TCP"
 		case "2":
-			protocal = "UDP"
+			protocol = "UDP"
 		default:
-			protocal = ""
+			protocol = ""
 		}
 	}
 	bindIP, ok := itemMap[common.BKBindIP].(string)
@@ -989,7 +989,7 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 		"ProcessName": itemMap[common.BKProcessNameField],
 		"OpTimeout":   itemMap["timeout"],       //"0",
 		"KillCmd":     itemMap["face_stop_cmd"], //"",
-		"Protocol":    protocal,
+		"Protocol":    protocol,
 		"Seq":         itemMap["priority"], //0",
 		"ProcGrp":     "",
 		"Port":        itemMap[common.BKPort],
@@ -1224,9 +1224,7 @@ func getV2KeyVal(key string, val interface{}) (string, string) {
 		v2Key = key
 	}
 
-	if nil == val {
-		val = ""
-	} else {
+	if nil != val {
 		if key == common.CreateTimeField || key == common.LastTimeField {
 			ts, ok := val.(time.Time)
 			if ok {
