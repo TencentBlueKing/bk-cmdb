@@ -14,7 +14,11 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="!authority.includes('update')">{{$t('Inst["恢复业务"]')}}</bk-button>
+                <bk-button type="primary" size="mini"
+                    :disabled="!archiveAuth"
+                    @click="handleRecovery(item)">
+                    {{$t('Inst["恢复业务"]')}}
+                </bk-button>
             </template>
         </cmdb-table>
     </div>
@@ -22,6 +26,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { OPERATION } from './router.config.js'
     export default {
         data () {
             return {
@@ -42,8 +47,8 @@
             customBusinessColumns () {
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
-            authority () {
-                return this.$store.getters['userPrivilege/modelAuthority']('biz')
+            archiveAuth () {
+                return this.$isAuthorized(OPERATION.BUSINESS_ARCHIVE)
             }
         },
         async created () {

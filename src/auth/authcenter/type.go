@@ -176,13 +176,40 @@ type BaseResponse struct {
 
 type SearchCondition struct {
 	ScopeInfo
-	ResourceType ResourceTypeID `json:"resource_type"`
-	ParentResources []ResourceID `json:"parent_resources"`
+	ResourceType    ResourceTypeID `json:"resource_type"`
+	ParentResources []ResourceID   `json:"parent_resources"`
 }
 
 type SearchResult struct {
 	BaseResponse
-	RequestID string        `json:"request_id"`
+	RequestID string                 `json:"request_id"`
 	Data      []meta.BackendResource `json:"data"`
 }
 
+func (br BaseResponse) ErrorString() string {
+	return fmt.Sprintf("request id: %s, error code: %d, message: %s", br.RequestID, br.Code, br.Message)
+}
+
+type ListAuthorizedResources struct {
+	Principal   `json:",inline"`
+	ScopeInfo   `json:",inline"`
+	TypeActions []TypeAction `json:"resource_types_actions"`
+	// array or string
+	DataType string `json:"resource_data_type"`
+}
+
+type TypeAction struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+}
+
+type ListAuthorizedResourcesResult struct {
+	BaseResponse
+	Data []AuthorizedResource `json:"data"`
+}
+
+type AuthorizedResource struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceIDs  [][]ResourceID `json:"resource_ids"`
+}

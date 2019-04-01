@@ -200,7 +200,6 @@ func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) 
 	return cli, err
 }
 
-
 type AssociationOnDeleteAction string
 type AssociationMapping string
 

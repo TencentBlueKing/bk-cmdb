@@ -42,7 +42,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 		Basic: authmeta.Basic{
 			Type: authmeta.HostInstance,
 		},
-		BusinessID:      bizID,
+		BusinessID: bizID,
 	}
 
 	taskName := fmt.Sprintf("sync host for business: %d", businessSimplify.BKAppIDField)

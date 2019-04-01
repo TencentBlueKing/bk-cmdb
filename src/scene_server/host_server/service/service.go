@@ -37,8 +37,8 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc       discovery.DiscoveryInterface
-	CacheDB    *redis.Client
+	disc        discovery.DiscoveryInterface
+	CacheDB     *redis.Client
 	AuthManager *extensions.AuthManager
 }
 

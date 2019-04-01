@@ -24,17 +24,17 @@ import (
 type AuthManager struct {
 	clientSet apimachinery.ClientSetInterface
 	Authorize auth.Authorize
-	
+
 	RegisterModelAttributeEnabled bool
-	RegisterModelUniqueEnabled bool
+	RegisterModelUniqueEnabled    bool
 }
 
 func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize) *AuthManager {
 	return &AuthManager{
-		clientSet: clientSet,
-		Authorize: Authorize,
+		clientSet:                     clientSet,
+		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
-		RegisterModelUniqueEnabled: true,
+		RegisterModelUniqueEnabled:    true,
 	}
 }
 
@@ -42,7 +42,7 @@ type InstanceSimplify struct {
 	ID         int64  `field:"id"`
 	InstanceID string `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
-	BizID     int64
+	BizID      int64
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
@@ -60,21 +60,21 @@ func (is *InstanceSimplify) Parse(data mapstr.MapStr) (*InstanceSimplify, error)
 
 func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 	/*
-	{
-	  "metadata": {
-		"label": {
-		  "bk_biz_id": "2"
+		{
+		  "metadata": {
+			"label": {
+			  "bk_biz_id": "2"
+			}
+		  }
 		}
-	  }
-	}
-	 */
-	 
-    metaInterface, exist := data[common.MetadataField]
+	*/
+
+	metaInterface, exist := data[common.MetadataField]
 	if !exist {
 		return 0, metadata.LabelKeyNotExistError
 	}
-    
-    metaValue, ok := metaInterface.(map[string]interface{})
+
+	metaValue, ok := metaInterface.(map[string]interface{})
 	if !ok {
 		return 0, metadata.LabelKeyNotExistError
 	}
@@ -97,13 +97,12 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 	return util.GetInt64ByInterface(bizID)
 }
 
-
 type BusinessSimplify struct {
 	BKAppIDField      int64  `field:"bk_biz_id"`
 	BKAppNameField    string `field:"bk_biz_name"`
 	BKSupplierIDField int64  `field:"bk_supplier_id"`
 	BKOwnerIDField    string `field:"bk_supplier_account"`
-	IsDefault    int64 `field:"default"`
+	IsDefault         int64  `field:"default"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
@@ -113,7 +112,7 @@ func (business *BusinessSimplify) Parse(data mapstr.MapStr) (*BusinessSimplify, 
 	if nil != err {
 		return nil, err
 	}
-	
+
 	return business, err
 }
 
@@ -152,11 +151,11 @@ func (is *ModuleSimplify) Parse(data mapstr.MapStr) (*ModuleSimplify, error) {
 }
 
 type HostSimplify struct {
-	BKAppIDField      int64  `field:"bk_biz_id"`
-	BKModuleIDField   int64  `field:"bk_module_id"`
-	BKSetIDField   int64  `field:"bk_set_id"`
-	BKHostIDField   int64  `field:"bk_host_id"`
-	BKHostNameField string `field:"bk_host_name"`
+	BKAppIDField       int64  `field:"bk_biz_id"`
+	BKModuleIDField    int64  `field:"bk_module_id"`
+	BKSetIDField       int64  `field:"bk_set_id"`
+	BKHostIDField      int64  `field:"bk_host_id"`
+	BKHostNameField    string `field:"bk_host_name"`
 	BKHostInnerIPField string `field:"bk_host_innerip"`
 }
 

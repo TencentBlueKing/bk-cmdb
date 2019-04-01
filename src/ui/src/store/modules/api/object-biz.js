@@ -13,20 +13,27 @@ import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
-    bizId: null
+    bizId: null,
+    authorizedBusiness: []
 }
 
 const getters = {
     business: state => state.business,
     bizId: state => state.bizId,
-    privilegeBusiness: (state, getters, rootState, rootGetters) => {
-        if (rootGetters.admin) return state.business
-        const privilege = (jsCookie.get('bk_privi_biz_id') || '').split('-')
-        return state.business.filter(business => privilege.includes(business['bk_biz_id'].toString()))
-    }
+    authorizedBusiness: state => state.authorizedBusiness
 }
 
 const actions = {
+    getAuthorizedBusiness ({ commit }) {
+        return $http.get('auth/business-list', {
+            requestId: 'getAuthorizedBusiness',
+            fromCache: true,
+            cancelWhenRouteChange: false
+        }).then(data => {
+            commit('setAuthorizedBusiness', data.info)
+            return data.info
+        })
+    },
     /**
      * 添加业务
      * @param {Function} commit store commit mutation hander
@@ -126,6 +133,9 @@ const mutations = {
     },
     setBizId (state, bizId) {
         state.bizId = bizId
+    },
+    setAuthorizedBusiness (state, list) {
+        state.authorizedBusiness = list
     }
 }
 

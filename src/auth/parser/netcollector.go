@@ -8,7 +8,7 @@ import (
 )
 
 func (ps *parseStream) netCollectorRelated() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -27,7 +27,7 @@ const (
 )
 
 func (ps *parseStream) netCollector() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -88,7 +88,7 @@ var (
 )
 
 func (ps *parseStream) netDevice() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -180,7 +180,7 @@ var (
 )
 
 func (ps *parseStream) netProperty() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -268,7 +268,7 @@ const (
 )
 
 func (ps *parseStream) netReport() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 	// find net device simple report

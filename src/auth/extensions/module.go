@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -62,7 +62,6 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http.Header, moduleIDs ...int64) ([]ModuleSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	moduleIDs = util.IntArrayUnique(moduleIDs)
-
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKModuleIDField).In(moduleIDs).ToMapStr(),

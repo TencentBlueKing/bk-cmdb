@@ -44,7 +44,7 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 		blog.Errorf("make iam resource for modules %+v return empty", modules)
 		return nil
 	}
-	
+
 	// step2 get modules by business from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
@@ -52,7 +52,7 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 		},
 		SupplierAccount: "",
 		BusinessID:      businessSimplify.BKAppIDField,
-		Layers: make([]authmeta.Item, 0),
+		Layers:          make([]authmeta.Item, 0),
 	}
 
 	taskName := fmt.Sprintf("sync module for business: %d", businessSimplify.BKAppIDField)

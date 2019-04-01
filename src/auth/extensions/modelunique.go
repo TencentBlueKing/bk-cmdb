@@ -201,26 +201,26 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 	for _, unique := range uniques {
 		objectIDs = append(objectIDs, unique.ObjID)
 	}
-	
+
 	if am.RegisterModelUniqueEnabled == false {
 		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
 	}
-	
+
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("get model by id failed, err: %+v", err)
 	}
-	
+
 	bizID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		return fmt.Errorf("extract business id from model failed, err: %+v", err)
 	}
-	
+
 	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
 	if err != nil {
 		return fmt.Errorf("make auth resource from model uniques failed, err: %+v", err)
 	}
-	
+
 	return am.authorize(ctx, header, bizID, resources...)
 }
 

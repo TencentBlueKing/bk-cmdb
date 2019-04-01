@@ -289,6 +289,12 @@ input.cmdb-form-input {
     &:hover {
         color: #f72239;
     }
+
+    &.disabled,
+    &:disabled {
+        opacity: .385;
+        cursor: not-allowed !important;
+    }
 }
 
 .color-danger {

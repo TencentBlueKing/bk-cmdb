@@ -41,14 +41,14 @@ type AttributeOperationInterface interface {
 // NewAttributeOperation create a new attribute operation instance
 func NewAttributeOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AttributeOperationInterface {
 	return &attribute{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type attribute struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager *extensions.AuthManager
+	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	obj          ObjectOperationInterface
@@ -219,7 +219,7 @@ func (a *attribute) FindObjectAttribute(params types.ContextParams, cond conditi
 }
 
 func (a *attribute) UpdateObjectAttribute(params types.ContextParams, data mapstr.MapStr, attID int64) error {
-	
+
 	// auth: check authorization
 	if err := a.authManager.AuthorizeByAttributeID(params.Context, params.Header, meta.Update, attID); err != nil {
 		blog.V(2).Infof("update model attribute %d failed, authorization failed, err: %+v", attID, err)

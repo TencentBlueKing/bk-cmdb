@@ -30,11 +30,11 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 		blog.Errorf("collect business failed, err: %+v", err)
 		return err
 	}
-	
+
 	if len(businesses) == 0 {
 		blog.Info("no business found")
 	}
-	
+
 	blog.Info("list business businessList: %+v", businesses)
 	resources := ih.authManager.MakeResourcesByBusiness(*header, authmeta.EmptyAction, businesses...)
 
