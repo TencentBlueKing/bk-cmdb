@@ -20,7 +20,8 @@ export default {
             i18n: 'Nav["模型拓扑"]',
             path: path,
             order: 2,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            adminView: true
         },
         auth: {
             view: '',

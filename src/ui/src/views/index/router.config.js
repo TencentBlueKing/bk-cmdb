@@ -9,7 +9,8 @@ export default {
     meta: {
         menu: {
             id: NAV_INDEX,
-            path: path
+            path: path,
+            adminView: true
         },
         auth: {
             view: null
