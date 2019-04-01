@@ -31,14 +31,13 @@ import (
 )
 
 var sLoginURL string
-var checkUrl string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
 var LoginPlg *plugin.Plugin
 
-//ValidLogin   valid the user login status
-func ValidLogin(config options.Config) gin.HandlerFunc {
+// ValidLogin valid the user login status
+func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		pathArr := strings.Split(c.Request.URL.Path, "/")
@@ -51,7 +50,7 @@ func ValidLogin(config options.Config) gin.HandlerFunc {
 		}
 
 		if isAuthed(c, config) {
-			//valid resource acess privilege
+			// valid resource access privilege
 			auth := auth.NewAuth()
 			ok := auth.ValidResAccess(pathArr, c)
 			if false == ok {
@@ -61,7 +60,7 @@ func ValidLogin(config options.Config) gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			//http request header add user
+			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
@@ -75,7 +74,12 @@ func ValidLogin(config options.Config) gin.HandlerFunc {
 			if path1 == "api" {
 				servers, err := Engine.Discovery().ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
-					blog.Fatal("api server addr not right")
+					blog.Errorf("no api server can be used. err: %v", err)
+					c.JSON(503, gin.H{
+						"status": "no api server can be used.",
+					})
+					c.Abort()
+					return
 				}
 				url := servers[0]
 				httpclient.ProxyHttp(c, url)

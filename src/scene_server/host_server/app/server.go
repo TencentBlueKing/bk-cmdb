@@ -79,7 +79,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	go hostSrv.Service.InitBackground()
 	select {}
-	return nil
 }
 
 type HostServer struct {

@@ -14,7 +14,6 @@ package command
 
 import (
 	"fmt"
-	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -123,19 +122,19 @@ func (n *Node) walk(walkfunc func(node *Node) error) error {
 	return nil
 }
 
-// nodekey: model2[key1:value,key2:value]-model2[key1:value,key2:value]
-func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
-	nodekey = n.ObjID + "["
-	if "" != parentKey {
-		nodekey = parentKey + "-" + nodekey
-	}
-	kv := []string{}
-	for _, key := range keys {
-		kv = append(kv, key+":"+fmt.Sprint(n.Data[key]))
-	}
-	nodekey = strings.Join(kv, ",") + "]"
-	return nodekey
-}
+// // nodekey: model2[key1:value,key2:value]-model2[key1:value,key2:value]
+// func (n *Node) getNodekey(parentKey string, keys []string) (nodekey string) {
+// 	nodekey = n.ObjID + "["
+// 	if "" != parentKey {
+// 		nodekey = parentKey + "-" + nodekey
+// 	}
+// 	kv := []string{}
+// 	for _, key := range keys {
+// 		kv = append(kv, key+":"+fmt.Sprint(n.Data[key]))
+// 	}
+// 	nodekey = strings.Join(kv, ",") + "]"
+// 	return nodekey
+// }
 
 // Topo define
 type Topo struct {

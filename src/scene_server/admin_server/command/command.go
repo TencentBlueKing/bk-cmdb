@@ -27,6 +27,10 @@ import (
 
 const bkbizCmdName = "bkbiz"
 
+const (
+	scopeAll = "all"
+)
+
 // Parse run app command
 func Parse(args []string) error {
 	ctx := context.Background()
@@ -51,7 +55,7 @@ func Parse(args []string) error {
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
 	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
-	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
+	bkbizfs.StringVar(&scope, "scope", scopeAll, "export scope, could be [biz] or [process], default all")
 	bkbizfs.StringVar(&filepath, "file", "", "export/import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	bkbizfs.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
@@ -81,7 +85,7 @@ func Parse(args []string) error {
 	}
 
 	if exportflag {
-		mode := ""
+		var mode string
 		if miniflag {
 			mode = "mini"
 		} else {
@@ -101,7 +105,7 @@ func Parse(args []string) error {
 			fmt.Printf("importing %s business from %s\n", bizName, filepath)
 		}
 		opt.mini = false
-		opt.scope = "all"
+		opt.scope = scopeAll
 		if err := importBKBiz(ctx, db, opt); err != nil {
 			fmt.Printf("import error: %s", err.Error())
 			os.Exit(2)

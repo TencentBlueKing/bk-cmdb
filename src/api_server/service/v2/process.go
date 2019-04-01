@@ -149,7 +149,7 @@ func (s *Service) getModulesByAppId(ctx context.Context, appID string, srvData *
 	}
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(ctx, appID, srvData.header, searchParams)
 	if nil != err {
-		blog.Errorf("getModulesByAppId http do error,err:%v,appID:%v,rid:%s", err.Error(), appID, srvData.rid)
+        blog.Errorf("getModulesByAppId http do error,err:%v,appID:%v,rid:%s", err.Error(), appID, srvData.rid)
 		return nil, srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
