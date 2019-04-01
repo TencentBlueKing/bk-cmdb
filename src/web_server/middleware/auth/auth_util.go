@@ -14,6 +14,8 @@ package auth
 
 import (
 	"encoding/json"
+	"net/http"
+	"regexp"
 	"strings"
 
 	"configcenter/src/common"
@@ -23,6 +25,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
+)
+
+var (
+	createObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/?$`)
+	deleteObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	deleteObjectInstanceBatchRegexp = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/batch/?$`)
+	updateObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	searchObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/search/[^\s/]+/[^\s/]+/?$`)
+	searchObjectInstAndAssoRegexp   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
+	instSearchRegexp                = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	getInstRegexp                   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/[0-9]+/?$`)
+	exportObjectInstanceRegexp      = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/export/?$`)
+	importObjectInstanceRegexp      = regexp.MustCompile(`/insts/owner/[^\s/]+/object/[^\s/]+/import/?$`)
 )
 
 // validModelConfigPrivi valid model inst privilege
@@ -35,10 +50,39 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 		blog.Error("get model privilege json error")
 		return false
 	}
-	if method == common.HTTPCreate {
+
+	pathStr := strings.Join(pathArr, "/")
+	switch {
+	case createObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
 		objName = pathArr[len(pathArr)-1]
-	} else {
+
+	case deleteObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodDelete:
 		objName = pathArr[len(pathArr)-2]
+
+	case updateObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPut:
+		objName = pathArr[len(pathArr)-2]
+
+	case searchObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-1]
+
+	case searchObjectInstAndAssoRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-2]
+
+	case instSearchRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-1]
+
+	case getInstRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-2]
+
+	case importObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-2]
+
+	case exportObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-2]
+
+	case deleteObjectInstanceBatchRegexp.MatchString(pathStr) && method == http.MethodDelete:
+		objName = pathArr[len(pathArr)-2]
+
 	}
 
 	priviArr, ok := mPrivi[objName]
@@ -47,7 +91,7 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 		return false
 	}
 
-	//merge update&&create privilege
+	// merge update&&create privilege
 	if method == common.HTTPUpdate || method == common.HTTPCreate {
 		if util.InArray(types.BK_CC_UPDATE, priviArr) {
 			return true
@@ -58,12 +102,12 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 
 	}
 
-	//valid delete privilege
+	// valid delete privilege
 	if method == common.HTTPDelete && util.InArray(types.BK_CC_DELETE, priviArr) {
 		return true
 	}
 
-	//valid search privilege
+	// valid search privilege
 	if method == common.HTTPSelectPost && util.InArray(types.BK_CC_SEARCH, priviArr) && util.InArray(types.BK_CC_SEARCH, pathArr) {
 		return true
 	}

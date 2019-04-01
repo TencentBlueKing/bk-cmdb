@@ -168,7 +168,7 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
 	if nil != err || false == result.Result {
-		blog.Errorf("get user list error：%v, error code:%d, error messsage:", err, result.Code, result.Message)
+		blog.Errorf("get user list error：%v, error code:%d, error messsage:%s", err, result.Code, result.Message)
 		return nil, fmt.Errorf("get user list reply error")
 	}
 	userListArr := make([]*metadata.LoginSystemUserInfo, 0)

@@ -22,7 +22,7 @@ import (
 
 func ClientTslConfNoVerity() *tls.Config {
 	return &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 	}
 }
 
@@ -51,7 +51,7 @@ func ClientTLSConfVerity(caFile, certFile, keyFile, passwd string) (*tls.Config,
 	}
 
 	conf := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 		RootCAs:            caPool,
 		Certificates:       []tls.Certificate{*cert},
 	}

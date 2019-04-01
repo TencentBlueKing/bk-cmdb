@@ -189,7 +189,7 @@ func (cli *Service) DeletePropertyGroup(req *restful.Request, resp *restful.Resp
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNamePropertyGroup).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select object group by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object group by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupDeleteFailed, cntErr.Error())})
 		return
 	}
@@ -290,7 +290,7 @@ func (cli *Service) DeletePropertyGroupObjectAtt(req *restful.Request, resp *res
 
 	cnt, cntErr := db.Table(common.BKTableNameObjAttDes).Find(objectAttSelector).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select objectatt group by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select objectatt group by condition(%+v), error is %d", objectAttSelector, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupDeleteFailed, cntErr.Error())})
 		return
 	}

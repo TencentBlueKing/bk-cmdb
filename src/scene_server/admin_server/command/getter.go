@@ -51,7 +51,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		result.BizTopo = root
 	}
 
-	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
+	if opt.scope == scopeAll || opt.scope == common.BKInnerObjIDProc {
 		objIds = append(objIds, common.BKInnerObjIDProc)
 
 		bizID, err := root.getInstID()
