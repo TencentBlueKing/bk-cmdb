@@ -139,23 +139,25 @@ const isShouldShow = to => {
 router.beforeEach((to, from, next) => {
     router.app.$nextTick(async () => {
         try {
-            const isStatusPage = statusRouter.some(status => status.name === to.name)
-            if (isStatusPage) {
-                next()
-            } else if (!isShouldShow(to)) {
+            if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
                 setLoading(true)
                 setMenuState(to)
                 await cancelRequest()
                 await preload(router.app)
-                const auth = await getAuth(to)
-                const viewAuth = isViewAuthorized(to)
-                if (viewAuth) {
+                const isStatusPage = statusRouter.some(status => status.name === to.name)
+                if (isStatusPage) {
                     next()
                 } else {
-                    setLoading(false)
-                    next({ name: '403' })
+                    const auth = await getAuth(to)
+                    const viewAuth = isViewAuthorized(to)
+                    if (viewAuth) {
+                        next()
+                    } else {
+                        setLoading(false)
+                        next({ name: '403' })
+                    }
                 }
             }
         } catch (e) {
