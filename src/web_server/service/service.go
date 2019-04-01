@@ -43,7 +43,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
-	ws.Use(middleware.ValidLogin(*s.Config))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)

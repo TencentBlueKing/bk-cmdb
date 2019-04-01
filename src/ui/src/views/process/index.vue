@@ -11,7 +11,7 @@
             <bk-button class="process-btn" type="primary"
                 :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
                 @click="handleCreate">
-                {{$t("ProcessManagement['新增进程']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 

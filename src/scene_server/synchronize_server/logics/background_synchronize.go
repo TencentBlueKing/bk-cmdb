@@ -81,7 +81,7 @@ func (s *synchronizeItem) synchronizeItemClearData(ctx context.Context) (map[str
 	clearDataInput.GenerateSign(common.SynchronizeSignPrefix)
 	result, err := s.lgc.CoreAPI.CoreService().Synchronize().SynchronizeClearData(ctx, s.lgc.header, clearDataInput)
 	if err != nil {
-		blog.Errorf("SynchronizeItem SynchronizeClearData error, config:%#v,err:%s,version:%s,rid:%s", s.config, err.Error(), s.version, s.lgc.rid)
+		blog.Errorf("SynchronizeItem SynchronizeClearData error, config:%#v,err:%s,version:%d,rid:%s", s.config, err.Error(), s.version, s.lgc.rid)
 		return errorInfoArr, nil
 	}
 	if !result.Result {
@@ -131,28 +131,28 @@ func (s *synchronizeItem) synchronizeInstanceTask(ctx context.Context) (errorInf
 	// set,modelneeds to be synchronized, and the required model can be filtered by the service,
 	//  the model needs the business information in the subsequent service.
 	if _, ok := s.objIDMap[common.BKInnerObjIDApp]; ok {
-		partErrorInfoArr, err = s.synchronizeInstance(ctx, common.BKInnerObjIDApp, inst)
+		partErrorInfoArrItem, err := s.synchronizeInstance(ctx, common.BKInnerObjIDApp, inst)
 		if err != nil {
 			blog.Errorf("synchronizeInstanceTask synchronize %s error,err:%s,rid:%s", common.BKInnerObjIDApp, err.Error(), s.lgc.rid)
-			return
+			return nil, err
 		}
 		if len(partErrorInfoArr) > 0 {
-			partErrorInfoArr = append(partErrorInfoArr, partErrorInfoArr...)
+			partErrorInfoArr = append(partErrorInfoArr, partErrorInfoArrItem...)
 		}
 		inst.SetAppIDArr(s.appIDArr)
 	}
-	for objID, _ := range s.objIDMap {
+	for objID := range s.objIDMap {
 		if objID == common.BKInnerObjIDApp {
 			// last already synchronize
 			continue
 		}
-		partErrorInfoArr, err = s.synchronizeInstance(ctx, objID, inst)
+		partErrorInfoArrItem, err := s.synchronizeInstance(ctx, objID, inst)
 		if err != nil {
 			blog.Errorf("synchronizeInstanceTask synchronize %s error,err:%s,rid:%s", objID, err.Error(), s.lgc.rid)
-			return
+			return nil, err
 		}
-		if len(partErrorInfoArr) > 0 {
-			partErrorInfoArr = append(partErrorInfoArr, partErrorInfoArr...)
+		if len(partErrorInfoArrItem) > 0 {
+			partErrorInfoArr = append(partErrorInfoArr, partErrorInfoArrItem...)
 		}
 
 	}
