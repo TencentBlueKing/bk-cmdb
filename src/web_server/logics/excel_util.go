@@ -40,7 +40,7 @@ func getFilterFields(objID string) []string {
 	default:
 		return []string{"create_time"}
 	}
-	return []string{"create_time"}
+	//return []string{"create_time"}
 }
 
 // checkExcelHealer check whether invalid fields exists in header and return headers

@@ -158,7 +158,7 @@ func (s *Service) getCompanyIDByIps(req *restful.Request, resp *restful.Response
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getCompanyIDByIps error:%v", err, rid)
+		blog.Errorf("getCompanyIDByIps error:%v,rid:%s", err, rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -391,7 +391,7 @@ func (s *Service) updateHostModule(req *restful.Request, resp *restful.Response)
 	} else {
 		moduleName, err := moduleMap[moduleIDArr[0]].String(common.BKModuleNameField)
 		if err != nil {
-			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", moduleMap, formData, "ModuleName", err, rid)
+			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", common.BKModuleNameField, err.Error(), moduleMap, formData, rid)
 			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "int", err.Error()), resp)
 			return
 		}
@@ -638,7 +638,7 @@ func (s *Service) GetHostHardInfo(req *restful.Request, resp *restful.Response) 
 	for _, item := range dataArr {
 		mapItem, err := mapstr.NewFromInterface(item)
 		if nil != err {
-			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%+v, request parammetes:%+v, request-id:%s", err.Error(), formData, util.GetHTTPCCRequestID(pheader))
+			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%#v, request parammetes:%#v, request-id:%s", err.Error(), item, formData, util.GetHTTPCCRequestID(pheader))
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "host info not map[string]interface").Error(), resp)
 			return
 		}

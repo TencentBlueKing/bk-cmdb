@@ -277,7 +277,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("assign host to app error, not foud app appID: %d, input:%+v,rid:%s", conf.ApplicationID)
+		blog.Errorf("assign host to app error, not foud app appID: %d, input:%#v,rid:%s", conf.ApplicationID, conf, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}

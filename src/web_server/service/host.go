@@ -103,7 +103,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	objID := common.BKInnerObjIDHost
 	fields, err := s.Logics.GetObjFieldIDs(objID, logics.GetFilterFields(objID), c.Request.Header)
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
