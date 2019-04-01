@@ -203,9 +203,9 @@ func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interfac
 }
 
 //GetHostIDModuleIDMapsByHostID get hsot id and module id by hostid return map[hostid]moduleid
-func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond interface{}, header http.Header) (map[int64]int64, error) {
+func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond interface{}, header http.Header) (map[int64][]int64, error) {
 	result := make([]metadata.ModuleHost, 0)
-	ret := make(map[int64]int64, 0)
+	ret := make(map[int64][]int64, 0)
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	fileds := []string{common.BKModuleIDField, common.BKSetIDField, common.BKAppIDField, common.BKHostIDField}
@@ -216,7 +216,7 @@ func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond
 	}
 
 	for _, r := range result {
-		ret[r.HostID] = r.ModuleID
+		ret[r.HostID] = append(ret[r.HostID], r.ModuleID)
 	}
 	return ret, nil
 }
@@ -333,11 +333,13 @@ func (lgc *Logics) TransferHostToDefaultModuleConfig(ctx context.Context, input 
 		return err
 	}
 	ec := eventclient.NewEventContextByReq(header, lgc.Cache)
-	for hostID, moduleID := range hostIDModuleIDMap {
-		_, err := lgc.DelSingleHostModuleRelation(ctx, ec, hostID, moduleID, input.ApplicationID, ownerID)
-		if nil != err {
-			blog.Errorf("TransferHostToDefaultModuleConfig  DelSingleHostModuleRelation , input:%#v, hostID:%v,moduleID:%v, err: %v,rid:%s", input, hostID, moduleID, err, rid)
-			return err
+	for hostID, moduleIDArr := range hostIDModuleIDMap {
+		for _, moduleID := range moduleIDArr {
+			_, err := lgc.DelSingleHostModuleRelation(ctx, ec, hostID, moduleID, input.ApplicationID, ownerID)
+			if nil != err {
+				blog.Errorf("TransferHostToDefaultModuleConfig  DelSingleHostModuleRelation , input:%#v, hostID:%v,moduleID:%v, err: %v,rid:%s", input, hostID, moduleID, err, rid)
+				return err
+			}
 		}
 	}
 	for _, hostID := range input.HostID {
