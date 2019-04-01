@@ -27,6 +27,10 @@ import (
 
 const bkbizCmdName = "bkbiz"
 
+const (
+	scopeAll = "all"
+)
+
 // Parse run app command
 func Parse(args []string) error {
 	ctx := context.Background()
@@ -102,7 +106,7 @@ func Parse(args []string) error {
 			fmt.Printf("importing %s business from %s\n", bizName, filePath)
 		}
 		opt.mini = false
-		opt.scope = "all"
+		opt.scope = scopeAll
 		if err := importBKBiz(ctx, db, opt); err != nil {
 			fmt.Printf("import error: %s", err.Error())
 			os.Exit(2)

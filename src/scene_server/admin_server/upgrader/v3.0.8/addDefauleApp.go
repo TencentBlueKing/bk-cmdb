@@ -24,6 +24,8 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+var admin = "admin"
+
 func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	if count, err := db.Table("cc_ApplicationBase").Find(mapstr.MapStr{common.BKAppNameField: common.DefaultAppName}).Count(ctx); err != nil {
@@ -35,8 +37,8 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	// add default biz
 	defaultBiz := map[string]interface{}{}
 	defaultBiz[common.BKAppNameField] = common.DefaultAppName
-	defaultBiz[common.BKMaintainersField] = "admin"
-	defaultBiz[common.BKProductPMField] = "admin"
+	defaultBiz[common.BKMaintainersField] = admin
+	defaultBiz[common.BKProductPMField] = admin
 	defaultBiz[common.BKTimeZoneField] = "Asia/Shanghai"
 	defaultBiz[common.BKLanguageField] = "1" //中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal

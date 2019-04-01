@@ -25,7 +25,8 @@ export default {
             i18n: 'Nav["事件推送"]',
             path: path,
             order: 5,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            adminView: true
         },
         auth: {
             view: R_EVENT,

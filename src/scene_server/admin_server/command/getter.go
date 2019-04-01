@@ -32,7 +32,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		return nil, err
 	}
 	if opt.scope == "all" || opt.scope == common.BKInnerObjIDApp {
-		assts, err := getAsst(ctx, db, opt)
+		assts, err := getMainlineAssociation(ctx, db, opt)
 		if nil != err {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		result.BizTopo = root
 	}
 
-	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
+	if opt.scope == scopeAll || opt.scope == common.BKInnerObjIDProc {
 		objIds = append(objIds, common.BKInnerObjIDProc)
 
 		bizID, err := root.getInstID()
@@ -197,7 +197,7 @@ func getMainline(root string, assts []*metadata.Association) ([]string, error) {
 	return nil, fmt.Errorf("topo association broken: %+v", assts)
 }
 
-func getAsst(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Association, error) {
+func getMainlineAssociation(ctx context.Context, db dal.RDB, opt *option) ([]*metadata.Association, error) {
 	assts := make([]*metadata.Association, 0)
 
 	cond := condition.CreateCondition()

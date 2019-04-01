@@ -17,7 +17,8 @@ export default {
             i18n: 'Nav["业务模型"]',
             path: path,
             order: 3,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            adminView: true
         },
         auth: {
             view: '',

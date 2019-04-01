@@ -25,7 +25,8 @@ export default {
             i18n: 'Nav["动态分组"]',
             path: path,
             order: 4,
-            parent: NAV_BUSINESS_RESOURCE
+            parent: NAV_BUSINESS_RESOURCE,
+            adminView: false
         },
         auth: {
             view: R_CUSTOM_QUERY,

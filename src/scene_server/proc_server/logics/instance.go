@@ -91,9 +91,9 @@ func (lgc *Logics) HandleProcInstNumByModuleID(ctx context.Context, appID, modul
 	procInfos, err := lgc.getProcInfoByID(ctx, procIDs)
 	isExistHostInst := make(map[string]metadata.ProcInstanceModel)
 	for procID, info := range procInfos {
-		for hostID, _ := range hostInfos {
+		for hostID := range hostInfos {
 			procInstInfo, ok := procInst[getInlineProcInstKey(hostID, moduleID)]
-			hostInstID := uint64(0)
+			var hostInstID uint64
 			if !ok {
 				maxInstID++
 				hostInstID = maxInstID

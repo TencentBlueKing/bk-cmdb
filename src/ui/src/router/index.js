@@ -117,14 +117,36 @@ const cancelRequest = () => {
 
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
+const setMenuState = to => {
+    const menu = to.meta.menu || {}
+    const menuId = menu.id
+    const parentId = menu.parent
+    router.app.$store.commit('menu/setActiveMenu', menuId)
+    if (parentId) {
+        router.app.$store.commit('menu/setOpenMenu', parentId)
+    }
+}
+
+const isShouldShow = to => {
+    const isAdminView = router.app.$store.getters.isAdminView
+    const menu = to.meta.menu
+    if (isAdminView && menu) {
+        return menu.adminView
+    }
+    return true
+}
+
 router.beforeEach((to, from, next) => {
     router.app.$nextTick(async () => {
-        const isStatusPage = statusRouter.some(status => status.name === to.name)
-        if (isStatusPage) {
-            next()
-        } else {
-            try {
+        try {
+            const isStatusPage = statusRouter.some(status => status.name === to.name)
+            if (isStatusPage) {
+                next()
+            } else if (!isShouldShow(to)) {
+                next({ name: index.name })
+            } else {
                 setLoading(true)
+                setMenuState(to)
                 await cancelRequest()
                 await preload(router.app)
                 const auth = await getAuth(to)
@@ -135,18 +157,16 @@ router.beforeEach((to, from, next) => {
                     setLoading(false)
                     next({ name: '403' })
                 }
-            } catch (e) {
-                setLoading(false)
-                next({name: 'error'})
             }
+        } catch (e) {
+            setLoading(false)
+            next({name: 'error'})
         }
     })
 })
 
 router.afterEach((to, from) => {
-    router.app.$nextTick(() => {
-        setLoading(false)
-    })
+    setLoading(false)
 })
 
 export default router
