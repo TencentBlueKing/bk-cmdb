@@ -72,7 +72,7 @@ func (s *Service) Index(c *gin.Context) {
 
 	//set cookie
 	appIDArr := make([]string, 0)
-	for key, _ := range userPriviApp {
+	for key := range userPriviApp {
 		appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
 	}
 	appIDStr := strings.Join(appIDArr, "-")
