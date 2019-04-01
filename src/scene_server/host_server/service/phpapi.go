@@ -793,7 +793,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
-	
+
 	param := make(common.KvMap)
 	param[common.BKAppIDField] = appID
 	param[common.BKHostIDField] = hostID

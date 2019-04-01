@@ -14,7 +14,7 @@ import (
 )
 
 func (ps *parseStream) hostRelated() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -45,7 +45,7 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 }
 
 func (ps *parseStream) userAPI() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -203,7 +203,7 @@ var (
 )
 
 func (ps *parseStream) userCustom() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -268,7 +268,7 @@ const (
 )
 
 func (ps *parseStream) host() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -539,7 +539,7 @@ var (
 )
 
 func (ps *parseStream) hostFavorite() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -624,7 +624,7 @@ var (
 )
 
 func (ps *parseStream) cloudResourceSync() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 

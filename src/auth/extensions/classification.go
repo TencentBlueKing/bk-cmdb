@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -32,7 +32,6 @@ import (
 func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Context, header http.Header, classificationIDs ...string) ([]metadata.Classification, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	classificationIDs = util.StrArrayUnique(classificationIDs)
-
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKClassificationIDField).In(classificationIDs).ToMapStr(),
@@ -57,7 +56,6 @@ func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Con
 func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.Classification, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
-
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),

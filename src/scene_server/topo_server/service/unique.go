@@ -39,7 +39,7 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 		blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
-	
+
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
 		blog.Errorf("[CreateObjectUnique] create for [%s] failed: %v, raw: %#v", objectID, err, data)
@@ -47,13 +47,13 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	uniqueID := id.ID
-	
+
 	// auth: register model unique
 	if err := s.AuthManager.RegisterModuleUniqueByID(params.Context, params.Header, uniqueID); err != nil {
 		blog.Errorf("register model unique to iam failed, uniqueID: %d, err: %+v", uniqueID, err)
 		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
-	
+
 	return id, nil
 }
 
@@ -116,19 +116,19 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 		blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
-	
+
 	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
 		blog.Errorf("[DeleteObjectUnique] delete [%s](%d) failed: %v", objectID, id, err)
 		return nil, err
 	}
-	
+
 	// auth: update registered model unique
 	if err := s.AuthManager.DeregisterModelUniqueByID(params.Context, params.Header, int64(id)); err != nil {
 		blog.Errorf("deregister model unique from iam failed, uniqueID: %d, err: %+v", id, err)
 		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
-	
+
 	return nil, nil
 }
 
@@ -146,6 +146,6 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 		blog.Errorf("update model unique failed, authorization failed, unique: %+v, err: %+v", uniques, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
-	
+
 	return uniques, nil
 }

@@ -87,7 +87,7 @@ func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 		return nil, errors.New("parse user info failed, miss BK_User in your request header")
 	}
 	userInfo.UserName = user
-	supplierID := requestHeader.Get(common.BKHTTPSupplierID)
+	supplierID := requestHeader.Get(common.BKHTTPOwnerID)
 	if len(supplierID) == 0 {
 		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
 	}

@@ -35,15 +35,15 @@ type GraphicsOperationInterface interface {
 
 func NewGraphics(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) GraphicsOperationInterface {
 	return &graphics{
-		clientSet: client,
+		clientSet:   client,
 		authManager: authManager,
 	}
 }
 
 type graphics struct {
-	clientSet apimachinery.ClientSetInterface
-	obj       ObjectOperationInterface
-	asst      AssociationOperationInterface
+	clientSet   apimachinery.ClientSetInterface
+	obj         ObjectOperationInterface
+	asst        AssociationOperationInterface
 	authManager *extensions.AuthManager
 }
 

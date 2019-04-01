@@ -27,7 +27,7 @@ import (
 
 // Producer producer WorkRequest and enqueue it
 type Producer struct {
-	clientSet apimachinery.ClientSetInterface
+	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
 	ID          int
 	WorkerQueue chan meta.WorkRequest
@@ -38,7 +38,7 @@ type Producer struct {
 func NewProducer(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager, workerQueue chan meta.WorkRequest) *Producer {
 	// Create, and return the producer.
 	producer := Producer{
-		clientSet: clientSet,
+		clientSet:   clientSet,
 		authManager: authManager,
 		ID:          0,
 		WorkerQueue: workerQueue,
@@ -91,7 +91,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		blog.Errorf("list business failed, err: %v", err)
 		return &jobs
 	}
-	
+
 	businessList := make([]extensions.BusinessSimplify, 0)
 	for _, business := range result.Data.Info {
 		businessSimplify := extensions.BusinessSimplify{}

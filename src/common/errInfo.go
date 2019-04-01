@@ -161,6 +161,7 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 
 	// apiserver 1100XXX
+	CCErrGetAuthorizedAppListFromAuthFailed = 1100001
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance

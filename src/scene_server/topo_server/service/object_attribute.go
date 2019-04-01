@@ -34,7 +34,7 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 	if err := s.AuthManager.RegisterModelAttribute(params.Context, params.Header, *attribute); err != nil {
 		return nil, fmt.Errorf("register model attribute to auth failed, err: %+v", err)
 	}
-	
+
 	return attr.ToMapStr()
 }
 

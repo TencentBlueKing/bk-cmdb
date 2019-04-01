@@ -75,7 +75,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 }
 
 func (ps *parseStream) validateAPI() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -87,7 +87,7 @@ func (ps *parseStream) validateAPI() *parseStream {
 }
 
 func (ps *parseStream) validateVersion() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -101,7 +101,7 @@ func (ps *parseStream) validateVersion() *parseStream {
 }
 
 func (ps *parseStream) validateResourceAction() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -144,7 +144,7 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 // user and supplier account must be set in the http
 // request header, otherwise, an error will be occur.
 func (ps *parseStream) validateUserAndSupplier() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -169,13 +169,17 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 
 // finalizer is to find whether a url resource has been matched or not.
 func (ps *parseStream) finalizer() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 	if len(ps.Attribute.Resources) <= 0 {
 		ps.err = errors.New("unsupported resource operation")
 	}
 	return ps
+}
+
+func (ps *parseStream) shouldReturn() bool {
+	return ps.err != nil || len(ps.Attribute.Resources) > 0
 }
 
 func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {

@@ -117,7 +117,6 @@ func (ta *TopoAuth) AuthorizeObject(ctx context.Context, header http.Header, bus
 }
 */
 
-
 func (ta *TopoAuth) RegisterClassification(ctx context.Context, header http.Header, class *metadata.Classification) error {
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
@@ -142,7 +141,6 @@ func (ta *TopoAuth) RegisterClassification(ctx context.Context, header http.Head
 
 	return nil
 }
-
 
 func (ta *TopoAuth) RegisterBusiness(ctx context.Context, header http.Header, bizName string, id int64) error {
 	resource := meta.ResourceAttribute{

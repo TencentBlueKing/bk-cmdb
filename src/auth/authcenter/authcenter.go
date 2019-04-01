@@ -226,7 +226,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 			blog.Debug("query permit %+v", ress[ressindex])
 			rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
 			if err != nil {
-				blog.Fatalf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
+				blog.Errorf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
 				ress[ressindex].Decision.Authorized = false
 				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
 				continue
@@ -234,7 +234,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 			actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
 			if err != nil {
-				blog.ErrorJSON("adaptor resource action failed, resource: %s, err: %s", ress[ressindex].ResourceAttribute, err)
+				blog.Errorf("adaptor resource action failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
 				ress[ressindex].Decision.Authorized = false
 				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
 				continue
@@ -315,6 +315,46 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	}
 
 	return
+}
+
+func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+		DataType: "array",
+	}
+
+	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, apps := range appList {
+		for _, appRsc := range apps.ResourceIDs {
+			for _, app := range appRsc {
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {

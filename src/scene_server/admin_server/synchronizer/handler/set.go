@@ -50,8 +50,8 @@ func (ih *IAMHandler) HandleSetSync(task *meta.WorkRequest) error {
 		Basic: authmeta.Basic{
 			Type: authmeta.ModelSet,
 		},
-		BusinessID:      businessSimplify.BKAppIDField,
-		Layers: make([]authmeta.Item, 0),
+		BusinessID: businessSimplify.BKAppIDField,
+		Layers:     make([]authmeta.Item, 0),
 	}
 
 	taskName := fmt.Sprintf("sync set for business: %d", businessSimplify.BKAppIDField)

@@ -19,16 +19,15 @@ import (
 
 // IAMHandler sync resource to iam
 type IAMHandler struct {
-	clientSet apimachinery.ClientSetInterface
+	clientSet   apimachinery.ClientSetInterface
 	authManager *extensions.AuthManager
 }
-
 
 // NewIAMHandler new a IAMHandler
 func NewIAMHandler(clientSet apimachinery.ClientSetInterface, authManager *extensions.AuthManager) *IAMHandler {
 	iamHandler := &IAMHandler{
 		authManager: authManager,
-		clientSet: clientSet,
+		clientSet:   clientSet,
 	}
 	return iamHandler
 }

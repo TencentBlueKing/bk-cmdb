@@ -39,7 +39,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("make auth resource from model failed, model: %+v, err: %+v", object, err)
 		return err
 	}
-	
+
 	layers := objectResource[0].Layers
 	layers = append(layers, authmeta.Item{
 		Type:       authmeta.Model,
@@ -50,8 +50,8 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		Basic: authmeta.Basic{
 			Type: authmeta.Model,
 		},
-		BusinessID:      bizID,
-		Layers:          layers,
+		BusinessID: bizID,
+		Layers:     layers,
 	}
 
 	// step2. collect instances by model, and convert to iam interface format
@@ -60,7 +60,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("", err)
 		return err
 	}
-	
+
 	resources := ih.authManager.MakeResourcesByInstances(header, authmeta.EmptyAction, bizID, instances...)
 	if err != nil {
 		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)

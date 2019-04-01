@@ -43,44 +43,9 @@
         },
         mounted () {
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
-            this.setDefaultCollection()
         },
         beforeDestroy () {
             removeResizeListener(this.$refs.mainScroller, execMainResizeListener)
-        },
-        methods: {
-            async setDefaultCollection () {
-                await Promise.all([
-                    this.searchUsercustom(),
-                    this.searchBiz()
-                ])
-                const firstEntryKey = this.firstEntryKey
-                if (this.usercustom[firstEntryKey] === void 0) {
-                    const classifyNavigationKey = this.classifyNavigationKey
-                    this.$store.dispatch('userCustom/saveUsercustom', {
-                        [firstEntryKey]: false,
-                        [classifyNavigationKey]: ['biz', '$resource']
-                    })
-                }
-            },
-            searchUsercustom () {
-                return this.$store.dispatch('userCustom/searchUsercustom', {
-                    config: {
-                        requestId: 'post_searchUsercustom'
-                    }
-                })
-            },
-            searchBiz () {
-                return this.$store.dispatch('objectBiz/searchBusiness', {
-                    config: {
-                        requestId: 'post_searchBusiness_$ne_disabled',
-                        fromCache: true
-                    }
-                }).then(business => {
-                    this.$store.commit('objectBiz/setBusiness', business.info)
-                    return business
-                })
-            }
         }
     }
 </script>

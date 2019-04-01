@@ -55,12 +55,12 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error, create module success, but get id failed, err: %+v", err)
 	}
-	
+
 	// auth: register module to iam
 	if err := s.AuthManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
 		return nil, fmt.Errorf("register module failed, err: %+v", err)
 	}
-	
+
 	return module, nil
 }
 
@@ -139,7 +139,7 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 	if err := s.AuthManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
 		return nil, fmt.Errorf("update registered module failed, err: %+v", err)
 	}
-	
+
 	return nil, nil
 }
 

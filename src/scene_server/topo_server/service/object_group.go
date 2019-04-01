@@ -54,7 +54,7 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	if nil != err {
 		return nil, err
 	}
-	
+
 	// query attribute groups with given condition, so that update them to iam after updated
 	searchCondition := condition.CreateCondition()
 	if cond.Condition.ID != 0 {

@@ -65,18 +65,19 @@ func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient
 
 func (s *service) WebServices() []*restful.WebService {
 
-	allWebServices := []*restful.WebService{}
+	allWebServices := make([]*restful.WebService, 0)
 
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
 
-	// init V3
 	ws := &restful.WebService{}
-
+	// init V3
 	ws.Route(ws.POST("/api/v3/auth/verify").To(s.AuthVerify))
+	ws.Route(ws.GET("/api/v3/auth/business-list").To(s.GetAuthorizedAppList))
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
 		Filter(s.authFilter(getErrFun))
+
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
@@ -96,6 +97,12 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			fchain.ProcessFilter(req, resp)
 			return
 		}
+
+		if req.Request.URL.Path == "/api/v3/auth/business-list" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
 		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
 			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
 			rsp := metadata.BaseResp{

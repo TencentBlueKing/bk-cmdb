@@ -110,13 +110,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
 	server.Service = &service.Service{
-		Language: engine.Language,
-		Engine:   engine,
+		Language:    engine.Language,
+		Engine:      engine,
 		AuthManager: authManager,
-		Core:     core.New(engine.CoreAPI, authManager),
-		Error:    engine.CCErr,
-		Txn:      txn,
-		Config:   server.Config,
+		Core:        core.New(engine.CoreAPI, authManager),
+		Error:       engine.CCErr,
+		Txn:         txn,
+		Config:      server.Config,
 	}
 
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(server.Service.WebService())); err != nil {
