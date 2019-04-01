@@ -17,8 +17,8 @@
                 <li class="menu-item"
                     v-for="(menu, index) in menus"
                     :class="{
-                        active: activeMenu === menu.id,
-                        'is-open': openedMenu === menu.id,
+                        active: active === menu.id,
+                        'is-open': open === menu.id,
                         'is-link': menu.path
                     }">
                     <h3 class="menu-info clearfix"
@@ -28,7 +28,7 @@
                         <span class="menu-name">{{menu.i18n ? $t(menu.i18n) : menu.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
                             v-if="menu.submenu && menu.submenu.length"
-                            :class="{open: menu.id === openedMenu}">
+                            :class="{open: menu.id === open}">
                         </i>
                     </h3>
                     <div class="menu-submenu" 
@@ -37,7 +37,7 @@
                         <router-link class="submenu-link" exact
                             v-for="(submenu, submenuIndex) in menu.submenu"
                             :class="{
-                                active: activeMenu === submenu.id,
+                                active: active === submenu.id,
                                 collection: menu.id === NAV_COLLECT
                             }"
                             :key="submenuIndex"
@@ -73,13 +73,12 @@ export default {
         return {
             NAV_COLLECT,
             routerLinkHeight: 42,
-            openedMenu: null,
-            activeMenu: null,
             timer: null
         }
     },
     computed: {
         ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
+        ...mapGetters('menu', ['active', 'open']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
         collectMenus () {
             const collectMenus = []
@@ -106,7 +105,8 @@ export default {
                 const meta = (route.meta || {})
                 const auth = meta.auth || {}
                 const menu = meta.menu
-                if (menu) {
+                const shouldShow = this.isAdminView ? menu && menu.adminView : menu
+                if (shouldShow) {
                     const authorized = auth.view ? isAuthorized(...auth.view.split('.'), true) : true
                     if (authorized) {
                         if (menu.parent) {
@@ -139,7 +139,7 @@ export default {
         },
         // 展开的分类子菜单高度
         openedMenuHeight () {
-            const openedMenu = this.menus.find(menu => menu.id === this.openedMenu)
+            const openedMenu = this.menus.find(menu => menu.id === this.open)
             if (openedMenu) {
                 const submenuCount = (openedMenu.submenu || []).length
                 return submenuCount * this.routerLinkHeight
@@ -166,7 +166,7 @@ export default {
         },
         getMenuModelsStyle (menu) {
             return {
-                height: (this.unfold && menu.id === this.openedMenu) ? this.openedMenuHeight + 'px' : 0
+                height: (this.unfold && menu.id === this.open) ? this.openedMenuHeight + 'px' : 0
             }
         },
         // 被点击的有对应的路由，则跳转
@@ -177,7 +177,8 @@ export default {
         },
         // 切换展开的分类
         toggleMenu (menu) {
-            this.openedMenu = menu.id === this.openedMenu ? null : menu.id
+            const openMenu = menu.id === this.open ? null : menu.id
+            this.$store.commit('menu/setOpenMenu', openMenu)
         },
         // 切换导航展开固定
         toggleNavStick () {

@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
@@ -55,7 +55,7 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 	go cleanOutdateEvents(cache)
 
 	if rc != nil {
-		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
+		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
 		go func() {
 			for {
 				if err := th.Run(); err != nil {
@@ -111,7 +111,7 @@ type TxnHandler struct {
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
-	commited    chan string
+	committed   chan string
 	shouldClose *util.AtomicBool
 	wg          sync.WaitGroup
 }
