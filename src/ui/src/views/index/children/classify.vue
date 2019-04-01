@@ -16,11 +16,14 @@
     import { mapGetters } from 'vuex'
     import throttle from 'lodash.throttle'
     import vClassifyItem from './classify-item'
+    import { OPERATION as businessOperation } from '@/views/business/router.config'
+    import { OPERATION as resourceOperation } from '@/views/resource/router.config'
     export default {
         components: {
             vClassifyItem
         },
         computed: {
+            ...mapGetters('auth', ['isAuthorized']),
             ...mapGetters('objectModelClassify', [
                 'authorizedClassifications',
                 'activeClassifications'
@@ -30,28 +33,27 @@
             hostManageClassification () {
                 const hostManageClassification = {
                     'bk_classification_icon': 'icon-cc-host',
-                    'bk_classification_id': 'bk_collection',
+                    'bk_classification_id': 'bk_host_management',
                     'bk_classification_name': this.$t('Hosts["主机管理"]'),
                     'bk_classification_type': 'inner',
                     'bk_objects': []
                 }
-                // 放开展示权限
-                // if (this.admin || (this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
-                hostManageClassification['bk_objects'].push({
-                    'bk_obj_name': this.$t('Common["业务"]'),
-                    'bk_obj_id': 'biz',
-                    'bk_obj_icon': 'icon-cc-business',
-                    'path': '/business',
-                    'bk_classification_id': 'bk_collection'
-                })
-                // }
-                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
+                if (this.$isAuthorized(businessOperation.R_BUSINESS, true)) {
+                    hostManageClassification['bk_objects'].push({
+                        'bk_obj_name': this.$t('Common["业务"]'),
+                        'bk_obj_id': 'biz',
+                        'bk_obj_icon': 'icon-cc-business',
+                        'path': '/business',
+                        'bk_classification_id': 'bk_host_management'
+                    })
+                }
+                if (this.$isAuthorized(resourceOperation.R_HOST, true)) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["主机"]'),
                         'bk_obj_id': '$resource',
                         'bk_obj_icon': 'icon-cc-host-free-pool',
                         'path': '/resource',
-                        'bk_classification_id': 'bk_collection'
+                        'bk_classification_id': 'bk_host_management'
                     })
                 }
                 return hostManageClassification
@@ -59,7 +61,6 @@
             classifyColumns () {
                 const classifies = [
                     this.hostManageClassification,
-                    // ...this.authorizedClassifications // 放开展示权限
                     ...this.activeClassifications
                 ].filter(classification => {
                     return classification['bk_classification_id'] !== 'bk_organization' && classification['bk_objects'].length

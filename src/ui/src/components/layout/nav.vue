@@ -107,7 +107,7 @@ export default {
                 const auth = meta.auth || {}
                 const menu = meta.menu
                 if (menu) {
-                    const authorized = auth.view ? isAuthorized(...auth.view.split('.')) : true
+                    const authorized = auth.view ? isAuthorized(...auth.view.split('.'), true) : true
                     if (authorized) {
                         if (menu.parent) {
                             const parent = menus.find(parent => parent.id === menu.parent) || {}

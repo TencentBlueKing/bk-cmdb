@@ -9,6 +9,7 @@ import {
 
 export const OPERATION = {
     C_HOST,
+    R_HOST,
     U_HOST,
     D_HOST,
     HOST_ASSIGN

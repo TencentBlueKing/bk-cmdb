@@ -8,6 +8,7 @@ import {
 
 export const OPERATION = {
     U_HOST,
+    R_HOST,
     HOST_TO_RESOURCE,
     TOPO_TRANSFER_HOST
 }

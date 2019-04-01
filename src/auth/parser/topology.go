@@ -23,7 +23,7 @@ import (
 )
 
 func (ps *parseStream) topology() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -54,7 +54,7 @@ var (
 )
 
 func (ps *parseStream) business() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -202,7 +202,7 @@ var (
 )
 
 func (ps *parseStream) mainline() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -336,7 +336,7 @@ var (
 )
 
 func (ps *parseStream) associationType() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -431,7 +431,7 @@ var (
 )
 
 func (ps *parseStream) objectAssociation() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -537,7 +537,7 @@ var (
 )
 
 func (ps *parseStream) objectInstanceAssociation() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -609,7 +609,7 @@ var (
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -894,7 +894,7 @@ var (
 )
 
 func (ps *parseStream) object() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1028,7 +1028,7 @@ var (
 )
 
 func (ps *parseStream) ObjectClassification() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1136,7 +1136,7 @@ var (
 )
 
 func (ps *parseStream) objectAttributeGroup() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1247,7 +1247,7 @@ var (
 )
 
 func (ps *parseStream) objectAttribute() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1338,7 +1338,7 @@ var (
 )
 
 func (ps *parseStream) ObjectModule() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1517,7 +1517,7 @@ var (
 )
 
 func (ps *parseStream) ObjectSet() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1666,7 +1666,7 @@ var (
 )
 
 func (ps *parseStream) objectUnique() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1763,7 +1763,7 @@ var (
 )
 
 func (ps *parseStream) audit() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 

@@ -120,8 +120,8 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")  // ignore err, because ConfigMap is map[string]string
 		blog.V(3).Infof("config updated: \n%s", out)
 
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
