@@ -132,11 +132,11 @@ router.beforeEach((to, from, next) => {
                 if (viewAuth) {
                     next()
                 } else {
+                    setLoading(false)
                     next({ name: '403' })
                 }
             } catch (e) {
                 setLoading(false)
-                console.log(e)
                 next({name: 'error'})
             }
         }
