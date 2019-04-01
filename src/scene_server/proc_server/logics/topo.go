@@ -72,21 +72,22 @@ func (lgc *Logics) getModuleIDByProcID(ctx context.Context, appID, procID int64,
 	condition := make(map[string]interface{}, 0)
 	condition[common.BKProcessIDField] = procID
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	rid := util.GetHTTPCCRequestID(header)
 	// get process by module
 	ret, err := lgc.CoreAPI.ProcController().GetProc2Module(context.Background(), header, condition)
 	if nil != err {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %s  http do error:%s", appID, procID, err.Error())
+		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http do error:%s,rid:%s", appID, procID, err.Error(), rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %s  http reply error:%s", appID, procID, ret.ErrMsg)
+		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http reply error:%s,rid:%s", appID, procID, ret.ErrMsg, rid)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	var moduleIDs []int64
 	for _, item := range ret.Data {
 		ids, err := lgc.HandleProcInstNumByModuleName(ctx, header, appID, item.ModuleName)
 		if nil != err {
-			blog.Errorf("getModuleIDByProcID get module id by module name %s  in application id  %d error %s", item.ModuleName, item.ApplicationID, err.Error())
+			blog.Errorf("getModuleIDByProcID get module id by module name %s  in application id  %d error %s,rid:%s", item.ModuleName, item.ApplicationID, err.Error(), rid)
 			return nil, err
 		}
 		moduleIDs = append(moduleIDs, ids...)
@@ -102,11 +103,11 @@ func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, header http.Header, 
 	}
 	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, dat)
 	if nil != err {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig http do error:%s", hostID, err.Error())
+		blog.Errorf("GetModuleIDByHostID hostID id %d GetModulesHostConfig http do error:%s", hostID, err.Error())
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig reply error:%s", hostID, ret.ErrMsg)
+		blog.Errorf("GetModuleIDByHostID  hostID %d GetModulesHostConfig reply error:%s", hostID, ret.ErrMsg)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 

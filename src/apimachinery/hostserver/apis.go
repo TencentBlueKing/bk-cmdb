@@ -327,20 +327,6 @@ func (hs *hostServer) GetDefaultCustom(ctx context.Context, h http.Header) (resp
 	return
 }
 
-func (hs *hostServer) GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("getAgentStatus/%s", appID)
-
-	err = hs.client.Get().
-		WithContext(ctx).
-		Body(nil).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (hs *hostServer) UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/openapi/host/%s", appID)

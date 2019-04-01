@@ -37,7 +37,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	sheet, err := xlsxFile.AddSheet("inst")
 	if err != nil {
-		blog.Errorf("setExcelRowDataByIndex add excel sheet error, rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("setExcelRowDataByIndex add excel sheet error, err:%s, rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return err
 
 	}
@@ -51,7 +51,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 
 	instPrimaryKeyValMap := make(map[int64][]PropertyPrimaryVal)
 	productExcelHealer(fields, filter, sheet, ccLang)
-	//indexID := getFieldsIDIndexMap(fields)
+	// indexID := getFieldsIDIndexMap(fields)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 
@@ -84,7 +84,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 
 	sheet, err := xlsxFile.AddSheet("host")
 	if err != nil {
-		blog.Errorf("BuildHostExcelFromData add excel sheet error, rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("BuildHostExcelFromData add excel sheet error, err:%s, rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return err
 	}
 	extFieldsTopoID := "cc_ext_field_topo"
@@ -134,7 +134,7 @@ func (lgc *Logics) BuildHostExcelFromData(ctx context.Context, objID string, fie
 
 func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID string, instPrimaryInfo map[int64][]PropertyPrimaryVal, xlsxFile *xlsx.File, header http.Header) error {
 	var instIDArr []int64
-	for instID, _ := range instPrimaryInfo {
+	for instID := range instPrimaryInfo {
 		instIDArr = append(instIDArr, instID)
 	}
 	instAsst, err := lgc.fetchAssocationData(ctx, header, objID, instIDArr)

@@ -474,7 +474,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 
 	// 克隆主机, 已存在的修改，不存在的新增；dstIpArr: 全部要克隆的主机，existIpArr：已存在的要克隆的主机
 	blog.V(5).Infof("existIpArr:%v, input:%v", existIPMap, input)
-	for dstIpV, _ := range dstIPMap {
+	for dstIpV := range dstIPMap {
 		if dstIpV == input.OrgIP {
 			blog.V(5).Infof("clone host updateHostMain err:dstIp and orgIp cannot be the same,srcIP:%s, dstIP:%s, input:%v", input.OrgIP, dstIpV, input)
 			continue

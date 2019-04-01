@@ -67,8 +67,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("host/enterIp").To(s.enterIP))
 	ws.Route(ws.POST("host/enterip").To(s.enterIP))
 
-	ws.Route(ws.POST("host/getAgentStatus").To(s.getAgentStatus))
-
 	ws.Route(ws.POST("Host/gethostlistbyip").To(s.getHostListByIP))
 	ws.Route(ws.POST("host/gethostlistbyip").To(s.getHostListByIP))
 	ws.Route(ws.POST("Host/getsethostlist").To(s.getSetHostList))
