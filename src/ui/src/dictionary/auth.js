@@ -45,8 +45,8 @@ export const C_HOST = 'hostInstance.create'
 export const R_HOST = 'hostInstance.findMany'
 export const U_HOST = 'hostInstance.update'
 export const D_HOST = 'hostInstance.delete'
-export const HOST_TO_RESOURCE = 'hostInstance.moduleTransfer'
-export const HOST_ASSIGN = 'hostInstance.moduleTransfer'
+export const HOST_TO_RESOURCE = 'hostInstance.moveHostFromModuleToResPool'
+export const HOST_ASSIGN = 'hostInstance.moveResPoolHostToBizIdleModule'
 
 // G = global 全局资源类型
 // (C/R/U/D) 对应的CRUD权限
