@@ -36,7 +36,7 @@
             }
         },
         computed: {
-            ...mapGetters(['admin', 'isAdminView']),
+            ...mapGetters(['user', 'admin', 'isAdminView']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
