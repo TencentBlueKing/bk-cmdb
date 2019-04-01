@@ -157,7 +157,7 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 	//translate cmdb v3 to v2 api result error,
 	if err != nil {
-		blog.Errorf("getContentByCustomerGroupID  v%", result)
+		blog.Errorf("getContentByCustomerGroupID  %v", result)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

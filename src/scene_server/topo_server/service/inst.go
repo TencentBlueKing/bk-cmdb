@@ -57,10 +57,10 @@ func (s *topoService) CreateInst(params types.ContextParams, pathParams, queryPa
 			blog.Errorf("import object[%s] instance batch, but got invalid BatchInfo:[%v] ", objID, batchInfo)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
-		setInst, err := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
-		if nil != err {
-			blog.Errorf("failed to create new object %s, %s", objID, err.Error())
-			return nil, err
+		setInst, createErr := s.core.InstOperation().CreateInstBatch(params, obj, batchInfo)
+		if nil != createErr {
+			blog.Errorf("failed to create new object %s, %s", objID, createErr.Error())
+			return nil, createErr
 		}
 		return setInst, nil
 	}

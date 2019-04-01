@@ -117,7 +117,7 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 
 	for _, origindist := range origindists {
 		subscribers := eh.findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
-		if len(subscribers) <= 0 || "nil" == subscribers[0] {
+		if len(subscribers) <= 0 || nilstr == subscribers[0] {
 			blog.Infof("%v no subscriber，continue", origindist.GetType())
 			return eh.SaveEventDone(event)
 		}
@@ -248,7 +248,7 @@ func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
 
 	eh.cache.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
 
-	if eventstr == "" || eventstr == "nil" {
+	if eventstr == "" || eventstr == nilstr {
 		return nil
 	}
 	eventbytes := []byte(eventstr)
@@ -259,3 +259,5 @@ func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
 	}
 	return &metadata.EventInstCtx{EventInst: event, Raw: eventstr}
 }
+
+const nilstr = "nil"

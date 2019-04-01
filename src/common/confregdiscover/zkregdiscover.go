@@ -13,11 +13,12 @@
 package confregdiscover
 
 import (
-	"configcenter/src/common/zkclient"
 	"context"
 	"fmt"
 	"strings"
 	"time"
+
+	"configcenter/src/common/zkclient"
 )
 
 // ZkRegDiscover config register and discover by zookeeper
@@ -74,16 +75,14 @@ func (zkRD *ZkRegDiscover) Read(path string) (string, error) {
 
 func (zkRD *ZkRegDiscover) Discover(key string) (<-chan *DiscoverEvent, error) {
 
-	discvCtx, _ := context.WithCancel(zkRD.rootCtx)
-
 	env := make(chan *DiscoverEvent, 1)
 
-	go zkRD.loopDiscover(key, discvCtx, env)
+	go zkRD.loopDiscover(zkRD.rootCtx, key, env)
 
 	return env, nil
 }
 
-func (zkRD *ZkRegDiscover) loopDiscover(path string, discvCtx context.Context, env chan *DiscoverEvent) {
+func (zkRD *ZkRegDiscover) loopDiscover(discvCtx context.Context, path string, env chan *DiscoverEvent) {
 	for {
 		discvEnv := &DiscoverEvent{
 			Err: nil,

@@ -30,7 +30,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 	if nil != err {
 		return nil, err
 	}
-	if opt.scope == "all" || opt.scope == common.BKInnerObjIDApp {
+	if opt.scope == scopeAll || opt.scope == common.BKInnerObjIDApp {
 		assts, err := getAsst(ctx, db, opt)
 		if nil != err {
 			return nil, err
@@ -50,7 +50,7 @@ func getBKTopo(ctx context.Context, db dal.RDB, opt *option) (*Topo, error) {
 		result.BizTopo = root
 	}
 
-	if opt.scope == "all" || opt.scope == common.BKInnerObjIDProc {
+	if opt.scope == scopeAll || opt.scope == common.BKInnerObjIDProc {
 		objIds = append(objIds, common.BKInnerObjIDProc)
 
 		bizID, err := root.getInstID()

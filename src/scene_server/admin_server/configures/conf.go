@@ -133,6 +133,9 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	}
 
 	data, err := json.Marshal(languagepack)
+	if err != nil {
+		return err
+	}
 	key := types.CC_SERVLANG_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }

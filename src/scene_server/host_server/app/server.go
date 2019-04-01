@@ -80,7 +80,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSvr.Service = service
 	hostSvr.Logic = service.Logics
 	select {}
-	return nil
 }
 
 type HostServer struct {

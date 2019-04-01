@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -22,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -178,30 +176,4 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	return
 
-}
-
-//httpRequest do http request
-func httpRequest(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.POST(url, header, params)
-
-	return string(reply), err
-}
-
-//httpRequestGet do http get request
-func httpRequestGet(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.GET(url, header, params)
-
-	return string(reply), err
 }

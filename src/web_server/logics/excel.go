@@ -206,7 +206,7 @@ func (lgc *Logics) BuildExcelTemplate(objID, filename string, header http.Header
 	file = xlsx.NewFile()
 	sheet, err := file.AddSheet("host")
 	if err != nil {
-		blog.Errorf("get %s fields error:", objID, err.Error())
+		blog.Errorf("get %s fields error: %v", objID, err)
 		return err
 	}
 	blog.V(5).Infof("BuildExcelTemplate fields count:%d", fields)

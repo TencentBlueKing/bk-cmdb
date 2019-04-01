@@ -148,7 +148,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjAsst).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select objectasst by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select objectasst by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
