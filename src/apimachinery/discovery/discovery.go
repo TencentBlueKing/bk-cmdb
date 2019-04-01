@@ -54,8 +54,8 @@ func NewDiscoveryInterface(client *zk.ZkClient) (DiscoveryInterface, error) {
 	d := &discover{
 		servers: make(map[string]*server),
 	}
-	for component, _ := range types.AllModule {
-		if component == types.CC_MODULE_WEBSERVER {
+	for component, isDiscovery := range types.AllModule {
+		if !isDiscovery {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
