@@ -182,9 +182,18 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return Edit, nil
 		}
 	}
-	if r.Action == meta.Archive {
-		return Archive, nil
+
+	if r.Basic.Type == meta.Business {
+		if r.Action == meta.Archive {
+			return Archive, nil
+		}
+
+		// edit a business.
+		if r.Action == meta.Create || r.Action == meta.Update {
+			return Edit, nil
+		}
 	}
+
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil

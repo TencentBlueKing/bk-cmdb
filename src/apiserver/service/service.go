@@ -64,29 +64,21 @@ func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient
 }
 
 func (s *service) WebServices() []*restful.WebService {
-
-	allWebServices := make([]*restful.WebService, 0)
-
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
 
 	ws := &restful.WebService{}
-	// init V3
-	ws.Route(ws.POST("/api/v3/auth/verify").To(s.AuthVerify))
-	ws.Route(ws.GET("/api/v3/auth/business-list").To(s.GetAuthorizedAppList))
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).
-		Filter(s.authFilter(getErrFun))
-
+	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Filter(s.authFilter(getErrFun))
+	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
+	ws.Route(ws.GET("/auth/business-list").To(s.GetAuthorizedAppList))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.URLFilterChan).To(s.Put))
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
-	allWebServices = append(allWebServices, ws)
-
-	// init v2
-	allWebServices = append(allWebServices, s.core.CompatibleV2Operation().WebService())
+	allWebServices := make([]*restful.WebService, 0)
+	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
 
 	return allWebServices
 }
