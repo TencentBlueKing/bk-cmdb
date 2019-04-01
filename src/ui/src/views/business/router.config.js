@@ -26,7 +26,8 @@ export default [{
             i18n: 'Nav["业务"]',
             path: businessPath,
             order: 1,
-            parent: NAV_BASIC_RESOURCE
+            parent: NAV_BASIC_RESOURCE,
+            adminView: true
         },
         auth: {
             view: R_BUSINESS,

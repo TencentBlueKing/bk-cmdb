@@ -630,12 +630,9 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'modelHistory',
+                    name: 'history',
                     params: {
                         objId: this.objId
-                    },
-                    query: {
-                        relative: `/general-model/${this.objId}`
                     }
                 })
             },

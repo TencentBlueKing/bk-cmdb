@@ -27,7 +27,8 @@ export default {
             i18n: 'Nav["主机"]',
             path: path,
             order: 2,
-            parent: NAV_BASIC_RESOURCE
+            parent: NAV_BASIC_RESOURCE,
+            adminView: true
         },
         auth: {
             view: R_HOST,

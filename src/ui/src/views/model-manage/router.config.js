@@ -29,7 +29,8 @@ export default [{
             i18n: 'Nav["模型"]',
             path: modelPath,
             order: 1,
-            parent: NAV_MODEL_MANAGEMENT
+            parent: NAV_MODEL_MANAGEMENT,
+            adminView: true
         },
         auth: {
             view: '',
