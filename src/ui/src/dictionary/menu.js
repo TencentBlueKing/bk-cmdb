@@ -12,7 +12,7 @@ export default [{
 }, {
     id: NAV_BASIC_RESOURCE,
     i18n: 'Nav["基础资源"]',
-    icon: 'icon-cc-basic-resource',
+    icon: 'icon-cc-resource',
     submenu: []
 }, {
     id: NAV_BUSINESS_RESOURCE,
