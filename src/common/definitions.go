@@ -675,6 +675,7 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
+	HostOSTypeEnumAIX     = "3"
 )
 
 const (
