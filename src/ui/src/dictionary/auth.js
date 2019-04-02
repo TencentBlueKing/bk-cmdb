@@ -77,7 +77,7 @@ export const SYSTEM_MANAGEMENT = 'sysSystemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'modelTopology.findMany'
 
 export const GET_AUTH_META = auth => {
-    const [ type, action ] = auth.split('.')
+    const [type, action] = auth.split('.')
     return {
         resource_type: type,
         action: action

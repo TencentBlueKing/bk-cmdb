@@ -1,7 +1,7 @@
 <template>
     <div class="topology-layout clearfix">
         <cmdb-resize-layout class="tree-layout fl"
-            v-bkloading="{isLoading: $loading([`get_getInstTopo_${business}`, `get_getInternalTopo_${business}`])}"
+            v-bkloading="{ isLoading: $loading([`get_getInstTopo_${business}`, `get_getInternalTopo_${business}`]) }"
             direction="right"
             :handler-offset="3"
             :min="200"
@@ -11,14 +11,14 @@
                 :id-generator="getTopoNodeId"
                 :tree="tree.data"
                 @on-selected="handleNodeSelected">
-                <div class="tree-node clearfix" slot-scope="{node, state}"
+                <div class="tree-node clearfix" slot-scope="{ node, state }"
                     :class="{
                         'tree-node-selected': state.selected,
                         'tree-node-module': node['bk_obj_id'] === 'module'
                     }">
                     <template v-if="[1, 2].includes(node.default)">
-                        <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
-                        <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
+                        <i class="topo-node-icon topo-node-icon-internal icon-cc-host-free-pool" v-if="node.default === 1"></i>
+                        <i class="topo-node-icon topo-node-icon-internal icon-cc-host-breakdown" v-else></i>
                     </template>
                     <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
                     <span class="topo-node-text" :title="node['bk_inst_name']">{{node['bk_inst_name']}}</span>
@@ -66,7 +66,7 @@
                     </cmdb-hosts-table>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
-                    v-bkloading="{isLoading: $loading()}"
+                    v-bkloading="{ isLoading: $loading() }"
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
@@ -267,7 +267,7 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
@@ -323,7 +323,7 @@
                 const objId = selectedNode['bk_obj_id']
                 const instId = selectedNode['bk_inst_id']
                 const requestParams = {
-                    page: {start: 0, limit: 1},
+                    page: { start: 0, limit: 1 },
                     fields: [],
                     condition: {}
                 }
@@ -528,7 +528,7 @@
             async handleCreate () {
                 this.tree.create.showDialog = true
                 this.tree.create.active = true
-                let targetNode = this.tree.selectedNode
+                const targetNode = this.tree.selectedNode
                 const model = this.topoModel.find(model => model['bk_obj_id'] === targetNode['bk_obj_id'])
                 const properties = await this.getCommonProperties(model['bk_next_obj'])
                 this.tree.create.properties = properties
@@ -546,13 +546,13 @@
                 this.tree.create.properties = []
             },
             handleSubmit (value, changedValue, originalInst, type) {
-                let promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
+                const promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
                 promise.then(() => {
                     this.$http.cancelCache('getInstTopo')
                 })
             },
             createNode (value) {
-                let selectedNode = this.tree.selectedNode
+                const selectedNode = this.tree.selectedNode
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
@@ -612,7 +612,7 @@
                 return promise
             },
             updateNode (value) {
-                const formData = {...value}
+                const formData = { ...value }
                 const selectedNode = this.tree.selectedNode
                 const objId = selectedNode['bk_obj_id']
                 let promise
@@ -666,7 +666,7 @@
                 const selectedNode = this.tree.selectedNode
                 const parentNode = this.tree.selectedNodeState.parent.node
                 const objId = selectedNode['bk_obj_id']
-                const config = {requestId: 'deleteNode'}
+                const config = { requestId: 'deleteNode' }
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${selectedNode['bk_inst_name']}?`,
                     content: objId === 'module'

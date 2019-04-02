@@ -1,6 +1,7 @@
 import $http from '@/api'
 
 const getUpdateParams = (payload) => {
+    // eslint-disable-next-line
     const { updateType, objId, relation, id, value, params, multiple } = payload
     let newRelation = [...relation]
     if (multiple) {
@@ -33,7 +34,7 @@ const actions = {
         return $http.post(`find/instassttopo/object/${objId}/inst/${instId}`, params, config)
     },
 
-    updateInstRelation ({commit, state, dispatch, rootGetters}, {params, config}) {
+    updateInstRelation ({ commit, state, dispatch, rootGetters }, { params, config }) {
         const updateParams = getUpdateParams(params)
         let promise
         switch (params.objId) {

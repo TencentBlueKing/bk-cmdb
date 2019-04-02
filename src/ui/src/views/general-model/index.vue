@@ -91,20 +91,20 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
+            :default-sort="table.defaultSort"
+            :wrapper-minus-height="157"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
                         :edit-disabled="!$isAuthorized(OPERATION.U_INST)"
                         :delete-disabled="!$isAuthorized(OPERATION.D_INST)"
@@ -114,17 +114,17 @@
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_INST': 'C_INST'])"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_INST' : 'C_INST'])"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         ref="multipleForm"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :save-disabled="!$isAuthorized(OPERATION.U_INST)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
@@ -141,12 +141,12 @@
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
-                        :instId="attribute.inst.details['bk_inst_id']">
+                        :inst-id="attribute.inst.details['bk_inst_id']">
                     </cmdb-audit-history>
                 </bk-tabpanel>
             </bk-tab>
         </cmdb-slider>
-        <cmdb-slider :isShow.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        <cmdb-slider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
                 :properties="properties"
                 :selected="columnsConfig.selected"
@@ -159,8 +159,8 @@
         <cmdb-slider
             :is-show.sync="importSlider.show"
             :title="$t('HostResourcePool[\'批量导入\']')">
-            <cmdb-import v-if="importSlider.show" slot="content" 
-                :template-url="url.template" 
+            <cmdb-import v-if="importSlider.show" slot="content"
+                :template-url="url.template"
                 :import-url="url.import"
                 :download-payload="url.downloadPayload"
                 :import-payload="url.importPayload"
@@ -252,8 +252,8 @@
                     import: prefix + 'import',
                     export: prefix + 'export',
                     template: `${window.API_HOST}importtemplate/${this.objId}`,
-                    downloadPayload: this.$injectMetadata({}, {inject: !this.isPublicModel}),
-                    importPayload: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                    downloadPayload: this.$injectMetadata({}, { inject: !this.isPublicModel }),
+                    importPayload: this.$injectMetadata({}, { inject: !this.isPublicModel })
                 }
             },
             isPublicModel () {
@@ -302,7 +302,7 @@
                         params: this.$injectMetadata({
                             bk_obj_id: this.objId,
                             bk_supplier_account: this.supplierAccount
-                        }, {inject: !this.isPublicModel}),
+                        }, { inject: !this.isPublicModel }),
                         config: {
                             requestId: `post_searchObjectAttribute_${this.objId}`,
                             fromCache: false
@@ -336,7 +336,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
+                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
                     config: {
                         fromCache: false,
                         requestId: `post_searchGroup_${this.objId}`
@@ -402,11 +402,11 @@
                 this.table.pagination.current = page
                 this.getTableData()
             },
-            getInstList (config = {cancelPrevious: true}) {
+            getInstList (config = { cancelPrevious: true }) {
                 return this.searchInst({
                     objId: this.objId,
-                    params: this.$injectMetadata(this.getSearchParams(), {inject: !this.isPublicModel}),
-                    config: Object.assign({requestId: `post_searchInst_${this.objId}`}, config)
+                    params: this.$injectMetadata(this.getSearchParams(), { inject: !this.isPublicModel }),
+                    config: Object.assign({ requestId: `post_searchInst_${this.objId}` }, config)
                 })
             },
             getAllInstList () {
@@ -415,7 +415,7 @@
                     params: this.$injectMetadata({
                         ...this.getSearchParams(),
                         page: {}
-                    }, {inject: !this.isPublicModel}),
+                    }, { inject: !this.isPublicModel }),
                     config: {
                         requestId: `${this.objId}AllList`,
                         cancelPrevious: true
@@ -501,7 +501,7 @@
                 return params
             },
             async handleEdit (flatternItem) {
-                const list = await this.getInstList({fromCache: true})
+                const list = await this.getInstList({ fromCache: true })
                 const inst = list.info.find(item => item['bk_inst_id'] === flatternItem['bk_inst_id'])
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
@@ -514,13 +514,13 @@
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", {name: inst['bk_inst_name']}),
+                    title: this.$t("Common['确认要删除']", { name: inst['bk_inst_name'] }),
                     confirmFn: () => {
                         this.deleteInst({
                             objId: this.objId,
                             instId: inst['bk_inst_id'],
                             config: {
-                                data: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                                data: this.$injectMetadata({}, { inject: !this.isPublicModel })
                             }
                         }).then(() => {
                             this.slider.show = false
@@ -535,13 +535,13 @@
                     this.updateInst({
                         objId: this.objId,
                         instId: originalValues['bk_inst_id'],
-                        params: this.$injectMetadata(values, {inject: !this.isPublicModel})
+                        params: this.$injectMetadata(values, { inject: !this.isPublicModel })
                     }).then(() => {
                         this.getTableData()
                         this.searchInstById({
                             objId: this.objId,
                             instId: originalValues['bk_inst_id'],
-                            params: this.$injectMetadata({}, {inject: !this.isPublicModel})
+                            params: this.$injectMetadata({}, { inject: !this.isPublicModel })
                         }).then(item => {
                             this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
                         })
@@ -550,7 +550,7 @@
                     })
                 } else {
                     this.createInst({
-                        params: this.$injectMetadata(values, {inject: !this.isPublicModel}),
+                        params: this.$injectMetadata(values, { inject: !this.isPublicModel }),
                         objId: this.objId
                     }).then(() => {
                         this.handlePageChange(1)
@@ -581,7 +581,7 @@
                                 'inst_id': instId
                             }
                         })
-                    }, {inject: !this.isPublicModel}),
+                    }, { inject: !this.isPublicModel }),
                     config: {
                         requestId: `${this.objId}BatchUpdate`
                     }
@@ -609,7 +609,7 @@
                             'delete': {
                                 'inst_ids': this.table.checked
                             }
-                        }, {inject: !this.isPublicModel})
+                        }, { inject: !this.isPublicModel })
                     }
                 }).then(() => {
                     this.$success(this.$t('Common["删除成功"]'))
@@ -690,7 +690,7 @@
         z-index: 1;
         &.button-delete {
             color: $cmdbDangerColor;
-            border-color: $cmdbDangerColor; 
+            border-color: $cmdbDangerColor;
         }
     }
 }

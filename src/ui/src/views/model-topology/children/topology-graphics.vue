@@ -184,7 +184,7 @@
                 if (edgeCount) {
                     this.$bkInfo({
                         title: this.$t('ModelManagement["移除失败"]'),
-                        content: this.$tc('ModelManagement["移除失败提示"]', edgeCount, {asstNum: edgeCount})
+                        content: this.$tc('ModelManagement["移除失败提示"]', edgeCount, { asstNum: edgeCount })
                     })
                     return false
                 } else {
@@ -201,7 +201,7 @@
                                 'bk_inst_id': data['bk_inst_id'],
                                 'bk_obj_id': data['bk_obj_id'],
                                 'node_type': data['node_type'],
-                                'position': {x: null, y: null}
+                                'position': { x: null, y: null }
                             }])
                             resolver(true)
                         },
@@ -236,10 +236,10 @@
                                 data: data,
                                 arrows: this.getEdgeArrows(data)
                             })
-                            this.$store.commit(commitMethod, {resolve: null, reject: null})
+                            this.$store.commit(commitMethod, { resolve: null, reject: null })
                         },
                         reject: result => {
-                            this.$store.commit(commitMethod, {resolve: null, reject: null})
+                            this.$store.commit(commitMethod, { resolve: null, reject: null })
                             reject(result)
                         }
                     })
@@ -301,7 +301,9 @@
                 })
             },
             updateSavedPosition (updateQueue) {
-                if (!updateQueue.length) { return false }
+                if (!updateQueue.length) {
+                    return false
+                }
                 this.convertPosition(updateQueue)
                 this.$store.commit('globalModels/updateTopologyData', updateQueue)
                 this.$store.dispatch('globalModels/updateModelAction', {

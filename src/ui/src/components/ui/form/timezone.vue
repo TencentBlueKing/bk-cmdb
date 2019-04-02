@@ -15,6 +15,7 @@
         name: 'cmdb-form-timezone',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {

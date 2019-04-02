@@ -13,7 +13,7 @@ import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
 
 const _getNavigationById = id => {
     let navigation
-    for (let classificationId in STATIC_NAVIGATION) {
+    for (const classificationId in STATIC_NAVIGATION) {
         navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
         if (navigation) break
     }
@@ -46,16 +46,16 @@ const getters = {
         return getters.models.find(model => model['bk_obj_id'] === id)
     },
     activeClassifications: state => {
-        let classifications = state.classifications
+        const classifications = state.classifications
         // 1.去掉停用模型
         let activeClassifications = classifications.map(classification => {
-            let activeClassification = {...classification}
+            const activeClassification = { ...classification }
             activeClassification['bk_objects'] = activeClassification['bk_objects'].filter(model => !model['bk_ispaused'])
             return activeClassification
         })
         // 2.去掉无启用模型的分类和不显示的分类
         activeClassifications = activeClassifications.filter(classification => {
-            let {
+            const {
                 'bk_classification_id': bkClassificationId,
                 'bk_objects': bkObjects
             } = classification
@@ -65,8 +65,8 @@ const getters = {
     },
     // 可用分类中被授权的分类
     authorizedClassifications: (state, getters, rootState, rootGetters) => {
-        let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
-        let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
+        // const modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
+        const authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
         // if (!rootGetters.admin) {
         //     // 1.去除无权限分类
         //     authorizedClassifications = authorizedClassifications.filter(classification => {
@@ -79,7 +79,7 @@ const getters = {
         //         })
         //     })
         // }
-        return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
+        return authorizedClassifications.filter(({ bk_objects: bkObjects }) => bkObjects.length)
     },
     authorizedModels: (state, getters) => {
         const models = []
@@ -116,7 +116,7 @@ const getters = {
         const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
         const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
         collectedModelIds.forEach(modelId => {
-            const specialModel = specialCollecton.find(({id}) => id === modelId)
+            const specialModel = specialCollecton.find(({ id }) => id === modelId)
             if (specialModel) {
                 collection.push(specialModel)
             } else {
@@ -142,7 +142,7 @@ const getters = {
 
             const systemConfig = authority['sys_config']
             const backConfig = systemConfig['back_config'] || []
-            const globalConfig = systemConfig['global_busi'] || []
+            // const globalConfig = systemConfig['global_busi'] || []
             const needsCheck = ['audit', 'event']
             needsCheck.forEach(id => {
                 const navigation = _getNavigationById(id)
@@ -200,7 +200,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchClassifications ({ commit, state, dispatch }, {params, config}) {
+    searchClassifications ({ commit, state, dispatch }, { params, config }) {
         return $http.post('find/objectclassification', params || {}, config)
     },
 
@@ -225,7 +225,7 @@ const mutations = {
         state.classifications = classifications
     },
     updateClassify (state, classification) {
-        let activeClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === classification['bk_classification_id'])
+        const activeClassification = state.classifications.find(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classification['bk_classification_id'])
         if (activeClassification) {
             activeClassification['bk_classification_icon'] = classification['bk_classification_icon']
             activeClassification['bk_classification_name'] = classification['bk_classification_name']
@@ -246,18 +246,18 @@ const mutations = {
         }
     },
     updateModel (state, updateModel) {
-        let {
+        const {
             bk_classification_id: bkClassificationId,
             bk_obj_id: bkObjId
         } = updateModel
-        let currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
-        let curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
+        const currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
+        const curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
         if (updateModel.hasOwnProperty('position')) {
             curModel['position'] = updateModel['position']
         }
     },
     deleteClassify (state, classificationId) {
-        let index = state.classifications.findIndex(({bk_classification_id: bkClassificationId}) => bkClassificationId === classificationId)
+        const index = state.classifications.findIndex(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classificationId)
         state.classifications.splice(index, 1)
     }
 }

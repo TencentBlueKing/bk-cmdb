@@ -4,7 +4,7 @@
             <div class="recently-browse fl"
                 v-for="index in recentlyCount"
                 :key="index"
-                :class="{'recently-browse-model': !!recentlyModels[index - 1]}"
+                :class="{ 'recently-browse-model': !!recentlyModels[index - 1] }"
                 @click="gotoRecently(recentlyModels[index - 1])">
                 <template v-if="recentlyModels[index - 1]">
                     <i :class="['recently-icon', recentlyModels[index - 1]['bk_obj_icon']]"></i>
@@ -110,7 +110,7 @@
                     'biz': this.loadBizInst,
                     'default': this.loadCommonInst
                 }
-                let loadFunc = funcMaps.hasOwnProperty(id) ? funcMaps[id] : funcMaps['default']
+                const loadFunc = funcMaps.hasOwnProperty(id) ? funcMaps[id] : funcMaps['default']
                 loadFunc(id).then(res => {
                     this.$set(this.modelInstCount, id, res.count)
                 })

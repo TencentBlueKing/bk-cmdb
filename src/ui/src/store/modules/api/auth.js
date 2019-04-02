@@ -17,7 +17,7 @@ const getters = {
 }
 
 const actions = {
-    async getOperationAuth ({commit}, list = []) {
+    async getOperationAuth ({ commit }, list = []) {
         const authList = await $http.post('auth/verify', {
             resources: list
         })
