@@ -359,12 +359,12 @@ func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) (
 	}
 	dataMap, ok := data.(map[string]interface{})
 	if false == ok {
-		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
+		blog.Errorf("%s rspV3 json get data.info error, body:%#v", logPrex, dataMap)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 	dataInfo, ok := dataMap["info"].([]interface{})
 	if false == ok {
-		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
+		blog.Errorf("%s rspV3 json get data.info error, body:%#v", logPrex, dataMap)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 	return dataInfo, 0

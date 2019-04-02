@@ -654,12 +654,12 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 		bl, err := s.Logics.IsHostExistInApp(data.ApplicationID, hostID, pheader)
 		if nil != err {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%d}, error:%s", data.ApplicationID, hostID, err.Error())
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPPFail)})
 			return
 		}
 		if false == bl {
-			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
+			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%d}", data.ApplicationID, hostID)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPP)})
 			return
 		}
