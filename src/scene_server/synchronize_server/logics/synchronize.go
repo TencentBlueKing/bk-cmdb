@@ -34,7 +34,7 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 	lgc = lgc.NewFromHeader(copyHeader(lgc.header))
 	interval, err := util.GetInt64ByInterface(config.Trigger.Role)
 	if err != nil {
-		blog.Warnf("Trigger.Role %s not integer, err:%s", err.Error())
+		blog.Warnf("Trigger.Role %v not integer, err:%s", config.Trigger.Role, err.Error())
 		if config.Trigger.IsTiming() {
 			interval = 10
 		} else {
@@ -56,13 +56,13 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 		if interval < 1 {
 			interval = 1
 		}
-	} else {
-		// default 60minute
-		interval = 60
 	}
-
 	// version
 	timeInterval := time.Duration(interval) * time.Minute
+
+	if lgc.Engine.ServiceManageInterface.IsMaster() {
+		lgc.Synchronize(ctx, config)
+	}
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
