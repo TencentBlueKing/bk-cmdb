@@ -57,12 +57,11 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 			interval = 1
 		}
 	}
-	// version
-	timeInterval := time.Duration(interval) * time.Minute
-
 	if lgc.Engine.ServiceManageInterface.IsMaster() {
 		lgc.Synchronize(ctx, config)
 	}
+
+	timeInterval := time.Duration(interval) * time.Minute
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
