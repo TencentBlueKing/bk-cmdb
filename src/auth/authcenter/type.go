@@ -6,7 +6,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-// system constanst
+// system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
 	SystemNameCMDB = "蓝鲸智云配置平台"
@@ -40,11 +40,11 @@ type RegisterInfo struct {
 type ResourceEntity struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ScopeInfo
-	ResourceName string       `json:"resource_name,omitempty"`
-	ResourceID   []ResourceID `json:"resource_id,omitempty"`
+	ResourceName string         `json:"resource_name,omitempty"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
 }
 
-type ResourceID struct {
+type RscTypeAndID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
@@ -107,6 +107,7 @@ type BatchResult struct {
 
 type ResourceAction struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
 	ActionID     ActionID       `json:"action_id"`
 }
 
@@ -177,7 +178,7 @@ type BaseResponse struct {
 type SearchCondition struct {
 	ScopeInfo
 	ResourceType    ResourceTypeID `json:"resource_type"`
-	ParentResources []ResourceID   `json:"parent_resources"`
+	ParentResources []RscTypeAndID `json:"parent_resources"`
 }
 
 type SearchResult struct {
@@ -210,7 +211,7 @@ type ListAuthorizedResourcesResult struct {
 }
 
 type AuthorizedResource struct {
-	ActionID     ActionID       `json:"action_id"`
-	ResourceType ResourceTypeID `json:"resource_type"`
-	ResourceIDs  [][]ResourceID `json:"resource_ids"`
+	ActionID     ActionID         `json:"action_id"`
+	ResourceType ResourceTypeID   `json:"resource_type"`
+	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
 }
