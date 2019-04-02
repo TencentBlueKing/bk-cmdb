@@ -28,7 +28,25 @@ import {
 
 Vue.use(Router)
 
-const statusRouter = [
+export const viewRouters = [
+    index,
+    audit,
+    businessModel,
+    customQuery,
+    eventpush,
+    history,
+    hosts,
+    modelAssociation,
+    modelTopology,
+    process,
+    resource,
+    topology,
+    ...generalModel,
+    ...business,
+    ...model
+]
+
+const statusRouters = [
     {
         name: '403',
         path: '/403',
@@ -44,36 +62,24 @@ const statusRouter = [
     }
 ]
 
+const redirectRouters = [{
+    path: '*',
+    redirect: {
+        name: '404'
+    }
+}, {
+    path: '/',
+    redirect: {
+        name: index.name
+    }
+}]
+
 const router = new Router({
     mode: 'hash',
     routes: [
-        {
-            path: '*',
-            redirect: {
-                name: '404'
-            }
-        }, {
-            path: '/',
-            redirect: {
-                name: index.name
-            }
-        },
-        ...statusRouter,
-        ...generalModel,
-        index,
-        audit,
-        ...business,
-        businessModel,
-        customQuery,
-        eventpush,
-        history,
-        hosts,
-        ...model,
-        modelAssociation,
-        modelTopology,
-        process,
-        resource,
-        topology
+        ...redirectRouters,
+        ...statusRouters,
+        ...viewRouters
     ]
 })
 
@@ -154,7 +160,7 @@ router.beforeEach((to, from, next) => {
                 if (setupStatus.preload) {
                     await preload(router.app)
                 }
-                const isStatusPage = statusRouter.some(status => status.name === to.name)
+                const isStatusPage = statusRouters.some(status => status.name === to.name)
                 if (isStatusPage) {
                     next()
                 } else {

@@ -25,10 +25,8 @@
         computed: {
             ...mapGetters('auth', ['isAuthorized']),
             ...mapGetters('objectModelClassify', [
-                'authorizedClassifications',
                 'activeClassifications'
             ]),
-            ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters(['admin']),
             hostManageClassification () {
                 const hostManageClassification = {

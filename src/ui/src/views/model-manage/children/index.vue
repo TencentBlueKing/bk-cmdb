@@ -145,6 +145,7 @@
                 'isPublicModel',
                 'isMainLine'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             isShowOperationButton () {
                 return (this.isAdminView || !this.isPublicModel) &&
                 !this.activeModel['ispre'] &&
@@ -260,7 +261,7 @@
                 }
             },
             checkModel () {
-                return this.$allModels.find(model => model['bk_obj_id'] === this.$route.params.modelId)
+                return this.models.find(model => model['bk_obj_id'] === this.$route.params.modelId)
             },
             hideChooseBox () {
                 this.isIconListShow = false
