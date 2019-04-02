@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -26,9 +27,9 @@ import (
 )
 
 // CreateSet create a new set
-func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
@@ -40,17 +41,31 @@ func (s *topoService) CreateSet(params types.ContextParams, pathParams, queryPar
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return s.core.SetOperation().CreateSet(params, obj, bizID, data)
+	set, err := s.Core.SetOperation().CreateSet(params, obj, bizID, data)
+	if err != nil {
+		return nil, err
+	}
+
+	setID, err := set.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create set success, but get id field failed")
+	}
+
+	// auth: register set
+	if err := s.AuthManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
+		return nil, fmt.Errorf("create set failed, %+v", err)
+	}
+	return set, nil
 }
 
-func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
 		blog.Errorf("[api-set]failed to parse the biz id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
@@ -63,11 +78,17 @@ func (s *topoService) DeleteSets(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	return nil, s.core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
+	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
+
+	// auth: register set
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
+		return nil, fmt.Errorf("deregister sets from iam failed, %+v", err)
+	}
+	return nil, err
 }
 
 // DeleteSet delete the set
-func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	if "batch" == pathParams("set_id") {
 		return s.DeleteSets(params, pathParams, queryParams, data)
@@ -85,18 +106,28 @@ func (s *topoService) DeleteSet(params types.ContextParams, pathParams, queryPar
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
 	}
 
-	return nil, s.core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
+	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
+
+	if err != nil {
+		return nil, fmt.Errorf("delete sets failed, %+v", err)
+	}
+
+	// auth: deregister set
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
+		return nil, fmt.Errorf("deregister set from iam failed, %+v", err)
+	}
+	return nil, nil
 }
 
 // UpdateSet update the set
-func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -110,17 +141,26 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
 	}
 
-	return nil, s.core.SetOperation().UpdateSet(params, data, obj, bizID, setID)
+	err = s.Core.SetOperation().UpdateSet(params, data, obj, bizID, setID)
+	if err != nil {
+		return nil, fmt.Errorf("update set failed, err: %+v", err)
+	}
+
+	// auth: update register set
+	if err := s.AuthManager.UpdateRegisteredSetByID(params.Context, params.Header, setID); err != nil {
+		return nil, fmt.Errorf("update registered set failed, %+v", err)
+	}
+	return nil, nil
 }
 
 // SearchSet search the set
-func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchSet(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
@@ -128,7 +168,7 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
 		blog.Errorf("[api-set]failed to search the set, %s", err.Error())
 		return nil, err
@@ -151,7 +191,7 @@ func (s *topoService) SearchSet(params types.ContextParams, pathParams, queryPar
 	queryCond.Sort = page.Sort
 	queryCond.Limit = page.Limit
 
-	cnt, instItems, err := s.core.SetOperation().FindSet(params, obj, queryCond)
+	cnt, instItems, err := s.Core.SetOperation().FindSet(params, obj, queryCond)
 	if nil != err {
 		blog.Errorf("[api-set] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err

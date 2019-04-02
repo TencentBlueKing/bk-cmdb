@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
@@ -30,7 +30,7 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client) error {
+func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
 	chErr := make(chan error, 1)
 	err := migrateIDToMongo(ctx, cache, db)
 	if err != nil {
@@ -52,15 +52,19 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc *rpc.Client)
 		chErr <- ih.StartHandleInsts()
 	}()
 
-	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
-	go func() {
-		for {
-			if err := th.Run(); err != nil {
-				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+	go cleanOutdateEvents(cache)
+
+	if rc != nil {
+		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
+		go func() {
+			for {
+				if err := th.Run(); err != nil {
+					blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+				}
+				time.Sleep(time.Second)
 			}
-			time.Sleep(time.Second)
-		}
-	}()
+		}()
+	}
 
 	return <-chErr
 }
@@ -88,7 +92,7 @@ func migrateIDToMongo(ctx context.Context, cache *redis.Client, db dal.RDB) erro
 	}
 
 	err = db.Table(common.BKTableNameIDgenerator).Insert(ctx, docs)
-	if err != nil {
+	if err != nil && !db.IsDuplicatedError(err) {
 		return err
 	}
 
@@ -103,11 +107,11 @@ type DistHandler struct {
 }
 
 type TxnHandler struct {
-	rc          *rpc.Client
+	rc          rpc.Client
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
-	commited    chan string
+	committed   chan string
 	shouldClose *util.AtomicBool
 	wg          sync.WaitGroup
 }

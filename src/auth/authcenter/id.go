@@ -14,164 +14,315 @@ package authcenter
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 )
 
-func GenerateResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 	switch attribute.Basic.Type {
 	case meta.Business:
-		return businessResourceID(attribute)
+		return businessResourceID(resourceType, attribute)
 	case meta.Model:
-		return modelResourceID(attribute)
+		return modelResourceID(resourceType, attribute)
 	case meta.ModelModule:
-		return modelModuleResourceID(attribute)
+		return modelModuleResourceID(resourceType, attribute)
 	case meta.ModelSet:
-		return modelSetResourceID(attribute)
+		return modelSetResourceID(resourceType, attribute)
 	case meta.MainlineModel:
-		return mainlineModelResourceID(attribute)
+		return mainlineModelResourceID(resourceType, attribute)
 	case meta.MainlineModelTopology:
-		return mainlineModelTopologyResourceID(attribute)
+		return mainlineModelTopologyResourceID(resourceType, attribute)
 	case meta.MainlineInstanceTopology:
-		return mainlineInstanceTopologyResourceID(attribute)
+		return mainlineInstanceTopologyResourceID(resourceType, attribute)
 	case meta.AssociationType:
-		return associationTypeResourceID(attribute)
+		return associationTypeResourceID(resourceType, attribute)
 	case meta.ModelAssociation:
-		return modelAssociationResourceID(attribute)
+		return modelAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstanceAssociation:
-		return modelInstanceAssociationResourceID(attribute)
+		return modelInstanceAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstance:
-		return modelInstanceResourceID(attribute)
+		return modelInstanceResourceID(resourceType, attribute)
 	case meta.ModelInstanceTopology:
-		return modelInstanceTopologyResourceID(attribute)
+		return modelInstanceTopologyResourceID(resourceType, attribute)
 	case meta.ModelTopology:
-		return modelTopologyResourceID(attribute)
+		return modelTopologyResourceID(resourceType, attribute)
 	case meta.ModelClassification:
-		return modelClassificationResourceID(attribute)
+		return modelClassificationResourceID(resourceType, attribute)
 	case meta.ModelAttributeGroup:
-		return modelAttributeGroupResourceID(attribute)
+		return modelAttributeGroupResourceID(resourceType, attribute)
 	case meta.ModelAttribute:
-		return modelAttributeResourceID(attribute)
+		return modelAttributeResourceID(resourceType, attribute)
 	case meta.ModelUnique:
-		return modelUniqueResourceID(attribute)
-	case meta.HostUserCustom:
-		return hostUserCustomResourceID(attribute)
+		return modelUniqueResourceID(resourceType, attribute)
+	case meta.UserCustom:
+		return hostUserCustomResourceID(resourceType, attribute)
 	case meta.HostFavorite:
-		return hostFavoriteResourceID(attribute)
+		return hostFavoriteResourceID(resourceType, attribute)
 	case meta.Process:
-		return processResourceID(attribute)
+		return processResourceID(resourceType, attribute)
 	case meta.NetDataCollector:
-		return netDataCollectorResourceID(attribute)
+		return netDataCollectorResourceID(resourceType, attribute)
+	case meta.EventPushing:
+		return eventSubscribeResourceID(resourceType, attribute)
+	case meta.HostInstance:
+		return hostInstanceResourceID(resourceType, attribute)
+	case meta.DynamicGrouping:
+		return dynamicGroupingResourceID(resourceType, attribute)
 	default:
-		return "", fmt.Errorf("unsupported resource type: %s", attribute.Type)
+		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
 }
 
 // generate business related resource id.
-func businessResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
 
-	return "", nil
+	return []ResourceID{id}, nil
 }
 
 // generate model's resource id, works for app model and model management
 // resource type in auth center.
-func modelResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: resourceType,
+	}
+	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 
-	return "", nil
+	return []ResourceID{id}, nil
 }
 
 // generate module resource id.
-func modelModuleResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("module:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
-func modelSetResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("set:%d", attribute.InstanceID),
+		},
+	}, nil
 }
 
-func mainlineModelResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func mainlineModelTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	return nil, nil
 }
 
-func mainlineInstanceTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func mainlineInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelAssociationResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func associationTypeResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
 
-	return "", nil
+	return []ResourceID{id}, nil
 }
 
-func modelInstanceAssociationResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelInstanceResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
 
-	return "", nil
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+
+	groupType := SysModelGroup
+	modelType := SysModel
+	if attribute.BusinessID > 0 {
+		groupType = BizModelGroup
+		modelType = BizModel
+	}
+
+	return []ResourceID{
+		{
+			ResourceType: groupType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
+		},
+		{
+			ResourceType: modelType,
+			ResourceID:   strconv.FormatInt(attribute.Layers[1].InstanceID, 10),
+		},
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }
 
-func modelInstanceTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelTopologyResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func modelClassificationResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	return []ResourceID{id}, nil
 }
 
-func modelAttributeGroupResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
-func modelAttributeResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
-func modelUniqueResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if len(attribute.Layers) < 2 {
+		return nil, NotEnoughLayer
+	}
+	id := ResourceID{
+		ResourceType: SysModel,
+	}
+	if attribute.BusinessID > 0 {
+		id.ResourceType = BizModel
+	}
+	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
+	return []ResourceID{id}, nil
 }
 
-func hostUserCustomResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func hostFavoriteResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
 }
 
-func processResourceID(attribute *meta.ResourceAttribute) (string, error) {
-
-	return "", nil
+func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	id := ResourceID{
+		ResourceType: BizProcessInstance,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	return []ResourceID{id}, nil
 }
 
-func netDataCollectorResourceID(attribute *meta.ResourceAttribute) (string, error) {
+func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
 
-	return "", nil
+	return nil, nil
+}
+
+func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	// translate all parent layers
+	resourceIDs := make([]ResourceID, 0)
+	for _, layer := range attribute.Layers {
+		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
+		if err != nil {
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, layer: %+v, err: %+v", layer, err)
+		}
+		resourceID := ResourceID{
+			ResourceType: *iamResourceType,
+			ResourceID:   strconv.FormatInt(layer.InstanceID, 10),
+		}
+		resourceIDs = append(resourceIDs, resourceID)
+	}
+
+	// append host resource id to end
+	hostResourceID := ResourceID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	resourceIDs = append(resourceIDs, hostResourceID)
+	return resourceIDs, nil
+}
+
+func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
+}
+
+func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+	if attribute.InstanceID <= 0 {
+		return nil, nil
+	}
+	return []ResourceID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		},
+	}, nil
 }

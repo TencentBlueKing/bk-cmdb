@@ -23,7 +23,7 @@ import (
 )
 
 func (ps *parseStream) topology() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -39,27 +39,28 @@ func (ps *parseStream) topology() *parseStream {
 		objectAttribute().
 		ObjectModule().
 		ObjectSet().
-		objectUnique()
+		objectUnique().
+		audit()
 
 	return ps
 }
 
 var (
-	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+$`)
-	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+/[0-9]+$`)
-	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[\S][^/]+/[0-9]+$`)
-	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[\S][^/]+$`)
-	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[\S][^/]+/[\S][^/]+/[0-9]+$`)
+	createBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/?$`)
+	updateBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	deleteBusinessRegexp       = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
+	findBusinessRegexp         = regexp.MustCompile(`^/api/v3/biz/search/[^\s/]+/?$`)
+	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) business() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
 	// create business, this is not a normalize api.
 	// TODO: update this api format.
-	if createBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
+	if ps.hitRegexp(createBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
@@ -73,7 +74,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// update business, this is not a normalize api.
 	// TODO: update this api format.
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("invalid update business request uri")
 			return ps
@@ -99,7 +100,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// update business enable status, this is not a normalize api.
 	// TODO: update this api format.
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("invalid update business enable status request uri")
 			return ps
@@ -125,7 +126,7 @@ func (ps *parseStream) business() *parseStream {
 
 	// delete business, this is not a normalize api.
 	// TODO: update this api format
-	if updateBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodDelete {
+	if ps.hitRegexp(updateBusinessRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 5 {
 			ps.err = errors.New("invalid delete business request uri")
 			return ps
@@ -151,12 +152,32 @@ func (ps *parseStream) business() *parseStream {
 
 	// find business, this is not a normalize api.
 	// TODO: update this api format
-	if findBusinessRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPost {
+	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.Business,
 					Action: meta.FindMany,
+				},
+				// we don't know if one or more business is to find, so we assume it's a find many
+				// business operation.
+			},
+		}
+		return ps
+	}
+
+	if ps.hitRegexp(updateBusinessStatusRegexp, http.MethodPut) {
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("delete business, but got invalid business id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.Business,
+					Action:     meta.Archive,
+					InstanceID: bizID,
 				},
 				// we don't know if one or more business is to find, so we assume it's a find many
 				// business operation.
@@ -173,15 +194,15 @@ const (
 )
 
 var (
-	deleteMainlineObjectRegexp        = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[\S][^/]+/objectids/[\S][^/]+$`)
-	findMainlineObjectTopoRegexp      = regexp.MustCompile(`^/api/v3/topo/model/[\S][^/]+$`)
-	findMainlineInstanceTopoRegexp    = regexp.MustCompile(`^/api/v3/topo/inst/[\S][^/]+/[0-9]+$`)
-	findMainineSubInstanceTopoRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/child/[\S][^/]+/[\S][^/]+/[0-9]+/[0-9]+$`)
-	findMainlineIdleFaultModuleRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[\S][^/]+/[0-9]+$`)
+	deleteMainlineObjectRegexp        = regexp.MustCompile(`^/api/v3/topo/model/mainline/owners/[^\s/]+/objectids/[^\s/]+/?$`)
+	findMainlineObjectTopoRegexp      = regexp.MustCompile(`^/api/v3/topo/model/[^\s/]+/?$`)
+	findMainlineInstanceTopoRegexp    = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
+	findMainineSubInstanceTopoRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/child/[^\s/]+/[^\s/]+/[0-9]+/[0-9]+/?$`)
+	findMainlineIdleFaultModuleRegexp = regexp.MustCompile(`^/api/v3/topo/internal/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainline() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -238,9 +259,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline instance topology, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
 					Action: meta.Find,
@@ -263,9 +284,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline object's sub instance topology, but got invalid business id %s", ps.RequestCtx.Elements[7])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
 					Action: meta.Find,
@@ -288,9 +309,9 @@ func (ps *parseStream) mainline() *parseStream {
 			ps.err = fmt.Errorf("find mainline idle and fault module, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Find,
@@ -315,7 +336,7 @@ var (
 )
 
 func (ps *parseStream) associationType() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -410,7 +431,7 @@ var (
 )
 
 func (ps *parseStream) objectAssociation() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -441,7 +462,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	}
 
 	// update object association operation
-	if updateObjectAssociationRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodPut {
+	if ps.hitRegexp(updateObjectAssociationRegexp, http.MethodPut) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("update object association, but got invalid url")
 			return ps
@@ -466,7 +487,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	}
 
 	// delete object association operation
-	if deleteObjectAssociationRegexp.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == http.MethodDelete {
+	if ps.hitRegexp(deleteObjectAssociationRegexp, http.MethodDelete) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("delete object association, but got invalid url")
 			return ps
@@ -516,7 +537,7 @@ var (
 )
 
 func (ps *parseStream) objectInstanceAssociation() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -575,20 +596,20 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 }
 
 var (
-	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+$`)
-	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[\S][^/]+/object/[\S][^/]+$`)
-	updateObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/[0-9]+$`)
-	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/batch$`)
-	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/batch$`)
-	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[\S][^/]+/[\S][^/]+/[0-9]+$`)
-	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[\S][^/]+/object/[\S][^/]+/inst/[0-9]+$`)
-	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[\S][^/]+/object/[\S][^/]+/inst/[0-9]+$`)
-	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[\S][^/]+/[0-9]+$`)
-	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[\S][^/]+/object/[\S][^/]+$`)
+	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/?$`)
+	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	updateObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	updateObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
+	deleteObjectInstanceBatchRegexp     = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/batch$`)
+	deleteObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	findObjectInstanceSubTopologyRegexp = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
+	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
+	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -866,14 +887,14 @@ const (
 )
 
 var (
-	deleteObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+$`)
-	updateObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+$`)
-	findObjectTopologyGraphicRegexp   = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[\S][^/]+/scope_id/[\S][^/]+/action/search$`)
-	updateObjectTopologyGraphicRegexp = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[\S][^/]+/scope_id/[\S][^/]+/action/[a-z]+$`)
+	deleteObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+/?$`)
+	updateObjectRegexp                = regexp.MustCompile(`^/api/v3/object/[0-9]+/?$`)
+	findObjectTopologyGraphicRegexp   = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[^\s/]+/scope_id/[^\s/]+/action/search$`)
+	updateObjectTopologyGraphicRegexp = regexp.MustCompile(`^/api/v3/objects/topographics/scope_type/[^\s/]+/scope_id/[^\s/]+/action/[a-z]+/?$`)
 )
 
 func (ps *parseStream) object() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1001,13 +1022,13 @@ const (
 )
 
 var (
-	deleteObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+$")
-	updateObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+$")
-	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[\S][^/]+/objects$`)
+	deleteObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+/?$")
+	updateObjectClassificationRegexp         = regexp.MustCompile("^/api/v3/object/classification/[0-9]+/?$")
+	findObjectsBelongsToClassificationRegexp = regexp.MustCompile(`^/api/v3/object/classification/[^\s/]+/objects$`)
 )
 
 func (ps *parseStream) ObjectClassification() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1109,13 +1130,13 @@ const (
 )
 
 var (
-	findObjectAttributeGroupRegexp     = regexp.MustCompile(`^/api/v3/objectatt/group/property/owner/[\S][^/]+/object/[\S][^/]+$`)
-	deleteObjectAttributeGroupRegexp   = regexp.MustCompile(`^/api/v3/objectatt/group/groupid/[0-9]+$`)
-	removeAttributeAwayFromGroupRegexp = regexp.MustCompile(`^/api/v3/objectatt/group/owner/[\S][^/]+/object/[\S][^/]+/propertyids/[\S][^/]+/groupids/[\S][^/]+$`)
+	findObjectAttributeGroupRegexp     = regexp.MustCompile(`^/api/v3/objectatt/group/property/owner/[^\s/]+/object/[^\s/]+/?$`)
+	deleteObjectAttributeGroupRegexp   = regexp.MustCompile(`^/api/v3/objectatt/group/groupid/[0-9]+/?$`)
+	removeAttributeAwayFromGroupRegexp = regexp.MustCompile(`^/api/v3/objectatt/group/owner/[^\s/]+/object/[^\s/]+/propertyids/[^\s/]+/groupids/[^\s/]+/?$`)
 )
 
 func (ps *parseStream) objectAttributeGroup() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1221,12 +1242,12 @@ const (
 )
 
 var (
-	deleteObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+$`)
-	updateObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+$`)
+	deleteObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+/?$`)
+	updateObjectAttributeRegexp = regexp.MustCompile(`^/api/v3/object/attr/[0-9]+/?$`)
 )
 
 func (ps *parseStream) objectAttribute() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1310,14 +1331,14 @@ func (ps *parseStream) objectAttribute() *parseStream {
 }
 
 var (
-	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+$`)
-	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+$`)
-	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+$`)
-	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[\S][^/]+/[0-9]+/[0-9]+$`)
+	createModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/?$`)
+	deleteModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	updateModuleRegexp = regexp.MustCompile(`^/api/v3/module/[0-9]+/[0-9]+/[0-9]+/?$`)
+	findModuleRegexp   = regexp.MustCompile(`^/api/v3/module/search/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) ObjectModule() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1340,9 +1361,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
 					Action: meta.Create,
@@ -1384,9 +1405,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
 					Action:     meta.Delete,
@@ -1428,9 +1449,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("update module, but got invalid module id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
 					Action:     meta.Update,
@@ -1466,9 +1487,9 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			ps.err = fmt.Errorf("find module, but got invalid set id %s", ps.RequestCtx.Elements[6])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
 					Action: meta.FindMany,
@@ -1488,15 +1509,15 @@ func (ps *parseStream) ObjectModule() *parseStream {
 }
 
 var (
-	createSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+$`)
-	deleteSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+$`)
+	createSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/?$`)
+	deleteSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
 	deleteManySetRegexp = regexp.MustCompile(`^/api/v3/set/[0-9]+/batch$`)
-	updateSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+$`)
-	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[\S][^/]+/[0-9]+$`)
+	updateSetRegexp     = regexp.MustCompile(`^/api/v3/set/[0-9]+/[0-9]+/?$`)
+	findSetRegexp       = regexp.MustCompile(`^/api/v3/set/search/[^\s/]+/[0-9]+/?$`)
 )
 
 func (ps *parseStream) ObjectSet() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1512,9 +1533,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("create set, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.Create,
@@ -1542,9 +1563,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
 					Action:     meta.Delete,
@@ -1567,9 +1588,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("delete set list, but got invalid business id %s", ps.RequestCtx.Elements[3])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.DeleteMany,
@@ -1597,9 +1618,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("update set, but got invalid set id %s", ps.RequestCtx.Elements[4])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
 					Action:     meta.Update,
@@ -1622,9 +1643,9 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			ps.err = fmt.Errorf("find set, but got invalid business id %s", ps.RequestCtx.Elements[5])
 			return ps
 		}
-		ps.Attribute.BusinessID = bizID
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
 					Action: meta.FindMany,
@@ -1638,14 +1659,14 @@ func (ps *parseStream) ObjectSet() *parseStream {
 }
 
 var (
-	createObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/action/create$`)
-	updateObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/[0-9]+/action/update$`)
-	deleteObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/[0-9]+/action/delete$`)
-	findObjectUniqueRegexp   = regexp.MustCompile(`^/api/v3/object/[\S][^/]+/unique/action/search$`)
+	createObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/action/create$`)
+	updateObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/[0-9]+/action/update$`)
+	deleteObjectUniqueRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/[0-9]+/action/delete$`)
+	findObjectUniqueRegexp   = regexp.MustCompile(`^/api/v3/object/[^\s/]+/unique/action/search$`)
 )
 
 func (ps *parseStream) objectUnique() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1728,6 +1749,31 @@ func (ps *parseStream) objectUnique() *parseStream {
 						Type: meta.Model,
 						Name: ps.RequestCtx.Elements[5],
 					},
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	searchAuditlog = `/api/v3/audit/search`
+)
+
+func (ps *parseStream) audit() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// add object unique operation.
+	if ps.hitPattern(searchAuditlog, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.AuditLog,
+					Action: meta.FindMany,
 				},
 			},
 		}

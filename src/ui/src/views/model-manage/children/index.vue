@@ -51,7 +51,7 @@
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
-                            v-if="tab.active==='field' && authority.includes('update')"
+                            v-if="tab.active==='field' && $isAuthorized(OPERATION.U_MODEL)"
                             :class="{'disabled': isReadOnly}">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('ModelManagement["导入"]')}}</span>
@@ -102,12 +102,13 @@
 </template>
 
 <script>
-    import thePropertyGroup from './property-group.vue'
+    import thePropertyGroup from './group.vue'
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             thePropertyGroup,
@@ -118,6 +119,7 @@
         },
         data () {
             return {
+                OPERATION,
                 tab: {
                     active: 'field'
                 },
@@ -144,7 +146,9 @@
                 'isMainLine'
             ]),
             isShowOperationButton () {
-                return (this.isAdminView || !this.isPublicModel) && !this.activeModel['ispre'] && this.authority.includes('update')
+                return (this.isAdminView || !this.isPublicModel) &&
+                !this.activeModel['ispre'] &&
+                this.$isAuthorized(OPERATION.U_MODEL)
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -153,16 +157,8 @@
                 return false
             },
             isEditable () {
-                if (!this.authority.includes('update')) {
-                    return false
-                } else if (this.isReadOnly) {
-                    return false
-                } else if (this.isAdminView) {
-                    return true
-                } else if (this.isPublicModel) {
-                    return false
-                }
-                return true
+                const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
+                return updateAuth && this.isReadOnly && this.isPublicModel
             },
             modelParams () {
                 let {
@@ -183,15 +179,11 @@
             exportUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             },
-            authority () {
-                if (this.isAdminView || this.isBusinessSelected) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
-            },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
-                return this.authority.includes('update') && !this.isMainLine && !cantImport.includes(this.$route.params.modelId)
+                return this.$isAuthorized(OPERATION.U_MODEL) &&
+                    !this.isMainLine &&
+                    !cantImport.includes(this.$route.params.modelId)
             }
         },
         watch: {

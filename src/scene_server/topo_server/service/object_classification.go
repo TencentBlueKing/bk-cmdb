@@ -18,19 +18,26 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"fmt"
 )
 
 // CreateClassification create a new object classification
-func (s *topoService) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	cls, err := s.core.ClassificationOperation().CreateClassification(params, data)
+func (s *Service) CreateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	cls, err := s.Core.ClassificationOperation().CreateClassification(params, data)
 	if nil != err {
 		return nil, err
 	}
+
+	// auth: register classification to iam
+	if err := s.AuthManager.RegisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
+		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
+	}
+
 	return cls.ToMapStr()
 }
 
 // SearchClassificationWithObjects search the classification with objects
-func (s *topoService) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassificationWithObjects(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -54,11 +61,11 @@ func (s *topoService) SearchClassificationWithObjects(params types.ContextParams
 		return nil, err
 	}
 
-	return s.core.ClassificationOperation().FindClassificationWithObjects(params, cond)
+	return s.Core.ClassificationOperation().FindClassificationWithObjects(params, cond)
 }
 
 // SearchClassification search the classifications
-func (s *topoService) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	if data.Exists(metadata.PageName) {
@@ -78,11 +85,11 @@ func (s *topoService) SearchClassification(params types.ContextParams, pathParam
 	}
 	cond.Parse(data)
 
-	return s.core.ClassificationOperation().FindClassification(params, cond)
+	return s.Core.ClassificationOperation().FindClassification(params, cond)
 }
 
 // UpdateClassification update the object classification
-func (s *topoService) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := mapstr.MapStr{}
@@ -94,12 +101,21 @@ func (s *topoService) UpdateClassification(params types.ContextParams, pathParam
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	err = s.Core.ClassificationOperation().UpdateClassification(params, data, id, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	// auth: register classification to iam
+	if err := s.AuthManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, id); err != nil {
+		return nil, fmt.Errorf("register classification to iam failed, err: %+v", err)
+	}
+
 	return nil, err
 }
 
 // DeleteClassification delete the object classification
-func (s *topoService) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteClassification(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	paramPath := mapstr.MapStr{}
@@ -110,8 +126,12 @@ func (s *topoService) DeleteClassification(params types.ContextParams, pathParam
 		return nil, err
 	}
 
-	data.Remove(metadata.BKMetadata)
+	// auth: register classification to iam
+	if err := s.AuthManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
+		return nil, fmt.Errorf("deregister classification to iam failed, err: %+v", err)
+	}
 
-	err = s.core.ClassificationOperation().DeleteClassification(params, id, data, cond)
+	// data.Remove(metadata.BKMetadata)
+	err = s.Core.ClassificationOperation().DeleteClassification(params, id, data, cond)
 	return nil, err
 }

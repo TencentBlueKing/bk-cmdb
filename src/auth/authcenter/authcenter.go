@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package authcenter
 
 import (
@@ -12,7 +24,9 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
 )
 
 const (
@@ -22,49 +36,71 @@ const (
 	cmdbUserID             string = "system"
 )
 
-// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthCenter, error) {
-	client, err := util.NewClient(tls)
-	if err != nil {
-		return nil, err
+// ParseConfigFromKV returns a new config
+func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
+	var cfg AuthConfig
+	enable, exist := configmap[prefix+".enable"]
+	if !exist {
+		return AuthConfig{}, nil
 	}
 
-	var cfg AuthConfig
-	address, exist := authCfg["auth.address"]
+	var err error
+	cfg.Enable, err = strconv.ParseBool(enable)
+	if err != nil {
+		return AuthConfig{}, errors.New(`invalid auth "enable" value`)
+	}
+
+	if !cfg.Enable {
+		return AuthConfig{}, nil
+	}
+
+	address, exist := configmap[prefix+".address"]
 	if !exist {
-		return nil, errors.New(`missing "address" configuration for auth center`)
+		return cfg, errors.New(`missing "address" configuration for auth center`)
 	}
 
 	cfg.Address = strings.Split(strings.Replace(address, " ", "", -1), ",")
 	if len(cfg.Address) == 0 {
-		return nil, errors.New(`invalid "address" configuration for auth center`)
+		return cfg, errors.New(`invalid "address" configuration for auth center`)
+	}
+	for i := range cfg.Address {
+		if !strings.HasSuffix(cfg.Address[i], "/") {
+			cfg.Address[i] = cfg.Address[i] + "/"
+		}
 	}
 
-	cfg.AppSecret, exist = authCfg["auth.appSecret"]
+	cfg.AppSecret, exist = configmap[prefix+".appSecret"]
 	if !exist {
-		return nil, errors.New(`missing "appSecret" configuration for auth center`)
+		return cfg, errors.New(`missing "appSecret" configuration for auth center`)
 	}
 
 	if len(cfg.AppSecret) == 0 {
-		return nil, errors.New(`invalid "appSecret" configuration for auth center`)
+		return cfg, errors.New(`invalid "appSecret" configuration for auth center`)
 	}
 
-	cfg.AppCode, exist = authCfg["auth.appCode"]
+	cfg.AppCode, exist = configmap[prefix+".appCode"]
 	if !exist {
-		return nil, errors.New(`missing "appCode" configuration for auth center`)
+		return cfg, errors.New(`missing "appCode" configuration for auth center`)
 	}
 
 	if len(cfg.AppCode) == 0 {
-		return nil, errors.New(`invalid "appCode" configuration for auth center`)
+		return cfg, errors.New(`invalid "appCode" configuration for auth center`)
 	}
 
-	cfg.SystemID, exist = authCfg["auth.systemID"]
-	if !exist {
-		return nil, errors.New(`missing "systemID" configuration for auth center`)
-	}
+	cfg.SystemID = SystemIDCMDB
 
-	if len(cfg.SystemID) == 0 {
-		return nil, errors.New(`invalid "systemID" configuration for auth center`)
+	return cfg, nil
+}
+
+// NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
+	if !cfg.Enable {
+		return new(AuthCenter), nil
+	}
+	client, err := util.NewClient(tls)
+	if err != nil {
+		return nil, err
 	}
 
 	c := &util.Capability{
@@ -85,6 +121,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthC
 	header.Set(authAppSecretHeaderKey, cfg.AppSecret)
 
 	return &AuthCenter{
+		Config: cfg,
 		authClient: &authClient{
 			client:      rest.NewRESTClient(c, ""),
 			Config:      cfg,
@@ -93,7 +130,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, authCfg map[string]string) (*AuthC
 	}, nil
 }
 
-// authCenter means BlueKing's authorize center,
+// AuthCenter means BlueKing's authorize center,
 // which is also a open source product.
 type AuthCenter struct {
 	Config AuthConfig
@@ -105,95 +142,333 @@ type AuthCenter struct {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	// TODO: fill this struct.
-	info := &AuthBatch{
+	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
+	if !ac.Config.Enable {
+		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
+		return meta.Decision{Authorized: true}, nil
+	}
+
+	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
+	noAuth := make([]string, 0)
+	for i, item := range batchresult {
+		if !item.Authorized {
+			noAuth = append(noAuth, fmt.Sprintf("resource [%v] permission deny by reason: %s", a.Resources[i].Type, item.Reason))
+		}
+	}
+
+	if len(noAuth) > 0 {
+		return meta.Decision{
+			Authorized: false,
+			Reason:     fmt.Sprintf("%v", noAuth),
+		}, nil
+	}
+
+	return meta.Decision{Authorized: true}, nil
+}
+
+func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error) {
+	if !ac.Config.Enable {
+		decisions = make([]meta.Decision, len(resources), len(resources))
+		for i := range decisions {
+			decisions[i].Authorized = true
+		}
+	}
+
+	header := http.Header{}
+	header.Set(AuthSupplierAccountHeaderKey, user.SupplierAccount)
+
+	type AuthResult struct {
+		meta.ResourceAttribute
+		*meta.Decision     // must use pointer
+		exactResourceIndex int
+		anyResourceIndex   int
+	}
+
+	biz2res := map[int64][]AuthResult{}
+	decisions = make([]meta.Decision, len(resources), len(resources))
+	for i := 0; i < len(resources); i++ {
+		biz2res[resources[i].BusinessID] = append(biz2res[resources[i].BusinessID], AuthResult{ResourceAttribute: resources[i], Decision: &decisions[i]})
+	}
+
+	exactResourceInfo := AuthBatch{
 		Principal: Principal{
 			Type: "user",
-			ID:   a.User.UserName,
+			ID:   user.UserName,
 		},
 	}
-
-	// TODO: this operation may be wrong, because some api filters does not
-	// fill the business id field, so these api should be normalized.
-	if a.BusinessID != 0 {
-		info.ScopeType = "biz"
-		info.ScopeID = strconv.FormatInt(a.BusinessID, 10)
-	} else {
-		info.ScopeType = "system"
-		info.ScopeID = "bk-cmdb"
+	anyResourceInfo := AuthBatch{
+		Principal: Principal{
+			Type: "user",
+			ID:   user.UserName,
+		},
 	}
+	for biz, ress := range biz2res {
+		if biz > 0 {
+			exactResourceInfo.ScopeType = ScopeTypeIDBiz
+			exactResourceInfo.ScopeID = strconv.FormatInt(biz, 10)
+			anyResourceInfo.ScopeType = ScopeTypeIDBiz
+			anyResourceInfo.ScopeID = strconv.FormatInt(biz, 10)
+		} else {
+			exactResourceInfo.ScopeType = ScopeTypeIDSystem
+			exactResourceInfo.ScopeID = SystemIDCMDB
+			anyResourceInfo.ScopeType = ScopeTypeIDSystem
+			anyResourceInfo.ScopeID = SystemIDCMDB
+		}
+		exactResourceIndex := 0
+		anyResourceIndex := 0
+		for ressindex := range ress {
+			resourceAttribute := &ress[ressindex].ResourceAttribute
+			if permit.ShouldSkipAuthorize(resourceAttribute) {
+				blog.V(5).Infof("skip authorization for: %+v", resourceAttribute)
+				ress[ressindex].Decision.Authorized = true
+				continue
+			}
+			blog.Debug("query permit %+v", ress[ressindex])
+			rscInfo, err := adaptor(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.Errorf("adaptor resource type failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor resource info failed, err: %v", err)
+				continue
+			}
 
-	info.ResourceActions = make([]ResourceAction, 0)
-	for _, rsc := range a.Resources {
+			actionID, err := adaptorAction(&ress[ressindex].ResourceAttribute)
+			if err != nil {
+				blog.Errorf("adaptor resource action failed, resource: %+v, err: %v", ress[ressindex].ResourceAttribute, err)
+				ress[ressindex].Decision.Authorized = false
+				ress[ressindex].Decision.Reason = fmt.Sprintf("adaptor action info failed, err: %v", err)
+				continue
+			}
 
-		rscInfo, err := adaptor(&rsc)
-		if err != nil {
-			return meta.Decision{}, fmt.Errorf("adaptor resource info failed, err: %v", err)
+			resourceAction := ResourceAction{
+				ActionID:     actionID,
+				ResourceInfo: *rscInfo,
+			}
+			blog.Debug("query param %+v", resourceAction)
+			if len(rscInfo.ResourceID) > 0 {
+				exactResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].exactResourceIndex = exactResourceIndex
+				exactResourceIndex++
+			} else {
+				anyResourceInfo.ResourceActions = append(exactResourceInfo.ResourceActions, resourceAction)
+				ress[ressindex].anyResourceIndex = anyResourceIndex
+				anyResourceIndex++
+			}
 		}
 
-		info.ResourceActions = append(info.ResourceActions, ResourceAction{
-			ActionID:     adaptorAction(&rsc),
-			ResourceInfo: *rscInfo,
-		})
+		if len(exactResourceInfo.ResourceActions) > 0 {
+			batchresult, err := ac.authClient.verifyExactResourceBatch(ctx, header, &exactResourceInfo)
+			if err != nil {
+				reason := fmt.Sprintf("verify failed, err: %v", err)
+				for _, res := range ress {
+					res.Authorized = false
+					res.Reason = reason
+				}
+				continue
+			}
+			for ressindex := range ress {
+				if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+					continue
+				}
+				if ress[ressindex].exactResourceIndex >= len(batchresult) {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].exactResourceIndex, len(batchresult))
+					continue
+				}
+				if batchresult[ress[ressindex].exactResourceIndex].IsPass {
+					ress[ressindex].Authorized = true
+				} else {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = "permission deny"
+				}
+			}
+		}
+		if len(anyResourceInfo.ResourceActions) > 0 {
+			batchresult, err := ac.authClient.verifyAnyResourceBatch(ctx, header, &anyResourceInfo)
+			if err != nil {
+				reason := fmt.Sprintf("verify failed, err: %v", err)
+				for _, res := range ress {
+					res.Authorized = false
+					res.Reason = reason
+				}
+				continue
+			}
+			for ressindex := range ress {
+				if ress[ressindex].Authorized || len(ress[ressindex].Reason) > 0 {
+					continue
+				}
+				if ress[ressindex].anyResourceIndex >= len(batchresult) {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = fmt.Sprintf("index out of range, %d:%d", ress[ressindex].anyResourceIndex, len(batchresult))
+					continue
+				}
+				if batchresult[ress[ressindex].anyResourceIndex].IsPass == false {
+					ress[ressindex].Authorized = false
+					ress[ressindex].Reason = "permission deny"
+					continue
+				}
+				ress[ressindex].Authorized = true
+			}
+		}
+		exactResourceInfo.ResourceActions = nil
+		anyResourceInfo.ResourceActions = nil
 	}
 
-	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, a.User.SupplierID)
-	return ac.authClient.verifyInList(ctx, header, info)
-
+	return
 }
 
-func (ac *AuthCenter) Register(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
+func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: ScopeInfo{
+			ScopeType: ScopeTypeIDSystem,
+			ScopeID:   SystemIDCMDB,
+		},
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: SysBusinessInstance,
+			},
+		},
+		DataType: "array",
 	}
-	scope, err := ac.getScopeInfo(r)
+
+	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, apps := range appList {
+		for _, appRsc := range apps.ResourceIDs {
+			for _, app := range appRsc {
+				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
+}
+
+func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if ac.Config.Enable == false {
+		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
+		return nil
+	}
+
+	if len(rs) == 0 {
+		return errors.New("no resource to be registered")
+	}
+
+	registerInfo, err := ac.DryRunRegisterResource(ctx, rs...)
 	if err != nil {
 		return err
 	}
 
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
-	}
-	info := &RegisterInfo{
-		CreatorType:  cmdbUser,
-		CreatorID:    cmdbUserID,
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.registerResource(ctx, header, info)
+	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
+
+	entities := &registerInfo.Resources
+	for _, entity := range *entities {
+		registerInfo.Resources = make([]ResourceEntity, 0)
+		registerInfo.Resources = append(registerInfo.Resources, entity)
+		ac.authClient.registerResource(ctx, header, registerInfo)
+	}
+	return nil
 }
 
-func (ac *AuthCenter) Deregister(ctx context.Context, r *meta.ResourceAttribute) error {
-	if len(r.Basic.Type) == 0 {
-		return errors.New("invalid resource attribute with empty object")
+func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
+	if ac.Config.Enable == false {
+		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
+		return nil, nil
 	}
 
-	scope, err := ac.getScopeInfo(r)
-	if err != nil {
-		return err
+	if len(rs) <= 0 {
+		blog.V(5).Info("no resource should be register")
+		return nil, nil
 	}
+	info := RegisterInfo{}
+	info.CreatorType = cmdbUser
+	info.CreatorID = cmdbUserID
+	info.Resources = make([]ResourceEntity, 0)
+	for _, r := range rs {
+		if len(r.Basic.Type) == 0 {
+			return nil, errors.New("invalid resource attribute with empty object")
+		}
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return nil, err
+		}
 
-	rscInfo, err := adaptor(r)
-	if err != nil {
-		return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return nil, fmt.Errorf("adaptor resource info failed, err: %v", err)
+		}
+		entity := ResourceEntity{}
+		entity.ScopeInfo.ScopeID = scope.ScopeID
+		entity.ScopeInfo.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
+
+		// TODO replace register with batch create or update interface, currently is register one by one.
+		info.Resources = append(info.Resources, entity)
 	}
-
-	info := &DeregisterInfo{
-		ScopeInfo:    *scope,
-		ResourceInfo: *rscInfo,
-	}
-
-	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
-	return ac.authClient.deregisterResource(ctx, header, info)
+	return &info, nil
 }
 
-func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) error {
+func (ac *AuthCenter) DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
+	}
+	info := DeregisterInfo{}
+	header := http.Header{}
+	for _, r := range rs {
+		if len(r.Basic.Type) == 0 {
+			return errors.New("invalid resource attribute with empty object")
+		}
+
+		scope, err := ac.getScopeInfo(&r)
+		if err != nil {
+			return err
+		}
+
+		rscInfo, err := adaptor(&r)
+		if err != nil {
+			return fmt.Errorf("adaptor resource info failed, err: %v", err)
+		}
+
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = rscInfo.ResourceType
+		entity.ResourceID = rscInfo.ResourceID
+		entity.ResourceName = rscInfo.ResourceName
+
+		info.Resources = append(info.Resources, entity)
+
+		header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	}
+
+	return ac.authClient.deregisterResource(ctx, header, &info)
+}
+
+func (ac *AuthCenter) UpdateResource(ctx context.Context, r *meta.ResourceAttribute) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+
 	if len(r.Basic.Type) == 0 || len(r.Basic.Name) == 0 {
 		return errors.New("invalid resource attribute with empty object or object name")
 	}
@@ -213,7 +488,7 @@ func (ac *AuthCenter) Update(ctx context.Context, r *meta.ResourceAttribute) err
 	}
 
 	header := http.Header{}
-	header.Add(AuthSupplierAccountHeaderKey, r.SupplierAccount)
+	header.Set(AuthSupplierAccountHeaderKey, r.SupplierAccount)
 	return ac.authClient.updateResource(ctx, header, info)
 }
 
@@ -221,16 +496,47 @@ func (ac *AuthCenter) Get(ctx context.Context) error {
 	panic("implement me")
 }
 
+func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error) {
+	if !ac.Config.Enable {
+		return nil, nil
+	}
+
+	scopeInfo, err := ac.getScopeInfo(r)
+	if err != nil {
+		return nil, err
+	}
+	resourceType, err := convertResourceType(r.Type, r.BusinessID)
+	if err != nil {
+		return nil, err
+	}
+	header := http.Header{}
+	resourceID, err := GenerateResourceID(*resourceType, r)
+	if err != nil {
+		return nil, err
+	}
+	if len(resourceID) == 0 {
+		return nil, fmt.Errorf("generate resource id failed, return empty")
+	}
+	blog.Infof("GenerateResourceID result: %+v", resourceID)
+	searchCondition := SearchCondition{
+		ScopeInfo:       *scopeInfo,
+		ResourceType:    *resourceType,
+		ParentResources: resourceID[:len(resourceID)-1],
+	}
+	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
+	return result, err
+}
+
 func (ac *AuthCenter) getScopeInfo(r *meta.ResourceAttribute) (*ScopeInfo, error) {
 	s := new(ScopeInfo)
 	// TODO: this operation may be wrong, because some api filters does not
 	// fill the business id field, so these api should be normalized.
-	if r.BusinessID != 0 {
-		s.ScopeType = "biz"
+	if r.BusinessID > 0 {
+		s.ScopeType = ScopeTypeIDBiz
 		s.ScopeID = strconv.FormatInt(r.BusinessID, 10)
 	} else {
-		s.ScopeType = "system"
-		s.ScopeID = "bk-cmdb"
+		s.ScopeType = ScopeTypeIDSystem
+		s.ScopeID = SystemIDCMDB
 	}
 	return s, nil
 }
@@ -258,4 +564,34 @@ func (s *acDiscovery) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+func (ac *AuthCenter) RawDeregisterResource(ctx context.Context, scope ScopeInfo, rs ...meta.BackendResource) error {
+	if !ac.Config.Enable {
+		return nil
+	}
+	if len(rs) <= 0 {
+		// not resource should be deregister
+		return nil
+	}
+	info := DeregisterInfo{}
+	header := http.Header{}
+	for _, r := range rs {
+		entity := ResourceEntity{}
+		entity.ScopeID = scope.ScopeID
+		entity.ScopeType = scope.ScopeType
+		entity.ResourceType = ResourceTypeID(r[len(r)-1].ResourceType)
+		resourceID := make([]ResourceID, 0)
+		for _, item := range r {
+			resourceID = append(resourceID, ResourceID{
+				ResourceType: ResourceTypeID(item.ResourceType),
+				ResourceID:   item.ResourceID,
+			})
+		}
+		entity.ResourceID = resourceID
+
+		info.Resources = append(info.Resources, entity)
+	}
+
+	return ac.authClient.deregisterResource(ctx, header, &info)
 }

@@ -1,9 +1,9 @@
 @font-face {
   font-family: 'icomoon';
   src:
-    url('fonts/icomoon.ttf?nofu0o') format('truetype'),
-    url('fonts/icomoon.woff?nofu0o') format('woff'),
-    url('fonts/icomoon.svg?nofu0o#icomoon') format('svg');
+    url('fonts/icomoon.ttf?nu1dmp') format('truetype'),
+    url('fonts/icomoon.woff?nu1dmp') format('woff'),
+    url('fonts/icomoon.svg?nu1dmp#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -443,120 +443,126 @@
 .icon-cc-resize-small:before {
   content: "\e98b";
 }
-.icon-cc-resources:before {
+.icon-cc-resource:before {
   content: "\e98c";
 }
-.icon-cc-round-plus:before {
+.icon-cc-resources:before {
   content: "\e98d";
 }
-.icon-cc-router:before {
+.icon-cc-round-plus:before {
   content: "\e98e";
 }
-.icon-cc-security:before {
+.icon-cc-router:before {
   content: "\e98f";
 }
-.icon-cc-security2:before {
+.icon-cc-security:before {
   content: "\e990";
 }
-.icon-cc-senior:before {
+.icon-cc-security2:before {
   content: "\e991";
 }
-.icon-cc-server:before {
+.icon-cc-senior:before {
   content: "\e992";
 }
-.icon-cc-service:before {
+.icon-cc-server:before {
   content: "\e993";
 }
-.icon-cc-set:before {
+.icon-cc-service:before {
   content: "\e994";
 }
-.icon-cc-setting:before {
+.icon-cc-set:before {
   content: "\e995";
 }
-.icon-cc-shift:before {
+.icon-cc-setting:before {
   content: "\e996";
 }
-.icon-cc-show:before {
+.icon-cc-shift:before {
   content: "\e997";
 }
-.icon-cc-skin:before {
+.icon-cc-show:before {
   content: "\e998";
 }
-.icon-cc-skip:before {
+.icon-cc-skin:before {
   content: "\e999";
 }
-.icon-cc-sort:before {
+.icon-cc-skip:before {
   content: "\e99a";
 }
-.icon-cc-sqlite:before {
+.icon-cc-sort:before {
   content: "\e99b";
 }
-.icon-cc-sql-server:before {
+.icon-cc-sqlite:before {
   content: "\e99c";
 }
-.icon-cc-square:before {
+.icon-cc-sql-server:before {
   content: "\e99d";
 }
-.icon-cc-star:before {
+.icon-cc-square:before {
   content: "\e99e";
 }
-.icon-cc-statement:before {
+.icon-cc-star:before {
   content: "\e99f";
 }
-.icon-cc-stick:before {
+.icon-cc-statement:before {
   content: "\e9a0";
 }
-.icon-cc-storage:before {
+.icon-cc-stick:before {
   content: "\e9a1";
 }
-.icon-cc-subnet:before {
+.icon-cc-storage:before {
   content: "\e9a2";
 }
-.icon-cc-switch2:before {
+.icon-cc-subnet:before {
   content: "\e9a3";
 }
-.icon-cc-thumbtack:before {
+.icon-cc-switch2:before {
   content: "\e9a4";
 }
-.icon-cc-tomcat:before {
+.icon-cc-thumbtack:before {
   content: "\e9a5";
 }
-.icon-cc-tree:before {
+.icon-cc-tips:before {
   content: "\e9a6";
 }
-.icon-cc-triangle:before {
+.icon-cc-tomcat:before {
   content: "\e9a7";
 }
-.icon-cc-triangle-sider:before {
+.icon-cc-tree:before {
   content: "\e9a8";
 }
-.icon-cc-unix:before {
+.icon-cc-triangle:before {
   content: "\e9a9";
 }
-.icon-cc-ups:before {
+.icon-cc-triangle-sider:before {
   content: "\e9aa";
 }
-.icon-cc-user:before {
+.icon-cc-unix:before {
   content: "\e9ab";
 }
-.icon-cc-virtual:before {
+.icon-cc-ups:before {
   content: "\e9ac";
 }
-.icon-cc-vmware:before {
+.icon-cc-user:before {
   content: "\e9ad";
 }
-.icon-cc-vsphere:before {
+.icon-cc-virtual:before {
   content: "\e9ae";
 }
-.icon-cc-weblogic:before {
+.icon-cc-vmware:before {
   content: "\e9af";
 }
-.icon-cc-win:before {
+.icon-cc-vsphere:before {
   content: "\e9b0";
 }
-.icon-cc-win7:before {
+.icon-cc-weblogic:before {
   content: "\e9b1";
 }
-.icon-cc-wireless:before {
+.icon-cc-win:before {
   content: "\e9b2";
+}
+.icon-cc-win7:before {
+  content: "\e9b3";
+}
+.icon-cc-wireless:before {
+  content: "\e9b4";
 }

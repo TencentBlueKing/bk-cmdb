@@ -6,18 +6,21 @@ comma:=,
 
 ARCH?=$(shell uname -m)
 
+# Version  : v3.2.2
+# Tag          : release-v3.2.2
+# BuildTime: 2019-02-19T16:48:43+0800
+# GitHash  : 3185b32956a6e59df1ee0744c6edf72e09828778
+# RunMode  : product
+
 BUILDTIME?=$(shell date +%Y-%m-%dT%T%z)
 GITHASH?=$(shell git rev-parse HEAD)
-BRANCH?=$(shell git rev-parse --abbrev-ref HEAD)
-#GITTAG?=$(shell git describe --always)
-#VERSION?=$(GITTAG)-$(shell date +%y.%m.%d)
-VERSION?=oc-$(shell date +%y.%m.%d)
-
+GITTAG?=$(shell git describe --all --tags --exact-match 2>/dev/null | awk -F '/' '{print $$NF}')
+VERSION?=$(shell git symbolic-ref -q --short HEAD || git describe --all --tags --exact-match 2>/dev/null | awk -F '-' '{print $$NF}')
 ISDEBUG?=false
 ifeq ($(ISDEBUG),true)
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCBRANCH=${BRANCH}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCRunMode=dev -X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG}"
 else
-	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG} -X configcenter/src/common/version.CCBRANCH=${BRANCH}"
+	GOBUILD_FLAGS = -ldflags "-X configcenter/src/common/version.CCVersion=${VERSION} -X configcenter/src/common/version.CCBuildTime=${BUILDTIME} -X configcenter/src/common/version.CCGitHash=${GITHASH} -X configcenter/src/common/version.CCTag=${GITTAG}"
 endif
 
 SCRIPT_DIR?=$(realpath $(firstword $(subst :, ,${GOPATH}))/src/configcenter/scripts)

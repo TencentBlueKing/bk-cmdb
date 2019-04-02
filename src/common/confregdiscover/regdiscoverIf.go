@@ -16,10 +16,6 @@ package confregdiscover
 type ConfRegDiscvIf interface {
 	// Ping to ping server
 	Ping() error
-	// Start the register and discover service
-	Start() error
-	// Stop the register and discover service
-	Stop() error
 	// Write the config data into configure register-discover service
 	Write(key string, data []byte) error
 	// Read the config data from configure register-discover service

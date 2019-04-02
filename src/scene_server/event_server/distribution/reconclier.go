@@ -20,14 +20,15 @@ import (
 	"strings"
 	"time"
 
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/storage/dal"
+	
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
 )
 
 type reconciler struct {
@@ -65,7 +66,7 @@ func (r *reconciler) loadAll() {
 func (r *reconciler) loadAllCached() {
 	r.cached = map[string][]string{}
 	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
-		if formkey != "" && formkey != "nil" && formkey != "redis" {
+		if formkey != "" && formkey != nilstr && formkey != "redis" {
 			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
 		}
 	}
@@ -142,5 +143,35 @@ func SubscribeChannel(redisCli *redis.Client) (err error) {
 			continue
 		}
 		MsgChan <- msg.Payload
+	}
+}
+
+func cleanOutdateEvents(redisCli *redis.Client) {
+	var err error
+	tick := util.NewTicker(time.Hour * 24)
+	tick.Tick()
+	for range tick.C {
+		blog.Infof("starting clean outdate events")
+		var keys = []string{}
+		if err = redisCli.Keys(types.EventCacheDistDonePrefix + "*").ScanSlice(&keys); err != nil {
+			blog.Errorf("fetch outdate event keys failed: %v", err)
+		}
+		keys = append(keys, types.EventCacheEventDoneKey)
+
+		for _, key := range keys {
+			iter := redisCli.HScan(key, 0, "*", 10).Iterator()
+			for iter.Next() {
+				if strings.HasPrefix(iter.Val(), "{") {
+					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > time.Hour*24 {
+						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
+							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
+						}
+					}
+				}
+			}
+			if err := iter.Err(); err != nil {
+				blog.Errorf("scan outdate events failed: %v", err)
+			}
+		}
 	}
 }

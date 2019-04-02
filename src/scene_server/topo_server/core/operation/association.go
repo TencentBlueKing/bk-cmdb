@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -49,8 +50,8 @@ type AssociationOperationInterface interface {
 	SearchObjectAssoWithAssoKindList(params types.ContextParams, asstKindIDs []string) (resp *metadata.AssociationList, err error)
 	SearchType(params types.ContextParams, request *metadata.SearchAssociationTypeRequest) (resp *metadata.SearchAssociationTypeResult, err error)
 	CreateType(cparams types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error)
-	UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
-	DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error)
+	UpdateType(params types.ContextParams, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error)
+	DeleteType(params types.ContextParams, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error)
 
 	SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
 	CreateObject(params types.ContextParams, request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
@@ -67,14 +68,16 @@ type AssociationOperationInterface interface {
 }
 
 // NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface) AssociationOperationInterface {
+func NewAssociationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AssociationOperationInterface {
 	return &association{
-		clientSet: client,
+		clientSet:   client,
+		authManager: authManager,
 	}
 }
 
 type association struct {
 	clientSet    apimachinery.ClientSetInterface
+	authManager  *extensions.AuthManager
 	cls          ClassificationOperationInterface
 	obj          ObjectOperationInterface
 	grp          GroupOperationInterface
@@ -139,8 +142,11 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 	return rsp.Data.Info, nil
 }
 
+// CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
-
+	if data.AsstKindID == common.AssociationKindMainline {
+		return nil, params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		blog.Errorf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		return nil, params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
@@ -195,8 +201,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-
-	data.ID = int64(rspAsst.Data.Created.ID)
 
 	return data, nil
 }
@@ -259,10 +263,13 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 		return params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
+	if result.Data.Info[0].AsstKindID == common.AssociationKindMainline {
+		return params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
+
 	// find instance(s) belongs to this association
 	cond = condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(result.Data.Info[0].ObjectID)
-	cond.Field(common.AssociatedObjectIDField).Eq(result.Data.Info[0].AsstObjID)
+	cond.Field(common.AssociationObjAsstIDField).Eq(result.Data.Info[0].AssociationName)
 	query := metadata.QueryInput{Condition: cond.ToMapStr()}
 	insts, err := a.SearchInstAssociation(params, &query)
 	if err != nil {
@@ -457,57 +464,59 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 		input.SortArr = append(input.SortArr, metadata.SearchSort{IsDsc: isDesc, Field: key})
 	}
 
-	return a.clientSet.CoreService().Association().ReadAssociation(context.Background(), params.Header, &input)
-
-	needComb := true
-	if KindIDCond, ok := request.Condition[common.AssociationKindIDField]; ok {
-		if kindIDSearchCond, ok := KindIDCond.(map[string]interface{}); ok {
-			needComb = false
-			kindIDSearchCond[common.BKDBNE] = common.AssociationKindMainline
-			request.Condition[common.AssociationKindIDField] = kindIDSearchCond
-		}
-	}
-	if needComb {
-		cond := condition.CreateCondition()
-		cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
-		nAsstKindCond := cond.ToMapStr()
-		if 0 == len(request.Condition) {
-			request.Condition = make(map[string]interface{})
-		}
-		for key, val := range nAsstKindCond {
-			request.Condition[key] = val
-		}
-	}
-
-	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
+	return a.clientSet.CoreService().Association().ReadAssociationType(context.Background(), params.Header, &input)
 
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
-	rsp, err := a.clientSet.CoreService().Association().CreateAssociation(context.Background(), params.Header, &metadata.CreateAssociationKind{Data: *request})
+
+	rsp, err := a.clientSet.CoreService().Association().CreateAssociationType(context.Background(), params.Header, &metadata.CreateAssociationKind{Data: *request})
+	if err != nil {
+		blog.Errorf("create association type failed, kind id: %s, err: %v", request.AssociationKindID, err)
+		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+	}
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
-	return resp, err
+	request.ID = resp.Data.ID
+	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, request.ID); err != nil {
+		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	}
+
+	return resp, nil
 
 }
 
-func (a *association) UpdateType(params types.ContextParams, asstTypeID int, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
+func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
+	if len(request.AsstName) != 0 {
+		if err := a.authManager.UpdateAssociationTypeByID(params.Context, params.Header, asstTypeID); err != nil {
+			blog.Errorf("update association type %s, but got update resource to auth failed, err: %v", request.AsstName, err)
+			return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+	}
+
 	input := metadata.UpdateOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
 		Data:      mapstr.NewFromStruct(request, "json"),
 	}
 
-	rsp, err := a.clientSet.CoreService().Association().UpdateAssociation(context.Background(), params.Header, &input)
+	rsp, err := a.clientSet.CoreService().Association().UpdateAssociationType(context.Background(), params.Header, &input)
+	if err != nil {
+		blog.Errorf("update association type failed, kind id: %d, err: %v", asstTypeID, err)
+		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+	}
 	resp = &metadata.UpdateAssociationTypeResult{BaseResp: rsp.BaseResp}
-	return resp, err
+	return resp, nil
 }
 
-func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (resp *metadata.DeleteAssociationTypeResult, err error) {
+func (a *association) DeleteType(params types.ContextParams, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error) {
+	if err := a.authManager.DeregisterAssociationTypeByIDs(params.Context, params.Header, asstTypeID); err != nil {
+		blog.Errorf("delete association type id: %d, but deregister from auth failed, err: %v", asstTypeID, err)
+		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	}
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
-
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}
@@ -556,13 +565,17 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 		return nil, params.Err.Error(common.CCErrorTopoAssociationKindHasBeenUsed)
 	}
 
-	rsp, err := a.clientSet.CoreService().Association().DeleteAssociation(
+	rsp, err := a.clientSet.CoreService().Association().DeleteAssociationType(
 		context.Background(), params.Header, &metadata.DeleteOption{
 			Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(asstTypeID).ToMapStr(),
 		},
 	)
+	if err != nil {
+		blog.Errorf("delete association type failed, kind id: %d, err: %v", asstTypeID, err)
+		return nil, params.Err.New(common.CCErrTopoCreateAssoKindFailed, err.Error())
+	}
 
-	return &metadata.DeleteAssociationTypeResult{BaseResp: rsp.BaseResp}, err
+	return &metadata.DeleteAssociationTypeResult{BaseResp: rsp.BaseResp}, nil
 }
 
 func (a *association) SearchObject(params types.ContextParams, request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error) {

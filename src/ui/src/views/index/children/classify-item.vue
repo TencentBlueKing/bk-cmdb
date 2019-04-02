@@ -12,6 +12,7 @@
                 <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
+                    v-if="classify.bk_classification_id !== 'bk_host_management'"
                     :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
                     @click.prevent.stop="toggleCustomNavigation(model)">
                 </i>
@@ -35,7 +36,7 @@
             }
         },
         computed: {
-            ...mapGetters(['admin', 'isAdminView']),
+            ...mapGetters(['user', 'admin', 'isAdminView']),
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),

@@ -14,12 +14,9 @@ package service
 
 import (
 	"plugin"
-	"strings"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
@@ -38,32 +35,16 @@ type Service struct {
 	Engine   *backbone.Engine
 	CacheCli *redis.Client
 	*logics.Logics
-	Disc   discovery.DiscoveryInterface
-	Config options.Config
+	Config  *options.Config
+	Session sessions.RedisStore
 }
 
 func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
-	var store sessions.RedisStore
-	var redisErr error
-	if 0 == len(s.Config.Session.Address) {
-		address := s.Config.Session.Host + ":" + s.Config.Session.Port
-		store, redisErr = sessions.NewRedisStore(10, "tcp", address, s.Config.Session.Secret, []byte("secret"))
-		if redisErr != nil {
-			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
-		}
-	} else {
-		address := strings.Split(s.Config.Session.Address, ";")
-		store, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, s.Config.Session.MasterName, "tcp", s.Config.Session.Secret, []byte("secret"))
-		if redisErr != nil {
-			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
-		}
-	}
-
-	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
+	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine
-	ws.Use(middleware.ValidLogin(s.Config, s.Disc))
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot + "/index.html")

@@ -16,10 +16,6 @@ package registerdiscover
 type RegDiscvServer interface {
 	// Ping to ping server
 	Ping() error
-	// start the register and discover service
-	Start() error
-	// stop the register and discover service
-	Stop() error
 	// RegisterAndWatch register server info into registe-discover service platform, and watch the info, if not exist, then register again
 	RegisterAndWatch(key string, data []byte) error
 	// GetServNodes get server nodes

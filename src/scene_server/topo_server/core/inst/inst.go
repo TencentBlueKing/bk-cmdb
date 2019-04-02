@@ -118,7 +118,16 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 }
 
 func (cli *inst) Create() error {
-	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
+	if cli.target.Object().IsPaused {
+		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+	}
+	if cli.target.IsCommon() {
+		cli.datas.Set(common.BKObjIDField, cli.target.Object().ObjectID)
+	}
+
+	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
+
+    rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
 		return err
@@ -135,7 +144,9 @@ func (cli *inst) Create() error {
 }
 
 func (cli *inst) Update(data mapstr.MapStr) error {
-
+	if cli.target.Object().IsPaused {
+		return cli.params.Err.Error(common.CCErrorTopoModleStopped)
+	}
 	instIDName := cli.target.GetInstIDFieldName()
 	instID, exists := cli.datas.Get(instIDName)
 

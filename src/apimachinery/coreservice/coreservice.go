@@ -17,7 +17,9 @@ import (
 
 	"configcenter/src/apimachinery/coreservice/association"
 	"configcenter/src/apimachinery/coreservice/instance"
+	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/synchronize"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
@@ -26,6 +28,8 @@ type CoreServiceClientInterface interface {
 	Instance() instance.InstanceClientInterface
 	Model() model.ModelClientInterface
 	Association() association.AssociationClientInterface
+	Synchronize() synchronize.SynchronizeClientInterface
+	Mainline() mainline.MainlineClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -49,4 +53,12 @@ func (c *coreService) Model() model.ModelClientInterface {
 
 func (c *coreService) Association() association.AssociationClientInterface {
 	return association.NewAssociationClientInterface(c.restCli)
+}
+
+func (c *coreService) Mainline() mainline.MainlineClientInterface {
+	return mainline.NewMainlineClientInterface(c.restCli)
+}
+
+func (c *coreService) Synchronize() synchronize.SynchronizeClientInterface {
+	return synchronize.NewSynchronizeClientInterface(c.restCli)
 }

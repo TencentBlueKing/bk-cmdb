@@ -13,7 +13,6 @@
 package service
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -21,6 +20,7 @@ import (
 	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -401,7 +401,7 @@ func (s *service) updateHostModule(req *restful.Request, resp *restful.Response)
 	} else {
 		moduleName, err := moduleMap[moduleIDArr[0]].String(common.BKModuleNameField)
 		if err != nil {
-			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", moduleMap, formData, "ModuleName", err, srvData.rid)
+			blog.Errorf("convert res to v2  key:%s, error:%v, moduleInfo:%+v,input:%+v,rid:%s", common.BKModuleNameField, err.Error(), moduleMap, formData, srvData.rid)
 			converter.RespFailV2Error(defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "int", err.Error()), resp)
 			return
 		}
@@ -660,7 +660,7 @@ func (s *service) GetHostHardInfo(req *restful.Request, resp *restful.Response) 
 	for _, item := range dataArr {
 		mapItem, err := mapstr.NewFromInterface(item)
 		if nil != err {
-			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%+v, request parammetes:%+v, rid:%s", err.Error(), formData, srvData.rid)
+			blog.Errorf("GetHostExtInfo  error, error:%s, host info:%#v, request parammetes:%#v, request-id:%s", err.Error(), item, formData, srvData.rid)
 			converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, "host info not map[string]interface").Error(), resp)
 			return
 		}

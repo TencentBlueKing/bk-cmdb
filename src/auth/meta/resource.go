@@ -12,6 +12,10 @@
 
 package meta
 
+import (
+	"configcenter/src/common"
+)
+
 type ResourceType string
 
 func (r ResourceType) String() string {
@@ -36,10 +40,16 @@ const (
 	ModelAttributeGroup      ResourceType = "modelAttributeGroup"
 	ModelAttribute           ResourceType = "modelAttribute"
 	ModelUnique              ResourceType = "modelUnique"
-	HostUserCustom           ResourceType = "hostUserCustom"
 	HostFavorite             ResourceType = "hostFavorite"
 	Process                  ResourceType = "process"
+	HostInstance             ResourceType = "hostInstance"
 	NetDataCollector         ResourceType = "netDataCollector"
+	DynamicGrouping          ResourceType = "dynamicGrouping" // 动态分组
+	EventPushing             ResourceType = "eventPushing"
+	Plat                     ResourceType = "plat"
+	AuditLog                 ResourceType = "auditlog"     // 操作审计
+	ResourceSync             ResourceType = "resourceSync" // 云资源发现
+	UserCustom               ResourceType = "usercustom"   // 用户自定义
 )
 
 const (
@@ -47,6 +57,7 @@ const (
 	ProcessConfigTemplate        = "processConfigTemplate"
 	ProcessConfigTemplateVersion = "processConfigTemplateVersion"
 	ProcessBoundConfig           = "processBoundConfig"
+	SystemFunctionality          = "systemFunctionality"
 
 	NetCollector = "netCollector"
 	NetDevice    = "netDevice"
@@ -128,7 +139,7 @@ var (
 			MoveHostFromModuleToResPool,
 			MoveHostToAnotherBizModule,
 			CleanHostInSetOrModule,
-			MoveHostsToOrBusinessModule,
+			MoveHostsToBusinessOrModule,
 			AddHostToResourcePool,
 			MoveHostToModule,
 		},
@@ -165,7 +176,7 @@ var (
 	}
 
 	HostUserCustomDescribe = ResourceDescribe{
-		Type:    HostUserCustom,
+		Type:    UserCustom,
 		Actions: []Action{Find, FindMany, Create, Update, Delete},
 	}
 
@@ -176,7 +187,7 @@ var (
 
 	ProcessDescribe = ResourceDescribe{
 		Type:    Process,
-		Actions: []Action{Create, Find, FindMany, Delete, DeleteMany, Update, UpdateMany, Create},
+		Actions: []Action{Create, Find, FindMany, Delete, DeleteMany, Update, UpdateMany},
 	}
 
 	NetDataCollectorDescribe = ResourceDescribe{
@@ -184,3 +195,16 @@ var (
 		Actions: []Action{Find, FindMany, Update, UpdateMany, DeleteMany, Create, DeleteMany},
 	}
 )
+
+func GetResourceTypeByObjectType(object string) ResourceType {
+	switch object {
+	case common.BKInnerObjIDApp:
+		return Business
+	case common.BKInnerObjIDSet:
+		return ModelSet
+	case common.BKInnerObjIDModule:
+		return ModelModule
+	default:
+		return Model
+	}
+}

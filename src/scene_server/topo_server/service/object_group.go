@@ -14,6 +14,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -25,17 +26,21 @@ import (
 
 // CreateObjectGroup create a new object group
 
-func (s *topoService) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	rsp, err := s.core.GroupOperation().CreateObjectGroup(params, data)
+func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	rsp, err := s.Core.GroupOperation().CreateObjectGroup(params, data)
 	if nil != err {
 		return nil, err
 	}
 
+	// auth: register attribute group
+	if err := s.AuthManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
+		return nil, fmt.Errorf("register attribute group to iam failed, err: %+v", err)
+	}
 	return rsp.ToMapStr()
 }
 
 // UpdateObjectGroup update the object group information
-func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := &metadata.UpdateGroupCondition{}
 
@@ -45,16 +50,45 @@ func (s *topoService) UpdateObjectGroup(params types.ContextParams, pathParams, 
 	}
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.GroupOperation().UpdateObjectGroup(params, cond)
+	err = s.Core.GroupOperation().UpdateObjectGroup(params, cond)
 	if nil != err {
 		return nil, err
 	}
 
+	// query attribute groups with given condition, so that update them to iam after updated
+	searchCondition := condition.CreateCondition()
+	if cond.Condition.ID != 0 {
+		searchCondition.Field(common.BKFieldID).Eq(cond.Condition.ID)
+	}
+	if cond.Condition.GroupID != "" {
+		searchCondition.Field(common.BKPropertyGroupIDField).Eq(cond.Condition.GroupID)
+	}
+	if cond.Condition.ObjID != "" {
+		searchCondition.Field(common.BKObjIDField).Eq(cond.Condition.ObjID)
+	}
+	queryCond := metadata.QueryCondition{
+		Condition: searchCondition.ToMapStr(),
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCond)
+	if err != nil {
+		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+	}
+	attributeGroups := make([]metadata.Group, 0)
+	for _, item := range result.Data.Info {
+		ag := metadata.Group{}
+		ag.Parse(item)
+		attributeGroups = append(attributeGroups, ag)
+	}
+
+	// auth: register attribute group
+	if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
 // DeleteObjectGroup delete the object group
-func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	gid, err := strconv.ParseInt(pathParams("id"), 10, 64)
 	if nil != err {
 		return nil, err
@@ -62,15 +96,19 @@ func (s *topoService) DeleteObjectGroup(params types.ContextParams, pathParams, 
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.GroupOperation().DeleteObjectGroup(params, gid)
+	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
 	if nil != err {
 		return nil, err
 	}
 
+	// auth: deregister attribute group
+	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
+		return nil, fmt.Errorf("deregister attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
-func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.MapStr, error) {
+func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (mapstr.MapStr, error) {
 
 	datas := []metadata.PropertyGroupObjectAtt{}
 	err := json.Unmarshal(data, &datas)
@@ -82,8 +120,8 @@ func (s *topoService) ParseUpdateObjectAttributeGroupInput(data []byte) (mapstr.
 	return result, nil
 }
 
-// UpdateObjectAttributeGroup update the object attribute belongs to group information
-func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// UpdateObjectAttributeGroupProperty update the object attribute belongs to group information
+func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	datas := make([]metadata.PropertyGroupObjectAtt, 0)
 	val, exists := data.Get("origin")
@@ -93,7 +131,7 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 
 	datas, _ = val.([]metadata.PropertyGroupObjectAtt)
 
-	err := s.core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
+	err := s.Core.GroupOperation().UpdateObjectAttributeGroup(params, datas)
 	if nil != err {
 		return nil, err
 	}
@@ -103,20 +141,43 @@ func (s *topoService) UpdateObjectAttributeGroup(params types.ContextParams, pat
 
 // DeleteObjectAttributeGroup delete the object attribute belongs to group information
 
-func (s *topoService) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
-	err := s.core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
+	err := s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
 	if nil != err {
 		return nil, err
 	}
 
+	// query attribute groups with given condition, so that update them to iam after updated
+	searchCondition := condition.CreateCondition()
+	searchCondition.Field(common.BKObjIDField).Eq(pathParams("bk_object_id"))
+	searchCondition.Field(common.BKPropertyIDField).Eq(pathParams("property_id"))
+	searchCondition.Field(common.BKPropertyGroupIDField).Eq(pathParams("group_id"))
+	queryCondition := metadata.QueryCondition{
+		Condition: searchCondition.ToMapStr(),
+	}
+	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCondition)
+	if err != nil {
+		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+	}
+	attributeGroups := make([]metadata.Group, 0)
+	for _, item := range result.Data.Info {
+		ag := metadata.Group{}
+		ag.Parse(item)
+		attributeGroups = append(attributeGroups, ag)
+	}
+
+	// auth: deregister attribute group
+	if err := s.AuthManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
+		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+	}
 	return nil, nil
 }
 
 // SearchGroupByObject search the groups by the object
-func (s *topoService) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchGroupByObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
-	return s.core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
+	return s.Core.GroupOperation().FindGroupByObject(params, pathParams("bk_obj_id"), cond)
 }

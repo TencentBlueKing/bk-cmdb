@@ -14,7 +14,11 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="isInfoShow">{{$t('Inst["恢复业务"]')}}</bk-button>
+                <bk-button type="primary" size="mini"
+                    :disabled="!archiveAuth"
+                    @click="handleRecovery(item)">
+                    {{$t('Inst["恢复业务"]')}}
+                </bk-button>
             </template>
         </cmdb-table>
     </div>
@@ -22,6 +26,7 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
+    import { OPERATION } from './router.config.js'
     export default {
         data () {
             return {
@@ -32,8 +37,7 @@
                     current: 1,
                     size: 10,
                     count: 0
-                },
-                isInfoShow: false
+                }
             }
         },
         computed: {
@@ -42,6 +46,9 @@
             ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
+            },
+            archiveAuth () {
+                return this.$isAuthorized(OPERATION.BUSINESS_ARCHIVE)
             }
         },
         async created () {
@@ -116,16 +123,11 @@
                 }
             },
             handleRecovery (biz) {
-                this.isInfoShow = true
                 this.$bkInfo({
                     title: this.$t('Inst["是否确认恢复业务？"]'),
                     content: this.$t('Inst["恢复业务提示"]', {bizName: biz['bk_biz_name']}),
                     confirmFn: () => {
-                        this.isInfoShow = false
                         this.recoveryBiz(biz)
-                    },
-                    cancelFn: () => {
-                        this.isInfoShow = false
                     }
                 })
             },

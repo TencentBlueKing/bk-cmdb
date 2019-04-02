@@ -2,9 +2,9 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!authority.includes('update') || !isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_BUSINESS) || !isAdminView"
                 @click="handleCreate">
-                {{$t("Inst['立即创建']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="options-button fr">
                 <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
@@ -58,23 +58,24 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
                         :deleteButtonText="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -83,7 +84,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :authority="authority"
+                        :disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -113,6 +114,7 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -121,6 +123,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -171,8 +174,14 @@
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
-            authority () {
-                return this.$store.getters['userPrivilege/modelAuthority']('biz')
+            saveDisabled () {
+                const type = this.attribute.type
+                if (type === 'create') {
+                    return !this.$isAuthorized(this.OPERATION.C_BUSINESS)
+                } else if (type === 'update') {
+                    return !this.$isAuthorized(this.OPERATION.U_BUSINESS)
+                }
+                return true
             }
         },
         watch: {

@@ -23,16 +23,14 @@ import (
 var _ mongodb.Transaction = (*transaction)(nil)
 
 type transaction struct {
-	mongocli       *client
-	innerSession   mongo.Session
-	collectionMaps map[collectionName]mongodb.CollectionInterface
+	mongocli     *client
+	innerSession mongo.Session
 }
 
 func newSessionTransaction(mongocli *client, clientSession mongo.Session) *transaction {
 	return &transaction{
-		mongocli:       mongocli,
-		innerSession:   clientSession,
-		collectionMaps: map[collectionName]mongodb.CollectionInterface{},
+		mongocli:     mongocli,
+		innerSession: clientSession,
 	}
 }
 
@@ -47,20 +45,11 @@ func (t *transaction) CommitTransaction() error {
 }
 
 func (t *transaction) Collection(collName string) mongodb.CollectionInterface {
-
-	target, ok := t.collectionMaps[collectionName(collName)]
-	if !ok {
-
-		target = newCollectionWithSession(t.mongocli.innerDB.innerDatabase, t.innerSession, collName)
-		t.collectionMaps[collectionName(collName)] = target
-	}
-
+	target := newCollectionWithSession(t.mongocli.innerDB.innerDatabase, t.innerSession, collName)
 	return target
 }
 
 func (t *transaction) Close() error {
-
-	t.collectionMaps = map[collectionName]mongodb.CollectionInterface{}
 	t.innerSession.EndSession(context.TODO())
 	return nil
 }

@@ -6,22 +6,6 @@
             :handler-offset="3"
             :min="200"
             :max="480">
-            <div class="tree-simplify" v-if="false && tree.simplifyAvailable">
-                <cmdb-form-bool class="tree-simplify-checkbox"
-                    :size="16"
-                    :true-value="true"
-                    :false-value="false"
-                    v-model="tree.simplify">
-                    <span>
-                        {{$t('BusinessTopology["精简显示"]')}}
-                    </span>
-                </cmdb-form-bool>
-                <v-popover style="display: inline-block;" trigger="hover" :delay="200">
-                    <i class="tree-simplify-tips bk-icon icon-info-circle">
-                    </i>
-                    <img src="@/assets/images/simplify-tips.png" slot="popover">
-                </v-popover>
-            </div>
             <cmdb-tree ref="topoTree" class="topo-tree"
                 children-key="child"
                 :id-generator="getTopoNodeId"
@@ -41,7 +25,7 @@
                     <bk-button type="primary" class="topo-node-btn-create fr"
                         v-if="showCreate(node, state)"
                         @click.stop="handleCreate">
-                        {{$t('Common[\'新增\']')}}
+                        {{$t('Common[\'新建\']')}}
                     </bk-button>
                 </div>
             </cmdb-tree>
@@ -70,6 +54,11 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
+                        delete-disabled
+                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :transfer-disabled="!$isAuthorized(OPERATION.TOPO_TRANSFER_HOST)"
+                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
@@ -81,7 +70,6 @@
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
-                        :authority="['search', 'update', 'delete']"
                         :show-delete="false"
                         :show-options="!isAdminView"
                         :properties="tab.properties"
@@ -90,7 +78,6 @@
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
-                        :authority="['search', 'update', 'delete']"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.selectedNodeInst"
@@ -121,6 +108,7 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbTopoNodeProcess from './children/_node-process'
     import treeNodeCreate from './children/_node-create.vue'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsTable,
@@ -129,6 +117,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: {
                     biz: [],
                     host: [],
@@ -141,9 +130,6 @@
                 topoModel: [],
                 tree: {
                     data: [],
-                    simplify: false,
-                    simplifyAvailable: false,
-                    simplifyParentNode: null,
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
@@ -225,13 +211,6 @@
             showProcessPanel (val) {
                 if (!val) {
                     this.tab.active = 'hosts'
-                }
-            },
-            'tree.simplify' (simplify) {
-                if (simplify) {
-                    this.simplifyTree()
-                } else {
-                    this.getBusinessTopo()
                 }
             }
         },
@@ -430,12 +409,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    // this.setSimplifyAvailable()
                 })
-            },
-            setSimplifyAvailable () {
-                const simplifyData = this.tree.data.filter(data => !this.tree.internalModule.includes(data))
-                this.tree.simplifyAvailable = simplifyData.length === 1 && simplifyData[0].child.length
             },
             getModelByObjId (id) {
                 return this.topoModel.find(model => model['bk_obj_id'] === id)
@@ -484,19 +458,21 @@
                     condition
                 }
                 const quickSearch = this.table.quickSearch
-                if (quickSearch.property && quickSearch.value !== null) {
+                if (quickSearch.property && quickSearch.value !== null && String(quickSearch.value).length) {
                     const quickSearchType = quickSearch.property['bk_property_type']
-                    if (['singleasst', 'multiasst'].includes(quickSearchType)) {
-                        condition.push({
-                            'bk_obj_id': quickSearch.property['bk_asst_obj_id'],
-                            condition: [{
-                                field: 'bk_inst_name',
-                                operator: quickSearch.operator,
-                                value: quickSearch.value
-                            }]
+                    const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
+                    if (['date', 'time'].includes(quickSearchType)) {
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$gte',
+                            value: quickSearch.value[0]
+                        })
+                        hostCondition.condition.push({
+                            field: quickSearch.property['bk_property_id'],
+                            operator: '$lte',
+                            value: quickSearch.value[1]
                         })
                     } else {
-                        const hostCondition = condition.find(condition => condition['bk_obj_id'] === 'host')
                         hostCondition.condition.push({
                             field: quickSearch.property['bk_property_id'],
                             operator: quickSearch.operator,
@@ -553,9 +529,6 @@
                 this.tree.create.showDialog = true
                 this.tree.create.active = true
                 let targetNode = this.tree.selectedNode
-                if (this.tree.simplify && targetNode['bk_obj_id'] === 'biz') {
-                    targetNode = this.tree.simplifyParentNode
-                }
                 const model = this.topoModel.find(model => model['bk_obj_id'] === targetNode['bk_obj_id'])
                 const properties = await this.getCommonProperties(model['bk_next_obj'])
                 this.tree.create.properties = properties
@@ -580,9 +553,6 @@
             },
             createNode (value) {
                 let selectedNode = this.tree.selectedNode
-                if (this.tree.simplify && selectedNode['bk_obj_id'] === 'biz') {
-                    selectedNode = this.tree.simplifyParentNode
-                }
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
@@ -741,18 +711,6 @@
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
                 const isModule = node['bk_obj_id'] === 'module'
                 return !this.isAdminView && selected && !isBlueKing && !isModule
-            },
-            simplifyTree () {
-                this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))
-                let instTopo = this.tree.data[0].child.slice(this.tree.internalModule.length)
-                let simplifyParentNode
-                while (instTopo.length === 1 && instTopo[0].child.length) {
-                    simplifyParentNode = instTopo[0]
-                    instTopo = instTopo[0].child
-                }
-                this.tree.simplifyParentNode = simplifyParentNode
-                this.tree.data[0].child.splice(this.tree.internalModule.length, 1, ...instTopo)
-                this.$refs.topoTree.$forceUpdate()
             }
         }
     }
@@ -772,13 +730,6 @@
             display: block;
             width: auto;
             margin: 20px 20px 13px;
-        }
-        .tree-simplify {
-            padding: 0 20px;
-            font-size: 14px;
-            .tree-simplify-tips:hover {
-                color: #0082ff;
-            }
         }
         .topo-tree{
             padding: 0 0 0 20px;

@@ -19,6 +19,7 @@ import (
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
@@ -55,6 +56,8 @@ type ProcServer struct {
 	EsbServ            esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
+	Auth               auth.Authorize
+	ConfigMap          map[string]string
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -69,7 +72,7 @@ func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig),
+		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig, s.Auth),
 	}
 }
 
@@ -113,6 +116,7 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
 	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
 	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
+	ws.Route(ws.GET("/template/group/{bk_supplier_account}/{bk_biz_id}").To(ps.GetTemplateGroup))
 
 	//v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
@@ -227,5 +231,5 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
 		}
 	}
-
+	ps.ConfigMap = current.ConfigMap
 }

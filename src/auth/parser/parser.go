@@ -13,28 +13,36 @@
 package parser
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strings"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 )
 
-func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
-
-	body, err := ioutil.ReadAll(req.Request.Body)
+func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAttribute, error) {
+	body, err := util.PeekRequest(req.Request)
 	if err != nil {
 		return nil, err
 	}
 
-	meta := new(metadata.Metadata)
-	if err := json.Unmarshal(body, meta); err != nil {
-		return nil, err
+	meta := struct {
+		Metadata metadata.Metadata `json:"metadata"`
+	}{}
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &meta); err != nil {
+			return nil, err
+		}
 	}
 
 	elements, err := urlParse(req.Request.URL.Path)
@@ -48,10 +56,10 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 		URI:      req.Request.URL.Path,
 		Elements: elements,
 		Body:     body,
-		Metadata: *meta,
+		Metadata: meta.Metadata,
 	}
 
-	stream, err := newParseStream(requestContext)
+	stream, err := newParseStream(requestContext, engine)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +67,54 @@ func ParseAttribute(req *restful.Request) (*meta.AuthAttribute, error) {
 	return stream.Parse()
 }
 
+// ParseCommonInfo get common info from req, aims at avoiding too much repeat code
+func ParseCommonInfo(requestHeader *http.Header) (*meta.CommonInfo, error) {
+	commonInfo := new(meta.CommonInfo)
+
+	userInfo, err := ParseUserInfo(requestHeader)
+	if err != nil {
+		return nil, err
+	}
+	commonInfo.User = *userInfo
+
+	return commonInfo, nil
+}
+
+func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
+	userInfo := new(meta.UserInfo)
+	user := requestHeader.Get(common.BKHTTPHeaderUser)
+	if len(user) == 0 {
+		return nil, errors.New("parse user info failed, miss BK_User in your request header")
+	}
+	userInfo.UserName = user
+	supplierID := requestHeader.Get(common.BKHTTPOwnerID)
+	if len(supplierID) == 0 {
+		return nil, errors.New("parse user info failed, miss bk_supplier_id in your request header")
+	}
+	userInfo.SupplierAccount = supplierID
+	return userInfo, nil
+}
+
+func ParseAPIVersion(req *restful.Request) (string, error) {
+	elements, err := urlParse(req.Request.URL.Path)
+	if err != nil {
+		blog.Errorf("parse api version failed, %+v", err)
+		return "", fmt.Errorf("parse api version failed, %+v", err)
+	}
+	version := elements[1]
+	if version != "v3" {
+		blog.Errorf("parse api version failed, unsupported api version: %s", version)
+		return "", fmt.Errorf("parse api version failed, unsupported api version: %s", version)
+	}
+	return version, nil
+}
+
 // url example: /api/v3/create/model
-var urlRegex = regexp.MustCompile(`^/api/([^/]+)/([^/]+)/([^/]+)/(.*)$`)
+var urlRegex = regexp.MustCompile(`^/api/([^/]+)(/[^/]+)+/?$`)
 
 func urlParse(url string) (elements []string, err error) {
 	if !urlRegex.MatchString(url) {
-		return nil, errors.New("invalid url format")
+		return nil, fmt.Errorf("invalid url format, url=%s", url)
 	}
 
 	return strings.Split(url, "/")[1:], nil

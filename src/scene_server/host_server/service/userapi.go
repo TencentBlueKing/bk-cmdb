@@ -145,7 +145,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 	//if name in condition , add like search
 	name, ok := condition["name"].(string)
 	if ok && "" != name {
-		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpeceialCharChange(name)}
+		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpecialCharChange(name)}
 	}
 
 	var err error
@@ -210,7 +210,7 @@ func (s *Service) GetUserCustomQueryResult(req *restful.Request, resp *restful.R
 
 	intAppID, err := util.GetInt64ByInterface(appID)
 	if nil != err {
-		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid:%s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
+		blog.Errorf("UserAPIResult custom query failed,  err: %v, appid: %s, id:%s, logID:%s", err.Error(), appID, ID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
 		return
 	}

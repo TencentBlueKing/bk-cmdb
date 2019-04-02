@@ -3,12 +3,12 @@
         <div class="hosts-options">
             <slot name="options">
                 <bk-button class="options-button" type="primary"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || editDisabled"
                     @click="handleMultipleEdit">
                     {{$t('Common["编辑"]')}}
                 </bk-button>
                 <bk-button class="options-button" type="default"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || transferDisabled"
                     @click="transfer.show = true">
                     {{$t('BusinessTopology["转移"]')}}
                 </bk-button>
@@ -19,6 +19,7 @@
                 </bk-button>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
+                    <input type="hidden" name="export_custom_fields" :value="usercustom[columnsConfigKey]">
                     <input type="hidden" name="bk_biz_id" value="-1">
                     <input type="hidden" name="metadata"
                         v-if="$route.name !== 'resource'"
@@ -83,29 +84,30 @@
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="tab.attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.details"
                         :show-delete="false"
+                        :edit-disabled="editDisabled"
+                        :delete-disabled="deleteDisabled"
                         @on-edit="handleEdit">
                         <cmdb-host-topo slot="details-header" :host="tab.attribute.inst.original"></cmdb-host-topo>
                     </cmdb-details>
                     <cmdb-form v-else-if="tab.attribute.type === 'update'"
                         ref="form"
-                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
                         :inst="tab.attribute.inst.edit"
                         :type="tab.attribute.type"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
-                        :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -114,7 +116,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="host"
-                        :authority="authority"
+                        :disabled="editDisabled"
                         :inst="tab.attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -161,6 +163,7 @@
             </div>
             <div class="transfer-content" slot="content">
                 <cmdb-transfer-host v-if="transfer.show"
+                    :transfer-resource-disabled="transferResourceDisabled"
                     :selected-hosts="selectedHosts"
                     @on-success="handleTransferSuccess"
                     @on-cancel="transfer.show = false">
@@ -210,12 +213,11 @@
                 type: Boolean,
                 default: false
             },
-            authority: {
-                type: Array,
-                default () {
-                    return ['search', 'update', 'delete']
-                }
-            }
+            saveDisabled: Boolean,
+            editDisabled: Boolean,
+            deleteDisabled: Boolean,
+            transferDisabled: Boolean,
+            transferResourceDisabled: Boolean
         },
         data () {
             return {

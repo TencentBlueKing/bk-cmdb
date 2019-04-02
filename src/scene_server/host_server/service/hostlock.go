@@ -18,6 +18,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -38,6 +39,25 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
 		return
 	}
+
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, ip := range input.IPS {
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
+		if err != nil {
+			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
+			return
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, err: %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		return
+	}
+
 	err := srvData.lgc.LockHost(srvData.ctx, input)
 	if nil != err {
 		blog.Errorf("lock host, handle host lock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
@@ -62,6 +82,25 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
 		return
 	}
+
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, ip := range input.IPS {
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
+		if err != nil {
+			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
+			return
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, err: %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		return
+	}
+
 	err := srvData.lgc.UnlockHost(srvData.ctx, input)
 	if nil != err {
 		blog.Errorf("unlock host, handle host unlock error, error:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
@@ -84,6 +123,24 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 	if 0 == len(input.IPS) {
 		blog.Errorf("query lock host, ip_list is empty, input:%+v,rid:%s", input, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "ip_list")})
+		return
+	}
+
+	// check authorization
+	hostIDArr := make([]int64, 0)
+	for _, ip := range input.IPS {
+		hostID, err := s.ip2hostID(srvData, ip, input.CloudID)
+		if err != nil {
+			blog.Errorf("invalid ip %s:%s, err: %s, rid:%s", ip, input.CloudID, err.Error(), srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsIsInvalid)})
+			return
+		}
+		hostIDArr = append(hostIDArr, hostID)
+	}
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, err: %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 

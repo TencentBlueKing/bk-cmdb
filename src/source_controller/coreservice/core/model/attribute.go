@@ -255,7 +255,7 @@ func (m *modelAttribute) SearchModelAttributesByCondition(ctx core.ContextParams
 	cond.Element(&mongo.In{Key: metadata.AttributeFieldSupplierAccount, Val: attrArr})
 	attrResult, err := m.search(ctx, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to search the attributes of the model(%s), error info is %s", ctx.ReqID, err.Error())
+		blog.Errorf("request(%s): it is failed to search the attributes of the model(%+v), error info is %s", ctx.ReqID, cond, err.Error())
 		return &metadata.QueryModelAttributeDataResult{}, err
 	}
 

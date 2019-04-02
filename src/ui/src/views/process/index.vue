@@ -3,15 +3,15 @@
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
-                :disabled="!table.checked.length || !authority.includes('update')" 
+                :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)" 
                 @click="handleMultipleEdit">
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
             <bk-button class="process-btn" type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
                 @click="handleCreate">
-                {{$t("ProcessManagement['新增进程']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
@@ -32,46 +32,41 @@
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
-            <div class="empty-info" slot="data-empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("ProcessManagement['当前业务并无进程，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
-            </div>
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.details"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.D_PROCESS)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update'] ? 'U_PROCESS' : 'C_PROCESS')"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
-                        :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
+                        :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
                 <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
-                        :authority="authority"
                         :processId="attribute.inst.details['bk_process_id']"
-                        :bizId="bizId"
-                    ></v-module>
+                        :bizId="bizId">
+                    </v-module>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
@@ -88,6 +83,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
     import vModule from './module'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
@@ -95,6 +91,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 slider: {
                     show: false,
@@ -125,8 +122,7 @@
                     checked: [],
                     defaultSort: '-bk_process_id',
                     sort: '-bk_process_id'
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {

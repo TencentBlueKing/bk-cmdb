@@ -8,6 +8,8 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
@@ -32,17 +34,18 @@ type RequestContext struct {
 
 type parseStream struct {
 	RequestCtx *RequestContext
-	Attribute  *meta.AuthAttribute
+	Attribute  meta.AuthAttribute
 	err        error
 	action     meta.Action
+	engine     *backbone.Engine
 }
 
-func newParseStream(rc *RequestContext) (*parseStream, error) {
+func newParseStream(rc *RequestContext, engine *backbone.Engine) (*parseStream, error) {
 	if nil == rc {
 		return nil, errors.New("request context is nil")
 	}
 
-	return &parseStream{RequestCtx: rc}, nil
+	return &parseStream{RequestCtx: rc, engine: engine}, nil
 }
 
 // parse is used to parse the auth attribute from RequestContext.
@@ -60,6 +63,7 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		topologyLatest().
 		netCollectorRelated().
 		processRelated().
+		eventRelated().
 		// finalizer must be at the end of the check chains.
 		finalizer()
 
@@ -67,11 +71,11 @@ func (ps *parseStream) Parse() (*meta.AuthAttribute, error) {
 		return nil, ps.err
 	}
 
-	return ps.Attribute, nil
+	return &ps.Attribute, nil
 }
 
 func (ps *parseStream) validateAPI() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -83,7 +87,7 @@ func (ps *parseStream) validateAPI() *parseStream {
 }
 
 func (ps *parseStream) validateVersion() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -92,13 +96,12 @@ func (ps *parseStream) validateVersion() *parseStream {
 		ps.err = fmt.Errorf("unsupported version %s", version)
 		return ps
 	}
-	ps.Attribute.APIVersion = version
 
 	return ps
 }
 
 func (ps *parseStream) validateResourceAction() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -141,7 +144,7 @@ func (ps *parseStream) validateResourceAction() *parseStream {
 // user and supplier account must be set in the http
 // request header, otherwise, an error will be occur.
 func (ps *parseStream) validateUserAndSupplier() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -159,24 +162,38 @@ func (ps *parseStream) validateUserAndSupplier() *parseStream {
 		ps.err = fmt.Errorf("request lost header: %s", common.BKHTTPOwnerID)
 		return ps
 	}
-	ps.Attribute.User.SupplierID = supplier
+	ps.Attribute.User.SupplierAccount = supplier
 
 	return ps
 }
 
 // finalizer is to find whether a url resource has been matched or not.
 func (ps *parseStream) finalizer() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
-	ps.err = errors.New("unsupported resource operation")
+	if len(ps.Attribute.Resources) <= 0 {
+		ps.err = errors.New("unsupported resource operation")
+	}
 	return ps
 }
 
+func (ps *parseStream) shouldReturn() bool {
+	return ps.err != nil || len(ps.Attribute.Resources) > 0
+}
+
 func (ps *parseStream) hitRegexp(reg *regexp.Regexp, httpMethod string) bool {
-	return reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
+	result := reg.MatchString(ps.RequestCtx.URI) && ps.RequestCtx.Method == httpMethod
+	if result {
+		blog.V(4).Infof("match %s %s", httpMethod, reg)
+	}
+	return result
 }
 
 func (ps *parseStream) hitPattern(pattern, httpMethod string) bool {
-	return pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
+	result := pattern == ps.RequestCtx.URI && ps.RequestCtx.Method == httpMethod
+	if result {
+		blog.V(4).Infof("match %s %s", httpMethod, pattern)
+	}
+	return result
 }

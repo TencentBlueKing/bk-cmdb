@@ -3,7 +3,19 @@ package authcenter
 import (
 	"fmt"
 
-	"configcenter/src/common/metadata"
+	"configcenter/src/auth/meta"
+)
+
+// system constanst
+const (
+	SystemIDCMDB   = "bk_cmdb"
+	SystemNameCMDB = "蓝鲸智云配置平台"
+)
+
+// ScopeTypeID constant
+const (
+	ScopeTypeIDSystem = "system"
+	ScopeTypeIDBiz    = "biz"
 )
 
 type AuthConfig struct {
@@ -15,32 +27,44 @@ type AuthConfig struct {
 	AppSecret string
 	// the system id that cmdb used in auth center.
 	SystemID string
+	// enable string
+	Enable bool
 }
 
 type RegisterInfo struct {
-	CreatorType  string `json:"creator_type"`
-	CreatorID    string `json:"creator_id"`
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	CreatorType string           `json:"creator_type"`
+	CreatorID   string           `json:"creator_id"`
+	Resources   []ResourceEntity `json:"resources,omitempty"`
+}
+
+type ResourceEntity struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ScopeInfo
+	ResourceName string       `json:"resource_name,omitempty"`
+	ResourceID   []ResourceID `json:"resource_id,omitempty"`
+}
+
+type ResourceID struct {
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   string         `json:"resource_id,omitempty"`
 }
 
 type ResourceInfo struct {
-	ResourceType Type `json:"resource_type"`
+	ResourceType ResourceTypeID `json:"resource_type"`
 	// this filed is not always used, it's decided by the api
 	// that is used.
-	ResourceName string `json:"resource_name,omitempty"`
-	ResourceID   string `json:"resource_id"`
+	ResourceEntity
 }
 
 type ScopeInfo struct {
-	ScopeType string `json:"scope_type"`
-	ScopeID   string `json:"scope_id"`
+	ScopeType string `json:"scope_type,omitempty"`
+	ScopeID   string `json:"scope_id,omitempty"`
 }
 
 type ResourceResult struct {
-	metadata.BaseResp `json:",inline"`
-	RequestID         string       `json:"request_id"`
-	Data              ResultStatus `json:"data"`
+	BaseResponse
+	RequestID string       `json:"request_id"`
+	Data      ResultStatus `json:"data"`
 }
 
 type ResultStatus struct {
@@ -56,13 +80,12 @@ type ResultStatus struct {
 }
 
 type DeregisterInfo struct {
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	Resources []ResourceEntity `json:"resources"`
 }
 
 type UpdateInfo struct {
-	ScopeInfo    `json:",inline"`
-	ResourceInfo `json:",inline"`
+	ScopeInfo
+	ResourceInfo
 }
 
 type Principal struct {
@@ -71,25 +94,25 @@ type Principal struct {
 }
 
 type AuthBatch struct {
-	Principal       `json:",inline"`
-	ScopeInfo       `json:",inline"`
+	Principal
+	ScopeInfo
 	ResourceActions []ResourceAction `json:"resources_actions"`
 }
 
 type BatchResult struct {
-	metadata.BaseResp `json:",inline"`
-	RequestID         string        `json:"request_id"`
-	Data              []BatchStatus `json:"data"`
+	BaseResponse
+	RequestID string        `json:"request_id"`
+	Data      []BatchStatus `json:"data"`
 }
 
 type ResourceAction struct {
-	ResourceInfo `json:",inline"`
-	ActionID     Action `json:"action_id"`
+	ResourceInfo
+	ActionID ActionID `json:"action_id"`
 }
 
 type BatchStatus struct {
-	ActionID     string `json:"action_id"`
-	ResourceInfo `json:",inline"`
+	ActionID string `json:"action_id"`
+	ResourceInfo
 	// for authorize confirm use, define if a user have
 	// the permission to this request.
 	IsPass bool `json:"is_pass"`
@@ -105,4 +128,88 @@ func (a *AuthError) Error() string {
 		return a.Reason.Error()
 	}
 	return fmt.Sprintf("request id: %s, err: %s", a.RequestID, a.Reason.Error())
+}
+
+type System struct {
+	SystemID   string `json:"system_id,omitempty"`
+	SystemName string `json:"system_name"`
+	Desc       string `json:"desc"`
+	// 可为空，在使用注册资源的方式时
+	QueryInterface string `json:"query_interface"`
+	//  关联的资源所属，有业务、全局、项目等
+	ReleatedScopeTypes string `json:"releated_scope_types"`
+	// 管理者，可通过权限中心产品页面修改模型相关信息
+	Managers string `json:"managers"`
+	// 更新者，可为system
+	Updater string `json:"updater,omitempty"`
+	// 创建者，可为system
+	Creator string `json:"creator,omitempty"`
+}
+
+type ResourceType struct {
+	ResourceTypeID       ResourceTypeID `json:"resource_type"`
+	ResourceTypeName     string         `json:"resource_type_name"`
+	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
+	Actions              []Action       `json:"actions"`
+}
+
+type Action struct {
+	ActionID          ActionID `json:"action_id"`
+	ActionName        string   `json:"action_name"`
+	IsRelatedResource bool     `json:"is_related_resource"`
+}
+
+type SystemDetail struct {
+	System
+	Scopes []struct {
+		ScopeTypeID   string         `json:"scope_type_id"`
+		ResourceTypes []ResourceType `json:"resource_types"`
+	} `json:"scopes"`
+}
+
+type BaseResponse struct {
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	Result    bool   `json:"result"`
+	RequestID string `json:"request_id"`
+}
+
+type SearchCondition struct {
+	ScopeInfo
+	ResourceType    ResourceTypeID `json:"resource_type"`
+	ParentResources []ResourceID   `json:"parent_resources"`
+}
+
+type SearchResult struct {
+	BaseResponse
+	RequestID string                 `json:"request_id"`
+	Data      []meta.BackendResource `json:"data"`
+}
+
+func (br BaseResponse) ErrorString() string {
+	return fmt.Sprintf("request id: %s, error code: %d, message: %s", br.RequestID, br.Code, br.Message)
+}
+
+type ListAuthorizedResources struct {
+	Principal   `json:",inline"`
+	ScopeInfo   `json:",inline"`
+	TypeActions []TypeAction `json:"resource_types_actions"`
+	// array or string
+	DataType string `json:"resource_data_type"`
+}
+
+type TypeAction struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+}
+
+type ListAuthorizedResourcesResult struct {
+	BaseResponse
+	Data []AuthorizedResource `json:"data"`
+}
+
+type AuthorizedResource struct {
+	ActionID     ActionID       `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceIDs  [][]ResourceID `json:"resource_ids"`
 }

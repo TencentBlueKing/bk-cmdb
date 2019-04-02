@@ -80,8 +80,12 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 	return nil
 }
 
+// SearchMainlineAssociationTopo get mainline topo of special model
+// result is a list with targetObj as head, so if you want a full topo, target must be biz model.
 func (a *association) SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error) {
 
+	// foundObjIDMap used as a map to detect whether found model is already in,
+	// so that we can detect infinite loop.
 	foundObjIDMap := make(map[string]bool)
 	results := make([]*metadata.MainlineObjectTopo, 0)
 	for {
@@ -145,14 +149,14 @@ func (a *association) CreateMainlineAssociation(params types.ContextParams, data
 		blog.Errorf("[operation-asst] bk_asst_obj_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKAsstObjIDField)
 	}
-	
-	if data.ClassificationID == "" {
-        blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
-        return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
-    }
 
-    params.MetaData = &data.Metadata
-    items, err := a.SearchMainlineAssociationTopo(params, bizObj)
+	if data.ClassificationID == "" {
+		blog.Errorf("[operation-asst] bk_classification_id empty,rid:%s", util.GetHTTPCCRequestID(params.Header))
+		return nil, params.Err.Errorf(common.CCErrCommParamsNeedSet, common.BKClassificationIDField)
+	}
+
+	params.MetaData = &data.Metadata
+	items, err := a.SearchMainlineAssociationTopo(params, bizObj)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to check the mainline topo level, error info is %s", err.Error())
 		return nil, err

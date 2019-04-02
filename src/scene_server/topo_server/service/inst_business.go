@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -24,22 +25,37 @@ import (
 )
 
 // CreateBusiness create a new business
-func (s *topoService) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
 	}
 
 	data.Set(common.BKDefaultField, 0)
-	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
+	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	if err != nil {
+		return nil, fmt.Errorf("create business failed, err: %+v", err)
+	}
+
+	businessID, err := business.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create business success, but get id failed, err: %+v", err)
+	}
+
+	// auth: register business to iam
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		return nil, fmt.Errorf("register business failed, err: %+v", err)
+	}
+
+	return business, nil
 }
 
 // DeleteBusiness delete the business
-func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -51,13 +67,18 @@ func (s *topoService) DeleteBusiness(params types.ContextParams, pathParams, que
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return nil, s.core.BusinessOperation().DeleteBusiness(params, obj, bizID)
+	// auth: deregister business to iam
+	if err := s.AuthManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
+		return nil, fmt.Errorf("deregister business failed, err: %+v", err)
+	}
+
+	return nil, s.Core.BusinessOperation().DeleteBusiness(params, obj, bizID)
 }
 
 // UpdateBusiness update the business
-func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -69,14 +90,23 @@ func (s *topoService) UpdateBusiness(params types.ContextParams, pathParams, que
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return nil, s.core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	if err != nil {
+		return nil, fmt.Errorf("update business failed, err: %+v", err)
+	}
 
+	// auth: update registered business to iam
+	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
+	}
+
+	return nil, nil
 }
 
 // UpdateBusinessStatus update the business status
-func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -88,7 +118,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 	data = mapstr.New()
-	_, bizs, err := s.core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
+	_, bizs, err := s.Core.BusinessOperation().FindBusiness(params, obj, nil, condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID))
 	if nil != err {
 		return nil, err
 	}
@@ -100,7 +130,7 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		innerCond := condition.CreateCondition()
 		innerCond.Field(common.BKAsstObjIDField).Eq(obj.Object().ObjectID)
 		innerCond.Field(common.BKAsstInstIDField).Eq(bizID)
-		if err := s.core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
+		if err := s.Core.AssociationOperation().CheckBeAssociation(params, obj, innerCond); nil != err {
 			return nil, err
 		}
 		data.Set(common.BKDataStatusField, pathParams("flag"))
@@ -119,13 +149,12 @@ func (s *topoService) UpdateBusinessStatus(params types.ContextParams, pathParam
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
 	}
 
-	return nil, s.core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	return nil, s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
 }
 
 // SearchBusiness search the business by condition
-func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -161,7 +190,7 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 	innerCond.SetPage(searchCond.Page)
 	innerCond.SetFields(searchCond.Fields)
 
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, searchCond.Fields, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -175,9 +204,9 @@ func (s *topoService) SearchBusiness(params types.ContextParams, pathParams, que
 }
 
 // SearchDefaultBusiness search the business by condition
-func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -190,7 +219,7 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 	}
 	innerCond.Field(common.BKDefaultField).Eq(common.DefaultAppFlag)
 
-	cnt, instItems, err := s.core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
 	if nil != err {
 		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
 		return nil, err
@@ -202,19 +231,34 @@ func (s *topoService) SearchDefaultBusiness(params types.ContextParams, pathPara
 }
 
 // CreateDefaultBusiness create the default business
-func (s *topoService) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
 	}
 
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
-	return s.core.BusinessOperation().CreateBusiness(params, obj, data)
+	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	if err != nil {
+		return nil, fmt.Errorf("create business failed, err: %+v", err)
+	}
+
+	businessID, err := business.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err)
+	}
+
+	// auth: register business to iam
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		return nil, fmt.Errorf("register business failed, err: %+v", err)
+	}
+
+	return business, nil
 }
 
-func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	obj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+func (s *Service) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
 		return nil, err
@@ -224,7 +268,7 @@ func (s *topoService) GetInternalModule(params types.ContextParams, pathParams, 
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 
-	_, result, err := s.core.BusinessOperation().GetInternalModule(params, obj, bizID)
+	_, result, err := s.Core.BusinessOperation().GetInternalModule(params, obj, bizID)
 	if nil != err {
 		return nil, err
 	}

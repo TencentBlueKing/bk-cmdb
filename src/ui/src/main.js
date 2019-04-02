@@ -1,11 +1,11 @@
 import Vue from 'vue'
 import App from './App.vue'
-import router from './router'
+import router from './router/index.js'
 import store from './store'
 import i18n from './i18n'
 import cmdbRequestMixin from './mixins/request'
 import cmdbClassifyMixin from './mixins/classify'
-import cmdbAuthorityMixin from './mixins/authority'
+import cmdbAuthMixin from './mixins/auth'
 import cmdbInjectMixin from './mixins/inject'
 import cmdbUI from './components/ui'
 import tools from './utils/tools'
@@ -23,7 +23,7 @@ Vue.use(cmdbUI)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
 Vue.mixin(cmdbClassifyMixin)
-Vue.mixin(cmdbAuthorityMixin)
+Vue.mixin(cmdbAuthMixin)
 Vue.mixin(cmdbInjectMixin)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools

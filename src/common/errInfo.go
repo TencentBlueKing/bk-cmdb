@@ -12,8 +12,8 @@
 
 package common
 
-//CC error number defined in this file
-//Errno name is composed of the following format CCErr[XXX]
+// CC error number defined in this file
+// Errno name is composed of the following format CCErr[XXX]
 const (
 
 	// the system code
@@ -141,22 +141,27 @@ const (
 	CCErrCommInstFieldConvFail = 1199040
 	// CCErrCommUtilFail  handle %s error %s
 	CCErrCommUtilHandleFail = 1199041
-    // CCErrCommParamsNeedFloat the parameter must be float type
-    CCErrCommParamsNeedFloat = 1199042
-    // CCErrCommFieldNotValidFail  valid data error, %s
-    CCErrCommFieldNotValidFail = 1199043
+	// CCErrCommParamsNeedFloat the parameter must be float type
+	CCErrCommParamsNeedFloat = 1199042
+	// CCErrCommFieldNotValidFail  valid data error, %s
+	CCErrCommFieldNotValidFail = 1199043
 
-	CCErrCommNotAllSuccess   = 1199044
+	CCErrCommNotAllSuccess = 1199044
 	// parse auth attribute in apiserver rest filter failed.
 	CCErrCommParseAuthAttributeFailed = 1199045
-	
+
 	// authorize request to auth center failed
 	CCErrCommCheckAuthorizeFailed = 1199046
-	
+
 	// auth failed, do not have permission.
 	CCErrCommAuthNotHavePermission = 1199047
 
+	CCErrCommAuthorizeFailed             = 1199048
+	CCErrCommRegistResourceToIAMFailed   = 1199049
+	CCErrCommUnRegistResourceToIAMFailed = 1199050
+
 	// apiserver 1100XXX
+	CCErrGetAuthorizedAppListFromAuthFailed = 1100001
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
@@ -314,9 +319,8 @@ const (
 	CCErrorTopoInvalidObjectInstanceNameFieldValue = 1101058
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
-	// association kind has already been instantiated
-	CCErrorTopoAssociationKindHasBeenUsed = 1101060
 
+	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
 	CCErrTopoAppSearchFailed                       = 1001033
@@ -348,19 +352,25 @@ const (
 	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
 	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
 	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
-
 	// association kind has been apply to object
-	CCErrorTopoAssKindHasApplyToObject = 1101069
-
+	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
-	CCErrorTopoPreAssKindCanNotBeDelete = 1101070
-	CCErrorTopoAsstKindIsNotExist       = 1101071
-	CCErrorAsstInstIsNotExist           = 1101072
-	CCErrorInstToAsstIsNotExist         = 1101073
-	CCErrorInstHasAsst                  = 1101074
-
-	CCErrTopoMulueIDNotfoundFailed = 1101080
-	CCErrTopoBkAppNotAllowedDelete = 1101081
+	CCErrorTopoPreAssKindCanNotBeDelete = 1101071
+	CCErrorTopoAsstKindIsNotExist       = 1101072
+	CCErrorAsstInstIsNotExist           = 1101073
+	CCErrorInstToAsstIsNotExist         = 1101074
+	CCErrorInstHasAsst                  = 1101075
+	CCErrTopoCreateAssoKindFailed       = 1101076
+	CCErrTopoUpdateAssoKindFailed       = 1101077
+	CCErrTopoDeleteAssoKindFailed       = 1101078
+	CCErrTopoMulueIDNotfoundFailed      = 1101080
+	CCErrTopoBkAppNotAllowedDelete      = 1101081
+	// CCErrorTopoAssociationKindMainlineUnavailable can't use bk_mainline in this case
+	CCErrorTopoAssociationKindMainlineUnavailable = 1101082
+	// CCErrorTopoAssociationKindInconsistent means AssociationKind parameter Inconsistent with caller method
+	CCErrorTopoAssociationKindInconsistent = 1101083
+	// CCErrorTopoModleStopped means model have been stopped to use
+	CCErrorTopoModleStopped = 1101084
 
 	// objectcontroller 1102XXX
 
@@ -407,7 +417,8 @@ const (
 
 	// migrate 1105XXX
 	//  CCErrCommMigrateFailed failed to migrate
-	CCErrCommMigrateFailed = 1105000
+	CCErrCommMigrateFailed        = 1105000
+	CCErrCommInitAuthcenterFailed = 1105001
 
 	// hostcontroller 1106XXX
 	CCErrHostSelectInst                  = 1106000
@@ -543,6 +554,8 @@ const (
 	CCErrHostGetResourceFail = 1110053
 	// CCErrHostModuleNotExist get %s module not found
 	CCErrHostModuleNotExist = 1110054
+	// CCErrDeleteHostFromBusiness Delete the host under the business
+	CCErrDeleteHostFromBusiness = 1110055
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -584,6 +597,11 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// synchronize data coreservice  11139xx
+	CCErrCoreServiceSyncError = 1113900
+	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
+	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
+
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
@@ -605,23 +623,17 @@ const (
 	// CCErrAPIServerV2HostModuleContainDefaultModuleErr  translate host to multiple module not contain default module
 	CCErrAPIServerV2HostModuleContainDefaultModuleErr = 1170007
 
-	/** TODO: 以下错误码需要改造 **/
+	// synchronize_server 1114xxx
 
-	//http
-	CC_Err_Comm_http_DO              = 2000
-	CC_Err_Comm_http_DO_STR          = "do http request failed!"
-	CC_Err_Comm_http_ReadReqBody     = 2002
-	CC_Err_Comm_http_ReadReqBody_STR = "read http request body failed!"
+	CCErrSynchronizeError = 1114001
+
+	/** TODO: 以下错误码需要改造 **/
 
 	//json
 	CC_ERR_Comm_JSON_DECODE     = 3001
 	CC_ERR_Comm_JSON_DECODE_STR = "json decode failed!"
 	CC_ERR_Comm_JSON_ENCODE     = 3002
 	CC_ERR_Comm_JSON_ENCODE_STR = "json encode failed!"
-
-	CC_Err_Comm_APP_QUERY_FAIL = 4008
-	//user custom
-	CC_Err_Comm_USER_CUSTOM_SAVE_FAIL = 5000
 
 	Json_Marshal_ERR     = 9000
 	Json_Marshal_ERR_STR = "json marshal error"

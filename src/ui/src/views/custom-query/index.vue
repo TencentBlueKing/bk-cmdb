@@ -2,25 +2,25 @@
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
                 @click="showUserAPISlider('create')">
-                {{$t("CustomQuery['新增查询']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="api-input fr">
                 <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
             </div>
         </div>
         <cmdb-table
-        class="api-table"
-        :loading="$loading('searchCustomQuery')"
-        :header="table.header"
-        :list="table.list"
-        :pagination.sync="table.pagination"
-        :wrapperMinusHeight="220"
-        @handlePageChange="handlePageChange"
-        @handleSizeChange="handleSizeChange"
-        @handleSortChange="handleSortChange"
-        @handleRowClick="showUserAPIDetails">
+            class="api-table"
+            :loading="$loading('searchCustomQuery')"
+            :header="table.header"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :wrapperMinusHeight="220"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange"
+            @handleSortChange="handleSortChange"
+            @handleRowClick="showUserAPIDetails">
             <template slot="create_time" slot-scope="{item}">
                 {{$tools.formatTime(item['create_time'])}}
             </template>
@@ -29,8 +29,7 @@
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("CustomQuery['当前业务并无自定义查询，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
+                <p>{{$t("CustomQuery['动态分组空数据提示']")}}</p>
             </div>
         </cmdb-table>
         <cmdb-slider
@@ -41,7 +40,6 @@
             :beforeClose="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
-                :authority="authority"
                 :id="slider.id"
                 :bizId="bizId"
                 :type="slider.type"
@@ -57,12 +55,14 @@
 <script>
     import { mapActions, mapGetters } from 'vuex'
     import vDefine from './define'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             vDefine
         },
         data () {
             return {
+                OPERATION,
                 filter: {
                     name: ''
                 },
@@ -101,8 +101,7 @@
                     type: 'create',
                     id: null,
                     title: this.$t("CustomQuery['新增查询']")
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {
@@ -169,7 +168,7 @@
             showUserAPISlider (type) {
                 this.slider.isShow = true
                 this.slider.type = type
-                this.slider.title = this.$t('CustomQuery["新增查询"]')
+                this.slider.title = this.$t('CustomQuery["新建查询"]')
             },
             /* 显示自定义API详情 */
             showUserAPIDetails (userAPI) {

@@ -560,8 +560,8 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 	if "" != resDataV3 {
 		resDataArrV3, ok := resDataV3.([]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForHostDataList not array data :%+v", data)
-			return nil, errors.New(fmt.Sprintf("data is not array %+v", resDataV3))
+			blog.Errorf("ResToV2ForHostDataList not array data :%#v", data)
+			return nil, fmt.Errorf("data is not array %#v", resDataV3)
 		}
 		var operators []string
 		var bakOperators []string
@@ -772,20 +772,20 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 			}
 		} else if common.BKProtocol == key || "Protocol" == key {
 			//v2 api erturn use protocol name
-			protocal, ok := val.(string)
+			protocol, ok := val.(string)
 			if false == ok {
-				protocal = ""
+				protocol = ""
 			} else {
-				switch protocal {
+				switch protocol {
 				case "1":
-					protocal = "TCP"
+					protocol = "TCP"
 				case "2":
-					protocal = "UDP"
+					protocol = "UDP"
 				default:
-					protocal = ""
+					protocol = ""
 				}
 			}
-			mapItem[key] = protocal
+			mapItem[key] = protocol
 		} else if key == "osType" {
 
 			switch realVal := val.(type) {
@@ -865,17 +865,17 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 
 		switch itemMap[common.BKObjIDField] {
 		case common.BKInnerObjIDApp:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["Level"] = 3
 			dataTemp["ApplicationID"] = strInstId
 			dataTemp["ApplicationName"] = itemMap[common.BKInstNameField]
 			appID = itemMap[common.BKInstIDField]
 		case common.BKInnerObjIDSet:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["SetID"] = strInstId
 			dataTemp["SetName"] = itemMap[common.BKInstNameField]
 		case common.BKInnerObjIDModule:
-			//dataTemp = itemMap
+			// dataTemp = itemMap
 			dataTemp["ApplicationID"] = appIdStr
 			dataTemp["ModuleID"] = itemMap[common.BKInstIDField]
 			dataTemp["ModuleName"] = itemMap[common.BKInstNameField]
@@ -929,42 +929,23 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 	default:
 		updateTime = ""
 	}
-	protocal, ok := itemMap[common.BKProtocol].(string)
+	protocol, ok := itemMap[common.BKProtocol].(string)
 	if false == ok {
-		protocal = ""
+		protocol = ""
 	} else {
-		switch protocal {
+		switch protocol {
 		case "1":
-			protocal = "TCP"
+			protocol = "TCP"
 		case "2":
-			protocal = "UDP"
+			protocol = "UDP"
 		default:
-			protocal = ""
-		}
-	}
-	bindIP, ok := itemMap[common.BKBindIP].(string)
-	if false == ok {
-		bindIP = ""
-	} else {
-		switch bindIP {
-		case "1":
-			bindIP = "127.0.0.1"
-		case "2":
-			bindIP = "0.0.0.0"
-		case "3":
-			bindIP = defLang.Language("apiv2_process_bind_innerip") //"第一内网IP"
-		case "4":
-			bindIP = defLang.Language("apiv2_process_bind_outerip") //"第一公网IP"
-		default:
-			bindIP = ""
+			protocol = ""
 		}
 	}
 
 	intAtuotimeGap, err := util.GetIntByInterface(itemMap["auto_time_gap"])
 	atuotimeGap := ""
-	if nil != err {
-		atuotimeGap = ""
-	} else {
+	if err == nil {
 		atuotimeGap = fmt.Sprintf("%d", intAtuotimeGap)
 	}
 
@@ -989,7 +970,7 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 		"ProcessName": itemMap[common.BKProcessNameField],
 		"OpTimeout":   itemMap["timeout"],       //"0",
 		"KillCmd":     itemMap["face_stop_cmd"], //"",
-		"Protocol":    protocal,
+		"Protocol":    protocol,
 		"Seq":         itemMap["priority"], //0",
 		"ProcGrp":     "",
 		"Port":        itemMap[common.BKPort],
@@ -1224,9 +1205,7 @@ func getV2KeyVal(key string, val interface{}) (string, string) {
 		v2Key = key
 	}
 
-	if nil == val {
-		val = ""
-	} else {
+	if nil != val {
 		if key == common.CreateTimeField || key == common.LastTimeField {
 			ts, ok := val.(time.Time)
 			if ok {

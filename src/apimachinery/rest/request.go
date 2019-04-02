@@ -15,7 +15,6 @@ package rest
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -32,6 +31,7 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	commonUtil "configcenter/src/common/util"
 )
 
@@ -215,18 +215,14 @@ func (r *Request) Do() *Result {
 		client = http.DefaultClient
 	}
 
-	maxRetryCycle := 3
-	retries := 0
-
-	hosts, err := r.
-		capability.
-		Discover.
-		GetServers()
+	hosts, err := r.capability.Discover.GetServers()
 	if err != nil {
 		result.Err = err
 		return result
 	}
 
+	maxRetryCycle := 3
+	var retries int
 	for try := 0; try < maxRetryCycle; try++ {
 		for index, host := range hosts {
 			retries = try + index
@@ -282,19 +278,15 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
-					}
+					blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s\nresponse status: %s, response body: %s, rid: %s", string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
-			if r.peek {
-				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
-			}
+			result.Status = resp.Status
 
 			return result
 		}
@@ -314,7 +306,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, verb: %s, request: %s", latency, r.verb, url)
 	}
 }
 
@@ -322,6 +314,7 @@ type Result struct {
 	Body       []byte
 	Err        error
 	StatusCode int
+	Status     string
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -332,12 +325,14 @@ func (r *Result) Into(obj interface{}) error {
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
-			if http.StatusOK != r.StatusCode {
+			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
+	} else if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
 }

@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -22,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -52,7 +50,7 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		sHostCond["ip"] = make(map[string]interface{})
 		condArr := make([]interface{}, 0)
 
-		//host condition
+		// host condition
 		condition := make(map[string]interface{})
 		hostCondArr := make([]interface{}, 0)
 		hostCond := make(map[string]interface{})
@@ -65,21 +63,21 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		condition["condition"] = hostCondArr
 		condArr = append(condArr, condition)
 
-		//biz conditon
+		// biz condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDApp
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//set conditon
+		// set condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDSet
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//module condition
+		// module condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDModule
 		condition["fields"] = make([]interface{}, 0)
@@ -105,7 +103,7 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, header, meta)
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -178,30 +176,4 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	return
 
-}
-
-//httpRequest do http request
-func httpRequest(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.POST(url, header, params)
-
-	return string(reply), err
-}
-
-//httpRequestGet do http get request
-func httpRequestGet(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.GET(url, header, params)
-
-	return string(reply), err
 }

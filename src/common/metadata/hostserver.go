@@ -13,9 +13,13 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"net/http"
 	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 type DeleteHostBatchOpt struct {
@@ -96,6 +100,12 @@ type HostCommonSearch struct {
 	Pattern   string            `json:"pattern,omitempty"`
 }
 
+type HostModuleFind struct {
+	ModuleIDS []int64  `json:"bk_module_ids"`
+	Metadata  Metadata `json:"metadata"`
+	Page      BasePage `json:"page"`
+}
+
 //ip search info
 type IPInfo struct {
 	Data  []string `json:"data"`
@@ -113,6 +123,28 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+func (sh SearchHost) ExtractHostIDs() *[]int64 {
+	hostIDArray := make([]int64, 0)
+	for _, h := range sh.Info {
+		if _, exist := h["host"]; exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host field.", h)
+			continue
+		}
+		hostID, exist := h["host"].(mapstr.MapStr)[common.BKHostIDField]
+		if exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host.bk_host_id field.", h)
+			continue
+		}
+		id, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.ErrorJSON("unexpected error, host: %s host.bk_host_id field is not integer.", h)
+			continue
+		}
+		hostIDArray = append(hostIDArray, id)
+	}
+	return &hostIDArray
 }
 
 type SearchHostResult struct {
@@ -236,4 +268,30 @@ type CloudSyncRedisAlreadyStarted struct {
 type CloudSyncRedisPendingStop struct {
 	TaskID  int64  `json:"bk_task_id"`
 	OwnerID string `json:"bk_supplier_account"`
+}
+
+// TransferHostAcrossBusinessParameter Transfer host across business request parameter
+type TransferHostAcrossBusinessParameter struct {
+	SrcAppID       int64   `json:"src_bk_biz_id"`
+	DstAppID       int64   `json:"dst_bk_biz_id"`
+	HostID         int64   `json:"bk_host_id"`
+	DstModuleIDArr []int64 `json:"bk_module_ids"`
+}
+
+// HostModuleRelationParameter host and module  relation parameter
+type HostModuleRelationParameter struct {
+	AppID  int64   `json:"bk_biz_id"`
+	HostID []int64 `json:"bk_host_id"`
+}
+
+// DeleteHostFromBizParameter delete host from business
+type DeleteHostFromBizParameter struct {
+	AppID     int64   `json:"bk_biz_id"`
+	HostIDArr []int64 `json:"bk_host_ids"`
+}
+
+// OperaterException synchronize result
+type OperaterException struct {
+	BaseResp `json:",inline"`
+	Data     []ExceptionResult `json:"data"`
 }

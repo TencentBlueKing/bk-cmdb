@@ -30,26 +30,27 @@ import (
 	hutil "configcenter/src/scene_server/host_server/util"
 )
 
-func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]string, []string, []string, error) {
+func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, ownerID string, hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
 
+	hostIDs := make([]int64, 0)
 	instance := NewImportInstance(ctx, ownerID, lgc)
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
 	}
 
-	hostMap, err := lgc.getAddHostIDMap(ctx, hostInfos)
+	hostIDMap, err := lgc.GetHostIDByIP(ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s", err.Error())
-		return nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
+		return nil, nil, nil, nil, fmt.Errorf("get hosts failed, err: %v", err)
 	}
 
 	var errMsg, updateErrMsg, succMsg []string
 	logConents := make([]auditoplog.AuditLogExt, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	for index, host := range hostInfos {
@@ -72,54 +73,59 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			iSubArea = common.BKDefaultDirSubArea
 		}
 
-		var iHostID interface{}
-		var isOK bool
-		// host not db ,check params host info with host id
-		iHostID, isOK = host[common.BKHostIDField]
-
-		if false == isOK {
-			key := lgc.getHostIPCloudKey(innerIP, iSubArea)
-			iHost, isDBOK := hostMap[key]
-			if isDBOK {
-				isOK = isDBOK
-				iHostID, _ = iHost[common.BKHostIDField]
-			}
-
-		}
-
-		var err error
 		var intHostID int64
-		preData := make(map[string]interface{}, 0)
-		if isOK {
-			intHostID, err = util.GetInt64ByInterface(iHostID)
-			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid host id: %v", iHostID)
-			}
-			// delete system fields
-			delete(host, common.BKHostIDField)
-			preData, _, _ = lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
-			// update host instance.
-			if err := instance.updateHostInstance(index, host, intHostID); err != nil {
-				updateErrMsg = append(updateErrMsg, err.Error())
-				continue
-			}
+		var existInDB bool
+		var err error
 
-		} else {
-			intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
+		// we support update host info both base on hostID and innerIP, hostID has higher priority then innerIP
+		hostIDFromInput, bHostIDInInput := host[common.BKHostIDField]
+		if bHostIDInInput == true {
+			intHostID, err = util.GetInt64ByInterface(hostIDFromInput)
 			if err != nil {
-				errMsg = append(errMsg, err.Error())
-				continue
+				return nil, nil, nil, nil, fmt.Errorf("invalid host id: %v", hostIDFromInput)
 			}
-			host[common.BKHostIDField] = intHostID
-			hostMap[lgc.getHostIPCloudKey(innerIP, iSubArea)] = host
+		} else {
+			// try to get hostID from db
+			key := generateHostCloudKey(innerIP, iSubArea)
+			intHostID, existInDB = hostIDMap[key]
+			if existInDB {
+				host[common.BKHostIDField] = intHostID
+			}
+			if existInDB == false {
+				// innerIP not in db, add the host to db
+				intHostID, err = instance.addHostInstance(int64(common.BKDefaultDirSubArea), index, appID, moduleID, host)
+				if err != nil {
+					errMsg = append(errMsg, err.Error())
+					continue
+				}
+				host[common.BKHostIDField] = intHostID
+				hostIDMap[generateHostCloudKey(innerIP, iSubArea)] = intHostID
+			}
 		}
 
+		// remove unchangeable fields
+		delete(host, common.BKHostIDField)
+		delete(host, common.BKHostInnerIPField)
+
+		// get host info before really change it
+		preData, _, _ := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
+
+		// update host instance.
+		if err := instance.updateHostInstance(index, host, intHostID); err != nil {
+			updateErrMsg = append(updateErrMsg, err.Error())
+			continue
+		}
+
+		// add current host operate result to  batch add result
 		succMsg = append(succMsg, strconv.FormatInt(index, 10))
+
+		// host info after it changed
 		curData, _, err := lgc.GetHostInstanceDetails(ctx, ownerID, strconv.FormatInt(intHostID, 10))
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return nil, nil, nil, nil, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 
+		// add audit log
 		logConents = append(logConents, auditoplog.AuditLogExt{
 			ID: intHostID,
 			Content: metadata.Content{
@@ -129,6 +135,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			},
 			ExtKey: innerIP,
 		})
+		hostIDs = append(hostIDs, intHostID)
 	}
 
 	if len(logConents) > 0 {
@@ -139,15 +146,15 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		}
 		_, err := lgc.CoreAPI.AuditController().AddHostLogs(ctx, ownerID, strconv.FormatInt(appID, 10), lgc.user, lgc.header, log)
 		if err != nil {
-			return succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
+			return hostIDs, succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
 	}
 
 	if 0 < len(errMsg) || 0 < len(updateErrMsg) {
-		return succMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
+		return hostIDs, succMsg, updateErrMsg, errMsg, errors.New(lgc.ccLang.Language("host_import_err"))
 	}
 
-	return succMsg, updateErrMsg, errMsg, nil
+	return hostIDs, succMsg, updateErrMsg, errMsg, nil
 }
 
 func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[string]*metadata.ObjAttDes, error) {
@@ -179,11 +186,15 @@ func (lgc *Logics) getHostFields(ctx context.Context, ownerID string) (map[strin
 	return fields, nil
 }
 
-func (lgc *Logics) getHostIPCloudKey(ip, cloudID interface{}) string {
+// generateHostCloudKey generate a cloudKey for host that is unique among clouds by appending the cloudID.
+func generateHostCloudKey(ip, cloudID interface{}) string {
 	return fmt.Sprintf("%v-%v", ip, cloudID)
 }
 
-func (lgc *Logics) getAddHostIDMap(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]map[string]interface{}, error) {
+// GetHostIDByIP get host id map at it best, ip not exist in db will be ignored.
+func (lgc *Logics) GetHostIDByIP(ctx context.Context, hostInfos map[int64]map[string]interface{}) (map[string]int64, error) {
+	// TODO why don't it just return a data structure of cloudKey: hostID map ?
+	// step1. extract all innerIP from hostInfos
 	var ipArr []string
 	for _, host := range hostInfos {
 		innerIP, isOk := host[common.BKHostInnerIPField].(string)
@@ -196,12 +207,12 @@ func (lgc *Logics) getAddHostIDMap(ctx context.Context, hostInfos map[int64]map[
 		return nil, fmt.Errorf("not found host inner ip fields")
 	}
 
+	// step2. query host info by innerIPs
 	var conds map[string]interface{}
 	if 0 < len(ipArr) {
 		conds = map[string]interface{}{common.BKHostInnerIPField: common.KvMap{common.BKDBIN: ipArr}}
 
 	}
-
 	query := &metadata.QueryInput{
 		Condition: conds,
 		Start:     0,
@@ -216,10 +227,15 @@ func (lgc *Logics) getAddHostIDMap(ctx context.Context, hostInfos map[int64]map[
 		return nil, errors.New(lgc.ccLang.Languagef("host_search_fail_with_errmsg", hResult.ErrMsg))
 	}
 
-	hostMap := make(map[string]map[string]interface{})
+	// step3. arrange data as a map, cloudKey: hostID
+	hostMap := make(map[string]int64, 0)
 	for _, h := range hResult.Data.Info {
-		key := lgc.getHostIPCloudKey(h[common.BKHostInnerIPField], h[common.BKCloudIDField])
-		hostMap[key] = h
+		key := generateHostCloudKey(h[common.BKHostInnerIPField], h[common.BKCloudIDField])
+		hostID, err := util.GetInt64ByInterface(h)
+		if err != nil {
+			return hostMap, fmt.Errorf("host data unexpected, data: %+v, err: %+v", h, err)
+		}
+		hostMap[key] = hostID
 	}
 
 	return hostMap, nil
