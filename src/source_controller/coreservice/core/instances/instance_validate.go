@@ -44,7 +44,7 @@ var createIgnoreKeys = []string{
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	valid, err := NewValidator(ctx, m.dependent, objID)
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed %s", err.Error())
 		return err
 	}
 	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
