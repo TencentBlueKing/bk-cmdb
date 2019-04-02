@@ -170,7 +170,6 @@ const (
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
 	BindModule            ActionID = "bindModule"
-	BindModuleQuery       ActionID = "bindModuleQuery"
 	AdminEntrance         ActionID = "adminEntrance"
 )
 
@@ -206,9 +205,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return BindModule, nil
 		}
 
-		if r.Action == meta.FindBoundModuleProcess {
-			return BindModuleQuery, nil
-		}
 	}
 
 	switch r.Action {
