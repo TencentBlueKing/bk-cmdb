@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 import preload from '@/setup/preload'
+import afterload from '@/setup/afterload'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
@@ -144,12 +145,12 @@ router.beforeEach((to, from, next) => {
             } else {
                 setLoading(true)
                 setMenuState(to)
-                await cancelRequest()
-                await preload(router.app)
                 const isStatusPage = statusRouter.some(status => status.name === to.name)
                 if (isStatusPage) {
                     next()
                 } else {
+                    await cancelRequest()
+                    await preload(router.app)
                     const auth = await getAuth(to)
                     const viewAuth = isViewAuthorized(to)
                     if (viewAuth) {
@@ -168,6 +169,7 @@ router.beforeEach((to, from, next) => {
 })
 
 router.afterEach((to, from) => {
+    afterload(router.app)
     setLoading(false)
 })
 
