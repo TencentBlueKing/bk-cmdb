@@ -15,14 +15,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
@@ -54,7 +54,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 			continue
 		}
 
-		processes, getErr := ps.getProcessesByModuleName(srvData.header, moduleName)
+		processes, getErr := ps.getProcessesByModuleName(srvData.header, moduleName, appID)
 		if getErr != nil {
 			blog.Errorf("GetProcessesByModuleName failed int GetProcessPortByApplicationID, err: %s,input:%+v,rid:%s", getErr.Error(), module, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByApplicationIDFail)})
@@ -266,11 +266,12 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 }
 
 // 根据模块获取所有关联的进程，建立Map ModuleToProcesses
-func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName string) ([]mapstr.MapStr, error) {
+func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName string, appID int64) ([]mapstr.MapStr, error) {
 	srvData := ps.newSrvComm(forward)
 	defErr := srvData.ccErr
 	procData := make([]mapstr.MapStr, 0)
 	params := mapstr.MapStr{
+		common.BKAppIDField:      appID,
 		common.BKModuleNameField: moduleName,
 	}
 
