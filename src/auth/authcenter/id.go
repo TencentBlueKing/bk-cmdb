@@ -69,6 +69,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostInstanceResourceID(resourceType, attribute)
 	case meta.DynamicGrouping:
 		return dynamicGroupingResourceID(resourceType, attribute)
+	case meta.SystemBase:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}

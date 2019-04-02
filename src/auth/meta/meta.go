@@ -121,8 +121,10 @@ const (
 	BoundModuleToProcess   Action = "boundModuleToProcess"
 	UnboundModuleToProcess Action = "unboundModelToProcess"
 
-	// topo
-	ModelTopologyView Action = "modelTopologyView"
+	// system base
+	ModelTopologyView      Action = "modelTopologyView"
+	ModelTopologyOperation Action = "modelTopologyOperation"
+	AdminEntrance          Action = "adminEntrance"
 )
 
 type InitConfig struct {
