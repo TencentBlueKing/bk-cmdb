@@ -10,7 +10,7 @@ const preloadConfig = {
 }
 
 export function getViewAuth (app) {
-    const viewAuthorities = [GET_AUTH_META(SYSTEM_MANAGEMENT)]
+    const viewAuthorities = [/* GET_AUTH_META(SYSTEM_MANAGEMENT) */]
     app.$router.options.routes.forEach(route => {
         const meta = route.meta || {}
         const auth = meta.auth || {}
