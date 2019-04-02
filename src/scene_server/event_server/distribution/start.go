@@ -19,15 +19,15 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/blog"
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
-
-	redis "gopkg.in/redis.v5"
 )
 
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
