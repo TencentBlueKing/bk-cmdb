@@ -95,7 +95,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang, metaInfo)
 	if 0 == len(attrItems) {
-		msg := ""
+		var msg string
 		if nil != err {
 			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		} else {
@@ -112,7 +112,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	logics.ConvAttrOption(attrItems)
 
-	blog.Debug("the object file content:%+v", attrItems)
+	blog.Debug("the object file content:%#v", attrItems)
 
 	params := map[string]interface{}{
 		objID: map[string]interface{}{

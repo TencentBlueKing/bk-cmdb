@@ -138,7 +138,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	}
 
 	if "" == moduleName || 0 == setID {
-		blog.Errorf("add single host module relation, get module error:not find module width ModuleID:%d", moduleID)
+		blog.Errorf("add single host module relation, get module error:not find module width ModuleID: %d", moduleID)
 		return false, errors.New("can not find it's module")
 	}
 
@@ -157,7 +157,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 	err = lgc.Instance.Table(common.BKTableNameModuleHostConfig).Insert(ctx, moduleHostConfig) //.Insert(common.BKTableNameModuleHostConfig, moduleHostConfig)
 	if err != nil {
-		blog.Errorf("add single host module relation, add module host relation error:", err.Error())
+		blog.Errorf("add single host module relation, add module host relation error: %v", err)
 		return false, err
 	}
 
@@ -179,7 +179,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	return true, nil
 }
 
-//GetDefaultModuleIDs get default module ids
+// GetDefaultModuleIDs get default module ids
 func (lgc *Logics) GetDefaultModuleIDs(ctx context.Context, appID int64) ([]int64, error) {
 	defaultModuleCond := make(map[string]interface{})
 	defaultModuleCond[common.BKDefaultField] = common.KvMap{common.BKDBIN: []int64{int64(common.DefaultFaultModuleFlag), int64(common.DefaultResModuleFlag)}}
@@ -208,14 +208,14 @@ func (lgc *Logics) GetDefaultModuleIDs(ctx context.Context, appID int64) ([]int6
 	return ret, nil
 }
 
-//GetModuleIDsByHostID get module id by hostid
+// GetModuleIDsByHostID get module id by hostid
 func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interface{}) ([]int64, error) {
 	result := make([]metadata.ModuleHost, 0)
 	var ret []int64
 
 	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(ctx, &result)
 	if nil != err {
-		blog.Errorf("get moudle id by host id failed, error: %s", err.Error())
+		blog.Errorf("get module id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
 	}
 	for _, r := range result {

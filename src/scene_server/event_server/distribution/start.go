@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/identifier"
@@ -109,7 +109,7 @@ type TxnHandler struct {
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
-	commited    chan string
+	committed   chan string
 	shouldClose *util.AtomicBool
 	wg          sync.WaitGroup
 }

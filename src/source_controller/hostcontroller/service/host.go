@@ -55,7 +55,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
 	if err != nil {
-		blog.Errorf("get host by id[%s] failed, err: %v", hostID, err)
+		blog.Errorf("get host by id[%d] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -385,7 +385,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		// delete relation in default app module
 		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
-			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
+			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
 			return
 		}

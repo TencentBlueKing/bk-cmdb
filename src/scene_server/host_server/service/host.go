@@ -21,9 +21,9 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
@@ -31,15 +31,15 @@ import (
 )
 
 type AppResult struct {
-	Result  bool        `json:result`
-	Code    int         `json:code`
-	Message interface{} `json:message`
-	Data    DataInfo    `json:data`
+	Result  bool        `json:"result"`
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+	Data    DataInfo    `json:"data"`
 }
 
 type DataInfo struct {
-	Count int                      `json:count`
-	Info  []map[string]interface{} `json:info`
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
@@ -323,72 +323,13 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(succ))
-}
-
-func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
-
-	data := make(mapstr.MapStr)
-	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("add host from agent failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-	content, ok := data["content"].(string)
-	if !ok || "" == content {
-		blog.Errorf("add history, but content is empty. data: %v,rid:%s", data, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPInputInvalid)})
-		return
-
-	}
-	params := make(map[string]interface{}, 1)
-	params["content"] = content
-
-	result, err := s.CoreAPI.HostController().History().AddHistory(srvData.ctx, srvData.user, srvData.header, &meta.HistoryContent{Content: content})
-	if err != nil {
-		blog.Errorf("AddHistory http do error, err: %v,input:+v,rid:%s", err, params, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("AddHistory http response error, err code:%s,err msg:%s,input:+v,rid:%s", result.Code, result.ErrMsg, params, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-
-	resp.WriteEntity(meta.NewSuccessResp(result.Data))
-}
-
-func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
-
-	start := req.PathParameter("start")
-	limit := req.PathParameter("limit")
-
-	result, err := s.CoreAPI.HostController().History().GetHistorys(srvData.ctx, srvData.user, start, limit, srvData.header)
-	if err != nil {
-		blog.Errorf("GetHistorys http do error, err: %v,input:(start:%d,end:%s),rid:%s", err, start, limit, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("GetHistorys http response error, err code:%s,err msg:%s,input:(start:%d,end:%s),rid:%s", result.Code, result.ErrMsg, start, limit, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-
-	resp.WriteEntity(meta.GetHistoryResult{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result.Data,
-	})
-
 }
 
 func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
@@ -522,7 +463,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
 		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
-			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", hostID, err)
+			blog.Errorf("update host batch, but get host[%v] pre data for audit failed, err: %v", hostID, err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
@@ -541,7 +482,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 	log := common.KvMap{common.BKContentField: logLastConents, common.BKOpDescField: "update host", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	aResult, err := s.CoreAPI.AuditController().AddHostLogs(srvData.ctx, srvData.ownerID, appID, srvData.user, srvData.header, log)
 	if err != nil || (err == nil && !aResult.Result) {
-		blog.Errorf("update host batch, but add host[%s] audit failed, err: %v, %v,rid:%s", hostIDs, err, aResult.ErrMsg, srvData.rid)
+		blog.Errorf("update host batch, but add host[%v] audit failed, err: %v, %v,rid:%s", hostIDs, err, aResult.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
@@ -565,7 +506,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		return
 	}
 	if 0 == len(hostList.ModuleID) {
-		blog.Errorf("host sync app  parameters required moduleID,input:%+v,rid:%s", hostList.ApplicationID, hostList, srvData.rid)
+		blog.Errorf("host sync app  parameters required moduleID,input:%+v,rid:%s", hostList, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
 		return
 	}
@@ -618,7 +559,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return

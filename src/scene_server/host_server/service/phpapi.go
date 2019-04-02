@@ -542,8 +542,8 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	}
 	configArr, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
 	if nil != err {
-		blog.Errorf("GetHostAppByCompanyId getConfigByCond err:%s, input:%+v,rid", err.Error(), input, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		blog.Errorf("GetHostAppByCompanyId getConfigByCond err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetFail)})
 		return
 	}
 	blog.V(5).Infof("GetHostAppByCompanyId configArr:%v, input:%+v,rid:%s", configArr, input, srvData.rid)
@@ -890,31 +890,6 @@ func (s *Service) DelPlat(req *restful.Request, resp *restful.Response) {
 			Data:     "",
 		})
 	}
-}
-
-func (s *Service) GetAgentStatus(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
-
-	// 获取AppID
-	pathParams := req.PathParameters()
-	appID, err := util.GetInt64ByInterface(pathParams["appid"])
-	if nil != err {
-		blog.Errorf("GetAgentStatus error :%s,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
-		return
-	}
-
-	res, err := srvData.lgc.GetAgentStatus(srvData.ctx, appID, &s.Config.Gse)
-	if nil != err {
-		blog.Errorf("GetAgentStatus error. err:%v,input:%+v,rid:%s", err, appID, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, err.Error())})
-		return
-	}
-	resp.WriteEntity(meta.Response{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     res,
-	})
-
 }
 
 func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful.Response) {

@@ -111,8 +111,6 @@ func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, appID, moduleID
 		}
 	}
 
-	return nil
-
 }
 
 // setProcInstDetallStatusUnregister modify process instance status to unregister in cmdb table

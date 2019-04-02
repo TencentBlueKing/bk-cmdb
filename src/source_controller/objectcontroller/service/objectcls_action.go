@@ -106,7 +106,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjClassifiction).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select object classification by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object classification by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
