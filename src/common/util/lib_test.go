@@ -157,11 +157,8 @@ func TestStrArrDiff(t *testing.T) {
 func TestGetActionLanguage(t *testing.T) {
 	req := httptest.NewRequest("POST", "http://127.0.0.1/call", nil)
 
-	language := GetActionLanguage(restful.NewRequest(req))
-	//require.Empty(t, language)
-
 	req.Header.Set(common.BKHTTPLanguage, "cn")
-	language = GetActionLanguage(restful.NewRequest(req))
+	language := GetActionLanguage(restful.NewRequest(req))
 	require.Equal(t, "cn", language)
 
 	req.Header.Set(common.BKHTTPLanguage, "cnn")

@@ -51,7 +51,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		return
 	}
 
-	module, err := srvData.lgc.GetModuleByModuleID(srvData.ctx, params.ApplicationID, params.ModuleID)
+	module, err := srvData.lgc.GetNormalModuleByModuleID(srvData.ctx, params.ApplicationID, params.ModuleID)
 	if err != nil {
 		blog.Errorf("add host multiple app module relation, but get module[%v] failed, err: %v,input:%+v,rid:%s", params.ModuleID, err, params, srvData.ctx)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoModuleSelectFailed)})
@@ -175,7 +175,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	for _, moduleID := range config.ModuleID {
-		module, err := srvData.lgc.GetModuleByModuleID(srvData.ctx, config.ApplicationID, moduleID)
+		module, err := srvData.lgc.GetNormalModuleByModuleID(srvData.ctx, config.ApplicationID, moduleID)
 		if err != nil {
 			blog.Errorf("add host and module relation, but get module with id[%d] failed, err: %v,param:%+v,rid:%s", moduleID, err, config, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
@@ -285,7 +285,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("assign host to app error, not foud app appID: %d, input:%+v,rid:%s", conf.ApplicationID)
+		blog.Errorf("assign host to app error, not found app appID: %d, input:%#v,rid:%s", conf.ApplicationID, conf, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommNotFound)})
 		return
 	}
@@ -635,7 +635,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
     }
 
     conds := make(map[string]interface{})
-    moduleNameLogKey := "idle"
+    var moduleNameLogKey string
     if common.DefaultResModuleName == moduleName {
         //空闲机
         moduleNameLogKey = "idle"

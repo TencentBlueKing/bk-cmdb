@@ -49,7 +49,6 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 	}
 
 	params := types.MapStr{}
-	conditon := types.MapStr{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
 		blog.Errorf("decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -58,7 +57,7 @@ func (ps *ProcServer) SearchTemplateVersion(req *restful.Request, resp *restful.
 
 	input := new(meta.QueryCondition)
 
-	conditon = types.MapStr{common.BKOwnerIDField: ownerID, common.BKAppIDField: appID, common.BKTemlateIDField: templateID}
+	conditon := types.MapStr{common.BKOwnerIDField: ownerID, common.BKAppIDField: appID, common.BKTemlateIDField: templateID}
 	status, ok := params[common.BKStatusField]
 	if ok {
 		conditon[common.BKStatusField] = status
