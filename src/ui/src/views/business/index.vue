@@ -4,7 +4,7 @@
             <bk-button class="fl" type="primary"
                 :disabled="!authority.includes('update') || !isAdminView"
                 @click="handleCreate">
-                {{$t("Inst['立即创建']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="options-button fr">
                 <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">

@@ -40,7 +40,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("add subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -171,7 +171,7 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 	blog.Infof("update subscription %v", id)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("update subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return

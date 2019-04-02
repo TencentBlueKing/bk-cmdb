@@ -160,6 +160,10 @@ func GetDefaultTopo_delete(req *restful.Request, appID string, topoApi string) (
 	resMap := make(map[string]interface{})
 
 	err = json.Unmarshal([]byte(res), &resMap)
+	if err != nil {
+		blog.Errorf("json Unmarshal data:%s, err:%s", res, err.Error())
+		return nil, err
+	}
 	if resMap["result"].(bool) {
 
 		resMapData, ok := resMap["data"].(map[string]interface{})
@@ -367,8 +371,8 @@ func (lgc *Logics) CheckAppTopoIsThreeLevel(ctx context.Context) (bool, error) {
 		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if false == result.Result {
-		blog.Errorf("CheckAppTopoIsThreeLevel http reply error. reply:%#v,input:%#v,rid:%s", result, lgc.ownerID, lgc.rid)
-		return false, lgc.ccErr.New(result.Code, result.ErrMsg)
+		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s ", result.ErrMsg)
+		return false, fmt.Errorf(result.ErrMsg)
 	}
 
 	for _, item := range result.Data {

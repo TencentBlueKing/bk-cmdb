@@ -153,8 +153,8 @@ func (lgc *Logics) getRawInstAsst(ctx context.Context, ownerID, objID string, ID
 
 				itemInstID, err := util.GetInt64ByInterface(dataVal)
 				if nil != err {
-					blog.Errorf("not found assocte object ID %d from %v", instID, info)
-					return nil, 0, fmt.Errorf("not found assocte object ID %d from %v", instID, info)
+					blog.Errorf("not found assocte object ID %s from %v", instID, info)
+					return nil, 0, fmt.Errorf("not found assocte object ID %s from %v", instID, info)
 				}
 				if 0 != len(IDs) {
 					for idx, key := range IDs {

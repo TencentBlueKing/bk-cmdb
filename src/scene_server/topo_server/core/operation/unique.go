@@ -104,7 +104,7 @@ func (a *unique) Search(params types.ContextParams, objectID string) (objectUniq
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrUnique(context.Background(), params.Header, cond)
 	if err != nil {
-		blog.Errorf("[UniqueOperation] search for %s, %#v failed %v", objectID, err)
+		blog.Errorf("[UniqueOperation] search for %s, failed %v", objectID, err)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueSearchFailed)
 	}
 	if !resp.Result {

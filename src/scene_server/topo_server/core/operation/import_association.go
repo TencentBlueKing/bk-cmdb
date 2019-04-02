@@ -344,7 +344,7 @@ func (ia *importAssociation) getInstDataByObjIDConds(objID, instIDKey string, co
 
 	instSearchResult, err := ia.cli.clientSet.CoreService().Instance().ReadInstance(ia.ctx, ia.params.Header, objID, queryInput)
 	if err != nil {
-		blog.Errorf("[getInstDataByObjIDConds] failed to  search %s instance , error info is %s, input:%+v, rid:%s", err.Error(), queryInput, ia.rid)
+		blog.Errorf("[getInstDataByObjIDConds] failed to  search %s instance , error info is %s, input:%#v, rid:%s", objID, err.Error(), queryInput, ia.rid)
 		return nil, ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !instSearchResult.Result {
@@ -380,7 +380,7 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	if isErr {
 		return
 	}
-	for key, _ := range attrNameValMap.attrNameVal {
+	for key := range attrNameValMap.attrNameVal {
 		_, ok := ia.instIDAttrKeyValMap[objID]
 		if !ok {
 			ia.instIDAttrKeyValMap[objID] = make(map[string][]*importAssociationInst)
