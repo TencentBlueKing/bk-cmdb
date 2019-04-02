@@ -308,8 +308,6 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) map[string]interfac
 		osname = fmt.Sprintf("%s", platform)
 		ostype = common.HostOSTypeEnumWindows
 	case "aix":
-		version = fmt.Sprintf("%s", version)
-		platform = fmt.Sprintf("%s", platform)
 		osname = platform
 		ostype = common.HostOSTypeEnumAIX
 	default:
