@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/metadata"
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
