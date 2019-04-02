@@ -66,7 +66,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB, s.AuthManager),
 	}
 }
 

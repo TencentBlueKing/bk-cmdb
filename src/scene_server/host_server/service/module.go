@@ -108,7 +108,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check business authorization
-	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, params.ApplicationID); err != nil {
+	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, req.Request.Header, params.ApplicationID); err != nil {
 		blog.Errorf("check business authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -273,6 +273,12 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
+	// auth: deregister hosts
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, config.HostID...); err != nil {
+		blog.Errorf("deregister host from iam failed, err: %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
+	}
 
 	for _, hostID := range config.HostID {
 		exist, err := srvData.lgc.IsHostExistInApp(srvData.ctx, config.ApplicationID, hostID)
@@ -329,6 +335,13 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
 	}
+	// auth: register hosts
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, config.HostID...); err != nil {
+		blog.Errorf("register host to iam failed, err: %v", err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
@@ -419,7 +432,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+		blog.Errorf("deregister host from iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -442,9 +455,9 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	// auth: check authorization
+	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+		blog.Errorf("register hosts to iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -557,7 +570,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+		blog.Errorf("deregister host from iam failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -682,7 +695,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 	}
 	if 0 == len(errmsg) {
-		// auth: check authorization
+		// auth: register hosts
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
 			blog.Errorf("register hosts to iam failed, err: %v", err)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
@@ -783,26 +796,26 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 
-    conds := make(map[string]interface{})
-    var moduleNameLogKey string
-    if common.DefaultResModuleName == moduleName {
-        //空闲机
-        moduleNameLogKey = "idle"
-        conds[common.BKDefaultField] = common.DefaultResModuleFlag
-        conds[common.BKModuleNameField] = common.DefaultResModuleName
-    } else {
-        //故障机器
-        moduleNameLogKey = "fault"
-        conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
-        conds[common.BKModuleNameField] = common.DefaultFaultModuleName
-    }
-    conds[common.BKAppIDField] = conf.ApplicationID
-    moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
-    if err != nil {
-        blog.Errorf("move host to module %s, get module id err: %v", moduleName, err)
-        resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
-        return
-    }
+	conds := make(map[string]interface{})
+	var moduleNameLogKey string
+	if common.DefaultResModuleName == moduleName {
+		//空闲机
+		moduleNameLogKey = "idle"
+		conds[common.BKDefaultField] = common.DefaultResModuleFlag
+		conds[common.BKModuleNameField] = common.DefaultResModuleName
+	} else {
+		//故障机器
+		moduleNameLogKey = "fault"
+		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
+		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
+	}
+	conds[common.BKAppIDField] = conf.ApplicationID
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
+	if err != nil {
+		blog.Errorf("move host to module %s, get module id err: %v", moduleName, err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModuleFailStr, conds[common.BKModuleNameField].(string)+" not foud ")})
+		return
+	}
 
 	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
 	if err := audit.WithPrevious(srvData.ctx); err != nil {
