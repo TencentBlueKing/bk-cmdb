@@ -357,6 +357,55 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 	return businessIDs, nil
 }
 
+func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]int64, error) {
+	scopeInfo := ScopeInfo{}
+	var resourceType ResourceTypeID
+	if businessID > 0 {
+		scopeInfo.ScopeType = ScopeTypeIDBiz
+		scopeInfo.ScopeID = strconv.FormatInt(businessID, 10)
+		resourceType = BizAudit
+	} else {
+		scopeInfo.ScopeType = ScopeTypeIDSystem
+		scopeInfo.ScopeID = SystemIDCMDB
+		resourceType = SysAudit
+	}
+
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: scopeInfo,
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: resourceType,
+			},
+		},
+		DataType: "array",
+	}
+
+	items, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, item := range items {
+		for _, resource := range item.ResourceIDs {
+			for _, layer := range resource {
+				id, err := strconv.ParseInt(layer.ResourceID, 10, 64)
+				if err != nil {
+					return businessIDs, err
+				}
+				businessIDs = append(businessIDs, id)
+			}
+		}
+	}
+
+	return businessIDs, nil
+}
+
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
