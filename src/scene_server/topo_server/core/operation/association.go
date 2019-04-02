@@ -198,7 +198,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-	
 
 	return data, nil
 }
@@ -405,9 +404,27 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 	if len(exists) > 0 {
 		beAsstObject := []string{}
 		for _, asst := range exists {
+			instRsp, err := a.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, asst.ObjectID,
+				&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: asst.InstID}})
+			if err != nil {
+				return params.Err.Error(common.CCErrObjectSelectInstFailed)
+			}
+			if !instRsp.Result {
+				return params.Err.New(instRsp.Code, instRsp.ErrMsg)
+			}
+			if len(instRsp.Data.Info) <= 0 {
+				// 作为补充而存在，删除实例主机已经不存在的脏实例关联
+				if delErr := a.DeleteInstAssociation(params, condition.CreateCondition().
+					Field(common.BKObjIDField).Eq(asst.ObjectID).Field(common.BKAsstInstIDField).Eq(asst.InstID)); delErr != nil {
+					return delErr
+				}
+				continue
+			}
 			beAsstObject = append(beAsstObject, asst.ObjectID)
 		}
-		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if len(beAsstObject) > 0 {
+			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		}
 	}
 	return nil
 }
