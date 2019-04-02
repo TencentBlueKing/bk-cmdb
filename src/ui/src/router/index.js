@@ -137,8 +137,13 @@ const isShouldShow = to => {
     return true
 }
 
+const setupStatus = {
+    preload: true,
+    afterload: true
+}
+
 router.beforeEach((to, from, next) => {
-    router.app.$nextTick(async () => {
+    Vue.nextTick(async () => {
         try {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
@@ -146,7 +151,9 @@ router.beforeEach((to, from, next) => {
                 setLoading(true)
                 setMenuState(to)
                 await cancelRequest()
-                await preload(router.app)
+                if (setupStatus.preload) {
+                    await preload(router.app)
+                }
                 const isStatusPage = statusRouter.some(status => status.name === to.name)
                 if (isStatusPage) {
                     next()
@@ -164,13 +171,23 @@ router.beforeEach((to, from, next) => {
         } catch (e) {
             setLoading(false)
             next({name: 'error'})
+        } finally {
+            setupStatus.preload = false
         }
     })
 })
 
 router.afterEach((to, from) => {
-    afterload(router.app)
-    setLoading(false)
+    try {
+        if (setupStatus.afterload) {
+            afterload(router.app)
+        }
+    } catch (e) {
+        // ignore
+    } finally {
+        setupStatus.afterload = false
+        setLoading(false)
+    }
 })
 
 export default router

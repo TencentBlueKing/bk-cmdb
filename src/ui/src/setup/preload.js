@@ -1,20 +1,22 @@
+import {
+    SYSTEM_MANAGEMENT,
+    GET_AUTH_META,
+    GET_MODEL_INST_AUTH_META
+} from '@/dictionary/auth'
+
 const preloadConfig = {
     fromCache: true,
     cancelWhenRouteChange: false
 }
 
 export function getViewAuth (app) {
-    const viewAuthorities = []
+    const viewAuthorities = [GET_AUTH_META(SYSTEM_MANAGEMENT)]
     app.$router.options.routes.forEach(route => {
         const meta = route.meta || {}
         const auth = meta.auth || {}
-        const view = auth.view || ''
-        if (view && (typeof view !== 'function')) {
-            const [ type, action ] = view.split('.')
-            viewAuthorities.push({
-                resource_type: type,
-                action: action
-            })
+        const staticView = auth.view && (!auth.meta || auth.meta !== GET_MODEL_INST_AUTH_META)
+        if (staticView) {
+            viewAuthorities.push(GET_AUTH_META(auth.view))
         }
     })
     return app.$store.dispatch('auth/getViewAuth', viewAuthorities)
@@ -55,11 +57,9 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    await Promise.all([
-        getViewAuth(app),
-        getAuthorizedBusiness(app)
-    ])
     return Promise.all([
+        getViewAuth(app),
+        getAuthorizedBusiness(app),
         getClassifications(app),
         getUserCustom(app),
         getUserList(app)

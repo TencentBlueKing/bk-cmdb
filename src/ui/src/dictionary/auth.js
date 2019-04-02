@@ -72,9 +72,9 @@ export const R_EVENT = 'eventPushing.findMany'
 export const R_AUDIT = 'auditlog.findMany'
 
 // 系统基础
-export const SYSTEM_TOPOLOGY = 'mainlineObjectTopology.find'
-export const SYSTEM_MANAGEMENT = 'sysSystemBase.adminEntrance'
-export const SYSTEM_MODEL_GRAPHICS = 'modelTopology.findMany'
+export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
+export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
+export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
 export const GET_AUTH_META = auth => {
     const [ type, action ] = auth.split('.')
