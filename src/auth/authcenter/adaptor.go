@@ -236,12 +236,14 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
-		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveHostToModule:
 		return ModuleTransfer, nil
+
+	case meta.MoveHostFromModuleToResPool:
+		return Delete, nil
 
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool

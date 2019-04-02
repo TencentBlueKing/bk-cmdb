@@ -17,6 +17,7 @@ import (
 
 	"gopkg.in/redis.v5"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -33,6 +34,7 @@ type Logics struct {
 	user    string
 	ownerID string
 	cache   *redis.Client
+	AuthManager *extensions.AuthManager
 }
 
 // NewFromHeader new Logic from header
@@ -67,7 +69,7 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 }
 
 // NewLogics get logic handle
-func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, authManager *extensions.AuthManager) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:  b,
@@ -78,5 +80,6 @@ func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client) *Log
 		user:    util.GetUser(header),
 		ownerID: util.GetOwnerID(header),
 		cache:   cache,
+		AuthManager: authManager,
 	}
 }
