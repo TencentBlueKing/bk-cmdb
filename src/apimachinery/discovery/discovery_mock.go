@@ -62,7 +62,7 @@ func (d *MockDiscovery) ProcCtrl() Interface {
 	return &mockServer{}
 }
 
-func (d *MockDiscovery) GseProcServ() Interface {
+func (d *MockDiscovery) GseProcServer() Interface {
 	return &mockServer{}
 }
 
