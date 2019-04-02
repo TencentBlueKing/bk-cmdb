@@ -13,7 +13,8 @@
 package middleware
 
 import (
-	"plugin"
+    "configcenter/src/apimachinery/discovery"
+    "plugin"
 	"strings"
 
 	"configcenter/src/common"
@@ -72,7 +73,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
-				servers, err := Engine.Discovery().ApiServer().GetServers()
+				servers, err := disc.ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
 					blog.Errorf("no api server can be used. err: %v", err)
 					c.JSON(503, gin.H{
