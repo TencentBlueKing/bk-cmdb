@@ -83,7 +83,7 @@ func (a *apiServer) GetAppRole(ctx context.Context, h http.Header, params mapstr
 func (a *apiServer) GetUserPrivilegeApp(ctx context.Context, h http.Header, ownerID, userName string, params mapstr.MapStr) (resp *metadata.AppQueryResult, err error) {
 
 	resp = new(metadata.AppQueryResult)
-	subPath := fmt.Sprintf("biz/search/%s")
+	subPath := fmt.Sprintf("biz/search/%s", ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
