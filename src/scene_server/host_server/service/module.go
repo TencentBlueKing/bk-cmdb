@@ -114,7 +114,7 @@ func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *rest
 		return
 	}
 	// auth: check host authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, hostIDArr...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostToAnotherBizModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -268,7 +268,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, config.HostID...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostsToBusinessOrModule, config.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -412,7 +412,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, conf.HostID...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -550,7 +550,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	audit.WithPrevious(srvData.ctx)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, conf.HostID...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -651,7 +651,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, hostIDArr...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -812,7 +812,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.TransferHost, conf.HostID...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostsToBusinessOrModule, conf.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return

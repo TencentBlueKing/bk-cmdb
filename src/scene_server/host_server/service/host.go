@@ -690,8 +690,8 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostList.ApplicationID); err != nil {
-		blog.Errorf("check business authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, req.Request.Header, authmeta.Update, hostList.ApplicationID); err != nil {
+		blog.Errorf("check hosts authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -807,7 +807,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.MoveHostToBizIdleModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -819,7 +819,6 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 	// step3. deregister host from iam
-	// auth: check authorization
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
 		blog.Errorf("deregister hosts failed, err: %v", err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
