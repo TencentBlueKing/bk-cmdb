@@ -324,7 +324,7 @@ func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond map[string][]
 }
 
 // TransferHostAcrossBusiness  Transfer host across business,
-// delete old business  host and module reltaion
+// delete old business  host and module relation
 func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dstAppID, hostID int64, moduleID []int64) errors.CCError {
 
 	bl, err := lgc.IsHostExistInApp(ctx, srcBizID, hostID)
@@ -420,7 +420,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 	}
 
 	// auth: check host authorization
-	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostToAnotherBizModule, newHostIDArr...); err != nil {
+	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostFromModuleToResPool, newHostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, err: %v", err)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
 	}
