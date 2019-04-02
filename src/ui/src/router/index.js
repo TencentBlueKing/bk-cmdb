@@ -145,12 +145,12 @@ router.beforeEach((to, from, next) => {
             } else {
                 setLoading(true)
                 setMenuState(to)
+                await cancelRequest()
+                await preload(router.app)
                 const isStatusPage = statusRouter.some(status => status.name === to.name)
                 if (isStatusPage) {
                     next()
                 } else {
-                    await cancelRequest()
-                    await preload(router.app)
                     const auth = await getAuth(to)
                     const viewAuth = isViewAuthorized(to)
                     if (viewAuth) {
