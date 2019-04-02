@@ -1,10 +1,10 @@
 <template>
-    <div v-bkloading="{isLoading: loading}"
+    <div v-bkloading="{ isLoading: loading }"
         :class="['table-wrapper', {
             'has-header': hasHeader,
             'has-footer': hasFooter
         }]"
-        :style="{height: wrapperHeight, width: wrapperWidth}">
+        :style="{ height: wrapperHeight, width: wrapperWidth }">
         <div class="table-layout">
             <cmdb-table-selector ref="headSelector" class="head-selector"
                 v-if="hasCheckbox && (pagination.count > pagination.size)"
@@ -16,13 +16,13 @@
             <div ref="headLayout" class="head-layout" v-if="hasHeader">
                 <v-thead ref="head"
                     :layout="layout"
-                    :style="{width: layout.bodyWidth ? layout.bodyWidth + 'px' : ''}">
+                    :style="{ width: layout.bodyWidth ? layout.bodyWidth + 'px' : '' }">
                 </v-thead>
             </div>
-            <div ref="bodyLayout" class="body-layout" :style="{maxHeight: bodyLayoutMaxHeight}">
+            <div ref="bodyLayout" class="body-layout" :style="{ maxHeight: bodyLayoutMaxHeight }">
                 <v-tbody ref="body"
                     :layout="layout"
-                    :style="{width: bodyWidth}">
+                    :style="{ width: bodyWidth }">
                 </v-tbody>
             </div>
         </div>
@@ -38,9 +38,14 @@
     import vPagination from './table-pagination'
     import TableLayout from './table-layout'
     import throttle from 'lodash.throttle'
-    import {addResizeListener, removeResizeListener} from '@/utils/resize-events.js'
+    import { addResizeListener, removeResizeListener } from '@/utils/resize-events.js'
     export default {
         name: 'cmdb-table',
+        components: {
+            vThead,
+            vTbody,
+            vPagination
+        },
         props: {
             loading: {
                 type: Boolean,
@@ -52,7 +57,7 @@
                     return []
                 },
                 validator (header) {
-                    const checkboxHeader = header.filter(({type}, index) => index === 0 && type === 'checkbox')
+                    const checkboxHeader = header.filter(({ type }, index) => index === 0 && type === 'checkbox')
                     return checkboxHeader.length <= 1
                 }
             },
@@ -74,7 +79,7 @@
                     }
                 },
                 validator (pagination) {
-                    let necessaryKeys = ['current', 'count', 'size']
+                    const necessaryKeys = ['current', 'count', 'size']
                     let invalid = necessaryKeys.some(key => typeof pagination[key] !== 'number')
                     if (pagination.hasOwnProperty('sizeSetting') && !Array.isArray(pagination.sizeSetting)) {
                         invalid = true
@@ -225,7 +230,7 @@
                 return this.width ? this.width + 'px' : 'auto'
             },
             bodyLayoutMaxHeight () {
-                const bodyLayout = this.$refs.bodyLayout
+                // const bodyLayout = this.$refs.bodyLayout
                 if (this.finalHeight) {
                     let minusHeight = 0
                     minusHeight += this.hasHeader ? 40 : 0
@@ -312,11 +317,6 @@
                 }, 50)
                 addResizeListener(this.$el, this.throttleLayout)
             }
-        },
-        components: {
-            vThead,
-            vTbody,
-            vPagination
         }
     }
 </script>

@@ -10,7 +10,7 @@ export function getViewAuth (app) {
         const auth = meta.auth || {}
         const view = auth.view || ''
         if (view && (typeof view !== 'function')) {
-            const [ type, action ] = view.split('.')
+            const [type, action] = view.split('.')
             viewAuthorities.push({
                 resource_type: type,
                 action: action

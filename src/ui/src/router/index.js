@@ -83,7 +83,7 @@ const getAuthMeta = (type, to, meta) => {
     }
     return GET_AUTH_META(type)
 }
-
+/* eslint-disable-next-line */
 const getAuth = to => {
     const auth = to.meta.auth || {}
     const view = auth.view
@@ -149,7 +149,7 @@ router.beforeEach((to, from, next) => {
                 setMenuState(to)
                 await cancelRequest()
                 await preload(router.app)
-                const auth = await getAuth(to)
+                // const auth = await getAuth(to)
                 const viewAuth = isViewAuthorized(to)
                 if (viewAuth) {
                     next()
@@ -160,7 +160,7 @@ router.beforeEach((to, from, next) => {
             }
         } catch (e) {
             setLoading(false)
-            next({name: 'error'})
+            next({ name: 'error' })
         }
     })
 })

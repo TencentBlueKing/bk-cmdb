@@ -16,15 +16,15 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange"
             @handleRowClick="showUserAPIDetails">
-            <template slot="create_time" slot-scope="{item}">
+            <template slot="create_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['create_time'])}}
             </template>
-            <template slot="last_time" slot-scope="{item}">
+            <template slot="last_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['last_time'])}}
             </template>
             <div class="empty-info" slot="data-empty">
@@ -33,15 +33,15 @@
             </div>
         </cmdb-table>
         <cmdb-slider
-            :isShow.sync="slider.isShow"
-            :hasQuickClose="true"
+            :is-show.sync="slider.isShow"
+            :has-quick-close="true"
             :width="430"
             :title="slider.title"
-            :beforeClose="handleSliderBeforeClose">
+            :before-close="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
                 :id="slider.id"
-                :bizId="bizId"
+                :biz-id="bizId"
                 :type="slider.type"
                 @delete="getUserAPIList"
                 @create="handleCreate"
@@ -107,12 +107,12 @@
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
-                let params = {
+                const params = {
                     start: (this.table.pagination.current - 1) * this.table.pagination.size,
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.filter.name ? params['condition'] = {'name': this.filter.name} : void (0)
+                this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
                 return params
             }
         },
@@ -214,4 +214,3 @@
         }
     }
 </style>
-

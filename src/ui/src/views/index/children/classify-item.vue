@@ -45,9 +45,9 @@
                 return this.usercustom[this.classifyNavigationKey] || []
             },
             usefulNavigation () {
-                const hasResourcePrivilege = this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')
+                // const hasResourcePrivilege = this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')
                 const usefulNavigation = this.customNavigation.filter(customId => {
-                    return this.authorizedNavigation.some(({children}) => children.some(navigation => navigation.id === customId))
+                    return this.authorizedNavigation.some(({ children }) => children.some(navigation => navigation.id === customId))
                 })
                 return usefulNavigation
             },
@@ -61,7 +61,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push({path})
+                this.$router.push({ path })
             },
             getModelLink (model) {
                 if (model.hasOwnProperty('path')) {
@@ -80,7 +80,7 @@
                     newCustom = this.customNavigation.filter(id => id !== model['bk_obj_id'])
                 } else { // 添加导航
                     if (this.collectedCount >= this.maxCustomNavigationCount) {
-                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                        this.$warn(this.$t('Index["限制添加导航提示"]', { max: this.maxCustomNavigationCount }))
                         return
                     } else {
                         isAdd = true

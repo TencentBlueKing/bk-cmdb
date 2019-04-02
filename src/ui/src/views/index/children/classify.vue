@@ -1,9 +1,9 @@
 <template>
     <div class="classify-layout clearfix">
-        <div class="classify-waterfall fl" 
-            v-for="col in classifyColumns.length" 
+        <div class="classify-waterfall fl"
+            v-for="col in classifyColumns.length"
             :key="col">
-            <v-classify-item 
+            <v-classify-item
                 v-for="classify in classifyColumns[col - 1]"
                 :key="classify['bk_classification_id']"
                 :classify="classify">
@@ -14,7 +14,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import throttle from 'lodash.throttle'
+    // import throttle from 'lodash.throttle'
     import vClassifyItem from './classify-item'
     import { OPERATION as businessOperation } from '@/views/business/router.config'
     import { OPERATION as resourceOperation } from '@/views/resource/router.config'
@@ -65,8 +65,8 @@
                 ].filter(classification => {
                     return classification['bk_classification_id'] !== 'bk_organization' && classification['bk_objects'].length
                 })
-                let colHeight = [0, 0, 0, 0]
-                let classifyColumns = [[], [], [], []]
+                const colHeight = [0, 0, 0, 0]
+                const classifyColumns = [[], [], [], []]
                 classifies.forEach(classify => {
                     const minColHeight = Math.min(...colHeight)
                     const rowIndex = colHeight.indexOf(minColHeight)

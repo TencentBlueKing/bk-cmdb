@@ -144,7 +144,8 @@
         "关联类型": "Association Type",
         "蓝鲸配置平台": "BK CMDB",
         "后台管理": "Back-stage",
-        "后台管理标题": "Back-stage Management"
+        "后台管理标题": "Back-stage Management",
+        "基础资源": "Basic Resource"
     },
     "Index": {
         "首页": "Index",

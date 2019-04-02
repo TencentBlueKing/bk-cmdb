@@ -27,7 +27,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchHost ({ commit, state, dispatch }, {params, config}) {
+    searchHost ({ commit, state, dispatch }, { params, config }) {
         return $http.post(`hosts/search`, params, config)
     },
 
