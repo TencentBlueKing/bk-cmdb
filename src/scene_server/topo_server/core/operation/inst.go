@@ -436,15 +436,10 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 			return err
 		}
 
-		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
-			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
-			return err
-		}
-
 		innerCond = condition.CreateCondition()
 		innerCond.Field(common.BKObjIDField).Eq(obj.GetID())
 		innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-		innerCond.Field(common.BKInstIDField).Eq(delInst)
+		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
 			return err
