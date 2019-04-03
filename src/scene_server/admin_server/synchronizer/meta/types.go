@@ -25,6 +25,7 @@ var (
 	ModuleResource   = ResourceType("module")
 	ModelResource    = ResourceType("model")
 	InstanceResource = ResourceType("instance")
+	AuditCategory    = ResourceType("audit")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -46,4 +47,5 @@ type SyncHandler interface {
 	HandleModuleSync(task *WorkRequest) error
 	HandleModelSync(task *WorkRequest) error
 	HandleInstanceSync(task *WorkRequest) error
+	HandleAuditSync(task *WorkRequest) error
 }

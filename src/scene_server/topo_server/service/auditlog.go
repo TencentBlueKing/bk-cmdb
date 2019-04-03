@@ -13,11 +13,13 @@
 package service
 
 import (
+	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"fmt"
 )
 
 const CCTimeTypeParseFlag = "cc_time_type"
@@ -53,6 +55,17 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	}
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
+	}
+	
+	// add auth filter condition
+	commonInfo, err := parser.ParseCommonInfo(&params.Header)
+	if err != nil {
+		return nil, fmt.Errorf("parse user info from request header failed, %+v", err)
+	}
+	authCondition, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, commonInfo.User)
+	if err != nil {
+		blog.Errorf("make audit query condition from auth failed, %+v", err)
+		return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
 	}
 	
 	return s.Core.AuditOperation().Query(params, query)
