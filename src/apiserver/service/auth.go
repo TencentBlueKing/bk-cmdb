@@ -61,7 +61,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	verifyResults, err := s.authorizer.AuthorizeBatch(context.Background(), user, attrs...)
 	if err != nil {
-		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v", err)
+		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 		return
 	}
