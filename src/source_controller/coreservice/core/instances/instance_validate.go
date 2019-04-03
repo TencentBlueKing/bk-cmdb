@@ -44,19 +44,23 @@ var createIgnoreKeys = []string{
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
 	valid, err := NewValidator(ctx, m.dependent, objID)
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed, err: %+v", err)
 		return err
 	}
 	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("params in need, valid %s, data: %+v", objID, instanceData)
+			blog.Errorf("field [%s] in required for model [%s], input data: %+v", key, objID, instanceData)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
+		if key == common.BKObjIDField {
+			// common instance always has no property bk_obj_id, but this field need save to db
+			continue
+		}
 		if metadata.BKMetadata == key {
 			bizID := metadata.GetBusinessIDFromMeta(val)
 			if "" != bizID {
@@ -70,7 +74,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		}
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("params is not valid, the key is %s", key)
+			blog.Errorf("field [%s] is not a valid property for model [%s]", key, objID)
 			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
