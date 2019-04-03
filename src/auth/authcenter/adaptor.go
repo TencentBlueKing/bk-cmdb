@@ -88,6 +88,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
+	case meta.SystemBase:
+		iamResourceType = SysSystemBase
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
@@ -254,7 +256,12 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
-
+	case meta.ModelTopologyView:
+		return ModelTopologyView, nil
+	case meta.ModelTopologyOperation:
+		return ModelTopologyOperation, nil
+	case meta.AdminEntrance:
+		return AdminEntrance, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
