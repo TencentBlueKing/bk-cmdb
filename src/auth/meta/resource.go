@@ -50,6 +50,7 @@ const (
 	AuditLog                 ResourceType = "auditlog"     // 操作审计
 	ResourceSync             ResourceType = "resourceSync" // 云资源发现
 	UserCustom               ResourceType = "usercustom"   // 用户自定义
+	SystemBase               ResourceType = "systemBase"
 )
 
 const (

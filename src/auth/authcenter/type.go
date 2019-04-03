@@ -6,7 +6,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-// system constanst
+// system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
 	SystemNameCMDB = "蓝鲸智云配置平台"
@@ -40,11 +40,11 @@ type RegisterInfo struct {
 type ResourceEntity struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ScopeInfo
-	ResourceName string       `json:"resource_name,omitempty"`
-	ResourceID   []ResourceID `json:"resource_id,omitempty"`
+	ResourceName string         `json:"resource_name,omitempty"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
 }
 
-type ResourceID struct {
+type RscTypeAndID struct {
 	ResourceType ResourceTypeID `json:"resource_type"`
 	ResourceID   string         `json:"resource_id,omitempty"`
 }
@@ -106,13 +106,14 @@ type BatchResult struct {
 }
 
 type ResourceAction struct {
-	ResourceInfo
-	ActionID ActionID `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
+	ResourceID   []RscTypeAndID `json:"resource_id,omitempty"`
+	ActionID     ActionID       `json:"action_id"`
 }
 
 type BatchStatus struct {
-	ActionID string `json:"action_id"`
-	ResourceInfo
+	ActionID     string         `json:"action_id"`
+	ResourceType ResourceTypeID `json:"resource_type"`
 	// for authorize confirm use, define if a user have
 	// the permission to this request.
 	IsPass bool `json:"is_pass"`
@@ -177,7 +178,7 @@ type BaseResponse struct {
 type SearchCondition struct {
 	ScopeInfo
 	ResourceType    ResourceTypeID `json:"resource_type"`
-	ParentResources []ResourceID   `json:"parent_resources"`
+	ParentResources []RscTypeAndID `json:"parent_resources"`
 }
 
 type SearchResult struct {
@@ -196,6 +197,7 @@ type ListAuthorizedResources struct {
 	TypeActions []TypeAction `json:"resource_types_actions"`
 	// array or string
 	DataType string `json:"resource_data_type"`
+	Exact    bool   `json:"is_exact_resource"`
 }
 
 type TypeAction struct {
@@ -209,7 +211,7 @@ type ListAuthorizedResourcesResult struct {
 }
 
 type AuthorizedResource struct {
-	ActionID     ActionID       `json:"action_id"`
-	ResourceType ResourceTypeID `json:"resource_type"`
-	ResourceIDs  [][]ResourceID `json:"resource_ids"`
+	ActionID     ActionID         `json:"action_id"`
+	ResourceType ResourceTypeID   `json:"resource_type"`
+	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
 }
