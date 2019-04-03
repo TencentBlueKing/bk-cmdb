@@ -141,7 +141,7 @@ const getters = {
             })
             const systemConfig = authority['sys_config']
             const backConfig = systemConfig['back_config'] || []
-            // const globalConfig = systemConfig['global_busi'] || []
+            const globalConfig = systemConfig['global_busi'] || []
             const needsCheck = ['audit', 'event']
             needsCheck.forEach(id => {
                 const navigation = _getNavigationById(id)
