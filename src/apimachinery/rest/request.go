@@ -285,8 +285,8 @@ func (r *Request) Do() *Result {
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinery][peek] %s %s with body %s\nresponse status: %s, response body: %s, rid: %s, cost: %dms",
-				string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers), cost)
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
+				cost, string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
