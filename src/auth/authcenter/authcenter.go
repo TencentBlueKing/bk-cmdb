@@ -355,7 +355,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 	if len(sysExactInput.ResourceActions) != 0 {
 		// get system resource auth status secondly.
-		statuses, err := ac.authClient.verifyExactResourceBatch(ctx, header, &sysInput)
+		statuses, err := ac.authClient.verifyExactResourceBatch(ctx, header, &sysExactInput)
 		if err != nil {
 			return nil, fmt.Errorf("get exact system resource[%s/%s] auth status failed, err: %v", sysInput.ScopeType, sysInput.ScopeID, err)
 		}
@@ -366,11 +366,11 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 		// update the system auth decisions
 		for index, status := range statuses {
-			if sysInput.ResourceActions[index].ResourceType != status.ResourceType ||
-				string(sysInput.ResourceActions[index].ActionID) != status.ActionID {
+			if sysExactInput.ResourceActions[index].ResourceType != status.ResourceType ||
+				string(sysExactInput.ResourceActions[index].ActionID) != status.ActionID {
 				return nil, fmt.Errorf("got exact system auth mismatch info from auth center, with resource type[%s:%s], action[%s:%s]",
-					sysInput.ResourceActions[index].ResourceType, status.ResourceType,
-					sysInput.ResourceActions[index].ActionID, status.ActionID)
+					sysExactInput.ResourceActions[index].ResourceType, status.ResourceType,
+					sysExactInput.ResourceActions[index].ActionID, status.ActionID)
 			}
 			decisions[sysInputExactIndexes[index]].Authorized = status.IsPass
 		}
