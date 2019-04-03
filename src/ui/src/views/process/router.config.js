@@ -35,6 +35,7 @@ export default {
         auth: {
             view: R_PROCESS,
             operation: Object.values(OPERATION)
-        }
+        },
+        requireBusiness: true
     }
 }
