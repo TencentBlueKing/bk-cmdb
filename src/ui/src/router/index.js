@@ -84,7 +84,10 @@ const getAuth = to => {
     const operation = auth.operation || []
     const routerAuth = [...view, ...operation]
     if (routerAuth.length) {
-        return router.app.$store.dispatch('auth/getOperationAuth', routerAuth)
+        return router.app.$store.dispatch('auth/getAuth', {
+            type: 'operation',
+            list: routerAuth
+        })
     }
     return Promise.resolve([])
 }
@@ -180,7 +183,7 @@ router.beforeEach((to, from, next) => {
 router.afterEach((to, from) => {
     try {
         if (setupStatus.afterload) {
-            afterload(router.app)
+            afterload(router.app, to, from)
         }
     } catch (e) {
         // ignore

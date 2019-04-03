@@ -17,8 +17,11 @@ export function getBusiness (app) {
     })
 }
 
-export default async function (app) {
-    return Promise.all([
-        getBusiness(app)
-    ])
+export default async function (app, to, from) {
+    const functions = []
+    if (to.meta.requireBusiness) {
+        functions.push(getBusiness)
+    }
+    console.log(functions, to.meta)
+    return Promise.all(functions.map(func => func(app, to, from)))
 }

@@ -27,6 +27,7 @@ export default {
         auth: {
             view: '',
             operation: Object.values(OPERATION)
-        }
+        },
+        requireBusiness: true
     }
 }
