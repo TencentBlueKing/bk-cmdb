@@ -43,7 +43,7 @@
                     'path': '/business',
                     'bk_classification_id': 'bk_host_management'
                 })
-                if (this.$isAuthorized(resourceOperation.R_HOST, true)) {
+                if (this.$isAuthorized(resourceOperation.R_HOST, {isView: true})) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["主机"]'),
                         'bk_obj_id': '$resource',
