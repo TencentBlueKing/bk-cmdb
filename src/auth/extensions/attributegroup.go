@@ -46,7 +46,11 @@ func (am *AuthManager) collectAttributesGroupByAttributeIDs(ctx context.Context,
 	pgs := make([]metadata.Group, 0)
 	for _, item := range resp.Data.Info {
 		pg := metadata.Group{}
-		pg.Parse(item)
+		_, err := pg.Parse(item)
+		if err != nil {
+			blog.Errorf("collectAttributesGroupByAttributeIDs %+v failed, parse attribute group %+v failed, err: %+v ", agIDs, item, err)
+			return nil, fmt.Errorf("parse attribute group from db data failed, err: %+v", err)
+		}
 		pgs = append(pgs, pg)
 	}
 	return pgs, nil
