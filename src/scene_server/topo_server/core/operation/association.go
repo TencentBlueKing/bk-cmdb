@@ -478,8 +478,8 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, request.ID); err != nil {
-		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
+	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, resp.Data.ID); err != nil {
+		blog.Error("create association type: %s success, but register id: %d to auth failed, err: %v", request.AssociationKindID, resp.Data.ID, err)
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
