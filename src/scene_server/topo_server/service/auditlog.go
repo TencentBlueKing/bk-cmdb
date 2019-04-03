@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"fmt"
 )
@@ -62,11 +63,22 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if err != nil {
 		return nil, fmt.Errorf("parse user info from request header failed, %+v", err)
 	}
-	authCondition, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, commonInfo.User)
+	var businessID int64
+	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
+	if exist == true {
+		id, err := util.GetInt64ByInterface(bizID)
+		if err != nil {
+			blog.Errorf("%s field in query condition but parse int failed, err: %+v", common.BKAppIDField, err)
+		}
+		businessID = id
+	}
+	
+	authCondition, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, commonInfo.User, businessID)
 	if err != nil {
 		blog.Errorf("make audit query condition from auth failed, %+v", err)
 		return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
 	}
+	blog.V(5).Infof("auth condition is: %+v", authCondition)
 	
 	return s.Core.AuditOperation().Query(params, query)
 }
