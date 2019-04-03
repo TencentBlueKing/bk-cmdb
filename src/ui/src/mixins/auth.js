@@ -1,10 +1,9 @@
 export default {
     methods: {
-        $isAuthorized (auth = '', option = { isView: false }) {
+        $isAuthorized (auth = '', option = { type: 'operation' }) {
             const types = Array.isArray(auth) ? auth : [auth]
             const authorized = types.map(auth => {
-                const [ type, action ] = auth.split('.')
-                return this.$store.getters['auth/isAuthorized'](type, action, option)
+                return this.$store.getters['auth/isAuthorized'](auth, option)
             })
             return !authorized.some(auth => !auth)
         }

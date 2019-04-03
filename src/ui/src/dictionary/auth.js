@@ -70,17 +70,10 @@ export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
 export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
-export const HAS_BUSINESS_MODE = [
+export const STATIC_BUSINESS_MODE = [
     C_MODEL_GROUP,
     U_MODEL_GROUP,
     D_MODEL_GROUP,
-    C_MODEL,
-    U_MODEL,
-    D_MODEL,
-    C_INST,
-    U_INST,
-    D_INST,
-    R_INST,
     C_CUSTOM_QUERY,
     U_CUSTOM_QUERY,
     D_CUSTOM_QUERY,
@@ -97,34 +90,21 @@ export const HAS_BUSINESS_MODE = [
     D_HOST
 ]
 
+export const DYNAMIC_BUSINESS_MODE = [
+    C_INST,
+    U_INST,
+    D_INST,
+    R_INST,
+    C_MODEL,
+    R_MODEL,
+    U_MODEL,
+    D_MODEL
+]
+
 export const GET_AUTH_META = (auth, options = {}) => {
     const [ type, action ] = auth.split('.')
-    const meta = {
+    return {
         resource_type: type,
         action: action
     }
-    // if (!options.noMode) {
-    //     const business = store.getters['objectBiz/bizId']
-    //     if (HAS_BUSINESS_MODE.includes(auth) && !store.getters.isAdminView && business) {
-    //         meta.bk_biz_id = business
-    //     }
-    // }
-    return meta
-}
-
-export const GET_MODEL_INST_AUTH_META = (modelId, auth, models = []) => {
-    const meta = GET_AUTH_META(auth, { noMode: true })
-    const model = models.find(model => model.bk_obj_id === modelId) || {}
-    const modelLabel = (model.metadata || {}).label || {}
-    if (modelLabel.hasOwnProperty('bk_biz_id')) {
-        Object.assign(meta, {
-            bk_biz_id: modelLabel.bk_biz_id
-        })
-    }
-    return Object.assign(meta, {
-        parent_layers: [{
-            resource_type: 'model',
-            resource_id: model.id
-        }]
-    })
 }
