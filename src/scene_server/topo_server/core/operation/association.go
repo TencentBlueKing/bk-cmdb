@@ -465,7 +465,6 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 	}
 
 	return a.clientSet.CoreService().Association().ReadAssociationType(context.Background(), params.Header, &input)
-
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
