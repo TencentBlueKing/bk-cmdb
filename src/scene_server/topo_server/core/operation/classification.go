@@ -90,14 +90,19 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 
 	// auth: check authorization
 	class := cls.Classify()
-	bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
-	if err != nil {
-		return nil, err
-	}
-	if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, bizID, meta.ModelClassification); err != nil {
-		blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
-		return nil, err
-	}
+	// var businessID int64
+	// if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
+	// 	var err error
+	// 	businessID, err = class.Metadata.Label.Int64(metadata.LabelBusinessID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+	//
+	// if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.ModelClassification); err != nil {
+	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
+	// 	return nil, err
+	// }
 
 	err = cls.Create()
 	if nil != err {
