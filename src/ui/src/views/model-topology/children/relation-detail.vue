@@ -48,7 +48,7 @@
                 <p class="form-error">{{errors.first('asstId')}}</p>
             </div>
         </label>
-        <div class="btn-group" v-if="isEdit">
+        <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
             <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>

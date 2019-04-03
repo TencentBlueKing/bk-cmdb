@@ -32,12 +32,6 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
-var (
-	CODE_SUCESS            = 0
-	CODE_ERROR_UPLOAD_FILE = 100
-	CODE_ERROR_OPEN_FILE   = 101
-)
-
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
 
@@ -115,7 +109,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return

@@ -86,15 +86,15 @@ const (
 	SearchObjectAssociation          = "/api/v3/object/association/action/search"
 	SearchObjects                    = "/api/v3/objects"
 	ExportHosts                      = "/hosts/export"
+	ImportHosts                      = "/hosts/import"
 	SearchInstAssociation            = "/api/v3/inst/association/action/search"
 	CreateInstAssociation            = "/api/v3/inst/association/action/create"
 )
 
-//system config privilege pattern
+// system config privilege pattern
 const (
-	resPattern    = `(hosts/import|export)|(hosts/modules/resource/idle)`
-	objectPattern = `object/classification/[a-z0-9A-Z_]+/objects$`
-	// proc search
+	ResPattern            = `hosts/modules/resource/idle`
+	objectPattern         = `object/classification/[a-z0-9A-Z_]+/objects$`
 	procSearch            = `proc/search/[a-z0-9A-Z_]+/[a-z0-9A-Z_]+$`
 	topoGraphicsSearch    = `objects/topographics/scope_type/[a-z0-9A-Z-_]+/scope_id/[a-z0-9A-Z-_]+/action/search$`
 	searchUserAPI         = `userapi/search/[0-9]+$`
@@ -103,9 +103,8 @@ const (
 	deleteInstAssociation = "/api/v3/inst/association/[0-9]+/action/delete$"
 )
 
-//system config privilege regexp
+// system config privilege regexp
 var (
-	ResPatternRegexp           = regexp.MustCompile(resPattern)
 	ObjectPatternRegexp        = regexp.MustCompile(objectPattern)
 	ProcSearchRegexp           = regexp.MustCompile(procSearch)
 	TopoGraphicsSearchRegexp   = regexp.MustCompile(topoGraphicsSearch)

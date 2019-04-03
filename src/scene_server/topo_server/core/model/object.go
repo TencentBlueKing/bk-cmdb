@@ -179,7 +179,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := []meta.Object{}
+	models := make([]meta.Object, 0)
 	for _, info := range rsp.Data.Info {
 		models = append(models, info.Spec)
 	}

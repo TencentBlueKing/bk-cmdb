@@ -52,8 +52,8 @@ func (s *Service) LockHost(req *restful.Request, resp *restful.Response) {
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -95,8 +95,8 @@ func (s *Service) UnlockHost(req *restful.Request, resp *restful.Response) {
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -138,8 +138,8 @@ func (s *Service) QueryHostLock(req *restful.Request, resp *restful.Response) {
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}

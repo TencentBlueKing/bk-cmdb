@@ -1,6 +1,6 @@
 <template>
     <div class="node-create-layout">
-        <h2 class="node-create-title">{{$t('BusinessTopology["新增节点"]')}}</h2>
+        <h2 class="node-create-title">{{$t('BusinessTopology["新建节点"]')}}</h2>
         <div class="node-create-path">{{topoPath}}</div>
         <div class="node-create-form">
             <div class="form-group"

@@ -40,7 +40,7 @@
                     <bk-button style="margin-left: 20px;" type="primary"
                         :disabled="!$isAuthorized(OPERATION.C_INST)"
                         @click="handleCreate">
-                        {{$t("Inst['立即创建']")}}
+                        {{$t("Common['新建']")}}
                     </bk-button>
                 </div>
             </div>
