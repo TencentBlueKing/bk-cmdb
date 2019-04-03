@@ -1,4 +1,5 @@
 import { language } from '@/i18n'
+import { SYSTEM_MANAGEMENT, GET_AUTH_META } from '@/dictionary/auth'
 import $http from '@/api'
 
 const state = {
@@ -24,7 +25,12 @@ const getters = {
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
     isAdminView: (state, getters, rootState, rootGetters) => {
-        if (!getters.admin) {
+        const systemAuth = rootState.auth.system
+        const managementData = systemAuth.find(data => {
+            const meta = GET_AUTH_META(SYSTEM_MANAGEMENT)
+            return data.resource_type === meta.resource_type && data.action === meta.action
+        }) || {}
+        if (!managementData.is_paas) {
             return false
         }
         if (window.sessionStorage.hasOwnProperty('isAdminView')) {

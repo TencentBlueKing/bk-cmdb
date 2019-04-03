@@ -251,6 +251,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['classifications']),
             selectNum () {
                 let num = 0
                 let {
@@ -374,7 +375,7 @@
             setEventPushList () {
                 let eventPushList = []
                 let subscriptionForm = {}
-                this.$classifications.map(classify => {
+                this.classifications.map(classify => {
                     if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_host_manage') {
                         let event = {
                             name: classify['bk_classification_name'],

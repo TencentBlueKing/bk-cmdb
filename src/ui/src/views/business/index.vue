@@ -168,6 +168,7 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['getModelById']),
             columnsConfigKey () {
                 return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
@@ -182,6 +183,9 @@
                     return !this.$isAuthorized(this.OPERATION.U_BUSINESS)
                 }
                 return true
+            },
+            model () {
+                return this.getModelById('biz') || {}
             }
         },
         watch: {
