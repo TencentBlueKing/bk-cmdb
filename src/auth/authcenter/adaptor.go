@@ -88,6 +88,12 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
+	case meta.AuditLog:
+		if businessID <= 0 {
+			iamResourceType = SysAudit
+		} else {
+			iamResourceType = BizAudit
+		}
 
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)

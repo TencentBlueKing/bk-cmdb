@@ -16,10 +16,10 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/synchronizer/handler"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
@@ -27,8 +27,8 @@ import (
 
 // AuthSynchronizer stores all related resource
 type AuthSynchronizer struct {
-	AuthConfig authcenter.AuthConfig
-	*backbone.Engine
+	AuthConfig  authcenter.AuthConfig
+	clientSet   apimachinery.ClientSetInterface
 	ctx         context.Context
 	Workers     *[]Worker
 	WorkerQueue chan meta.WorkRequest
@@ -36,8 +36,8 @@ type AuthSynchronizer struct {
 }
 
 // NewSynchronizer new a synchronizer object
-func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, backbone *backbone.Engine) *AuthSynchronizer {
-	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, Engine: backbone}
+func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface) *AuthSynchronizer {
+	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, clientSet: clientSet}
 }
 
 // Run do start synchronize
@@ -54,8 +54,8 @@ func (d *AuthSynchronizer) Run() error {
 		blog.Errorf("new auth client failed, err: %+v", err)
 		return fmt.Errorf("new auth client failed, err: %+v", err)
 	}
-	authManager := extensions.NewAuthManager(d.Engine.CoreAPI, authorize)
-	workerHandler := handler.NewIAMHandler(d.Engine.CoreAPI, authManager)
+	authManager := extensions.NewAuthManager(d.clientSet, authorize)
+	workerHandler := handler.NewIAMHandler(d.clientSet, authManager)
 
 	// init worker
 	workers := make([]Worker, 3)
@@ -67,7 +67,7 @@ func (d *AuthSynchronizer) Run() error {
 	d.Workers = &workers
 
 	// init producer
-	d.Producer = NewProducer(d.Engine.CoreAPI, authManager, d.WorkerQueue)
+	d.Producer = NewProducer(d.clientSet, authManager, d.WorkerQueue)
 	d.Producer.Start()
 	blog.Infof("auth synchronize started")
 	return nil
