@@ -5,6 +5,15 @@ import {
     STATIC_BUSINESS_MODE,
     DYNAMIC_BUSINESS_MODE
 } from '@/dictionary/auth'
+
+const defaultAuthData = {
+    bk_biz_id: 0,
+    is_pass: false,
+    parent_layers: null,
+    reason: '',
+    resource_id: 0
+}
+
 const state = {
     operation: [],
     view: [],
@@ -44,46 +53,54 @@ const getters = {
 }
 
 const actions = {
-    async getOperationAuth ({commit, getters}, list = []) {
-        const authList = await $http.post('auth/verify', {
-            resources: list.map(auth => getters.getAuthMeta(auth))
+    async getAuth ({commit, getters, rootGetters}, params) {
+        const allAuth = params.list || []
+        const authType = params.type || 'operation'
+        const shouldAuth = []
+        const shouldNotAuth = []
+        const hasBusiness = !!rootGetters['objectBiz/bizId']
+        const isBusinessMode = !rootGetters.isAdminView
+
+        allAuth.forEach(auth => {
+            const isBusinessAuth = STATIC_BUSINESS_MODE.includes(auth)
+            if (isBusinessMode && isBusinessAuth) {
+                if (hasBusiness) {
+                    shouldAuth.push(auth)
+                } else {
+                    shouldNotAuth.push(auth)
+                }
+            } else {
+                shouldAuth.push(auth)
+            }
         })
-        commit('setOperationAuth', authList)
-        return authList
-    },
-    async getViewAuth ({ commit, getters }, list) {
-        const viewAuth = await $http.post('auth/verify', {
-            resources: list.map(auth => getters.getAuthMeta(auth))
-        }, {
-            requestId: 'getViewAuth',
-            fromCache: true,
-            cancelWhenRouteChange: false
+
+        let authData = []
+        if (shouldAuth.length) {
+            authData = await $http.post('auth/verify', {
+                resources: shouldAuth.map(auth => getters.getAuthMeta(auth))
+            }, params.config || {})
+        }
+
+        const allAuthData = authData.concat(shouldNotAuth.map(auth => {
+            const meta = getters.getAuthMeta(auth)
+            return {
+                ...defaultAuthData,
+                ...meta
+            }
+        }))
+
+        commit('setAuth', {
+            type: authType,
+            auth: allAuthData
         })
-        commit('setViewAuth', viewAuth)
-        return viewAuth
-    },
-    async getSystemAuth ({ commit, getters }, list) {
-        const systemAuth = await $http.post('auth/verify', {
-            resources: list.map(auth => getters.getAuthMeta(auth))
-        }, {
-            requestId: 'getSystemAuth',
-            fromCache: true,
-            cancelWhenRouteChange: false
-        })
-        commit('setSystemAuth', systemAuth)
-        return systemAuth
+
+        return allAuthData
     }
 }
 
 const mutations = {
-    setOperationAuth (state, operationAuth) {
-        state.operation = operationAuth
-    },
-    setViewAuth (state, viewAuth) {
-        state.view = viewAuth
-    },
-    setSystemAuth (state, systemAuth) {
-        state.system = systemAuth
+    setAuth (state, data) {
+        state[data.type] = data.auth
     },
     setDynamicMeta (state, meta) {
         state.dynamicMeta = meta
