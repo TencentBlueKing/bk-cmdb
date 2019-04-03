@@ -36,15 +36,13 @@
                     'bk_classification_type': 'inner',
                     'bk_objects': []
                 }
-                if (this.$isAuthorized(businessOperation.R_BUSINESS, true)) {
-                    hostManageClassification['bk_objects'].push({
-                        'bk_obj_name': this.$t('Common["业务"]'),
-                        'bk_obj_id': 'biz',
-                        'bk_obj_icon': 'icon-cc-business',
-                        'path': '/business',
-                        'bk_classification_id': 'bk_host_management'
-                    })
-                }
+                hostManageClassification['bk_objects'].push({
+                    'bk_obj_name': this.$t('Common["业务"]'),
+                    'bk_obj_id': 'biz',
+                    'bk_obj_icon': 'icon-cc-business',
+                    'path': '/business',
+                    'bk_classification_id': 'bk_host_management'
+                })
                 if (this.$isAuthorized(resourceOperation.R_HOST, true)) {
                     hostManageClassification['bk_objects'].push({
                         'bk_obj_name': this.$t('Nav["主机"]'),
