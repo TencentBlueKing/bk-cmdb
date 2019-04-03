@@ -32,12 +32,6 @@ import (
 	"github.com/rentiansheng/xlsx"
 )
 
-var (
-	CODE_SUCESS            = 0
-	CODE_ERROR_UPLOAD_FILE = 100
-	CODE_ERROR_OPEN_FILE   = 101
-)
-
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
 
@@ -66,7 +60,10 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //del file
+
+	// del file
+	defer os.Remove(filePath)
+
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -112,7 +109,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -148,7 +145,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 }
 
-//BuildDownLoadExcelTemplate build download excel template
+// BuildDownLoadExcelTemplate build download excel template
 func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
@@ -181,7 +178,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", objID))
 
-	//http.ServeFile(c.Writer, c.Request, file)
+	// http.ServeFile(c.Writer, c.Request, file)
 	c.File(file)
 	os.Remove(file)
 	return

@@ -33,7 +33,7 @@ import (
 // filter at the same time.
 
 func (ps *parseStream) topologyLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -59,7 +59,7 @@ var (
 )
 
 func (ps *parseStream) objectUniqueLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -188,7 +188,7 @@ var (
 )
 
 func (ps *parseStream) associationTypeLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -273,7 +273,7 @@ var (
 )
 
 func (ps *parseStream) objectAssociationLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -458,7 +458,7 @@ var (
 )
 
 func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -596,7 +596,7 @@ var (
 )
 
 func (ps *parseStream) objectInstanceLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -930,7 +930,7 @@ var (
 )
 
 func (ps *parseStream) objectLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1096,7 +1096,7 @@ var (
 )
 
 func (ps *parseStream) ObjectClassificationLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1228,7 +1228,7 @@ var (
 )
 
 func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 	// create object's attribute group operation.
@@ -1418,7 +1418,7 @@ var (
 )
 
 func (ps *parseStream) objectAttributeLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 
@@ -1575,7 +1575,7 @@ var (
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
-	if ps.err != nil {
+	if ps.shouldReturn() {
 		return ps
 	}
 

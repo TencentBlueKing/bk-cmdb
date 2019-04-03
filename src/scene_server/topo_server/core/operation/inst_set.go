@@ -84,7 +84,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 		data.Set(common.BKDefaultField, 0)
 	}
 
-	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
+	// data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 	return s.inst.CreateInst(params, obj, data)
 }
 

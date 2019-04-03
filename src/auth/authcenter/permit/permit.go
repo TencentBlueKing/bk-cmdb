@@ -16,7 +16,7 @@ import "configcenter/src/auth/meta"
 
 // this function is used to check where this request attribute is permitted as default,
 // so that it is not need to check permission status in auth center.
-func IsPermit(rsc *meta.ResourceAttribute) bool {
+func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 
 	switch {
 

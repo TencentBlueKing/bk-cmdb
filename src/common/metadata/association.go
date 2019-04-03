@@ -190,6 +190,16 @@ type AssociationKind struct {
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
+func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) {
+	// TODO support parse metadata params
+	err := mapstr.SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
+}
+
 type AssociationOnDeleteAction string
 type AssociationMapping string
 

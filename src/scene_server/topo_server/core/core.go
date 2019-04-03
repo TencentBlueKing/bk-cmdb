@@ -14,7 +14,7 @@ package core
 
 import (
 	"configcenter/src/apimachinery"
-	"configcenter/src/scene_server/topo_server/core/auth"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -58,26 +58,26 @@ type core struct {
 }
 
 // New create a core manager
-func New(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) Core {
+func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health
 	healthOpeartion := operation.NewHealthOperation(client)
 
 	// create insts
-	attributeOperation := operation.NewAttributeOperation(client)
-	classificationOperation := operation.NewClassificationOperation(client, auth)
+	attributeOperation := operation.NewAttributeOperation(client, authManager)
+	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
-	objectOperation := operation.NewObjectOperation(client, auth)
-	instOperation := operation.NewInstOperation(client)
+	objectOperation := operation.NewObjectOperation(client, authManager)
+	instOperation := operation.NewInstOperation(client, authManager)
 	moduleOperation := operation.NewModuleOperation(client)
 	setOperation := operation.NewSetOperation(client)
-	businessOperation := operation.NewBusinessOperation(client, auth)
-	associationOperation := operation.NewAssociationOperation(client, auth)
+	businessOperation := operation.NewBusinessOperation(client, authManager)
+	associationOperation := operation.NewAssociationOperation(client, authManager)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
-	graphics := operation.NewGraphics(client)
+	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
 	audit := operation.NewAuditOperation(client)
-	unique := operation.NewUniqueOperation(client)
+	unique := operation.NewUniqueOperation(client, authManager)
 
 	targetModel := model.New(client)
 	targetInst := inst.New(client)

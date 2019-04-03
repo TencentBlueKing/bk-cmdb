@@ -14,10 +14,13 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -48,9 +51,10 @@ type InstOperationInterface interface {
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
 	return &commonInst{
-		clientSet: client,
+		clientSet:   client,
+		authManager: authManager,
 	}
 }
 
@@ -68,6 +72,7 @@ type BatchResult struct {
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
+	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
@@ -85,8 +90,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	var rowErr map[int64]error
 	results := &BatchResult{}
-	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
-		return results, nil
+	if batchInfo.InputType != common.InputTypeExcel {
+		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
+	}
+	if batchInfo.BatchInfo == nil {
+		return results, fmt.Errorf("BatchInfo empty")
 	}
 
 	for errIdx, err := range rowErr {
@@ -94,6 +102,13 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
+
+	// auth: check authorization
+	if err := c.authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
+		blog.V(2).Infof("create unique for model %d failed, authorization failed, err: %+v", object.ID, err)
+		return nil, err
+	}
+
 	// all the instances's name should not be same,
 	// so we need to check first.
 	instNameMap := make(map[string]struct{})
@@ -119,6 +134,9 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		instNameMap[name] = struct{}{}
 	}
 
+	updatedInstanceIDs := make([]int64, 0)
+	createdInstanceIDs := make([]int64, 0)
+
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
 			// this is a empty excel line.
@@ -129,7 +147,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		if item.GetValues().Exists(obj.GetInstIDFieldName()) {
+		exist := item.GetValues().Exists(obj.GetInstIDFieldName())
+		if exist {
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
@@ -137,6 +156,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
+			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
 				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
@@ -173,6 +193,27 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+		instanceID, err := item.GetInstID()
+		if err != nil {
+			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v", err)
+			continue
+		}
+		if exist == false {
+			createdInstanceIDs = append(createdInstanceIDs, instanceID)
+		}
+	}
+
+	// auth register new created
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
+		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
+		return nil, err
+	}
+
+	// auth update registered instances
+	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
+		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
+		return nil, err
 	}
 
 	return results, nil
@@ -221,6 +262,17 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
+		return nil, err
+	}
+
+	instanceID, err := item.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, err: %+v", err)
+	}
+
+	// auth: register instances to iam
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
+		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
 
@@ -735,7 +787,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					switch t := objCondition.Value.(type) {
 					case string:
 						instCond[objCondition.Field] = map[string]interface{}{
-							common.BKDBEQ: gparams.SpeceialCharChange(t),
+							common.BKDBEQ: gparams.SpecialCharChange(t),
 						}
 					default:
 						instCond[objCondition.Field] = objCondition.Value

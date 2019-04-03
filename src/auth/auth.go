@@ -29,6 +29,7 @@ type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 	AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error)
+	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
 }
 
 // ResourceHandler is used to handle the resources register to authorize center.
@@ -36,12 +37,18 @@ type Authorizer interface {
 type ResourceHandler interface {
 	// register a resource
 	RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
+	// register a resource
+	DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*authcenter.RegisterInfo, error)
 	// deregister a resource
 	DeregisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error
+	// deregister a resource with raw iam resource id
+	RawDeregisterResource(ctx context.Context, scope authcenter.ScopeInfo, rs ...meta.BackendResource) error
 	// update a resource's info
 	UpdateResource(ctx context.Context, rs *meta.ResourceAttribute) error
 	// get a resource's info
 	Get(ctx context.Context) error
+	// list resources by condition
+	ListResources(ctx context.Context, r *meta.ResourceAttribute) ([]meta.BackendResource, error)
 	// init the authcenter
 	Init(ctx context.Context, config meta.InitConfig) error
 }

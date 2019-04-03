@@ -145,7 +145,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 	//if name in condition , add like search
 	name, ok := condition["name"].(string)
 	if ok && "" != name {
-		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpeceialCharChange(name)}
+		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpecialCharChange(name)}
 	}
 
 	var err error

@@ -38,7 +38,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 		return err
 	}
 
-	// init model classifaction
+	// init model classification
 	clsName2ID := map[string]int64{}
 	for _, cls := range configs.Classifications {
 		bizID, _ := cls.Metadata.Label.GetBusinessID()
@@ -60,7 +60,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: groupType,
-					ResourceID: []ResourceID{
+					ResourceID: []RscTypeAndID{
 						{ResourceType: groupType, ResourceID: strconv.FormatInt(cls.ID, 10)},
 					},
 					ResourceName: cls.ClassificationName,
@@ -103,7 +103,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: modelType,
-					ResourceID: []ResourceID{
+					ResourceID: []RscTypeAndID{
 						{ResourceType: groupType, ResourceID: strconv.FormatInt(clsID, 10)},
 						{ResourceType: modelType, ResourceID: strconv.FormatInt(model.ID, 10)},
 					},
@@ -129,7 +129,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: SysBusinessInstance,
-					ResourceID: []ResourceID{
+					ResourceID: []RscTypeAndID{
 						{ResourceType: SysBusinessInstance, ResourceID: strconv.FormatInt(biz.BizID, 10)},
 					},
 					ResourceName: biz.BizName,

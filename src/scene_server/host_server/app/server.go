@@ -17,12 +17,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/emicklei/go-restful"
 
+	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -30,7 +31,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/authorize"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
 )
@@ -66,7 +66,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	if false == configReady {
 		blog.Infof("waiting config timeout.")
-		return errors.New("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
@@ -75,13 +75,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	config := hostSrv.Config.Auth
 	blog.Info("host server auth config is: %+v", config)
-	authorizer, err := authorize.NewHostAuthorizer(nil, config)
+	authorizer, err := auth.NewAuthorize(nil, config)
 	if err != nil {
-		blog.Errorf("make host authorizer failed, err: %+v", err)
-		return fmt.Errorf("make host authorizer failed, err: %+v", err)
+		blog.Errorf("new host authorizer failed, err: %+v", err)
+		return fmt.Errorf("new host authorizer failed, err: %+v", err)
 	}
-	service.Authorizer = *authorizer
-
+	authManager := extensions.NewAuthManager(engine.CoreAPI, authorizer)
+	service.AuthManager = authManager
 	service.Engine = engine
 	service.Config = &hostSrv.Config
 	service.CacheDB = cacheDB
@@ -123,15 +123,8 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 
 	h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
 	if err != nil {
-		blog.Warnf("parse authcenter config failed: %v", err)
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
-
-	enable, err := strconv.ParseBool(current.ConfigMap["auth.enable"])
-	if err == nil {
-		blog.Errorf("parse auth enable field failed, set default to true, err: %+v", err)
-		enable = true
-	}
-	h.Config.Auth.Enable = enable
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
