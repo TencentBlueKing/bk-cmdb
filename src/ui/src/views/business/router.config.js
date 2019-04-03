@@ -30,7 +30,7 @@ export default [{
             adminView: true
         },
         auth: {
-            view: R_BUSINESS,
+            view: '',
             operation: Object.values(OPERATION)
         }
     }
