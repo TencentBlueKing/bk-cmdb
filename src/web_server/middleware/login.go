@@ -13,11 +13,11 @@
 package middleware
 
 import (
-    "plugin"
-    "strings"
+	"plugin"
+	"strings"
 
-    "configcenter/src/apimachinery/discovery"
-    "configcenter/src/common"
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
