@@ -13,6 +13,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -33,7 +34,22 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	data.Set(common.BKDefaultField, 0)
-	return s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	if err != nil {
+		return nil, fmt.Errorf("create business failed, err: %+v", err)
+	}
+
+	businessID, err := business.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create business success, but get id failed, err: %+v", err)
+	}
+
+	// auth: register business to iam
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		return nil, fmt.Errorf("register business failed, err: %+v", err)
+	}
+
+	return business, nil
 }
 
 // DeleteBusiness delete the business
@@ -49,6 +65,11 @@ func (s *Service) DeleteBusiness(params types.ContextParams, pathParams, queryPa
 	if nil != err {
 		blog.Errorf("[api-business]failed to parse the biz id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
+	}
+
+	// auth: deregister business to iam
+	if err := s.AuthManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
+		return nil, fmt.Errorf("deregister business failed, err: %+v", err)
 	}
 
 	return nil, s.Core.BusinessOperation().DeleteBusiness(params, obj, bizID)
@@ -69,8 +90,17 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	return nil, s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	if err != nil {
+		return nil, fmt.Errorf("update business failed, err: %+v", err)
+	}
 
+	// auth: update registered business to iam
+	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
+	}
+
+	return nil, nil
 }
 
 // UpdateBusinessStatus update the business status
@@ -124,7 +154,6 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
 		blog.Errorf("failed to search the business, %s", err.Error())
@@ -210,7 +239,22 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 	}
 
 	data.Set(common.BKDefaultField, common.DefaultAppFlag)
-	return s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	business, err := s.Core.BusinessOperation().CreateBusiness(params, obj, data)
+	if err != nil {
+		return nil, fmt.Errorf("create business failed, err: %+v", err)
+	}
+
+	businessID, err := business.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create default business success, but get id failed, err: %+v", err)
+	}
+
+	// auth: register business to iam
+	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
+		return nil, fmt.Errorf("register business failed, err: %+v", err)
+	}
+
+	return business, nil
 }
 
 func (s *Service) GetInternalModule(params types.ContextParams, pathParams, queryparams ParamsGetter, data mapstr.MapStr) (interface{}, error) {

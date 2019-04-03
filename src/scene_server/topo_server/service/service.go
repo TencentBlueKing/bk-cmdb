@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -31,21 +32,20 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
 	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
-	Engine   *backbone.Engine
-	Txn      dal.DB
-	Core     core.Core
-	Config   options.Config
-	Auth     *topoauth.TopoAuth
-	Error    errors.CCErrorIf
-	Language language.CCLanguageIf
-	actions  []action
+	Engine      *backbone.Engine
+	Txn         dal.DB
+	Core        core.Core
+	Config      options.Config
+	AuthManager *extensions.AuthManager
+	Error       errors.CCErrorIf
+	Language    language.CCLanguageIf
+	actions     []action
 }
 
 // WebService the web service
@@ -59,7 +59,8 @@ func (s *Service) WebService() *restful.WebService {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON) // TODO: {version} need to replaced by v3
+	// TODO: {version} need to replaced by v3
+	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -192,7 +193,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 				metadata := metadata.NewMetaDataFromMap(mData)
-				data, dataErr := act.HandlerFunc(types.ContextParams{
+				handlerContext := types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
 					Lang:            defLang,
@@ -202,23 +203,21 @@ func (s *Service) Actions() []*httpserver.Action {
 					User:            user,
 					Engin:           s.Engine,
 					MetaData:        metadata,
-				},
-					req.PathParameter,
-					req.QueryParameter,
-					mData)
+				}
+				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
 
-				if nil != dataErr {
-					switch e := dataErr.(type) {
-					default:
-						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
-					case errors.CCErrorCoder:
-						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
-					}
+				if dataErr == nil {
+					s.sendResponse(resp, common.CCSuccess, data)
 					return
 				}
 
-				s.sendResponse(resp, common.CCSuccess, data)
-
+				switch e := dataErr.(type) {
+				case errors.CCErrorCoder:
+					s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
+				default:
+					s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
+				}
+				return
 			}})
 		}(a)
 

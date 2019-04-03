@@ -366,7 +366,7 @@
             },
 
             formatValue (value) {
-                return parseInt(value) < 10 ? '0' + value : value
+                return parseInt(value) < 10 ? '0' + parseInt(value) : value
             },
 
             // 高亮显示已选日期

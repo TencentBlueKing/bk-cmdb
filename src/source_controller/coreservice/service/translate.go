@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator" //TODO: need to be removed
+	"configcenter/src/scene_server/validator"  // TODO: need to be removed
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{

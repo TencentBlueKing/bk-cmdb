@@ -83,6 +83,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	blog.Infof("enable authcenter: %v", authConf.Enable)
 
 	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
+
 	apiSvr.Core = engine
 	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
 		return err

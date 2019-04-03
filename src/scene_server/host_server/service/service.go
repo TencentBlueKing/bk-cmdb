@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"context"
 	"net/http"
 
@@ -30,16 +31,15 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
-	"configcenter/src/scene_server/host_server/authorize"
 	"configcenter/src/scene_server/host_server/logics"
 )
 
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc       discovery.DiscoveryInterface
-	CacheDB    *redis.Client
-	Authorizer authorize.HostAuthorizer
+	disc        discovery.DiscoveryInterface
+	CacheDB     *redis.Client
+	AuthManager *extensions.AuthManager
 }
 
 type srvComm struct {
@@ -66,7 +66,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB, s.AuthManager),
 	}
 }
 
@@ -90,8 +90,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	// ws.Route(ws.POST("/hosts/history").To(s.AddHistory))
-	// ws.Route(ws.GET("/hosts/history/{start}/{limit}").To(s.GetHistorys))
 	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
@@ -126,7 +124,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/host/lock/search").To(s.QueryHostLock))
 
 	ws.Route(ws.GET("/host/getHostListByAppidAndField/{" + common.BKAppIDField + "}/{field}").To(s.getHostListByAppidAndField))
-	ws.Route(ws.GET("getAgentStatus/{appid}").To(s.GetAgentStatus))
 	ws.Route(ws.PUT("/openapi/host/{" + common.BKAppIDField + "}").To(s.UpdateHost))
 	ws.Route(ws.PUT("/host/updateHostByAppID/{appid}").To(s.UpdateHostByAppID))
 	ws.Route(ws.POST("/gethostlistbyip").To(s.HostSearchByIP))

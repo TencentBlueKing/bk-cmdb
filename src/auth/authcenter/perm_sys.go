@@ -148,38 +148,6 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       SysHostInstance,
-		ResourceTypeName:     "主机",
-		ParentResourceTypeID: "",
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          ModuleTransfer,
-				ActionName:        "分配到业务",
-				IsRelatedResource: true,
-			},
-		},
-	},
-	{
 		ResourceTypeID:       SysEventPushing,
 		ResourceTypeName:     "事件推送",
 		ParentResourceTypeID: "",
@@ -224,6 +192,18 @@ var expectSystemResourceType = []ResourceType{
 			{
 				ActionID:          ModelTopologyView,
 				ActionName:        "模型拓扑视图",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Actions: []Action{
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
 				IsRelatedResource: false,
 			},
 		},

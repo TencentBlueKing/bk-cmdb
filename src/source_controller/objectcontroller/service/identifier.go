@@ -212,13 +212,13 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		}
 		// fill module
 		appmodulename2moduleIDs := map[string][]int64{}
-		for _, rela := range modulehosts[inst.HostID] {
+		for _, relate := range modulehosts[inst.HostID] {
 			mod := &metadata.HostIdentModule{
-				SetID:    rela.SetID,
-				ModuleID: rela.ModuleID,
-				BizID:    rela.AppID,
+				SetID:    relate.SetID,
+				ModuleID: relate.ModuleID,
+				BizID:    relate.AppID,
 			}
-			inst.HostIdentModule[fmt.Sprint(rela.ModuleID)] = mod
+			inst.HostIdentModule[fmt.Sprint(relate.ModuleID)] = mod
 
 			if biz, ok := bizs[mod.BizID]; ok {
 				mod.BizName = biz.BizName

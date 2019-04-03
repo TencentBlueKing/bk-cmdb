@@ -179,7 +179,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := []meta.Object{}
+	models := make([]meta.Object, 0)
 	for _, info := range rsp.Data.Info {
 		models = append(models, info.Spec)
 	}
@@ -187,6 +187,8 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 	return models, nil
 }
 
+// GetMainlineParentObject get mainline relationship model
+// the parent not exactly mean parent in a tree case
 func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)

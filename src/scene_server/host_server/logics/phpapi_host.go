@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"strconv"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -56,13 +57,13 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 		common.BKHostIDField: []int64{hostIDArr[0]},
 	})
 	if nil != err {
-		return "", err
+		return "", fmt.Errorf("GetConfigByCond error:%v", err)
 	}
 
 	lenOfConfigData := len(configData)
 	if lenOfConfigData == 0 {
-		blog.Errorf("not expected config lenth: appid:%d, hostid:%d,rid:%s", appID, hostIDArr[0], phpapi.rid)
-		return "", phpapi.ccErr.Errorf(common.CCErrHostModuleConfigFaild, phpapi.logic.ccLang.Language("host_module_config_not_found"))
+		blog.Errorf("not expected config lenth: appid:%d, hostid:%d", appID, hostIDArr[0])
+		return "", fmt.Errorf("not expected config length: %d", lenOfConfigData)
 	}
 
 	hostID := configData[0][common.BKHostIDField]

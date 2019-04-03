@@ -13,11 +13,11 @@
 package operation
 
 import (
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"context"
 	"strings"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -68,16 +68,16 @@ type AssociationOperationInterface interface {
 }
 
 // NewAssociationOperation create a new association operation instance
-func NewAssociationOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) AssociationOperationInterface {
+func NewAssociationOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) AssociationOperationInterface {
 	return &association{
-		clientSet: client,
-		auth:      auth,
+		clientSet:   client,
+		authManager: authManager,
 	}
 }
 
 type association struct {
 	clientSet    apimachinery.ClientSetInterface
-	auth         *topoauth.TopoAuth
+	authManager  *extensions.AuthManager
 	cls          ClassificationOperationInterface
 	obj          ObjectOperationInterface
 	grp          GroupOperationInterface
@@ -201,7 +201,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-	
 
 	return data, nil
 }
@@ -408,9 +407,27 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 	if len(exists) > 0 {
 		beAsstObject := []string{}
 		for _, asst := range exists {
+			instRsp, err := a.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, asst.ObjectID,
+				&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: asst.InstID}})
+			if err != nil {
+				return params.Err.Error(common.CCErrObjectSelectInstFailed)
+			}
+			if !instRsp.Result {
+				return params.Err.New(instRsp.Code, instRsp.ErrMsg)
+			}
+			if len(instRsp.Data.Info) <= 0 {
+				// 作为补充而存在，删除实例主机已经不存在的脏实例关联
+				if delErr := a.DeleteInstAssociation(params, condition.CreateCondition().
+					Field(common.BKObjIDField).Eq(asst.ObjectID).Field(common.BKAsstInstIDField).Eq(asst.InstID)); delErr != nil {
+					return delErr
+				}
+				continue
+			}
 			beAsstObject = append(beAsstObject, asst.ObjectID)
 		}
-		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if len(beAsstObject) > 0 {
+			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		}
 	}
 	return nil
 }
@@ -466,7 +483,6 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 	}
 
 	return a.clientSet.CoreService().Association().ReadAssociationType(context.Background(), params.Header, &input)
-
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -479,8 +495,8 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	if err := a.auth.RegisterAssociationType(params.Context, params.Header, request); err != nil {
-		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
+	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, resp.Data.ID); err != nil {
+		blog.Error("create association type: %s success, but register id: %d to auth failed, err: %v", request.AssociationKindID, resp.Data.ID, err)
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 
@@ -490,7 +506,7 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 
 func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, request *metadata.UpdateAssociationTypeRequest) (resp *metadata.UpdateAssociationTypeResult, err error) {
 	if len(request.AsstName) != 0 {
-		if err := a.auth.UpdateAssociationType(params.Context, params.Header, asstTypeID, request.AsstName); err != nil {
+		if err := a.authManager.UpdateAssociationTypeByID(params.Context, params.Header, asstTypeID); err != nil {
 			blog.Errorf("update association type %s, but got update resource to auth failed, err: %v", request.AsstName, err)
 			return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
@@ -511,7 +527,7 @@ func (a *association) UpdateType(params types.ContextParams, asstTypeID int64, r
 }
 
 func (a *association) DeleteType(params types.ContextParams, asstTypeID int64) (resp *metadata.DeleteAssociationTypeResult, err error) {
-	if err := a.auth.DeregisterAssociationType(params.Context, params.Header, asstTypeID); err != nil {
+	if err := a.authManager.DeregisterAssociationTypeByIDs(params.Context, params.Header, asstTypeID); err != nil {
 		blog.Errorf("delete association type id: %d, but deregister from auth failed, err: %v", asstTypeID, err)
 		return nil, params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}

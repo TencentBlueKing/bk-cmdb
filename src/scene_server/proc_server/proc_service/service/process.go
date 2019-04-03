@@ -408,7 +408,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	if processName, ok := condition[common.BKProcessNameField]; ok {
 		processNameStr, ok := processName.(string)
 		if ok {
-			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpeceialCharChange(processNameStr)}
+			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpecialCharChange(processNameStr)}
 
 		} else {
 			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: processName}

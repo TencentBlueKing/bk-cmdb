@@ -19,7 +19,7 @@ import (
 	"configcenter/src/auth/meta"
 )
 
-func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	switch attribute.Basic.Type {
 	case meta.Business:
 		return businessResourceID(resourceType, attribute)
@@ -69,86 +69,98 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostInstanceResourceID(resourceType, attribute)
 	case meta.DynamicGrouping:
 		return dynamicGroupingResourceID(resourceType, attribute)
+	case meta.SystemBase:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
 }
 
 // generate business related resource id.
-func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
 // generate model's resource id, works for app model and model management
 // resource type in auth center.
-func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: resourceType,
 	}
 	id.ResourceID = strconv.FormatInt(attribute.InstanceID, 10)
 
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
 // generate module resource id.
-func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("module:%d", attribute.InstanceID),
+		},
+	}, nil
+}
+
+func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   fmt.Sprintf("set:%d", attribute.InstanceID),
+		},
+	}, nil
+}
+
+func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	return nil, nil
+}
+
+func mainlineInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-	return nil, nil
-}
-
-func mainlineInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
-}
-
-func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-
-	return nil, nil
-}
-
-func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
 
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
@@ -164,7 +176,7 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 		modelType = BizModel
 	}
 
-	return []ResourceID{
+	return []RscTypeAndID{
 		{
 			ResourceType: groupType,
 			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
@@ -180,116 +192,124 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 	}, nil
 }
 
-func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: resourceType,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if len(attribute.Layers) < 2 {
 		return nil, NotEnoughLayer
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: SysModel,
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
 	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if len(attribute.Layers) < 2 {
 		return nil, NotEnoughLayer
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: SysModel,
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
 	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if len(attribute.Layers) < 2 {
 		return nil, NotEnoughLayer
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: SysModel,
 	}
 	if attribute.BusinessID > 0 {
 		id.ResourceType = BizModel
 	}
 	id.ResourceID = strconv.FormatInt(attribute.Layers[len(attribute.Layers)-1].InstanceID, 10)
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	id := ResourceID{
+	id := RscTypeAndID{
 		ResourceType: BizProcessInstance,
 		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
 	}
-	return []ResourceID{id}, nil
+	return []RscTypeAndID{id}, nil
 }
 
-func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
 	return nil, nil
 }
 
-func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
-	resourceIDs := make([]ResourceID, 0)
+func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	// translate all parent layers
+	resourceIDs := make([]RscTypeAndID, 0)
 	for _, layer := range attribute.Layers {
-		iamResourceType, err := convertResourceType(attribute)
+		iamResourceType, err := convertResourceType(layer.Type, attribute.BusinessID)
 		if err != nil {
-			return nil, fmt.Errorf("convert resource type to iam resource type failed, attribute: %+v, err: %+v", attribute, err)
+			return nil, fmt.Errorf("convert resource type to iam resource type failed, layer: %+v, err: %+v", layer, err)
 		}
-		resourceID := ResourceID{
+		resourceID := RscTypeAndID{
 			ResourceType: *iamResourceType,
-			ResourceID:   fmt.Sprintf("%d", layer.InstanceID),
+			ResourceID:   strconv.FormatInt(layer.InstanceID, 10),
 		}
 		resourceIDs = append(resourceIDs, resourceID)
 	}
+
+	// append host resource id to end
+	hostResourceID := RscTypeAndID{
+		ResourceType: resourceType,
+		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	}
+	resourceIDs = append(resourceIDs, hostResourceID)
 	return resourceIDs, nil
 }
 
-func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	return []ResourceID{
+	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
@@ -297,11 +317,11 @@ func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 	}, nil
 }
 
-func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]ResourceID, error) {
+func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
 		return nil, nil
 	}
-	return []ResourceID{
+	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
 			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),

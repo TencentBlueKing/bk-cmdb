@@ -13,12 +13,13 @@
 package operation
 
 import (
-	"configcenter/src/scene_server/topo_server/core/auth"
 	"context"
 	"fmt"
 	"strconv"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -46,16 +47,16 @@ type ObjectOperationInterface interface {
 }
 
 // NewObjectOperation create a new object operation instance
-func NewObjectOperation(client apimachinery.ClientSetInterface, auth *topoauth.TopoAuth) ObjectOperationInterface {
+func NewObjectOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) ObjectOperationInterface {
 	return &object{
-		clientSet: client,
-		auth:      auth,
+		clientSet:   client,
+		authManager: authManager,
 	}
 }
 
 type object struct {
 	clientSet    apimachinery.ClientSetInterface
-	auth         *topoauth.TopoAuth
+	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	cls          ClassificationOperationInterface
@@ -76,6 +77,7 @@ func (o *object) SetProxy(modelFactory model.Factory, instFactory inst.Factory, 
 	o.unique = unique
 }
 
+// IsValidObject check whether objID is a real model's bk_obj_id field in backend
 func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 
 	checkObjCond := condition.CreateCondition()
@@ -95,20 +97,23 @@ func (o *object) IsValidObject(params types.ContextParams, objID string) error {
 	return nil
 }
 
+// CreateObjectBatch manipulate model in cc_ObjDes
+// this method does'nt act as it's name, it create or update model's attributes indeed.
+// it only operate on model already exist, that it to say no new model will be created.
 func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
-	inputData := map[string]ImportObjectData{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
+	inputDataMap := map[string]ImportObjectData{}
+	if err := data.MarshalJSONInto(&inputDataMap); nil != err {
 		return nil, err
 	}
 
 	result := mapstr.New()
 	hasError := false
-	for objID, inputData := range inputData {
+	for objID, inputData := range inputDataMap {
 		subResult := mapstr.New()
 		if err := o.IsValidObject(params, objID); nil != err {
-			blog.Errorf("create object patch, but not a valid object, object id: %s", objID)
-			subResult["errors"] = fmt.Sprintf("the object(%s) is invalid", objID)
+			blog.Errorf("create model patch, but not a valid model id, model id: %s", objID)
+			subResult["errors"] = fmt.Sprintf("the model(%s) is invalid", objID)
 			result[objID] = subResult
 			hasError = true
 			continue
@@ -282,8 +287,8 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 		return result, params.Err.Error(common.CCErrCommNotAllSuccess)
 	}
 	return result, nil
-
 }
+
 func (o *object) FindObjectBatch(params types.ContextParams, data mapstr.MapStr) (mapstr.MapStr, error) {
 
 	cond := &ExportObjectCondition{}
@@ -322,11 +327,23 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
 		return nil, err
 	}
+
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		objects = append(objects, obj.Object())
+	}
+	// auth: check authorization
+	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Find, objects...); err != nil {
+		blog.V(2).Infof("authorization failed, err: %+v", objects, err)
+		return nil, err
+	}
+
 	for _, item := range objs {
 		return item, nil
 	}
 	return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Errorf(common.CCErrCommParamsIsInvalid, objectID).Error())
 }
+
 func (o *object) CreateObject(params types.ContextParams, isMainline bool, data mapstr.MapStr) (model.Object, error) {
 	obj := o.modelFactory.CreateObject(params)
 	err := obj.Parse(data)
@@ -354,6 +371,18 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
+	businessID, err := obj.Object().Metadata.Label.GetBusinessID()
+	if err != nil && err != metadata.LabelKeyNotExistError {
+		blog.Errorf("create model failed, get business field from model: %+v meta failed, err: %+v", obj.Object(), err)
+		return nil, params.Err.Errorf(common.CCErrCommAuthorizeFailed, "get business field from model meta failed")
+	}
+
+	// auth: check authorization
+	if err := o.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.Model); err != nil {
+		blog.V(2).Infof("create model %s failed, authorization failed, err: %+v", obj.Object(), err)
+		return nil, err
+	}
+
 	err = obj.Create()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to save the data(%#v), err: %s", data, err.Error())
@@ -361,10 +390,6 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 	}
 
 	object := obj.Object()
-	if err := o.auth.RegisterObject(params.Context, params.Header, &object); err != nil {
-		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-	}
-
 	// create the default group
 	grp := obj.CreateGroup()
 	groupData := metadata.Group{
@@ -447,6 +472,11 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, err
 	}
 
+	// auth: register model to iam
+	if err := o.authManager.RegisterObject(params.Context, params.Header, object); err != nil {
+		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	}
+
 	return obj, nil
 }
 
@@ -495,6 +525,7 @@ func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) e
 
 	return nil
 }
+
 func (o *object) DeleteObject(params types.ContextParams, id int64, cond condition.Condition, needCheckInst bool) error {
 
 	if 0 < id {
@@ -507,11 +538,20 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		return err
 	}
 
+	// auth: check authorization
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		objects = append(objects, obj.Object())
+	}
+
+	// auth: check authorization
+	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Delete, objects...); err != nil {
+		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
+		return err
+	}
+
 	for _, obj := range objs {
 		object := obj.Object()
-		if err := o.auth.DeregisterObject(params.Context, params.Header, &object); err != nil {
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
 		// check if is can be deleted
 		if needCheckInst {
 			if err := o.CanDelete(params, obj); nil != err {
@@ -562,6 +602,12 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 		}
 
 	}
+
+	// auth: deregister models
+	if err := o.authManager.DeregisterObject(params.Context, params.Header, objects...); err != nil {
+		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
+	}
+
 	return nil
 }
 
@@ -677,9 +723,11 @@ func (o *object) FindObjectTopo(params types.ContextParams, cond condition.Condi
 func (o *object) FindObject(params types.ContextParams, cond condition.Condition) ([]model.Object, error) {
 	fCond := cond.ToMapStr()
 	if nil != params.MetaData {
+		// search model from special business
 		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
 		fCond.Remove(metadata.BKMetadata)
 	} else {
+		// search global shared model
 		fCond.Merge(metadata.BizLabelNotExist)
 	}
 	rsp, err := o.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
@@ -711,12 +759,11 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	}
 
 	object := obj.Object()
-	if len(object.ObjectName) != 0 {
-		// need to update object in auth.
-		if err := o.auth.UpdateRegisteredObject(params.Context, params.Header, &object); err != nil {
-			blog.Errorf("update object %s, but update to auth failed, err: %v", object.ObjectName, err)
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
+
+	// auth: check authorization
+	if err := o.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
+		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
+		return err
 	}
 
 	// check repeated
@@ -735,5 +782,10 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
+	// need to update object in auth.
+	if err := o.authManager.UpdateRegisteredObjects(params.Context, params.Header, object); err != nil {
+		blog.Errorf("update object %s, but update to auth failed, err: %v", object.ObjectName, err)
+		return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+	}
 	return nil
 }

@@ -48,10 +48,10 @@ import (
 // CoreServiceInterface the topo service methods used to init
 type CoreServiceInterface interface {
 	WebService() *restful.WebService
-	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf)
+	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
 }
 
-// New ceate topo servcie instance
+// New create topo service instance
 func New() CoreServiceInterface {
 	return &coreService{}
 }
@@ -66,7 +66,7 @@ type coreService struct {
 	core     core.Core
 }
 
-func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) {
+func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engin = engin
@@ -86,17 +86,18 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-			return
+			return dbErr
 		}
 	} else {
 		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-			return
+			return dbErr
 		}
 	}
 	// connect the remote mongodb
 	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), datasynchronize.New(db, s), mainline.New(db))
+	return nil
 }
 
 // WebService the web service
@@ -188,6 +189,16 @@ func (s *coreService) sendCompleteResponse(resp *restful.Response, errorCode int
 	}
 	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 
+}
+
+func (s *coreService)addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc)  {
+	actionObject := action{
+		Method:                     method,
+		Path:                       path,
+		HandlerFunc:                handlerFunc,
+		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+	}
+	s.actions = append(s.actions, actionObject)
 }
 
 // Actions return the all actions
