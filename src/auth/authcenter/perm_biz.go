@@ -192,4 +192,16 @@ var expectBizResourceType = []ResourceType{
 			},
 		},
 	},
+	{
+		ResourceTypeID:       BizAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Actions: []Action{
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
+			},
+		},
+	},
 }
