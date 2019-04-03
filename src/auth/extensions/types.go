@@ -183,3 +183,19 @@ func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
 
 	return is, err
 }
+
+type AuditCategorySimplify struct {
+	BKAppIDField       int64  `field:"bk_biz_id"`
+	BKOpTargetField string `field:"op_target"`
+	ModelID int64
+}
+
+func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}

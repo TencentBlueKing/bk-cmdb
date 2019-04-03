@@ -80,9 +80,6 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 		objects = append(objects, item.Spec)
 	}
 
-	if len(objects) != len(objIDs) {
-		return nil, fmt.Errorf("collect models failed, input len: %d, output len: %d", len(objIDs), len(objects))
-	}
 	return objects, nil
 }
 
