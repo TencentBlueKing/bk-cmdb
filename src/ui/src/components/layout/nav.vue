@@ -78,62 +78,8 @@ export default {
     },
     computed: {
         ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
-        ...mapGetters('menu', ['active', 'open']),
+        ...mapGetters('menu', ['active', 'open', 'menus']),
         ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
-        collectMenus () {
-            const collectMenus = []
-            const collectedModelIds = this.usercustom[this.classifyNavigationKey] || []
-            const getModelById = this.$store.getters['objectModelClassify/getModelById']
-            collectedModelIds.forEach((modelId, index) => {
-                const model = getModelById(modelId)
-                if (model) {
-                    collectMenus.push({
-                        id: model.bk_obj_id,
-                        name: model.bk_obj_name,
-                        path: GET_MODEL_PATH(modelId),
-                        order: index
-                    })
-                }
-            })
-            return collectMenus
-        },
-        menus () {
-            const menus = this.$tools.clone(MENU)
-            const routes = this.$router.options.routes
-            const isAuthorized = this.$store.getters['auth/isAuthorized']
-            routes.forEach(route => {
-                const meta = (route.meta || {})
-                const auth = meta.auth || {}
-                const menu = meta.menu
-                const shouldShow = this.isAdminView ? menu && menu.adminView : menu
-                if (shouldShow) {
-                    const authorized = auth.view ? isAuthorized(...auth.view.split('.'), true) : true
-                    if (authorized) {
-                        if (menu.parent) {
-                            const parent = menus.find(parent => parent.id === menu.parent) || {}
-                            const submenu = parent.submenu || []
-                            submenu.push(menu)
-                        } else {
-                            const parent = menus.find(parent => parent.id === menu.id) || {}
-                            Object.assign(parent, menu)
-                        }
-                    }
-                }
-            })
-            const collectMenu = menus.find(menu => menu.id === NAV_COLLECT) || {}
-            const collectSubmenu = collectMenu.submenu || []
-            Array.prototype.push.apply(collectSubmenu, this.collectMenus)
-            const availableMenus = menus.filter(menu => {
-                return menu.path ||
-                    (Array.isArray(menu.submenu) && menu.submenu.length)
-            })
-            availableMenus.forEach(menu => {
-                if (Array.isArray(menu.submenu)) {
-                    menu.submenu.sort((prev, next) => prev.order - next.order)
-                }
-            })
-            return availableMenus
-        },
         unfold () {
             return this.navStick || !this.navFold
         },
