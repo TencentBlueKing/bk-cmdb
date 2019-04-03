@@ -10,7 +10,14 @@ const preloadConfig = {
 }
 
 export function getSystemAuth (app) {
-    return app.$store.dispatch('auth/getSystemAuth', [SYSTEM_MANAGEMENT])
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'system',
+        list: [SYSTEM_MANAGEMENT],
+        config: {
+            ...preloadConfig,
+            requestId: 'getSystemAuth'
+        }
+    })
 }
 
 export function getViewAuth (app) {
@@ -22,7 +29,14 @@ export function getViewAuth (app) {
             viewAuthorities.push(auth.view)
         }
     })
-    return app.$store.dispatch('auth/getViewAuth', viewAuthorities)
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'view',
+        list: viewAuthorities,
+        config: {
+            ...preloadConfig,
+            requestId: 'getViewAuth'
+        }
+    })
 }
 
 export function getClassifications (app) {
