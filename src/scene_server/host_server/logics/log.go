@@ -221,7 +221,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 
 		preModule := make([]interface{}, 0)
 		var preApp interface{}
-		for moduleID, _ := range preMap[instID] {
+		for moduleID := range preMap[instID] {
 			preModule = append(preModule, moduleMap[moduleID])
 			preApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID
@@ -230,7 +230,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 		curModule := make([]interface{}, 0)
 		var curApp interface{}
 
-		for moduleID, _ := range curMap[instID] {
+		for moduleID := range curMap[instID] {
 			curModule = append(curModule, moduleMap[moduleID])
 			curApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID

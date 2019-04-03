@@ -1,9 +1,10 @@
 package metric
 
 import (
-	"configcenter/src/common/metadata"
 	"errors"
 	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
 type MetricFamily struct {
@@ -13,18 +14,18 @@ type MetricFamily struct {
 }
 
 type Metric struct {
-	MetricMeta `json:",inline"`
-	Value      *FloatOrString   `json:"value"`
-	Extension  *MetricExtension `json:"extension"`
+	*MetricMeta `json:",inline"`
+	Value       *FloatOrString   `json:"value"`
+	Extension   *MetricExtension `json:"extension"`
 }
 
 func newMetric(m MetricInterf) (*Metric, error) {
 	if m == nil {
-		return nil, errors.New("metric is nil.")
+		return nil, errors.New("metric is nil")
 	}
 	meta := m.GetMeta()
 	if len(meta.Name) == 0 {
-		return nil, errors.New("metric name is null.")
+		return nil, errors.New("metric name is null")
 	}
 
 	if len(meta.Help) == 0 {

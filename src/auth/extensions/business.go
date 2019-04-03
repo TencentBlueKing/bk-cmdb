@@ -118,6 +118,15 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
+func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	if err != nil {
+		return fmt.Errorf("authorize businesses failed, get business by id failed, err: %+v", err)
+	}
+
+	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+}
+
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)

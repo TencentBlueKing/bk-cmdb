@@ -371,6 +371,11 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
+	if action == meta.Find || action == meta.FindMany {
+		blog.V(4).Infof("skip authorization for host reading, hosts: %+v", hostIDs)
+		return nil
+	}
+	
 	if len(hostIDs) == 0 {
 		return nil
 	}

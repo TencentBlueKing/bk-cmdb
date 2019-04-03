@@ -262,7 +262,7 @@ func (tm *Manager) Commit(txnID string) error {
 	if nil != txnerr {
 		session.Txninst.Status = types.TxStatusException
 	} else {
-		session.Txninst.Status = types.TxStatusCommited
+		session.Txninst.Status = types.TxStatusCommitted
 	}
 	tm.eventChan <- session.Txninst
 

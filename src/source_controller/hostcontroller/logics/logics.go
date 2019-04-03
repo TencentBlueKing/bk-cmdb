@@ -19,7 +19,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/redis.v5"
 	"net/http"
-	
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -138,7 +137,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	}
 
 	if "" == moduleName || 0 == setID {
-		blog.Errorf("add single host module relation, get module error:not find module width ModuleID:%d", moduleID)
+		blog.Errorf("add single host module relation, get module error:not find module width ModuleID: %d", moduleID)
 		return false, errors.New("can not find it's module")
 	}
 
@@ -157,7 +156,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	moduleHostConfig = util.SetModOwner(moduleHostConfig, ownerID)
 	err = lgc.Instance.Table(common.BKTableNameModuleHostConfig).Insert(ctx, moduleHostConfig) //.Insert(common.BKTableNameModuleHostConfig, moduleHostConfig)
 	if err != nil {
-		blog.Errorf("add single host module relation, add module host relation error:", err.Error())
+		blog.Errorf("add single host module relation, add module host relation error: %v", err)
 		return false, err
 	}
 
@@ -179,7 +178,7 @@ func (lgc *Logics) AddSingleHostModuleRelation(ctx context.Context, header http.
 	return true, nil
 }
 
-//GetDefaultModuleIDs get default module ids
+// GetDefaultModuleIDs get default module ids
 func (lgc *Logics) GetDefaultModuleIDs(ctx context.Context, appID int64) ([]int64, error) {
 	defaultModuleCond := make(map[string]interface{})
 	defaultModuleCond[common.BKDefaultField] = common.KvMap{common.BKDBIN: []int64{int64(common.DefaultFaultModuleFlag), int64(common.DefaultResModuleFlag)}}
@@ -208,14 +207,14 @@ func (lgc *Logics) GetDefaultModuleIDs(ctx context.Context, appID int64) ([]int6
 	return ret, nil
 }
 
-//GetModuleIDsByHostID get module id by hostid
+// GetModuleIDsByHostID get module id by hostid
 func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interface{}) ([]int64, error) {
 	result := make([]metadata.ModuleHost, 0)
 	var ret []int64
 
 	err := lgc.Instance.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(ctx, &result)
 	if nil != err {
-		blog.Errorf("get moudle id by host id failed, error: %s", err.Error())
+		blog.Errorf("get module id by host id failed, error: %s", err.Error())
 		return ret, errors.New("can not find the module that host belongs to")
 	}
 	for _, r := range result {
@@ -225,9 +224,9 @@ func (lgc *Logics) GetModuleIDsByHostID(ctx context.Context, moduleCond interfac
 }
 
 //GetHostIDModuleIDMapsByHostID get hsot id and module id by hostid return map[hostid]moduleid
-func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond interface{}, header http.Header) (map[int64]int64, error) {
+func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond interface{}, header http.Header) (map[int64][]int64, error) {
 	result := make([]metadata.ModuleHost, 0)
-	ret := make(map[int64]int64, 0)
+	ret := make(map[int64][]int64, 0)
 	rid := util.GetHTTPCCRequestID(header)
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	fileds := []string{common.BKModuleIDField, common.BKSetIDField, common.BKAppIDField, common.BKHostIDField}
@@ -238,7 +237,7 @@ func (lgc *Logics) GetHostIDModuleIDMapsByHostID(ctx context.Context, moduleCond
 	}
 
 	for _, r := range result {
-		ret[r.HostID] = r.ModuleID
+		ret[r.HostID] = append(ret[r.HostID], r.ModuleID)
 	}
 	return ret, nil
 }
@@ -355,11 +354,13 @@ func (lgc *Logics) TransferHostToDefaultModuleConfig(ctx context.Context, input 
 		return err
 	}
 
-	for hostID, moduleID := range hostIDModuleIDMap {
-		_, err := lgc.DelSingleHostModuleRelation(ctx, header, hostID, moduleID, input.ApplicationID, ownerID)
-		if nil != err {
-			blog.Errorf("TransferHostToDefaultModuleConfig  DelSingleHostModuleRelation , input:%#v, hostID:%v,moduleID:%v, err: %v,rid:%s", input, hostID, moduleID, err, rid)
-			return err
+	for hostID, moduleIDArr := range hostIDModuleIDMap {
+		for _, moduleID := range moduleIDArr {
+			_, err := lgc.DelSingleHostModuleRelation(ctx, header, hostID, moduleID, input.ApplicationID, ownerID)
+			if nil != err {
+				blog.Errorf("TransferHostToDefaultModuleConfig  DelSingleHostModuleRelation , input:%#v, hostID:%v,moduleID:%v, err: %v,rid:%s", input, hostID, moduleID, err, rid)
+				return err
+			}
 		}
 	}
 	for _, hostID := range input.HostID {
