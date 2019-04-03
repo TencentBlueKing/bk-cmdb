@@ -4,6 +4,8 @@ import {
     GET_MODEL_INST_AUTH_META
 } from '@/dictionary/auth'
 
+import { viewRouters } from '@/router'
+
 const preloadConfig = {
     fromCache: true,
     cancelWhenRouteChange: false
@@ -11,7 +13,7 @@ const preloadConfig = {
 
 export function getViewAuth (app) {
     const viewAuthorities = [ GET_AUTH_META(SYSTEM_MANAGEMENT) ]
-    app.$router.options.routes.forEach(route => {
+    viewRouters.forEach(route => {
         const meta = route.meta || {}
         const auth = meta.auth || {}
         const staticView = auth.view && (!auth.meta || auth.meta !== GET_MODEL_INST_AUTH_META)
