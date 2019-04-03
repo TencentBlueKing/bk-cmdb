@@ -439,12 +439,13 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 	header := http.Header{}
 	header.Set(AuthSupplierAccountHeaderKey, rs[0].SupplierAccount)
 
-	entities := &registerInfo.Resources
-	for _, entity := range *entities {
-		registerInfo.Resources = make([]ResourceEntity, 0)
-		registerInfo.Resources = append(registerInfo.Resources, entity)
-		ac.authClient.registerResource(ctx, header, registerInfo)
+	if err := ac.authClient.registerResource(ctx, header, registerInfo); err != nil {
+		if err == ErrDuplicated {
+			return nil
+		}
+		return err
 	}
+
 	return nil
 }
 
