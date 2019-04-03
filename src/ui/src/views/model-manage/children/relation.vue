@@ -119,6 +119,7 @@
                 'activeModel',
                 'isInjectable'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -184,7 +185,7 @@
                 })
             },
             getModelName (objId) {
-                let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                let model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
                     return model['bk_obj_name']
                 }

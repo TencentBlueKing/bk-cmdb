@@ -20,6 +20,7 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 
+	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -45,11 +46,7 @@ func (t *CoreServer) onCoreServiceConfigUpdate(previous, current cc.ProcessConfi
 	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
 
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
-	for t.Core == nil {
-		time.Sleep(time.Second)
-		blog.V(3).Info("sleep for engine")
-	}
-	t.Service.SetConfig(t.Config, t.Core, nil, nil)
+
 }
 
 // Run main function
@@ -72,13 +69,31 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Regdiscv:     op.ServConf.RegDiscover,
 		SrvInfo:      svrInfo,
 	}
+
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
+	var configReady bool
+	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		if "" == coreSvr.Config.Mongo.Address {
+			time.Sleep(time.Second)
+		} else {
+			configReady = true
+			break
+		}
+	}
+
+	if false == configReady {
+		return fmt.Errorf("Configuration item not found")
+	}
+
 	coreSvr.Core = engine
-	coreService.SetConfig(coreSvr.Config, engine, engine.CCErr, engine.Language)
+	err = coreService.SetConfig(coreSvr.Config, engine, engine.CCErr, engine.Language)
+	if err != nil {
+		return err
+	}
 	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
 		return err
 	}
