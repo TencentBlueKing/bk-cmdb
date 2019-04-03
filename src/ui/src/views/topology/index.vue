@@ -25,7 +25,7 @@
                     <bk-button type="primary" class="topo-node-btn-create fr"
                         v-if="showCreate(node, state)"
                         @click.stop="handleCreate">
-                        {{$t('Common[\'新增\']')}}
+                        {{$t('Common[\'新建\']')}}
                     </bk-button>
                 </div>
             </cmdb-tree>

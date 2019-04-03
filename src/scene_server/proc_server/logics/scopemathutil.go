@@ -82,7 +82,7 @@ func (s *ScopeMatch) ParseConds() (data interface{}, err error) {
 
 		}
 	}
-	return s.getRealVal(s.rawRegex)
+	//return s.getRealVal(s.rawRegex)
 }
 
 func (s *ScopeMatch) MatchStr(str string) bool {

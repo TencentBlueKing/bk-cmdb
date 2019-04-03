@@ -21,7 +21,7 @@
 	"1110020": "Save field configuration failed",
 	"1110021": "Failed to get field configuration",
 	"1110022": "Failed to get default field configuration",
-	"1110023": "Host ID '%s' does not belong to current business",
+	"1110023": "Host ID '%v' does not belong to current business",
 	"1110024": "Failed to get service for host '%s'",
 	"1110025": "Deletion of host '%s' from resource pool failed, error:%s",
 	"1110026": "The relationship between the newly added host '%s' and the module failed, error:%s",

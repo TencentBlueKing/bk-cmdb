@@ -29,11 +29,18 @@ func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header
 	if err != nil {
 		return 0, fmt.Errorf("get business:%d detailed failed, err: %+v", businessID, err)
 	}
+	if len(businesses) != 1 {
+		return 0, fmt.Errorf("get business:%d failed, not found", businessID)
+	}
 	business := businesses[0]
 
+	/*
+	// set resource pool as global
 	if business.IsDefault == 1 {
 		return 0, nil
 	}
+	*/
+	
 	return business.BKAppIDField, nil
 }
 

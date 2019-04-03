@@ -123,7 +123,7 @@ func (s *Service) DeleteHostFavouriteByID(req *restful.Request, resp *restful.Re
 	ID := req.PathParameter("id")
 
 	if "" == ID || "0" == ID {
-		blog.Errorf("delete host favourite failed, with id  %%,rid:%s", ID, srvData.rid)
+		blog.Errorf("delete host favourite failed, with id  %d,rid:%s", ID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}

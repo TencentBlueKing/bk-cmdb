@@ -25,7 +25,8 @@ export default {
             i18n: 'Nav["主机查询"]',
             path: path,
             order: 1,
-            parent: NAV_BUSINESS_RESOURCE
+            parent: NAV_BUSINESS_RESOURCE,
+            adminView: false
         },
         auth: {
             view: R_HOST,

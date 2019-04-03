@@ -12,7 +12,8 @@ export default {
             i18n: 'Nav["操作审计"]',
             path: path,
             order: 1,
-            parent: NAV_AUDIT_ANALYSE
+            parent: NAV_AUDIT_ANALYSE,
+            adminView: true
         },
         auth: {
             view: '',

@@ -50,25 +50,25 @@ func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.
 	return result.Data.Info[0].Int64(common.BKModuleIDField)
 }
 
-func (lgc *Logics) GetModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
-	query := &metadata.QueryCondition{
-		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
-		SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
-		Fields:    []string{common.BKModuleIDField},
-		Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
-	}
+func (lgc *Logics) GetNormalModuleByModuleID(ctx context.Context, appID, moduleID int64) ([]mapstr.MapStr, errors.CCError) {
+    query := &metadata.QueryCondition{
+        Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
+        SortArr:   metadata.NewSearchSortParse().String(common.BKModuleIDField).ToSearchSortArr(),
+        Fields:    []string{common.BKModuleIDField},
+        Condition: hutil.NewOperation().WithAppID(appID).WithModuleID(moduleID).Data(),
+    }
 
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
-	if err != nil {
-		blog.Errorf("GetModuleByModuleID http do error, err:%s,input:%+v,rid:%s", err.Error(), query, lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("GetModuleByModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
-		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
-	}
+    result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, query)
+    if err != nil {
+        blog.Errorf("GetNormalModuleByModuleID http do error, err:%s,input:%#v,rid:%s", err.Error(), query, lgc.rid)
+        return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+    }
+    if !result.Result {
+        blog.Errorf("GetNormalModuleByModuleID http response error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
+        return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+    }
 
-	return result.Data.Info, nil
+    return result.Data.Info, nil
 }
 
 func (lgc *Logics) GetModuleIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
