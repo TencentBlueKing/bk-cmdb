@@ -31,7 +31,7 @@ import (
 )
 
 // CreateMainlineObjectAssociation used for create association of type bk_mainline, as it can only create by special method,
-// for example add a level to business modle
+// for example add a level to business model
 func (cli *Service) CreateMainlineObjectAssociation(req *restful.Request, resp *restful.Response) {
 	// bk_maineline is a inner association type that can only create in special case,
 	// so we separate bk_mainline association type creation with a independent method,
@@ -148,7 +148,7 @@ func (cli *Service) DeleteObjectAssociation(req *restful.Request, resp *restful.
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjAsst).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select objectasst by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select objectasst by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}

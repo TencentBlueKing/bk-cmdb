@@ -1,10 +1,11 @@
 package metric
 
 import (
-	"configcenter/src/common/http/httpclient"
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"configcenter/src/common/http/httpclient"
 )
 
 func NewMetricController(conf Config, healthFunc HealthFunc, collectors ...*Collector) []Action {
@@ -68,7 +69,7 @@ type MetricMeta struct {
 }
 
 type MetricInterf interface {
-	GetMeta() MetricMeta
+	GetMeta() *MetricMeta
 	GetValue() (*FloatOrString, error)
 	GetExtension() (*MetricExtension, error)
 }

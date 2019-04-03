@@ -202,7 +202,7 @@ func (bsonCodec) Encode(v interface{}) ([]byte, error) {
 }
 
 const (
-	// MagicVersion is the cc rpc protocal version
+	// MagicVersion is the cc rpc protocol version
 	MagicVersion = uint16(0x1b01) // cmdb01
 )
 

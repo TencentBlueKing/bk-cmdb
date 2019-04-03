@@ -49,7 +49,7 @@ type TxStatus int
 // TxStatus enumerations
 const (
 	TxStatusOnProgress TxStatus = iota + 1
-	TxStatusCommited
+	TxStatusCommitted
 	TxStatusAborted
 	TxStatusException
 )
@@ -58,7 +58,7 @@ func (s TxStatus) String() string {
 	switch s {
 	case TxStatusOnProgress:
 		return "OnProgress"
-	case TxStatusCommited:
+	case TxStatusCommitted:
 		return "Commited"
 	case TxStatusAborted:
 		return "Aborted"
