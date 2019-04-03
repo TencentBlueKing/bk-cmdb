@@ -141,16 +141,38 @@ var expectBizResourceType = []ResourceType{
 				ActionName:        "绑定到模块",
 				IsRelatedResource: true,
 			},
-			{
-				ActionID:          BindModuleQuery,
-				ActionName:        "绑定模块查询",
-				IsRelatedResource: true,
-			},
 		},
 	},
+	// { 二期要用，注释掉留这
+	// 	ResourceTypeID:       BizTopoInstance,
+	// 	ResourceTypeName:     "拓扑",
+	// 	ParentResourceTypeID: "",
+	// 	Actions: []Action{
+	// 		{
+	// 			ActionID:          Create,
+	// 			ActionName:        "新建",
+	// 			IsRelatedResource: false,
+	// 		},
+	// 		{
+	// 			ActionID:          Edit,
+	// 			ActionName:        "编辑",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 		{
+	// 			ActionID:          Delete,
+	// 			ActionName:        "删除",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 		{
+	// 			ActionID:          Get,
+	// 			ActionName:        "查询",
+	// 			IsRelatedResource: true,
+	// 		},
+	// 	},
+	// },
 	{
-		ResourceTypeID:       BizTopoInstance,
-		ResourceTypeName:     "拓扑",
+		ResourceTypeID:       BizHostInstance,
+		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
 		Actions: []Action{
 			{
@@ -168,37 +190,17 @@ var expectBizResourceType = []ResourceType{
 				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          HostTransfer,
-				ActionName:        "主机转移",
-				IsRelatedResource: true,
-			},
 		},
 	},
 	{
-		ResourceTypeID:       BizHostInstance,
-		ResourceTypeName:     "主机",
+		ResourceTypeID:       BizAuditLog,
+		ResourceTypeName:     "操作审计",
 		ParentResourceTypeID: "",
 		Actions: []Action{
 			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
 				ActionID:          Get,
 				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          ModuleTransfer,
-				ActionName:        "转资源池",
-				IsRelatedResource: true,
+				IsRelatedResource: false,
 			},
 		},
 	},

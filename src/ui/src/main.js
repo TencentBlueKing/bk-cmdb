@@ -4,7 +4,6 @@ import router from './router/index.js'
 import store from './store'
 import i18n from './i18n'
 import cmdbRequestMixin from './mixins/request'
-import cmdbClassifyMixin from './mixins/classify'
 import cmdbAuthMixin from './mixins/auth'
 import cmdbInjectMixin from './mixins/inject'
 import cmdbUI from './components/ui'
@@ -22,7 +21,6 @@ import './assets/icon/bk-icon-2.0/iconfont.css'
 Vue.use(cmdbUI)
 Vue.use(clipboard)
 Vue.mixin(cmdbRequestMixin)
-Vue.mixin(cmdbClassifyMixin)
 Vue.mixin(cmdbAuthMixin)
 Vue.mixin(cmdbInjectMixin)
 Vue.prototype.$http = api

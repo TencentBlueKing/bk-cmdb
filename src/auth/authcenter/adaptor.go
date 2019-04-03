@@ -88,7 +88,10 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
-
+	case meta.SystemBase:
+		iamResourceType = SysSystemBase
+	case meta.UserCustom:
+		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	default:
@@ -131,6 +134,7 @@ const (
 	SysModel            ResourceTypeID = "sysModel"
 	SysInstance         ResourceTypeID = "sysInstance"
 	SysAssociationType  ResourceTypeID = "sysAssociationType"
+	SysAuditLog         ResourceTypeID = "sysAuditLog"
 )
 
 // Business Resource
@@ -143,6 +147,11 @@ const (
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
+	BizAuditLog        ResourceTypeID = "bizAuditLog"
+)
+
+const (
+	UserCustom ResourceTypeID = "userCustom"
 )
 
 type ActionID string
@@ -170,7 +179,6 @@ const (
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
 	BindModule            ActionID = "bindModule"
-	BindModuleQuery       ActionID = "bindModuleQuery"
 	AdminEntrance         ActionID = "adminEntrance"
 )
 
@@ -182,9 +190,18 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return Edit, nil
 		}
 	}
-	if r.Action == meta.Archive {
-		return Archive, nil
+
+	if r.Basic.Type == meta.Business {
+		if r.Action == meta.Archive {
+			return Archive, nil
+		}
+
+		// edit a business.
+		if r.Action == meta.Create || r.Action == meta.Update {
+			return Edit, nil
+		}
 	}
+
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
@@ -206,9 +223,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return BindModule, nil
 		}
 
-		if r.Action == meta.FindBoundModuleProcess {
-			return BindModuleQuery, nil
-		}
 	}
 
 	switch r.Action {
@@ -231,12 +245,14 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
-		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveHostToModule:
 		return ModuleTransfer, nil
+
+	case meta.MoveHostFromModuleToResPool:
+		return Delete, nil
 
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool
@@ -247,7 +263,12 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
-
+	case meta.ModelTopologyView:
+		return ModelTopologyView, nil
+	case meta.ModelTopologyOperation:
+		return ModelTopologyOperation, nil
+	case meta.AdminEntrance:
+		return AdminEntrance, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)

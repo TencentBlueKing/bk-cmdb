@@ -9,30 +9,14 @@
  */
 
 import $http from '@/api'
-import STATIC_NAVIGATION from '@/assets/json/static-navigation.json'
-
-const _getNavigationById = id => {
-    let navigation
-    for (let classificationId in STATIC_NAVIGATION) {
-        navigation = STATIC_NAVIGATION[classificationId].children.find(navigation => navigation.id === id)
-        if (navigation) break
-    }
-    return navigation
-}
 
 const state = {
     classifications: [],
-    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo'],
-    interceptStaticModel: {
-        'bk_host_manage': ['resource'],
-        'bk_back_config': ['event', 'model', 'audit']
-    },
-    staticClassifyId: Object.keys(STATIC_NAVIGATION)
+    invisibleClassifications: ['bk_host_manage', 'bk_biz_topo']
 }
 
 const getters = {
     classifications: state => state.classifications,
-    staticClassifyId: state => state.staticClassifyId,
     models: state => {
         const models = []
         state.classifications.forEach(classification => {
@@ -62,97 +46,6 @@ const getters = {
             return !state.invisibleClassifications.includes(bkClassificationId) && Array.isArray(bkObjects) && bkObjects.length
         })
         return activeClassifications
-    },
-    // 可用分类中被授权的分类
-    authorizedClassifications: (state, getters, rootState, rootGetters) => {
-        let modelAuthority = rootGetters['userPrivilege/privilege']['model_config'] || {}
-        let authorizedClassifications = JSON.parse(JSON.stringify(getters.activeClassifications))
-        // if (!rootGetters.admin) {
-        //     // 1.去除无权限分类
-        //     authorizedClassifications = authorizedClassifications.filter(classification => {
-        //         return modelAuthority.hasOwnProperty(classification['bk_classification_id'])
-        //     })
-        //     // 2.去除分类下无权限的模型
-        //     authorizedClassifications.forEach(classification => {
-        //         classification['bk_objects'] = classification['bk_objects'].filter(model => {
-        //             return modelAuthority[classification['bk_classification_id']].hasOwnProperty(model['bk_obj_id'])
-        //         })
-        //     })
-        // }
-        return authorizedClassifications.filter(({bk_objects: bkObjects}) => bkObjects.length)
-    },
-    authorizedModels: (state, getters) => {
-        const models = []
-        getters.authorizedClassifications.forEach(classification => {
-            classification['bk_objects'].forEach(model => {
-                models.push(model)
-            })
-        })
-        return models
-    },
-    authorizedNavigation: (state, getters, rootState, rootGetters) => {
-        const authority = rootGetters['userPrivilege/privilege']
-        const collectionKey = 'bk_collection'
-        const collection = []
-        const specialCollecton = [{
-            id: 'biz',
-            path: '/business',
-            icon: 'icon-cc-business',
-            i18n: 'Nav["业务"]',
-            authorized: true,
-            classificationId: collectionKey
-        }]
-        const hasResourcePrivilege = rootGetters.admin || (authority['sys_config']['global_busi'] || []).includes('resource')
-        if (hasResourcePrivilege) {
-            specialCollecton.push({
-                id: '$resource',
-                path: '/resource',
-                icon: 'icon-cc-host-free-pool',
-                i18n: 'Nav["主机"]',
-                authorized: hasResourcePrivilege,
-                classificationId: collectionKey
-            })
-        }
-        const collectedModelKey = rootGetters['userCustom/classifyNavigationKey']
-        const collectedModelIds = rootGetters['userCustom/usercustom'][collectedModelKey] || []
-        collectedModelIds.forEach(modelId => {
-            const specialModel = specialCollecton.find(({id}) => id === modelId)
-            if (specialModel) {
-                collection.push(specialModel)
-            } else {
-                const model = getters.getModelById(modelId)
-                if (model) {
-                    collection.push({
-                        id: modelId,
-                        name: model['bk_obj_name'],
-                        icon: model['bk_obj_icon'],
-                        path: `/general-model/${modelId}`,
-                        authorized: true,
-                        classificationId: collectionKey
-                    })
-                }
-            }
-        })
-        STATIC_NAVIGATION[collectionKey].children = collection
-
-        if (!rootGetters.admin) {
-            STATIC_NAVIGATION['bk_authority'].children.forEach(navigation => {
-                navigation.authorized = false
-            })
-            const systemConfig = authority['sys_config']
-            const backConfig = systemConfig['back_config'] || []
-            const globalConfig = systemConfig['global_busi'] || []
-            const needsCheck = ['audit', 'event']
-            needsCheck.forEach(id => {
-                const navigation = _getNavigationById(id)
-                navigation.authorized = backConfig.includes(id)
-            })
-            // 基础资源->主机/ 权限控制
-            const resourceAuthorized = _getNavigationById('resource')
-            resourceAuthorized.authorized = globalConfig.includes('resource')
-        }
-        const navigation = Object.keys(STATIC_NAVIGATION).map(classificationId => STATIC_NAVIGATION[classificationId])
-        return navigation.sort((A, B) => A.order - B.order)
     }
 }
 

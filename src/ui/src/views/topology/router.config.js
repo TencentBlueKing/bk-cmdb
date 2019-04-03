@@ -1,18 +1,10 @@
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
-    C_TOPO,
-    U_TOPO,
-    D_TOPO,
-    TOPO_TRANSFER_HOST,
     U_HOST,
     HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    C_TOPO,
-    U_TOPO,
-    D_TOPO,
-    TOPO_TRANSFER_HOST,
     U_HOST,
     HOST_TO_RESOURCE
 }
