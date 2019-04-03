@@ -1,6 +1,5 @@
 import {
-    R_INST,
-    GET_MODEL_INST_AUTH_META
+    R_INST
 } from '@/dictionary/auth'
 
 export default {
@@ -10,7 +9,6 @@ export default {
     meta: {
         auth: {
             view: R_INST,
-            meta: GET_MODEL_INST_AUTH_META,
             operation: [R_INST]
         }
     }

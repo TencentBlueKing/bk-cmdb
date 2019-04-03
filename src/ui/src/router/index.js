@@ -21,11 +21,6 @@ import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 
-import {
-    GET_AUTH_META,
-    GET_MODEL_INST_AUTH_META
-} from '@/dictionary/auth'
-
 Vue.use(Router)
 
 export const viewRouters = [
@@ -83,24 +78,13 @@ const router = new Router({
     ]
 })
 
-const getAuthMeta = (type, to, meta) => {
-    if (meta === GET_MODEL_INST_AUTH_META) {
-        const models = router.app.$store.getters['objectModelClassify/models']
-        return GET_MODEL_INST_AUTH_META(to.params.objId, type, models)
-    }
-    return GET_AUTH_META(type)
-}
-
 const getAuth = to => {
     const auth = to.meta.auth || {}
-    const view = auth.view
-    const operation = Array.isArray(auth.operation) ? auth.operation : []
-    const operationAuthMeta = operation.map(type => getAuthMeta(type, to, auth.meta))
-    if (view) {
-        operationAuthMeta.push(getAuthMeta(view, to, auth.meta))
-    }
-    if (operationAuthMeta.length) {
-        return router.app.$store.dispatch('auth/getOperationAuth', operationAuthMeta)
+    const view = auth.view || []
+    const operation = auth.operation || []
+    const routerAuth = [...view, ...operation]
+    if (routerAuth.length) {
+        return router.app.$store.dispatch('auth/getOperationAuth', routerAuth)
     }
     return Promise.resolve([])
 }
@@ -111,8 +95,7 @@ const isViewAuthorized = to => {
     if (!view) {
         return true
     }
-    const authMeta = getAuthMeta(view, to, auth.meta)
-    const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.resource_type, authMeta.action)
+    const viewAuth = router.app.$store.getters['auth/isAuthorized'](view)
     return viewAuth
 }
 
@@ -131,6 +114,15 @@ const setMenuState = to => {
     router.app.$store.commit('menu/setActiveMenu', menuId)
     if (parentId) {
         router.app.$store.commit('menu/setOpenMenu', parentId)
+    }
+}
+
+const checkDynamicMeta = (to, from) => {
+    router.app.$store.commit('auth/setDynamicMeta', {})
+    const auth = to.meta.auth || {}
+    const setDynamicMeta = auth.setDynamicMeta
+    if (typeof setDynamicMeta === 'function') {
+        setDynamicMeta(to, from, router.app)
     }
 }
 
@@ -160,6 +152,7 @@ router.beforeEach((to, from, next) => {
                 if (setupStatus.preload) {
                     await preload(router.app)
                 }
+                checkDynamicMeta(to, from)
                 const isStatusPage = statusRouters.some(status => status.name === to.name)
                 if (isStatusPage) {
                     next()
@@ -175,6 +168,7 @@ router.beforeEach((to, from, next) => {
                 }
             }
         } catch (e) {
+            console.error(e)
             setLoading(false)
             next({name: 'error'})
         } finally {

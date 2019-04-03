@@ -36,7 +36,7 @@ const getters = {
             const menu = meta.menu
             const shouldShow = this.isAdminView ? menu && menu.adminView : menu
             if (shouldShow) {
-                const authorized = auth.view ? rootGetters['auth/isAuthorized'](...auth.view.split('.'), {isView: true}) : true
+                const authorized = auth.view ? rootGetters['auth/isAuthorized'](...auth.view.split('.'), {type: 'view'}) : true
                 if (authorized) {
                     if (menu.parent) {
                         const parent = menus.find(parent => parent.id === menu.parent) || {}
