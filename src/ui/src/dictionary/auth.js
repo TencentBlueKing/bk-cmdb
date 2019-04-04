@@ -71,13 +71,20 @@ export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
 export const STATIC_BUSINESS_MODE = [
+    C_MODEL,
+    R_MODEL,
+    U_MODEL,
+    D_MODEL,
+
     C_MODEL_GROUP,
     U_MODEL_GROUP,
     D_MODEL_GROUP,
+
     C_CUSTOM_QUERY,
     U_CUSTOM_QUERY,
     D_CUSTOM_QUERY,
     R_CUSTOM_QUERY,
+
     C_PROCESS,
     U_PROCESS,
     D_PROCESS,
@@ -85,6 +92,7 @@ export const STATIC_BUSINESS_MODE = [
     PROCESS_BIND_MODULE,
     PROCESS_UNBIND_MODULE,
     PROCESS_SEARCH_MODULE,
+    
     C_HOST,
     U_HOST,
     D_HOST
@@ -94,11 +102,7 @@ export const DYNAMIC_BUSINESS_MODE = [
     C_INST,
     U_INST,
     D_INST,
-    R_INST,
-    C_MODEL,
-    R_MODEL,
-    U_MODEL,
-    D_MODEL
+    R_INST
 ]
 
 export const GET_AUTH_META = (auth, options = {}) => {
