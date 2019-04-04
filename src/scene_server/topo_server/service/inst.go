@@ -60,8 +60,8 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		}
 
 		// auth: check authorization
-		if err := s.AuthManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, obj.Object()); err != nil {
-			blog.V(2).Infof("create unique for model %d failed, authorization failed, err: %+v", obj.Object().ID, err)
+		if err := s.AuthManager.AuthorizeInstanceCreateByObject(params.Context, params.Header, meta.Update, obj.Object()); err != nil {
+			blog.V(2).Infof("authorization for create instance by model %d failed, authorization failed, err: %+v", obj.Object().ID, err)
 			return nil, err
 		}
 
