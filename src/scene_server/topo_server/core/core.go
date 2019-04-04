@@ -68,7 +68,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	classificationOperation := operation.NewClassificationOperation(client, authManager)
 	groupOperation := operation.NewGroupOperation(client)
 	objectOperation := operation.NewObjectOperation(client, authManager)
-	instOperation := operation.NewInstOperation(client, authManager)
+	instOperation := operation.NewInstOperation(client)
 	moduleOperation := operation.NewModuleOperation(client)
 	setOperation := operation.NewSetOperation(client)
 	businessOperation := operation.NewBusinessOperation(client, authManager)
