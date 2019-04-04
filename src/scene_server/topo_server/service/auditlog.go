@@ -46,8 +46,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 			}
 
 			conds[common.BKOpTimeField] = common.KvMap{
-				"$gte": times[0], 
-				"$lte": times[1], 
+				"$gte":              times[0],
+				"$lte":              times[1],
 				CCTimeTypeParseFlag: "1",
 			}
 		}
@@ -57,7 +57,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
 	}
-	
+
 	// add auth filter condition
 	commonInfo, err := parser.ParseCommonInfo(&params.Header)
 	if err != nil {
@@ -72,13 +72,13 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		}
 		businessID = id
 	}
-	
+
 	authCondition, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, commonInfo.User, businessID)
 	if err != nil {
 		blog.Errorf("make audit query condition from auth failed, %+v", err)
 		return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
 	}
 	blog.V(5).Infof("auth condition is: %+v", authCondition)
-	
+
 	return s.Core.AuditOperation().Query(params, query)
 }
