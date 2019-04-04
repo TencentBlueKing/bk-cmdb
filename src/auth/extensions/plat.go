@@ -38,41 +38,19 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
 	if err != nil {
-		blog.V(3).Infof("get instances by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
+		blog.V(3).Infof("get plats by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
-	instances := make([]PlatSimplify, 0)
+	plats := make([]PlatSimplify, 0)
 	for _, cls := range result.Data.Info {
-		instance := PlatSimplify{}
-		_, err = instance.Parse(cls)
+		plat := PlatSimplify{}
+		_, err = plat.Parse(cls)
 		if err != nil {
 			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
 		}
-		instances = append(instances, instance)
+		plats = append(plats, plat)
 	}
-	return instances, nil
-}
-
-func (am *AuthManager) collectPlatByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]PlatSimplify, error) {
-
-	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
-	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
-	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
-	}
-	instances := make([]PlatSimplify, 0)
-	for _, cls := range result.Data.Info {
-		classification := PlatSimplify{}
-		_, err = classification.Parse(cls)
-		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
-		}
-		instances = append(instances, classification)
-	}
-	return instances, nil
+	return plats, nil
 }
 
 func (am *AuthManager) makeResourcesByPlat(header http.Header, action meta.Action, plats ...PlatSimplify) []meta.ResourceAttribute {
@@ -122,28 +100,28 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 	return nil
 }
 
-func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
+func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http.Header, ids ...int64) error {
+	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredPlat(ctx, header, plats...)
 }
 
-func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
+func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredPlat(ctx, header, plats...)
 }
 
 func (am *AuthManager) DeregisterPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+		return fmt.Errorf("deregister plats failed, get plats by id failed, err: %+v", err)
 	}
-	return am.DeregisterClassification(ctx, header, instances...)
+	return am.DeregisterPlat(ctx, header, plats...)
 }
 
 func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
