@@ -22,6 +22,5 @@ export default async function (app, to, from) {
     if (to.meta.requireBusiness) {
         functions.push(getBusiness)
     }
-    console.log(functions, to.meta)
     return Promise.all(functions.map(func => func(app, to, from)))
 }
