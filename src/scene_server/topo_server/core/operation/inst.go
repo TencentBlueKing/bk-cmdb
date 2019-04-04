@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -67,6 +66,8 @@ type InstID int64
 type BatchResult struct {
 	Errors       []string `json:"error"`
 	Success      []string `json:"success"`
+	SuccessCreated      []int64 `json:"success_created"`
+	SuccessUpdated      []int64 `json:"success_updated"`
 	UpdateErrors []string `json:"update_error"`
 }
 
@@ -102,12 +103,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
-
-	// auth: check authorization
-	if err := c.authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
-		blog.V(2).Infof("create unique for model %d failed, authorization failed, err: %+v", object.ID, err)
-		return nil, err
-	}
 
 	// all the instances's name should not be same,
 	// so we need to check first.
@@ -203,18 +198,9 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			createdInstanceIDs = append(createdInstanceIDs, instanceID)
 		}
 	}
-
-	// auth register new created
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
-		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
-		return nil, err
-	}
-
-	// auth update registered instances
-	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
-		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
-		return nil, err
-	}
+	
+	results.SuccessCreated = createdInstanceIDs
+	results.SuccessUpdated = updatedInstanceIDs
 
 	return results, nil
 }

@@ -140,6 +140,7 @@ func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID stri
 	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
 	inputParam.Condition = condition.ToMapStr()
 
+	blog.V(9).Infof("search instance with parameter: %+v", inputParam)
 	instItems, err := m.searchInstance(ctx, objID, inputParam)
 	if nil != err {
 		blog.Errorf("search instance error [%v]", err)
