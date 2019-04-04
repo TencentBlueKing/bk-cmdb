@@ -40,6 +40,10 @@ const statusRouter = [
         name: 'error',
         path: '/error',
         components: require('@/views/status/error')
+    }, {
+        name: 'noAuthority',
+        path: '/require-business',
+        components: require('@/views/status/require-business')
     }
 ]
 
