@@ -49,7 +49,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 		_, err := setSimplify.Parse(instance)
 		if err != nil {
 			blog.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
-			continue
+			return nil, fmt.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
 		}
 		sets = append(sets, setSimplify)
 	}

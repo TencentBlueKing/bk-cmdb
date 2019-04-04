@@ -70,7 +70,8 @@ func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, heade
 		classification := metadata.Classification{}
 		_, err = classification.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			blog.Errorf("collectClassificationsByRawIDs %+v failed, parse classification %+v failed, err: %+v ", ids, cls, err)
+			return nil, fmt.Errorf("parse classification from db data failed, err: %+v", err)
 		}
 		classifications = append(classifications, classification)
 	}
