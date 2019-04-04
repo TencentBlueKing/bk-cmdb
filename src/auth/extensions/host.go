@@ -13,7 +13,6 @@
 package extensions
 
 import (
-	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )

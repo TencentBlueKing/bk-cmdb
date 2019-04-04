@@ -13,6 +13,7 @@
 package middleware
 
 import (
+	"configcenter/src/web_server/middleware/auth"
 	"plugin"
 	"strings"
 
@@ -23,12 +24,11 @@ import (
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 var sLoginURL string
@@ -61,6 +61,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.Abort()
 				return
 			}
+			
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
