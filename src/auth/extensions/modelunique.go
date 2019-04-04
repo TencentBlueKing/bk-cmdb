@@ -47,7 +47,11 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	uniques := make([]metadata.ObjectUnique, 0)
 	for _, item := range resp.Data.Info {
 		unique := metadata.ObjectUnique{}
-		unique.Parse(item)
+		_, err := unique.Parse(item)
+		if err != nil {
+			blog.Errorf("collectUniqueByUniqueIDs %+v failed, parse unique %+v failed, err: %+v ", uniqueIDs, item, err)
+			return nil, fmt.Errorf("parse unique from db data failed, err: %+v", err)
+		}
 		uniques = append(uniques, unique)
 	}
 	return uniques, nil
