@@ -49,11 +49,11 @@ func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams
 }
 
 func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.QueryCondition{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
+
 	dataResult, err := s.core.InstanceOperation().SearchModelInstance(params, pathParams("bk_obj_id"), inputData)
 	if nil != err {
 		return dataResult, err

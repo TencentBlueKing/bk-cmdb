@@ -33,6 +33,7 @@ export default {
         auth: {
             view: R_HOST,
             operation: Object.values(OPERATION)
-        }
+        },
+        requireBusiness: true
     }
 }
