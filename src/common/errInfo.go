@@ -599,6 +599,18 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
+	// TODO add error tips
+	// CCErrCoreServiceHostNotBelongBusiness hostID [%#v] does not belong of  businessID [%d]
+	CCErrCoreServiceHostNotBelongBusiness = 1113002
+	// CCErrCoreServiceHostNotExist hostID [%#v] does not exist
+	CCErrCoreServiceHostNotExist = 1113003
+	// ModuleID [%#v] has not belong of  businessID [%d]
+	CCErrCoreServiceHasModuleNotBelongBusiness = 1113004
+	// CCErrCoreServiceModuleContainDefaultModuleErr  translate host to multiple module not contain default module
+	CCErrCoreServiceModuleContainDefaultModuleErr = 1113005
+	// CCErrCoreServiceBusinessNotExist Business [%#v] does not exist
+	CCErrCoreServiceBusinessNotExist = 1113006
+
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist

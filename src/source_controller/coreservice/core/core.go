@@ -132,6 +132,10 @@ type TopoOperation interface {
 	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
 }
 
+// HostOperation methods
+type HostOperation interface {
+}
+
 // AssociationOperation association methods
 type AssociationOperation interface {
 	AssociationKind
@@ -153,7 +157,7 @@ type core struct {
 	instance        InstanceOperation
 	associaction    AssociationOperation
 	dataSynchronize DataSynchronizeOperation
-	topo         TopoOperation
+	topo            TopoOperation
 }
 
 // New create core
@@ -163,7 +167,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		instance:        instance,
 		associaction:    association,
 		dataSynchronize: dataSynchronize,
-		topo:         topo,
+		topo:            topo,
 	}
 }
 
