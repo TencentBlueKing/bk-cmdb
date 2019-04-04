@@ -172,7 +172,7 @@ var expectBizResourceType = []ResourceType{
 	// },
 	{
 		ResourceTypeID:       BizHostInstance,
-		ResourceTypeName:     "主机",
+		ResourceTypeName:     "业务主机",
 		ParentResourceTypeID: "",
 		Actions: []Action{
 			{
