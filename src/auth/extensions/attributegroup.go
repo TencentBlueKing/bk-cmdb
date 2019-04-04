@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) collectAttributesGroupByAttributeIDs(ctx context.Context, header http.Header, agIDs ...int64) ([]metadata.Group, error) {
+func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header http.Header, agIDs ...int64) ([]metadata.Group, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	agIDs = util.IntArrayUnique(agIDs)
 
@@ -34,13 +34,13 @@ func (am *AuthManager) collectAttributesGroupByAttributeIDs(ctx context.Context,
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNamePropertyGroup, queryCond)
 	if err != nil {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, err: %+v", agIDs, err)
+		return nil, fmt.Errorf("get model attribute group by id: %+v failed, err: %+v", agIDs, err)
 	}
 	if len(resp.Data.Info) == 0 {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, not found", agIDs)
+		return nil, fmt.Errorf("get model attribute group by id: %+v failed, not found", agIDs)
 	}
 	if len(resp.Data.Info) != len(agIDs) {
-		return nil, fmt.Errorf("get attribute by id: %+v failed, get %d, expect %d", agIDs, len(resp.Data.Info), len(agIDs))
+		return nil, fmt.Errorf("get model attribute group by id: %+v failed, get %d, expect %d", agIDs, len(resp.Data.Info), len(agIDs))
 	}
 
 	pgs := make([]metadata.Group, 0)
@@ -64,7 +64,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+		return nil, fmt.Errorf("register model attributes group failed, get related models failed, err: %+v", err)
 	}
 	objectMap := map[string]metadata.Object{}
 	for _, object := range objects {
@@ -73,7 +73,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
-		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
+		return nil, fmt.Errorf("make auth resource for model attribute group failed, extract ancestor business failed, err: %+v", err)
 	}
 
 	classificationIDs := make([]string, 0)
@@ -82,7 +82,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 	}
 	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
+		return nil, fmt.Errorf("register model attributes failed, get ancestor classification failed, err: %+v", err)
 	}
 	classificationMap := map[string]metadata.Classification{}
 	for _, classification := range classifications {
@@ -97,7 +97,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 		// check obj's group id in map
 		if _, exist := classificationMap[object.ObjCls]; exist == false {
-			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist")
+			blog.V(3).Infof("makeResourceByAttributeGroup failed, get ancestor classification failed, err: bk_classification_id not exist, classificationMap: %+v, model id: %s", classificationMap, object.ObjCls)
 			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 		}
 
@@ -136,7 +136,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, meta.EmptyAction, attributeGroups...)
 	if err != nil {
-		return fmt.Errorf("register model attribute failed, err: %+v", err)
+		return fmt.Errorf("register model attribute group failed, err: %+v", err)
 	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
@@ -145,27 +145,35 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, meta.EmptyAction, attributeGroups...)
 	if err != nil {
-		return fmt.Errorf("deregister model attribute failed, err: %+v", err)
+		return fmt.Errorf("deregister model attribute group failed, err: %+v", err)
 	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, header http.Header, groupIDs ...int64) error {
+	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, groupIDs...)
 	if err != nil {
-		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+		return fmt.Errorf("deregistered model attribute group failed, get model attribute group by id failed, err: %+v", err)
 	}
-	return am.DeregisterModelAttribute(ctx, header, attibutes...)
+	return am.DeregisterModelAttributeGroup(ctx, header, attributeGroups...)
 }
 
 func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) error {
+	if am.RegisterModelAttributeEnabled == false {
+		objectIDs := make([]string, 0)
+		for _, attributeGroup := range attributeGroups {
+			objectIDs = append(objectIDs, attributeGroup.ObjectID)
+		}
+		return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+	}
+
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, action, attributeGroups...)
 	if err != nil {
 		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
 	}
 
-	return am.Authorize.RegisterResource(ctx, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
@@ -178,23 +186,17 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
-	attibutes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)
 	if err != nil {
-		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
+		return fmt.Errorf("update registered model attribute group failed, get attribute by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredModelAttribute(ctx, header, attibutes...)
+	return am.UpdateRegisteredModelAttributeGroup(ctx, header, attributeGroups...)
 }
 
-func (am *AuthManager) AuthorizeByAttributeGroupID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
-	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
+func (am *AuthManager) AuthorizeAttributeGroupByID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)
 	}
-
-	objectIDs := make([]string, 0)
-	for _, attribute := range attributes {
-		objectIDs = append(objectIDs, attribute.ObjectID)
-	}
-
-	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+	return am.AuthorizeModelAttributeGroup(ctx, header, action, attributeGroups...)
 }
