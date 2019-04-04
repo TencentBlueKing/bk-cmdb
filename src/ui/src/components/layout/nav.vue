@@ -95,8 +95,8 @@
                     return submenuCount * this.routerLinkHeight
                 }
             }
+            /* eslint-disable end */
         },
-        /* eslint-disable end */
         methods: {
             handleMouseEnter () {
                 if (this.timer) {
