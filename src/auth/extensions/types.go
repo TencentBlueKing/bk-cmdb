@@ -71,7 +71,7 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 
 	metaInterface, exist := data[common.MetadataField]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	metaValue, ok := metaInterface.(map[string]interface{})
