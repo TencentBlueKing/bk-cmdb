@@ -229,10 +229,54 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, header http.Header, objectID string) error {
-	return am.AuthorizeByObjectID(ctx, header, meta.Update, objectID)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectID)
+	if err != nil {
+		return fmt.Errorf("get model by id failed, err: %+v", err)
+	}
+	
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
+	if err != nil {
+		return fmt.Errorf("extract business from object failed, err: %+v", err)
+	}
+	
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.Update, businessID, objects...)
+	if err != nil {
+		return fmt.Errorf("make parent resource from objects failed, err: %+v", err)
+	}
+	
+	if am.RegisterModelUniqueEnabled == false {
+		return am.batchAuthorize(ctx, header, parentResources...)
+	}
+	
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, parentResource := range parentResources {
+		layers := parentResource.Layers
+		layers = append(layers, meta.Item{
+			Type:       meta.Model,
+			Action:     parentResource.Action,
+			Name:       parentResource.Name,
+			InstanceID: parentResource.InstanceID,
+		})
+		resource := meta.ResourceAttribute{
+			Basic:           meta.Basic{
+				Type:       meta.ModelUnique,
+				Action:     meta.Create,
+			},
+			SupplierAccount: parentResource.SupplierAccount,
+			BusinessID:      parentResource.BusinessID,
+			Layers:          layers,
+		}
+		resources = append(resources, resource)
+	}
+	
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+	
 	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)

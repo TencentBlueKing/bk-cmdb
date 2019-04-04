@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
@@ -60,6 +61,30 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 	}
 	if decision.Authorized == false {
 		return fmt.Errorf("authorize failed, reason: %s", decision.Reason)
+	}
+
+	return nil
+}
+
+func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, resources ...meta.ResourceAttribute) error {
+	commonInfo, err := parser.ParseCommonInfo(&header)
+	if err != nil {
+		return fmt.Errorf("authentication failed, parse user info from header failed, %+v", err)
+	}
+
+	decisions, err := am.Authorize.AuthorizeBatch(ctx, commonInfo.User, resources...)
+	if err != nil {
+		return fmt.Errorf("authorize failed, err: %+v", err)
+	}
+	
+	messages := make([]string, 0)
+	for _, decision := range decisions {
+		if decision.Authorized == false {
+			messages = append(messages, fmt.Sprintf("authorize failed, reason: %s", decision.Reason))
+		}
+	}
+	if len(messages) > 0 {
+		return fmt.Errorf(strings.Join(messages, "\n"))
 	}
 
 	return nil

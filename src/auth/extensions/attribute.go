@@ -227,10 +227,5 @@ func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.H
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)
 	}
 
-	objectIDs := make([]string, 0)
-	for _, attribute := range attributes {
-		objectIDs = append(objectIDs, attribute.ObjectID)
-	}
-
-	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+	return am.AuthorizeModelAttribute(ctx, header, action, attributes...)
 }
