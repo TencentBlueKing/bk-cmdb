@@ -103,7 +103,7 @@ const (
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
 
-	Excute Action = "excute"
+	Excute Action = "execute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
@@ -120,10 +120,11 @@ const (
 	// process actions
 	BoundModuleToProcess   Action = "boundModuleToProcess"
 	UnboundModuleToProcess Action = "unboundModelToProcess"
-	FindBoundModuleProcess Action = "findBoundModuleProcess"
 
-	// topo
-	ModelTopologyView Action = "modelTopologyView"
+	// system base
+	ModelTopologyView      Action = "modelTopologyView"
+	ModelTopologyOperation Action = "modelTopologyOperation"
+	AdminEntrance          Action = "adminEntrance"
 )
 
 type InitConfig struct {

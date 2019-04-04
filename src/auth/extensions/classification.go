@@ -99,7 +99,7 @@ func (am *AuthManager) makeResourcesByClassifications(header http.Header, action
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
-				Type:       meta.Model,
+				Type:       meta.ModelClassification,
 				Name:       classification.ClassificationID,
 				InstanceID: classification.ID,
 			},

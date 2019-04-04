@@ -1,4 +1,5 @@
 import { NAV_AUDIT_ANALYSE } from '@/dictionary/menu'
+import Meta from '@/router/meta'
 
 const path = '/auditing'
 
@@ -18,6 +19,7 @@ export default {
         auth: {
             view: '',
             operation: []
-        }
+        },
+        requireBusiness: true
     }
 }
