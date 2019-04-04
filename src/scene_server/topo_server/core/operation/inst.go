@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -50,10 +49,9 @@ type InstOperationInterface interface {
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface) InstOperationInterface {
 	return &commonInst{
 		clientSet:   client,
-		authManager: authManager,
 	}
 }
 
@@ -73,7 +71,6 @@ type BatchResult struct {
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
