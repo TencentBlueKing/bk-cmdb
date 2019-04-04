@@ -30,13 +30,13 @@
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom', 'recentlyKey']),
-            ...mapGetters('objectModelClassify', ['authorizedNavigation', 'authorizedModels']),
+            ...mapGetters('objectModelClassify', ['models']),
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             },
             // 最近浏览的所有通用模型
             recentlyModels () {
-                return this.authorizedModels.filter(model => this.recently.includes(model['bk_obj_id']))
+                return this.models.filter(model => this.recently.includes(model['bk_obj_id']))
             },
             // 最近浏览的所有通用模型路由
             recentlyModelsPath () {

@@ -211,7 +211,7 @@
 
 <script>
     import vPop from './pop'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         components: {
             vPop
@@ -254,6 +254,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['classifications']),
             selectNum () {
                 let num = 0
                 const {
@@ -382,7 +383,7 @@
             setEventPushList () {
                 const eventPushList = []
                 const subscriptionForm = {}
-                this.$classifications.map(classify => {
+                this.classifications.map(classify => {
                     if (classify['bk_objects'].length && classify['bk_classification_id'] !== 'bk_host_manage') {
                         const event = {
                             name: classify['bk_classification_name'],

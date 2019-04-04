@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -90,14 +91,19 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 
 	// auth: check authorization
 	class := cls.Classify()
-	bizID, err := class.Metadata.Label.Int64(metadata.LabelBusinessID)
-	if err != nil {
-		return nil, err
-	}
-	if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, bizID, meta.ModelClassification); err != nil {
-		blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
-		return nil, err
-	}
+	// var businessID int64
+	// if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
+	// 	var err error
+	// 	businessID, err = class.Metadata.Label.Int64(metadata.LabelBusinessID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+	//
+	// if err := c.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.ModelClassification); err != nil {
+	// 	blog.V(2).Infof("create classification %+v failed, authorization failed, err: %+v", class, err)
+	// 	return nil, err
+	// }
 
 	err = cls.Create()
 	if nil != err {
@@ -140,6 +146,12 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 	}
 	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
 		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
+	}
+
+	// auth: deregister classification to iam
+	if err := c.authManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
+		blog.Errorf("deregister classification to iam failed, err: %+v", err)
+		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
 	}
 
 	for _, cls := range clsItems {
@@ -299,6 +311,12 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err
+	}
+
+	// auth: register classification to iam
+	if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, id); err != nil {
+		blog.Errorf("[operation-cls]failed to update the classification(%#v), update register failed, error info is %s", cls, err.Error())
+		return fmt.Errorf("register classification to iam failed, err: %+v", err)
 	}
 
 	return nil

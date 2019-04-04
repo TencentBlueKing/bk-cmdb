@@ -264,7 +264,7 @@ export function clone (object) {
  * @param {Object} object - 需拷贝的对象
  * @return {Object} 拷贝后的对象
  */
-export function getMetadataBiz (object) {
+export function getMetadataBiz (object = {}) {
     const metadata = object.metadata || {}
     const label = metadata.label || {}
     const biz = label['bk_biz_id']

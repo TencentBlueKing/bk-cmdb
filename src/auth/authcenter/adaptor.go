@@ -90,7 +90,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = BizCustomQuery
 	case meta.SystemBase:
 		iamResourceType = SysSystemBase
-
+	case meta.UserCustom:
+		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	default:
@@ -133,6 +134,7 @@ const (
 	SysModel            ResourceTypeID = "sysModel"
 	SysInstance         ResourceTypeID = "sysInstance"
 	SysAssociationType  ResourceTypeID = "sysAssociationType"
+	SysAuditLog         ResourceTypeID = "sysAuditLog"
 )
 
 // Business Resource
@@ -145,6 +147,11 @@ const (
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
+	BizAuditLog        ResourceTypeID = "bizAuditLog"
+)
+
+const (
+	UserCustom ResourceTypeID = "userCustom"
 )
 
 type ActionID string

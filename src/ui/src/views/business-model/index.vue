@@ -54,7 +54,8 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
                 return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
             }
@@ -86,7 +87,7 @@
                 }
             },
             getModelIcon (objId) {
-                const model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const model = this.models.find(model => model['bk_obj_id'] === objId)
                 return (model || {})['bk_obj_icon']
             },
             canAddLevel (model) {

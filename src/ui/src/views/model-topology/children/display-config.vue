@@ -90,7 +90,8 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'models'
             ])
         },
         created () {
@@ -147,7 +148,7 @@
                 this.topoList = topoList
             },
             asstLabel (model, asst) {
-                const asstModel = this.$allModels.find(model => {
+                const asstModel = this.models.find(model => {
                     return model['bk_obj_id'] === asst['bk_obj_id']
                 })
                 if (asstModel) {

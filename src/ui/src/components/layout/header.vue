@@ -41,7 +41,7 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="admin" @click="toggleAdminView">
+            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -50,9 +50,13 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { SYSTEM_MANAGEMENT } from '@/dictionary/auth'
     export default {
         data () {
             return {
+                OPERATION: {
+                    SYSTEM_MANAGEMENT
+                },
                 isShowUserDropdown: false,
                 isShowHelper: false
             }
@@ -61,13 +65,6 @@
             ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
-            },
-            title () {
-                const {
-                    $classify
-                } = this
-                const title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
