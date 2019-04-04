@@ -42,7 +42,7 @@ type InstanceSimplify struct {
 	ID         int64  `field:"id"`
 	InstanceID string `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
-	BizID      int64
+	BizID      int64  `field:"bk_biz_id"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance
