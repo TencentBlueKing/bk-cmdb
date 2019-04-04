@@ -2,7 +2,7 @@
     <div class="tips-wrapper">
         <div class="content-wrapper">
             <div class="title">
-                <i class="bk-icon icon-cc-no-authority"></i>
+                <i class="icon icon-cc-no-authority"></i>
                 <h2>{{$t("Common['无业务权限']")}}</h2>
             </div>
             <p>{{$t("Common['点击下方按钮申请']")}}</p>
@@ -25,12 +25,18 @@
         text-align: center;
         color: #63656E;
         font-size: 14px;
-        .title h2 {
-            margin-top: 10px;
-            margin-bottom: 10px;
-            font-size: 22px;
-            color: #313238;
-            font-weight: normal;
+        .title {
+            .icon {
+                font-size: 56px;
+                color: #979BA5;
+            }
+            h2 {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                font-size: 22px;
+                color: #313238;
+                font-weight: normal;
+            }
         }
         .btns {
             margin-top: 24px;
