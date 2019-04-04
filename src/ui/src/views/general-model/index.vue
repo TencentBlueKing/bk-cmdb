@@ -237,8 +237,12 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             objId () {
                 return this.$route.params.objId
+            },
+            model () {
+                return this.getModelById(this.objId) || {}
             },
             customConfigKey () {
                 return `${this.userName}_${this.objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
@@ -257,7 +261,7 @@
                 }
             },
             isPublicModel () {
-                const model = this.$allModels.find(model => model['bk_obj_id'] === this.objId) || {}
+                const model = this.models.find(model => model['bk_obj_id'] === this.objId) || {}
                 return !this.$tools.getMetadataBiz(model)
             }
         },
@@ -275,12 +279,12 @@
                 this.setTableHeader()
             },
             objId () {
-                this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
+                this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
                 this.reload()
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$model['bk_obj_name'])
+            this.$store.commit('setHeaderTitle', this.model['bk_obj_name'])
             this.reload()
         },
         methods: {
@@ -510,7 +514,7 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+                this.slider.title = `${this.$t("Common['创建']")} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({

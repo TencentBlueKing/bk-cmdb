@@ -146,9 +146,10 @@
             ...mapGetters('objectBiz', [
                 'business'
             ]),
+            ...mapGetters('objectModelClassify', ['classifications']),
             filterClassifications () {
                 const classifications = []
-                this.$classifications.map(classify => {
+                this.classifications.map(classify => {
                     if (classify['bk_classification_id'] === 'bk_biz_topo') {
                         classifications.push({
                             name: classify['bk_classification_name'],

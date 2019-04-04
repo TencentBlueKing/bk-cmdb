@@ -103,6 +103,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', ['models']),
             objId () {
                 return this.$parent.objId
             },
@@ -301,7 +302,7 @@
                 const options = this.associationObject.map(option => {
                     const isSource = option['bk_obj_id'] === this.objId
                     const type = this.associationType.find(type => type['bk_asst_id'] === option['bk_asst_id'])
-                    const model = this.$allModels.find(model => {
+                    const model = this.models.find(model => {
                         if (isSource) {
                             return model['bk_obj_id'] === option['bk_asst_obj_id']
                         } else {

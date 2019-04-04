@@ -10,7 +10,6 @@
             :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
             :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
             :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
-            :transfer-disabled="!$isAuthorized(OPERATION.TOPO_TRANSFER_HOST)"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>

@@ -77,7 +77,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         props: {
             toObjId: {
@@ -134,8 +134,9 @@
                 'searchAssociationType',
                 'searchObjectAssociation'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             getModelName (objId) {
-                const model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
                     return model['bk_obj_name']
                 }

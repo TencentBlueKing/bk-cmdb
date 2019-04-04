@@ -33,6 +33,7 @@
 
 <script>
     import vueDraggable from 'vuedraggable'
+    import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-filter-config',
         components: {
@@ -68,9 +69,10 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['models']),
             modelOptions () {
                 return Object.keys(this.properties).map(objId => {
-                    const model = this.$allModels.find(model => model['bk_obj_id'] === objId) || {}
+                    const model = this.models.find(model => model['bk_obj_id'] === objId) || {}
                     return {
                         id: objId,
                         name: model['bk_obj_name']

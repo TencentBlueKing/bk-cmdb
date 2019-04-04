@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -33,6 +34,7 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameAsstDes, queryCond)
 	if err != nil {
+		blog.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 		return nil, fmt.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 	}
 	if len(resp.Data.Info) == 0 {
@@ -45,11 +47,16 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 	aks := make([]metadata.AssociationKind, 0)
 	for _, item := range resp.Data.Info {
 		ak := metadata.AssociationKind{}
-		ak.Parse(item)
+		_, err := ak.Parse(item)
+		if err != nil {
+			blog.Errorf("collectAssociationTypesByIDs %+v failed, parse association kind %+v failed, err: %+v ", ids, item, err)
+			return nil, fmt.Errorf("parse association from db data failed, err: %+v", err)
+		}
 		aks = append(aks, ak)
 	}
 	return aks, nil
 }
+
 func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header http.Header, action meta.Action, aks ...metadata.AssociationKind) ([]meta.ResourceAttribute, error) {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, ak := range aks {

@@ -57,7 +57,6 @@
                         delete-disabled
                         :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
                         :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :transfer-disabled="!$isAuthorized(OPERATION.TOPO_TRANSFER_HOST)"
                         :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
