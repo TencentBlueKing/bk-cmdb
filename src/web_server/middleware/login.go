@@ -13,7 +13,6 @@
 package middleware
 
 import (
-	"configcenter/src/web_server/middleware/auth"
 	"plugin"
 	"strings"
 
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
