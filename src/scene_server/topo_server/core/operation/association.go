@@ -407,9 +407,27 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 	if len(exists) > 0 {
 		beAsstObject := []string{}
 		for _, asst := range exists {
+			instRsp, err := a.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, asst.ObjectID,
+				&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: asst.InstID}})
+			if err != nil {
+				return params.Err.Error(common.CCErrObjectSelectInstFailed)
+			}
+			if !instRsp.Result {
+				return params.Err.New(instRsp.Code, instRsp.ErrMsg)
+			}
+			if len(instRsp.Data.Info) <= 0 {
+				// 作为补充而存在，删除实例主机已经不存在的脏实例关联
+				if delErr := a.DeleteInstAssociation(params, condition.CreateCondition().
+					Field(common.BKObjIDField).Eq(asst.ObjectID).Field(common.BKAsstInstIDField).Eq(asst.InstID)); delErr != nil {
+					return delErr
+				}
+				continue
+			}
 			beAsstObject = append(beAsstObject, asst.ObjectID)
 		}
-		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if len(beAsstObject) > 0 {
+			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		}
 	}
 	return nil
 }
@@ -465,7 +483,6 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 	}
 
 	return a.clientSet.CoreService().Association().ReadAssociationType(context.Background(), params.Header, &input)
-
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -478,8 +495,8 @@ func (a *association) CreateType(params types.ContextParams, request *metadata.A
 	resp = &metadata.CreateAssociationTypeResult{BaseResp: rsp.BaseResp}
 	resp.Data.ID = int64(rsp.Data.Created.ID)
 	request.ID = resp.Data.ID
-	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, request.ID); err != nil {
-		blog.Error("create association type: %s, but register to auth failed, err: %v", request.AssociationKindID, err)
+	if err := a.authManager.RegisterAssociationTypeByID(params.Context, params.Header, resp.Data.ID); err != nil {
+		blog.Error("create association type: %s success, but register id: %d to auth failed, err: %v", request.AssociationKindID, resp.Data.ID, err)
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 

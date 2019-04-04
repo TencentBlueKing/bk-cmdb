@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -31,8 +32,9 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(ids)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameAsstDes, queryCond)
+	resp, err := am.clientSet.CoreService().Association().ReadAssociationType(ctx, header, queryCond)
 	if err != nil {
+		blog.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 		return nil, fmt.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 	}
 	if len(resp.Data.Info) == 0 {
@@ -44,12 +46,11 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 
 	aks := make([]metadata.AssociationKind, 0)
 	for _, item := range resp.Data.Info {
-		ak := metadata.AssociationKind{}
-		ak.Parse(item)
-		aks = append(aks, ak)
+		aks = append(aks, *item)
 	}
 	return aks, nil
 }
+
 func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header http.Header, action meta.Action, aks ...metadata.AssociationKind) ([]meta.ResourceAttribute, error) {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, ak := range aks {

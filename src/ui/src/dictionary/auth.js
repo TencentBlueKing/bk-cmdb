@@ -1,6 +1,3 @@
-// B = business 业务资源类型
-// (C/R/U/D) 对应的CRUD权限
-
 // 模型分组
 export const C_MODEL_GROUP = 'modelClassification.create'
 export const U_MODEL_GROUP = 'modelClassification.update'
@@ -45,11 +42,8 @@ export const C_HOST = 'hostInstance.create'
 export const R_HOST = 'hostInstance.findMany'
 export const U_HOST = 'hostInstance.update'
 export const D_HOST = 'hostInstance.delete'
-export const HOST_TO_RESOURCE = 'hostInstance.moduleTransfer'
-export const HOST_ASSIGN = 'hostInstance.moduleTransfer'
-
-// G = global 全局资源类型
-// (C/R/U/D) 对应的CRUD权限
+export const HOST_TO_RESOURCE = 'hostInstance.moveHostFromModuleToResPool'
+export const HOST_ASSIGN = 'hostInstance.moveResPoolHostToBizIdleModule'
 
 // 关联类型
 export const C_RELATION = 'associationType.create'
@@ -72,31 +66,49 @@ export const R_EVENT = 'eventPushing.findMany'
 export const R_AUDIT = 'auditlog.findMany'
 
 // 系统基础
-export const SYSTEM_TOPOLOGY = 'mainlineObjectTopology.find'
-export const SYSTEM_MANAGEMENT = 'sysSystemBase.adminEntrance'
-export const SYSTEM_MODEL_GRAPHICS = 'modelTopology.findMany'
+export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
+export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
+export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
-export const GET_AUTH_META = auth => {
+export const STATIC_BUSINESS_MODE = [
+    C_MODEL,
+    R_MODEL,
+    U_MODEL,
+    D_MODEL,
+
+    C_MODEL_GROUP,
+    U_MODEL_GROUP,
+    D_MODEL_GROUP,
+
+    C_CUSTOM_QUERY,
+    U_CUSTOM_QUERY,
+    D_CUSTOM_QUERY,
+    R_CUSTOM_QUERY,
+
+    C_PROCESS,
+    U_PROCESS,
+    D_PROCESS,
+    R_PROCESS,
+    PROCESS_BIND_MODULE,
+    PROCESS_UNBIND_MODULE,
+    PROCESS_SEARCH_MODULE,
+    
+    C_HOST,
+    U_HOST,
+    D_HOST
+]
+
+export const DYNAMIC_BUSINESS_MODE = [
+    C_INST,
+    U_INST,
+    D_INST,
+    R_INST
+]
+
+export const GET_AUTH_META = (auth, options = {}) => {
     const [ type, action ] = auth.split('.')
     return {
         resource_type: type,
         action: action
     }
-}
-
-export const GET_MODEL_INST_AUTH_META = (modelId, auth, models = []) => {
-    const meta = GET_AUTH_META(auth)
-    const model = models.find(model => model.bk_obj_id === modelId) || {}
-    const modelLabel = (model.metadata || {}).label || {}
-    if (modelLabel.hasOwnProperty('bk_biz_id')) {
-        Object.assign(meta, {
-            bk_biz_id: modelLabel.bk_biz_id
-        })
-    }
-    return Object.assign(meta, {
-        parent_layers: [{
-            resource_type: 'model',
-            resource_id: model.id
-        }]
-    })
 }

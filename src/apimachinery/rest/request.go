@@ -248,6 +248,7 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
+			start := time.Now()
 			resp, err := client.Do(req)
 			if err != nil {
 				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
@@ -257,7 +258,7 @@ func (r *Request) Do() *Result {
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
 					}
 					return result
 				}
@@ -267,6 +268,7 @@ func (r *Request) Do() *Result {
 				continue
 
 			}
+			cost := time.Since(start).Nanoseconds() / int64(time.Millisecond)
 
 			var body []byte
 			if resp.Body != nil {
@@ -278,12 +280,13 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s\nresponse status: %s, response body: %s, rid: %s", string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
+				cost, string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status

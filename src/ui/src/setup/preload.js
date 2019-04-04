@@ -1,23 +1,42 @@
+import {
+    SYSTEM_MANAGEMENT
+} from '@/dictionary/auth'
+
+import { viewRouters } from '@/router'
+
 const preloadConfig = {
     fromCache: true,
     cancelWhenRouteChange: false
 }
 
-export function getViewAuth (app) {
-    const viewAuthorities = []
-    app.$router.options.routes.forEach(route => {
-        const meta = route.meta || {}
-        const auth = meta.auth || {}
-        const view = auth.view || ''
-        if (view && (typeof view !== 'function')) {
-            const [ type, action ] = view.split('.')
-            viewAuthorities.push({
-                resource_type: type,
-                action: action
-            })
+export function getSystemAuth (app) {
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'system',
+        list: [SYSTEM_MANAGEMENT],
+        config: {
+            ...preloadConfig,
+            requestId: 'getSystemAuth'
         }
     })
-    return app.$store.dispatch('auth/getViewAuth', viewAuthorities)
+}
+
+export function getViewAuth (app) {
+    const viewAuthorities = []
+    viewRouters.forEach(route => {
+        const meta = route.meta || {}
+        const auth = meta.auth || {}
+        if (auth.view) {
+            viewAuthorities.push(auth.view)
+        }
+    })
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'view',
+        list: viewAuthorities,
+        config: {
+            ...preloadConfig,
+            requestId: 'getViewAuth'
+        }
+    })
 }
 
 export function getClassifications (app) {
@@ -32,26 +51,6 @@ export function getClassifications (app) {
 
 export function getAuthorizedBusiness (app) {
     return app.$store.dispatch('objectBiz/getAuthorizedBusiness')
-}
-
-export function getBusiness (app) {
-    return app.$store.dispatch('objectBiz/searchBusiness', {
-        params: {
-            'fields': ['bk_biz_id', 'bk_biz_name'],
-            'condition': {
-                'bk_data_status': {
-                    '$ne': 'disabled'
-                }
-            }
-        },
-        config: {
-            ...preloadConfig,
-            requestId: 'post_searchBusiness_$ne_disabled'
-        }
-    }).then(business => {
-        app.$store.commit('objectBiz/setBusiness', business.info)
-        return business
-    })
 }
 
 export function getUserCustom (app) {
@@ -75,14 +74,18 @@ export function getUserList (app) {
 }
 
 export default async function (app) {
-    await Promise.all([
-        getViewAuth(app),
-        getAuthorizedBusiness(app)
-    ])
+    try {
+        await Promise.all([
+            getSystemAuth(app),
+            getAuthorizedBusiness(app)
+        ])
+    } catch (e) {
+        console.error(e)
+    }
     return Promise.all([
+        getViewAuth(app),
         getClassifications(app),
         getUserCustom(app),
-        getBusiness(app),
         getUserList(app)
     ])
 }

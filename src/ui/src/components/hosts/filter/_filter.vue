@@ -165,6 +165,7 @@
                 'applyingProperties',
                 'applyingConditions'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             filterConfigProperties () {
                 const properties = {}
                 Object.keys(this.properties).forEach(objId => {
@@ -283,7 +284,7 @@
             },
             getFilterLabel (property) {
                 const objId = property['bk_obj_id']
-                const propertyModel = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const propertyModel = this.models.find(model => model['bk_obj_id'] === objId)
                 return `${propertyModel['bk_obj_name']} - ${property['bk_property_name']}`
             },
             getOperatorType (property) {
