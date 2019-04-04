@@ -34,7 +34,7 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		clientSet:                     clientSet,
 		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
-		RegisterModelUniqueEnabled:    true,
+		RegisterModelUniqueEnabled:    false,
 	}
 }
 
