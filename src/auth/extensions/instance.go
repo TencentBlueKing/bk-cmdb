@@ -106,7 +106,7 @@ func (am *AuthManager) extractBusinessIDFromInstances(instances ...InstanceSimpl
 		bizID := instance.BizID
 		// we should ignore metadata.LabelBusinessID field not found error
 		if idx > 0 && bizID != businessID {
-			blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from objects")
+			blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances")
 			return 0, fmt.Errorf("get multiple business ID from objects")
 		}
 		businessID = bizID
@@ -114,23 +114,73 @@ func (am *AuthManager) extractBusinessIDFromInstances(instances ...InstanceSimpl
 	return businessID, nil
 }
 
-func (am *AuthManager) MakeResourcesByInstances(header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) extractObjectIDFromInstances(instances ...InstanceSimplify) (string, error) {
+	var objectID string
+	for idx, instance := range instances {
+		objID := instance.ObjectID
+		if idx > 0 && objID != objectID {
+			blog.V(5).Infof("extractObjectIDFromInstances failed, get multiple object ID from instances")
+			return "", fmt.Errorf("get multiple object ID from instances")
+		}
+		objectID = objID
+	}
+	return objectID, nil
+}
+
+func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) ([]meta.ResourceAttribute, error) {
+	objectID, err := am.extractObjectIDFromInstances(instances...)
+	if err != nil {
+		blog.Errorf("MakeResourcesByInstances failed, extract object id from instances failed, err: %+v", err)
+		return nil, fmt.Errorf("extract object id from instances failed, err: %+v", err)
+	}
+	
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectID)
+	if err != nil {
+		blog.Errorf("MakeResourcesByInstances failed, collect objects by id failed, err: %+v", err)
+		return nil, fmt.Errorf("extract object by id failed, err: %+v", err)
+	}
+	if len(objects) != 1 {
+		blog.Errorf("MakeResourcesByInstances failed, get %d objects by id %s", len(objects), objectID)
+		return nil, fmt.Errorf("get %d object by id %s", len(objects), objectID)
+	}
+	object := objects[0]
+	
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, object)
+	if err != nil {
+		blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v", object, err)
+		return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", objectID)
+	}
+	if len(parentResources) != 1 {
+		blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s", len(parentResources), objectID)
+		return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %s", len(parentResources), objectID)
+	}
+	
+	parentResource := parentResources[0]
+	
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, instance := range instances {
+		layers := parentResource.Layers
+		layers = append(layers, meta.Item{
+			Type:       parentResource.Type,
+			Action:     parentResource.Action,
+			Name:       parentResource.Name,
+			InstanceID: parentResource.InstanceID,
+		})
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
 				Action:     action,
 				Type:       meta.ModelInstance,
 				Name:       instance.Name,
-				InstanceID: instance.ID,
+				InstanceID: instance.InstanceID,
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
+			Layers: layers,
 		}
 
 		resources = append(resources, resource)
 	}
-	return resources
+	return resources, nil
 }
 
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
@@ -143,7 +193,11 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, action, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, action, bizID, instances...)
+	if err != nil {
+		blog.Errorf("AuthorizeByInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -156,7 +210,11 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, bizID, instances...)
+	if err != nil {
+		blog.Errorf("UpdateRegisteredInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -208,7 +266,11 @@ func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, bizID, instances...)
+	if err != nil {
+		blog.Errorf("RegisterInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -222,7 +284,49 @@ func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, bizID, instances...)
+	if err != nil {
+		blog.Errorf("DeregisterInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+// AuthorizeInstanceCreateByObjectID authorize create priority by object, plz be note this method only overlay model read/update/delete, without create
+func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
+	if err != nil {
+		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, extract business id from objects failed, objects: %+v, err: %+v", objects, err)
+		return fmt.Errorf("authorize create instance failed, extract business id from models failed, err: %+v", err)
+	}
+
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, businessID, objects...)
+	if err != nil {
+		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v", objects, err)
+		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
+	}
+	
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, parentResource := range parentResources {
+		layers := parentResource.Layers
+		layers = append(layers, meta.Item{
+			Type:       parentResource.Basic.Type,
+			Action:     parentResource.Basic.Action,
+			Name:       parentResource.Basic.Name,
+			InstanceID: parentResource.Basic.InstanceID,
+		})
+		resource := meta.ResourceAttribute{
+			Basic:           meta.Basic{
+				Type:       meta.ModelInstance,
+				Action:     meta.Create,
+			},
+			SupplierAccount: parentResource.SupplierAccount,
+			BusinessID:      parentResource.BusinessID,
+			Layers:          layers,
+		}
+		resources = append(resources, resource)
+	}
+
+	return am.authorize(ctx, header, businessID, resources...)
 }

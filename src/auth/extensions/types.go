@@ -39,9 +39,9 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 }
 
 type InstanceSimplify struct {
-	ID         int64  `field:"id"`
-	InstanceID string `field:"bk_inst_id"`
+	InstanceID int64 `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
+	ObjectID   string `field:"bk_obj_id"`
 	BizID      int64
 }
 
@@ -175,6 +175,22 @@ type PlatSimplify struct {
 }
 
 func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}
+
+type ModelUniqueSimplify struct {
+	ID    uint64 `field:"id" json:"id" bson:"id"`
+	ObjID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	Ispre bool   `field:"ispre" json:"ispre" bson:"ispre"`
+}
+
+func (is *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {
