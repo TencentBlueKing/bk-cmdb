@@ -96,7 +96,7 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	// auth: update registered business to iam
-	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, obj.GetObjectID(), bizID); err != nil {
 		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
 	}
 

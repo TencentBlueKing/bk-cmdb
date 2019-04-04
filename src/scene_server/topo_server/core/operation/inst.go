@@ -205,13 +205,13 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	// auth register new created
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, obj.GetObjectID(), createdInstanceIDs...); err != nil {
 		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
 
 	// auth update registered instances
-	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
+	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, obj.GetObjectID(), updatedInstanceIDs...); err != nil {
 		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 
 	// auth: register instances to iam
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
+	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, obj.GetObjectID(), instanceID); err != nil {
 		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
