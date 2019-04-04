@@ -265,16 +265,6 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		return nil, err
 	}
 
-	instanceID, err := item.GetInstID()
-	if err != nil {
-		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, err: %+v", err)
-	}
-
-	// auth: register instances to iam
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
-		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
-		return nil, err
-	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 

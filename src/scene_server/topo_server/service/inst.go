@@ -13,7 +13,7 @@
 package service
 
 import (
-    "fmt"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -72,6 +72,16 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	instanceID, err := setInst.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, instance: %+v, err: %+v", setInst, err)
+	}
+
+	// auth: register instances to iam
+	if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
+		blog.V(2).Infof("create instance success, but register instances to iam failed, instances: %+v, err: %+v", setInst, err)
+		return nil, err
+	}
 	return setInst.ToMapStr(), nil
 }
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
