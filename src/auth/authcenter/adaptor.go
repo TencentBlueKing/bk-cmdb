@@ -134,6 +134,7 @@ const (
 	SysModel            ResourceTypeID = "sysModel"
 	SysInstance         ResourceTypeID = "sysInstance"
 	SysAssociationType  ResourceTypeID = "sysAssociationType"
+	SysAuditLog         ResourceTypeID = "sysAuditLog"
 )
 
 // Business Resource
@@ -146,6 +147,7 @@ const (
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
+	BizAuditLog        ResourceTypeID = "bizAuditLog"
 )
 
 const (

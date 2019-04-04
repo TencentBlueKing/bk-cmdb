@@ -1,9 +1,9 @@
+import { getMetadataBiz } from '@/utils/tools'
 import {
     C_INST,
     R_INST,
     U_INST,
-    D_INST,
-    GET_MODEL_INST_AUTH_META
+    D_INST
 } from '@/dictionary/auth'
 
 const prefix = '/general-model/'
@@ -42,13 +42,23 @@ export default [{
     }
 }, {
     name: 'generalModel',
-    path: `${prefix}:${param}`,
+    path: GET_MODEL_PATH(`:${param}`),
     component: () => import('./index.vue'),
     meta: {
         auth: {
             view: '',
-            meta: GET_MODEL_INST_AUTH_META,
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setDynamicMeta: (to, from, app) => {
+                console.log(app.$store.getters['objectModelClassify/models'])
+                const modelId = to.params[param]
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                const bizId = getMetadataBiz(model)
+                const dynamicMeta = {}
+                if (bizId) {
+                    dynamicMeta.bk_biz_id = bizId
+                }
+                app.$store.commit('auth/setDynamicMeta', {})
+            }
         }
     }
 }]

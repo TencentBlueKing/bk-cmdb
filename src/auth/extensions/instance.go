@@ -188,23 +188,23 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
 	}
-	return am.RegisterClassification(ctx, header, instances...)
+	return am.RegisterInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
+	bizID, err := am.extractBusinessIDFromInstances(instances...)
 	if err != nil {
 		return fmt.Errorf("register classifications failed, extract business id from classification failed, err: %+v", err)
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
+	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
