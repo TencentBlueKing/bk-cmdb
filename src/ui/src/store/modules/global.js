@@ -30,7 +30,7 @@ const getters = {
             const meta = GET_AUTH_META(SYSTEM_MANAGEMENT)
             return data.resource_type === meta.resource_type && data.action === meta.action
         }) || {}
-        if (!managementData.is_paas) {
+        if (!managementData.is_pass) {
             return false
         }
         if (window.sessionStorage.hasOwnProperty('isAdminView')) {
