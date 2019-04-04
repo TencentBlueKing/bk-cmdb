@@ -13,7 +13,7 @@
 package service
 
 import (
-    "fmt"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -163,7 +162,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instanceIDs...); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, obj.GetObjectID(), instanceIDs...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
@@ -199,7 +198,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 

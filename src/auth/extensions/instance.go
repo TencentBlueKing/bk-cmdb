@@ -74,33 +74,33 @@ func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header
 	return instances, nil
 }
 
-func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]InstanceSimplify, error) {
+func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, modelID string, ids ...int64) ([]InstanceSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
 
 	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
+		Condition: condition.CreateCondition().Field(common.GetInstIDField(modelID)).In(ids).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, modelID, &cond)
 	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
+		blog.V(3).Infof("get instance by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get instance by id failed, err: %+v", err)
 	}
 	instances := make([]InstanceSimplify, 0)
-	for _, cls := range result.Data.Info {
-		classification := InstanceSimplify{}
-		_, err = classification.Parse(cls)
+	for _, inst := range result.Data.Info {
+		instance := InstanceSimplify{}
+		_, err = instance.Parse(inst)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("get instance by object failed, err: %+v", err)
 		}
-		instances = append(instances, classification)
+		instances = append(instances, instance)
 	}
 	return instances, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromInstances(classifications ...InstanceSimplify) (int64, error) {
+func (am *AuthManager) extractBusinessIDFromInstances(instances ...InstanceSimplify) (int64, error) {
 	var businessID int64
-	for idx, instance := range classifications {
+	for idx, instance := range instances {
 		bizID := instance.BizID
 		// we should ignore metadata.LabelBusinessID field not found error
 		if idx > 0 && bizID != businessID {
@@ -163,16 +163,16 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 	return nil
 }
 
-func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
@@ -187,8 +187,8 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 	return am.DeregisterClassification(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
 	}

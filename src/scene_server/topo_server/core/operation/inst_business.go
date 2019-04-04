@@ -345,7 +345,7 @@ func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr
 			return params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		if err := b.authManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+		if err := b.authManager.UpdateRegisteredBusinessByID(params.Context, params.Header, obj.GetObjectID(), bizID); err != nil {
 			blog.Errorf("update business name: %s, but update resource to auth failed, err: %v", bizName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}

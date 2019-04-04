@@ -140,16 +140,16 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 	return nil
 }
 
-func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, modelID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, modelID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
 	}
