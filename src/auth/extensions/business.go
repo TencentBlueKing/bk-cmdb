@@ -141,27 +141,27 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+		return fmt.Errorf("deregister businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.DeregisterClassification(ctx, header, instances...)
+	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
