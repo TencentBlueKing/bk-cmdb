@@ -13,7 +13,6 @@
 package middleware
 
 import (
-	"configcenter/src/web_server/middleware/auth"
 	"plugin"
 	"strings"
 
@@ -52,16 +51,16 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 		if isAuthed(c, config) {
 			// valid resource access privilege
-			auth := auth.NewAuth()
-			ok := auth.ValidResAccess(pathArr, c)
-			if false == ok {
-				c.JSON(403, gin.H{
-					"status": "access forbidden",
-				})
-				c.Abort()
-				return
-			}
-			
+			// auth := auth.NewAuth()
+			// ok := auth.ValidResAccess(pathArr, c)
+			// if false == ok {
+			// 	c.JSON(403, gin.H{
+			// 		"status": "access forbidden",
+			// 	})
+			// 	c.Abort()
+			// 	return
+			// }
+
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
