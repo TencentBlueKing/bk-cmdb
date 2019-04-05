@@ -30,16 +30,16 @@ const getters = {
         return getters.models.find(model => model['bk_obj_id'] === id)
     },
     activeClassifications: state => {
-        let classifications = state.classifications
+        const classifications = state.classifications
         // 1.去掉停用模型
         let activeClassifications = classifications.map(classification => {
-            let activeClassification = {...classification}
+            const activeClassification = { ...classification }
             activeClassification['bk_objects'] = activeClassification['bk_objects'].filter(model => !model['bk_ispaused'])
             return activeClassification
         })
         // 2.去掉无启用模型的分类和不显示的分类
         activeClassifications = activeClassifications.filter(classification => {
-            let {
+            const {
                 'bk_classification_id': bkClassificationId,
                 'bk_objects': bkObjects
             } = classification
@@ -95,7 +95,7 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchClassifications ({ commit, state, dispatch }, {params, config}) {
+    searchClassifications ({ commit, state, dispatch }, { params, config }) {
         return $http.post('find/objectclassification', params || {}, config)
     },
 
@@ -120,7 +120,7 @@ const mutations = {
         state.classifications = classifications
     },
     updateClassify (state, classification) {
-        let activeClassification = state.classifications.find(({bk_classification_id: bkClassificationId}) => bkClassificationId === classification['bk_classification_id'])
+        const activeClassification = state.classifications.find(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classification['bk_classification_id'])
         if (activeClassification) {
             activeClassification['bk_classification_icon'] = classification['bk_classification_icon']
             activeClassification['bk_classification_name'] = classification['bk_classification_name']
@@ -141,18 +141,18 @@ const mutations = {
         }
     },
     updateModel (state, updateModel) {
-        let {
+        const {
             bk_classification_id: bkClassificationId,
             bk_obj_id: bkObjId
         } = updateModel
-        let currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
-        let curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
+        const currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
+        const curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
         if (updateModel.hasOwnProperty('position')) {
             curModel['position'] = updateModel['position']
         }
     },
     deleteClassify (state, classificationId) {
-        let index = state.classifications.findIndex(({bk_classification_id: bkClassificationId}) => bkClassificationId === classificationId)
+        const index = state.classifications.findIndex(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classificationId)
         state.classifications.splice(index, 1)
     }
 }

@@ -54,6 +54,10 @@ const statusRouters = [
         name: 'error',
         path: '/error',
         components: require('@/views/status/error')
+    }, {
+        name: 'noAuthority',
+        path: '/require-business',
+        components: require('@/views/status/require-business')
     }
 ]
 
@@ -160,6 +164,7 @@ router.beforeEach((to, from, next) => {
                 if (isStatusPage) {
                     next()
                 } else {
+                    // eslint-disable-next-line
                     const auth = await getAuth(to)
                     const viewAuth = isViewAuthorized(to)
                     if (viewAuth) {
@@ -173,7 +178,7 @@ router.beforeEach((to, from, next) => {
         } catch (e) {
             console.error(e)
             setLoading(false)
-            next({name: 'error'})
+            next({ name: 'error' })
         } finally {
             setupStatus.preload = false
         }

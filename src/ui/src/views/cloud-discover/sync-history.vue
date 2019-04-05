@@ -8,29 +8,29 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">
-                <template slot="bk_status" slot-scope="{ item }">
-                    <span class="sync-success" v-if="item.bk_status === 'success'">
-                        {{$t('Inst["成功"]')}}
-                    </span>
-                    <span class="sync-fail" v-else-if="item.bk_status === 'fail'">
-                        {{$t('EventPush["失败"]')}}
-                    </span>
-                </template>
-                <template slot="details" slot-scope="{ item }">
-                    <span v-if="item.fail_reason === 'AuthFailure'">
-                        {{ $t('Cloud["ID和Key认证失败"]') }}
-                    </span>
-                    <span v-else-if="item.fail_reason === 'else'">
-                        {{ $t('Cloud["服务器错误"]') }}
-                    </span>
-                    <span v-else>
-                        {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
-                    </span>
-                </template>
+            <template slot="bk_status" slot-scope="{ item }">
+                <span class="sync-success" v-if="item.bk_status === 'success'">
+                    {{$t('Inst["成功"]')}}
+                </span>
+                <span class="sync-fail" v-else-if="item.bk_status === 'fail'">
+                    {{$t('EventPush["失败"]')}}
+                </span>
+            </template>
+            <template slot="details" slot-scope="{ item }">
+                <span v-if="item.fail_reason === 'AuthFailure'">
+                    {{ $t('Cloud["ID和Key认证失败"]') }}
+                </span>
+                <span v-else-if="item.fail_reason === 'else'">
+                    {{ $t('Cloud["服务器错误"]') }}
+                </span>
+                <span v-else>
+                    {{$t('Cloud[\'新增\']')}} ({{item.new_add}}) / {{$t('Cloud[\'变更\']')}} ({{item.attr_changed}})
+                </span>
+            </template>
         </cmdb-table>
     </div>
 </template>
@@ -53,7 +53,7 @@
                 dateRange: [],
                 operator: '',
                 table: {
-                    header: [ {
+                    header: [{
                         id: 'bk_obj_id',
                         sortable: false,
                         width: 80,
@@ -113,10 +113,10 @@
                 this.dateRange = [start, end]
             },
             async getTableData () {
-                let params = {}
-                let innerParams = {}
-                let pagination = this.table.pagination
-                let page = {
+                const params = {}
+                const innerParams = {}
+                const pagination = this.table.pagination
+                const page = {
                     start: (pagination.current - 1) * pagination.size,
                     limit: pagination.size,
                     sort: this.table.sort
@@ -126,7 +126,7 @@
                 params['bk_start_time'] = innerParams
                 params['bk_task_id'] = this.curPush.bk_task_id
                 params['page'] = page
-                let res = await this.searchCloudHistory({params, config: {requestID: 'getSyncHistory'}})
+                const res = await this.searchCloudHistory({ params, config: { requestID: 'getSyncHistory' } })
                 this.table.list = res.info.map(data => {
                     data['start_time'] = this.$tools.formatTime(data['start_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['bk_obj_id'] = this.$t('Hosts["主机"]')

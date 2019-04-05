@@ -2,6 +2,7 @@ import Axios from 'axios'
 import md5 from 'md5'
 import CachedPromise from './_cached-promise'
 import RequestQueue from './_request-queue'
+// eslint-disable-next-line
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
@@ -101,7 +102,7 @@ async function getPromise (method, url, data, userConfig = {}) {
         const axiosRequest = methodsWithData.includes(method) ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config)
         axiosRequest.then(response => {
             Object.assign(config, response.config)
-            handleResponse({config, response, resolve, reject})
+            handleResponse({ config, response, resolve, reject })
         }).catch(error => {
             Object.assign(config, error.config)
             reject(error)
@@ -126,10 +127,10 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
-function handleResponse ({config, response, resolve, reject}) {
+function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
     if (!transformedResponse.result && config.globalError) {
-        reject({message: transformedResponse['bk_error_msg']})
+        reject({ message: transformedResponse['bk_error_msg'] })
     } else {
         resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
@@ -146,8 +147,8 @@ function handleReject (error, config) {
         return Promise.reject(error)
     }
     if (config.globalError && error.response) {
-        const {status, data} = error.response
-        const nextError = {message: error.message}
+        const { status, data } = error.response
+        const nextError = { message: error.message }
         if (status === 401) {
             window.location.href = Site.login
         } else if (data && data['bk_error_msg']) {

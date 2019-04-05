@@ -1,3 +1,4 @@
+/* eslint-disable-next-line */
 import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'

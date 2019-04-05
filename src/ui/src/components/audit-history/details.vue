@@ -2,7 +2,7 @@
     <div class="history-details-wrapper">
         <template v-if="details">
             <div class="history-info">
-                <div :class="['info-group', info.key]" v-for="(info, index) in informations">
+                <div :class="['info-group', info.key]" v-for="(info, index) in informations" :key="index">
                     <label class="info-label">{{info.label}}：</label>
                     <span class="info-value">
                         <template v-if="info.key === 'op_time'">
@@ -15,26 +15,26 @@
                 </div>
             </div>
             <cmdb-table
-                rowCursor="default"
-                rowHoverColor="#fff"
+                row-cursor="default"
+                row-hover-color="#fff"
                 :loading="$loading(`post_searchObjectAttribute_${objId}`)"
                 :sortable="false"
-                :width="width? width : 700"
-                :wrapperMinusHeight="300"
-                :emptyHeight="230"
+                :width="width ? width : 700"
+                :wrapper-minus-height="300"
+                :empty-height="230"
                 :header="tableHeader"
                 :list="tableList"
-                :rowBorder="true"
-                :colBorder="true"
-                v-bind="height ? {height} : {}">
-                <template slot="pre_data" slot-scope="{item}" v-html="item['pre_data']">
-                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['pre_data']"></div>
+                :row-border="true"
+                :col-border="true"
+                v-bind="height ? { height } : {}">
+                <template slot="pre_data" slot-scope="{ item }" v-html="item['pre_data']">
+                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['pre_data']"></div>
                 </template>
-                <template slot="cur_data" slot-scope="{item}">
-                    <div :class="['details-data', {'has-changed': hasChanged(item)}]" v-html="item['cur_data']"></div>
+                <template slot="cur_data" slot-scope="{ item }">
+                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['cur_data']"></div>
                 </template>
             </cmdb-table>
-            <p class="field-btn" @click="toggleFields" v-if="this.details.op_type !== 1 && this.details.op_type !== 3">
+            <p class="field-btn" @click="toggleFields" v-if="details.op_type !== 1 && details.op_type !== 3">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
         </template>
@@ -89,11 +89,11 @@
                 return this.details ? this.details['op_target'] : null
             },
             options () {
-                let biz = {}
-                this.business.forEach(({bk_biz_id: bkBizId, bk_biz_name: bkBizName}) => {
+                const biz = {}
+                this.business.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
                     biz[bkBizId] = bkBizName
                 })
-                let opType = {
+                const opType = {
                     1: this.$t("Common['新增']"),
                     2: this.$t("Common['修改']"),
                     3: this.$t("Common['删除']"),
@@ -105,7 +105,7 @@
                 }
             },
             tableHeader () {
-                let header = [{
+                const header = [{
                     id: 'bk_property_name',
                     name: '',
                     width: 130
@@ -129,12 +129,12 @@
                 return header
             },
             tableList () {
-                let list = []
-                const attribute = (this.attribute || []).filter(({bk_isapi: bkIsapi}) => !bkIsapi)
+                const list = []
+                const attribute = (this.attribute || []).filter(({ bk_isapi: bkIsapi }) => !bkIsapi)
                 if (this.details['op_type'] !== 100) {
                     attribute.forEach(property => {
-                        let preData = this.getCellValue(property, 'pre_data')
-                        let curData = this.getCellValue(property, 'cur_data')
+                        const preData = this.getCellValue(property, 'pre_data')
+                        const curData = this.getCellValue(property, 'cur_data')
                         if (!this.isShowAllFields) {
                             if (preData !== curData) {
                                 list.push({
@@ -157,16 +157,16 @@
                     const curBizId = content['cur_data']['bk_biz_id']
                     const preModule = content['pre_data']['module'] || []
                     const curModule = content['cur_data']['module'] || []
-                    let pre = []
-                    let cur = []
+                    const pre = []
+                    const cur = []
                     preModule.forEach(module => {
                         pre.push(`${this.options.biz[preBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
                     })
                     curModule.forEach(module => {
                         cur.push(`${this.options.biz[curBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
                     })
-                    let preData = pre.join('<br>')
-                    let curData = cur.join('<br>')
+                    const preData = pre.join('<br>')
+                    const curData = cur.join('<br>')
                     if (!this.isShowAllFields) {
                         if (preData !== curData) {
                             list.push({
@@ -224,16 +224,16 @@
                     const {
                         bk_property_id: bkPropertyId,
                         bk_property_type: bkPropertyType,
-                        bk_property_name: bkPropertyName,
+                        // bk_property_name: bkPropertyName,
                         option
                     } = property
                     let value = data[bkPropertyId]
                     if (bkPropertyType === 'enum' && Array.isArray(option)) {
-                        const targetOption = option.find(({id}) => id === value)
+                        const targetOption = option.find(({ id }) => id === value)
                         value = targetOption ? targetOption.name : ''
                     } else if (bkPropertyType === 'singleasst' || bkPropertyType === 'multiasst') {
-                        let asstVal = [];
-                        (Array.isArray(value) ? value : []).forEach(({bk_inst_name: bkInstName}) => {
+                        const asstVal = [];
+                        (Array.isArray(value) ? value : []).forEach(({ bk_inst_name: bkInstName }) => {
                             if (bkInstName) {
                                 asstVal.push(bkInstName)
                             }

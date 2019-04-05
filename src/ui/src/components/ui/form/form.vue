@@ -14,7 +14,7 @@
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
                                 <div class="property-name">
-                                    <span class="property-name-text" :class="{required: property['isrequired']}">{{property['bk_property_name']}}</span>
+                                    <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
                                     <i class="property-name-tooltips icon-cc-tips"
                                         v-if="property['placeholder']"
                                         v-tooltip="htmlEncode(property['placeholder'])">
@@ -23,7 +23,7 @@
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{error: errors.has(property['bk_property_id'])}"
+                                        :class="{ error: errors.has(property['bk_property_id']) }"
                                         :disabled="checkDisabled(property)"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
@@ -41,7 +41,7 @@
         </div>
         <div class="form-options"
             v-if="showOptions"
-            :class="{sticky: scrollbar}">
+            :class="{ sticky: scrollbar }">
             <slot name="form-options">
                 <bk-button class="button-save" type="primary"
                     :disabled="saveDisabled || !hasChange || $loading()"
@@ -97,7 +97,7 @@
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (let propertyId in this.values) {
+                for (const propertyId in this.values) {
                     if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -160,7 +160,7 @@
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },

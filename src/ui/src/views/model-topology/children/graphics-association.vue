@@ -115,7 +115,7 @@
         data () {
             return {
                 title: '',
-                info: {...DEFAULT_INFO},
+                info: { ...DEFAULT_INFO },
                 constraintList: [{
                     id: '1:1',
                     name: '1-1'
@@ -280,7 +280,7 @@
                 reject && reject(new Error(false))
             },
             reset () {
-                this.info = {...DEFAULT_INFO}
+                this.info = { ...DEFAULT_INFO }
             },
             getTitle (asstId) {
                 const data = this.localAssociationList.find(data => data['bk_asst_id'] === asstId) || {}

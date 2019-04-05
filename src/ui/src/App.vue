@@ -6,7 +6,7 @@
         </div>
         <the-header></the-header>
         <the-nav class="nav-layout"></the-nav>
-        <main class="main-layout" v-bkloading="{isLoading: globalLoading}">
+        <main class="main-layout" v-bkloading="{ isLoading: globalLoading }">
             <div class="admin-tips" v-if="false">
                 <span class="tips-text">{{$t('Common["欢迎来到蓝鲸配置平台全局管理中心！您所做的操作将影响公共部分内容，请谨慎操作"]')}}</span>
                 <i class="bk-icon icon-close"></i>

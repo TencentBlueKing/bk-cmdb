@@ -55,14 +55,14 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange"
             @handleRowClick="handleRowClick"
         ></cmdb-table>
         <cmdb-slider
-            :isShow.sync="details.isShow"
+            :is-show.sync="details.isShow"
             :title="$t('OperationAudit[\'操作详情\']')">
             <v-details :details="details.data" slot="content"></v-details>
         </cmdb-slider>
@@ -74,6 +74,9 @@
     import { mapActions, mapGetters } from 'vuex'
     import moment from 'moment'
     export default {
+        components: {
+            vDetails
+        },
         data () {
             return {
                 filter: { // 查询筛选参数
@@ -145,7 +148,7 @@
             ]),
             ...mapGetters('objectModelClassify', ['classifications']),
             filterClassifications () {
-                let classifications = []
+                const classifications = []
                 this.classifications.map(classify => {
                     if (classify['bk_classification_id'] === 'bk_biz_topo') {
                         classifications.push({
@@ -160,8 +163,8 @@
                         })
                     } else if (classify['bk_classification_id'] !== 'bk_host_manage') {
                         if (classify['bk_objects'].length) {
-                            let children = []
-                            classify['bk_objects'].map(({bk_obj_id: bkObjId, bk_obj_name: bkObjName}) => {
+                            const children = []
+                            classify['bk_objects'].map(({ bk_obj_id: bkObjId, bk_obj_name: bkObjName }) => {
                                 children.push({
                                     id: bkObjId,
                                     name: bkObjName
@@ -184,7 +187,7 @@
                         this.filter.bkCreateTime[1] ? this.filter.bkCreateTime[1] + ' 23:59:59' : ''
                     ]
                 }
-                let params = {
+                const params = {
                     condition: {
                         op_time: opTime
                     },
@@ -196,19 +199,19 @@
                 this.setParams(params.condition, 'op_type', this.filter.bkOpType)
                 this.setParams(params.condition, 'op_target', this.filter.classify)
                 if (this.filter.bkIP) { // 将IP分隔成查询数组
-                    let ipArray = []
+                    const ipArray = []
                     this.filter.bkIP.split(',').map((ip, index) => {
                         if (ip) {
                             ipArray.push(ip.trim())
                         }
                     })
-                    this.setParams(params.condition, 'ext_key', {$in: ipArray})
+                    this.setParams(params.condition, 'ext_key', { $in: ipArray })
                 }
                 return params
             },
             /* 业务ID与Name的mapping */
             applicationMap () {
-                let applicationMap = {}
+                const applicationMap = {}
                 this.business.forEach((application, index) => {
                     applicationMap[application['bk_biz_id']] = application['bk_biz_name']
                 })
@@ -216,7 +219,7 @@
             },
             /* 操作类型map */
             operateTypeMap () {
-                let operateTypeMap = {}
+                const operateTypeMap = {}
                 this.operateTypeList.forEach((operateType, index) => {
                     operateTypeMap[operateType['id']] = operateType['name']
                 })
@@ -225,6 +228,9 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["操作审计"]'))
+        },
+        mounted () {
+            this.initDate()
         },
         methods: {
             ...mapActions('operationAudit', ['getOperationLog']),
@@ -277,12 +283,6 @@
                 this.details.data = item
                 this.details.isShow = true
             }
-        },
-        mounted () {
-            this.initDate()
-        },
-        components: {
-            vDetails
         }
     }
 </script>

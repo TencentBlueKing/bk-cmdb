@@ -40,7 +40,7 @@ const actions = {
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
-    searchGroup ({ commit, state, dispatch, rootGetters }, {objId, params, config}) {
+    searchGroup ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
         return $http.post(`find/objectattgroup/object/${objId}`, params, config)
     },
 

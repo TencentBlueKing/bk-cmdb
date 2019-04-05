@@ -14,6 +14,7 @@
         name: 'cmdb-form-float',
         props: {
             value: {
+                type: Number,
                 default: null
             },
             disabled: {
