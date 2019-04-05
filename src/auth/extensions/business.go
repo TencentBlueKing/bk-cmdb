@@ -42,7 +42,7 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 		businessSimplify := BusinessSimplify{}
 		_, err := businessSimplify.Parse(business)
 		if err != nil {
-			blog.Errorf("parse business %+v simplify information failed, err: %+v", business, err)
+			blog.Errorf("parse businesses %+v simplify information failed, err: %+v", business, err)
 			continue
 		}
 
@@ -60,15 +60,16 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
-		blog.V(3).Infof("get instances by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
+		blog.V(3).Infof("get businesses by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get businesses by id failed, err: %+v", err)
 	}
+	blog.V(5).Infof("get businesses by id result: %+v", result)
 	instances := make([]BusinessSimplify, 0)
 	for _, cls := range result.Data.Info {
 		instance := BusinessSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("parse business from db data failed, err: %+v", err)
 		}
 		instances = append(instances, instance)
 	}
@@ -141,27 +142,27 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+		return fmt.Errorf("deregister businesses failed, get businesses by id failed, err: %+v", err)
 	}
-	return am.DeregisterClassification(ctx, header, instances...)
+	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {

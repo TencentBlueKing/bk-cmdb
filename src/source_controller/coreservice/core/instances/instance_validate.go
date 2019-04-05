@@ -59,6 +59,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	for key, val := range instanceData {
 		if key == common.BKObjIDField {
 			// common instance always has no property bk_obj_id, but this field need save to db
+			blog.V(9).Infof("skip verify filed: %s", key)
 			continue
 		}
 		if metadata.BKMetadata == key {
