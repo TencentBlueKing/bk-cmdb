@@ -13,15 +13,15 @@
 package service
 
 import (
-    "fmt"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-
 	"configcenter/src/common/metadata"
 	paraparse "configcenter/src/common/paraparse"
 	"configcenter/src/scene_server/topo_server/core/operation"
@@ -58,11 +58,31 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 			blog.Errorf("import object[%s] instance batch, but got invalid BatchInfo:[%v] ", objID, batchInfo)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
+
+		// auth: check authorization
+		if err := s.AuthManager.AuthorizeInstanceCreateByObject(params.Context, params.Header, meta.Update, obj.Object()); err != nil {
+			blog.V(2).Infof("authorization for create instance by model %d failed, authorization failed, err: %+v", obj.Object().ID, err)
+			return nil, err
+		}
+
 		setInst, err := s.Core.InstOperation().CreateInstBatch(params, obj, batchInfo)
 		if nil != err {
 			blog.Errorf("failed to create new object %s, %s", objID, err.Error())
 			return nil, err
 		}
+
+		// auth register new created
+		if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, objID, setInst.SuccessCreated...); err != nil {
+			blog.V(2).Infof("register instances to iam failed, err: %+v", err)
+			return nil, err
+		}
+
+		// auth update registered instances
+		if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, setInst.SuccessUpdated...); err != nil {
+			blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
+			return nil, err
+		}
+
 		return setInst, nil
 	}
 
@@ -72,6 +92,16 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	instanceID, err := setInst.GetInstID()
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, instance: %+v, err: %+v", setInst, err)
+	}
+
+	// auth: register instances to iam
+	if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, objID, instanceID); err != nil {
+		blog.V(2).Infof("create instance success, but register instance to iam failed, instance: %d, err: %+v", instanceID, err)
+		return nil, err
+	}
 	return setInst.ToMapStr(), nil
 }
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -163,7 +193,7 @@ func (s *Service) UpdateInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instanceIDs...); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, instanceIDs...); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
@@ -199,7 +229,7 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, instID); err != nil {
 		return nil, fmt.Errorf("deregister instances failed, err: %+v", err)
 	}
 
