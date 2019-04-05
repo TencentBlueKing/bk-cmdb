@@ -168,7 +168,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-			dataResult.Info[modelIdx].Attributes[attributeIdx].Description = s.TranslateDescription(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
 				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx])
 			}
@@ -319,7 +319,7 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
@@ -343,7 +343,7 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
