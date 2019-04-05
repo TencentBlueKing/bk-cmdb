@@ -77,7 +77,6 @@ func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header
 func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]InstanceSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
-
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
 	}
