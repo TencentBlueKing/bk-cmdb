@@ -29,7 +29,7 @@ export default {
             adminView: false
         },
         auth: {
-            view: R_CUSTOM_QUERY,
+            view: '',
             operation: Object.values(OPERATION)
         },
         requireBusiness: true
