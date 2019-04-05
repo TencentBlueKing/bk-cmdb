@@ -145,6 +145,7 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
+			Layers: parentLayers,
 		}
 
 		resources = append(resources, resource)

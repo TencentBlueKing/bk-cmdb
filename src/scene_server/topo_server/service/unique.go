@@ -142,8 +142,12 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUnique(params.Context, params.Header, meta.Update, uniques...); err != nil {
-		blog.Errorf("update model unique failed, authorization failed, unique: %+v, err: %+v", uniques, err)
+	ids := make([]int64, 0)
+	for _, unique := range uniques {
+		ids = append(ids, int64(unique.ID))
+	}
+	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Update, ids...); err != nil {
+		blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
 
