@@ -55,7 +55,7 @@ const statusRouters = [
         path: '/error',
         components: require('@/views/status/error')
     }, {
-        name: 'noAuthority',
+        name: 'requireBusiness',
         path: '/require-business',
         components: require('@/views/status/require-business')
     }
@@ -84,9 +84,9 @@ const router = new Router({
 
 const getAuth = to => {
     const auth = to.meta.auth || {}
-    const view = auth.view || []
+    const view = auth.view
     const operation = auth.operation || []
-    const routerAuth = [...view, ...operation]
+    const routerAuth = view ? [view, ...operation] : operation
     if (routerAuth.length) {
         return router.app.$store.dispatch('auth/getAuth', {
             type: 'operation',
@@ -115,6 +115,10 @@ const cancelRequest = () => {
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 const setMenuState = to => {
+    const isStatusRoute = statusRouters.some(route => route.name === to.name)
+    if (isStatusRoute) {
+        return false
+    }
     const menu = to.meta.menu || {}
     const menuId = menu.id
     const parentId = menu.parent
@@ -124,13 +128,23 @@ const setMenuState = to => {
     }
 }
 
-const checkDynamicMeta = (to, from) => {
+const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/setDynamicMeta', {})
     const auth = to.meta.auth || {}
     const setDynamicMeta = auth.setDynamicMeta
     if (typeof setDynamicMeta === 'function') {
         setDynamicMeta(to, from, router.app)
     }
+}
+
+const checkBusiness = to => {
+    const getters = router.app.$store.getters
+    const isAdminView = getters.isAdminView
+    if (isAdminView || !to.meta.requireBusiness) {
+        return true
+    }
+    const authorizedBusiness = getters['objectBiz/authorizedBusiness']
+    return authorizedBusiness.length
 }
 
 const isShouldShow = to => {
@@ -159,20 +173,20 @@ router.beforeEach((to, from, next) => {
                 if (setupStatus.preload) {
                     await preload(router.app)
                 }
-                checkDynamicMeta(to, from)
-                const isStatusPage = statusRouters.some(status => status.name === to.name)
-                if (isStatusPage) {
-                    next()
-                } else {
-                    // eslint-disable-next-line
-                    const auth = await getAuth(to)
-                    const viewAuth = isViewAuthorized(to)
-                    if (viewAuth) {
+                checkAuthDynamicMeta(to, from)
+                await getAuth(to)
+                const viewAuth = isViewAuthorized(to)
+                if (viewAuth) {
+                    const isBusinessCheckPass = checkBusiness(to)
+                    if (isBusinessCheckPass) {
                         next()
                     } else {
                         setLoading(false)
-                        next({ name: '403' })
+                        next({ name: 'requireBusiness' })
                     }
+                } else {
+                    setLoading(false)
+                    next({ name: '403' })
                 }
             }
         } catch (e) {
