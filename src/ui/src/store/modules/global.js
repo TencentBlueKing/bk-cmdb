@@ -55,7 +55,7 @@ const getters = {
 }
 
 const actions = {
-    getUserList ({commit}) {
+    getUserList ({ commit }) {
         return $http.get(`${window.API_HOST}user/list?_t=${(new Date()).getTime()}`, {
             requestId: 'get_user_list',
             fromCache: true,

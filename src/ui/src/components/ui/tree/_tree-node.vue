@@ -12,7 +12,7 @@
                 'tree-node-info-layout-line-short-h': children.length
             }">
             <i class="tree-node-expanded-icon fl" v-if="!leaf && !state.hidden"
-                :class="[state.expanded ? 'icon-cc-rect-sub': 'icon-cc-rect-add']"
+                :class="[state.expanded ? 'icon-cc-rect-sub' : 'icon-cc-rect-add']"
                 @click="handleExpandClick(!state.expanded)">
             </i>
             <tree-node-info class="tree-node-info"
@@ -29,10 +29,10 @@
         <ul class="tree-node-children"
             v-if="!leaf"
             v-show="state.expanded"
-            :class="{'tree-node-children-root': level === 1}">
-            <cmdb-tree-node v-for="(child, index) in children"
+            :class="{ 'tree-node-children-root': level === 1 }">
+            <cmdb-tree-node v-for="(child, _index) in children"
                 :key="layout.getNodeId(child)"
-                :index="index"
+                :index="_index"
                 :node="child"
                 :layout="layout"
                 :level="level + 1">
@@ -89,7 +89,7 @@
             node: {
                 deep: true,
                 handler (val, oldVal) {
-                    let stateChanged = Object.keys(this.basicState).some(key => val[key] !== oldVal[key])
+                    const stateChanged = Object.keys(this.basicState).some(key => val[key] !== oldVal[key])
                     if (stateChanged) {
                         this.updateBasicState()
                     }
@@ -135,13 +135,13 @@
                 const changedState = {
                     id: this.layout.getNodeId(node)
                 }
-                for (let key in basicState) {
+                for (const key in basicState) {
                     if (node.hasOwnProperty(key) && node[key] !== this.state[key]) {
                         changedState[key] = node[key]
                     }
                 }
                 Object.assign(this.state, changedState)
-                for (let key in changedState) {
+                for (const key in changedState) {
                     if (stateHandler.hasOwnProperty(key)) {
                         stateHandler[key](changedState[key])
                     }

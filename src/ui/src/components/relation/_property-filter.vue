@@ -14,14 +14,14 @@
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" style="width: 245px;" 
+        <div class="property-value fl" style="width: 245px;"
             v-if="Object.keys(selectedProperty).length">
             <cmdb-form-enum
                 v-if="selectedProperty['bk_property_type'] === 'enum'"
                 :options="selectedProperty.option || []"
                 v-model="localSelected.value">
             </cmdb-form-enum>
-             <component
+            <component
                 v-else
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
                 v-model.trim="localSelected.value">
@@ -78,12 +78,12 @@
         computed: {
             ...mapGetters(['supplierAccount']),
             selectedProperty () {
-                return this.filteredProperties.find(({bk_property_id: bkPropertyId}) => bkPropertyId === this.localSelected.id) || {}
+                return this.filteredProperties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === this.localSelected.id) || {}
             },
             operatorOptions () {
                 if (this.selectedProperty) {
                     if (['bk_host_innerip', 'bk_host_outerip'].includes(this.selectedProperty['bk_property_id']) || this.objId === 'biz') {
-                        return [{label: this.operatorLabel['$regex'], value: '$regex'}]
+                        return [{ label: this.operatorLabel['$regex'], value: '$regex' }]
                     } else {
                         const propertyType = this.selectedProperty['bk_property_type']
                         const propertyOperator = this.propertyOperator.hasOwnProperty(propertyType) ? this.propertyOperator[propertyType] : this.propertyOperator['default']

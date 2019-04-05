@@ -106,7 +106,7 @@ export const DYNAMIC_BUSINESS_MODE = [
 ]
 
 export const GET_AUTH_META = (auth, options = {}) => {
-    const [ type, action ] = auth.split('.')
+    const [type, action] = auth.split('.')
     return {
         resource_type: type,
         action: action

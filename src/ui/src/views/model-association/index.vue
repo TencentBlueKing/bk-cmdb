@@ -47,11 +47,11 @@
             class="relation-slider"
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-relation
                 slot="content"
                 class="slider-content"
-                :isEdit="slider.isEdit"
+                :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"
                 @cancel="slider.isShow = false">
@@ -62,7 +62,7 @@
 
 <script>
     import theRelation from './_detail'
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions } from 'vuex'
     import { OPERATION } from './router.config'
     export default {
         components: {
@@ -113,7 +113,7 @@
         },
         computed: {
             searchParams () {
-                let params = {
+                const params = {
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.size,
                         limit: this.table.pagination.size,
@@ -160,15 +160,15 @@
                 })
             },
             async searchUsageCount () {
-                let asstIds = []
-                this.table.list.forEach(({bk_asst_id: asstId}) => asstIds.push(asstId))
+                const asstIds = []
+                this.table.list.forEach(({ bk_asst_id: asstId }) => asstIds.push(asstId))
                 const res = await this.searchAssociationListWithAssociationKindList({
                     params: {
                         asst_ids: asstIds
                     }
                 })
                 this.table.list.forEach(item => {
-                    let asst = res.associations.find(({bk_asst_id: asstId}) => asstId === item['bk_asst_id'])
+                    const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item['bk_asst_id'])
                     if (asst) {
                         this.$set(item, 'count', asst.assts.length)
                     }
@@ -188,7 +188,7 @@
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], {name: relation['bk_asst_name']}),
+                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
                     confirmFn: async () => {
                         await this.deleteAssociationType({
                             id: relation.id,
@@ -219,7 +219,6 @@
         }
     }
 </script>
-
 
 <style lang="scss" scoped>
     .operation-box {

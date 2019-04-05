@@ -108,9 +108,9 @@
                 初始化图表
             */
             initChart () {
-                let chart1 = this.Echarts.init(this.$refs['chart1'])
-                let chart2 = this.Echarts.init(this.$refs['chart2'])
-                let chart3 = this.Echarts.init(this.$refs['chart3'])
+                const chart1 = this.Echarts.init(this.$refs['chart1'])
+                const chart2 = this.Echarts.init(this.$refs['chart2'])
+                const chart3 = this.Echarts.init(this.$refs['chart3'])
                 chart1.setOption({
                     title: {
                         text: this.$t('Hosts["总CPU使用率"]'),
@@ -200,10 +200,10 @@
                 })
             },
             openAgentApp () {
-                let agentAppUrl = window.Site.agent
+                const agentAppUrl = window.Site.agent
                 if (agentAppUrl) {
                     if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                        window.top.postMessage(JSON.stringify({ action: 'open_other_app', app_code: 'bk_nodeman' }), '*')
                     } else {
                         window.open(agentAppUrl)
                     }

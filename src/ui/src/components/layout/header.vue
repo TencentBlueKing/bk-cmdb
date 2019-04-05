@@ -1,6 +1,6 @@
 <template>
-    <header class="header-layout clearfix" 
-        :class="{'nav-sticked': navStick}">
+    <header class="header-layout clearfix"
+        :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
             <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
@@ -16,7 +16,7 @@
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
                     {{userName}}({{userRole}})
                     <i class="user-name-angle bk-icon icon-angle-down"
-                        :class="{dropped: isShowUserDropdown}">
+                        :class="{ dropped: isShowUserDropdown }">
                     </i>
                 </p>
                 <transition name="toggle-slide">
@@ -41,7 +41,7 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, {type: 'system'})" @click="toggleAdminView">
+            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -83,7 +83,7 @@
             // 回退路由
             back () {
                 if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push({path: this.$route.meta.returnPath})
+                    this.$router.push({ path: this.$route.meta.returnPath })
                 } else {
                     this.$store.commit('setHeaderStatus', {
                         back: false

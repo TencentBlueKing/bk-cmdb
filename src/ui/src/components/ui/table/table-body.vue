@@ -1,5 +1,5 @@
 <template>
-    <table :class="['cc-table-body', {'row-border': table.rowBorder, 'col-border': table.colBorder, 'stripe': table.stripe}]">
+    <table :class="['cc-table-body', { 'row-border': table.rowBorder, 'col-border': table.colBorder, 'stripe': table.stripe }]">
         <colgroup>
             <col v-for="(width, index) in layout.colgroup" :key="index" :width="width">
         </colgroup>
@@ -22,13 +22,13 @@
                         </label>
                     </td>
                     <td is="data-content" v-else
-                        :class="['data-content', {'checkbox-content': head.type === 'checkbox'}]"
+                        :class="['data-content', { 'checkbox-content': head.type === 'checkbox' }]"
                         :key="colIndex"
                         :item="item"
                         :head="head"
                         :layout="layout"
-                        :rowIndex="rowIndex"
-                        :colIndex="colIndex">
+                        :row-index="rowIndex"
+                        :col-index="colIndex">
                     </td>
                 </template>
             </tr>
@@ -37,7 +37,7 @@
             <tr>
                 <td is="data-empty" class="data-empty" align="center"
                     :colspan="table.header.length"
-                    :style="{height: emptyHeight}" 
+                    :style="{ height: emptyHeight }"
                     :layout="layout">
                 </td>
             </tr>
@@ -47,6 +47,43 @@
 
 <script>
     export default {
+        components: {
+            'data-content': {
+                props: ['head', 'item', 'layout', 'rowIndex', 'colIndex'],
+                render (h) {
+                    const table = this.layout.table
+                    const column = this.head[table.valueKey]
+                    const defaultConfig = {
+                        on: {
+                            click: this.handleCellClick
+                        }
+                    }
+                    if (typeof table.renderCell === 'function') {
+                        return h('td', defaultConfig, table.renderCell(this.item, this.head, this.layout))
+                    } else if (table.$scopedSlots[column]) {
+                        return h('td', defaultConfig, table.$scopedSlots[column]({ item: this.item, rowIndex: this.rowIndex, colIndex: this.colIndex, layout: this.layout }))
+                    } else {
+                        return h('td', Object.assign({}, defaultConfig, { attrs: { title: this.item[this.head[table.valueKey]] } }), this.item[this.head[table.valueKey]])
+                    }
+                },
+                methods: {
+                    handleCellClick () {
+                        this.layout.table.$emit('handleCellClick', this.item, this.rowIndex, this.colIndex)
+                    }
+                }
+            },
+            'data-empty': {
+                props: ['layout'],
+                render (h) {
+                    const dataEmptySlot = this.layout.table.$slots['data-empty']
+                    if (dataEmptySlot) {
+                        return h('td', {}, dataEmptySlot)
+                    } else {
+                        return h('td', {}, this.$t("Common['暂时没有数据']"))
+                    }
+                }
+            }
+        },
         props: {
             layout: Object
         },
@@ -69,7 +106,7 @@
                 return `table-${this.layout.id}-body-${head[this.table.valueKey]}-checkbox-${rowIndex}`
             },
             getColWidth (width, index) {
-                let total = this.layout.colgroup.length
+                const total = this.layout.colgroup.length
                 if ((index === total - 1) && this.layout.scrollY) {
                     return width - this.table.gutterWidth
                 }
@@ -103,43 +140,6 @@
                 const rowHoverColor = this.table.rowHoverColor
                 if (rowHoverColor) {
                     event.currentTarget.style.backgroundColor = 'inherit'
-                }
-            }
-        },
-        components: {
-            'data-content': {
-                props: ['head', 'item', 'layout', 'rowIndex', 'colIndex'],
-                render (h) {
-                    const table = this.layout.table
-                    const column = this.head[table.valueKey]
-                    const defaultConfig = {
-                        on: {
-                            click: this.handleCellClick
-                        }
-                    }
-                    if (typeof table.renderCell === 'function') {
-                        return h('td', defaultConfig, table.renderCell(this.item, this.head, this.layout))
-                    } else if (table.$scopedSlots[column]) {
-                        return h('td', defaultConfig, table.$scopedSlots[column]({item: this.item, rowIndex: this.rowIndex, colIndex: this.colIndex, layout: this.layout}))
-                    } else {
-                        return h('td', Object.assign({}, defaultConfig, {attrs: {title: this.item[this.head[table.valueKey]]}}), this.item[this.head[table.valueKey]])
-                    }
-                },
-                methods: {
-                    handleCellClick () {
-                        this.layout.table.$emit('handleCellClick', this.item, this.rowIndex, this.colIndex)
-                    }
-                }
-            },
-            'data-empty': {
-                props: ['layout'],
-                render (h) {
-                    const dataEmptySlot = this.layout.table.$slots['data-empty']
-                    if (dataEmptySlot) {
-                        return h('td', {}, dataEmptySlot)
-                    } else {
-                        return h('td', {}, this.$t("Common['暂时没有数据']"))
-                    }
                 }
             }
         }

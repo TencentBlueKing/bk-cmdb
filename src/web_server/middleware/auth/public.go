@@ -204,7 +204,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
 			// common inst op valid
-			modelPrivi := session.Get("modelPrivi").(string)
+			modelPrivi := util.GetStrByInterface(session.Get("modelPrivi"))
 			if 0 == len(modelPrivi) {
 				blog.Error("get model privilege json error")
 				return false
