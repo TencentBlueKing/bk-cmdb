@@ -10,7 +10,7 @@
         <div class="header-options">
             <cmdb-business-selector
                 class="business-selector"
-                v-if="!isAdminView">
+                v-if="!isAdminView && authorizedBusiness.length">
             </cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
@@ -62,7 +62,16 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
+            ...mapGetters([
+                'site',
+                'userName',
+                'admin',
+                'showBack',
+                'navStick',
+                'headerTitle',
+                'isAdminView'
+            ]),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             }

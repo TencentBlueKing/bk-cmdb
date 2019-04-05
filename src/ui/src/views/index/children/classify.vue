@@ -32,7 +32,7 @@
                 const hostManageClassification = {
                     'bk_classification_icon': 'icon-cc-host',
                     'bk_classification_id': 'bk_host_management',
-                    'bk_classification_name': this.$t('Hosts["主机管理"]'),
+                    'bk_classification_name': this.$t('Nav["基础资源"]'),
                     'bk_classification_type': 'inner',
                     'bk_objects': []
                 }
