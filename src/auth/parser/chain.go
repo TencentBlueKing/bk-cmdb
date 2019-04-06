@@ -173,7 +173,7 @@ func (ps *parseStream) finalizer() *parseStream {
 		return ps
 	}
 	if len(ps.Attribute.Resources) <= 0 {
-		ps.err = errors.New("unsupported resource operation")
+		ps.err = errors.New("no matched rules")
 	}
 	return ps
 }

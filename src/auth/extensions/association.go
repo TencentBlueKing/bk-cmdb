@@ -25,14 +25,14 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.AssociationKind, error) {
+func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]*metadata.AssociationKind, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
 
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(ids)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameAsstDes, queryCond)
+	resp, err := am.clientSet.CoreService().Association().ReadAssociationType(ctx, header, queryCond)
 	if err != nil {
 		blog.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 		return nil, fmt.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
@@ -44,20 +44,10 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 		return nil, fmt.Errorf("get association types by id: %+v failed, get %d, expect %d", ids, len(resp.Data.Info), len(ids))
 	}
 
-	aks := make([]metadata.AssociationKind, 0)
-	for _, item := range resp.Data.Info {
-		ak := metadata.AssociationKind{}
-		_, err := ak.Parse(item)
-		if err != nil {
-			blog.Errorf("collectAssociationTypesByIDs %+v failed, parse association kind %+v failed, err: %+v ", ids, item, err)
-			return nil, fmt.Errorf("parse association from db data failed, err: %+v", err)
-		}
-		aks = append(aks, ak)
-	}
-	return aks, nil
+	return resp.Data.Info, nil
 }
 
-func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header http.Header, action meta.Action, aks ...metadata.AssociationKind) ([]meta.ResourceAttribute, error) {
+func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header http.Header, action meta.Action, aks ...*metadata.AssociationKind) ([]meta.ResourceAttribute, error) {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, ak := range aks {
 		resource := meta.ResourceAttribute{
@@ -73,7 +63,7 @@ func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header
 	return resources, nil
 }
 
-func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.Header, aks ...metadata.AssociationKind) error {
+func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.Header, aks ...*metadata.AssociationKind) error {
 	resources, err := am.makeResourceByAssociationType(ctx, header, meta.EmptyAction, aks...)
 	if err != nil {
 		return fmt.Errorf("make auth resource from association type failed, err: %+v", err)
