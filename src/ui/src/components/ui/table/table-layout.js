@@ -8,7 +8,7 @@ class TableLayout {
         this.columns = []
         this.scrollY = false
         this.bodyWidth = null
-        for (let name in options) {
+        for (const name in options) {
             if (options.hasOwnProperty(name)) {
                 this[name] = options[name]
             }
@@ -16,38 +16,38 @@ class TableLayout {
     }
 
     checkScrollY () {
-        let $bodyWrapper = this.table.$refs.bodyLayout
-        let $body = this.table.$refs.body.$el
+        const $bodyWrapper = this.table.$refs.bodyLayout
+        const $body = this.table.$refs.body.$el
         this.scrollY = $body.offsetHeight > $bodyWrapper.offsetHeight
     }
 
     update () {
         const wrapperWidth = this.table.width
-        let columns = this.columns
+        const columns = this.columns
         let bodyMinWidth = 0
-        let bodyWidth = wrapperWidth ? wrapperWidth - 2 : this.table.$refs.bodyLayout.offsetWidth
-        let flexColumns = columns.filter(({flex, dragged}) => flex && !dragged)
+        const bodyWidth = wrapperWidth ? wrapperWidth - 2 : this.table.$refs.bodyLayout.offsetWidth
+        const flexColumns = columns.filter(({ flex, dragged }) => flex && !dragged)
         if (flexColumns.length) { // 存在不固定宽度的列
             columns.forEach(column => {
                 bodyMinWidth += column.width || column.minWidth
             })
-            let gutterWidth = this.scrollY ? this.table.gutterWidth : 0
+            const gutterWidth = this.scrollY ? this.table.gutterWidth : 0
             if (bodyMinWidth <= bodyWidth - gutterWidth) { // 表格的最小宽度小于容器宽度，需对弹性单元格平均分配剩余宽度
-                let totalFlexWidth = bodyWidth - bodyMinWidth - gutterWidth
+                const totalFlexWidth = bodyWidth - bodyMinWidth - gutterWidth
                 if (flexColumns.length === 1) { // 只要一个弹性单元格，则其分配全部剩余宽度
                     flexColumns[0].realWidth = flexColumns[0].minWidth + totalFlexWidth
                 } else { // 多个弹性单元格，前面n-1个平均分配向下取整的宽度，第n个获得总弹性宽度减去前面n-1总和的宽度
-                    let allflexColumnsWidth = flexColumns.reduce((prev, column) => prev + column.minWidth, 0)
-                    let flexRatio = totalFlexWidth / allflexColumnsWidth
+                    const allflexColumnsWidth = flexColumns.reduce((prev, column) => prev + column.minWidth, 0)
+                    const flexRatio = totalFlexWidth / allflexColumnsWidth
                     let notLastWidth = 0
                     flexColumns.forEach((column, index) => {
                         if (index !== (flexColumns.length - 1)) {
-                            let flexWidth = Math.floor(column.minWidth * flexRatio)
+                            const flexWidth = Math.floor(column.minWidth * flexRatio)
                             notLastWidth += flexWidth
                             column.realWidth = column.minWidth + flexWidth
                         }
                     })
-                    let lastColumn = flexColumns[flexColumns.length - 1]
+                    const lastColumn = flexColumns[flexColumns.length - 1]
                     lastColumn.realWidth = lastColumn.minWidth + totalFlexWidth - notLastWidth
                 }
             } else {
