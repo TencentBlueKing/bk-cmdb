@@ -1145,8 +1145,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 }
 
 const (
-	createObjectAttributeGroupPattern = "/api/v3/objectatt/group/new"
-	updateObjectAttributeGroupPattern = "/api/v3/objectatt/group/update"
+	createObjectAttributeGroupPattern         = "/api/v3/objectatt/group/new"
+	updateObjectAttributeGroupPattern         = "/api/v3/objectatt/group/update"
+	updateObjectAttributeGroupPropertyPattern = "/api/v3/objectatt/group/property"
 )
 
 var (
@@ -1202,7 +1203,19 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelClassification,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
 			},
