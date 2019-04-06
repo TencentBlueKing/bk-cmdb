@@ -1,12 +1,12 @@
 <template>
-    <div class="relation-tree-layout" v-bkloading="{isLoading: $loading(`get_getInstRelation_${objId}_${instId}`)}">
+    <div class="relation-tree-layout" v-bkloading="{ isLoading: $loading(`get_getInstRelation_${objId}_${instId}`) }">
         <template v-if="next.length">
             <div
                 v-for="(relation, index) in next" :key="index">
                 <div class="tree-row" @click="handleRowClick(relation)">
                     <i class="tree-row-expand-icon icon-cc-triangle-sider"
                         v-if="relation.children.length"
-                        :class="{expanded: relation.show}">
+                        :class="{ expanded: relation.show }">
                     </i>
                     <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
                     <span>{{relation['bk_obj_name']}}</span>
@@ -14,9 +14,9 @@
                 </div>
                 <div v-show="relation.show">
                     <div class="tree-row tree-row-child"
-                        v-for="(inst, index) in relation.children"
-                        :key="index"
-                        :class="{active: details.instId === inst['bk_inst_id'] && details.objId === relation['bk_obj_id']}"
+                        v-for="(inst, _index) in relation.children"
+                        :key="_index"
+                        :class="{ active: details.instId === inst['bk_inst_id'] && details.objId === relation['bk_obj_id'] }"
                         @click="handleShowDetails(relation, inst)">
                         <i :class="['tree-row-icon', relation['bk_obj_icon']]"></i>
                         <span>{{inst['bk_inst_name']}}</span>
@@ -29,8 +29,8 @@
             <span class="empty-text">{{$t("Common['当前还未有关联项']")}}</span>
         </div>
         <cmdb-topo-details v-if="details.show"
-            :objId="details.objId"
-            :instId="details.instId"
+            :obj-id="details.objId"
+            :inst-id="details.instId"
             :title="details.title"
             :show.sync="details.show">
         </cmdb-topo-details>

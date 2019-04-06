@@ -34,14 +34,14 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		clientSet:                     clientSet,
 		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
-		RegisterModelUniqueEnabled:    true,
+		RegisterModelUniqueEnabled:    false,
 	}
 }
 
 type InstanceSimplify struct {
-	ID         int64  `field:"id"`
-	InstanceID string `field:"bk_inst_id"`
+	InstanceID int64 `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
+	ObjectID   string `field:"bk_obj_id"`
 	BizID      int64
 }
 
@@ -71,7 +71,7 @@ func (is *InstanceSimplify) ParseBizID(data mapstr.MapStr) (int64, error) {
 
 	metaInterface, exist := data[common.MetadataField]
 	if !exist {
-		return 0, metadata.LabelKeyNotExistError
+		return 0, nil
 	}
 
 	metaValue, ok := metaInterface.(map[string]interface{})
@@ -191,6 +191,22 @@ type AuditCategorySimplify struct {
 }
 
 func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}
+
+type ModelUniqueSimplify struct {
+	ID    uint64 `field:"id" json:"id" bson:"id"`
+	ObjID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	Ispre bool   `field:"ispre" json:"ispre" bson:"ispre"`
+}
+
+func (is *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {

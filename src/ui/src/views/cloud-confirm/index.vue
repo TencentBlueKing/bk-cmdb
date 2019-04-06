@@ -41,32 +41,32 @@
             :checked.sync="table.checked"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
+            :default-sort="table.defaultSort"
+            :wrapper-minus-height="157"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
-                <template slot="bk_resource_type" slot-scope="{ item }">
-                    <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
-                        {{$t('Cloud["变更"]')}}
-                    </span>
-                    <span class="new-add" v-else>
-                        {{$t('Cloud["新增"]')}}
-                    </span>
-                </template>
-                <template slot="bk_account_type" slot-scope="{ item }">
-                    <span>{{$t('Cloud["腾讯云"]')}}</span>
-                </template>
-                <template slot="bk_obj_id" slot-scope="{ item }">
-                    {{ $t('Hosts["主机"]')}}
-                </template>
-                <template slot="operation" slot-scope="{ item }">
-                    <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
-                </template>
-                <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
-                        <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
-                    </p>
-                </div>
+            <template slot="bk_resource_type" slot-scope="{ item }">
+                <span class="attr-changed" v-if="item.bk_resource_type === 'change'">
+                    {{$t('Cloud["变更"]')}}
+                </span>
+                <span class="new-add" v-else>
+                    {{$t('Cloud["新增"]')}}
+                </span>
+            </template>
+            <template slot="bk_account_type" slot-scope="{ item }">
+                <span>{{$t('Cloud["腾讯云"]')}}</span>
+            </template>
+            <template slot="bk_obj_id" slot-scope="{ item }">
+                {{ $t('Hosts["主机"]')}}
+            </template>
+            <template slot="operation" slot-scope="{ item }">
+                <span class="text-primary mr20" @click.stop="singleConfirm(item)">{{$t('Hosts["确认"]')}}</span>
+            </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Cloud['暂时没有数据，请确保先添加云资源发现任务，']")}}
+                    <span class="text-primary" @click="handleAdd">{{ $t('Cloud["去添加"]')}}</span>
+                </p>
+            </div>
         </cmdb-table>
     </div>
 </template>
@@ -107,7 +107,7 @@
                     businessResolver: null
                 },
                 table: {
-                    header: [ {
+                    header: [{
                         id: 'bk_resource_id',
                         type: 'checkbox'
                     }, {
@@ -155,8 +155,8 @@
         computed: {
             batchConfirmTips () {
                 let tips = {}
-                tips = this.$t("Cloud['您将批量确认']") + this.table.checked.length + this.$t("Cloud['个资源实例，']") +
-                    this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']")
+                tips = this.$t("Cloud['您将批量确认']") + this.table.checked.length + this.$t("Cloud['个资源实例，']")
+                    + this.$t("Cloud['确认后的资源实例将被录入到主机资源池中']")
                 return tips
             }
         },
@@ -171,10 +171,10 @@
                 'addConfirmHistory'
             ]),
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {}
-                let attr = {}
-                let page = {
+                const pagination = this.table.pagination
+                const params = {}
+                const attr = {}
+                const page = {
                     start: (pagination.current - 1) * pagination.size,
                     limit: pagination.size,
                     sort: this.table.sort
@@ -190,7 +190,7 @@
                     }
                 }
                 params['page'] = page
-                let res = await this.getResourceConfirm({params, config: {requestID: 'searchConfirm'}})
+                const res = await this.getResourceConfirm({ params, config: { requestID: 'searchConfirm' } })
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     return data
@@ -198,7 +198,7 @@
                 pagination.count = res.count
             },
             confirmHistory () {
-                this.$router.push({name: 'resourceConfirmHistory'})
+                this.$router.push({ name: 'resourceConfirmHistory' })
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size
@@ -209,7 +209,7 @@
                 this.getTableData()
             },
             batchConfirm () {
-                let params = {}
+                const params = {}
                 params['bk_resource_id'] = this.table.checked
                 this.$bkInfo({
                     title: this.$t("Cloud['批量资源确认']"),
@@ -222,8 +222,8 @@
                 })
             },
             singleConfirm (item) {
-                let params = {}
-                let arr = []
+                const params = {}
+                const arr = []
                 arr.push(item['bk_resource_id'])
                 params['bk_resource_id'] = arr
                 this.$bkInfo({
@@ -238,15 +238,15 @@
             },
             handleConfirm (params) {
                 return Promise.all([
-                    this.addConfirmHistory({params}),
-                    this.resourceConfirm({params})
+                    this.addConfirmHistory({ params }),
+                    this.resourceConfirm({ params })
                 ])
             },
             handleCheckAll () {
                 this.table.checked = this.table.list.map(inst => inst['bk_resource_id'])
             },
             handleAdd () {
-                this.$router.push({name: 'cloud', params: { type: 'create' }})
+                this.$router.push({ name: 'cloud', params: { type: 'create' } })
             }
         }
     }

@@ -6,7 +6,7 @@
                 <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
             </div>
             <ul class="property-list property-list-unselected">
-                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
+                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
                     <span class="property-name">{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-angle-right"></i>
                 </li>
@@ -19,15 +19,15 @@
             <div class="property-list-layout">
                 <ul class="property-list property-list-selected">
                     <li class="property-item disabled"
-                        v-for="(property, index) in undragbbleProperties">
+                        v-for="(property, index) in undragbbleProperties" :key="index">
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                     </li>
                 </ul>
                 <vue-draggable element="ul" class="property-list property-list-selected"
                     v-model="drabbleProperties"
-                    :options="{animation: 150}">
+                    :options="{ animation: 150 }">
                     <li class="property-item"
-                        v-for="(property, index) in drabbleProperties">
+                        v-for="(property, index) in drabbleProperties" :key="index">
                         <i class="icon-triple-dot"></i>
                         <span class="property-name" :title="property['bk_property_name']">{{property['bk_property_name']}}</span>
                         <i class="bk-icon icon-eye-slash-shape"
@@ -90,7 +90,7 @@
         computed: {
             sortedProperties () {
                 return [...this.properties].sort((propertyA, propertyB) => {
-                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', {sensitivity: 'accent'})
+                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', { sensitivity: 'accent' })
                 })
             },
             unselectedProperties () {
@@ -146,14 +146,14 @@
                 if (this.localSelected.length < this.max) {
                     this.localSelected.push(property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
                 }
             },
             unselectProperty (property) {
                 if (this.localSelected.length > this.min) {
                     this.localSelected = this.localSelected.filter(propertyId => propertyId !== property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
                 }
             },
             checkDisabled (property) {
@@ -161,9 +161,9 @@
             },
             handleApply () {
                 if (this.localSelected.length > this.max) {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
                 } else if (this.localSelected.length < this.min) {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
                 } else {
                     this.$emit('on-apply', [...this.undragbbleProperties, ...this.drabbleProperties])
                 }

@@ -32,7 +32,7 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 	// get model by objID
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(ids)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
-	resp, err := am.clientSet.CoreService().Association().ReadAssociationType(ctx, header, queryCond)
+	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameAsstDes, queryCond)
 	if err != nil {
 		blog.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 		return nil, fmt.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
@@ -46,7 +46,13 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 
 	aks := make([]metadata.AssociationKind, 0)
 	for _, item := range resp.Data.Info {
-		aks = append(aks, *item)
+		ak := metadata.AssociationKind{}
+		_, err := ak.Parse(item)
+		if err != nil {
+			blog.Errorf("collectAssociationTypesByIDs %+v failed, parse association kind %+v failed, err: %+v ", ids, item, err)
+			return nil, fmt.Errorf("parse association from db data failed, err: %+v", err)
+		}
+		aks = append(aks, ak)
 	}
 	return aks, nil
 }

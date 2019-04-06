@@ -15,6 +15,7 @@
         name: 'cmdb-form-int',
         props: {
             value: {
+                type: Number,
                 default: null
             },
             disabled: {
