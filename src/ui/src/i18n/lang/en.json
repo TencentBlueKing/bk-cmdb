@@ -121,7 +121,7 @@
         "管理员后台": "Administrator Backstage",
         "返回业务管理": "Return to Business Management",
         "无业务权限": "Sorry, you have no business rights",
-        "点击下方按钮申请": "You don't have the task business permission yet, you can click 'Apply to create business' or 'Apply for business permission' to get permission.",
+        "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business"
     },
