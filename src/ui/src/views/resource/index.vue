@@ -82,11 +82,11 @@
             </div>
         </cmdb-hosts-table>
         <cmdb-slider :is-show.sync="importInst.show" :title="$t('HostResourcePool[\'批量导入\']')">
-           <bk-tab :active-name.sync="importInst.active" slot="content">
+            <bk-tab :active-name.sync="importInst.active" slot="content">
                 <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
-                        :templateUrl="importInst.templateUrl"
-                        :importUrl="importInst.importUrl"
+                        :template-url="importInst.templateUrl"
+                        :import-url="importInst.importUrl"
                         @success="getHostList(true)"
                         @partialSuccess="getHostList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
@@ -214,9 +214,9 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: false}),
+                    }, { inject: false }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -306,22 +306,22 @@
                     content = render('p', [
                         render('span', 'Selected '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, this.table.checked.length),
                         render('span', ' Hosts Transfer to Idle machine under '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, business['bk_biz_name'])
                     ])
                 } else {
                     content = render('p', [
                         render('span', '选中的 '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, this.table.checked.length),
                         render('span', ' 个主机转移到 '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, business['bk_biz_name']),
                         render('span', ' 下的空闲机模块')
                     ])
@@ -371,10 +371,10 @@
                 })
             },
             openAgentApp () {
-                let agentAppUrl = window.Site.agent
+                const agentAppUrl = window.Site.agent
                 if (agentAppUrl) {
                     if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                        window.top.postMessage(JSON.stringify({ action: 'open_other_app', app_code: 'bk_nodeman' }), '*')
                     } else {
                         window.open(agentAppUrl)
                     }

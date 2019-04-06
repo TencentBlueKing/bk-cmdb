@@ -5,7 +5,7 @@ class TreeLayout {
         this.flatternStates = {}
         this.selectedState = null
         this.expandedStates = {}
-        for (let name in options) {
+        for (const name in options) {
             if (options.hasOwnProperty(name)) {
                 this[name] = options[name]
             }
@@ -34,7 +34,7 @@ class TreeLayout {
 
     selectState (id) {
         const flatternStates = this.flatternStates
-        for (let key in this.flatternStates) {
+        for (const key in this.flatternStates) {
             const state = flatternStates[key]
             if (state.id === id) {
                 state.selected = true

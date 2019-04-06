@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 import Vue from 'vue'
 import $http from '@/api'
 import {
@@ -39,9 +40,9 @@ const getters = {
         const isBusinessMode = !rootGetters.isAdminView
         const bizId = rootGetters['objectBiz/bizId']
         if (
-            isBusinessMode &&
-            bizId &&
-            STATIC_BUSINESS_MODE.includes(auth)
+            isBusinessMode
+            && bizId
+            && STATIC_BUSINESS_MODE.includes(auth)
         ) {
             meta.bk_biz_id = bizId
         }
@@ -53,7 +54,7 @@ const getters = {
 }
 
 const actions = {
-    async getAuth ({commit, getters, rootGetters}, params) {
+    async getAuth ({ commit, getters, rootGetters }, params) {
         const allAuth = params.list || []
         const authType = params.type || 'operation'
         const shouldAuth = []

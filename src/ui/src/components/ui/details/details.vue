@@ -28,8 +28,8 @@
         </div>
         <div class="details-options"
             v-if="showOptions"
-            :class="{sticky: scrollbar}">
-            <slot name="details-options" >
+            :class="{ sticky: scrollbar }">
+            <slot name="details-options">
                 <bk-button class="button-edit" type="primary"
                     v-if="showEdit"
                     :disabled="editDisabled"

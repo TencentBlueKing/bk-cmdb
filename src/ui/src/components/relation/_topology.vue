@@ -1,19 +1,19 @@
 <template>
-    <div class="relation-topology-layout" :class="{'full-screen': fullScreen}">
+    <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }">
         <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
             {{$t('Common["退出"]')}}
         </bk-button>
-        <div class="tolology-loading" v-bkloading="{isLoading: $loading(getRelationRequestId)}">
+        <div class="tolology-loading" v-bkloading="{ isLoading: $loading(getRelationRequestId) }">
             <div class="topology-container" ref="container">
             </div>
         </div>
         <ul class="topology-legend">
-            <li class="legend-item" 
+            <li class="legend-item"
                 v-for="(legend, index) in legends"
                 :key="index"
-                :class="{inactive: !legend.active}"
+                :class="{ inactive: !legend.active }"
                 @click="handleToggleNodeVisibility(legend)">
                 <i :class="legend.icon"></i>
                 {{legend.name}} {{legend.count}}
@@ -30,9 +30,9 @@
         </div>
         <cmdb-topo-details
             v-if="details.show"
-            :fullScreen="fullScreen"
-            :objId="details.objId"
-            :instId="details.instId"
+            :full-screen="fullScreen"
+            :obj-id="details.objId"
+            :inst-id="details.instId"
             :title="details.title"
             :show.sync="details.show">
         </cmdb-topo-details>
@@ -146,7 +146,7 @@
                     this.handleDragStart(data)
                 })
                 node = node || this.nodes[0]
-                this.network.focus(node.id, {scale: 0.8})
+                this.network.focus(node.id, { scale: 0.8 })
                 this.network.selectNodes([node.id])
                 this.legends = node.legends
             },
@@ -167,7 +167,7 @@
                     return data
                 })
             },
-            async updateNetwork ({curr, next, prev}, node = null) {
+            async updateNetwork ({ curr, next, prev }, node = null) {
                 node = node || await this.createRootNode(curr)
                 node.next = node.next || []
                 node.prev = node.prev || []
@@ -267,7 +267,7 @@
                 }
                 this.nodes = [...this.nodes, ...relationNodes]
                 this.edges = [...this.edges, ...relationEdges]
-                return {nodes: relationNodes, edges: relationEdges, legends: relationLegends}
+                return { nodes: relationNodes, edges: relationEdges, legends: relationLegends }
             },
             exist (currentNode, newInst, type) {
                 return currentNode[type].some(node => {
@@ -367,12 +367,12 @@
                 const nodeId = data.node
                 this.hoverNode = this.nodes.find(node => node.id === nodeId)
                 this.$nextTick(() => {
-                    const $tooltips = this.$refs.tooltips
+                    // const $tooltips = this.$refs.tooltips
                     const view = this.network.getViewPosition()
                     const scale = this.network.getScale()
                     const nodeBox = this.network.getBoundingBox(nodeId)
                     const containerBox = this.$refs.container.getBoundingClientRect()
-                    const tooltipsBox = $tooltips.getBoundingClientRect()
+                    // const tooltipsBox = $tooltips.getBoundingClientRect()
                     const left = containerBox.width / 2 + (nodeBox.right - view.x) * scale
                     const top = containerBox.height / 2 + (nodeBox.top - view.y) * scale
                     this.$refs.tooltips.style.left = left + 'px'
@@ -403,7 +403,7 @@
                 this.fullScreen = fullScreen
                 this.$nextTick(() => {
                     this.network.redraw()
-                    this.network.moveTo({scale: 0.8})
+                    this.network.moveTo({ scale: 0.8 })
                 })
             }
         }

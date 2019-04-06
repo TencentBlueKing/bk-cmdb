@@ -13,7 +13,7 @@
             :header="table.header"
             :has-footer="false"
             :list="table.list"
-            :wrapperMinusHeight="300"
+            :wrapper-minus-height="300"
             @handleSortChange="handleSortChange">
             <template slot="bk_property_id" slot-scope="{ item }">
                 <span
@@ -46,12 +46,12 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-field-detail
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEditField="slider.isEditField"
+                :is-read-only="isReadOnly"
+                :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 @save="saveField"
                 @cancel="slider.isShow = false">
@@ -184,7 +184,7 @@
             },
             deleteField (field) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], {name: field['bk_property_name']}),
+                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], { name: field['bk_property_name'] }),
                     confirmFn: async () => {
                         await this.deleteObjectAttribute({
                             id: field.id,
@@ -200,8 +200,8 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: this.objId}, {inject: this.isInjectable}),
-                    config: {requestId: `post_searchObjectAttribute_${this.objId}`}
+                    params: this.$injectMetadata({ bk_obj_id: this.objId }, { inject: this.isInjectable }),
+                    config: { requestId: `post_searchObjectAttribute_${this.objId}` }
                 })
                 this.table.list = res
             },
