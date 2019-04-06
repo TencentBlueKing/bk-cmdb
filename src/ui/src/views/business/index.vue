@@ -7,7 +7,10 @@
                 {{$t("Common['新建']")}}
             </bk-button>
             <div class="options-button fr">
-                <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
+                <bk-button class="button-history"
+                    v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
+                    :disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
+                    @click="routeToHistory">
                     <i class="icon-cc-history2"></i>
                 </bk-button>
                 <bk-button class="button-setting" v-tooltip.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">

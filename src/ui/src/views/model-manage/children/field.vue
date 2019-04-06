@@ -37,7 +37,7 @@
                     {{$t('Common["编辑"]')}}
                 </button>
                 <button class="text-primary"
-                    :disabled="item.ispre || !isFieldEditable(item)"
+                    :disabled="!isFieldEditable(item)"
                     @click.stop="deleteField(item)">
                     {{$t('Common["删除"]')}}
                 </button>
@@ -160,7 +160,7 @@
                 'deleteObjectAttribute'
             ]),
             isFieldEditable (item) {
-                if (this.isReadOnly || this.updateAuth) {
+                if (item.ispre || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {

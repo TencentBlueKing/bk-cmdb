@@ -40,7 +40,7 @@ export default [{
     component: () => import('./archived.vue'),
     meta: {
         auth: {
-            view: '',
+            view: BUSINESS_ARCHIVE,
             operation: [BUSINESS_ARCHIVE]
         }
     }
