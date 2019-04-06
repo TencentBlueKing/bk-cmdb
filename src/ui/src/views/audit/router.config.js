@@ -20,7 +20,6 @@ export default {
         auth: {
             view: '',
             operation: []
-        },
-        requireBusiness: true
+        }
     }
 }
