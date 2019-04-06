@@ -606,6 +606,7 @@ var (
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	findObjectInstancesDetailRegexp     = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
@@ -864,6 +865,25 @@ func (ps *parseStream) objectInstance() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[7],
+					},
+				},
+			},
+		}
+		return ps
+	}
+
+	// find object/s instance list details operation.
+	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
 				},
 				Layers: []meta.Item{
