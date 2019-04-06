@@ -14,9 +14,9 @@
         <ul class="icon-box clearfix" ref="iconBox">
             <li class="icon"
                 ref="iconItem"
-                :class="{'create': type === 'create', 'active': icon.value === localValue}"
-                v-tooltip="{content: language === 'zh_CN' ? icon.nameZh : icon.nameEn}"
-                v-for="(icon, index) in curIconList" 
+                :class="{ 'create': type === 'create', 'active': icon.value === localValue }"
+                v-tooltip="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"
+                v-for="(icon, index) in curIconList"
                 :key="index" @click="chooseIcon(icon.value)">
                 <i :class="icon.value"></i>
             </li>
@@ -30,9 +30,11 @@
     export default {
         props: {
             value: {
+                type: String,
                 default: 'icon-cc-default'
             },
             type: {
+                type: String,
                 default: 'create'
             }
         },
@@ -53,7 +55,7 @@
                 'language'
             ]),
             curIconList () {
-                let {
+                const {
                     searchText,
                     page
                 } = this

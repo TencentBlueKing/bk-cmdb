@@ -3,10 +3,10 @@
         <cmdb-table ref="processTable"
             :header="header"
             :list="list"
-            :defaultSort="defaultSort"
+            :default-sort="defaultSort"
             :pagination.sync="pagination"
             :loading="$loading(['post_searchObjectAttribute_process', 'searchProcess'])"
-            :wrapperMinusHeight="minusHeight"
+            :wrapper-minus-height="minusHeight"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">

@@ -6,7 +6,7 @@
                 <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
             </div>
             <ul class="property-list">
-                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" @click="selectProperty(property)">
+                <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">
                     <span>{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-angle-right"></i>
                 </li>
@@ -16,8 +16,8 @@
             <div class="wrapper-header selected-header">
                 <label class="header-label">{{$t("Inst['已显示属性']")}}</label>
             </div>
-            <vue-draggable element="ul" class="property-list property-list-selected" v-model="selectedProperties" :options="{animation: 150}">
-                <li class="property-item" v-for="(property, index) in selectedProperties">
+            <vue-draggable element="ul" class="property-list property-list-selected" v-model="selectedProperties" :options="{ animation: 150 }">
+                <li class="property-item" v-for="(property, index) in selectedProperties" :key="index">
                     <i class="icon-triple-dot"></i>
                     <span>{{property['bk_property_name']}}</span>
                     <i class="bk-icon icon-eye-slash-shape" @click="unselectProperty(property)" v-tooltip="$t('Common[\'隐藏\']')"></i>
@@ -82,7 +82,7 @@
             sortedProperties () {
                 const properties = this.properties[this.selectedModel] || []
                 return [...properties].sort((propertyA, propertyB) => {
-                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', {sensitivity: 'accent'})
+                    return propertyA['bk_property_name'].localeCompare(propertyB['bk_property_name'], 'zh-Hans-CN', { sensitivity: 'accent' })
                 })
             },
             unselectedProperties () {
@@ -140,21 +140,21 @@
                         'bk_obj_id': property['bk_obj_id']
                     })
                 } else {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
                 }
             },
             unselectProperty (property) {
                 if (this.localSelcted.length > this.min) {
                     this.localSelcted = this.localSelcted.filter(selected => selected['bk_property_id'] !== property['bk_property_id'])
                 } else {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
                 }
             },
             handleApply () {
                 if (this.localSelcted.length > this.max) {
-                    this.$info(this.$t('Common["最多选择N项"]', {n: this.max}))
+                    this.$info(this.$t('Common["最多选择N项"]', { n: this.max }))
                 } else if (this.localSelcted.length < this.min) {
-                    this.$info(this.$t('Common["至少选择N项"]', {n: this.min}))
+                    this.$info(this.$t('Common["至少选择N项"]', { n: this.min }))
                 } else {
                     this.$emit('on-apply', this.selectedProperties)
                 }

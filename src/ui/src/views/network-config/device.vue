@@ -5,9 +5,9 @@
                 {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
             <bk-button type="default"
-            :loading="$loading('deleteDevice')"
-            :disabled="!table.checked.length"
-            @click="deleteDevices">
+                :loading="$loading('deleteDevice')"
+                :disabled="!table.checked.length"
+                @click="deleteDevices">
                 {{$t('Common["删除"]')}}
             </bk-button>
             <bk-button type="default" @click="importSlider.isShow = true">
@@ -27,7 +27,7 @@
             :list="table.list"
             :checked.sync="table.checked"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
+            :default-sort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
@@ -37,22 +37,22 @@
             </template>
         </cmdb-table>
         <bk-dialog
-        class="create-dialog"
-        :is-show.sync="deviceDialog.isShow" 
-        :title="deviceDialog.title"
-        :has-footer="false"
-        :close-icon="false"
-        :width="424">
+            class="create-dialog"
+            :is-show.sync="deviceDialog.isShow"
+            :title="deviceDialog.title"
+            :has-footer="false"
+            :close-icon="false"
+            :width="424">
             <div slot="content">
                 <div>
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["设备型号"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" 
-                    class="cmdb-form-input" 
-                    name="device_model"
-                    v-model.trim="deviceDialog.data['device_model']" 
-                    v-validate="'required|singlechar'">
+                    <input type="text"
+                        class="cmdb-form-input"
+                        name="device_model"
+                        v-model.trim="deviceDialog.data['device_model']"
+                        v-validate="'required|singlechar'">
                     <div v-show="errors.has('device_model')" class="color-danger">{{ errors.first('device_model') }}</div>
                 </div>
                 <div>
@@ -95,9 +95,9 @@
         <cmdb-slider
             :is-show.sync="importSlider.isShow"
             :title="$t('HostResourcePool[\'批量导入\']')">
-            <cmdb-import v-if="importSlider.isShow" slot="content" 
-                :templateUrl="url.template" 
-                :importUrl="url.import" 
+            <cmdb-import v-if="importSlider.isShow" slot="content"
+                :template-url="url.template"
+                :import-url="url.import"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -199,10 +199,10 @@
                 this.$bkInfo({
                     title: this.$t('NetworkDiscovery["确认删除设备"]'),
                     confirmFn: async () => {
-                        let params = {
+                        const params = {
                             device_id: this.table.checked
                         }
-                        await this.deleteDevice({config: {data: params, requestId: 'deleteDevice'}})
+                        await this.deleteDevice({ config: { data: params, requestId: 'deleteDevice' } })
                         this.table.checked = []
                         this.handlePageChange(1)
                     }
@@ -226,7 +226,7 @@
                 this.deviceDialog.isShow = false
             },
             getObjName (bkObjId) {
-                let obj = this.netList.find(({bk_obj_id: objId}) => objId === bkObjId)
+                const obj = this.netList.find(({ bk_obj_id: objId }) => objId === bkObjId)
                 if (obj) {
                     return obj['bk_obj_name']
                 }
@@ -236,7 +236,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = {
+                const params = {
                     device_model: this.deviceDialog.data['device_model'],
                     device_name: this.deviceDialog.data['device_name'],
                     bk_obj_id: this.deviceDialog.data['bk_obj_id'],
@@ -246,24 +246,24 @@
                     await this.updateDevice({
                         deviceId: this.deviceDialog.data['device_id'],
                         params,
-                        config: {requestId: 'updateDevice'}
+                        config: { requestId: 'updateDevice' }
                     })
                 } else {
-                    await this.createDevice({params, config: {requestId: 'createDevice'}})
+                    await this.createDevice({ params, config: { requestId: 'createDevice' } })
                 }
                 this.hideDeviceDialog()
                 this.handlePageChange(1)
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {
+                const pagination = this.table.pagination
+                const params = {
                     page: {
                         start: (pagination.current - 1) * pagination.size,
                         limit: pagination.size,
                         sort: this.table.sort
                     }
                 }
-                const res = await this.searchDevice({params, config: {requestId: 'searchDevice'}})
+                const res = await this.searchDevice({ params, config: { requestId: 'searchDevice' } })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
             },
