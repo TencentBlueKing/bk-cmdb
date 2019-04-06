@@ -13,13 +13,13 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 
 	"configcenter/src/auth/meta"
-	"configcenter/src/framework/core/errors"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -1470,7 +1470,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 	}
 
 	// find module operation.
-	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
+	if ps.hitRegexp(findModuleRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("find module, but got invalid url")
 			return ps
