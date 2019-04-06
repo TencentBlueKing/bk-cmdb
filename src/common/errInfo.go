@@ -163,6 +163,7 @@ const (
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
 	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
+	CCErrAPINoObjectInstancesIsFound           = 1100003
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
