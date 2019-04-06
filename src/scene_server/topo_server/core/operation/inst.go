@@ -51,7 +51,7 @@ type InstOperationInterface interface {
 // NewInstOperation create a new inst operation instance
 func NewInstOperation(client apimachinery.ClientSetInterface) InstOperationInterface {
 	return &commonInst{
-		clientSet:   client,
+		clientSet: client,
 	}
 }
 
@@ -62,11 +62,11 @@ type InputKey string
 type InstID int64
 
 type BatchResult struct {
-	Errors       []string `json:"error"`
-	Success      []string `json:"success"`
-	SuccessCreated      []int64 `json:"success_created"`
-	SuccessUpdated      []int64 `json:"success_updated"`
-	UpdateErrors []string `json:"update_error"`
+	Errors         []string `json:"error"`
+	Success        []string `json:"success"`
+	SuccessCreated []int64  `json:"success_created"`
+	SuccessUpdated []int64  `json:"success_updated"`
+	UpdateErrors   []string `json:"update_error"`
 }
 
 type commonInst struct {
@@ -195,7 +195,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			createdInstanceIDs = append(createdInstanceIDs, instanceID)
 		}
 	}
-	
+
 	results.SuccessCreated = createdInstanceIDs
 	results.SuccessUpdated = updatedInstanceIDs
 
@@ -247,7 +247,6 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
 		return nil, err
 	}
-
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 
