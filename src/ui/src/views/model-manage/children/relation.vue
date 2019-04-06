@@ -12,7 +12,7 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handleSortChange="handleSortChange">
             <template slot="bk_obj_asst_id" slot-scope="{ item }">
                 <span
@@ -50,14 +50,14 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-relation-detail
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEdit="slider.isEdit"
+                :is-read-only="isReadOnly"
+                :is-edit="slider.isEdit"
                 :relation="slider.relation"
-                :relationList="relationList"
+                :relation-list="relationList"
                 @save="saveRelation"
                 @cancel="slider.isShow = false">
             </the-relation-detail>
@@ -158,7 +158,7 @@
                 return true
             },
             getRelationName (id) {
-                let relation = this.relationList.find(item => item.id === id)
+                const relation = this.relationList.find(item => item.id === id)
                 if (relation) {
                     return relation.name
                 }
@@ -171,7 +171,7 @@
                         fromCache: true
                     }
                 })
-                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                this.relationList = data.info.map(({ bk_asst_id: asstId, bk_asst_name: asstName }) => {
                     if (asstName.length) {
                         return {
                             id: asstId,
@@ -185,7 +185,7 @@
                 })
             },
             getModelName (objId) {
-                let model = this.models.find(model => model['bk_obj_id'] === objId)
+                const model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
                     return model['bk_obj_name']
                 }

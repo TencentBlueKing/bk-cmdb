@@ -1,5 +1,5 @@
 <template>
-    <div class="transfer-layout clearfix" v-bkloading="{isLoading: loading}">
+    <div class="transfer-layout clearfix" v-bkloading="{ isLoading: loading }">
         <div class="columns-layout fl">
             <div class="business-layout">
                 <label class="business-label">{{$t('Common[\'业务\']')}}</label>
@@ -14,7 +14,7 @@
                     :tree="tree.data"
                     :before-click="beforeNodeSelect"
                     @on-click="handleNodeClick">
-                    <div class="tree-node clearfix" slot-scope="{node, state}"
+                    <div class="tree-node clearfix" slot-scope="{ node, state }"
                         :class="{
                             'tree-node-selected': state.selected,
                             'tree-node-leaf-module': node['bk_obj_id'] === 'module'
@@ -26,8 +26,8 @@
                             :false-value="false">
                         </cmdb-form-bool>
                         <template v-if="[1, 2].includes(node.default)">
-                            <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
-                            <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
+                            <i class="topo-node-icon topo-node-icon-internal icon-cc-host-free-pool" v-if="node.default === 1"></i>
+                            <i class="topo-node-icon topo-node-icon-internal icon-cc-host-breakdown" v-else></i>
                         </template>
                         <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
                         <span class="topo-node-text">{{node['bk_inst_name']}}</span>
@@ -65,12 +65,12 @@
                 </label>
             </div>
             <div class="button-layout content-middle fr">
-                <bk-button class= "transfer-button" type="primary"
+                <bk-button class="transfer-button" type="primary"
                     :disabled="!selectedModuleStates.length"
                     @click="handleTransfer">
                     {{$t('Common[\'确认转移\']')}}
                 </bk-button>
-                <bk-button class= "transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
             </div>
         </div>
     </div>
@@ -109,7 +109,7 @@
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
+                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
                 return !!this.selectedModuleStates.length && !hasSpecialModule
             },
             loading () {
@@ -222,8 +222,10 @@
                 return `${node['bk_obj_id']}-${node['bk_inst_id']}`
             },
             beforeNodeSelect (node, state) {
+                /* eslint-disable */
                 let confirmResolver
                 let confirmRejecter
+                /* eslint-enable */
                 const asyncConfirm = new Promise((resolve, reject) => {
                     confirmResolver = resolve
                     confirmRejecter = reject
@@ -232,15 +234,15 @@
                     confirmResolver(true)
                 } else {
                     const isSpecialNode = !!node.default || node['bk_inst_id'] === 'source'
-                    const hasNormalNode = this.selectedModuleStates.some(({node}) => {
+                    const hasNormalNode = this.selectedModuleStates.some(({ node }) => {
                         return !node.default && node['bk_inst_id'] !== 'source'
                     })
-                    const hasSpecialNode = this.selectedModuleStates.some(({node}) => {
+                    const hasSpecialNode = this.selectedModuleStates.some(({ node }) => {
                         return node.default || node['bk_inst_id'] === 'source'
                     })
                     if (isSpecialNode && hasNormalNode) {
                         this.$bkInfo({
-                            title: this.$t('Common[\'转移确认\']', {target: node['bk_inst_name']}),
+                            title: this.$t('Common[\'转移确认\']', { target: node['bk_inst_name'] }),
                             confirmFn: () => {
                                 this.selectedModuleStates = []
                                 confirmResolver(true)
@@ -286,9 +288,9 @@
                 return `${currentBusiness['bk_biz_name']}-${state.parent.node['bk_inst_name']}`
             },
             handleTransfer () {
-                const toSource = this.selectedModuleStates.some(({node}) => node['bk_inst_id'] === 'source')
-                const toIdle = this.selectedModuleStates.some(({node}) => node.default === 1)
-                const toFault = this.selectedModuleStates.some(({node}) => node.default === 2)
+                const toSource = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source')
+                const toIdle = this.selectedModuleStates.some(({ node }) => node.default === 1)
+                const toFault = this.selectedModuleStates.some(({ node }) => node.default === 2)
                 const transferConfig = {
                     requestId: 'transferHost'
                 }
@@ -335,7 +337,7 @@
                 })
             },
             getTransferParams () {
-                let hasSpecialNode = this.selectedModuleStates.some(({node}) => [1, 2].includes(node.default))
+                // const hasSpecialNode = this.selectedModuleStates.some(({ node }) => [1, 2].includes(node.default))
                 let increment = this.increment
                 if (this.hasSpecialNode || this.hostIds.length === 1) {
                     increment = false
@@ -343,7 +345,7 @@
                 return {
                     'bk_biz_id': this.businessId,
                     'bk_host_id': this.hostIds,
-                    'bk_module_id': this.selectedModuleStates.map(({node}) => node['bk_inst_id']),
+                    'bk_module_id': this.selectedModuleStates.map(({ node }) => node['bk_inst_id']),
                     'is_increment': increment
                 }
             },

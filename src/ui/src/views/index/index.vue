@@ -47,7 +47,7 @@
                 }
             }
             addMainResizeListener(this.resizeHandler)
-            this.resizeHandler({target: document.querySelector('.main-scroller')})
+            this.resizeHandler({ target: document.querySelector('.main-scroller') })
         },
         beforeDestroy () {
             removeMainResizeListener(this.resizeHandler)

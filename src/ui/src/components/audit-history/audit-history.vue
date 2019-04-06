@@ -16,7 +16,7 @@
             :header="header"
             :list="list"
             :pagination.sync="pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange"
@@ -30,10 +30,10 @@
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
-            <v-details class="details-content" 
-                :isShow="this.details.isShow"
+            <v-details class="details-content"
+                :is-show="details.isShow"
                 :details="details.data"
-                :height="342" 
+                :height="342"
                 :width="635"></v-details>
         </div>
     </div>
@@ -44,6 +44,9 @@
     import vDetails from './details'
     import { mapActions } from 'vuex'
     export default {
+        components: {
+            vDetails
+        },
         props: {
             extKey: {
                 type: Object,
@@ -169,9 +172,6 @@
                     this.details.clickoutside = false
                 })
             }
-        },
-        components: {
-            vDetails
         }
     }
 </script>

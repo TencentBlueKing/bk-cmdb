@@ -4,7 +4,7 @@
             <img src="../../assets/images/403.png" alt="">
             <div class="tips-403">
                 {{$t('Common["Sorry，您没有业务管理的权限，请联系配置平台管理员"]')}}
-                <p :class="{'zh': $i18n.locale === 'zh_CN'}" class="name"></p>
+                <p :class="{ 'zh': $i18n.locale === 'zh_CN' }" class="name"></p>
             </div>
         </div>
     </div>

@@ -2,9 +2,9 @@
     <div class="collect-wrapper">
         <div class="title">
             <bk-button type="primary"
-            :disabled="!table.checked.length"
-            :loading="$loading('collectDataCollection')"
-            @click="executionDiscovery">
+                :disabled="!table.checked.length"
+                :loading="$loading('collectDataCollection')"
+                @click="executionDiscovery">
                 {{$t('NetworkDiscovery["执行发现"]')}}
             </bk-button>
             <div class="input-box">
@@ -18,7 +18,7 @@
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
-            :wrapperMinusHeight="240"
+            :wrapper-minus-height="240"
             @handleSortChange="handleSortChange"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
@@ -65,14 +65,14 @@
             </template>
         </cmdb-table>
         <bk-dialog
-        class="config-dialog"
-        :is-show.sync="configDialog.isShow" 
-        :has-header="false"
-        :has-footer="false"
-        :quick-close="false"
-        :close-icon="false"
-        padding="0"
-        :width="424">
+            class="config-dialog"
+            :is-show.sync="configDialog.isShow"
+            :has-header="false"
+            :has-footer="false"
+            :quick-close="false"
+            :close-icon="false"
+            padding="0"
+            :width="424">
             <div slot="content" class="dialog-content">
                 <div class="content-box">
                     <h2 class="title">
@@ -81,7 +81,7 @@
                     <label>
                         <span>{{$t('NetworkDiscovery["SNMP扫描范围"]')}}</span>
                         <span class="color-danger">*</span>
-                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{content: htmlEncode(), classes: 'collect-tooltip'}"></i>
+                        <i class="bk-icon icon-exclamation-circle" v-tooltip="{ content: htmlEncode(), classes: 'collect-tooltip' }"></i>
                     </label>
                     <textarea name="scan_range" id="" cols="30" rows="10" v-validate="'required'" v-model.trim="configDialog.scan_range"></textarea>
                     <div v-show="errors.has('scan_range')" class="color-danger">{{ errors.first('scan_range') }}</div>
@@ -111,7 +111,7 @@
                 </div>
             </div>
         </bk-dialog>
-        <div class="status-tips" ref='tooltipContent' v-if="tooltip.id">
+        <div class="status-tips" ref="tooltipContent" v-if="tooltip.id">
             <p class="tips-content">{{$t('NetworkDiscovery["采集器状态"]')}}：
                 <span :class="tooltip.content.status.collector_status === 'normal' ? 'color-success' : 'color-danger'">
                     {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["正常"]') : $t('NetworkDiscovery["异常"]')}}
@@ -123,7 +123,7 @@
                 </span>
             </p>
             <p class="tips-content">{{$t('NetworkDiscovery["上报状态"]')}}：
-                <span :class="{'color-success': tooltip.content.status.report_status === 'normal'}">
+                <span :class="{ 'color-success': tooltip.content.status.report_status === 'normal' }">
                     {{tooltip.content.status.collector_status === 'normal' ? $t('NetworkDiscovery["完成"]') : $t('NetworkDiscovery["上报中"]')}}
                 </span>
             </p>
@@ -220,18 +220,18 @@
                 'updateDataCollection'
             ]),
             executionDiscovery () {
-                let params = {
+                const params = {
                     collectors: []
                 }
                 this.table.checked.map(key => {
-                    let keyArr = key.split('#')
+                    const keyArr = key.split('#')
                     params.collectors.push({
                         bk_cloud_id: Number(keyArr[0]),
                         bk_host_innerip: keyArr[1],
                         bk_biz_id: Number(keyArr[2])
                     })
                 })
-                this.collectDataCollection({params, config: {requestId: 'collectDataCollection'}})
+                this.collectDataCollection({ params, config: { requestId: 'collectDataCollection' } })
             },
             showConfig (item) {
                 this.configDialog.scan_range = item.config['scan_range'] === null ? '' : item.config['scan_range'].join('\n')
@@ -249,7 +249,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = {
+                const params = {
                     bk_cloud_id: this.configDialog['bk_cloud_id'],
                     bk_host_innerip: this.configDialog['bk_host_innerip'],
                     bk_biz_id: this.configDialog['bk_biz_id'],
@@ -259,7 +259,7 @@
                         community: this.configDialog.community
                     }
                 }
-                await this.updateDataCollection({params, config: {requestId: 'updateDataCollection'}})
+                await this.updateDataCollection({ params, config: { requestId: 'updateDataCollection' } })
                 this.hideConfig()
                 this.getTableData()
             },
@@ -284,13 +284,13 @@
             htmlEncode () {
                 let temp = document.createElement('div')
                 temp.innerHTML = `${this.$t('NetworkDiscovery["填写格式"]')}&lt;/br&gt;${this.$t('NetworkDiscovery["指定IP"]')}：192.168.1.1&lt;/br&gt;IP ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1-192.168.1.200&lt;/br&gt;cidr ip ${this.$t('NetworkDiscovery["范围"]')}：192.168.1.1/32`
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {
+                const pagination = this.table.pagination
+                const params = {
                     query: this.filter.text,
                     page: {
                         start: (pagination.current - 1) * pagination.size,
@@ -298,11 +298,11 @@
                         sort: this.table.sort
                     }
                 }
-                const res = await this.searchDataCollection({params, config: {requestId: 'searchDataCollection'}})
+                const res = await this.searchDataCollection({ params, config: { requestId: 'searchDataCollection' } })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
                 if (res.info.length) {
-                    let index = this.table.header.findIndex(header => header.id === 'version')
+                    const index = this.table.header.findIndex(header => header.id === 'version')
                     this.table.header[index] = {
                         id: 'version',
                         name: `${this.$t('NetworkDiscovery["版本"]')}(${this.$t('NetworkDiscovery["最新"]')}${res.info[0]['latest_ersion']})`

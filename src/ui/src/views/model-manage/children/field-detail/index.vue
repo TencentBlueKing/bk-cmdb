@@ -5,13 +5,13 @@
                 {{$t('ModelManagement["唯一标识"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldId')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
                 <input type="text" class="cmdb-form-input"
-                name="fieldId"
-                :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
-                v-model.trim="fieldInfo['bk_property_id']"
-                :disabled="isEditField"
-                v-validate="'required|fieldId'">
+                    name="fieldId"
+                    :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
+                    v-model.trim="fieldInfo['bk_property_id']"
+                    :disabled="isEditField"
+                    v-validate="'required|fieldId'">
                 <p class="form-error">{{errors.first('fieldId')}}</p>
             </div>
         </label>
@@ -20,13 +20,13 @@
                 {{$t('ModelManagement["名称"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('fieldName')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
                 <input type="text" class="cmdb-form-input"
-                name="fieldName"
-                :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
-                v-model.trim="fieldInfo['bk_property_name']"
-                :disabled="isReadOnly"
-                v-validate="'required|enumName'">
+                    name="fieldName"
+                    :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
+                    v-model.trim="fieldInfo['bk_property_name']"
+                    :disabled="isReadOnly"
+                    v-validate="'required|enumName'">
                 <p class="form-error">{{errors.first('fieldName')}}</p>
             </div>
         </label>
@@ -46,13 +46,13 @@
         <div class="field-detail">
             <the-config
                 :type="fieldInfo['bk_property_type']"
-                :isReadOnly="isReadOnly"
+                :is-read-only="isReadOnly"
                 :editable.sync="fieldInfo['editable']"
                 :isrequired.sync="fieldInfo['isrequired']"
             ></the-config>
-            <component 
+            <component
                 v-if="isComponentShow"
-                :isReadOnly="isReadOnly"
+                :is-read-only="isReadOnly"
                 :is="`the-field-${fieldType}`"
                 v-model="fieldInfo.option"
                 ref="component"
@@ -64,9 +64,9 @@
             </span>
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input"
-                v-model.trim="fieldInfo['unit']"
-                :disabled="isReadOnly"
-                :placeholder="$t('ModelManagement[\'请输入单位\']')">
+                    v-model.trim="fieldInfo['unit']"
+                    :disabled="isReadOnly"
+                    :placeholder="$t('ModelManagement[\'请输入单位\']')">
             </div>
         </label>
         <div class="form-label">
@@ -166,7 +166,7 @@
                 'isInjectable'
             ]),
             fieldType () {
-                let {
+                const {
                     bk_property_type: type
                 } = this.fieldInfo
                 if (this.charMap.indexOf(type) !== -1) {
@@ -206,7 +206,7 @@
                 'updateObjectAttribute'
             ]),
             initData () {
-                for (let key in this.fieldInfo) {
+                for (const key in this.fieldInfo) {
                     this.fieldInfo[key] = this.$tools.clone(this.field[key])
                 }
             },
@@ -238,7 +238,7 @@
                         this.$http.cancel(`post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`)
                     })
                 } else {
-                    let otherParams = {
+                    const otherParams = {
                         creator: this.userName,
                         bk_property_group: (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default',
                         bk_obj_id: this.activeModel['bk_obj_id'],

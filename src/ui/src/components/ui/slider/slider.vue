@@ -1,7 +1,7 @@
 <template>
     <transition name="slide">
         <div class="slidebar-wrapper" v-if="isShow" @click.self="quickClose">
-            <div class="sideslider" :style="{width: `${width}px`}">
+            <div class="sideslider" :style="{ width: `${width}px` }">
                 <div class="sideslider-title" ref="title">
                     <slot name="title">
                         <h3 class="title">
@@ -25,6 +25,7 @@
                 标题
             */
             title: {
+                type: String,
                 default: ''
             },
             /*
@@ -38,6 +39,7 @@
                 弹窗宽度
             */
             width: {
+                type: Number,
                 default: 800
             },
             /*
