@@ -27,7 +27,7 @@ export default {
             adminView: false
         },
         auth: {
-            view: R_HOST,
+            view: '',
             operation: Object.values(OPERATION)
         },
         requireBusiness: true

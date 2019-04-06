@@ -4,7 +4,7 @@
             <div class="table-box">
                 <p class="title clearfix">
                     <label class="label" @click="propertyTable.isShow = !propertyTable.isShow">
-                        <i class="bk-icon icon-angle-down" :class="{'rotate': !propertyTable.isShow}"></i>
+                        <i class="bk-icon icon-angle-down" :class="{ 'rotate': !propertyTable.isShow }"></i>
                         <span>{{$t('Common["属性"]')}}</span>
                     </label>
                     <label class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -17,23 +17,23 @@
                         <cmdb-table
                             class="table"
                             :loading="$loading('searchNetcollectChangeDetail')"
-                            :maxHeight="40 * propertyTableList.length + 40"
+                            :max-height="40 * propertyTableList.length + 40"
                             :header="propertyTable.header"
                             :list="propertyTableList"
                             :pagination.sync="propertyTable.pagination"
-                            :defaultSort="propertyTable.defaultSort"
+                            :default-sort="propertyTable.defaultSort"
                             @handleSortChange="propertyHandleSortChange">
                             <template v-for="(header, index) in propertyTable.header" :slot="header.id" slot-scope="{ item }">
                                 <template v-if="header.id === 'isrequired'">
-                                    <span :key="index" :class="{'disabled': item.method !== 'accept'}">
+                                    <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">
                                         {{item.isrequired ? $t('NetworkDiscovery["是"]') : $t('NetworkDiscovery["否"]')}}
                                     </span>
                                 </template>
                                 <template v-else-if="header.id === 'operation'">
-                                    <span v-if="!item.isrequired" :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                    <span v-if="!item.isrequired" :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="togglePropertyMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
                                 </template>
                                 <template v-else>
-                                    <span :key="index" :class="{'disabled': item.method !== 'accept'}">{{item[header.id]}}</span>
+                                    <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">{{item[header.id]}}</span>
                                 </template>
                             </template>
                         </cmdb-table>
@@ -43,7 +43,7 @@
             <div class="table-box relation">
                 <p class="title clearfix">
                     <label class="label" @click="relationTable.isShow = !relationTable.isShow">
-                        <i class="bk-icon icon-angle-down" :class="{'rotate': !relationTable.isShow}"></i>
+                        <i class="bk-icon icon-angle-down" :class="{ 'rotate': !relationTable.isShow }"></i>
                         <span>{{$t('NetworkDiscovery["关系"]')}}</span>
                     </label>
                     <label class="cmdb-form-checkbox cmdb-checkbox-small">
@@ -56,21 +56,21 @@
                         <cmdb-table
                             class="table"
                             :loading="$loading('searchNetcollectChangeDetail')"
-                            :maxHeight="40 * relationTableList.length + 40"
+                            :max-height="40 * relationTableList.length + 40"
                             :header="relationTable.header"
                             :list="relationTableList"
                             :pagination.sync="relationTable.pagination"
-                            :defaultSort="relationTable.defaultSort"
+                            :default-sort="relationTable.defaultSort"
                             @handleSortChange="relationHandleSortChange">
                             <template v-for="(header, index) in relationTable.header" :slot="header.id" slot-scope="{ item }">
                                 <template v-if="header.id === 'action'">
-                                    <span :key="index" :class="{'color-danger': item.action === 'delete', 'disabled': item.method !== 'accept'}">{{actionMap[item.action]}}</span>
+                                    <span :key="index" :class="{ 'color-danger': item.action === 'delete', 'disabled': item.method !== 'accept' }">{{actionMap[item.action]}}</span>
                                 </template>
                                 <template v-else-if="header.id === 'operation'">
-                                    <span :key="index" class="text-primary" :class="{'disabled': ignore}" @click.stop="toggleRelationMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
+                                    <span :key="index" class="text-primary" :class="{ 'disabled': ignore }" @click.stop="toggleRelationMethod(item)">{{item.method === 'accept' ? $t('NetworkDiscovery["忽略"]') : $t('NetworkDiscovery["取消忽略"]')}}</span>
                                 </template>
                                 <template v-else>
-                                    <span :key="index" :class="{'disabled': item.method !== 'accept'}">{{item[header.id]}}</span>
+                                    <span :key="index" :class="{ 'disabled': item.method !== 'accept' }">{{item[header.id]}}</span>
                                 </template>
                             </template>
                         </cmdb-table>

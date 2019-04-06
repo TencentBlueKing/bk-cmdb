@@ -7,6 +7,7 @@
 <script>
     export default {
         name: 'cmdb-form-bool-input',
+        // eslint-disable-next-line
         props: ['value'],
         data () {
             return {

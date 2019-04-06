@@ -5,12 +5,12 @@
             <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
         <cmdb-table class="archived-table"
-            rowCursor="default"
+            row-cursor="default"
             :sortable="false"
             :pagination.sync="pagination"
             :list="list"
             :header="header"
-            :wrapperMinusHeight="157"
+            :wrapper-minus-height="157"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
@@ -125,7 +125,7 @@
             handleRecovery (biz) {
                 this.$bkInfo({
                     title: this.$t('Inst["是否确认恢复业务？"]'),
-                    content: this.$t('Inst["恢复业务提示"]', {bizName: biz['bk_biz_name']}),
+                    content: this.$t('Inst["恢复业务提示"]', { bizName: biz['bk_biz_name'] }),
                     confirmFn: () => {
                         this.recoveryBiz(biz)
                     }

@@ -79,7 +79,7 @@ const mutations = {
             Object.assign(topologyMap[modelId], data)
         })
     },
-    addAssociation (state, {id, association}) {
+    addAssociation (state, { id, association }) {
         const data = state.topologyMap[id]
         const associations = data.assts
         if (Array.isArray(associations)) {

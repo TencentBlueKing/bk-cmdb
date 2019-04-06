@@ -7,9 +7,9 @@ export default {
         const node = state.node
         const nodeId = state.id
         if (treeInstance.$scopedSlots[nodeId]) {
-            return treeInstance.$scopedSlots[nodeId]({node, state})
+            return treeInstance.$scopedSlots[nodeId]({ node, state })
         } else if (treeInstance.$scopedSlots.default) {
-            return treeInstance.$scopedSlots.default({node, state})
+            return treeInstance.$scopedSlots.default({ node, state })
         } else if (typeof treeInstance.render === 'function') {
             return treeInstance.render(h, node, state)
         } else {

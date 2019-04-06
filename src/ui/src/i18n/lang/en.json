@@ -119,7 +119,11 @@
         "搜索": "Search",
         "确定删除选中的实例": "Confirm to delete selected instance(s)?",
         "管理员后台": "Administrator Backstage",
-        "返回业务管理": "Return to Business Management"
+        "返回业务管理": "Return to Business Management",
+        "无业务权限": "Sorry, you have no business rights",
+        "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
+        "申请业务权限": "Apply for business permission",
+        "申请创建业务": "Apply to create business"
     },
     "Nav": {
         "首页": "Index",
@@ -146,7 +150,8 @@
         "蓝鲸配置平台": "BK CMDB",
         "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
-        "后台管理标题": "Back-stage Management"
+        "后台管理标题": "Back-stage Management",
+        "基础资源": "Basic Resource"
     },
     "Index": {
         "首页": "Index",

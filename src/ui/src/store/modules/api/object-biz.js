@@ -9,7 +9,7 @@
  */
 
 import $http from '@/api'
-import jsCookie from 'js-cookie'
+// import jsCookie from 'js-cookie'
 
 const state = {
     business: [],
@@ -92,7 +92,7 @@ const actions = {
      * @param {Number} bizId 业务id
      * @return {promises} promises 对象
      */
-    recoveryBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
+    recoveryBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
         return $http.put(`biz/status/enable/${rootGetters.supplierAccount}/${params['bk_biz_id']}`, {}, config)
     },
 
@@ -105,11 +105,11 @@ const actions = {
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchBusiness ({ commit, state, dispatch, rootGetters }, {params, config}) {
+    searchBusiness ({ commit, state, dispatch, rootGetters }, { params, config }) {
         return $http.post(`biz/search/${rootGetters.supplierAccount}`, params, config)
     },
 
-    searchBusinessById ({rootGetters}, {bizId, config}) {
+    searchBusinessById ({ rootGetters }, { bizId, config }) {
         return $http.post(`biz/search/${rootGetters.supplierAccount}`, {
             condition: {
                 'bk_biz_id': {

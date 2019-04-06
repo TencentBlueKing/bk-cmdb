@@ -4,7 +4,7 @@
             <div class="fl">
                 <bk-button class="options-button options-button-update" size="small" type="primary"
                     :disabled="!hasRelation || disabled"
-                    :class="{active: activeComponent === 'cmdbRelationUpdate'}"
+                    :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                     @click="handleShowUpdate">
                     {{$t('Association["关联管理"]')}}
                     <i class="bk-icon icon-angle-down"></i>
@@ -92,8 +92,8 @@
             async getRelation () {
                 try {
                     let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
-                        this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
-                        this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'}),
+                        this.getObjectAssociation({ 'bk_obj_id': this.objId }, { requestId: 'getSourceAssocaition' }),
+                        this.getObjectAssociation({ 'bk_asst_obj_id': this.objId }, { requestId: 'getTargetAssocaition' }),
                         this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                             config: {
                                 requestId: 'getMainLineModels'
@@ -117,7 +117,7 @@
             },
             getObjectAssociation (condition, config) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: this.$injectMetadata({condition}),
+                    params: this.$injectMetadata({ condition }),
                     config
                 })
             },
