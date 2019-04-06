@@ -39,7 +39,7 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 }
 
 type InstanceSimplify struct {
-	InstanceID int64 `field:"bk_inst_id"`
+	InstanceID int64  `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
 	ObjectID   string `field:"bk_obj_id"`
 	BizID      int64
