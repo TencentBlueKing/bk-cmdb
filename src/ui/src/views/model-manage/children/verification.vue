@@ -122,10 +122,7 @@
                 'deleteObjectUniqueConstraints'
             ]),
             isEditable (item) {
-                if (item.ispre) {
-                    return false
-                }
-                if (this.isReadOnly) {
+                if (item.ispre || this.isReadOnly) {
                     return false
                 }
                 if (!this.isAdminView) {
