@@ -21,6 +21,26 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
+// ResourceTypeID is resource's type in auth center.
+func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+	var err error
+	info := new(ResourceInfo)
+	info.ResourceName = attribute.Basic.Name
+
+	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
+	if err != nil {
+		return info, err
+	}
+	info.ResourceType = *resourceTypeID
+
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
+}
+
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
@@ -98,26 +118,6 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	}
 
 	return &iamResourceType, nil
-}
-
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
-
-	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return info, err
-	}
-	info.ResourceType = *resourceTypeID
-
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
 }
 
 // ResourceTypeID is resource's type in auth center.
@@ -226,6 +226,20 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return BindModule, nil
 		}
 
+	}
+
+	if r.Basic.Type == meta.HostInstance {
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Edit, nil
+		}
+
+		if r.Action == meta.AddHostToResourcePool {
+			return Create, nil
+		}
+
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Create, nil
+		}
 	}
 
 	switch r.Action {
