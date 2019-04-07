@@ -421,7 +421,7 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 	return businessIDs, nil
 }
 
-func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]int64, error) {
+func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]AuthorizedResource, error) {
 	scopeInfo := ScopeInfo{}
 	var resourceType ResourceTypeID
 	if businessID > 0 {
@@ -449,25 +449,12 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 		DataType: "array",
 	}
 
-	items, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	authorizedAudits, err := ac.authClient.GetAuthorizedResources(ctx, info)
 	if err != nil {
 		return nil, err
 	}
 
-	businessIDs := make([]int64, 0)
-	for _, item := range items {
-		for _, resource := range item.ResourceIDs {
-			for _, layer := range resource {
-				id, err := strconv.ParseInt(layer.ResourceID, 10, 64)
-				if err != nil {
-					return businessIDs, err
-				}
-				businessIDs = append(businessIDs, id)
-			}
-		}
-	}
-
-	return businessIDs, nil
+	return authorizedAudits, nil
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {

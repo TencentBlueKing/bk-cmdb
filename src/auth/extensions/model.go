@@ -83,6 +83,32 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	return objects, nil
 }
 
+func (am *AuthManager) collectObjectsByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.Object, error) {
+	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
+	ids = util.IntArrayUnique(ids)
+
+	// get model by objID
+	cond := condition.CreateCondition().Field(common.BKFieldID).In(ids)
+	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
+	resp, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, queryCond)
+	if err != nil {
+		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", ids, err)
+	}
+	if len(resp.Data.Info) == 0 {
+		return nil, fmt.Errorf("get model by id: %+v failed, not found", ids)
+	}
+	if len(resp.Data.Info) != len(ids) {
+		return nil, fmt.Errorf("get model by id: %+v failed, result count %d not equal to expect %d", ids, len(resp.Data.Info), len(ids))
+	}
+
+	objects := make([]metadata.Object, 0)
+	for _, item := range resp.Data.Info {
+		objects = append(objects, item.Spec)
+	}
+
+	return objects, nil
+}
+
 func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
 	var businessID int64
 	for idx, object := range objects {

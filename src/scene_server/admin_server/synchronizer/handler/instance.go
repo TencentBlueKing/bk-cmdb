@@ -60,8 +60,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("", err)
 		return err
 	}
-
-	resources := ih.authManager.MakeResourcesByInstances(header, authmeta.EmptyAction, bizID, instances...)
+	resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, bizID, instances...)
 	if err != nil {
 		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)
 		return nil
