@@ -13,24 +13,24 @@
 package extensions
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"context"
+	"fmt"
+	"net/http"
 )
 
 /*
  * process
  */
 
-func (am *AuthManager) collectProcessesByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]ProcessSimplify, error) {
+func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]ProcessSimplify, error) {
 	cond := metadata.QueryCondition{
+		Fields: []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
@@ -75,7 +75,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 	return processes, nil
 }
 
-func (am *AuthManager) makeResourcesByProcesses(header http.Header, action meta.Action, businessID int64, processes ...ProcessSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64, processes ...ProcessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, process := range processes {
 		resource := meta.ResourceAttribute{
@@ -115,7 +115,7 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByProcesses(header, action, bizID, processes...)
+	resources := am.MakeResourcesByProcesses(header, action, bizID, processes...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -128,7 +128,7 @@ func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header htt
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
+	resources := am.MakeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -156,7 +156,7 @@ func (am *AuthManager) RegisterProcesses(ctx context.Context, header http.Header
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
+	resources := am.MakeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -170,7 +170,7 @@ func (am *AuthManager) DeregisterProcesses(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
+	resources := am.MakeResourcesByProcesses(header, meta.EmptyAction, bizID, processes...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
