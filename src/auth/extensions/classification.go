@@ -114,6 +114,10 @@ func (am *AuthManager) makeResourcesByClassifications(header http.Header, action
 }
 
 func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classifications ...metadata.Classification) error {
+	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, classifications: %+v", classifications)
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)

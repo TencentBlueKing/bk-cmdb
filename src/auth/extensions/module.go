@@ -116,6 +116,11 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 }
 
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
+	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, modules: %+v", modules)
+		return nil
+	}
+
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)

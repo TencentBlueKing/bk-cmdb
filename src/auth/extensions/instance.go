@@ -144,7 +144,7 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	}
 	object := objects[0]
 	
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, object)
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
 	if err != nil {
 		blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v", object, err)
 		return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", objectID)
@@ -183,6 +183,11 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 }
 
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
+	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, instances: %+v", instances)
+		return nil
+	}
+
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromInstances(instances...)
@@ -300,7 +305,7 @@ func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, head
 		return fmt.Errorf("authorize create instance failed, extract business id from models failed, err: %+v", err)
 	}
 
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, businessID, objects...)
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
 	if err != nil {
 		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v", objects, err)
 		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)

@@ -90,7 +90,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
 	
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		blog.Errorf("makeResourceByUnique failed, get parent resource failed, objects: %+v, err: %+v", objects, err)
 		return nil, fmt.Errorf("get parent resources failed, objects: %+v, err: %+v", objects, err)
@@ -237,13 +237,7 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 		return fmt.Errorf("get model by id %s failed, err: %+v", objectID, err)
 	}
 	
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, get business id from models failed, objects: %+v, err: %+v", objects, err)
-		return fmt.Errorf("extract business from object failed, err: %+v", err)
-	}
-	
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.Update, businessID, objects...)
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.Update, objects...)
 	if err != nil {
 		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, make parent resource by models failed, objects: %+v, err: %+v", objects, err)
 		return fmt.Errorf("make parent resource from objects failed, err: %+v", err)

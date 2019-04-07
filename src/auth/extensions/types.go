@@ -27,6 +27,7 @@ type AuthManager struct {
 
 	RegisterModelAttributeEnabled bool
 	RegisterModelUniqueEnabled    bool
+	SkipReadAuthorization         bool
 }
 
 func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize) *AuthManager {
@@ -35,6 +36,7 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
 		RegisterModelUniqueEnabled:    false,
+		SkipReadAuthorization:         true,
 	}
 }
 
