@@ -606,6 +606,7 @@ var (
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	findObjectInstancesDetailRegexp     = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
@@ -877,6 +878,25 @@ func (ps *parseStream) objectInstance() *parseStream {
 		return ps
 	}
 
+	// find object/s instance list details operation.
+	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[7],
+					},
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -1125,8 +1145,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 }
 
 const (
-	createObjectAttributeGroupPattern = "/api/v3/objectatt/group/new"
-	updateObjectAttributeGroupPattern = "/api/v3/objectatt/group/update"
+	createObjectAttributeGroupPattern         = "/api/v3/objectatt/group/new"
+	updateObjectAttributeGroupPattern         = "/api/v3/objectatt/group/update"
+	updateObjectAttributeGroupPropertyPattern = "/api/v3/objectatt/group/property"
 )
 
 var (
@@ -1182,7 +1203,19 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelClassification,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
 			},
