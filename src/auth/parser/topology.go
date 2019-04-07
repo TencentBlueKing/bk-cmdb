@@ -595,6 +595,10 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	return ps
 }
 
+const (
+	findObjectInstanceBatchRegexp = `/api/v3/object/search/batch`
+)
+
 var (
 	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/?$`)
 	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -891,6 +895,18 @@ func (ps *parseStream) objectInstance() *parseStream {
 						Type: meta.Model,
 						Name: ps.RequestCtx.Elements[7],
 					},
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
 				},
 			},
 		}
