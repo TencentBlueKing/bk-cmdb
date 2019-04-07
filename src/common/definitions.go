@@ -200,7 +200,8 @@ const (
 
 const (
 	// BKFieldID the id definition
-	BKFieldID = "id"
+	BKFieldID   = "id"
+	BKFieldName = "name"
 
 	// BKDefaultField the default field
 	BKDefaultField = "default"

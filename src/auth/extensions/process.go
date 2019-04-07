@@ -124,7 +124,7 @@ func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header htt
 	// extract business id
 	bizID, err := am.extractBusinessIDFromProcesses(processes...)
 	if err != nil {
-		return fmt.Errorf("authorize processes failed, extract business id from classification failed, err: %+v", err)
+		return fmt.Errorf("authorize processes failed, extract business id from processes failed, err: %+v", err)
 	}
 
 	// make auth resources
@@ -142,7 +142,7 @@ func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header htt
 func (am *AuthManager) UpdateRegisteredProcessesByID(ctx context.Context, header http.Header, ids ...int64) error {
 	processes, err := am.collectProcessesByIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered processes failed, get processes by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredProcesses(ctx, header, processes...)
 }
