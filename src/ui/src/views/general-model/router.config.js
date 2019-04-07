@@ -49,7 +49,6 @@ export default [{
             view: '',
             operation: Object.values(OPERATION),
             setDynamicMeta: (to, from, app) => {
-                console.log(app.$store.getters['objectModelClassify/models'])
                 const modelId = to.params[param]
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
                 const bizId = getMetadataBiz(model)
