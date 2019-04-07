@@ -760,11 +760,13 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 
 	object := obj.Object()
 
+	/*
 	// auth: check authorization
-	if err := o.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
+	if err := o.authManager.AuthorizeObjectByRawID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
 		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
 		return err
 	}
+	*/
 
 	// check repeated
 	exists, err := obj.IsExists()
@@ -782,9 +784,9 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
-	// need to update object in auth.
-	if err := o.authManager.UpdateRegisteredObjects(params.Context, params.Header, object); err != nil {
-		blog.Errorf("update object %s, but update to auth failed, err: %v", object.ObjectName, err)
+	// auth update register info
+	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, id); err != nil {
+		blog.Errorf("update object %s success, but update to auth failed, err: %v", object.ObjectName, err)
 		return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
 	return nil
