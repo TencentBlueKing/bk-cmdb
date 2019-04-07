@@ -89,7 +89,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
 	
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, businessID, objects...)
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource failed, objects: %+v, err: %+v", objects, err)
 		return nil, fmt.Errorf("get parent resources failed, objects: %+v, err: %+v", objects, err)

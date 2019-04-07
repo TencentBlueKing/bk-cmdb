@@ -113,6 +113,11 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 }
 
 func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
+	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, sets: %+v", sets)
+		return nil
+	}
+
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromSets(sets...)
