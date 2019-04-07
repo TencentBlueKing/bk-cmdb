@@ -760,12 +760,6 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 
 	object := obj.Object()
 
-	// auth: check authorization
-	if err := o.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
-		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
-		return err
-	}
-
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {
