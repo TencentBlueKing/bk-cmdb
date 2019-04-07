@@ -85,7 +85,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //delete file
+	defer os.Remove(filePath)
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -112,8 +112,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	logics.ConvAttrOption(attrItems)
 
-	blog.Debug("the object file content:%#v", attrItems)
-
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
@@ -123,7 +121,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
-
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -239,7 +236,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	// get the all attribute of the object
 	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
 	if nil != err {
-		blog.Error(err.Error())
+		blog.Error("export model, but get object data failed, err: %v", err)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
 		return
@@ -266,13 +263,6 @@ func (s *Service) ExportObject(c *gin.Context) {
 	setExcelTitle(sheet.AddRow(), defLang)
 	setExcelTitleType(sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
-
-	/*
-		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-		dd.SetDropList([]string{})
-		sheet.Col(2).SetDataValidationWithStart(dd, 3)
-		sheet.Cell(1,1).SetString()
-	*/
 
 	// add the value
 	for _, item := range arrItems {
