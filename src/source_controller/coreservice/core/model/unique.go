@@ -12,11 +12,8 @@
 
 package model
 
-import ( //	"configcenter/src/common/blog"
-	//	"configcenter/src/common/errors"
-	//	"configcenter/src/common/mapstr"
+import (
 	"configcenter/src/common/metadata"
-	//	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )

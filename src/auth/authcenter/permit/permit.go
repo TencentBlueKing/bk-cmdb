@@ -52,6 +52,9 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelInstanceAssociation:
 		return true
 
+	case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):
+		return true
+
 	// all the network data collector related operation is all authorized for now.
 	case rsc.Type == meta.NetDataCollector:
 		return true

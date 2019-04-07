@@ -110,12 +110,10 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	kvMap := mapstr.MapStr{}
 	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap, metaInfo)
-
 	if err != nil {
-		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-
-		c.String(http.StatusInternalServerError, msg, nil)
+		fmt.Println("return msg: ", msg)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -139,7 +137,6 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
-	//fileName := fmt.Sprintf("tmp/%s_inst.xls", time.Now().UnixNano())
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {

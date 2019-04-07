@@ -39,9 +39,13 @@ func ParseAttribute(req *restful.Request, engine *backbone.Engine) (*meta.AuthAt
 	meta := struct {
 		Metadata metadata.Metadata `json:"metadata"`
 	}{}
-	if len(body) > 0 {
+
+	// TODO: this condition should be optimized.
+	// one of the api like body is an array is
+	// put: /api/v3/objectatt/group/property
+	if len(body) > 0 && body[0] != '[' {
 		if err := json.Unmarshal(body, &meta); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse attribute, but unmarshal body failed, err: %v", err)
 		}
 	}
 
