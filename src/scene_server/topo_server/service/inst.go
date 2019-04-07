@@ -72,15 +72,19 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		}
 
 		// auth register new created
-		if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, objID, setInst.SuccessCreated...); err != nil {
-			blog.V(2).Infof("register instances to iam failed, err: %+v", err)
-			return nil, err
+		if len(setInst.SuccessCreated) != 0 {
+			if err := s.AuthManager.RegisterInstancesByID(params.Context, params.Header, objID, setInst.SuccessCreated...); err != nil {
+				blog.V(2).Infof("register instances to iam failed, err: %+v", err)
+				return nil, err
+			}
 		}
 
 		// auth update registered instances
-		if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, setInst.SuccessUpdated...); err != nil {
-			blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
-			return nil, err
+		if len(setInst.SuccessUpdated) == 0 {
+			if err := s.AuthManager.UpdateRegisteredInstanceByID(params.Context, params.Header, objID, setInst.SuccessUpdated...); err != nil {
+				blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
+				return nil, err
+			}
 		}
 
 		return setInst, nil
