@@ -85,7 +85,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //delete file
+	defer os.Remove(filePath)
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -112,8 +112,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	logics.ConvAttrOption(attrItems)
 
-	blog.Debug("the object file content:%#v", attrItems)
-
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
@@ -123,7 +121,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
-
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
