@@ -920,6 +920,7 @@ const (
 	createObjectPattern       = "/api/v3/object"
 	findObjectsPattern        = "/api/v3/objects"
 	findObjectTopologyPattern = "/api/v3/objects/topo"
+	createObjectBatchPattern  = "/api/v3/object/batch"
 )
 
 var (
@@ -941,6 +942,19 @@ func (ps *parseStream) object() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// create common object batch operation.
+	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.CreateMany,
 				},
 			},
 		}
