@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -33,36 +32,32 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
-	iConds := query.Condition
-	if nil == iConds {
+	queryCondition := query.Condition
+	if nil == queryCondition {
 		query.Condition = common.KvMap{common.BKOwnerIDField: params.SupplierAccount}
 	} else {
-		conds := iConds.(map[string]interface{})
-		times, ok := conds[common.BKOpTimeField].([]interface{})
+		cond := queryCondition.(map[string]interface{})
+		times, ok := cond[common.BKOpTimeField].([]interface{})
 		if ok {
 			if 2 != len(times) {
 				blog.Errorf("search operation log input params times error, info: %v", times)
 				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 			}
 
-			conds[common.BKOpTimeField] = common.KvMap{
+			cond[common.BKOpTimeField] = common.KvMap{
 				"$gte":              times[0],
 				"$lte":              times[1],
 				CCTimeTypeParseFlag: "1",
 			}
 		}
-		conds[common.BKOwnerIDField] = params.SupplierAccount
-		query.Condition = conds
+		cond[common.BKOwnerIDField] = params.SupplierAccount
+		query.Condition = cond
 	}
 	if 0 == query.Limit {
 		query.Limit = common.BKDefaultLimit
 	}
 
 	// add auth filter condition
-	commonInfo, err := parser.ParseCommonInfo(&params.Header)
-	if err != nil {
-		return nil, fmt.Errorf("parse user info from request header failed, %+v", err)
-	}
 	var businessID int64
 	bizID, exist := query.Condition.(map[string]interface{})[common.BKAppIDField]
 	if exist == true {
@@ -73,12 +68,23 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		businessID = id
 	}
 
-	authCondition, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, commonInfo.User, businessID)
+	authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
 	if err != nil {
 		blog.Errorf("make audit query condition from auth failed, %+v", err)
 		return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
 	}
+	if hasAuthorization == false {
+		blog.Errorf("user %+v has no authorization on audit", params.User)
+		return nil, nil
+	}
 	blog.V(5).Infof("auth condition is: %+v", authCondition)
-
+	
+	
+	mergedCondition := query.Condition.(mapstr.MapStr)
+	mergedCondition.Merge(authCondition.ToMapStr())
+	
+	query.Condition = mergedCondition.ToMapInterface()
+	
+	blog.InfoJSON("AuditOperation parameter: %s", query)
 	return s.Core.AuditOperation().Query(params, query)
 }
