@@ -27,6 +27,7 @@ type AuthManager struct {
 
 	RegisterModelAttributeEnabled bool
 	RegisterModelUniqueEnabled    bool
+	SkipReadAuthorization         bool
 }
 
 func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Authorize) *AuthManager {
@@ -35,6 +36,7 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
 		RegisterModelUniqueEnabled:    false,
+		SkipReadAuthorization:         true,
 	}
 }
 
@@ -184,6 +186,22 @@ func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
 	return is, err
 }
 
+type AuditCategorySimplify struct {
+	BKAppIDField    int64  `field:"bk_biz_id"`
+	BKOpTargetField string `field:"op_target"`
+	ModelID         int64
+}
+
+func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}
+
 type ModelUniqueSimplify struct {
 	ID    uint64 `field:"id" json:"id" bson:"id"`
 	ObjID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
@@ -191,6 +209,22 @@ type ModelUniqueSimplify struct {
 }
 
 func (is *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
+
+	err := mapstr.SetValueToStructByTags(is, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return is, err
+}
+
+type ProcessSimplify struct {
+	ProcessID    int64  `field:"bk_process_id"`
+	ProcessName  string `field:"bk_process_name"`
+	BKAppIDField int64  `field:"bk_biz_id"`
+}
+
+func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {

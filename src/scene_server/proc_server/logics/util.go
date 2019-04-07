@@ -15,6 +15,7 @@ package logics
 import (
 	"context"
 	"fmt"
+
 	"github.com/rs/xid"
 
 	authMeta "configcenter/src/auth/meta"
@@ -82,7 +83,6 @@ func (lgc *Logics) AuthCenterInstInfo(ctx context.Context, appID, instID int64, 
 		err = lgc.auth.DeregisterResource(ctx, authParameter)
 	default:
 		err = lgc.auth.RegisterResource(ctx, authParameter)
-
 	}
 	if err != nil {
 		blog.Errorf("AuthCenterInstInfo error, err:%s,input:%#v,rid:%s", err.Error(), authParameter, lgc.rid)
