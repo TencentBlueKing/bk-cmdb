@@ -34,7 +34,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("extract business id from model failed, model: %+v, err: %+v", object, err)
 		return err
 	}
-	objectResource, err := ih.authManager.MakeResourcesByObjects(context.Background(), header, authmeta.EmptyAction, bizID, object)
+	objectResource, err := ih.authManager.MakeResourcesByObjects(context.Background(), header, authmeta.EmptyAction, object)
 	if err != nil {
 		blog.Errorf("make auth resource from model failed, model: %+v, err: %+v", object, err)
 		return err
