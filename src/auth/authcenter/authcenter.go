@@ -207,17 +207,18 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 			return nil, err
 		}
 
-		info, err := adaptor(&rsc)
-		if err != nil {
-			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
-			return nil, err
-		}
-
 		// pick out skip resource at first.
 		if permit.ShouldSkipAuthorize(&rsc) {
 			// this resource should be skipped, do not need to verify in auth center.
 			decisions[index].Authorized = true
+			blog.V(5).Infof("skip resource authorize for resource: %+v", rsc)
 			continue
+		}
+
+		info, err := adaptor(&rsc)
+		if err != nil {
+			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
+			return nil, err
 		}
 
 		if rsc.BusinessID > 0 {
