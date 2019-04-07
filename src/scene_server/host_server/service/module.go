@@ -562,12 +562,6 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
 	audit.WithPrevious(srvData.ctx)
 
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
