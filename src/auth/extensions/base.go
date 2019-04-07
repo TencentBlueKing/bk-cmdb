@@ -35,12 +35,10 @@ func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header
 	}
 	business := businesses[0]
 
-	/*
 	// set resource pool as global
 	if business.IsDefault == 1 {
 		return 0, nil
 	}
-	*/
 	
 	return business.BKAppIDField, nil
 }

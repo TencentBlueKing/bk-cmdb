@@ -175,6 +175,8 @@ func GetInstTableName(objID string) string {
 		return BKTableNameObjUnique
 	case BKTableNameAsstDes:
 		return BKTableNameAsstDes
+	case BKTableNameOperationLog:
+		return BKTableNameOperationLog
 	default:
 		return BKTableNameBaseInst
 	}

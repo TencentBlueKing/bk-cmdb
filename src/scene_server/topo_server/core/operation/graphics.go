@@ -174,8 +174,9 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 	for _, data := range datas {
 		objectIDs = append(objectIDs, data.ObjID)
 	}
-	if err := g.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyView, objectIDs...); err != nil {
-		return err
+	if err := g.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyOperation, objectIDs...); err != nil {
+		blog.Errorf("UpdateGraphics failed, authorization failed, err: %+v", err)
+		return params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)

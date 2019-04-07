@@ -23,38 +23,42 @@ import (
 	"configcenter/src/scene_server/admin_server/synchronizer/utils"
 )
 
-// HandleSetSync do sync set of one business
-func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
+// HandleAuditSync do sync all audit category to iam
+func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
 	businessID := businessSimplify.BKAppIDField
-	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
-
+	categories, err := ih.authManager.CollectAuditCategoryByBusinessID(context.Background(), *header, businessID)
 	if err != nil {
-		blog.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
-		return fmt.Errorf("get models by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
+		blog.Errorf("get categories by business id:%d failed, err: %+v", businessID, err)
+		return err
 	}
-	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
-
-	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, objects...)
+	if len(categories) == 0 {
+		blog.Infof("no categories found for business: %d", businessID)
+		return nil
+	}
+	resources, err := ih.authManager.MakeResourcesByAuditCategories(context.Background(), *header, authmeta.EmptyAction, businessID, categories...)
 	if err != nil {
-		blog.Errorf("make iam resource from models failed, err: %+v", err)
+		blog.Errorf("make iam resource for audit categories %+v failed, err: %+v", categories, err)
+		return err
+	}
+	if len(resources) == 0 && len(categories) > 0 {
+		blog.Errorf("make iam resource for categories %+v return empty", categories)
 		return nil
 	}
 
-	// step2 get models from iam
+	// step2 get set by business from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
-			Type: authmeta.Model,
+			Type: authmeta.AuditLog,
 		},
-		SupplierAccount: "",
-		BusinessID:      businessSimplify.BKAppIDField,
-		Layers:          make([]authmeta.Item, 0),
+		BusinessID: businessSimplify.BKAppIDField,
+		Layers:     make([]authmeta.Item, 0),
 	}
 
-	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
+	taskName := fmt.Sprintf("sync audit categories for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
 }
