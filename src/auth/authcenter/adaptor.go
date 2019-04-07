@@ -196,7 +196,11 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		// edit a business.
-		if r.Action == meta.Create || r.Action == meta.Update {
+		if r.Action == meta.Create {
+			return Create, nil
+		}
+
+		if r.Action == meta.Update {
 			return Edit, nil
 		}
 	}
