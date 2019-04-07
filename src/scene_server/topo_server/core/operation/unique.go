@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
@@ -49,11 +48,12 @@ type unique struct {
 
 func (a *unique) Create(params types.ContextParams, objectID string, request *metadata.CreateUniqueRequest) (uniqueID *metadata.RspID, err error) {
 
+	// TODO: remove this authorization
 	// auth: check authorization
-	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
-		blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", objectID, err)
-		return nil, err
-	}
+	// if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objectID); err != nil {
+	// 	blog.V(2).Infof("create unique for model %s failed, authorization failed, err: %+v", objectID, err)
+	// 	return nil, err
+	// }
 
 	unique := metadata.ObjectUnique{
 		ObjID:     request.ObjID,
@@ -73,11 +73,12 @@ func (a *unique) Create(params types.ContextParams, objectID string, request *me
 		return nil, params.Err.New(resp.Code, resp.ErrMsg)
 	}
 
+	// TODO: remove this
 	// auth: register unique to iam
-	uniqueid := int64(resp.Data.Created.ID)
-	if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, uniqueid); err != nil {
-		return nil, fmt.Errorf("register model attribute unique to iam failed, err: %+v", err)
-	}
+	// uniqueid := int64(resp.Data.Created.ID)
+	// if err := a.authManager.UpdateRegisteredModelUniqueByID(params.Context, params.Header, uniqueid); err != nil {
+	// 	return nil, fmt.Errorf("register model attribute unique to iam failed, err: %+v", err)
+	// }
 	return &metadata.RspID{ID: int64(resp.Data.Created.ID)}, nil
 }
 

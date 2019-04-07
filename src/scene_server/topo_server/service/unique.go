@@ -34,11 +34,12 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 
 	objectID := pathParams(common.BKObjIDField)
 
+	// TODO: remove this, this has already be done in api server
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
-		blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
+	// 	blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
