@@ -185,7 +185,7 @@ func (ps *parseStream) userAPI() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.Excute,
+					Action: meta.Execute,
 					Name:   ps.RequestCtx.Elements[5],
 				},
 			},

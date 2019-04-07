@@ -52,9 +52,8 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 	}
 }
 
-//GetInstData get inst data
 func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta metadata.Metadata) ([]mapstr.MapStr, error) {
-
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
 
@@ -75,14 +74,19 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	searchCond["page"] = nil
 	searchCond[metadata.BKMetadata] = meta
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
-	if nil != err || !result.Result {
-		blog.Errorf("get inst detail error:%v , search condition:%#v", err, searchCond)
-		return nil, errors.New(result.ErrMsg)
+	if nil != err {
+		blog.Errorf("get inst data detail error:%v , search condition:%#v", err, searchCond)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("get inst data detail error:%v , search condition:%#v", result.ErrMsg, searchCond)
+		return nil, defErr.Error(result.Code)
 	}
 
 	if 0 == result.Data.Count {
-		blog.Errorf("inst inst count is 0 ")
-		return nil, errors.New("no inst")
+		blog.Errorf("get inst data detail, but got 0 instances , search condition:%#v", searchCond)
+		return nil, defErr.Error(common.CCErrAPINoObjectInstancesIsFound)
 	}
 
 	// read object attributes
@@ -90,14 +94,20 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	attrCond[common.BKObjIDField] = objID
 	attrCond[common.BKOwnerIDField] = ownerID
 	attrResult, aErr := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, attrCond)
-	if nil != aErr || !attrResult.Result {
-		blog.Errorf("get object attr error: %s", aErr.Error())
-		return nil, errors.New(result.ErrMsg)
+	if nil != aErr {
+		blog.Errorf("get object: %s instance, but get object attr error: %v", objID, aErr)
+		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
+
+	if !attrResult.Result {
+		blog.Errorf("get object: %s instance, but get object attr error: %s", objID, attrResult.Code)
+		return nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
+	}
+
 	for _, cell := range attrResult.Data {
 		kvMap.Set(cell.PropertyID, cell.PropertyName)
-
 	}
+
 	return result.Data.Info, nil
 }
 

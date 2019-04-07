@@ -103,17 +103,17 @@ const (
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
 
-	Excute Action = "execute"
+	Execute Action = "execute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
+	AddHostToResourcePool          Action = "addHostToResourcePool"
+	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToBizFaultModule       Action = "moveHostToBizFaultModule"
 	MoveHostToBizIdleModule        Action = "moveHostToBizIdleModule"
-	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
 	TransferHost                   Action = "transferHost"
 

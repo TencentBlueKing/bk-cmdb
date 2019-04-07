@@ -52,9 +52,22 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelInstanceAssociation:
 		return true
 
+	case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):
+		return true
+
 	// all the network data collector related operation is all authorized for now.
 	case rsc.Type == meta.NetDataCollector:
 		return true
+	// host search operation, skip.
+	case rsc.Type == meta.HostInstance && rsc.Action == meta.FindMany:
+		return true
+
+	// topology instance resource types.
+	case rsc.Type == meta.ModelModule || rsc.Type == meta.ModelSet || rsc.Type == meta.ModelInstanceTopology:
+		return true
+
+	default:
+		return false
 	}
 
 	return false
