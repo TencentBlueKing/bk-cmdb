@@ -1,18 +1,14 @@
 import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
-    C_HOST,
-    U_HOST,
-    D_HOST,
-    R_HOST,
-    HOST_ASSIGN
+    C_RESOURCE_HOST,
+    U_RESOURCE_HOST,
+    D_RESOURCE_HOST
 } from '@/dictionary/auth'
 
 export const OPERATION = {
-    C_HOST,
-    R_HOST,
-    U_HOST,
-    D_HOST,
-    HOST_ASSIGN
+    C_RESOURCE_HOST,
+    U_RESOURCE_HOST,
+    D_RESOURCE_HOST
 }
 
 const path = '/resource'
@@ -33,7 +29,6 @@ export default {
         auth: {
             view: '',
             operation: Object.values(OPERATION)
-        },
-        requireBusiness: true
+        }
     }
 }

@@ -8,7 +8,7 @@
             :sortable="false">
             <template slot="is_bind" slot-scope="{ item }">
                 <bk-button type="primary"
-                    v-if="item['is_bind'] === '1'"
+                    v-if="item['is_bind'] === 1"
                     :loading="$loading(`${item['bk_module_name']}Bind`)"
                     :disabled="!unbindModuleAuth"
                     @click="unbindModule(item)">
