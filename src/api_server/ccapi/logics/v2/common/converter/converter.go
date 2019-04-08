@@ -319,6 +319,8 @@ func convertToV2HostListMain(resDataInfoV3 interface{}) (interface{}, error) {
 			OSType = "linux"
 		case common.HostOSTypeEnumWindows:
 			OSType = "windows"
+		case common.HostOSTypeEnumAIX:
+			OSType = "aix"
 		default:
 			OSType = ""
 		}
