@@ -29,12 +29,10 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 		return nil, err
 	}
 
+	blog.V(5).Infof("ih.authManager.Authorize.ListResources result: %+v", iamResources)
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
 		if len(iamResource) == 0 {
-			continue
-		}
-		if len(iamIDPrefix) == 0 {
 			continue
 		}
 		if strings.HasPrefix(iamResource[len(iamResource)-1].ResourceID, iamIDPrefix) {

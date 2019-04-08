@@ -29,11 +29,33 @@ func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
+	categories := make([]extensions.AuditCategorySimplify, 0)
 	businessID := businessSimplify.BKAppIDField
-	categories, err := ih.authManager.CollectAuditCategoryByBusinessID(context.Background(), *header, businessID)
+	objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, businessID)
 	if err != nil {
 		blog.Errorf("get categories by business id:%d failed, err: %+v", businessID, err)
 		return err
+	}
+	for _, object := range objects {
+		categories = append(categories, extensions.AuditCategorySimplify{
+			BKAppIDField:    businessID,
+			BKOpTargetField: object.ObjectID,
+			ModelID:         object.ID,
+		})
+	}
+	if businessID != 0 {
+		objects, err := ih.authManager.CollectObjectsByBusinessID(context.Background(), *header, 0)
+		if err != nil {
+			blog.Errorf("get objects by business id:%d failed, err: %+v", 0, err)
+			return err
+		}
+		for _, object := range objects {
+			categories = append(categories, extensions.AuditCategorySimplify{
+				BKAppIDField:    businessID,
+				BKOpTargetField: object.ObjectID,
+				ModelID:         object.ID,
+			})
+		}
 	}
 	if len(categories) == 0 {
 		blog.Infof("no categories found for business: %d", businessID)
