@@ -19,7 +19,8 @@ const state = {
     operation: [],
     view: [],
     system: [],
-    dynamicMeta: {}
+    businessMeta: {},
+    parentMeta: {}
 }
 
 const getters = {
@@ -47,7 +48,7 @@ const getters = {
             meta.bk_biz_id = bizId
         }
         if (DYNAMIC_BUSINESS_MODE.includes(auth)) {
-            Object.assign(meta, getters.dynamicMeta)
+            Object.assign(meta, state.parentMeta)
         }
         return meta
     }
@@ -103,8 +104,15 @@ const mutations = {
     setAuth (state, data) {
         state[data.type] = data.auth
     },
-    setDynamicMeta (state, meta) {
-        state.dynamicMeta = meta
+    setParentMeta (state, meta = {}) {
+        state.parentMeta = meta
+    },
+    setBusinessMeta (state, meta = {}) {
+        state.businessMeta = meta
+    },
+    clearDynamicMeta (state) {
+        state.parentMeta = {}
+        state.businessMeta = {}
     }
 }
 

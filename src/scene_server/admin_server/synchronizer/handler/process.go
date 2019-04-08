@@ -36,7 +36,7 @@ func (ih *IAMHandler) HandleProcessSync(task *meta.WorkRequest) error {
 		return err
 	}
 	resources := ih.authManager.MakeResourcesByProcesses(*header, authmeta.EmptyAction, bizID, processes...)
-	
+
 	if len(resources) == 0 {
 		blog.Info("no process found, skip synchronize")
 		return nil

@@ -138,7 +138,7 @@ func (cli *Service) TranslatePropertyName(defLang language.DefaultCCLanguageIf, 
 }
 
 func (cli *Service) TranslatePlaceholder(defLang language.DefaultCCLanguageIf, att *meta.Attribute) string {
-	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Description)
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Placeholder)
 }
 
 func (cli *Service) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *meta.Attribute, val interface{}) interface{} {
