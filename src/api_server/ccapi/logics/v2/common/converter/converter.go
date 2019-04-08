@@ -1210,5 +1210,5 @@ func getFieldsMap(objType string) map[string]string {
 		"timeout":          "OpTimeout",
 		"auto_time_gap":    "AutoTimeGap",
 	}
-	return fieldsMap
-}
+//	return fieldsMap
+//}
