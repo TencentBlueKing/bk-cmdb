@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -31,7 +31,7 @@ import (
 
 func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]ProcessSimplify, error) {
 	cond := metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
+		Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
@@ -122,6 +122,10 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header http.Header, processes ...ProcessSimplify) error {
+	if len(processes) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromProcesses(processes...)
 	if err != nil {
@@ -141,6 +145,10 @@ func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header htt
 }
 
 func (am *AuthManager) UpdateRegisteredProcessesByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	processes, err := am.collectProcessesByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered processes failed, get processes by id failed, err: %+v", err)
@@ -149,6 +157,9 @@ func (am *AuthManager) UpdateRegisteredProcessesByID(ctx context.Context, header
 }
 
 func (am *AuthManager) RegisterProcesses(ctx context.Context, header http.Header, processes ...ProcessSimplify) error {
+	if len(processes) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromProcesses(processes...)
@@ -163,6 +174,9 @@ func (am *AuthManager) RegisterProcesses(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) DeregisterProcesses(ctx context.Context, header http.Header, processes ...ProcessSimplify) error {
+	if len(processes) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromProcesses(processes...)

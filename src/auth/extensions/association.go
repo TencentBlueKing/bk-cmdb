@@ -64,6 +64,10 @@ func (am *AuthManager) makeResourceByAssociationType(ctx context.Context, header
 }
 
 func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.Header, aks ...*metadata.AssociationKind) error {
+	if len(aks) == 0 {
+		return nil
+	}
+
 	resources, err := am.makeResourceByAssociationType(ctx, header, meta.EmptyAction, aks...)
 	if err != nil {
 		return fmt.Errorf("make auth resource from association type failed, err: %+v", err)
@@ -73,6 +77,10 @@ func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterAssociationTypeByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	aks, err := am.collectAssociationTypesByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("get asssociation type by id failed, err: %+v", err)
@@ -82,6 +90,10 @@ func (am *AuthManager) RegisterAssociationTypeByID(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateAssociationTypeByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	aks, err := am.collectAssociationTypesByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("get asssociation type by id failed, err: %+v", err)
@@ -96,6 +108,10 @@ func (am *AuthManager) UpdateAssociationTypeByID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) DeregisterAssociationTypeByIDs(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	aks, err := am.collectAssociationTypesByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("get asssociation type by id failed, err: %+v", err)
