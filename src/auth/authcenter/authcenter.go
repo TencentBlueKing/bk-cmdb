@@ -616,14 +616,13 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	if len(resourceID) == 0 {
-		return nil, fmt.Errorf("generate resource id failed, return empty")
-	}
 	blog.Infof("GenerateResourceID result: %+v", resourceID)
 	searchCondition := SearchCondition{
-		ScopeInfo:       *scopeInfo,
-		ResourceType:    *resourceType,
-		ParentResources: resourceID[:len(resourceID)-1],
+		ScopeInfo:    *scopeInfo,
+		ResourceType: *resourceType,
+	}
+	if resourceID != nil && len(resourceID) > 0 {
+		searchCondition.ParentResources = resourceID[:len(resourceID)-1]
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err

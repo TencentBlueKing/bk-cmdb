@@ -234,13 +234,13 @@ func (is *ProcessSimplify) Parse(data mapstr.MapStr) (*ProcessSimplify, error) {
 	return is, err
 }
 
-type UserAPISimplify struct {
-	BKAppIDField int64 `field:"bk_biz_id"`
-	ID string `field:"id"`
-	Name string `field:"name"`
+type DynamicGroupSimplify struct {
+	BKAppIDField int64  `field:"bk_biz_id"`
+	ID           string `field:"id"`
+	Name         string `field:"name"`
 }
 
-func (is *UserAPISimplify) Parse(data mapstr.MapStr) (*UserAPISimplify, error) {
+func (is *DynamicGroupSimplify) Parse(data mapstr.MapStr) (*DynamicGroupSimplify, error) {
 
 	err := mapstr.SetValueToStructByTags(is, data)
 	if nil != err {

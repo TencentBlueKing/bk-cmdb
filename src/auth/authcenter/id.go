@@ -320,10 +320,10 @@ func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 }
 
 func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if attribute.InstanceID<= 0 && len(attribute.InstanceIDEx) == 0{
+	if attribute.InstanceID <= 0 && len(attribute.InstanceIDEx) == 0 {
 		return nil, nil
 	}
-	
+
 	instanceID := strconv.FormatInt(attribute.InstanceID, 10)
 	if len(attribute.InstanceIDEx) != 0 {
 		instanceID = attribute.InstanceIDEx
