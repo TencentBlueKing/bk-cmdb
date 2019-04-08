@@ -134,21 +134,7 @@ func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) 
 }
 
 func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
-	// step1 get classifications
-	classificationIDs := make([]string, 0)
-	for _, obj := range objects {
-		classificationIDs = append(classificationIDs, obj.ObjCls)
-	}
-	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
-	if err != nil {
-		return nil, fmt.Errorf("make auth resource by models failed, err: %+v", err)
-	}
-	classificationMap := map[string]metadata.Classification{}
-	for _, classification := range classifications {
-		classificationMap[classification.ClassificationID] = classification
-	}
-
-	// step2 prepare resource layers for authorization
+	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, object := range objects {
 		businessID, err := am.ExtractBusinessIDFromObject(object)
@@ -156,20 +142,6 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 			blog.V(3).Infof("parse business id from object failed, err: %+v", err)
 			return nil, fmt.Errorf("parse business id from object failed, err: %+v", err)
 		}
-		parentLayers := meta.Layers{}
-
-		// check obj's group id in map
-		if _, exist := classificationMap[object.ObjCls]; exist == false {
-			blog.V(3).Infof("get classification by object failed, err: bk_classification_id not exist")
-			return nil, fmt.Errorf("get classification by object failed, err: bk_classification_id not exist")
-		}
-
-		// model group
-		parentLayers = append(parentLayers, meta.Item{
-			Type:       meta.Model,
-			Name:       classificationMap[object.ObjCls].ClassificationID,
-			InstanceID: classificationMap[object.ObjCls].ID,
-		})
 
 		// instance
 		resource := meta.ResourceAttribute{
@@ -181,13 +153,10 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
-			Layers: parentLayers,
 		}
-
 		resources = append(resources, resource)
 	}
 
-	blog.V(9).Infof("MakeResourcesByObjects: %+v", resources)
 	return resources, nil
 }
 
