@@ -1,3 +1,4 @@
+// eslint-disable-next-line
 import Vue from 'vue'
 import $http from '@/api'
 import {
@@ -18,7 +19,8 @@ const state = {
     operation: [],
     view: [],
     system: [],
-    dynamicMeta: {}
+    businessMeta: {},
+    parentMeta: {}
 }
 
 const getters = {
@@ -39,21 +41,21 @@ const getters = {
         const isBusinessMode = !rootGetters.isAdminView
         const bizId = rootGetters['objectBiz/bizId']
         if (
-            isBusinessMode &&
-            bizId &&
-            STATIC_BUSINESS_MODE.includes(auth)
+            isBusinessMode
+            && bizId
+            && STATIC_BUSINESS_MODE.includes(auth)
         ) {
             meta.bk_biz_id = bizId
         }
         if (DYNAMIC_BUSINESS_MODE.includes(auth)) {
-            Object.assign(meta, getters.dynamicMeta)
+            Object.assign(meta, state.parentMeta)
         }
         return meta
     }
 }
 
 const actions = {
-    async getAuth ({commit, getters, rootGetters}, params) {
+    async getAuth ({ commit, getters, rootGetters }, params) {
         const allAuth = params.list || []
         const authType = params.type || 'operation'
         const shouldAuth = []
@@ -102,8 +104,15 @@ const mutations = {
     setAuth (state, data) {
         state[data.type] = data.auth
     },
-    setDynamicMeta (state, meta) {
-        state.dynamicMeta = meta
+    setParentMeta (state, meta = {}) {
+        state.parentMeta = meta
+    },
+    setBusinessMeta (state, meta = {}) {
+        state.businessMeta = meta
+    },
+    clearDynamicMeta (state) {
+        state.parentMeta = {}
+        state.businessMeta = {}
     }
 }
 

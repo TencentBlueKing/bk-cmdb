@@ -137,16 +137,16 @@ func (a *attribute) DeleteObjectAttribute(params types.ContextParams, cond condi
 	}
 
 	// auth: check authorization
-	var objID string
-	for idx, attrItem := range attrItems {
-		oID := attrItem.Attribute().ObjectID
-		if idx == 0 && objID != oID {
-			return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, "can't attributes of multiple model per request")
-		}
-	}
-	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
-		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
-	}
+	// var objID string
+	// for idx, attrItem := range attrItems {
+	// 	oID := attrItem.Attribute().ObjectID
+	// 	if idx == 0 && objID != oID {
+	// 		return params.Err.New(common.CCErrTopoObjectAttributeDeleteFailed, "can't attributes of multiple model per request")
+	// 	}
+	// }
+	// if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+	// 	return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
+	// }
 
 	for _, attrItem := range attrItems {
 		// delete the attribute

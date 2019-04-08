@@ -17,9 +17,8 @@ import (
 	"net/http"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
-	"configcenter/src/auth"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -40,11 +39,10 @@ type Logics struct {
 	user         string
 	ccErr        errors.DefaultCCErrorIf
 	ccLang       language.DefaultCCLanguageIf
-	auth         auth.Authorize
 }
 
 // NewLogics get logic handle
-func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbServ esbserver.EsbClientInterface, procHostInst *ProcHostInstConfig, auth auth.Authorize) *Logics {
+func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbServ esbserver.EsbClientInterface, procHostInst *ProcHostInstConfig) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
 		Engine:       b,
@@ -57,7 +55,6 @@ func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbS
 		cache:        cache,
 		esbServ:      esbServ,
 		procHostInst: procHostInst,
-		auth:         auth,
 	}
 }
 

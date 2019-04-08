@@ -6,7 +6,7 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="verification-selector">
-                <div class="text-content" @click="toggleSelector(true)" :class="{'open': attribute.isShow}">
+                <div class="text-content" @click="toggleSelector(true)" :class="{ 'open': attribute.isShow }">
                     <span>{{selectedName}}</span>
                     <i class="bk-icon icon-angle-down"></i>
                 </div>
@@ -37,9 +37,9 @@
         </div>
         <div class="btn-group">
             <bk-button type="primary"
-            :disabled="isReadOnly || !verificationInfo.selected.length"
-            :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
-            @click="saveVerification">
+                :disabled="isReadOnly || !verificationInfo.selected.length"
+                :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
+                @click="saveVerification">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
@@ -86,9 +86,9 @@
                 'isInjectable'
             ]),
             selectedName () {
-                let nameList = []
+                const nameList = []
                 this.verificationInfo.selected.forEach(id => {
-                    let attr = this.attribute.list.find(attr => attr.id === id)
+                    const attr = this.attribute.list.find(attr => attr.id === id)
                     if (attr) {
                         nameList.push(attr['bk_property_name'])
                     }
@@ -96,7 +96,7 @@
                 return nameList.join(',')
             },
             params () {
-                let params = {
+                const params = {
                     must_check: this.verificationInfo['must_check'],
                     keys: []
                 }

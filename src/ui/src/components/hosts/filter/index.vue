@@ -1,5 +1,5 @@
 <template>
-    <div class="hosts-filter-layout" :class="{close}">
+    <div class="hosts-filter-layout" :class="{ close }">
         <i class="filter-toggle bk-icon icon-angle-right" @click="close = !close"></i>
         <div class="filter-main">
             <bk-tab class="filter-tab" size="small" :active-name.sync="tab.active" style="padding: 0">

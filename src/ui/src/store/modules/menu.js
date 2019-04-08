@@ -34,9 +34,9 @@ const getters = {
             const meta = (route.meta || {})
             const auth = meta.auth || {}
             const menu = meta.menu
-            const shouldShow = this.isAdminView ? menu && menu.adminView : menu
+            const shouldShow = rootGetters.isAdminView ? menu && menu.adminView : !!menu
             if (shouldShow) {
-                const authorized = auth.view ? rootGetters['auth/isAuthorized'](...auth.view.split('.'), {type: 'view'}) : true
+                const authorized = auth.view ? rootGetters['auth/isAuthorized'](...auth.view.split('.'), { type: 'view' }) : true
                 if (authorized) {
                     if (menu.parent) {
                         const parent = menus.find(parent => parent.id === menu.parent) || {}
@@ -53,8 +53,8 @@ const getters = {
         const collectSubmenu = collectMenu.submenu || []
         Array.prototype.push.apply(collectSubmenu, getters.collectMenus)
         const availableMenus = menus.filter(menu => {
-            return menu.path ||
-                (Array.isArray(menu.submenu) && menu.submenu.length)
+            return menu.path
+                || (Array.isArray(menu.submenu) && menu.submenu.length)
         })
         availableMenus.forEach(menu => {
             if (Array.isArray(menu.submenu)) {

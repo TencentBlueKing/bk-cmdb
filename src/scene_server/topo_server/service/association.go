@@ -25,41 +25,50 @@ import (
 )
 
 // CreateMainLineObject create a new object in the main line topo
-func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	tx, err := s.Txn.StartTransaction(context.Background())
 	if err != nil {
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
-	mainLineAssociation := &metadata.Association{}
+	defer func() {
+		if retErr != nil {
+			if err != nil {
+				if txnErr := tx.Abort(context.Background()); txnErr != nil {
+					blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v", tx.TxnInfo().TxnID, txnErr)
+					return
+				}
 
+			}
+
+			if txnErr := tx.Commit(context.Background()); txnErr != nil {
+				blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v", tx.TxnInfo().TxnID, txnErr)
+				return
+			}
+		}
+	}()
+
+	mainLineAssociation := &metadata.Association{}
 	_, err = mainLineAssociation.Parse(data)
 	if nil != err {
 		blog.Errorf("[api-asst] failed to parse the data(%#v), error info is %s", data, err.Error())
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "mainline object")
 	}
 	params.MetaData = &mainLineAssociation.Metadata
 	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
-
 	if err != nil {
-		if txerr := tx.Abort(context.Background()); txerr != nil {
-			blog.Errorf("[api-asst] abort transaction failed; %v", err)
-			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
-		}
-	} else {
-		if txerr := tx.Commit(context.Background()); txerr != nil {
-			return ret, params.Err.Error(common.CCErrObjectDBOpErrno)
-		}
+		blog.Errorf("create mainline object: %s failed, err: %v", mainLineAssociation.ObjectID, err)
+		return nil, params.Err.Error(common.CCErrTopoMainlineCreatFailed)
 	}
 
 	// auth: register mainline object
-	object := ret.Object()
-	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, object); err != nil {
+	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, ret.Object()); err != nil {
 		message := fmt.Sprintf("register mainline model to iam failed, err: %+v", err)
 		blog.V(2).Info(message)
 		return ret, params.Err.Errorf(common.CCErrCommRegistResourceToIAMFailed, message)
 	}
 
-	return ret, err
+	return ret, nil
 }
 
 // DeleteMainLineObject delete a object int the main line topo

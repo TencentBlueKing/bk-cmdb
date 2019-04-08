@@ -1,4 +1,5 @@
 import { NAV_AUDIT_ANALYSE } from '@/dictionary/menu'
+// eslint-disable-next-line
 import Meta from '@/router/meta'
 
 const path = '/auditing'
@@ -19,7 +20,6 @@ export default {
         auth: {
             view: '',
             operation: []
-        },
-        requireBusiness: true
+        }
     }
 }

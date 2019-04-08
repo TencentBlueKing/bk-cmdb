@@ -13,13 +13,13 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 
 	"configcenter/src/auth/meta"
-	"configcenter/src/framework/core/errors"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -595,6 +595,10 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	return ps
 }
 
+const (
+	findObjectInstanceBatchRegexp = `/api/v3/object/search/batch`
+)
+
 var (
 	createObjectInstanceRegexp          = regexp.MustCompile(`^/api/v3/inst/[^\s/]+/[^\s/]+/?$`)
 	findObjectInstanceRegexp            = regexp.MustCompile(`^/api/v3/inst/association/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -606,6 +610,7 @@ var (
 	findObjectInstanceTopologyRegexp    = regexp.MustCompile(`^/api/v3/inst/association/topo/search/owner/[^\s/]+/object/[^\s/]+/inst/[0-9]+/?$`)
 	findBusinessInstanceTopologyRegexp  = regexp.MustCompile(`^/api/v3/topo/inst/[^\s/]+/[0-9]+/?$`)
 	findObjectInstancesRegexp           = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
+	findObjectInstancesDetailRegexp     = regexp.MustCompile(`^/api/v3/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
 )
 
 func (ps *parseStream) objectInstance() *parseStream {
@@ -877,6 +882,37 @@ func (ps *parseStream) objectInstance() *parseStream {
 		return ps
 	}
 
+	// find object/s instance list details operation.
+	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+				},
+				Layers: []meta.Item{
+					{
+						Type: meta.Model,
+						Name: ps.RequestCtx.Elements[7],
+					},
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
 	return ps
 }
 
@@ -884,6 +920,7 @@ const (
 	createObjectPattern       = "/api/v3/object"
 	findObjectsPattern        = "/api/v3/objects"
 	findObjectTopologyPattern = "/api/v3/objects/topo"
+	createObjectBatchPattern  = "/api/v3/object/batch"
 )
 
 var (
@@ -905,6 +942,19 @@ func (ps *parseStream) object() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.Create,
+				},
+			},
+		}
+		return ps
+	}
+
+	// create common object batch operation.
+	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.Model,
+					Action: meta.CreateMany,
 				},
 			},
 		}
@@ -1125,8 +1175,9 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 }
 
 const (
-	createObjectAttributeGroupPattern = "/api/v3/objectatt/group/new"
-	updateObjectAttributeGroupPattern = "/api/v3/objectatt/group/update"
+	createObjectAttributeGroupPattern         = "/api/v3/objectatt/group/new"
+	updateObjectAttributeGroupPattern         = "/api/v3/objectatt/group/update"
+	updateObjectAttributeGroupPropertyPattern = "/api/v3/objectatt/group/property"
 )
 
 var (
@@ -1182,7 +1233,19 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.ModelClassification,
+					Type:   meta.ModelAttributeGroup,
+					Action: meta.Update,
+				},
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
 				},
 			},
@@ -1470,7 +1533,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 	}
 
 	// find module operation.
-	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
+	if ps.hitRegexp(findModuleRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = errors.New("find module, but got invalid url")
 			return ps

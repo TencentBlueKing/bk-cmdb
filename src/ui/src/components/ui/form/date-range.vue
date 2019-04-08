@@ -4,12 +4,12 @@
             :placeholder="placeholder"
             :disabled="disabled"
             :position="position"
-            :rangeSeparator="rangeSeparator"
-            :quickSelect="quickSelect"
+            :range-separator="rangeSeparator"
+            :quick-select="quickSelect"
             :ranges="ranges"
             :timer="timer"
-            :startDate="startDate"
-            :endDate="endDate"
+            :start-date="startDate"
+            :end-date="endDate"
             @change="handleChange">
         </bk-date-range>
     </div>
@@ -20,6 +20,7 @@
         name: 'cmdb-form-date-range',
         props: {
             value: {
+                type: Array,
                 default () {
                     return []
                 }
