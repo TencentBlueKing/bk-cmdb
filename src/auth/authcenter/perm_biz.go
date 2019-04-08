@@ -36,9 +36,8 @@ var expectBizResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       BizModel,
-		ResourceTypeName:     "模型",
-		ParentResourceTypeID: BizModelGroup,
+		ResourceTypeID:   BizModel,
+		ResourceTypeName: "模型",
 		Actions: []Action{
 			{
 				ActionID:          Create,
