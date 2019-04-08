@@ -243,7 +243,16 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	}
 	return nil
 }
-
+func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, ids ...int64) error {
+	ids = util.IntArrayUnique(ids)
+	
+	objects, err := am.collectObjectsByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("get model by id failed, id: %+v, err: %+v", ids, err)
+	}
+	
+	return am.UpdateRegisteredObjects(ctx, header, objects...)
+}
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
 	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {

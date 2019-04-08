@@ -13,16 +13,16 @@
 package extensions
 
 import (
-	"configcenter/src/auth/parser"
-	"configcenter/src/common/mapstr"
 	"context"
 	"fmt"
 	"net/http"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
