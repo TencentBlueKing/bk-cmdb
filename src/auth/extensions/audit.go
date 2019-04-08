@@ -28,7 +28,7 @@ import (
 )
 
 func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]AuditCategorySimplify, error) {
-	
+
 	query := &metadata.QueryInput{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
@@ -38,11 +38,11 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 		return nil, fmt.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
 	}
 	/*
-	response, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameOperationLog, query)
-	if err != nil {
-		blog.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
-		return nil, fmt.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
-	}
+		response, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameOperationLog, query)
+		if err != nil {
+			blog.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
+			return nil, fmt.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
+		}
 	*/
 
 	data, err := mapstr.NewFromInterface(response.Data)
@@ -61,7 +61,7 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 	modelIDFound := map[string]bool{}
 	for _, item := range auditLogs {
 		category := &AuditCategorySimplify{}
-		category, err :=  category.Parse(item)
+		category, err := category.Parse(item)
 		if err != nil {
 			blog.Errorf("parse audit category simplify failed, category: %+v, err: %+v", category, err)
 			continue
@@ -83,7 +83,7 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 	for _, object := range objects {
 		objectIDMap[object.ObjectID] = object.ID
 	}
-	
+
 	// invalid categories will be filter out
 	validCategories := make([]AuditCategorySimplify, 0)
 	for _, category := range categories {
@@ -153,14 +153,15 @@ func (am *AuthManager) RegisterAuditCategories(ctx context.Context, header http.
 }
 
 // MakeAuthorizedAuditListCondition make a query condition, with which user can only search audit log under it.
-func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, header http.Header, businessID int64) (cond condition.Condition, hasAuthorization bool, err error) {
+// ==> [{"bk_biz_id":2,"op_target":{"$in":["module"]}}]
+func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, header http.Header, businessID int64) (cond []mapstr.MapStr, hasAuthorization bool, err error) {
 	// businessID 0 means audit log priority of special model on any business
 
 	commonInfo, err := parser.ParseCommonInfo(&header)
 	if err != nil {
 		return nil, false, fmt.Errorf("parse user info from request header failed, %+v", err)
 	}
-	
+
 	businessIDs := make([]int64, 0)
 	if businessID == 0 {
 		ids, err := am.Authorize.GetAuthorizedBusinessList(ctx, commonInfo.User)
@@ -172,7 +173,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	}
 	businessIDs = append(businessIDs, 0)
 	blog.V(5).Infof("audit on business %+v to be check", businessIDs)
-	
+
 	authorizedBusinessModelMap := map[int64][]string{}
 	for _, businessID := range businessIDs {
 		auditList, err := am.Authorize.GetAuthorizedAuditList(ctx, commonInfo.User, businessID)
@@ -181,25 +182,24 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 			return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
 		}
 		blog.Infof("get authorized audit by business %d result: %s", businessID, auditList)
-		
+		blog.InfoJSON("get authorized audit by business %s result: %s", businessID, auditList)
+
 		modelIDs := make([]int64, 0)
-		for _, resourceID := range auditList {
-			if len(resourceID.ResourceIDs) == 0 {
-				continue
+		for _, authorizedList := range auditList {
+			for _, resourceID := range authorizedList.ResourceIDs {
+				if len(resourceID) == 0 {
+					continue
+				}
+				modelID := resourceID[len(resourceID)-1].ResourceID
+				id, err := util.GetInt64ByInterface(modelID)
+				if err != nil {
+					blog.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
+					return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
+				}
+				modelIDs = append(modelIDs, id)
 			}
-			lastResourceID := resourceID.ResourceIDs[len(resourceID.ResourceIDs) - 1]
-			if len(lastResourceID) == 0 {
-				continue
-			}
-			modelID := lastResourceID[len(lastResourceID) - 1].ResourceID
-			id, err := util.GetInt64ByInterface(modelID)
-			if err != nil {
-				blog.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-				return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-			}
-			modelIDs = append(modelIDs, id)
 		}
-		
+
 		if len(modelIDs) == 0 {
 			continue
 		}
@@ -208,7 +208,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 			blog.Errorf("get related model with id %+v by authorized audit failed, err: %+v", modelIDs, err)
 			return nil, false, fmt.Errorf("get related model with id %+v by authorized audit failed, err: %+v", modelIDs, err)
 		}
-		
+
 		objectIDs := make([]string, 0)
 		for _, object := range objects {
 			objectIDs = append(objectIDs, object.ObjectID)
@@ -216,8 +216,9 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 		authorizedBusinessModelMap[businessID] = objectIDs
 	}
 
-	cond = condition.CreateCondition()
-	
+	blog.InfoJSON("authorizedBusinessModelMap result: %s", authorizedBusinessModelMap)
+	cond = make([]mapstr.MapStr, 0)
+
 	// extract authorization on any business
 	if _, ok := authorizedBusinessModelMap[0]; ok == true {
 		if len(authorizedBusinessModelMap[0]) > 0 {
@@ -225,21 +226,21 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 			item := condition.CreateCondition()
 			item.Field(common.BKOpTargetField).In(authorizedBusinessModelMap[0])
 
-			cond.NewOR().Item(item.ToMapStr())
+			cond = append(cond, item.ToMapStr())
 			delete(authorizedBusinessModelMap, 0)
 		}
 	}
-	
+
 	// extract authorization on special business and object
 	for businessID, objectIDs := range authorizedBusinessModelMap {
 		hasAuthorization = true
 		item := condition.CreateCondition()
 		item.Field(common.BKOpTargetField).In(objectIDs)
 		item.Field(common.BKAppIDField).Eq(businessID)
-		
-		cond.NewOR().Item(item)
+
+		cond = append(cond, item.ToMapStr())
 	}
-	
+
 	blog.V(5).Infof("MakeAuthorizedAuditListCondition result: %+v", cond)
 	return cond, hasAuthorization, nil
 }

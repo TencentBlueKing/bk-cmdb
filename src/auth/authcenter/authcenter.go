@@ -448,6 +448,7 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 			},
 		},
 		DataType: "array",
+		Exact: true,
 	}
 
 	authorizedAudits, err := ac.authClient.GetAuthorizedResources(ctx, info)
@@ -616,7 +617,7 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	blog.Infof("GenerateResourceID result: %+v", resourceID)
+	blog.V(5).Infof("GenerateResourceID result: %+v", resourceID)
 	searchCondition := SearchCondition{
 		ScopeInfo:    *scopeInfo,
 		ResourceType: *resourceType,
