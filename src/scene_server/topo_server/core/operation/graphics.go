@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -167,16 +166,6 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 		if nil != params.MetaData {
 			datas[index].SetMetaData(*params.MetaData)
 		}
-	}
-
-	// check authorization
-	objectIDs := make([]string, 0)
-	for _, data := range datas {
-		objectIDs = append(objectIDs, data.ObjID)
-	}
-	if err := g.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.ModelTopologyOperation, objectIDs...); err != nil {
-		blog.Errorf("UpdateGraphics failed, authorization failed, err: %+v", err)
-		return params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)
