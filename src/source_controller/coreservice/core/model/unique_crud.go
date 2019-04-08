@@ -224,20 +224,14 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 
 	pipeline := []interface{}{}
 
-	instcond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-	}
+	instcond := mapstr.MapStr{}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instcond.Set(common.BKObjIDField, objID)
 	}
 
 	if !mustCheck {
-		matchs := []mapstr.MapStr{}
 		for _, key := range keynames {
-			matchs = append(matchs, mapstr.MapStr{key: mapstr.MapStr{common.BKDBNE: nil}})
-		}
-		if len(matchs) > 0 {
-			instcond.Set(common.BKDBOR, matchs)
+			instcond.Set(key, mapstr.MapStr{common.BKDBNE: nil})
 		}
 	}
 
