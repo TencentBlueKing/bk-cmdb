@@ -50,7 +50,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update'] ? 'U_PROCESS' : 'C_PROCESS')"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_PROCESS' : 'C_PROCESS'])"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
