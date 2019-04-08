@@ -76,6 +76,10 @@ type UpdateModelAttrUnique struct {
 	Data UpdateUniqueRequest `json:"data"`
 }
 
+type DeleteModelAttrUnique struct {
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+}
+
 type CreateModelInstance struct {
 	Data mapstr.MapStr `json:"data"`
 }
