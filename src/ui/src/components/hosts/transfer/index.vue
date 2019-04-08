@@ -101,9 +101,9 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['business']),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
             currentBusiness () {
-                return this.business.find(item => item['bk_biz_id'] === this.businessId)
+                return this.authorizedBusiness.find(item => item['bk_biz_id'] === this.businessId)
             },
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
