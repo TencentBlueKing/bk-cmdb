@@ -443,11 +443,12 @@ func (m *model) UpdateModelAttrUnique(ctx context.Context, h http.Header, objID 
 	return
 }
 
-func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (resp *metadata.DeletedOptionResult, err error) {
+func (m *model) DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (resp *metadata.DeletedOptionResult, err error) {
 	subPath := fmt.Sprintf("/delete/model/%s/attributes/unique/%d", objID, id)
 
 	err = m.client.Delete().
 		WithContext(ctx).
+		Body(meta).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
