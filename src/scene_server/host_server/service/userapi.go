@@ -60,7 +60,7 @@ func (s *Service) AddUserCustomQuery(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
-	if err := s.AuthManager.RegisterUserAPIByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
+	if err := s.AuthManager.RegisterDynamicGroupByID(srvData.ctx, srvData.header, result.Data.ID); err != nil {
 		blog.Errorf("AddUserCustomQuery register user api failed, err: %+v, rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 	}
@@ -97,7 +97,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 	}
 
 	id := req.PathParameter("id")
-	if err := s.AuthManager.UpdateRegisteredUserAPIByID(srvData.ctx, srvData.header, id); err != nil {
+	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
 		blog.Errorf("GetUserCustom update register user api failed, err: %+v,rid:%s", err, id, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 	}
@@ -128,7 +128,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	if err := s.AuthManager.DeregisterUserAPIByID(srvData.ctx, srvData.header, ID); err != nil {
+	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, ID); err != nil {
 		blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 	}
@@ -157,7 +157,7 @@ func (s *Service) GetUserCustomQuery(req *restful.Request, resp *restful.Respons
 	} else {
 		condition = make(map[string]interface{})
 	}
-	//if name in condition , add like search
+	// if name in condition , add like search
 	name, ok := condition["name"].(string)
 	if ok && "" != name {
 		condition["name"] = common.KvMap{common.BKDBLIKE: params.SpecialCharChange(name)}
