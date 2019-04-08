@@ -167,25 +167,21 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 		return nil, nil
 	}
 
-	if len(attribute.Layers) < 2 {
+	if len(attribute.Layers) < 1 {
 		return nil, NotEnoughLayer
 	}
 
-	groupType := SysModelGroup
+	// groupType := SysModelGroup
 	modelType := SysModel
 	if attribute.BusinessID > 0 {
-		groupType = BizModelGroup
+		// groupType = BizModelGroup
 		modelType = BizModel
 	}
 
 	return []RscTypeAndID{
 		{
-			ResourceType: groupType,
-			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
-		},
-		{
 			ResourceType: modelType,
-			ResourceID:   strconv.FormatInt(attribute.Layers[1].InstanceID, 10),
+			ResourceID:   strconv.FormatInt(attribute.Layers[0].InstanceID, 10),
 		},
 		{
 			ResourceType: resourceType,
