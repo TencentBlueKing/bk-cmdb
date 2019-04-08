@@ -306,9 +306,7 @@ func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID
 
 	pipeline := []interface{}{}
 
-	instcond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-	}
+	instcond := mapstr.MapStr{}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instcond.Set(common.BKObjIDField, objID)
 	}

@@ -79,11 +79,17 @@ func New(uri string, enableTransaction bool) (dal.DB, error) {
 
 // Close replica client
 func (c *Mongo) Close() error {
+	if c.rpc == nil {
+		return nil
+	}
 	return c.rpc.Close()
 }
 
 // Ping replica client
 func (c *Mongo) Ping() error {
+	if c.rpc == nil {
+		return nil
+	}
 	return c.rpc.Ping()
 }
 
