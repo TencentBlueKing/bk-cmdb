@@ -129,7 +129,7 @@ const setMenuState = to => {
 }
 
 const checkAuthDynamicMeta = (to, from) => {
-    router.app.$store.commit('auth/setDynamicMeta', {})
+    router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
     const setDynamicMeta = auth.setDynamicMeta
     if (typeof setDynamicMeta === 'function') {
