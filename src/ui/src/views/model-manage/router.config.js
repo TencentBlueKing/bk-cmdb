@@ -63,7 +63,7 @@ export default [{
         checkAvailable: (to, from, app) => {
             const modelId = to.params.modelId
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-            return model && !model.bk_ispaused
+            return !!model
         }
     }
 }]
