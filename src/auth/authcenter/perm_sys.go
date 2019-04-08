@@ -50,9 +50,8 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       SysModel,
-		ResourceTypeName:     "模型",
-		ParentResourceTypeID: SysModelGroup,
+		ResourceTypeID:   SysModel,
+		ResourceTypeName: "模型",
 		Actions: []Action{
 			{
 				ActionID:          Create,
