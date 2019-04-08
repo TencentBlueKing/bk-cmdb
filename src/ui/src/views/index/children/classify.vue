@@ -17,8 +17,6 @@
     // import throttle from 'lodash.throttle'
     import vClassifyItem from './classify-item'
     // eslint-disable-next-line
-    import { OPERATION as businessOperation } from '@/views/business/router.config'
-    import { OPERATION as resourceOperation } from '@/views/resource/router.config'
     export default {
         components: {
             vClassifyItem
@@ -35,23 +33,19 @@
                     'bk_classification_id': 'bk_host_management',
                     'bk_classification_name': this.$t('Nav["基础资源"]'),
                     'bk_classification_type': 'inner',
-                    'bk_objects': []
-                }
-                hostManageClassification['bk_objects'].push({
-                    'bk_obj_name': this.$t('Common["业务"]'),
-                    'bk_obj_id': 'biz',
-                    'bk_obj_icon': 'icon-cc-business',
-                    'path': '/business',
-                    'bk_classification_id': 'bk_host_management'
-                })
-                if (this.$isAuthorized(resourceOperation.R_HOST, { type: 'view' })) {
-                    hostManageClassification['bk_objects'].push({
+                    'bk_objects': [{
+                        'bk_obj_name': this.$t('Common["业务"]'),
+                        'bk_obj_id': 'biz',
+                        'bk_obj_icon': 'icon-cc-business',
+                        'path': '/business',
+                        'bk_classification_id': 'bk_host_management'
+                    }, {
                         'bk_obj_name': this.$t('Nav["主机"]'),
                         'bk_obj_id': '$resource',
                         'bk_obj_icon': 'icon-cc-host-free-pool',
                         'path': '/resource',
                         'bk_classification_id': 'bk_host_management'
-                    })
+                    }]
                 }
                 return hostManageClassification
             },

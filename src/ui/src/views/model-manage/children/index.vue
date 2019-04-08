@@ -159,7 +159,7 @@
             },
             isEditable () {
                 const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
-                return updateAuth && this.isReadOnly && this.isPublicModel
+                return updateAuth && !this.isReadOnly && this.isPublicModel
             },
             modelParams () {
                 const {
