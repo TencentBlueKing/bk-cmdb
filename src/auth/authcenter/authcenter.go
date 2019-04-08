@@ -448,6 +448,7 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 			},
 		},
 		DataType: "array",
+		Exact: true,
 	}
 
 	authorizedAudits, err := ac.authClient.GetAuthorizedResources(ctx, info)
