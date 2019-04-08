@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/httpclient"
-	"configcenter/src/common/version"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
@@ -132,17 +131,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		session.Set(common.WEBSessionSupplierID, "0")
 
 		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
-		if version.CCRunMode == version.CCRunModeDev {
-			cookieUserID, err := c.Cookie(common.WEBSessionUinKey)
-			if "" == cookieUserID || nil != err {
-				c.SetCookie(common.WEBSessionUinKey, "admin", 0, "/", "", false, false)
-				session.Set(common.WEBSessionUinKey, cookieUserID)
-			} else if cookieUserID != session.Get(common.WEBSessionUinKey) {
-				session.Set(common.WEBSessionUinKey, cookieUserID)
-			}
-		} else {
-			session.Set(common.WEBSessionUinKey, "admin")
-		}
+		session.Set(common.WEBSessionUinKey, "admin")
 
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
