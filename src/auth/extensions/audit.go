@@ -182,23 +182,22 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 			return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
 		}
 		blog.Infof("get authorized audit by business %d result: %s", businessID, auditList)
+		blog.InfoJSON("get authorized audit by business %s result: %s", businessID, auditList)
 
 		modelIDs := make([]int64, 0)
-		for _, resourceID := range auditList {
-			if len(resourceID.ResourceIDs) == 0 {
-				continue
+		for _, authorizedList := range auditList {
+			for _, resourceID := range authorizedList.ResourceIDs {
+				if len(resourceID) == 0 {
+					continue
+				}
+				modelID := resourceID[len(resourceID)-1].ResourceID
+				id, err := util.GetInt64ByInterface(modelID)
+				if err != nil {
+					blog.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
+					return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
+				}
+				modelIDs = append(modelIDs, id)
 			}
-			lastResourceID := resourceID.ResourceIDs[len(resourceID.ResourceIDs)-1]
-			if len(lastResourceID) == 0 {
-				continue
-			}
-			modelID := lastResourceID[len(lastResourceID)-1].ResourceID
-			id, err := util.GetInt64ByInterface(modelID)
-			if err != nil {
-				blog.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-				return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-			}
-			modelIDs = append(modelIDs, id)
 		}
 
 		if len(modelIDs) == 0 {
