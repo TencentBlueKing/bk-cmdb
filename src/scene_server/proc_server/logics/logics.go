@@ -40,7 +40,6 @@ type Logics struct {
 	user         string
 	ccErr        errors.DefaultCCErrorIf
 	ccLang       language.DefaultCCLanguageIf
-	auth         auth.Authorize
 }
 
 // NewLogics get logic handle
@@ -57,7 +56,6 @@ func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbS
 		cache:        cache,
 		esbServ:      esbServ,
 		procHostInst: procHostInst,
-		auth:         auth,
 	}
 }
 
