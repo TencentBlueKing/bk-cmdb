@@ -58,7 +58,9 @@ type Basic struct {
 	Name string
 
 	// the instance id of this resource, which could be a model's instance id.
+	// InstanceIDEx is a extend for instanceID which can only be integer, but some resources only have string format id.
 	InstanceID int64
+	InstanceIDEx string
 }
 
 // BackendResourceLayer represent one resource layer

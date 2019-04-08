@@ -25,7 +25,7 @@ import (
 func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string) ([]authmeta.BackendResource, error) {
 	iamResources, err := ih.authManager.Authorize.ListResources(context.Background(), ra)
 	if err != nil {
-		blog.Errorf("synchronize failed, ListResources failed, task: %s, err: %+v", taskName, err)
+		blog.Errorf("synchronize failed, ListResources from iam failed, task: %s, err: %+v", taskName, err)
 		return nil, err
 	}
 
