@@ -90,7 +90,11 @@ func (a *unique) Update(params types.ContextParams, objectID string, id uint64, 
 }
 
 func (a *unique) Delete(params types.ContextParams, objectID string, id uint64) (err error) {
-	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), params.Header, objectID, id)
+	meta := metadata.Metadata{}
+	if params.MetaData != nil {
+		meta = *params.MetaData
+	}
+	resp, err := a.clientSet.CoreService().Model().DeleteModelAttrUnique(context.Background(), params.Header, objectID, id, metadata.DeleteModelAttrUnique{Metadata: meta})
 	if err != nil {
 		blog.Errorf("[UniqueOperation] delete for %s, %d failed %v", objectID, id, err)
 		return params.Err.Error(common.CCErrTopoObjectUniqueDeleteFailed)
