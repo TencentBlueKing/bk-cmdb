@@ -56,7 +56,7 @@ type ModelAttribute interface {
 type ModelAttrUnique interface {
 	CreateModelAttrUnique(ctx ContextParams, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error)
 	UpdateModelAttrUnique(ctx ContextParams, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error)
-	DeleteModelAttrUnique(ctx ContextParams, objID string, id uint64) (*metadata.DeletedCount, error)
+	DeleteModelAttrUnique(ctx ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error)
 	SearchModelAttrUnique(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error)
 }
 

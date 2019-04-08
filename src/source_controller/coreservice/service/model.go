@@ -383,8 +383,7 @@ func (s *coreService) UpdateModelAttrUnique(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputDatas := metadata.CreateManyModelClassifiaction{}
+	inputDatas := metadata.DeleteModelAttrUnique{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
 		return nil, err
 	}
@@ -394,5 +393,5 @@ func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParam
 		return nil, params.Error.Errorf(common.CCErrCommParamsNeedInt, "id")
 	}
 
-	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id)
+	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id, metadata.DeleteModelAttrUnique{Metadata: inputDatas.Metadata})
 }
