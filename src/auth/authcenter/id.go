@@ -171,8 +171,11 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 		return nil, NotEnoughLayer
 	}
 
+
+	// groupType := SysModelGroup
 	modelType := SysModel
 	if attribute.BusinessID > 0 {
+		// groupType = BizModelGroup
 		modelType = BizModel
 	}
 
