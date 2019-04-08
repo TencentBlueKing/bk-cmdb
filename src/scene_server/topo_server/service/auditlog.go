@@ -77,13 +77,10 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		blog.Errorf("user %+v has no authorization on audit", params.User)
 		return nil, nil
 	}
+	
+	query.Condition.(map[string]interface{})["$or"] = authCondition
 	blog.V(5).Infof("auth condition is: %+v", authCondition)
-	
-	
-	mergedCondition := query.Condition.(mapstr.MapStr)
-	mergedCondition.Merge(authCondition.ToMapStr())
-	
-	query.Condition = mergedCondition.ToMapInterface()
+	blog.InfoJSON("MakeAuthorizedAuditListCondition result: %s", authCondition)
 	
 	blog.InfoJSON("AuditOperation parameter: %s", query)
 	return s.Core.AuditOperation().Query(params, query)
