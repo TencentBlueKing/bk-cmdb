@@ -13,14 +13,11 @@
 package logics
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/rs/xid"
 
-	authMeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 )
 
@@ -60,32 +57,4 @@ func GetProcInstModel(appID, setID, moduleID, hostID, procID, funcID, procNum in
 		instProc = append(instProc, item)
 	}
 	return instProc
-}
-
-// AuthCenterInstInfo  register and unregister, update  process to authorize center ,
-// name delete process allow empty
-func (lgc *Logics) AuthCenterInstInfo(ctx context.Context, appID, instID int64, action authMeta.Action, name string) error {
-	authParameter := authMeta.ResourceAttribute{
-		Basic: authMeta.Basic{
-			Type:       authMeta.Process,
-			Action:     action,
-			Name:       name,
-			InstanceID: instID,
-		},
-		SupplierAccount: lgc.ownerID,
-		BusinessID:      appID,
-	}
-	var err error
-	switch action {
-	case authMeta.Update:
-		err = lgc.auth.UpdateResource(ctx, &authParameter)
-	case authMeta.Delete:
-		err = lgc.auth.DeregisterResource(ctx, authParameter)
-	default:
-		err = lgc.auth.RegisterResource(ctx, authParameter)
-	}
-	if err != nil {
-		blog.Errorf("AuthCenterInstInfo error, err:%s,input:%#v,rid:%s", err.Error(), authParameter, lgc.rid)
-	}
-	return err
 }

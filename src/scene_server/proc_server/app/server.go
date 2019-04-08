@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -90,7 +91,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
-	procSvr.Auth = authorize
+	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
