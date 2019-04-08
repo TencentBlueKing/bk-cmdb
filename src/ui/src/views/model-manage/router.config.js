@@ -53,11 +53,11 @@ export default [{
                 const modelId = to.params.modelId
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
                 const bizId = getMetadataBiz(model)
-                const dynamicMeta = {}
                 if (bizId) {
-                    dynamicMeta.bk_biz_id = bizId
+                    app.$store.commit('auth/setBusinessMeta', {
+                        bk_biz_id: bizId
+                    })
                 }
-                app.$store.commit('auth/setDynamicMeta', dynamicMeta)
             }
         }
     }
