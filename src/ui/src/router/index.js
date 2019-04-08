@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
+import StatusError from './StatusError.js'
+
 import preload from '@/setup/preload'
 import afterload from '@/setup/afterload'
 import $http from '@/api'
@@ -137,6 +139,13 @@ const checkAuthDynamicMeta = (to, from) => {
     }
 }
 
+const checkAvailable = (to, from) => {
+    if (typeof to.meta.checkAvailable === 'function') {
+        return to.meta.checkAvailable(to, from, router.app)
+    }
+    return true
+}
+
 const checkBusiness = to => {
     const getters = router.app.$store.getters
     const isAdminView = getters.isAdminView
@@ -169,30 +178,39 @@ router.beforeEach((to, from, next) => {
             } else {
                 setLoading(true)
                 setMenuState(to)
+
                 await cancelRequest()
                 if (setupStatus.preload) {
                     await preload(router.app)
                 }
+
                 checkAuthDynamicMeta(to, from)
+
+                const isAvailable = checkAvailable(to, from)
+                if (!isAvailable) {
+                    throw new StatusError({ name: '404' })
+                }
                 await getAuth(to)
                 const viewAuth = isViewAuthorized(to)
-                if (viewAuth) {
-                    const isBusinessCheckPass = checkBusiness(to)
-                    if (isBusinessCheckPass) {
-                        next()
-                    } else {
-                        setLoading(false)
-                        next({ name: 'requireBusiness' })
-                    }
-                } else {
-                    setLoading(false)
-                    next({ name: '403' })
+                if (!viewAuth) {
+                    throw new StatusError({ name: '403' })
                 }
+
+                const isBusinessCheckPass = checkBusiness(to)
+                if (!isBusinessCheckPass) {
+                    throw new StatusError({ name: 'requireBusiness' })
+                }
+
+                next()
             }
         } catch (e) {
-            console.error(e)
+            console.log(e)
+            if (e instanceof StatusError) {
+                next({ name: e.name })
+            } else {
+                next({ name: 'error' })
+            }
             setLoading(false)
-            next({ name: 'error' })
         } finally {
             setupStatus.preload = false
         }

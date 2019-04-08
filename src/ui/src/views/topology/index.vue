@@ -392,7 +392,7 @@
                     })
                 ]).then(([instTopo, internalTopo]) => {
                     const moduleModel = this.getModelByObjId('module')
-                    const internalModule = internalTopo.module.map(module => {
+                    const internalModule = (internalTopo.module || []).map(module => {
                         return {
                             'default': ['空闲机', 'idle machine'].includes(module['bk_module_name']) ? 1 : 2,
                             'bk_obj_id': 'module',
