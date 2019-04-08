@@ -36,9 +36,8 @@ var expectBizResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       BizModel,
-		ResourceTypeName:     "模型",
-		ParentResourceTypeID: BizModelGroup,
+		ResourceTypeID:   BizModel,
+		ResourceTypeName: "模型",
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -172,7 +171,7 @@ var expectBizResourceType = []ResourceType{
 	// },
 	{
 		ResourceTypeID:       BizHostInstance,
-		ResourceTypeName:     "主机",
+		ResourceTypeName:     "业务主机",
 		ParentResourceTypeID: "",
 		Actions: []Action{
 			{

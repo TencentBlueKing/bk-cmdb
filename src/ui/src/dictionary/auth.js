@@ -37,12 +37,17 @@ export const D_TOPO = 'mainlineInstanceTopology.delete'
 export const R_TOPO = 'mainlineInstanceTopology.findMany'
 export const TOPO_TRANSFER_HOST = 'mainlineInstanceTopology.transferHost'
 
-// 主机管理
+// 业务主机
 export const C_HOST = 'hostInstance.create'
 export const R_HOST = 'hostInstance.findMany'
 export const U_HOST = 'hostInstance.update'
 export const D_HOST = 'hostInstance.delete'
 export const HOST_TO_RESOURCE = 'hostInstance.moveHostFromModuleToResPool'
+
+// 资源池主机
+export const C_RESOURCE_HOST = 'hostInstance.create'
+export const U_RESOURCE_HOST = 'hostInstance.update'
+export const D_RESOURCE_HOST = 'hostInstance.delete'
 export const HOST_ASSIGN = 'hostInstance.moveResPoolHostToBizIdleModule'
 
 // 关联类型

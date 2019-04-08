@@ -75,6 +75,7 @@
                             </span>
                         </label>
                         <label class="label-btn"
+                            v-if="$isAuthorized(OPERATION.D_MODEL)"
                             v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
@@ -159,7 +160,7 @@
             },
             isEditable () {
                 const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
-                return updateAuth && this.isReadOnly && this.isPublicModel
+                return updateAuth && !this.isReadOnly && this.isPublicModel
             },
             modelParams () {
                 const {

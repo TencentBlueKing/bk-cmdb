@@ -50,9 +50,8 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       SysModel,
-		ResourceTypeName:     "模型",
-		ParentResourceTypeID: SysModelGroup,
+		ResourceTypeID:   SysModel,
+		ResourceTypeName: "模型",
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -205,6 +204,28 @@ var expectSystemResourceType = []ResourceType{
 				ActionID:          Get,
 				ActionName:        "查询",
 				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysHostInstance,
+		ResourceTypeName:     "主机（资源池）",
+		ParentResourceTypeID: "",
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
 			},
 		},
 	},
