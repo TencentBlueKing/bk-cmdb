@@ -1339,6 +1339,8 @@ func getOSTypeByEnumID(enumID string) (OSType string) {
 		OSType = "linux"
 	case common.HostOSTypeEnumWindows:
 		OSType = "windows"
+	case common.HostOSTypeEnumAIX:
+		OSType = "aix"
 	default:
 		OSType = enumID
 	}
