@@ -79,5 +79,6 @@ func (s *Service) Index(c *gin.Context) {
 		"curl":        s.Config.LoginUrl,
 		"userName":    userName,
 		"agentAppUrl": s.Config.AgentAppUrl,
+		"authCenter":  s.Config.AuthCenter,
 	})
 }

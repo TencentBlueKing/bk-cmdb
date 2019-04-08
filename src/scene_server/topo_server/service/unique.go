@@ -76,10 +76,10 @@ func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, que
 	data.Remove(metadata.BKMetadata)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-		blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+	// 	blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
@@ -113,10 +113,10 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-		blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+	// 	blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 
 	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
