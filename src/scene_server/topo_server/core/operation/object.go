@@ -767,7 +767,7 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return err
 	}
 	*/
-
+	
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {
