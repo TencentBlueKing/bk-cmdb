@@ -171,6 +171,7 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 		return nil, NotEnoughLayer
 	}
 
+
 	// groupType := SysModelGroup
 	modelType := SysModel
 	if attribute.BusinessID > 0 {
@@ -212,7 +213,7 @@ func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.
 }
 
 func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if len(attribute.Layers) < 2 {
+	if len(attribute.Layers) < 1 {
 		return nil, NotEnoughLayer
 	}
 	id := RscTypeAndID{
@@ -226,7 +227,7 @@ func modelAttributeGroupResourceID(resourceType ResourceTypeID, attribute *meta.
 }
 
 func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if len(attribute.Layers) < 2 {
+	if len(attribute.Layers) < 1 {
 		return nil, NotEnoughLayer
 	}
 	id := RscTypeAndID{
@@ -240,7 +241,7 @@ func modelAttributeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 }
 
 func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if len(attribute.Layers) < 2 {
+	if len(attribute.Layers) < 1 {
 		return nil, NotEnoughLayer
 	}
 	id := RscTypeAndID{

@@ -43,8 +43,8 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 type InstanceSimplify struct {
 	InstanceID int64  `field:"bk_inst_id"`
 	Name       string `field:"bk_inst_name"`
+	BizID      int64  `field:"bk_biz_id"`
 	ObjectID   string `field:"bk_obj_id"`
-	BizID      int64
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance

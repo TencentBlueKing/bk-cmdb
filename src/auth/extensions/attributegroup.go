@@ -77,7 +77,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs failed, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object id failed, err: %+v", err)
 	}
-	
+
 	if len(objects) == 0 {
 		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object by id not found")
@@ -88,7 +88,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		blog.Errorf("makeResourceByAttributeGroup failed, extract business id failed, attribute group: %+v, err: %+v", attributeGroups, err)
 		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
-	
+
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource failed, objects: %+v, err: %+v", objects, err)
@@ -102,7 +102,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource empty, objects: %+v", objects)
 		return nil, fmt.Errorf("get parent resources empty, objects: %+v", objects)
 	}
-	
+
 	parentResource := parentResources[0]
 
 	// prepare resource layers for authorization
@@ -130,7 +130,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 		resources = append(resources, resource)
 	}
-	
+
 	blog.V(5).Infof("makeResourceByAttributeGroup result: %+v", resources)
 	return resources, nil
 }
@@ -139,7 +139,7 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
-	
+
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, meta.EmptyAction, attributeGroups...)
 	if err != nil {
 		return fmt.Errorf("register model attribute group failed, err: %+v", err)
@@ -152,7 +152,7 @@ func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
-	
+
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, meta.EmptyAction, attributeGroups...)
 	if err != nil {
 		return fmt.Errorf("deregister model attribute group failed, err: %+v", err)
@@ -165,7 +165,7 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
-	
+
 	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, groupIDs...)
 	if err != nil {
 		return fmt.Errorf("deregistered model attribute group failed, get model attribute group by id failed, err: %+v", err)

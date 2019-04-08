@@ -78,7 +78,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		blog.Errorf("makeResourceByUnique failed, collectObjectsByObjectIDs failed, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object id failed, err: %+v", err)
 	}
-	
+
 	if len(objects) == 0 {
 		blog.Errorf("makeResourceByUnique failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object by id not found")
@@ -89,7 +89,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		blog.Errorf("makeResourceByUnique failed, extract business id failed, uniques: %+v, err: %+v", uniques, err)
 		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
-	
+
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		blog.Errorf("makeResourceByUnique failed, get parent resource failed, objects: %+v, err: %+v", objects, err)
@@ -103,7 +103,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		blog.Errorf("makeResourceByUnique failed, get parent resource empty, objects: %+v", objects)
 		return nil, fmt.Errorf("get parent resources empty, objects: %+v", objects)
 	}
-	
+
 	parentResource := parentResources[0]
 
 	// prepare resource layers for authorization
@@ -137,6 +137,10 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("register model unique failed, err: %+v", err)
@@ -146,6 +150,10 @@ func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("deregister model unique failed, err: %+v", err)
@@ -155,6 +163,10 @@ func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+
 	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
@@ -168,10 +180,14 @@ func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Hea
 		return fmt.Errorf("authorize model unique failed, err: %+v", err)
 	}
 
-	return am.Authorize.RegisterResource(ctx, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+
 	resources, err := am.makeResourceByUnique(ctx, header, meta.EmptyAction, uniques...)
 	if err != nil {
 		return fmt.Errorf("update registered model unique failed, err: %+v", err)
@@ -181,6 +197,10 @@ func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.RegisterModelUniqueEnabled == false {
+		return nil
+	}
+
 	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
@@ -236,17 +256,17 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, get model by id: %s failed, err: %+v", objectID, err)
 		return fmt.Errorf("get model by id %s failed, err: %+v", objectID, err)
 	}
-	
+
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.Update, objects...)
 	if err != nil {
 		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, make parent resource by models failed, objects: %+v, err: %+v", objects, err)
 		return fmt.Errorf("make parent resource from objects failed, err: %+v", err)
 	}
-	
+
 	if am.RegisterModelUniqueEnabled == false {
 		return am.batchAuthorize(ctx, header, parentResources...)
 	}
-	
+
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, parentResource := range parentResources {
 		layers := parentResource.Layers
@@ -257,9 +277,9 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 			InstanceID: parentResource.InstanceID,
 		})
 		resource := meta.ResourceAttribute{
-			Basic:           meta.Basic{
-				Type:       meta.ModelUnique,
-				Action:     meta.Create,
+			Basic: meta.Basic{
+				Type:   meta.ModelUnique,
+				Action: meta.Create,
 			},
 			SupplierAccount: parentResource.SupplierAccount,
 			BusinessID:      parentResource.BusinessID,
@@ -267,7 +287,7 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 		}
 		resources = append(resources, resource)
 	}
-	
+
 	blog.V(5).Infof("AuthorizeModelUniqueResourceCreate result: %+v", resources)
 	return am.batchAuthorize(ctx, header, resources...)
 }
@@ -276,7 +296,7 @@ func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http
 	if am.RegisterModelUniqueEnabled == false {
 		return nil
 	}
-	
+
 	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered model unique failed, get unique by id failed, err: %+v", err)
@@ -290,6 +310,6 @@ func (am *AuthManager) AuthorizeModelUniqueByID(ctx context.Context, header http
 		blog.Errorf("get model unique by id failed, err: %+v", err)
 		return fmt.Errorf("get model unique by id failed, err: %+v", err)
 	}
-	
+
 	return am.AuthorizeByUnique(ctx, header, action, modelUniques...)
 }

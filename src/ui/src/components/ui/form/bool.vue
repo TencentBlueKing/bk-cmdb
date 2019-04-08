@@ -27,7 +27,7 @@
         },
         props: {
             checked: {
-                type: Boolean,
+                type: [Boolean, String, Number],
                 default: false
             },
             disabled: {
@@ -35,11 +35,11 @@
                 default: false
             },
             trueValue: {
-                type: Boolean,
+                type: [Boolean, String, Number],
                 default: true
             },
             falseValue: {
-                type: Boolean,
+                type: [Boolean, String, Number],
                 default: false
             },
             size: {

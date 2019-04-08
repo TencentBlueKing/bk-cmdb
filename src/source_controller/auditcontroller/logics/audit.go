@@ -115,6 +115,7 @@ func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]m
 	limit := dat.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
+	blog.V(9).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
 	err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Sort(dat.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)

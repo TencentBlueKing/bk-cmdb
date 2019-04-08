@@ -8,14 +8,14 @@
                     v-if="isAdminView"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新增模型"]')}}
+                    {{$t('ModelManagement["新建模型"]')}}
                 </bk-button>
                 <bk-button type="primary"
                     v-else
                     v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新增模型"]')}}
+                    {{$t('ModelManagement["新建模型"]')}}
                 </bk-button>
                 <bk-button type="default"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
@@ -127,7 +127,7 @@
         </bk-dialog>
         <the-create-model
             :is-show.sync="modelDialog.isShow"
-            :title="$t('ModelManagement[\'新增模型\']')"
+            :title="$t('ModelManagement[\'新建模型\']')"
             @confirm="saveModel">
         </the-create-model>
     </div>
@@ -212,6 +212,7 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
+            this.searchClassificationsObjects({})
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
