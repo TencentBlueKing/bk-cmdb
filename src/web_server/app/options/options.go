@@ -70,4 +70,12 @@ type Config struct {
 	LoginUrl     string
 	LoginVersion string
 	ConfigMap    map[string]string
+
+	// auth info
+	AuthCenter AppInfo
+}
+
+type AppInfo struct {
+	AppCode string `json:"appCode""`
+	URL     string `json:"url"`
 }
