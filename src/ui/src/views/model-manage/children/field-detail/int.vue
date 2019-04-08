@@ -14,7 +14,7 @@
         </div>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["最大值"]')}}</span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('max')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('max') }">
                 <input type="text" class="cmdb-form-input"
                     v-model="localValue.max"
                     name="max"
@@ -31,6 +31,7 @@
     export default {
         props: {
             value: {
+                type: [Object, String],
                 default: {
                     min: '',
                     max: ''

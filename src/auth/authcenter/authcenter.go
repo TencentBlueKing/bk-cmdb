@@ -207,17 +207,18 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 			return nil, err
 		}
 
-		info, err := adaptor(&rsc)
-		if err != nil {
-			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
-			return nil, err
-		}
-
 		// pick out skip resource at first.
 		if permit.ShouldSkipAuthorize(&rsc) {
 			// this resource should be skipped, do not need to verify in auth center.
 			decisions[index].Authorized = true
+			blog.V(5).Infof("skip resource authorize for resource: %+v", rsc)
 			continue
+		}
+
+		info, err := adaptor(&rsc)
+		if err != nil {
+			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
+			return nil, err
 		}
 
 		if rsc.BusinessID > 0 {
@@ -421,6 +422,42 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 	return businessIDs, nil
 }
 
+func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]AuthorizedResource, error) {
+	scopeInfo := ScopeInfo{}
+	var resourceType ResourceTypeID
+	if businessID > 0 {
+		scopeInfo.ScopeType = ScopeTypeIDBiz
+		scopeInfo.ScopeID = strconv.FormatInt(businessID, 10)
+		resourceType = BizAuditLog
+	} else {
+		scopeInfo.ScopeType = ScopeTypeIDSystem
+		scopeInfo.ScopeID = SystemIDCMDB
+		resourceType = SysAuditLog
+	}
+
+	info := &ListAuthorizedResources{
+		Principal: Principal{
+			Type: cmdbUser,
+			ID:   user.UserName,
+		},
+		ScopeInfo: scopeInfo,
+		TypeActions: []TypeAction{
+			{
+				ActionID:     Get,
+				ResourceType: resourceType,
+			},
+		},
+		DataType: "array",
+	}
+
+	authorizedAudits, err := ac.authClient.GetAuthorizedResources(ctx, info)
+	if err != nil {
+		return nil, err
+	}
+
+	return authorizedAudits, nil
+}
+
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
@@ -579,14 +616,13 @@ func (ac *AuthCenter) ListResources(ctx context.Context, r *meta.ResourceAttribu
 	if err != nil {
 		return nil, err
 	}
-	if len(resourceID) == 0 {
-		return nil, fmt.Errorf("generate resource id failed, return empty")
-	}
 	blog.Infof("GenerateResourceID result: %+v", resourceID)
 	searchCondition := SearchCondition{
-		ScopeInfo:       *scopeInfo,
-		ResourceType:    *resourceType,
-		ParentResources: resourceID[:len(resourceID)-1],
+		ScopeInfo:    *scopeInfo,
+		ResourceType: *resourceType,
+	}
+	if resourceID != nil && len(resourceID) > 0 {
+		searchCondition.ParentResources = resourceID[:len(resourceID)-1]
 	}
 	result, err := ac.authClient.ListResources(ctx, header, searchCondition)
 	return result, err

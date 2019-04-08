@@ -21,9 +21,9 @@ import (
 
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
@@ -269,9 +269,9 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+// add host to host resource pool
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-
 	hostList := new(meta.HostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
 		blog.Errorf("add host failed with decode body err: %v,rid:%s", err, srvData.rid)
@@ -303,20 +303,6 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		blog.Errorf("add host, but get module id failed, err: %s,input: %+v,rid: %s", err.Error(), hostList, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
-		return
-	}
-
-	// check permission to register host
-	/*
-		if shouldContinue := s.verifyModulePermission(&req.Request.Header, resp, moduleID, authmeta.Update); shouldContinue == false {
-			return
-		}
-	*/
-	// check authorization to create host
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, srvData.header, appID); err != nil {
-		blog.Errorf("check add host authorization failed, business: %+v, err: %v", appID, err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 

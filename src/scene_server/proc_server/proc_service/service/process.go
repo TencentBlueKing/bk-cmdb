@@ -21,13 +21,13 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin/json"
 
-	authMeta "configcenter/src/auth/meta"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 )
 
@@ -71,7 +71,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	//save change log
+	// save change log
 	instID := ret.Data.Created.ID
 	curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
 	if err != nil {
@@ -80,9 +80,16 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
 	}
 
-	err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(instID), authMeta.Create, procName)
-	if err != nil {
-		blog.Warnf("CreateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
+	// auth: register process to iam
+	processSimplify := extensions.ProcessSimplify{
+		ProcessID:    int64(appID),
+		ProcessName:  procName,
+		BKAppIDField: int64(instID),
+	}
+	if err := ps.AuthManager.RegisterProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+		blog.Warnf("create process sucess, but register to iam failed, err: %+v, process: %+v, rid: %s", err, processSimplify, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
 	}
 
 	// return success
@@ -156,16 +163,23 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// save operation log
-	/// take snapshot before operation
+	// take snapshot before operation
 	curDetail, err := ps.getProcDetail(req, ownerID, appID, procID)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s,rid:%s", err.Error(), srvData.rid)
 	}
 	ps.addProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, srvData.header)
 	if procData.Exists(common.BKProcNameField) {
-		err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, procName)
-		if err != nil {
-			blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
+		// auth: register process to iam
+		processSimplify := extensions.ProcessSimplify{
+			ProcessID:    int64(appID),
+			ProcessName:  procName,
+			BKAppIDField: int64(procID),
+		}
+		if err := ps.AuthManager.UpdateRegisteredProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+			blog.Warnf("update process success, but update register to iam failed, err: %+v, process: %+v, rid: %s", err, processSimplify, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+			return
 		}
 	}
 
@@ -173,7 +187,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 }
 
 func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Response) {
-	//user := util.GetUser(req.Request.Header)
+	// user := util.GetUser(req.Request.Header)
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
 
@@ -220,6 +234,8 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			return
 		}
 	}
+
+	updatedProcesses := make([]extensions.ProcessSimplify, 0)
 	for index, procIDStr := range procIDArr {
 		procID, err := strconv.Atoi(procIDStr)
 		if err != nil {
@@ -274,10 +290,20 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			return
 		}
 		if procData.Exists(common.BKProcNameField) {
-			err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Update, procName)
-			if err != nil {
-				blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, input, srvData.rid)
+			processSimplify := extensions.ProcessSimplify{
+				ProcessID:    int64(procID),
+				ProcessName:  procName,
+				BKAppIDField: int64(appID),
 			}
+			updatedProcesses = append(updatedProcesses, processSimplify)
+		}
+	} // end for procIDArr
+
+	if len(updatedProcesses) > 0 {
+		if err := ps.AuthManager.UpdateRegisteredProcesses(srvData.ctx, srvData.header, updatedProcesses...); err != nil {
+			blog.Errorf("batch update processes success, but update register to iam failed, err: %+v, processes:%+v, rid:%s", err, updatedProcesses, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+			return
 		}
 	}
 
@@ -374,10 +400,18 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 
 	// save operation log
 	ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, preProcDetail, nil, auditoplog.AuditOpTypeDel, procID, srvData.header)
-	err = srvData.lgc.AuthCenterInstInfo(srvData.ctx, int64(appID), int64(procID), authMeta.Delete, "")
-	if err != nil {
-		blog.Warnf("UpdateProcess AuthCenterInstInfo error, err:%s, input:%#v,rid:%s", err, conditon, srvData.rid)
+
+	// auth: dereigster process from iam
+	processSimplify := extensions.ProcessSimplify{
+		ProcessID:    int64(procID),
+		BKAppIDField: int64(appID),
 	}
+	if err := ps.AuthManager.DeregisterProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+		blog.Errorf("delete processes success, but deregister from iam failed, err: %+v, processes:%+v, rid:%s", err, processSimplify, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
+	}
+
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 

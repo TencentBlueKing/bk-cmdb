@@ -49,15 +49,22 @@ export default [{
             view: '',
             operation: Object.values(OPERATION),
             setDynamicMeta: (to, from, app) => {
-                console.log(app.$store.getters['objectModelClassify/models'])
                 const modelId = to.params[param]
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
-                const bizId = getMetadataBiz(model)
-                const dynamicMeta = {}
-                if (bizId) {
-                    dynamicMeta.bk_biz_id = bizId
+                if (model) {
+                    app.$store.commit('auth/setParentMeta', {
+                        parent_layers: [{
+                            resource_type: 'model',
+                            resource_id: model.id
+                        }]
+                    })
+                    const bizId = getMetadataBiz(model)
+                    if (bizId) {
+                        app.$store.commit('auth/setBusinessMeta', {
+                            bk_biz_id: bizId
+                        })
+                    }
                 }
-                app.$store.commit('auth/setDynamicMeta', {})
             }
         }
     }

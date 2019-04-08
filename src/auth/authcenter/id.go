@@ -69,6 +69,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return hostInstanceResourceID(resourceType, attribute)
 	case meta.DynamicGrouping:
 		return dynamicGroupingResourceID(resourceType, attribute)
+	case meta.AuditLog:
+		return auditLogResourceID(resourceType, attribute)
 	case meta.SystemBase:
 		return nil, nil
 	default:
@@ -318,9 +320,23 @@ func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 }
 
 func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	if attribute.InstanceID <= 0 {
+	if attribute.InstanceID <= 0 && len(attribute.InstanceIDEx) == 0 {
 		return nil, nil
 	}
+
+	instanceID := strconv.FormatInt(attribute.InstanceID, 10)
+	if len(attribute.InstanceIDEx) != 0 {
+		instanceID = attribute.InstanceIDEx
+	}
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   instanceID,
+		},
+	}, nil
+}
+
+func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,

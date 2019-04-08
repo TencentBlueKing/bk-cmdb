@@ -21,6 +21,26 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
+// ResourceTypeID is resource's type in auth center.
+func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+	var err error
+	info := new(ResourceInfo)
+	info.ResourceName = attribute.Basic.Name
+
+	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
+	if err != nil {
+		return info, err
+	}
+	info.ResourceType = *resourceTypeID
+
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
+}
+
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
@@ -30,17 +50,16 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.Business:
 		iamResourceType = SysBusinessInstance
 
-	case meta.ModelUnique,
+	case meta.Model,
+		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-
-		fallthrough
-	case meta.Model:
 		if businessID > 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
 		}
+
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
 		iamResourceType = BizTopoInstance
 
@@ -88,6 +107,12 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
+	case meta.AuditLog:
+		if businessID <= 0 {
+			iamResourceType = SysAuditLog
+		} else {
+			iamResourceType = BizAuditLog
+		}
 	case meta.SystemBase:
 		iamResourceType = SysSystemBase
 	case meta.UserCustom:
@@ -99,26 +124,6 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	}
 
 	return &iamResourceType, nil
-}
-
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
-
-	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return info, err
-	}
-	info.ResourceType = *resourceTypeID
-
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
 }
 
 // ResourceTypeID is resource's type in auth center.
@@ -197,7 +202,11 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		// edit a business.
-		if r.Action == meta.Create || r.Action == meta.Update {
+		if r.Action == meta.Create {
+			return Create, nil
+		}
+
+		if r.Action == meta.Update {
 			return Edit, nil
 		}
 	}
@@ -223,6 +232,20 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return BindModule, nil
 		}
 
+	}
+
+	if r.Basic.Type == meta.HostInstance {
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Edit, nil
+		}
+
+		if r.Action == meta.AddHostToResourcePool {
+			return Create, nil
+		}
+
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Create, nil
+		}
 	}
 
 	switch r.Action {

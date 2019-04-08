@@ -30,6 +30,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
+	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
@@ -99,6 +100,10 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
 		return err
 	}
+
+	authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+	authSynchronizer.Run()
+
 	<-ctx.Done()
 	blog.V(0).Info("process stopped")
 	return nil
@@ -120,8 +125,8 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		if h.Config == nil {
 			h.Config = new(options.Config)
 		}
-		
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ")  // ignore err, because ConfigMap is map[string]string
+
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") // ignore err, because ConfigMap is map[string]string
 		blog.V(3).Infof("config updated: \n%s", out)
 
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)

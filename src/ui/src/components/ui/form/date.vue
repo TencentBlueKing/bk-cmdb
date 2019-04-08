@@ -17,6 +17,7 @@
         name: 'cmdb-form-date',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             startDate: {
