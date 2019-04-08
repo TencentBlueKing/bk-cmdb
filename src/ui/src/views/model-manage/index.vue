@@ -212,7 +212,9 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
-            this.searchClassificationsObjects({})
+            this.searchClassificationsObjects({
+                params: this.$injectMetadata()
+            })
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
