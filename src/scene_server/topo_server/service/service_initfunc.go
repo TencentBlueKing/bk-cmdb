@@ -64,6 +64,7 @@ func (s *Service) initAssociation() {
 func (s *Service) initAuditLog() {
 
 	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/audit/search", HandlerFunc: s.AuditQuery})
+	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/object/{bk_obj_id}/audit/search", HandlerFunc: s.InstanceAuditQuery})
 }
 
 func (s *Service) initCompatiblev2() {
