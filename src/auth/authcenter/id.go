@@ -171,7 +171,6 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 		return nil, NotEnoughLayer
 	}
 
-
 	// groupType := SysModelGroup
 	modelType := SysModel
 	if attribute.BusinessID > 0 {
@@ -334,10 +333,11 @@ func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.Reso
 }
 
 func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	instanceID := attribute.InstanceIDEx
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,
-			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+			ResourceID:   instanceID,
 		},
 	}, nil
 }

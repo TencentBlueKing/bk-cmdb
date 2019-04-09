@@ -355,6 +355,7 @@ func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, 
 	}
 	return nil
 }
+
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
 	if len(hosts) == 0 {
 		return nil
@@ -387,6 +388,10 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) ([]meta.ResourceAttribute, error) {
+	if len(hostIDs) == 0 {
+		return nil, nil
+	}
+
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
@@ -414,6 +419,10 @@ func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+	if len(hosts) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromHosts(ctx, header, hosts...)
 	if err != nil {
@@ -433,6 +442,10 @@ func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) UpdateRegisteredHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered hosts failed, get hosts by id failed, err: %+v", err)
@@ -441,6 +454,10 @@ func (am *AuthManager) UpdateRegisteredHostsByID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) DeregisterHostsByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	hosts, err := am.collectHostByHostIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister hosts failed, get hosts by id failed, err: %+v", err)
@@ -449,6 +466,10 @@ func (am *AuthManager) DeregisterHostsByID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+	if len(hosts) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromHosts(ctx, header, hosts...)
 	if err != nil {
@@ -462,6 +483,10 @@ func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, ho
 }
 
 func (am *AuthManager) RegisterHostsByID(ctx context.Context, header http.Header, hostIDs ...int64) error {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return fmt.Errorf("register host failed, get hosts by id failed, err: %+v", err)
@@ -470,6 +495,9 @@ func (am *AuthManager) RegisterHostsByID(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) error {
+	if len(hosts) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromHosts(ctx, header, hosts...)

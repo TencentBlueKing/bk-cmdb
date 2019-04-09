@@ -446,6 +446,12 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 		return nil, err
 	}
 
+	// auth: check authorization
+	if err := s.AuthManager.AuthorizeByInstanceID(params.Context, params.Header, meta.Find, objID, instID); err != nil {
+		blog.Errorf("authorization failed, objectID: %s, instanceID: %d, err: %+v", objID, instID, err)
+		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
+	}
+	
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("bk_obj_id"), err.Error())
