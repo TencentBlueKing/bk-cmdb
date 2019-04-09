@@ -610,6 +610,14 @@ const (
 	CCErrCoreServiceModuleContainDefaultModuleErr = 1113005
 	// CCErrCoreServiceBusinessNotExist Business [%#v] does not exist
 	CCErrCoreServiceBusinessNotExist = 1113006
+	// CCErrCoreServiceDefaultModuleNotExist Business [%#v] default module does not exist
+	CCErrCoreServiceDefaultModuleNotExist = 1113007
+	// CCErrCoreServiceModuleNotDefaultModuleErr   businessID [%d] of moduleID[%d] not default module
+	CCErrCoreServiceModuleNotDefaultModuleErr = 1113008
+	// CCErrCoreServiceTransferHostModuleErr   transfer module host config error. error detail in return data
+	CCErrCoreServiceTransferHostModuleErr = 1113009
+	// CCErrCoreServiceEventPushEventFailed failed to sent event
+	CCErrCoreServiceEventPushEventFailed = 1113010
 
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900
