@@ -13,6 +13,7 @@
 package extensions
 
 import (
+	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
@@ -39,7 +40,7 @@ func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header
 	if business.IsDefault == 1 {
 		return 0, nil
 	}
-	
+
 	return business.BKAppIDField, nil
 }
 
@@ -74,7 +75,7 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 	if err != nil {
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}
-	
+
 	messages := make([]string, 0)
 	for _, decision := range decisions {
 		if decision.Authorized == false {
@@ -95,4 +96,14 @@ func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.Re
 		}
 	}
 	return nil
+}
+
+// this functions works to parse business id from metadata's label
+// if the business id key is exist in the label, then it will check
+// the value and parse form it. otherwise it will return with 0.
+func extractBusinessID(m metadata.Label) (int64, error) {
+	if _, exist := m[metadata.LabelBusinessID]; exist {
+		return m.Int64(metadata.LabelBusinessID)
+	}
+	return 0, nil
 }
