@@ -121,6 +121,18 @@ func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Hea
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
+func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	processes, err := am.collectProcessesByIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("authorize processes failed, collect process by id failed, id: %+v, err: %+v", ids, err)
+	}
+	
+	return am.AuthorizeByProcesses(ctx, header, action, processes...)
+}
+
 func (am *AuthManager) UpdateRegisteredProcesses(ctx context.Context, header http.Header, processes ...ProcessSimplify) error {
 	if len(processes) == 0 {
 		return nil

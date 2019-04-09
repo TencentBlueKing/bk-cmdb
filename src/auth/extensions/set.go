@@ -112,9 +112,27 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 	return resources
 }
 
+func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+	
+	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("collect set by id failed, err: %+v", err)
+	}
+	return am.AuthorizeBySet(ctx, header, action, sets...)
+}
+
 func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, sets: %+v", sets)
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
 		return nil
 	}
 
@@ -132,6 +150,9 @@ func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, a
 
 func (am *AuthManager) UpdateRegisteredSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
 	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
 		return nil
 	}
 
@@ -157,6 +178,9 @@ func (am *AuthManager) UpdateRegisteredSetByID(ctx context.Context, header http.
 	if len(setIDs) == 0 {
 		return nil
 	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	sets, err := am.collectSetBySetIDs(ctx, header, setIDs...)
 	if err != nil {
@@ -169,6 +193,9 @@ func (am *AuthManager) DeregisterSetByID(ctx context.Context, header http.Header
 	if len(ids) == 0 {
 		return nil
 	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
 	if err != nil {
@@ -179,6 +206,9 @@ func (am *AuthManager) DeregisterSetByID(ctx context.Context, header http.Header
 
 func (am *AuthManager) RegisterSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
 	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
 		return nil
 	}
 
@@ -198,6 +228,9 @@ func (am *AuthManager) RegisterSetByID(ctx context.Context, header http.Header, 
 	if len(setIDs) == 0 {
 		return nil
 	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	sets, err := am.collectSetBySetIDs(ctx, header, setIDs...)
 	if err != nil {
@@ -208,6 +241,9 @@ func (am *AuthManager) RegisterSetByID(ctx context.Context, header http.Header, 
 
 func (am *AuthManager) DeregisterSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
 	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
 		return nil
 	}
 
