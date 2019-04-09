@@ -40,7 +40,6 @@ func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 		categories = append(categories, extensions.AuditCategorySimplify{
 			BKAppIDField:    businessID,
 			BKOpTargetField: object.ObjectID,
-			ModelID:         object.ID,
 		})
 	}
 	if businessID != 0 {
@@ -53,7 +52,6 @@ func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 			categories = append(categories, extensions.AuditCategorySimplify{
 				BKAppIDField:    businessID,
 				BKOpTargetField: object.ObjectID,
-				ModelID:         object.ID,
 			})
 		}
 	}
@@ -82,5 +80,6 @@ func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync audit categories for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := true
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

@@ -152,7 +152,16 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, pathParams("flag"))
 	}
 
-	return nil, s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
+	if err != nil {
+		blog.Errorf("UpdateBusinessStatus failed, run update failed, err: %+v", err)
+		return nil, err
+	}
+	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
+		blog.Errorf("UpdateBusinessStatus failed, update register business info failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
+	return nil, nil
 }
 
 // SearchBusiness search the business by condition

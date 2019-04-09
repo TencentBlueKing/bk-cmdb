@@ -57,5 +57,6 @@ func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync module for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := "module"
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
