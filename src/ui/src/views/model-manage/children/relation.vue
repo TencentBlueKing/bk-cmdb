@@ -212,6 +212,7 @@
                         await this.deleteObjectAssociation({
                             id: relation.id,
                             config: {
+                                data: this.$injectMetadata({}, { inject: this.isInjectable }),
                                 requestId: 'deleteObjectAssociation'
                             }
                         }).then(() => {
