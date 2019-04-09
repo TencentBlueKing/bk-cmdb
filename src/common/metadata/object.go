@@ -55,7 +55,7 @@ type Object struct {
 
 // GetDefaultInstPropertyName get default inst
 func (o *Object) GetDefaultInstPropertyName() string {
-	return o.ObjectID
+	return common.DefaultInstName
 }
 
 // GetInstIDFieldName get instid filed
