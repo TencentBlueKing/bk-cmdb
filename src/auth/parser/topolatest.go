@@ -746,38 +746,18 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	// find object instance fully topology operation.
 	if ps.hitRegexp(findObjectInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("find object instance topology, but got invalid url")
+			ps.err = errors.New("find host snapshot details query, but got invalid uri")
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
-		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get object id in metadata failed, err: %v", err)
-			return ps
-		}
-
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get instance id %s", ps.RequestCtx.Elements[7])
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
+			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstanceTopology,
-					Action:     meta.Find,
-					InstanceID: instID,
-				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
+					Type:   meta.HostInstance,
+					Action:      meta.SkipAction,
 				},
 			},
 		}
-
 		return ps
 	}
 
