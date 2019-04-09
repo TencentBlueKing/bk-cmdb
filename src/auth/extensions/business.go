@@ -129,6 +129,10 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -142,6 +146,10 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
@@ -150,6 +158,10 @@ func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
@@ -158,6 +170,10 @@ func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister businesses failed, get businesses by id failed, err: %+v", err)
@@ -166,6 +182,10 @@ func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -173,6 +193,10 @@ func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if len(businessIDs) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)
@@ -181,6 +205,10 @@ func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -188,6 +216,10 @@ func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if len(businessIDs) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)
