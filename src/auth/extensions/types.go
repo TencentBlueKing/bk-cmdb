@@ -29,6 +29,7 @@ type AuthManager struct {
 	RegisterModelUniqueEnabled    bool
 	RegisterModuleEnabled    bool
 	RegisterSetEnabled    bool
+	RegisterAuditCategoryEnabled    bool
 	SkipReadAuthorization         bool
 }
 
@@ -41,6 +42,7 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		RegisterModuleEnabled:         false,
 		RegisterSetEnabled:            false,
 		SkipReadAuthorization:         true,
+		RegisterAuditCategoryEnabled:  false,
 	}
 }
 

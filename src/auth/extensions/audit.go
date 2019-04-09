@@ -202,3 +202,15 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 	blog.V(5).Infof("MakeAuthorizedAuditListCondition result: %+v", cond)
 	return cond, hasAuthorization, nil
 }
+
+func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Header, businessID int64) error {
+	resource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Action:     meta.Find,
+			Type:       meta.AuditLog,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+		BusinessID:      businessID,
+	}
+	return am.authorize(ctx, header, businessID, resource)
+}
