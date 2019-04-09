@@ -147,7 +147,21 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
-
+	
+	// filter out SkipAction, which set by api server to skip authorization
+	noSkipResources := make([]meta.ResourceAttribute, 0)
+	for _, resource := range a.Resources {
+		if resource.Action == meta.SkipAction {
+			continue
+		}
+		noSkipResources = append(noSkipResources, resource)
+	}
+	a.Resources = noSkipResources
+	if len(noSkipResources) == 0 {
+		blog.V(5).Infof("Authorize skip. auth attribute: %+v", a)
+		return meta.Decision{Authorized: true}, nil
+	}
+	
 	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
 	noAuth := make([]string, 0)
 	for i, item := range batchresult {
