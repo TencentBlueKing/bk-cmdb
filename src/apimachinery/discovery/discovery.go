@@ -59,7 +59,7 @@ func NewDiscoveryInterface(client *zk.ZkClient) (DiscoveryInterface, error) {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path)
+		svr, err := newServerDiscover(disc, path, component)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
 		}
