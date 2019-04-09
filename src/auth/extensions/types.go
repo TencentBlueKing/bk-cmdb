@@ -27,6 +27,9 @@ type AuthManager struct {
 
 	RegisterModelAttributeEnabled bool
 	RegisterModelUniqueEnabled    bool
+	RegisterModuleEnabled    bool
+	RegisterSetEnabled    bool
+	RegisterAuditCategoryEnabled    bool
 	SkipReadAuthorization         bool
 }
 
@@ -36,7 +39,10 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface, Authorize auth.Au
 		Authorize:                     Authorize,
 		RegisterModelAttributeEnabled: false,
 		RegisterModelUniqueEnabled:    false,
+		RegisterModuleEnabled:         false,
+		RegisterSetEnabled:            false,
 		SkipReadAuthorization:         true,
+		RegisterAuditCategoryEnabled:  false,
 	}
 }
 
@@ -189,7 +195,6 @@ func (is *PlatSimplify) Parse(data mapstr.MapStr) (*PlatSimplify, error) {
 type AuditCategorySimplify struct {
 	BKAppIDField    int64  `field:"bk_biz_id"`
 	BKOpTargetField string `field:"op_target"`
-	ModelID         int64
 }
 
 func (is *AuditCategorySimplify) Parse(data mapstr.MapStr) (*AuditCategorySimplify, error) {

@@ -181,6 +181,18 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 	return resources, nil
 }
 
+func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.Header, action meta.Action, objID string, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	
+	instances, err := am.collectInstancesByRawIDs(ctx,header, objID, ids...)
+	if err != nil {
+		return fmt.Errorf("collect instance of model: %s by id %+v failed, err: %+v", objID, ids, err)
+	}
+	return am.AuthorizeByInstances(ctx, header, action, instances...)
+}
+
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, instances: %+v", instances)

@@ -105,7 +105,7 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 
 	// job of synchronize business scope resources to iam
 	// resourceTypes := []meta.ResourceType{meta.HostResource, meta.SetResource, meta.ModuleResource, meta.ModelResource, meta.ProcessResource, meta.DynamicGroupResource, meta.AuditCategory}
-	resourceTypes := []meta.ResourceType{meta.AuditCategory}
+	resourceTypes := []meta.ResourceType{}
 	for _, resourceType := range resourceTypes {
 		for _, businessSimplify := range businessList {
 			jobs = append(jobs, meta.WorkRequest{
