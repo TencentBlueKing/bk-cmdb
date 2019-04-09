@@ -64,7 +64,7 @@
                     </template>
                     <template v-if="isShowOperationButton">
                         <label class="label-btn"
-                            v-if="!isMainLine"
+                            v-if="!isMainLine && $isAuthorized(OPERATION.U_MODEL)"
                             v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
@@ -150,7 +150,6 @@
             isShowOperationButton () {
                 return (this.isAdminView || !this.isPublicModel)
                     && !this.activeModel['ispre']
-                    && this.$isAuthorized(OPERATION.U_MODEL)
             },
             isReadOnly () {
                 if (this.activeModel) {
