@@ -272,7 +272,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveHostToModule:
-		return ModuleTransfer, nil
+		return Edit, nil
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
