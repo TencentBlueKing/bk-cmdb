@@ -191,7 +191,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
 		r.Basic.Type == meta.ModelUnique ||
 		r.Basic.Type == meta.ModelAttribute {
-		if r.Action == meta.Delete || r.Action == meta.Update {
+		if r.Action == meta.Delete || r.Action == meta.Update || r.Action == meta.Create {
 			return Edit, nil
 		}
 	}
