@@ -159,7 +159,13 @@
             },
             isEditable () {
                 const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
-                return updateAuth && !this.isReadOnly && this.isPublicModel
+                if (!updateAuth) {
+                    return false
+                }
+                if (this.isAdminView) {
+                    return !this.activeModel.ispre
+                }
+                return !this.isReadOnly && !this.isPublicModel
             },
             modelParams () {
                 const {
