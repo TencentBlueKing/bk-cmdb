@@ -480,7 +480,7 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-// AssignHostToApp transfer resource host to  idle module
+// AssignHostToApp transfer host from resource pool to idle module
 func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
@@ -561,10 +561,24 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 
 	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
 	audit.WithPrevious(srvData.ctx)
+	
+	// auth: check target business update priority
+	if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, conf.ApplicationID); err != nil {
+		blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v", conf.ApplicationID, err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		return
+	}
+
+	// auth: check host transfer priority
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
+		blog.Errorf("AssignHostToApp failed, authorize on host transfer failed, hosts: %+v, err: %v", conf.HostID, err)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		return
+	}
 
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("AssignHostToApp failed, deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
