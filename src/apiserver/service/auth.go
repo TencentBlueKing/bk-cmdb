@@ -90,6 +90,11 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 		return
 	}
 
+	if len(appIDList) == 0 {
+		resp.WriteEntity(metadata.NewSuccessResp(metadata.InstResult{Info: make([]mapstr.MapStr, 0)}))
+		return
+	}
+
 	input := params.SearchParams{
 		Condition: mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{"$in": appIDList}},
 	}
