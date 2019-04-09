@@ -1,10 +1,11 @@
 <template>
     <div class="audit-wrapper">
-        <div class="title-content clearfix">
-            <div class="group-content group-content-business">
-                <div class="selector-content selector-content-business">
+        <div class="title-content">
+            <div class="group-content" v-if="isAdminView">
+                <span class="title-name">{{$t('Common["业务"]')}}</span>
+                <div class="selector-content">
                     <bk-selector
-                        :list="business"
+                        :list="authorizedBusiness"
                         :selected.sync="filter.bizId"
                         :searchable="true"
                         :allow-clear="true"
@@ -14,15 +15,15 @@
                     ></bk-selector>
                 </div>
             </div>
-            <div class="group-content group-content-ip">
+            <div class="group-content">
                 <span class="title-name">IP</span>
-                <div class="selector-content selector-content-ip">
+                <div class="selector-content">
                     <input class="cmdb-form-input" type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
                 </div>
             </div>
-            <div class="group-content group-content-classify">
+            <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
-                <div class="selector-content selector-content-classify">
+                <div class="selector-content">
                     <bk-selector
                         :list="filterClassifications"
                         :selected.sync="filter.classify"
@@ -31,22 +32,22 @@
                     ></bk-selector>
                 </div>
             </div>
-            <div class="group-content group-content-type">
+            <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
-                <div class="selector-content selector-content-type">
+                <div class="selector-content">
                     <bk-selector
                         :list="operateTypeList"
                         :selected.sync="filter.bkOpType"
                     ></bk-selector>
                 </div>
             </div>
-            <div class="group-content group-content-time">
+            <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit[\'时间\']')}}</span>
-                <div class="selector-content selector-content-time">
+                <div class="selector-content date-range-content">
                     <cmdb-form-date-range class="date-range" position="left" v-model="filter.bkCreateTime"></cmdb-form-date-range>
                 </div>
             </div>
-            <div class="group-content group-content-btn fr">
+            <div class="group-content button-group">
                 <bk-button type="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
             </div>
         </div>
@@ -143,8 +144,10 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             ...mapGetters('objectBiz', [
-                'business'
+                'authorizedBusiness',
+                'bizId'
             ]),
             ...mapGetters('objectModelClassify', ['classifications']),
             filterClassifications () {
@@ -195,7 +198,7 @@
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.setParams(params.condition, 'bk_biz_id', this.filter.bizId)
+                this.setParams(params.condition, 'bk_biz_id', this.isAdminView ? this.filter.bizId : this.bizId)
                 this.setParams(params.condition, 'op_type', this.filter.bkOpType)
                 this.setParams(params.condition, 'op_target', this.filter.classify)
                 if (this.filter.bkIP) { // 将IP分隔成查询数组
@@ -212,7 +215,7 @@
             /* 业务ID与Name的mapping */
             applicationMap () {
                 const applicationMap = {}
-                this.business.forEach((application, index) => {
+                this.authorizedBusiness.forEach((application, index) => {
                     applicationMap[application['bk_biz_id']] = application['bk_biz_name']
                 })
                 return applicationMap
@@ -289,45 +292,26 @@
 
 <style lang="scss" scoped>
     .title-content{
+        padding: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-direction: row;
+        flex-wrap: nowrap;
         .group-content{
-            float: left;
-            margin: 0 1.9% 20px 0;
+            flex: 1 1;
+            margin: 0 1.5% 0 0;
             white-space: nowrap;
             font-size: 0;
-            &.group-content-business{
-                width: calc(120 / (1020 - 348) * (100% - 348px));
-                .selector-content-business{
-                    width: 100%;
-                }
+            &.button-group {
+                text-align: right;
+                flex: 0 0 90px;
+                margin: 0;
             }
-            &.group-content-ip{
-                width: calc(145 / (1020 - 348) * (100% - 348px));
-                .selector-content-ip{
-                    width: calc(122 / 145 * 100%);
-                }
-            }
-            &.group-content-classify{
-                width: calc(165 / (1020 - 348) * (100% - 348px));
-                .selector-content-classify{
-                    width: calc(127 / 165 * 100%);
-                }
-            }
-            &.group-content-type{
-                width: calc(145 / (1020 - 348) * (100% - 348px));
-                .selector-content-type{
-                    width: calc(107 / 145 * 100%);
-                }
-            }
-            &.group-content-time{
-                width: 280px;
-                margin-right: 0;
-                .date-range{
-                    width: 240px;
-                }
-            }
-            &.group-content-btn{
-                width: auto;
-                margin-right: 0;
+            .selector-content {
+                display: inline-block;
+                vertical-align: middle;
+                width: calc(100% - 40px);
             }
             .search-btn{
                 padding: 0 19px;
@@ -337,22 +321,15 @@
             }
             .title-name{
                 display: inline-block;
+                vertical-align: middle;
+                width: 40px;
                 font-size: 14px;
-                line-height: 36px;
-                padding-right: 10px;
-                vertical-align: top;
+                padding-right: 5px;
             }
-            .selector-content{
-                display: inline-block;
-                font-size: 14px;
-                position: relative;
-            }
-            &:nth-child(2){
-                input{
-                    height: 36px;
-                    line-height: 36px;
+            .date-range-content {
+                width: calc(100% - 40px);
+                .date-range {
                     width: 100%;
-                    padding: 0 6px;
                 }
             }
         }
