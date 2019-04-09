@@ -134,6 +134,7 @@ type TopoOperation interface {
 
 // HostOperation methods
 type HostOperation interface {
+	TransferHostToDefaultModule(ctx ContextParams, input *metadata.TransferHostToDefaultModuleConfig) ([]metadata.ExceptionResult, error)
 }
 
 // AssociationOperation association methods
@@ -150,6 +151,7 @@ type Core interface {
 	AssociationOperation() AssociationOperation
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
+	HostOperation() HostOperation
 }
 
 type core struct {
@@ -158,16 +160,18 @@ type core struct {
 	associaction    AssociationOperation
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
+	host            HostOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
 		associaction:    association,
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
+		host:            host,
 	}
 }
 
@@ -189,4 +193,8 @@ func (m *core) TopoOperation() TopoOperation {
 
 func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
 	return m.dataSynchronize
+}
+
+func (m *core) HostOperation() HostOperation {
+	return m.host
 }

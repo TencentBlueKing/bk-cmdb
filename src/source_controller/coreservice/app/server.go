@@ -77,12 +77,19 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	var configReady bool
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
+		// redis not found
+		if "" == coreSvr.Config.Redis.Address {
+			time.Sleep(time.Second)
+			continue
+		}
+		// Mongo not found
 		if "" == coreSvr.Config.Mongo.Address {
 			time.Sleep(time.Second)
-		} else {
-			configReady = true
-			break
+			continue
 		}
+		configReady = true
+		break
+
 	}
 
 	if false == configReady {
