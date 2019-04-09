@@ -119,6 +119,9 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 	if len(ids) == 0 {
 		return nil
 	}
+	if am.RegisterModuleEnabled == false {
+		return nil
+	}
 	
 	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
 	if err != nil {
@@ -128,6 +131,13 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
+	if am.RegisterModuleEnabled == false {
+		return nil
+	}
+	
+	if len(modules) == 0 {
+		return nil
+	}
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, modules: %+v", modules)
 		return nil
@@ -147,6 +157,9 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 
 func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
 	if len(modules) == 0 {
+		return nil
+	}
+	if am.RegisterModuleEnabled == false {
 		return nil
 	}
 
@@ -172,6 +185,9 @@ func (am *AuthManager) UpdateRegisteredModuleByID(ctx context.Context, header ht
 	if len(moduleIDs) == 0 {
 		return nil
 	}
+	if am.RegisterModuleEnabled == false {
+		return nil
+	}
 
 	modules, err := am.collectModuleByModuleIDs(ctx, header, moduleIDs...)
 	if err != nil {
@@ -184,6 +200,9 @@ func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Hea
 	if len(ids) == 0 {
 		return nil
 	}
+	if am.RegisterModuleEnabled == false {
+		return nil
+	}
 
 	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
 	if err != nil {
@@ -194,6 +213,9 @@ func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Hea
 
 func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
 	if len(modules) == 0 {
+		return nil
+	}
+	if am.RegisterModuleEnabled == false {
 		return nil
 	}
 
@@ -213,6 +235,9 @@ func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Heade
 	if len(moduleIDs) == 0 {
 		return nil
 	}
+	if am.RegisterModuleEnabled == false {
+		return nil
+	}
 
 	modules, err := am.collectModuleByModuleIDs(ctx, header, moduleIDs...)
 	if err != nil {
@@ -223,6 +248,9 @@ func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Heade
 
 func (am *AuthManager) DeregisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
 	if len(modules) == 0 {
+		return nil
+	}
+	if am.RegisterModuleEnabled == false {
 		return nil
 	}
 

@@ -330,11 +330,11 @@ func (ps *parseStream) host() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveHostFromModuleToResPool,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -364,21 +364,14 @@ func (ps *parseStream) host() *parseStream {
 
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
+			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveResPoolHostToBizIdleModule,
+					Action:      meta.SkipAction,
 				},
 			},
 		}
-
 		return ps
 	}
 
