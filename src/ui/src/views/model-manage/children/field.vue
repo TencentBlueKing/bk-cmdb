@@ -192,6 +192,9 @@
                         await this.deleteObjectAttribute({
                             id: field.id,
                             config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: this.isInjectable
+                                }),
                                 requestId: 'deleteObjectAttribute'
                             }
                         }).then(() => {
