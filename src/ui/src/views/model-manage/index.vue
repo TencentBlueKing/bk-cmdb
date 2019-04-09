@@ -30,7 +30,21 @@
                     @click="modelType = 'enable'">
                     {{$t('ModelManagement["启用模型"]')}}
                 </bk-button>
+                <bk-tooltip
+                    :content="$t('ModelManagement[\'停用模型提示\']')"
+                    placenment="bottom"
+                    v-if="!disabledClassifications.length">
+                    <bk-button class="model-type-button disabled"
+                        v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
+                        size="mini"
+                        :disabled="!disabledClassifications.length"
+                        :type="modelType === 'disabled' ? 'primary' : 'default'"
+                        @click="modelType = 'disabled'">
+                        {{$t('ModelManagement["停用模型"]')}}
+                    </bk-button>
+                </bk-tooltip>
                 <bk-button class="model-type-button disabled"
+                    v-else
                     size="mini"
                     :disabled="!disabledClassifications.length"
                     :type="modelType === 'disabled' ? 'primary' : 'default'"
