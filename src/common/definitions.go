@@ -629,6 +629,8 @@ const DefaultAppName string = "资源池"
 
 const DefaultCloudName string = "default area"
 
+const DefaultInstName string = "实例名"
+
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 

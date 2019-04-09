@@ -43,6 +43,27 @@ func (ps *parseStream) getModel(cond mapstr.MapStr) ([]metadata.Object, error) {
 	return models, nil
 }
 
+func (ps *parseStream) getModelAttribute(cond mapstr.MapStr) ([]metadata.Attribute, error) {
+	attr, err := ps.engine.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), ps.RequestCtx.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return nil, err
+	}
+
+	if !attr.Result {
+		return nil, errors.New(attr.Code, attr.ErrMsg)
+	}
+	if len(attr.Data.Info) <= 0 {
+		return nil, fmt.Errorf("attribute [%+v] not found", cond)
+	}
+
+	attrs := []metadata.Attribute{}
+	for _, info := range attr.Data.Info {
+		attrs = append(attrs, info)
+	}
+	return attrs, nil
+}
+
 func (ps *parseStream) getCls(clsID string) (metadata.Classification, error) {
 	model, err := ps.engine.CoreAPI.CoreService().Model().ReadModelClassification(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKClassificationIDField: clsID}})

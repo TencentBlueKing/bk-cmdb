@@ -746,7 +746,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	// find object instance fully topology operation.
 	if ps.hitRegexp(findObjectInstanceTopologyLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 8 {
-			ps.err = errors.New("find host snapshot details query, but got invalid uri")
+			ps.err = errors.New("find object instance topology, but got invalid url")
 			return ps
 		}
 
@@ -1329,16 +1329,21 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
-		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: modelEn})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
 			return ps
 		}
 
@@ -1373,6 +1378,18 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
@@ -1385,6 +1402,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
