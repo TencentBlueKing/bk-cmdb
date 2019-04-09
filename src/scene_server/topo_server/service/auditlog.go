@@ -71,19 +71,27 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		businessID = id
 	}
 
-	authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
-	if err != nil {
-		blog.Errorf("make audit query condition from auth failed, %+v", err)
-		return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
-	}
-	if hasAuthorization == false {
-		blog.Errorf("user %+v has no authorization on audit", params.User)
-		return nil, nil
-	}
+	// switch between tow different control mechanism
+	if s.AuthManager.RegisterAuditCategoryEnabled == false {
+		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
+			blog.Errorf("AuditQuery failed, authorize failed, err: %+v", err)
+			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		}
+	} else {
+		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
+		if err != nil {
+			blog.Errorf("make audit query condition from auth failed, %+v", err)
+			return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
+		}
+		if hasAuthorization == false {
+			blog.Errorf("user %+v has no authorization on audit", params.User)
+			return nil, nil
+		}
 
-	query.Condition.(map[string]interface{})["$or"] = authCondition
-	blog.V(5).Infof("auth condition is: %+v", authCondition)
-	blog.InfoJSON("MakeAuthorizedAuditListCondition result: %s", authCondition)
+		query.Condition.(map[string]interface{})["$or"] = authCondition
+		blog.V(5).Infof("auth condition is: %+v", authCondition)
+		blog.InfoJSON("MakeAuthorizedAuditListCondition result: %s", authCondition)
+	}
 
 	blog.InfoJSON("AuditOperation parameter: %s", query)
 	return s.Core.AuditOperation().Query(params, query)
