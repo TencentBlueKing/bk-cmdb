@@ -162,6 +162,9 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 
 // AuthorizeByObjectID authorize model by id
 func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objIDs ...string) error {
+	if len(objIDs) == 0 {
+		return nil
+	}
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, models: %+v", objIDs)
 		return nil
@@ -221,6 +224,9 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if len(objects) == 0 {
+		return nil
+	}
 	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
@@ -233,6 +239,9 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 }
 
 func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if len(objects) == 0 {
+		return nil
+	}
 	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
@@ -244,16 +253,22 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	return nil
 }
 func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	ids = util.IntArrayUnique(ids)
-	
+
 	objects, err := am.collectObjectsByRawIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("get model by id failed, id: %+v, err: %+v", ids, err)
 	}
-	
+
 	return am.UpdateRegisteredObjects(ctx, header, objects...)
 }
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if len(objects) == 0 {
+		return nil
+	}
 	resources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
@@ -270,6 +285,9 @@ func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, objectIDs ...string) error {
+	if len(objectIDs) == 0 {
+		return nil
+	}
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("deregister mainline model failed, get model by id failed, err: %+v", err)

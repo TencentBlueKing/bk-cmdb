@@ -121,7 +121,6 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 		return nil
 	}
 
-
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)
 	if err != nil {
@@ -135,6 +134,10 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if len(modules) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)
 	if err != nil {
@@ -154,6 +157,10 @@ func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) UpdateRegisteredModuleByID(ctx context.Context, header http.Header, moduleIDs ...int64) error {
+	if len(moduleIDs) == 0 {
+		return nil
+	}
+
 	modules, err := am.collectModuleByModuleIDs(ctx, header, moduleIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
@@ -162,6 +169,10 @@ func (am *AuthManager) UpdateRegisteredModuleByID(ctx context.Context, header ht
 }
 
 func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister modules failed, get modules by id failed, err: %+v", err)
@@ -170,6 +181,9 @@ func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if len(modules) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)
@@ -184,6 +198,10 @@ func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, m
 }
 
 func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Header, moduleIDs ...int64) error {
+	if len(moduleIDs) == 0 {
+		return nil
+	}
+
 	modules, err := am.collectModuleByModuleIDs(ctx, header, moduleIDs...)
 	if err != nil {
 		return fmt.Errorf("register module failed, get modules by id failed, err: %+v", err)
@@ -192,6 +210,9 @@ func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) DeregisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if len(modules) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)

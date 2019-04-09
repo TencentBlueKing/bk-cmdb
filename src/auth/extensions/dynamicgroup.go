@@ -121,6 +121,10 @@ func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if len(dynamicGroups) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
 	if err != nil {
@@ -140,6 +144,10 @@ func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header
 }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	dynamicGroups, err := am.collectDynamicGroupByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered dynamic group failed, get dynamic group by id failed, err: %+v", err)
@@ -148,6 +156,9 @@ func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, hea
 }
 
 func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if len(dynamicGroups) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
@@ -162,6 +173,9 @@ func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	dynamicGroups, err := am.collectDynamicGroupByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered dynamic group failed, get dynamic group by id failed, err: %+v", err)
@@ -170,6 +184,9 @@ func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if len(dynamicGroups) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
@@ -184,6 +201,9 @@ func (am *AuthManager) DeregisterDynamicGroups(ctx context.Context, header http.
 }
 
 func (am *AuthManager) DeregisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if len(ids) == 0 {
+		return nil
+	}
 	dynamicGroups, err := am.collectDynamicGroupByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered dynamic group failed, get dynamic group by id failed, err: %+v", err)

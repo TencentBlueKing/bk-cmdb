@@ -113,7 +113,7 @@ func (am *AuthManager) ExtractBusinessIDFromAuditCategories(categories ...AuditC
 }
 
 func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, header http.Header, action meta.Action, businessID int64, categories ...AuditCategorySimplify) ([]meta.ResourceAttribute, error) {
-	// step2 prepare resource layers for authorization
+	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, category := range categories {
 		// instance
@@ -136,6 +136,10 @@ func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, heade
 }
 
 func (am *AuthManager) RegisterAuditCategories(ctx context.Context, header http.Header, categories ...AuditCategorySimplify) error {
+	if len(categories) == 0 {
+		return nil
+	}
+
 	businessID, err := am.ExtractBusinessIDFromAuditCategories(categories...)
 	if err != nil {
 		return fmt.Errorf("extract business id from audit categories failed, err: %+v", err)
