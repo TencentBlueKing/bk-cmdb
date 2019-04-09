@@ -115,6 +115,18 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 	return resources
 }
 
+func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	
+	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
+	}
+	return am.AuthorizeByModule(ctx, header, action, modules...)
+}
+
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, modules: %+v", modules)
