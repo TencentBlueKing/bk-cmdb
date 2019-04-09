@@ -15,7 +15,7 @@ package service
 import (
 	"context"
 	"fmt"
-	
+
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -80,11 +80,11 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 		blog.Errorf("user %+v has no authorization on audit", params.User)
 		return nil, nil
 	}
-	
+
 	query.Condition.(map[string]interface{})["$or"] = authCondition
 	blog.V(5).Infof("auth condition is: %+v", authCondition)
 	blog.InfoJSON("MakeAuthorizedAuditListCondition result: %s", authCondition)
-	
+
 	blog.InfoJSON("AuditOperation parameter: %s", query)
 	return s.Core.AuditOperation().Query(params, query)
 }
@@ -103,13 +103,13 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
-	
+
 	queryCondition := query.Condition
 	if nil == queryCondition {
 		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
-	} 
-	
+	}
+
 	cond := queryCondition.(map[string]interface{})
 	times, ok := cond[common.BKOpTimeField].([]interface{})
 	if ok {
@@ -173,7 +173,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		blog.Error("authorization on instance of model %s failed, err: %+v", objectID, err)
 		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
-	
+
 	blog.InfoJSON("AuditOperation parameter: %s", query)
 	return s.Core.AuditOperation().Query(params, query)
 }

@@ -47,5 +47,6 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync host for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
