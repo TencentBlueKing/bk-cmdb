@@ -88,6 +88,10 @@ func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
+	if len(plats) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
 
@@ -101,6 +105,10 @@ func (am *AuthManager) UpdateRegisteredPlat(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
@@ -109,6 +117,10 @@ func (am *AuthManager) UpdateRegisteredPlatByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
@@ -117,6 +129,10 @@ func (am *AuthManager) UpdateRegisteredPlatByRawID(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterPlatByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	plats, err := am.collectPlatByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister plats failed, get plats by id failed, err: %+v", err)
@@ -125,6 +141,10 @@ func (am *AuthManager) DeregisterPlatByRawID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
+	if len(plats) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
 
@@ -132,6 +152,10 @@ func (am *AuthManager) RegisterPlat(ctx context.Context, header http.Header, pla
 }
 
 func (am *AuthManager) RegisterPlatByID(ctx context.Context, header http.Header, platIDs ...int64) error {
+	if len(platIDs) == 0 {
+		return nil
+	}
+
 	plats, err := am.collectPlatByIDs(ctx, header, platIDs...)
 	if err != nil {
 		return fmt.Errorf("get plats by id failed, err: %+v", err)
@@ -140,6 +164,10 @@ func (am *AuthManager) RegisterPlatByID(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, plats ...PlatSimplify) error {
+	if len(plats) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.makeResourcesByPlat(header, meta.EmptyAction, plats...)
 
@@ -147,6 +175,10 @@ func (am *AuthManager) DeregisterPlat(ctx context.Context, header http.Header, p
 }
 
 func (am *AuthManager) DeregisterPlatByID(ctx context.Context, header http.Header, platIDs ...int64) error {
+	if len(platIDs) == 0 {
+		return nil
+	}
+
 	plats, err := am.collectPlatByIDs(ctx, header, platIDs...)
 	if err != nil {
 		return fmt.Errorf("get plats by id failed, err: %+v", err)

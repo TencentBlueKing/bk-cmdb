@@ -136,6 +136,10 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 }
 
 func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if len(attributeGroups) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -149,6 +153,10 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if len(attributeGroups) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -162,6 +170,10 @@ func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, header http.Header, groupIDs ...int64) error {
+	if len(groupIDs) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -191,6 +203,10 @@ func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if len(attributeGroups) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -203,6 +219,10 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if len(attributeIDs) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}

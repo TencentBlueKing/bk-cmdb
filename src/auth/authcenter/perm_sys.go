@@ -188,11 +188,6 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "管理页面入口",
 				IsRelatedResource: false,
 			},
-			{
-				ActionID:          ModelTopologyView,
-				ActionName:        "模型拓扑视图",
-				IsRelatedResource: false,
-			},
 		},
 	},
 	{

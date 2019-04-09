@@ -132,6 +132,10 @@ func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header htt
 }
 
 func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if len(classifications) == 0 {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
 	if err != nil {
@@ -151,6 +155,10 @@ func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, header http.Header, classificationIDs ...string) error {
+	if len(classificationIDs) == 0 {
+		return nil
+	}
+
 	classifications, err := am.collectClassificationsByClassificationIDs(ctx, header, classificationIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
@@ -159,6 +167,10 @@ func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, h
 }
 
 func (am *AuthManager) UpdateRegisteredClassificationByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	classifications, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
@@ -167,6 +179,10 @@ func (am *AuthManager) UpdateRegisteredClassificationByRawID(ctx context.Context
 }
 
 func (am *AuthManager) DeregisterClassificationByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	classifications, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister classifications failed, get classfication by id failed, err: %+v", err)
@@ -175,6 +191,9 @@ func (am *AuthManager) DeregisterClassificationByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) RegisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if len(classifications) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
@@ -189,6 +208,9 @@ func (am *AuthManager) RegisterClassification(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if len(classifications) == 0 {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromClassifications(classifications...)

@@ -112,12 +112,29 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 	return resources
 }
 
+func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+	
+	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("collect set by id failed, err: %+v", err)
+	}
+	return am.AuthorizeBySet(ctx, header, action, sets...)
+}
+
 func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, sets: %+v", sets)
 		return nil
 	}
-
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromSets(sets...)
@@ -132,6 +149,13 @@ func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, a
 }
 
 func (am *AuthManager) UpdateRegisteredSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
+	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromSets(sets...)
 	if err != nil {
@@ -151,6 +175,13 @@ func (am *AuthManager) UpdateRegisteredSet(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) UpdateRegisteredSetByID(ctx context.Context, header http.Header, setIDs ...int64) error {
+	if len(setIDs) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+
 	sets, err := am.collectSetBySetIDs(ctx, header, setIDs...)
 	if err != nil {
 		return fmt.Errorf("update registered sets failed, get sets by id failed, err: %+v", err)
@@ -159,6 +190,13 @@ func (am *AuthManager) UpdateRegisteredSetByID(ctx context.Context, header http.
 }
 
 func (am *AuthManager) DeregisterSetByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+
 	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister sets failed, get sets by id failed, err: %+v", err)
@@ -167,6 +205,12 @@ func (am *AuthManager) DeregisterSetByID(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) RegisterSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
+	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromSets(sets...)
@@ -181,6 +225,13 @@ func (am *AuthManager) RegisterSet(ctx context.Context, header http.Header, sets
 }
 
 func (am *AuthManager) RegisterSetByID(ctx context.Context, header http.Header, setIDs ...int64) error {
+	if len(setIDs) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
+
 	sets, err := am.collectSetBySetIDs(ctx, header, setIDs...)
 	if err != nil {
 		return fmt.Errorf("register set failed, get sets by id failed, err: %+v", err)
@@ -189,6 +240,12 @@ func (am *AuthManager) RegisterSetByID(ctx context.Context, header http.Header, 
 }
 
 func (am *AuthManager) DeregisterSet(ctx context.Context, header http.Header, sets ...SetSimplify) error {
+	if len(sets) == 0 {
+		return nil
+	}
+	if am.RegisterSetEnabled == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromSets(sets...)

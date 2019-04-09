@@ -149,7 +149,7 @@ func instNotChange(content interface{}) bool {
 	delete(curData, common.LastTimeField)
 	bl := cmp.Equal(preData, curData)
 	if bl {
-		blog.V(5).Info("inst data same, %#v", content)
+		blog.V(5).Infof("inst data same, %+v", content)
 	}
 	return bl
 }
