@@ -43,7 +43,7 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 	return realResources, nil
 }
 
-func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute) error {
+func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
 	iamResources, err := ih.getIamResources(taskName, ra, iamIDPrefix)
 	if err != nil {
 		blog.Errorf("task: %s, get iam resources failed, err: %+v", taskName, err)
@@ -97,6 +97,10 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 		}
 	}
 
+	if skipDeregister == true {
+		return nil
+	}
+	
 	// deregister resource id that hasn't been hit
 	if len(resources) == 0 {
 		blog.Info("cmdb resource not found of current category, skip deregister resource for safety.")

@@ -37,13 +37,6 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 		blog.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
 		return nil, fmt.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
 	}
-	/*
-		response, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameOperationLog, query)
-		if err != nil {
-			blog.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
-			return nil, fmt.Errorf("get audit log by business %d failed, err: %+v", businessID, err)
-		}
-	*/
 
 	data, err := mapstr.NewFromInterface(response.Data)
 	if nil != err {
@@ -57,7 +50,6 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 	}
 
 	categories := make([]AuditCategorySimplify, 0)
-	modelIDs := make([]string, 0)
 	modelIDFound := map[string]bool{}
 	for _, item := range auditLogs {
 		category := &AuditCategorySimplify{}
@@ -67,37 +59,13 @@ func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, hea
 			continue
 		}
 		if _, exist := modelIDFound[category.BKOpTargetField]; exist == false {
-			modelIDs = append(modelIDs, category.BKOpTargetField)
 			categories = append(categories, *category)
 			modelIDFound[category.BKOpTargetField] = true
 		}
 	}
-	blog.V(5).Infof("audit log are belong to model: %+v", modelIDs)
-	modelIDs = util.StrArrayUnique(modelIDs)
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, modelIDs...)
-	if err != nil {
-		blog.Errorf("collectObjectsByObjectIDs failed, model: %+v, err: %+v", modelIDs, err)
-		return nil, fmt.Errorf("get audit category related models failed, err: %+v", err)
-	}
-	objectIDMap := map[string]int64{}
-	for _, object := range objects {
-		objectIDMap[object.ObjectID] = object.ID
-	}
 
-	// invalid categories will be filter out
-	validCategories := make([]AuditCategorySimplify, 0)
-	for _, category := range categories {
-		modelID, existed := objectIDMap[category.BKOpTargetField]
-		if existed == true {
-			category.ModelID = modelID
-			validCategories = append(validCategories, category)
-		} else {
-			blog.Errorf("unexpect audit op_target: %s", category.BKOpTargetField)
-		}
-	}
-
-	blog.V(4).Infof("list audit categories by business %d result: %+v", businessID, validCategories)
-	return validCategories, nil
+	blog.V(4).Infof("list audit categories by business %d result: %+v", businessID, categories)
+	return categories, nil
 }
 
 func (am *AuthManager) ExtractBusinessIDFromAuditCategories(categories ...AuditCategorySimplify) (int64, error) {
@@ -122,7 +90,7 @@ func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, heade
 				Action:     action,
 				Type:       meta.AuditLog,
 				Name:       category.BKOpTargetField,
-				InstanceID: category.ModelID,
+				InstanceIDEx: category.BKOpTargetField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
 			BusinessID:      businessID,
@@ -188,18 +156,14 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 		blog.Infof("get authorized audit by business %d result: %s", businessID, auditList)
 		blog.InfoJSON("get authorized audit by business %s result: %s", businessID, auditList)
 
-		modelIDs := make([]int64, 0)
+		modelIDs := make([]string, 0)
 		for _, authorizedList := range auditList {
 			for _, resourceID := range authorizedList.ResourceIDs {
 				if len(resourceID) == 0 {
 					continue
 				}
 				modelID := resourceID[len(resourceID)-1].ResourceID
-				id, err := util.GetInt64ByInterface(modelID)
-				if err != nil {
-					blog.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-					return nil, false, fmt.Errorf("get authorized audit by business %d failed, err: %+v", businessID, err)
-				}
+				id := util.GetStrByInterface(modelID)
 				modelIDs = append(modelIDs, id)
 			}
 		}
@@ -207,17 +171,7 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 		if len(modelIDs) == 0 {
 			continue
 		}
-		objects, err := am.collectObjectsByRawIDs(ctx, header, modelIDs...)
-		if err != nil {
-			blog.Errorf("get related model with id %+v by authorized audit failed, err: %+v", modelIDs, err)
-			return nil, false, fmt.Errorf("get related model with id %+v by authorized audit failed, err: %+v", modelIDs, err)
-		}
-
-		objectIDs := make([]string, 0)
-		for _, object := range objects {
-			objectIDs = append(objectIDs, object.ObjectID)
-		}
-		authorizedBusinessModelMap[businessID] = objectIDs
+		authorizedBusinessModelMap[businessID] = modelIDs
 	}
 
 	blog.InfoJSON("authorizedBusinessModelMap result: %s", authorizedBusinessModelMap)

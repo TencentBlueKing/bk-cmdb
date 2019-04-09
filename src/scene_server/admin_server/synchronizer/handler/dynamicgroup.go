@@ -52,5 +52,6 @@ func (ih *IAMHandler) HandleDynamicGroupSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync dynamic groups for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

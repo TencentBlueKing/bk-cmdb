@@ -82,5 +82,6 @@ func (ih *IAMHandler) HandleAuditSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync audit categories for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := true
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
