@@ -1,11 +1,8 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 
-/* eslint-disable */
 import {
-    SYSTEM_TOPOLOGY,
     U_MODEL
 } from '@/dictionary/auth'
-/* eslint-enable */
 
 export const OPERATION = {
     U_MODEL
