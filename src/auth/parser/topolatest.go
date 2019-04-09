@@ -752,8 +752,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get object id in metadata failed, err: %v", err)
-			return ps
+			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
 		}
 
 		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
