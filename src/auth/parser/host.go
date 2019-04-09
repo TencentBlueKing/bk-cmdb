@@ -22,7 +22,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userAPI().
 		userCustom().
 		hostFavorite().
-		cloudResourceSync()
+		cloudResourceSync().
+		hostSnapshot()
 
 	return ps
 }
@@ -646,5 +647,33 @@ func (ps *parseStream) cloudResourceSync() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+var(
+	findHostSnapshotAPIRegexp      = regexp.MustCompile(`^/api/v3/hosts/snapshot/[0-9]+/?$`)
+)
+
+func (ps *parseStream) hostSnapshot() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+	
+	if ps.hitRegexp(findHostSnapshotAPIRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("find host snapshot details query, but got invalid uri")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action:      meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }
