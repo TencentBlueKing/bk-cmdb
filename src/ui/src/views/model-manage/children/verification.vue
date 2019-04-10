@@ -146,6 +146,8 @@
                 this.attributeList = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
@@ -185,7 +187,7 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
                     config: {
                         requestId: 'searchObjectUniqueConstraints'
                     }
