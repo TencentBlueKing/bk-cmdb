@@ -90,10 +90,9 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 
 		query.Condition.(map[string]interface{})["$or"] = authCondition
 		blog.V(5).Infof("auth condition is: %+v", authCondition)
-		blog.InfoJSON("MakeAuthorizedAuditListCondition result: %s", authCondition)
 	}
 
-	blog.InfoJSON("AuditOperation parameter: %s", query)
+	blog.V(5).Infof("AuditOperation parameter: %+v", query)
 	return s.Core.AuditOperation().Query(params, query)
 }
 
