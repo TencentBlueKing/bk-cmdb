@@ -7,7 +7,7 @@
             </div>
             <p>{{$t("Common['点击下方按钮申请']")}}</p>
             <div class="btns">
-                <bk-button type="default">
+                <bk-button type="primary" @click="handleApplyPermission">
                     {{$t("Common['申请业务权限']")}}
                 </bk-button>
             </div>
@@ -16,6 +16,22 @@
 </template>
 <script>
     export default {
+        methods: {
+            handleApplyPermission () {
+                const topWindow = window.top
+                const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                const authCenter = window.Site.authCenter || {}
+                if (isPaasConsole) {
+                    topWindow.postMessage(JSON.stringify({
+                        action: 'open_other_app',
+                        app_code: authCenter.appCode,
+                        app_url: 'perm-apply'
+                    }), '*')
+                } else {
+                    window.open(authCenter.url)
+                }
+            }
+        }
     }
 </script>
 

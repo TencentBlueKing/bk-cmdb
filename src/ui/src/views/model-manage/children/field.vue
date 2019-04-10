@@ -23,6 +23,9 @@
                 </span>
                 <span class="field-id">{{item['bk_property_id']}}</span>
             </template>
+            <template slot="bk_property_type" slot-scope="{ item }">
+                <span>{{fieldTypeMap[item['bk_property_type']]}}</span>
+            </template>
             <template slot="isrequired" slot-scope="{ item }">
                 <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
                 <i class="field-required-icon bk-icon icon-close" v-else></i>
@@ -189,6 +192,9 @@
                         await this.deleteObjectAttribute({
                             id: field.id,
                             config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: this.isInjectable
+                                }),
                                 requestId: 'deleteObjectAttribute'
                             }
                         }).then(() => {
