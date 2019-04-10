@@ -290,8 +290,4 @@ type DeleteHostFromBizParameter struct {
 	HostIDArr []int64 `json:"bk_host_ids"`
 }
 
-// OperaterException synchronize result
-type OperaterException struct {
-	BaseResp `json:",inline"`
-	Data     []ExceptionResult `json:"data"`
-}
+
