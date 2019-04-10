@@ -152,7 +152,7 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 		ids = append(ids, int64(unique.ID))
 	}
 
-	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Update, ids...); err != nil {
+	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
 		blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
