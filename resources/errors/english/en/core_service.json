@@ -7,7 +7,7 @@
     "1113006": "Business [%#v] does not exist",
     "1113007": "Business [%#v] default module does not exist",
     "1113008": "businessID [%d] of moduleID[%d] not default module",
-    "1113009": "transfer module host relation failure. error detail in return data",
+    "1113009": "transfer module host relation failure.",
     "1113010": "failed to sent event",
 
     "":""
