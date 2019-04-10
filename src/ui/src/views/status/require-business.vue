@@ -6,7 +6,7 @@
                 <h2>{{$t("Common['无业务权限']")}}</h2>
             </div>
             <div class="btns">
-                <bk-button type="default">
+                <bk-button type="primary" @click="handleApplyPermission">
                     {{$t("Common['申请业务权限']")}}
                 </bk-button>
             </div>
@@ -17,6 +17,22 @@
     export default {
         created () {
             this.$store.commit('setHeaderTitle', '')
+        },
+        methods: {
+            handleApplyPermission () {
+                const topWindow = window.top
+                const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                const authCenter = window.Site.authCenter || {}
+                if (isPaasConsole) {
+                    topWindow.postMessage(JSON.stringify({
+                        action: 'open_other_app',
+                        app_code: authCenter.appCode,
+                        app_url: 'perm-apply'
+                    }), '*')
+                } else {
+                    window.open(authCenter.url)
+                }
+            }
         }
     }
 </script>

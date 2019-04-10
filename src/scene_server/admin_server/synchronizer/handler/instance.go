@@ -68,5 +68,6 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync instance for business: %d model: %s", bizID, object.ObjectID)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

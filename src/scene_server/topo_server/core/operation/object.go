@@ -332,11 +332,6 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
 	}
-	// auth: check authorization
-	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Find, objects...); err != nil {
-		blog.V(2).Infof("authorization failed, err: %+v", objects, err)
-		return nil, err
-	}
 
 	for _, item := range objs {
 		return item, nil

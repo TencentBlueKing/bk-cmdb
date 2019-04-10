@@ -2,7 +2,7 @@
     <div class="relation-wrapper">
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
+                :disabled="!isAdminView || !$isAuthorized(OPERATION.C_RELATION)"
                 @click="createRelation">
                 {{$t('Common["新建"]')}}
             </bk-button>
@@ -62,7 +62,7 @@
 
 <script>
     import theRelation from './_detail'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import { OPERATION } from './router.config'
     export default {
         components: {
@@ -112,6 +112,7 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             searchParams () {
                 const params = {
                     page: {
@@ -134,7 +135,8 @@
         },
         created () {
             const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
-            if (!updateAuth) {
+            const deleteAuth = this.$isAuthorized(this.OPERATION.D_RELATION)
+            if (!this.isAdminView || !(updateAuth || deleteAuth)) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))

@@ -104,6 +104,7 @@ const (
 	// unknown action, which is also unsupported actions.
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
+	SkipAction Action = "skip"
 
 	Execute Action = "execute"
 

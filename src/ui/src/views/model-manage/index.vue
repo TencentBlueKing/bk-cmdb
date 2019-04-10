@@ -77,15 +77,15 @@
                             'ispaused': model['bk_ispaused'],
                             'ispre': isInner(model)
                         }"
-                        v-for="(_model, modelIndex) in classification['bk_objects']"
+                        v-for="(model, modelIndex) in classification['bk_objects']"
                         :key="modelIndex"
-                        @click="modelClick(_model)">
+                        @click="modelClick(model)">
                         <div class="icon-box">
-                            <i class="icon" :class="[_model['bk_obj_icon']]"></i>
+                            <i class="icon" :class="[model['bk_obj_icon']]"></i>
                         </div>
                         <div class="model-details">
-                            <p class="model-name" :title="_model['bk_obj_name']">{{_model['bk_obj_name']}}</p>
-                            <p class="model-id" :title="_model['bk_obj_id']">{{_model['bk_obj_id']}}</p>
+                            <p class="model-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</p>
+                            <p class="model-id" :title="model['bk_obj_id']">{{model['bk_obj_id']}}</p>
                         </div>
                     </li>
                 </ul>
@@ -175,9 +175,6 @@
                         id: ''
                     }
                 },
-                model: {
-                    modelId: 'modelId'
-                },
                 modelDialog: {
                     isShow: false
                 },
@@ -257,8 +254,6 @@
                 return !!this.$tools.getMetadataBiz(classification)
             },
             isInner (model) {
-                // const metadata = model.metadata || {}
-                // const label = metadata.label || {}
                 return !this.$tools.getMetadataBiz(model)
             },
             showGroupDialog (isEdit, group) {
