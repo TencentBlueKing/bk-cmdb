@@ -167,8 +167,12 @@ func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadat
 	blog.V(5).Infof("get user list url: %s, return：%s", getURL, reply)
 	var result userListResult
 	err = json.Unmarshal([]byte(reply), &result)
+	if err != nil {
+		blog.Errorf("get user list error, http reply not json format. err：%v, reply:%s", err.Error(), string(reply))
+		return nil, fmt.Errorf("get user list reply error")
+	}
 	if nil != err || false == result.Result {
-		blog.Errorf("get user list error：%v, error code:%d, error messsage:%s", err, result.Code, result.Message)
+		blog.Errorf("get user list error, http reply error.  reply:%s", string(reply))
 		return nil, fmt.Errorf("get user list reply error")
 	}
 	userListArr := make([]*metadata.LoginSystemUserInfo, 0)

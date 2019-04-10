@@ -38,17 +38,20 @@ func (phpapi *PHPAPI) GetDefaultModules(appID int) (types.MapStr, error) {
 	resMap, err := phpapi.getObjByCondition(param, common.BKInnerObjIDModule)
 
 	if nil != err {
+		blog.Error("GetDefaultModules http do error. err:%s, input:%s, rid:%s", err.Error(), param.Condition, phpapi.rid)
 		return nil, err
 	}
 
-	blog.V(5).Infof("getDefaultModules complete, res: %v", resMap)
+	blog.V(5).Infof("getDefaultModules complete, res: %v,rid:%s", resMap, phpapi.rid)
 
 	if false == resMap.Result {
-		return nil, errors.New(resMap.ErrMsg)
+		blog.Error("GetDefaultModules http reply error. err:%s, input:%s, rid:%s", resMap.ErrMsg, param.Condition, phpapi.rid)
+		return nil, phpapi.ccErr.New(resMap.Code, resMap.ErrMsg)
 	}
 
 	if resMap.Data.Count == 0 {
-		return nil, errors.New(fmt.Sprintf("can not found default module, appid: %d", appID))
+		blog.Error("GetDefaultModules not found module. input:%s, rid:%s", param.Condition, phpapi.rid)
+		return nil, fmt.Errorf("can not found default module, appid: %d", appID)
 	}
 
 	return resMap.Data.Info[0], nil
@@ -75,7 +78,7 @@ func (phpapi *PHPAPI) GetHostByIPAndSource(innerIP string, platID int64) ([]type
 		return nil, errors.New(resMap.ErrMsg)
 	}
 
-	blog.V(5).Infof("getHostByIPAndSource res: %v", resMap)
+	blog.V(5).Infof("getHostByIPAndSource res: %v,rid:%s", resMap, phpapi.rid)
 
 	return resMap.Data.Info, nil
 }
@@ -119,14 +122,14 @@ func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[in
 
 	for _, host := range res.Data.Info {
 
-		host_id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if nil != err {
-			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, phpapi.rid)
+			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, host, phpapi.rid)
 			return nil, nil, err
 		}
 
-		hostMap[host_id] = host
-		hostIDArr = append(hostIDArr, host_id)
+		hostMap[hostID] = host
+		hostIDArr = append(hostIDArr, hostID)
 	}
 	return hostMap, hostIDArr, nil
 }
