@@ -19,13 +19,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
 
-	"github.com/emicklei/go-restful"
 )
 
 // updateHostPlat 根据条件更新主机信息
@@ -686,7 +687,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	for key, _ := range appMap {
+	for key := range appMap {
 		appID = key
 	}
 
@@ -708,7 +709,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		})
 		return
 	}
-	for key, _ := range setMap {
+	for key := range setMap {
 		setID = key
 	}
 
@@ -723,7 +724,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
 		return
 	}
-	for key, _ := range moduleMap {
+	for key := range moduleMap {
 		moduleID = key
 	}
 

@@ -169,13 +169,14 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
 	pHeader := req.Request.Header
 	user := util.GetUser(pHeader)
+	rid := util.GetHTTPCCRequestID(pHeader)
 	var logContent auditoplog.AuditLogExt
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("create config template failed! derr: %v", err)
+		blog.Errorf("create config template failed! derr: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -184,34 +185,34 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	templateID, err := strconv.ParseInt(templateIDStr, 10, 64)
 
 	if nil != err {
-		blog.Errorf("intput params err: %v", err)
+		blog.Errorf("intput params err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsInvalid)})
 		return
 	}
 
 	input := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("update config template failed! decode request body err: %v", err)
+		blog.Errorf("update config template failed! decode request body err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDConfigTemp, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidUpdate, int64(templateID)); err != nil {
-		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
+		blog.Errorf("fail to valid input parameters. err:%s,rid:%s", err.Error(), rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
 		return
 	}
 
 	tempFields, err := ps.GetTemplateAttributes(ownerID, pHeader)
 	if nil != err {
-		blog.Errorf("delete config template  err: %v", err)
+		blog.Errorf("delete config template  err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}
 	logger := ps.Logics.NewTemplate(pHeader, ownerID)
 	if err := logger.WithPrevious(templateID, tempFields); err != nil {
-		blog.Errorf("delete template, but get temp[%s] pre data for audit failed, err: %v", templateID, err)
+		blog.Errorf("delete template, but get temp[%s] pre data for audit failed, err: %v,rid:%s", templateID, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
 	}
@@ -226,13 +227,13 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	}
 	ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDConfigTemp, req.Request.Header, data)
 	if nil != err || !ret.Result {
-		blog.Errorf("update config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s", err, ret.Code, ret.ErrMsg)
+		blog.Errorf("update config template failed by processcontroll. err: %v, errcode: %d, errmsg: %s,rid:%s", err, ret.Code, ret.ErrMsg, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUpdateTemplateFail)})
 		return
 	}
 
 	if err := logger.WithCurrent(templateID); err != nil {
-		blog.Errorf("delete config template, but get current host data failed, err: %v", err)
+		blog.Errorf("delete config template, but get current host data failed, err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}
@@ -241,7 +242,7 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	logs := common.KvMap{common.BKContentField: logContent, common.BKOpDescField: "update template", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(context.Background(), common.BKDefaultOwnerID, appIDStr, user, pHeader, logs)
 	if nil != err || !result.Result {
-		blog.Errorf("delete config template failed, but add template[%s] audit failed, err: %v, %v", templateID, err, result.ErrMsg)
+		blog.Errorf("delete config template failed, but add template[%v] audit failed, err: %v, %v,rid:%s", templateID, err, result.ErrMsg, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}

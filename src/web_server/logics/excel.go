@@ -148,7 +148,7 @@ func (lgc *Logics) BuildAssociationExcelFromData(ctx context.Context, objID stri
 
 	sheet, err := xlsxFile.AddSheet("assocation")
 	if err != nil {
-		blog.Errorf("setExcelRowDataByIndex add excel  assocation sheet error, rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("setExcelRowDataByIndex add excel  assocation sheet error. err:%s,rid:%s", err.Error(), util.GetHTTPCCRequestID(header))
 		return err
 	}
 	productExcelAssociationHealer(sheet, lgc.Language.CreateDefaultCCLanguageIf(util.GetLanguage(header)))
