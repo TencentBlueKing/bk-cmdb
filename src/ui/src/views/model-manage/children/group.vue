@@ -247,7 +247,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
                     config: {
                         requestId: `get_searchGroup_${this.objId}`,
                         cancelPrevious: true
@@ -259,6 +259,8 @@
                     params: this.$injectMetadata({
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
