@@ -212,7 +212,7 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	}
 	logger := ps.Logics.NewTemplate(pHeader, ownerID)
 	if err := logger.WithPrevious(templateID, tempFields); err != nil {
-		blog.Errorf("delete template, but get temp[%s] pre data for audit failed, err: %v,rid:%s", templateID, err, rid)
+		blog.Errorf("delete template, but get temp[%v] pre data for audit failed, err: %v,rid:%s", templateID, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
 	}
