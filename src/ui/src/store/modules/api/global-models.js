@@ -11,11 +11,17 @@
 import $http from '@/api'
 
 const state = {
-
+    customModelConfig: null
 }
 
 const getters = {
-
+    modelConfig: (state, getters, rootState, rootGetters) => {
+        const modelConfig = {}
+        rootGetters['objectModelClassify/models'].forEach(model => {
+            modelConfig[model.bk_obj_id] = true
+        })
+        return Object.assign(modelConfig, state.customModelConfig)
+    }
 }
 
 const actions = {
@@ -45,7 +51,9 @@ const actions = {
 }
 
 const mutations = {
-
+    setCustomModelConfig (state, config) {
+        state.customModelConfig = config
+    }
 }
 
 export default {

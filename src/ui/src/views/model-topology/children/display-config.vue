@@ -13,16 +13,24 @@
             </div>
             <ul class="display-list">
                 <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
-                    <p class="group-name">{{group['bk_classification_name']}}</p>
+                    <p class="group-name">
+                        <span class="group-name-text">{{group['bk_classification_name']}}</span>
+                        <label class="group-name-checkbox cmdb-form-checkbox cmdb-checkbox-small">
+                            <input type="checkbox"
+                                :checked="isGroupChecked(group)"
+                                @change="handleToggleGroup($event, group)" >
+                        </label>
+                    </p>
                     <ul class="clearfix">
                         <li class="model-item" :class="{'active': model['bk_obj_id'] === activePop}" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
                             <label class="cmdb-form-checkbox checkbox cmdb-checkbox-small">
-                                <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                            </label>
-                            <div class="cmdb-form-checkbox text-box" @click.stop="toggleActivePop(model['bk_obj_id'])">
+                                <input type="checkbox" v-model="localModelConfig[model.bk_obj_id]">
                                 <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
-                                <span class="count">({{model.asstInfo.assts.length}})</span>
-                                <i class="bk-icon icon-angle-down"></i>
+                            </label>
+                            <div class="cmdb-form-checkbox text-box">
+                                <!-- <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span> -->
+                                <!-- <span class="count">({{model.asstInfo.assts.length}})</span> -->
+                                <!-- <i class="bk-icon icon-angle-down"></i> -->
                                 <cmdb-collapse-transition>
                                     <div class="relation-detail" v-click-outside="hidePop" @click.stop v-if="activePop === model['bk_obj_id']">
                                         <div class="detail-title clearfix">
@@ -85,19 +93,36 @@
                 activePop: '',
                 isShowName: this.isShowModelName,
                 isShowAsst: this.isShowModelAsst,
-                topoList: []
+                topoList: [],
+                localModelConfig: {}
             }
         },
         computed: {
             ...mapGetters('objectModelClassify', [
                 'classifications'
-            ])
+            ]),
+            ...mapGetters('globalModels', ['modelConfig'])
         },
         created () {
             this.initLocalTopoModelList()
             this.initTopoList()
+            this.initModelConfig()
         },
         methods: {
+            initModelConfig () {
+                this.localModelConfig = this.$tools.clone(this.modelConfig)
+            },
+            isGroupChecked (group) {
+                return !group.bk_objects.some(model => {
+                    return !this.localModelConfig[model.bk_obj_id]
+                })
+            },
+            handleToggleGroup (event, group) {
+                const isChecked = event.target.checked
+                group.bk_objects.forEach(model => {
+                    this.localModelConfig[model.bk_obj_id] = isChecked
+                })
+            },
             hidePop () {
                 this.activePop = ''
             },
@@ -161,24 +186,33 @@
                 }
             },
             saveDisplay () {
+                const modelChecked = Object.values(this.localModelConfig).some(value => value)
+                if (!modelChecked) {
+                    this.$warn(this.$t('ModelManagement["模型配置提示"]'))
+                    return false
+                }
                 const displayConfig = {
                     isShowModelName: this.isShowName,
                     isShowModelAsst: this.isShowAsst,
                     topoModelList: this.$tools.clone(this.localTopoModelList)
                 }
+                this.$store.commit('globalModels/setCustomModelConfig', this.localModelConfig)
                 this.$emit('save', displayConfig)
                 this.$emit('cancel')
             },
             reset () {
                 this.isShowName = true
                 this.isShowAsst = true
-                this.localTopoModelList.forEach(model => {
-                    if (model.hasOwnProperty('assts') && model.assts.length) {
-                        model.assts.forEach(asst => {
-                            asst.checked = true
-                        })
-                    }
+                Object.keys(this.localModelConfig).forEach(modelId => {
+                    this.localModelConfig[modelId] = false
                 })
+                // this.localTopoModelList.forEach(model => {
+                //     if (model.hasOwnProperty('assts') && model.assts.length) {
+                //         model.assts.forEach(asst => {
+                //             asst.checked = true
+                //         })
+                //     }
+                // })
             }
         }
     }
@@ -208,6 +242,24 @@
                 padding-left: 8px;
                 border-left: 4px solid $cmdbBorderColor;
                 line-height: 14px;
+                font-size: 0;
+                &:hover .group-name-checkbox {
+                    display: inline-block;
+                }
+                .group-name-text {
+                    display: inline-block;
+                    vertical-align: middle;
+                    color: #333948;
+                    font-weight: bold;
+                    font-size: 14px;
+                }
+                .group-name-checkbox {
+                    display: none;
+                    padding: 0;
+                    margin: 0 0 0 4px;
+                    vertical-align: middle;
+                    line-height: 1;
+                }
             }
         }
         .model-item {

@@ -256,6 +256,7 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
+            ...mapGetters('globalModels', ['modelConfig']),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
                     const position = node.data.position
@@ -719,7 +720,8 @@
                                 name: nodeData['node_name'],
                                 backgroundColor: '#fff'
                             }))}`,
-                            data: nodeData
+                            data: nodeData,
+                            hidden: !this.modelConfig[nodeData.bk_obj_id]
                         }
                         if (this.displayConfig.isShowModelName) {
                             node.label = nodeData['node_name']
