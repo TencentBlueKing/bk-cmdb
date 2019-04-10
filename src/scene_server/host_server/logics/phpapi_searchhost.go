@@ -122,14 +122,14 @@ func (phpapi *PHPAPI) GetHostMapByCond(condition map[string]interface{}) (map[in
 
 	for _, host := range res.Data.Info {
 
-		host_id, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if nil != err {
-			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, phpapi.rid)
+			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, host, phpapi.rid)
 			return nil, nil, err
 		}
 
-		hostMap[host_id] = host
-		hostIDArr = append(hostIDArr, host_id)
+		hostMap[hostID] = host
+		hostIDArr = append(hostIDArr, hostID)
 	}
 	return hostMap, hostIDArr, nil
 }

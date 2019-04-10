@@ -383,7 +383,7 @@ func (lgc *Logics) CloneHostProperty(input *meta.CloneHostPropertyParams, appID,
 
 	srcHostID, err := util.GetInt64ByInterface(hostMapData[common.BKHostIDField])
 	if nil != err {
-		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%v input:%v,rid", hostMapData, input, rid)
+		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%v input:%v,rid:%s", hostMapData, input, rid)
 		return nil, defError.Error(common.CCErrHostDetailFail)
 	}
 	configCond := map[string][]int64{
