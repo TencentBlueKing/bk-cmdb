@@ -10,7 +10,7 @@
         <div class="header-options">
             <cmdb-business-selector
                 class="business-selector"
-                v-if="!isAdminView && authorizedBusiness.length">
+                v-if="!isAdminView">
             </cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">

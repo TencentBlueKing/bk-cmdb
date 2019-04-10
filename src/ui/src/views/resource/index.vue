@@ -253,12 +253,9 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'modelHistory',
+                    name: 'history',
                     params: {
                         objId: 'host'
-                    },
-                    query: {
-                        relative: '/resource'
                     }
                 })
             },
@@ -373,12 +370,17 @@
                 })
             },
             openAgentApp () {
-                const agentAppUrl = window.Site.agent
-                if (agentAppUrl) {
-                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({ action: 'open_other_app', app_code: 'bk_nodeman' }), '*')
+                const agent = window.Site.agent
+                if (agent) {
+                    const topWindow = window.top
+                    const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                    if (isPaasConsole) {
+                        topWindow.postMessage(JSON.stringify({
+                            action: 'open_other_app',
+                            app_code: 'bk_nodeman'
+                        }), '*')
                     } else {
-                        window.open(agentAppUrl)
+                        window.open(agent)
                     }
                 } else {
                     this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))

@@ -56,5 +56,6 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
