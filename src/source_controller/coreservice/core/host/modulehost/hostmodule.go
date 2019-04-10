@@ -51,7 +51,7 @@ func (mh *ModuleHost) TransferHostToDefaultModule(ctx core.ContextParams, input 
 		return nil, err
 	}
 	if len(defaultModuleIDArr) == 0 {
-		blog.ErrorJSON("TransferHostToDefaultModule GetDefaultModuleIDArr error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToDefaultModule GetDefaultModuleIDArr error. input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceDefaultModuleNotExist, input.ApplicationID)
 	}
 	var isDefaultModule bool
@@ -106,7 +106,7 @@ func (mh *ModuleHost) getModuleInfoByModuleID(ctx core.ContextParams, appID int6
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(appID)
 	moduleConds.Field(common.BKModuleIDField).In(moduleID)
-	cond := util.SetModOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
+	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
 	err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(ctx, &moduleInfoArr)
@@ -122,7 +122,7 @@ func (mh *ModuleHost) getHostIDModuleMapByHostID(ctx core.ContextParams, appID i
 	moduleHostCond := condition.CreateCondition()
 	moduleHostCond.Field(common.BKAppIDField).Eq(appID)
 	moduleHostCond.Field(common.BKHostIDField).In(hostIDArr)
-	cond := util.SetModOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
+	cond := util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
 
 	var dataArr []metadata.ModuleHost
 	err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &dataArr)
