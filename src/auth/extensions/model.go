@@ -161,16 +161,16 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 }
 
 // AuthorizeByObjectID authorize model by id
-func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objIDs ...string) error {
-	if len(objIDs) == 0 {
+func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objectIDs ...string) error {
+	if len(objectIDs) == 0 {
 		return nil
 	}
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, models: %+v", objIDs)
+		blog.V(4).Infof("skip authorization for reading, models: %+v", objectIDs)
 		return nil
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("get model by id failed, err: %+v", err)
 	}
