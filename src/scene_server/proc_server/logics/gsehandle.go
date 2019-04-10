@@ -118,7 +118,7 @@ func (lgc *Logics) unregisterProcInstanceToGse(gseproc *metadata.GseProcRequest,
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	ret, err := lgc.EsbServ.GseSrv().UnRegisterProcInfo(context.Background(), header, gseproc)
 	if err != nil {
-		blog.Errorf("register process(%s) into gse failed.  errcode: %d, errmsg: %s", gseproc.Meta.Name, err)
+		blog.Errorf("register process(%s) into gse failed. err: %s", gseproc.Meta.Name, err)
 		return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	} else if 0 != ret.Code {
 		blog.Errorf("register process(%s) into gse failed. errcode: %d, errmsg: %s", gseproc.Meta.Name, ret.Code, ret.Message)
@@ -185,7 +185,7 @@ func (lgc *Logics) getOperateProcInstanceData(ctx context.Context, procOp *metad
 	gseHostArr, err := lgc.GetHostForGse(ctx, procOp.ApplicationID, allHostIDArr, header)
 	// register process into gse
 	if err != nil {
-		blog.Errorf("OperateProcInstanceByGse register process into gse failed. err: %v", err, util.GetHTTPCCRequestID(header))
+		blog.Errorf("OperateProcInstanceByGse register process into gse failed. err: %v, rid:%s", err, util.GetHTTPCCRequestID(header))
 		return nil, err
 	}
 	hostInfoMap := make(map[int64]*metadata.GseHost, 0)
@@ -315,8 +315,6 @@ func (lgc *Logics) QueryProcessOperateResult(ctx context.Context, taskID string,
 	dat.Condition = mapstr.MapStr{common.BKTaskIDField: taskID}
 	dat.Limit = common.BKNoLimit
 	succ = make([]string, 0)
-	waitExec = make([]string, 0)
-	exceErrMap = make(map[string]string, 0)
 
 	ret, err := lgc.CoreAPI.ProcController().SearchOperateTaskInfo(ctx, header, dat)
 	dat.Start += dat.Limit

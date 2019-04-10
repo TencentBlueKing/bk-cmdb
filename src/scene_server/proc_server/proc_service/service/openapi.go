@@ -464,20 +464,32 @@ func (ps *ProcServer) getProcessMapByAppID(appID int64, forward http.Header) (ma
 }
 
 func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Header) ([]interface{}, error) {
+	ccErr := ps.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(forward))
+	rid := util.GetHTTPCCRequestID(forward)
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appId
 	input := new(meta.QueryInput)
 	input.Condition = condition
 	objModRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, forward, input)
-	if err != nil || (err == nil && !objModRet.Result) {
-		return nil, fmt.Errorf("fail to get module by appid(%d). err: %v, errcode: %d, errmsg: %s", err, objModRet.Code, objModRet.ErrMsg)
+	if err != nil {
+		blog.ErrorJSON("getProcessBindModule SearchObjects http do error. err:%s, input:%s,rid:%s", err.Error(), condition, rid)
+		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !objModRet.Result {
+		blog.ErrorJSON("getProcessBindModule SearchObjects http do error. err:%s, input:%s,rid:%s", objModRet, condition, rid)
+		return nil, ccErr.New(objModRet.Code, objModRet.ErrMsg)
 	}
 
 	moduleArr := objModRet.Data.Info
 	condition[common.BKProcessIDField] = procId
 	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(context.Background(), forward, condition)
-	if err != nil || (err == nil && !procRet.Result) {
-		return nil, fmt.Errorf("fail to GetProc2Module in getProcessBindModule. err: %v, errcode: %d, errmsg: %s", err, procRet.Code, procRet.ErrMsg)
+	if err != nil {
+		blog.ErrorJSON("getProcessBindModule GetProc2Module http do error. err:%s, input:%s,rid:%s", err.Error(), condition, rid)
+		return nil, ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !procRet.Result {
+		blog.ErrorJSON("getProcessBindModule GetProc2Module http do error. err:%s, input:%s,rid:%s", procRet, condition, rid)
+		return nil, ccErr.New(objModRet.Code, objModRet.ErrMsg)
 	}
 
 	procModuleData := procRet.Data
@@ -490,7 +502,7 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 			}
 			isDefault64, err := util.GetInt64ByInterface(modArr[common.BKDefaultField])
 			if nil != err {
-				blog.Errorf("GetProcessBindModule get module default error:%s", err.Error())
+				blog.Errorf("GetProcessBindModule get module default error:%s,rid:%s", err.Error(), rid)
 				continue
 
 			} else {
@@ -529,6 +541,6 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 		result = append(result, data)
 	}
 
-	blog.V(5).Infof("getProcessBindModule result: %+v", result)
+	blog.V(5).Infof("getProcessBindModule result: %+v,rid:%s", result, rid)
 	return result, nil
 }
