@@ -35,19 +35,20 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	user := util.GetUser(req.Request.Header)
 	language := util.GetLanguage(req.Request.Header)
 	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 	ownerID := req.PathParameter(common.BKOwnerIDField)
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.Atoi(appIDStr)
 	if err != nil {
-		blog.Errorf("convert appid from string to int failed!, err: %s, input:%s", err.Error(), appID)
+		blog.Errorf("convert appid from string to int failed!, err: %s, input:%v, rid:%s", err.Error(), req.PathParameters(), rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	input := make(map[string]interface{})
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
-		blog.Errorf("create process failed! decode request body err: %v", err)
+		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -55,7 +56,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	input[common.BKAppIDField] = appID
 	valid := validator.NewValidMap(common.BKDefaultOwnerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
-		blog.Errorf("fail to valid input parameters. err:%s", err.Error())
+		blog.Errorf("fail to valid input parameters. err:%s,input:%#v,rid:%s", err.Error(), input, rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
 		return
 	}
@@ -220,7 +221,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 		valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
 		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
-			blog.Errorf("fail to valid proc parameters. err:%s", err.Error())
+			blog.Errorf("fail to valid proc parameters. err:%s,input:%#v,rid:%s", err.Error(), procData, rid)
 			appName, _ := curData[common.BKProcNameField]
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommUtilHandleFail, defLang.Languagef("proc_valid_check_fail", appName), err.Error())})
 			return
@@ -245,7 +246,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		input["data"] = procData
 		ret, err := ps.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDProc, req.Request.Header, input)
 		if err != nil || (err == nil && !ret.Result) {
-			blog.Errorf("update process failed . err: %s", err.Error())
+			blog.Errorf("update process failed . err: %s,input:%s,rid:%s", err.Error(), input, rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUpdateProcessFaile)})
 			return
 		}
@@ -259,7 +260,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		details, err := ps.getProcDetail(req, ownerID, appID, int(procID))
 
 		if err != nil {
-			blog.Errorf("get inst detail error: %v, procID:%s", err, procID)
+			blog.Errorf("get inst detail error: %v, procID:%v,rid:%s", err, procID, rid)
 			continue
 		}
 
