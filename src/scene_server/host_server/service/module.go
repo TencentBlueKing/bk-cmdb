@@ -843,7 +843,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 	if !result.Result {
 		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, result, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.New(result.Code, result.ErrMsg), Data: result.Data})
 		return
 	}
 	// auth: register hosts
