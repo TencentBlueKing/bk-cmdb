@@ -5,7 +5,6 @@
                 <i class="icon icon-cc-no-authority"></i>
                 <h2>{{$t("Common['无业务权限']")}}</h2>
             </div>
-            <p>{{$t("Common['点击下方按钮申请']")}}</p>
             <div class="btns">
                 <bk-button type="primary" @click="handleApplyPermission">
                     {{$t("Common['申请业务权限']")}}
@@ -16,6 +15,9 @@
 </template>
 <script>
     export default {
+        created () {
+            this.$store.commit('setHeaderTitle', '')
+        },
         methods: {
             handleApplyPermission () {
                 const topWindow = window.top
