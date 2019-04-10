@@ -244,7 +244,11 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 	}
 
 	if am.RegisterModelUniqueEnabled == false {
-		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
+		objectAction := meta.Update
+		if action == meta.Find || action == meta.FindMany {
+			objectAction = action
+		}
+		return am.AuthorizeByObjectID(ctx, header, objectAction, objectIDs...)
 	}
 
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
