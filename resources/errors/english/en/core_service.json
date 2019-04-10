@@ -1,6 +1,14 @@
 {
     "1113001": "there are some fields under the group",
     "1113002":"hostID [%#v] does not belong of  businessID [%d]", 
+    "1113003": "hostID [%#v] does not exist",
+    "1113004": "ModuleID [%#v] has not belong of  businessID [%d]",
+    "1113005": "translate host to multiple module not contain default module",
+    "1113006": "Business [%#v] does not exist",
+    "1113007": "Business [%#v] default module does not exist",
+    "1113008": "businessID [%d] of moduleID[%d] not default module",
+    "1113009": "transfer module host relation failure. error detail in return data",
+    "1113010": "failed to sent event",
 
     "":""
 }

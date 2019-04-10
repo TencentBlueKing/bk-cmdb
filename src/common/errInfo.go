@@ -599,7 +599,6 @@ const (
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
-	// TODO add error tips
 	// CCErrCoreServiceHostNotBelongBusiness hostID [%#v] does not belong of  businessID [%d]
 	CCErrCoreServiceHostNotBelongBusiness = 1113002
 	// CCErrCoreServiceHostNotExist hostID [%#v] does not exist
