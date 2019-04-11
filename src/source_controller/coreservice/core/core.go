@@ -134,7 +134,7 @@ type TopoOperation interface {
 
 // HostOperation methods
 type HostOperation interface {
-	TransferHostToDefaultModule(ctx ContextParams, input *metadata.TransferHostToDefaultModuleConfig) ([]metadata.ExceptionResult, error)
+	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
 }
 
 // AssociationOperation association methods
