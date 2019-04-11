@@ -18,6 +18,5 @@
 - **部署完整的社区版**体验（包含所有蓝鲸的基础平台、SaaS应用等）
   - 社区版下载地址：http://bk.tencent.com/download/
   - 部署指引：http://docs.bk.tencent.com/bkce_install_guide/
-- 在蓝鲸公有云版上体验（目前正在重构，敬请期待）
 
 - **开源独立部署**（目前已推出容器化部署，GitHub上的release版本会跟社区版大版本集成的配置平台保持同步更新）：https://github.com/Tencent/bk-cmdb#getting-started
