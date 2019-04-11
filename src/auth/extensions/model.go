@@ -27,6 +27,8 @@ import (
 	"configcenter/src/common/util"
 )
 
+// CollectObjectsByBusinessID get models by business
+// businessID=0 ==> get all global models
 func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]metadata.Object, error) {
 	condCheckModel := mongo.NewCondition()
 	if businessID != 0 {
@@ -57,22 +59,27 @@ func (am *AuthManager) CollectObjectsByBusinessID(ctx context.Context, header ht
 	return objects, nil
 }
 
-func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, objIDs ...string) ([]metadata.Object, error) {
+// collectObjectsByObjectIDs collect business object that belongs to business or global object, which both id must in objectIDs
+func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) ([]metadata.Object, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
-	objIDs = util.StrArrayUnique(objIDs)
+	objectIDs = util.StrArrayUnique(objectIDs)
 
 	// get model by objID
-	cond := condition.CreateCondition().Field(common.BKObjIDField).In(objIDs)
-	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
+	cond := condition.CreateCondition().Field(common.BKObjIDField).In(objectIDs)
+	fCond := cond.ToMapStr()
+	fCond.Merge(metadata.NewPublicOrBizConditionByBizID(businessID))
+	fCond.Remove(metadata.BKMetadata)
+	queryCond := &metadata.QueryCondition{Condition: fCond}
+	
 	resp, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, queryCond)
 	if err != nil {
-		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objIDs, err)
+		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objectIDs, err)
 	}
 	if len(resp.Data.Info) == 0 {
-		return nil, fmt.Errorf("get model by id: %+v failed, not found", objIDs)
+		return nil, fmt.Errorf("get model by id: %+v failed, not found", objectIDs)
 	}
-	if len(resp.Data.Info) != len(objIDs) {
-		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objIDs)
+	if len(resp.Data.Info) != len(objectIDs) {
+		return nil, fmt.Errorf("get model by id: %+v failed, get multiple model", objectIDs)
 	}
 
 	objects := make([]metadata.Object, 0)
@@ -110,29 +117,34 @@ func (am *AuthManager) collectObjectsByRawIDs(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) ExtractBusinessIDFromObject(object metadata.Object) (int64, error) {
-	bizID, err := object.Metadata.Label.Int64(metadata.LabelBusinessID)
-	// we should ignore metadata.LabelBusinessID field not found error
-	if err != nil && err != metadata.LabelKeyNotExistError {
-		return 0, fmt.Errorf("parse biz id from model: %+v failed, err: %+v", object, err)
-	}
-	return bizID, nil
+	return metadata.ParseBizIDFromData(object)
 }
 
 func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
-	var businessID int64
-	for idx, object := range objects {
+	if len(objects) == 0 {
+		return 0, fmt.Errorf("no object found")
+	}
+	
+	businessIDs := make([]int64, 0)
+	for _, object := range objects {
 		bizID, err := am.ExtractBusinessIDFromObject(object)
 		if err != nil {
 			return 0, fmt.Errorf("parse business id from model failed, model: %+v, err: %+v", object, err)
 		}
-		if idx > 0 && bizID != businessID {
-			return 0, fmt.Errorf("authorization failed, get multiple business ID from objects")
-		}
-		businessID = bizID
+		businessIDs = append(businessIDs, bizID)
 	}
-	return businessID, nil
+	
+	if len(businessIDs) > 1 {
+		return 0, fmt.Errorf("models belongs to multiple business: [%+v]", businessIDs)
+	}
+	
+	if len(businessIDs) == 0 {
+		return 0, fmt.Errorf("unexpected error, no business found with objects: %+v", objects)
+	}
+	return businessIDs[0], nil
 }
 
+// MakeResourcesByObjects make object resource with businessID and objects
 func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
 	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
@@ -161,7 +173,7 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 }
 
 // AuthorizeByObjectID authorize model by id
-func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, objectIDs ...string) error {
+func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, businessID int64, objectIDs ...string) error {
 	if len(objectIDs) == 0 {
 		return nil
 	}
@@ -170,7 +182,7 @@ func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Head
 		return nil
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("get model by id failed, err: %+v", err)
 	}
@@ -238,7 +250,7 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 	return nil
 }
 
-func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, businessID int64, objects ...metadata.Object) error {
 	if len(objects) == 0 {
 		return nil
 	}
@@ -252,7 +264,7 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	}
 	return nil
 }
-func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, ids ...int64) error {
+func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, businessID int64, ids ...int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -263,7 +275,7 @@ func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, head
 		return fmt.Errorf("get model by id failed, id: %+v, err: %+v", ids, err)
 	}
 
-	return am.UpdateRegisteredObjects(ctx, header, objects...)
+	return am.UpdateRegisteredObjects(ctx, header, businessID, objects...)
 }
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
 	if len(objects) == 0 {
@@ -284,11 +296,11 @@ func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.H
 	return am.RegisterObject(ctx, header, objects...)
 }
 
-func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, objectIDs ...string) error {
+func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) error {
 	if len(objectIDs) == 0 {
 		return nil
 	}
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		return fmt.Errorf("deregister mainline model failed, get model by id failed, err: %+v", err)
 	}

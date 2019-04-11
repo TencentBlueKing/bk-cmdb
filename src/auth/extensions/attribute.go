@@ -56,25 +56,49 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 	return attributes, nil
 }
 
+func (am *AuthManager) ExtractBusinessIDFromModelAttributes(attributes ...metadata.Attribute) (int64, error) {
+	if len(attributes) == 0 {
+		return 0, fmt.Errorf("no object found")
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, attribute := range attributes {
+		bizID, err := metadata.ParseBizIDFromMetadata(attribute.Metadata)
+		if err != nil {
+			return 0, fmt.Errorf("parse business id failed, err: %+v", err)
+		}
+		businessIDs = append(businessIDs, bizID)
+	}
+
+	if len(businessIDs) > 1 {
+		return 0, fmt.Errorf("attributes belongs to multiple business: [%+v]", businessIDs)
+	}
+
+	if len(businessIDs) == 0 {
+		return 0, fmt.Errorf("unexpected error, no business found with attributes: %+v", attributes)
+	}
+	return businessIDs[0], nil
+}
+
 func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error) {
 	blog.V(9).Infof("makeResourceByAttributes input: %+v", attributes)
 	objectIDs := make([]string, 0)
 	for _, attribute := range attributes {
 		objectIDs = append(objectIDs, attribute.ObjectID)
 	}
+	
+	businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
+	if err != nil {
+		return nil, fmt.Errorf("extract business id from model attribute failed, err: %+v", err)
+	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
 	}
 	objectMap := map[string]metadata.Object{}
 	for _, object := range objects {
 		objectMap[object.ObjectID] = object
-	}
-
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
 	}
 
 	classificationIDs := make([]string, 0)
@@ -191,13 +215,17 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 	if len(attributes) == 0 {
 		return nil
 	}
-
+	
 	if am.RegisterModelAttributeEnabled == false {
+		businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
+		if err != nil {
+			return fmt.Errorf("extract business id from model attributes failed, err: %+v", businessID)
+		}
 		objectIDs := make([]string, 0)
 		for _, attribute := range attributes {
 			objectIDs = append(objectIDs, attribute.ObjectID)
 		}
-		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
+		return am.AuthorizeByObjectID(ctx, header, meta.Update, businessID, objectIDs...)
 	}
 
 	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)

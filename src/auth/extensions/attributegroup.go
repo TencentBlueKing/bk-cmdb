@@ -57,6 +57,11 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 }
 
 func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) ([]meta.ResourceAttribute, error) {
+	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
+	if err != nil {
+		return nil, fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
+	}
+	
 	objectIDs := make([]string, 0)
 	for _, attributeGroup := range attributeGroups {
 		objectIDs = append(objectIDs, attributeGroup.ObjectID)
@@ -72,7 +77,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		return nil, fmt.Errorf("model id not found")
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs failed, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object id failed, err: %+v", err)
@@ -81,12 +86,6 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 	if len(objects) == 0 {
 		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object by id not found")
-	}
-
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		blog.Errorf("makeResourceByAttributeGroup failed, extract business id failed, attribute group: %+v, err: %+v", attributeGroups, err)
-		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
 
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
@@ -133,6 +132,30 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 	blog.V(5).Infof("makeResourceByAttributeGroup result: %+v", resources)
 	return resources, nil
+}
+
+func (am *AuthManager) ExtractBusinessIDFromAttributeGroup(attributeGroups ...metadata.Group) (int64, error) {
+	if len(attributeGroups) == 0 {
+		return 0, fmt.Errorf("no object found")
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, attributeGroup := range attributeGroups {
+		bizID, err := metadata.ParseBizIDFromMetadata(attributeGroup.Metadata)
+		if err != nil {
+			return 0, fmt.Errorf("parse business id failed, err: %+v", err)
+		}
+		businessIDs = append(businessIDs, bizID)
+	}
+
+	if len(businessIDs) > 1 {
+		return 0, fmt.Errorf("attribute groups belongs to multiple business: [%+v]", businessIDs)
+	}
+
+	if len(businessIDs) == 0 {
+		return 0, fmt.Errorf("unexpected error, no business found with attribute groups: %+v", attributeGroups)
+	}
+	return businessIDs[0], nil
 }
 
 func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
@@ -186,12 +209,17 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 }
 
 func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) error {
+	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
+	if err != nil {
+		return fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
+	}
+	
 	if am.RegisterModelAttributeEnabled == false {
 		objectIDs := make([]string, 0)
 		for _, attributeGroup := range attributeGroups {
 			objectIDs = append(objectIDs, attributeGroup.ObjectID)
 		}
-		return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+		return am.AuthorizeByObjectID(ctx, header, action, businessID, objectIDs...)
 	}
 
 	resources, err := am.makeResourceByAttributeGroup(ctx, header, action, attributeGroups...)
