@@ -117,7 +117,7 @@ func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[s
 	return
 }
 
-func (m *mod) TransferHostToDefaultModule(ctx context.Context, h http.Header, dat *metadata.TransferHostToDefaultModuleConfig) (resp *metadata.Response, err error) {
+func (m *mod) TransferHostToDefaultModule(ctx context.Context, h http.Header, dat *metadata.TransferHostToInnerModule) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "transfer/host/default/module"
 

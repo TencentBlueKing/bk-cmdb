@@ -19,9 +19,10 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (h *host) TransferHostToDefaultModuleConfig(ctx context.Context, header http.Header, input *metadata.TransferHostToDefaultModuleConfig) (resp *metadata.OperaterException, err error) {
+// TransferHostToInnerModule  transfer host to inner module  eg:idle module and fault module
+func (h *host) TransferHostToInnerModule(ctx context.Context, header http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
-	subPath := "/set/module/host/relation/default/module"
+	subPath := "/set/module/host/relation/inner/module"
 
 	err = h.client.Post().
 		WithContext(ctx).
