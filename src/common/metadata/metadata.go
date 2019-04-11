@@ -46,6 +46,32 @@ var (
 
 var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
 
+/*
+func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		bizID = ""
+	}
+	condArr := make([]mapstr.MapStr, 0)
+	condArr = append(condArr, BizLabelNotExist, mapstr.MapStr{"metadata.label.bk_biz_id": bizID})
+	return mapstr.MapStr{"$or": condArr}
+}
+*/
+
+func BizIDFromMetadata(meta Metadata) (int64, error) {
+	var businessID int64
+	var err error
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		return 0, nil
+	}
+	businessID, err = util.GetInt64ByInterface(bizID)
+	if err != nil {
+		return 0, fmt.Errorf("convert business id failed, err: %+v", err)
+	}
+	return businessID, nil
+}
+
 func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	var businessID int64
 	var err error
@@ -67,7 +93,7 @@ func NewPublicOrBizConditionByBizID(businessID int64) mapstr.MapStr {
 	condArr := make([]mapstr.MapStr, 0)
 	condArr = append(condArr, BizLabelNotExist)
 	if businessID != 0 {
-		condArr = append(condArr, mapstr.MapStr{"metadata.label.bk_biz_id": businessID})
+		condArr = append(condArr, mapstr.MapStr{"metadata.label.bk_biz_id": strconv.FormatInt(businessID, 10)})
 	}
 	return mapstr.MapStr{"$or": condArr}
 }
@@ -114,25 +140,22 @@ func GetBusinessIDFromMeta(data interface{}) string {
 // {"label": []} ==> 0, error
 // {"label": {"bk_biz_id": 1}} ==> 1, nil
 // {"label": {"bk_biz_id": "a"}} ==> 0, error
-func ParseBizIDFromData(rawData interface{}) (int64, error) {
-	data, ok := rawData.(map[string]interface{})
-	if ok == false {
-		return 0, fmt.Errorf("invalid input, not map struct")
-	}
-	rawMetadata, existed := data[BKMetadata]
-	if existed == false {
-		return 0, nil
-	}
-	return ParseBizIDFromMetadata(rawMetadata)
-}
-
-func ParseBizIDFromMetadata(rawMetadata interface{}) (int64, error) {
-	if rawMetadata == nil {
-		return 0, fmt.Errorf("metadata is nil")
+func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
+	rawMetadata, exist := rawData.Get(BKMetadata)
+	if exist == false {
+		return 0, fmt.Errorf("invalid input, metadata field not exist")
 	}
 	metadata, ok := rawMetadata.(map[string]interface{})
 	if ok == false {
-		return 0, fmt.Errorf("invalid metadata format, not map struct")
+		return 0, fmt.Errorf("invalid input, not mapstr struct")
+	}
+	
+	return ParseBizIDFromMetadata(metadata)
+}
+
+func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
+	if metadata == nil {
+		return 0, fmt.Errorf("metadata is nil")
 	}
 	rawLabel, existed := metadata[BKLabel]
 	if existed == false {
@@ -140,7 +163,7 @@ func ParseBizIDFromMetadata(rawMetadata interface{}) (int64, error) {
 	}
 	label, ok := rawLabel.(map[string]interface{})
 	if !ok {
-		return 0, fmt.Errorf("invalid label field format, not map struct")
+		return 0, fmt.Errorf("invalid label field format, not mapstr struct")
 	}
 	rawBizID, existed := label[LabelBusinessID]
 	if !existed {

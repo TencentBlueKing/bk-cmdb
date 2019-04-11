@@ -34,6 +34,7 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(uniqueIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjUnique, queryCond)
+	// resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model unique by id: %+v failed, err: %+v", uniqueIDs, err)
 	}
@@ -68,6 +69,8 @@ func (am *AuthManager) ExtractBusinessIDFromUniques(uniques ...ModelUniqueSimpli
 		businessIDs = append(businessIDs, unique.BusinessID)
 	}
 
+	businessIDs = util.IntArrayUnique(businessIDs)
+	
 	if len(businessIDs) > 1 {
 		return 0, fmt.Errorf("uniques belongs to multiple business: [%+v]", businessIDs)
 	}

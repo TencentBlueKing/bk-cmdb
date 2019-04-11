@@ -141,13 +141,14 @@ func (am *AuthManager) ExtractBusinessIDFromAttributeGroup(attributeGroups ...me
 
 	businessIDs := make([]int64, 0)
 	for _, attributeGroup := range attributeGroups {
-		bizID, err := metadata.ParseBizIDFromMetadata(attributeGroup.Metadata)
+		bizID, err := metadata.BizIDFromMetadata(attributeGroup.Metadata)
 		if err != nil {
 			return 0, fmt.Errorf("parse business id failed, err: %+v", err)
 		}
 		businessIDs = append(businessIDs, bizID)
 	}
 
+	businessIDs = util.IntArrayUnique(businessIDs)
 	if len(businessIDs) > 1 {
 		return 0, fmt.Errorf("attribute groups belongs to multiple business: [%+v]", businessIDs)
 	}
