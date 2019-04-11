@@ -212,3 +212,11 @@ type TopoInstance struct {
 func (ti *TopoInstance) Key() string {
 	return fmt.Sprintf("%s:%d", ti.ObjectID, ti.InstanceID)
 }
+
+// TransferHostsCrossBusinessRequest Transfer host across business request parameter
+type TransferHostsCrossBusinessRequest struct {
+	SrcApplicationID int64   `json:"src_bk_biz_id"`
+	DstApplicationID int64   `json:"dst_bk_biz_id"`
+	HostIDArr        []int64 `json:"bk_host_id"`
+	DstModuleIDArr   []int64 `json:"bk_module_ids"`
+}
