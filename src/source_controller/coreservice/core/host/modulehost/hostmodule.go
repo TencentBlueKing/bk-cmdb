@@ -41,34 +41,23 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client) *ModuleHost {
 	}
 }
 
-// TransferHostToDefaultModule transfer host to default module config
-func (mh *ModuleHost) TransferHostToDefaultModule(ctx core.ContextParams, input *metadata.TransferHostToDefaultModuleConfig) ([]metadata.ExceptionResult, error) {
+// TransferHostToInnerModule transfer host to inner module, default module contain(idle module, fault module)
+func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
 
 	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, []int64{input.ModuleID}, false)
-	defaultModuleIDArr, err := transfer.GetDefaultModuleIDArr(ctx)
+
+	exit, err := transfer.HasInnerModule(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule GetDefaultModuleIDArr error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule HasInnerModule error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
-	if len(defaultModuleIDArr) == 0 {
-		blog.ErrorJSON("TransferHostToDefaultModule GetDefaultModuleIDArr error. input:%s, rid:%s", input, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceDefaultModuleNotExist, input.ApplicationID)
-	}
-	var isDefaultModule bool
-	for _, moduleID := range defaultModuleIDArr {
-		if moduleID == input.ModuleID {
-			isDefaultModule = true
-			continue
-		}
-	}
-	if !isDefaultModule {
-		blog.ErrorJSON("TransferHostToDefaultModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
+	if !exit {
+		blog.ErrorJSON("TransferHostToInnerModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ApplicationID, input.ModuleID)
 	}
-
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TransferHostToDefaultModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostToInnerModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
 
@@ -76,7 +65,76 @@ func (mh *ModuleHost) TransferHostToDefaultModule(ctx core.ContextParams, input 
 	for _, hostID := range input.HostID {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TransferHostToDefaultModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("TransferHostToInnerModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Code:        int64(err.GetCode()),
+				OriginIndex: hostID,
+			})
+		}
+	}
+	if err != nil {
+		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
+	}
+
+	return nil, nil
+}
+
+// TransferHostModule transfer host to use add module
+func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+
+	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, input.ModuleID, input.IsIncrement)
+
+	// 在HostModule的validParameterModule 方法中判断默认模块不可以与普通模块同时存在，
+	// 是为了保证数据的证据性。 这里是为了保证逻辑的正确性。
+	// 保证主机只可以在用户新加的普通模块中转移
+	exit, err := transfer.HasInnerModule(ctx)
+	if err != nil {
+		blog.ErrorJSON("TrasferHostModule HasDefaultModule error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		return nil, err
+	}
+	if !exit {
+		blog.ErrorJSON("TrasferHostModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ApplicationID, input.ModuleID)
+	}
+	err = transfer.ValidParameter(ctx)
+	if err != nil {
+		blog.ErrorJSON("TrasferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		return nil, err
+	}
+	var exceptionArr []metadata.ExceptionResult
+	for _, hostID := range input.HostID {
+		err := transfer.Transfer(ctx, hostID)
+		if err != nil {
+			blog.ErrorJSON("TrasferHostModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Code:        int64(err.GetCode()),
+				OriginIndex: hostID,
+			})
+		}
+	}
+	if err != nil {
+		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
+	}
+
+	return nil, nil
+}
+
+// TransferHostCrossBusiness Host cross-business transfer
+func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
+
+	err := transfer.ValidParameter(ctx)
+	if err != nil {
+		blog.ErrorJSON("TransferHostCrossBusiness ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		return nil, err
+	}
+	var exceptionArr []metadata.ExceptionResult
+	for _, hostID := range input.HostIDArr {
+		err := transfer.Transfer(ctx, hostID)
+		if err != nil {
+			blog.ErrorJSON("TransferHostCrossBusiness  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
