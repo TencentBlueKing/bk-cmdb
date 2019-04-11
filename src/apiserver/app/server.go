@@ -46,12 +46,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	svc := service.NewService()
-	ctnr := restful.NewContainer()
-	ctnr.Router(restful.CurlyRouter{})
-	ctnr.Router(restful.CurlyRouter{})
-	for _, item := range svc.WebServices() {
-		ctnr.Add(item)
-	}
 
 	apiSvr := new(APIServer)
 	input := &backbone.BackboneParameter{
@@ -84,6 +78,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
 
+	ctnr := restful.NewContainer()
+	ctnr.Router(restful.CurlyRouter{})
+	ctnr.Router(restful.CurlyRouter{})
+	for _, item := range svc.WebServices(authConf) {
+		ctnr.Add(item)
+	}
 	apiSvr.Core = engine
 	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
 		return err

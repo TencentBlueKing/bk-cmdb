@@ -94,15 +94,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			} else {
 				process.Service.SetAuthcenter(authcli)
 			}
+			authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+			authSynchronizer.Run()
 		}
 		break
 	}
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
 		return err
 	}
-
-	authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
-	authSynchronizer.Run()
 
 	<-ctx.Done()
 	blog.V(0).Info("process stopped")
