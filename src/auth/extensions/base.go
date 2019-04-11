@@ -13,7 +13,6 @@
 package extensions
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
+	"configcenter/src/common/metadata"
 )
 
 // correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
