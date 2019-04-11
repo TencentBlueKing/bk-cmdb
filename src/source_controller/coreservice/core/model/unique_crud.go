@@ -144,7 +144,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
 	if len(unique.Metadata.Label) > 0 {
-		cond.Field(metadata.BKMetadata).Eq(unique.Label)
+		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
 	}
 
 	oldunique := metadata.ObjectUnique{}
