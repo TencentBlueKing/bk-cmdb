@@ -81,7 +81,12 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	objID := pathParams("bk_obj_id")
 
 	// auth: deregister mainline object
-	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, objID); err != nil {
+	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
+	if err != nil {
+		blog.Errorf("parse business id from request failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+	}
+	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, bizID, objID); err != nil {
 		message := fmt.Sprintf("deregister mainline model failed, err: %+v", err)
 		blog.V(2).Info(message)
 		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, message)
