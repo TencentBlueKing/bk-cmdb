@@ -1,5 +1,6 @@
 import auth from './auth.js'
-export default {
-    request: [auth.request],
-    response: [auth.response]
-}
+import business from './business.js'
+export default [
+    business,
+    auth
+]

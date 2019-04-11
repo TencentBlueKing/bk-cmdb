@@ -1,5 +1,9 @@
 /* eslint-disable */
 import * as AUTH from '@/dictionary/auth'
+import { 
+    isSameRequest,
+    isRedirectResponse
+} from './util.js'
 
 const authActionMap = {
     'findMany': 'search',
@@ -13,40 +17,29 @@ const modelAuth = [
     AUTH.R_INST
 ]
 
-const getFullUrl = url => {
-    return `${window.API_PREFIX}/${url}`
-}
-
 const CONFIG = {
     origin: {
-        url: getFullUrl('auth/verify'),
+        url: 'auth/verify',
         method: 'post'
     },
     redirect: {
-        url: getFullUrl('auth/verify'),
-        method: 'post'
-        // url: getFullUrl(`topo/privilege/user/detail/0/${window.User.name}`),
-        // method: 'get'
+        url: `topo/privilege/user/detail/0/${window.User.name}`,
+        method: 'get'
     }
 }
 
 export default {
     request: config => {
-        // if (
-        //     getFullUrl(config.url) === CONFIG.origin.url
-        //     && config.method === CONFIG.origin.method
-        // ) {
-        //     Object.assign(config, CONFIG.redirect)
-        // }
+        if (isSameRequest(CONFIG.origin, config)) {
+            Object.assign(config, CONFIG.redirect)
+        }
         return config
     },
     response: response => {
-        const { url, baseURL, method } = response.config
-        if (
-            url === CONFIG.redirect.url
-            && method === CONFIG.redirect.method
-        ) {
-            console.log(response)
+        if (isRedirectResponse(CONFIG.redirect, response)) {
+            Object.assign(response.data, {
+                data: []
+            })
         }
         return response
     }
