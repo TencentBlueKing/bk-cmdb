@@ -22,7 +22,6 @@ import (
 )
 
 func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.CreateModelInstance{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -31,7 +30,6 @@ func (s *coreService) CreateOneModelInstance(params core.ContextParams, pathPara
 }
 
 func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.CreateManyModelInstance{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -40,7 +38,6 @@ func (s *coreService) CreateManyModelInstances(params core.ContextParams, pathPa
 }
 
 func (s *coreService) UpdateModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.UpdateOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -73,7 +70,6 @@ func (s *coreService) SearchModelInstances(params core.ContextParams, pathParams
 }
 
 func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
@@ -82,7 +78,6 @@ func (s *coreService) DeleteModelInstances(params core.ContextParams, pathParams
 }
 
 func (s *coreService) CascadeDeleteModelInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
 	inputData := metadata.DeleteOption{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
