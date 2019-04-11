@@ -21,7 +21,7 @@ import (
 )
 
 type HostClientInterface interface {
-	TransferHostToDefaultModuleConfig(ctx context.Context, h http.Header, input *metadata.TransferHostToDefaultModuleConfig) (resp *metadata.OperaterException, err error)
+	TransferHostToInnerModule(ctx context.Context, h http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error)
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {
