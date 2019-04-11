@@ -401,7 +401,8 @@
         "公共": "Public",
         "自定义": "Custom",
         "新增模型提示": "Can only add in custom group",
-        "无自定义分组": "There are no custom groups"
+        "无自定义分组": "There are no custom groups",
+        "停用模型提示": "No model disabled"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
