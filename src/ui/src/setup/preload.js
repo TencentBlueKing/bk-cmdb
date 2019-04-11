@@ -85,7 +85,7 @@ export default async function (app) {
     return Promise.all([
         getViewAuth(app),
         getClassifications(app),
-        getUserCustom(app),
+        // getUserCustom(app),
         getUserList(app)
     ])
 }

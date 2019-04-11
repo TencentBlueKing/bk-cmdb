@@ -6,8 +6,7 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-import middleware from './middleware'
-
+import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -19,9 +18,9 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
     config => {
-        middleware.request.forEach(func => {
-            if (typeof func === 'function') {
-                config = func(config)
+        middlewares.forEach(middleware => {
+            if (typeof middleware.request === 'function') {
+                config = middleware.request(config)
             }
         })
         return config
@@ -33,9 +32,9 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
     response => {
-        middleware.response.forEach(func => {
-            if (typeof func === 'function') {
-                response = func(response)
+        middlewares.forEach(middleware => {
+            if (typeof middleware.response === 'function') {
+                response = middleware.response(response)
             }
         })
         return response
