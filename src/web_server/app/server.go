@@ -21,8 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/holmeswang/contrib/sessions"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,6 +30,8 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
+
+	"github.com/holmeswang/contrib/sessions"
 )
 
 type WebServer struct {
