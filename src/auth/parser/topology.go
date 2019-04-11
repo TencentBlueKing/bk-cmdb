@@ -1695,7 +1695,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 	}
 
 	// find set operation.
-	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
+	if ps.hitRegexp(findSetRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
 			ps.err = errors.New("find set, but got invalid url")
 			return ps
