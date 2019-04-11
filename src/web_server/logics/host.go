@@ -33,11 +33,17 @@ import (
 func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) ([]mapstr.MapStr, error) {
 	hostInfo := make([]mapstr.MapStr, 0)
 	sHostCond := make(map[string]interface{})
-	appID, _ := strconv.Atoi(appIDStr)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if err != nil {
+		return nil, err
+	}
 	hostIDArr := strings.Split(hostIDStr, ",")
-	iHostIDArr := make([]int, 0)
+	iHostIDArr := make([]int64, 0)
 	for _, j := range hostIDArr {
-		hostID, _ := strconv.Atoi(j)
+		hostID, err := strconv.ParseInt(j, 10, 64)
+		if err != nil {
+			return nil, err
+		}
 		iHostIDArr = append(iHostIDArr, hostID)
 	}
 	if -1 != appID {
@@ -89,8 +95,12 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
-	if nil != err || false == result.Result {
-		return hostInfo, errors.New("no host")
+	if nil != err {
+		return hostInfo, err
+	}
+
+	if !result.Result {
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
