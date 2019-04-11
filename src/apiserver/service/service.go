@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apiserver/core"
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
 	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -33,7 +34,7 @@ import (
 
 // Service service methods
 type Service interface {
-	WebServices() []*restful.WebService
+	WebServices(auth authcenter.AuthConfig) []*restful.WebService
 	SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
@@ -63,13 +64,16 @@ func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient
 	s.authorizer = authorize
 }
 
-func (s *service) WebServices() []*restful.WebService {
+func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Filter(s.authFilter(getErrFun))
+	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	if auth.Enable {
+		ws.Filter(s.authFilter(getErrFun))
+	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
 	ws.Route(ws.GET("/auth/business-list").To(s.GetAuthorizedAppList))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
