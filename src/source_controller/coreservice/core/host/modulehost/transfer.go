@@ -188,7 +188,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	}
 	//  存在不属于当前业务的模块
 	if len(moduleInfoArr) != len(t.moduleIDArr) {
-		blog.Errorf("validParameterModule not found module info. moduleID:%#v,bizID,rid:%s", t.moduleIDArr, bizID, ctx.ReqID)
+		blog.Errorf("validParameterModule not found module info. moduleID:%#v,bizID:%d,rid:%s", t.moduleIDArr, bizID, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, t.moduleIDArr, bizID)
 	}
 
