@@ -40,8 +40,8 @@ type transferHostModule struct {
 
 	// handle data
 
-	// default module id array
-	defaultModuleID []int64
+	// inner module id array
+	innerModuleID []int64
 
 	// map[module id]set id
 	moduleIDSetIDmap map[int64]int64
@@ -59,8 +59,8 @@ func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64,
 
 // validParameter valid parametere legal
 func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
-	if len(t.defaultModuleID) == 0 {
-		err := t.getDefaultModuleIDArr(ctx)
+	if len(t.innerModuleID) == 0 {
+		err := t.getInnerModuleIDArr(ctx)
 		return err
 	}
 
@@ -75,6 +75,12 @@ func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErr
 	}
 
 	return nil
+}
+
+// SetCrossBusiness Set host cross-service transfer parameters
+func (t *transferHostModule) SetCrossBusiness(ctx core.ContextParams, bizID int64) {
+	t.crossBizTransfer = true
+	t.srcBizID = bizID
 }
 
 func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
@@ -175,6 +181,9 @@ func (t *transferHostModule) validParameterInst(ctx core.ContextParams) errors.C
 // module must be exist in business
 // multiple modules not default module, transfer default must be one module
 func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors.CCErrorCoder {
+	if len(t.moduleIDArr) == 0 {
+		return ctx.Error.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)
+	}
 	bizID := t.bizID
 	// transfer the host across businees,
 	// check host belongs to the original business ID
@@ -212,6 +221,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	// When multiple modules are used, determine whether the default module .
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
+		// 为了保证数据的证据性
 		defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 		if err != nil {
 			blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
@@ -304,7 +314,7 @@ func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, b
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	if isDefault {
-		cond.Field(common.BKModuleIDField).In(t.defaultModuleID)
+		cond.Field(common.BKModuleIDField).In(t.innerModuleID)
 	}
 	cond.Field(common.BKHostIDField).Eq(hostID)
 
@@ -340,11 +350,6 @@ func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, b
 //AddSingleHostModuleRelation add single host module relation
 func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
-	// transfer the host across businees,
-	// check host belongs to the original business ID
-	if t.crossBizTransfer {
-		bizID = t.srcBizID
-	}
 
 	var moduleIDArr []int64
 	// append method, filter already exist modules
@@ -396,8 +401,8 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 	return insertDataArr, nil
 }
 
-// getDefaultModuleIDArr get default module
-func (t *transferHostModule) getDefaultModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
+// getInnerModuleIDArr get default module
+func (t *transferHostModule) getInnerModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
 	bizID := t.bizID
 	// transfer the host across businees,
 	// check host belongs to the original business ID
@@ -413,28 +418,48 @@ func (t *transferHostModule) getDefaultModuleIDArr(ctx core.ContextParams) error
 	err := t.mh.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).All(ctx, &moduleInfoArr)
 
 	if err != nil {
-		blog.ErrorJSON("getDefaultModuleIDArr find data error. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
+		blog.ErrorJSON("getInnerModuleIDArr find data error. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if len(moduleInfoArr) == 0 {
-		blog.Warnf("getDefaultModuleIDArr not found default module. appID:%d, rid:%s", bizID, ctx.ReqID)
+		blog.Warnf("getInnerModuleIDArr not found default module. appID:%d, rid:%s", bizID, ctx.ReqID)
 	}
 	for _, moduleInfo := range moduleInfoArr {
 		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
 		if err != nil {
-			blog.ErrorJSON("getDefaultModuleIDArr module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
+			blog.ErrorJSON("getInnerModuleIDArr module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
-		t.defaultModuleID = append(t.defaultModuleID, moduleID)
+		t.innerModuleID = append(t.innerModuleID, moduleID)
 	}
 
 	return nil
 }
 
-func (t *transferHostModule) GetDefaultModuleIDArr(ctx core.ContextParams) ([]int64, errors.CCError) {
-	if len(t.defaultModuleID) == 0 {
-		err := t.getDefaultModuleIDArr(ctx)
-		return t.defaultModuleID, err
+func (t *transferHostModule) GetInnerModuleIDArr(ctx core.ContextParams) ([]int64, errors.CCError) {
+	if len(t.innerModuleID) == 0 {
+		err := t.getInnerModuleIDArr(ctx)
+		return t.innerModuleID, err
 	}
-	return t.defaultModuleID, nil
+	return t.innerModuleID, nil
+}
+
+func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error) {
+	innerModuleIDArr, err := t.GetInnerModuleIDArr(ctx)
+	if err != nil {
+		return false, err
+	}
+	if len(innerModuleIDArr) == 0 {
+		blog.ErrorJSON("HasInnerModule  error. module:%s, rid:%s", t.moduleIDArr, ctx.ReqID)
+		return false, ctx.Error.CCErrorf(common.CCErrCoreServiceDefaultModuleNotExist, t.bizID)
+	}
+	for _, innerModuleID := range innerModuleIDArr {
+		for _, moduleID := range t.moduleIDArr {
+			if moduleID == innerModuleID {
+				return true, nil
+			}
+		}
+
+	}
+	return false, nil
 }
