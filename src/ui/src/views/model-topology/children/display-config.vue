@@ -12,13 +12,13 @@
                 </label>
             </div>
             <ul class="display-list">
-                <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
+                <li class="group-item" v-for="(group, groupIndex) in displayModelGroups" :key="groupIndex">
                     <p class="group-name">
                         <span class="group-name-text">{{group['bk_classification_name']}}</span>
                         <label class="group-name-checkbox cmdb-form-checkbox cmdb-checkbox-small">
                             <input type="checkbox"
                                 :checked="isGroupChecked(group)"
-                                @change="handleToggleGroup($event, group)" >
+                                @change="handleToggleGroup($event, group)">
                         </label>
                     </p>
                     <ul class="clearfix">
@@ -27,33 +27,6 @@
                                 <input type="checkbox" v-model="localModelConfig[model.bk_obj_id]">
                                 <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span>
                             </label>
-                            <div class="cmdb-form-checkbox text-box">
-                                <!-- <span class="cmdb-checkbox-text">{{model['bk_obj_name']}}</span> -->
-                                <!-- <span class="count">({{model.asstInfo.assts.length}})</span> -->
-                                <!-- <i class="bk-icon icon-angle-down"></i> -->
-                                <cmdb-collapse-transition>
-                                    <div class="relation-detail" v-click-outside="hidePop" @click.stop v-if="activePop === model['bk_obj_id']">
-                                        <div class="detail-title clearfix">
-                                            <div class="fl">
-                                                <span class="title">{{$t('ModelManagement["模型关联"]')}}</span>
-                                                <span class="info">({{$t('ModelManagement["即视图中的连线"]')}})</span>
-                                            </div>
-                                            <label class="fr cmdb-form-checkbox cmdb-checkbox-small">
-                                                <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
-                                                <span class="cmdb-checkbox-text">{{$t('Common["全选"]')}}</span>
-                                            </label>
-                                        </div>
-                                        <ul class="relation-list clearfix">
-                                            <li class="fl" v-for="(asst, asstIndex) in findCurrentModelAsst(model)" :key="asstIndex">
-                                                <label class="cmdb-form-checkbox cmdb-checkbox-small" :title="asstLabel(model, asst)">
-                                                    <input type="checkbox" v-model="asst.checked">
-                                                    <span class="cmdb-checkbox-text">{{asstLabel(model, asst)}}</span>
-                                                </label>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </cmdb-collapse-transition>
-                            </div>
                         </li>
                     </ul>
                 </li>
@@ -93,7 +66,6 @@
                 activePop: '',
                 isShowName: this.isShowModelName,
                 isShowAsst: this.isShowModelAsst,
-                topoList: [],
                 localModelConfig: {}
             }
         },
@@ -101,11 +73,13 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
-            ...mapGetters('globalModels', ['modelConfig'])
+            ...mapGetters('globalModels', [
+                'modelConfig',
+                'displayModelGroups'
+            ])
         },
         created () {
             this.initLocalTopoModelList()
-            this.initTopoList()
             this.initModelConfig()
         },
         methods: {
@@ -145,31 +119,6 @@
                     asst.checked = event.target.checked
                 })
                 this.$forceUpdate()
-            },
-            initTopoList () {
-                let topoList = []
-                this.classifications.forEach(group => {
-                    let objects = []
-                    let asstObjects = {}
-                    group['bk_objects'].forEach(model => {
-                        let asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
-                        if (asstInfo) {
-                            objects.push({
-                                ...model,
-                                ...{asstInfo}
-                            })
-                        }
-                    })
-                    if (objects.length) {
-                        topoList.push({
-                            ...group,
-                            ...{
-                                bk_objects: objects
-                            }
-                        })
-                    }
-                })
-                this.topoList = topoList
             },
             asstLabel (model, asst) {
                 let asstModel = this.$allModels.find(model => {
