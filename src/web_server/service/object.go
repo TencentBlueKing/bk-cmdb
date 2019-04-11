@@ -255,7 +255,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 

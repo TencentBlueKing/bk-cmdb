@@ -754,7 +754,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action:      meta.SkipAction,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1412,7 +1412,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
+			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
 		}
 
 		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
