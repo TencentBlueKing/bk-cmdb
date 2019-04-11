@@ -117,7 +117,7 @@ func (am *AuthManager) collectObjectsByRawIDs(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) ExtractBusinessIDFromObject(object metadata.Object) (int64, error) {
-	return metadata.ParseBizIDFromData(object)
+	return metadata.BizIDFromMetadata(object.Metadata)
 }
 
 func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
@@ -133,7 +133,8 @@ func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) 
 		}
 		businessIDs = append(businessIDs, bizID)
 	}
-	
+
+	businessIDs = util.IntArrayUnique(businessIDs)
 	if len(businessIDs) > 1 {
 		return 0, fmt.Errorf("models belongs to multiple business: [%+v]", businessIDs)
 	}

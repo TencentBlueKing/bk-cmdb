@@ -81,7 +81,7 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 	objID := pathParams("bk_obj_id")
 
 	// auth: deregister mainline object
-	bizID, err := metadata.ParseBizIDFromData(params.MetaData)
+	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
 	if err != nil {
 		blog.Errorf("parse business id from request failed, err: %+v", err)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)

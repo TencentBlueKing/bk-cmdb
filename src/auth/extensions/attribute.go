@@ -63,13 +63,14 @@ func (am *AuthManager) ExtractBusinessIDFromModelAttributes(attributes ...metada
 
 	businessIDs := make([]int64, 0)
 	for _, attribute := range attributes {
-		bizID, err := metadata.ParseBizIDFromMetadata(attribute.Metadata)
+		bizID, err := metadata.BizIDFromMetadata(attribute.Metadata)
 		if err != nil {
 			return 0, fmt.Errorf("parse business id failed, err: %+v", err)
 		}
 		businessIDs = append(businessIDs, bizID)
 	}
 
+	businessIDs = util.IntArrayUnique(businessIDs)
 	if len(businessIDs) > 1 {
 		return 0, fmt.Errorf("attributes belongs to multiple business: [%+v]", businessIDs)
 	}
