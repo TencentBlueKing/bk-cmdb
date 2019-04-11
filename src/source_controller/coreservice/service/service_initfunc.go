@@ -114,6 +114,11 @@ func (s *coreService) initMainline() {
 	s.addAction(http.MethodPost, "/read/mainline/instance/{bk_biz_id}", s.SearchMainlineInstanceTopo, nil)
 }
 
+func (s *coreService) host() {
+	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToDefaultModule, nil)
+
+}
+
 func (s *coreService) initService() {
 	s.initHealth()
 	s.initModelClassification()
@@ -125,4 +130,5 @@ func (s *coreService) initService() {
 	s.initInstanceAssociation()
 	s.initDataSynchronize()
 	s.initMainline()
+	s.host()
 }

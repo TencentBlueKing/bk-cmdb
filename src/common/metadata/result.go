@@ -173,3 +173,9 @@ type ReadInstAssociationResult struct {
 		Info  []InstAsst `json:"info"`
 	}
 }
+
+// OperaterException  result
+type OperaterException struct {
+	BaseResp `json:",inline"`
+	Data     []ExceptionResult `json:"data"`
+}
