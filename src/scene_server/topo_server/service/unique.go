@@ -15,7 +15,6 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -152,10 +151,12 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 		ids = append(ids, int64(unique.ID))
 	}
 
+	/*
 	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
 		blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
+	*/
 
 	return uniques, nil
 }
