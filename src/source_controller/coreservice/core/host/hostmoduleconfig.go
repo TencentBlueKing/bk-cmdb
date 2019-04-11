@@ -17,7 +17,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-// TransferHostToDefaultModule transfer host to default module config
-func (hm *hostManager) TransferHostToDefaultModule(ctx core.ContextParams, input *metadata.TransferHostToDefaultModuleConfig) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferHostToDefaultModule(ctx, input)
+// TransferHostToInnerModule transfer host to inner module
+func (hm *hostManager) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferHostToInnerModule(ctx, input)
 }

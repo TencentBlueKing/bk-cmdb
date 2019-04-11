@@ -20,12 +20,12 @@ import (
 )
 
 func (s *coreService) TransferHostToDefaultModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	inputData := &metadata.TransferHostToDefaultModuleConfig{}
+	inputData := &metadata.TransferHostToInnerModule{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("TransferHostToDefaultModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	exceptionArr, err := s.core.HostOperation().TransferHostToDefaultModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferHostToInnerModule(params, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
 		return exceptionArr, err

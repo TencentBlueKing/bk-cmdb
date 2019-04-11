@@ -830,12 +830,12 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	transferInput := &metadata.TransferHostToDefaultModuleConfig{
+	transferInput := &metadata.TransferHostToInnerModule{
 		ApplicationID: conf.ApplicationID,
 		HostID:        conf.HostID,
 		ModuleID:      moduleID,
 	}
-	result, err := s.CoreAPI.CoreService().Host().TransferHostToDefaultModuleConfig(ctx, pheader, transferInput)
+	result, err := s.CoreAPI.CoreService().Host().TransferHostToInnerModule(ctx, pheader, transferInput)
 	if err != nil {
 		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})

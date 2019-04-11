@@ -115,7 +115,7 @@ func (s *coreService) initMainline() {
 }
 
 func (s *coreService) host() {
-	s.addAction(http.MethodPost, "/set/module/host/relation/default/module", s.TransferHostToDefaultModule, nil)
+	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToDefaultModule, nil)
 
 }
 
