@@ -96,9 +96,9 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
 	if err != nil {
-		blog.Error(err.Error())
+		blog.Errorf("export host, but get hosts info failed, err: %v", err)
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 	var file *xlsx.File
