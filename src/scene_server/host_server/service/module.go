@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/emicklei/go-restful"
 
@@ -845,82 +844,22 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	for _, hostID := range conf.HostID {
-		exist, err := srvData.lgc.IsHostExistInApp(srvData.ctx, conf.ApplicationID, hostID)
-		if err != nil {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", conf.ApplicationID, hostID, err.Error())
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-			return
-		}
-
-		if !exist {
-			blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %v,input:%+v,rid:%s", conf.ApplicationID, hostID, conf, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostNotINAPP, hostID)})
-			return
-		}
-
-		opt := metadata.ModuleHostConfigParams{
-			ApplicationID: conf.ApplicationID,
-			HostID:        hostID,
-		}
-		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName DelModuleHostConfig http do error. err: %v,input:%+v,param:%+v,rid:%s", err, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("moveHostToModuleByName DelModuleHostConfig http response error. err coe:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-
-		opt.ModuleID = []int64{moduleID}
-		result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName AddModuleHostConfig http do error. err: %v,input:%+v,param:%+v,rid:%s", err, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("moveHostToModuleByName AddModuleHostConfig http response error. err coe:%d,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDELResourcePool)})
-			return
-		}
-		notExistHostID, err := srvData.lgc.ExistHostIDSInApp(ctx, conf.ApplicationID, conf.HostID)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName ExistHostIDSInApp error, err:%s,input:%#v,rid:%s", err.Error(), conf, rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-			return
-		}
-		if len(notExistHostID) > 0 {
-			blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %#v, not exist in app:%#v,rid:%s", conf.ApplicationID, conf.HostID, notExistHostID, rid)
-			notTipStrHostID := ""
-			for _, hostID := range notExistHostID {
-				notTipStrHostID = fmt.Sprintf("%s,%s", notTipStrHostID, hostID)
-			}
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrHostNotINAPP, strings.Trim(notTipStrHostID, ","))})
-			return
-		}
-		transferInput := &metadata.TransferHostToDefaultModuleConfig{
-			ApplicationID: conf.ApplicationID,
-			HostID:        conf.HostID,
-			ModuleID:      moduleID,
-		}
-		tResult, err := s.CoreAPI.HostController().Module().TransferHostToDefaultModule(ctx, pheader, transferInput)
-		if err != nil {
-			blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
-		}
-		if !tResult.Result {
-			blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, tResult, rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
-		}
-
+	transferInput := &metadata.TransferHostToInnerModule{
+		ApplicationID: conf.ApplicationID,
+		HostID:        conf.HostID,
+		ModuleID:      moduleID,
 	}
-
+	result, err := s.CoreAPI.CoreService().Host().TransferHostToInnerModule(ctx, pheader, transferInput)
+	if err != nil {
+		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http reply error. input:%#v,condition:%#v,err:%#v,rid:%s", conf, transferInput, result, rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.New(result.Code, result.ErrMsg), Data: result.Data})
+		return
+	}
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)

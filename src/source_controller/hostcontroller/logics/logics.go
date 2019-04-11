@@ -341,7 +341,7 @@ func (lgc *Logics) GetSetAndModuleMapByModuleID(ctx context.Context, appID int64
 }
 
 // TransferHostToDefaultModuleConfig transfer host to default module config
-func (lgc *Logics) TransferHostToDefaultModuleConfig(ctx context.Context, input *metadata.TransferHostToDefaultModuleConfig, header http.Header) error {
+func (lgc *Logics) TransferHostToDefaultModuleConfig(ctx context.Context, input *metadata.TransferHostToInnerModule, header http.Header) error {
 	rid := util.GetHTTPCCRequestID(header)
 	ownerID := util.GetOwnerID(header)
 

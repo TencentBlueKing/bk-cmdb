@@ -23,6 +23,9 @@
                 </span>
                 <span class="field-id">{{item['bk_property_id']}}</span>
             </template>
+            <template slot="bk_property_type" slot-scope="{ item }">
+                <span>{{fieldTypeMap[item['bk_property_type']]}}</span>
+            </template>
             <template slot="isrequired" slot-scope="{ item }">
                 <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
                 <i class="field-required-icon bk-icon icon-close" v-else></i>
@@ -91,18 +94,18 @@
                 },
                 table: {
                     header: [{
+                        id: 'isrequired',
+                        name: this.$t('ModelManagement["必填"]')
+                    }, {
                         id: 'bk_property_id',
                         name: this.$t('ModelManagement["唯一标识"]'),
                         minWidth: 110
                     }, {
-                        id: 'bk_property_type',
-                        name: this.$t('ModelManagement["字段类型"]')
-                    }, {
-                        id: 'isrequired',
-                        name: this.$t('ModelManagement["必填"]')
-                    }, {
                         id: 'bk_property_name',
                         name: this.$t('ModelManagement["名称"]')
+                    }, {
+                        id: 'bk_property_type',
+                        name: this.$t('ModelManagement["字段类型"]')
                     }, {
                         id: 'create_time',
                         name: this.$t('ModelManagement["创建时间"]')
@@ -189,6 +192,9 @@
                         await this.deleteObjectAttribute({
                             id: field.id,
                             config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: this.isInjectable
+                                }),
                                 requestId: 'deleteObjectAttribute'
                             }
                         }).then(() => {
