@@ -66,10 +66,14 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapstr.MapStr) (model.AttributeInterface, error) {
 
-	businessID, err := metadata.ParseBizIDFromData(data)
-	if err != nil {
-		blog.Errorf("[operation-attr] failed to parse biz id field, error info is %s", data, err.Error())
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+	var businessID int64
+	var err error
+	if params.MetaData != nil {
+		businessID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			blog.Errorf("[operation-attr] failed to parse biz id field, error info is %s", data, err.Error())
+			return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+		}
 	}
 	att := a.modelFactory.CreateAttribute(params)
 
