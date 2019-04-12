@@ -3,6 +3,7 @@ export const NAV_BASIC_RESOURCE = 'basicResource'
 export const NAV_BUSINESS_RESOURCE = 'businessResource'
 export const NAV_AUDIT_ANALYSE = 'auditAnalyse'
 export const NAV_MODEL_MANAGEMENT = 'modelManagement'
+export const NAV_PERMISSION = 'permission'
 export const NAV_COLLECT = 'collect'
 
 export default [{
@@ -23,6 +24,11 @@ export default [{
     id: NAV_AUDIT_ANALYSE,
     i18n: 'Nav["审计与分析"]',
     icon: 'icon-cc-nav-audit',
+    submenu: []
+}, {
+    id: NAV_PERMISSION,
+    i18n: 'Nav["权限控制"]',
+    icon: 'icon-cc-nav-authority',
     submenu: []
 }, {
     id: NAV_MODEL_MANAGEMENT,
