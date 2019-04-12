@@ -22,6 +22,9 @@ import (
 
 type HostClientInterface interface {
 	TransferHostToInnerModule(ctx context.Context, h http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error)
+	TransferHostModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error)
+	TransferHostCrossBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error)
+	GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error)
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {
