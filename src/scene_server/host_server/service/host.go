@@ -81,7 +81,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	query.Limit.Offset = 0
 	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, &query)
 	if err != nil {
-		blog.Errorf("delete host batch  SearchObjects http do error, err: %v,input:+v,rid:%s", err, opt, srvData.rid)
+		blog.Errorf("delete host batch  SearchObjects http do error, err: %v, input:%#v, rid:%s", err, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
@@ -133,12 +133,12 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &delOptConfig)
 		if err != nil {
-			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v,input:+v,params:%s,rid:%s", err, opt, delOptConfig, srvData.rid)
+			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v, input:%#v, params:%s, rid:%s", err, opt, delOptConfig, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 			return
 		}
 		if !result.Result {
-			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s,err msg:%s,input:+v,params:%s,rid:%s", result.Code, result.ErrMsg, opt, delOptConfig, srvData.rid)
+			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s, err msg:%s, input:%#v ,params:%s, rid:%s", result.Code, result.ErrMsg, opt, delOptConfig, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
@@ -246,12 +246,12 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
 
 	if err != nil {
-		blog.Errorf("HostSnapInfohttp do error, err: %v,input:+v,rid:%s", err, hostID, srvData.rid)
+		blog.Errorf("HostSnapInfohttp do error, err: %v ,input:%#v, rid:%s", err, hostID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPReadBodyFailed)})
 		return
 	}
 	if !result.Result {
-		blog.Errorf("HostSnapInfohttp reponse erro, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, srvData.rid)
+		blog.Errorf("HostSnapInfohttp reponse erro, err code:%d,err msg:%s, input:%#v, rid:%s", result.Code, result.ErrMsg, hostID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
@@ -815,12 +815,12 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 		bl, err := srvData.lgc.IsHostExistInApp(srvData.ctx, data.ApplicationID, hostID)
 		if nil != err {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s,rid:%s", data.ApplicationID, hostID, err.Error(), srvData.rid)
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%d}, error:%s,rid:%s", data.ApplicationID, hostID, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 		if false == bl {
-			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s},rid:%s", data.ApplicationID, hostID, srvData.rid)
+			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%d},rid:%s", data.ApplicationID, hostID, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotINAPP)})
 			return
 		}
@@ -854,7 +854,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			return
 		}
 		if !result.Result {
-			blog.Errorf("remove hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+			blog.Errorf("remove hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, data, moduleHostConfigParams, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
@@ -868,7 +868,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 				return
 			}
 			if !result.Result {
-				blog.Errorf("add hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+				blog.Errorf("add hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, data, moduleHostConfigParams, srvData.rid)
 				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 				return
 			}

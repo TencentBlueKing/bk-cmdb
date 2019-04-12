@@ -460,7 +460,7 @@ func (s *service) getHostsByProperty(req *restful.Request, resp *restful.Respons
 
 	resDataV2, err := converter.ResToV2ForHostList(result.Result, result.ErrMsg, result.Data)
 	if err != nil {
-		blog.Errorf("convert host res to v2 error:%v,input:%#v,param:$#v,rid:%s", err, formData, param, srvData.rid)
+		blog.Errorf("convert host res to v2 error:%v,input:%#v,param:%#v,rid:%s", err, formData, param, srvData.rid)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}

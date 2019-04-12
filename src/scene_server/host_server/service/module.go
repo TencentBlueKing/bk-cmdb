@@ -546,7 +546,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	if moduleID == 0 {
-		blog.Errorf("assign host to app, but get module id failed, %s not found: %v,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), srvData.rid)
+		blog.Errorf("assign host to app, but get module id failed, %s not found,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)})
 		return
 	}
@@ -560,17 +560,17 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 
 	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
 	audit.WithPrevious(srvData.ctx)
-	
+
 	// auth: check target business update priority
 	if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, conf.ApplicationID); err != nil {
-		blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v", conf.ApplicationID, err)
+		blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", conf.ApplicationID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 
 	// auth: check host transfer priority
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
-		blog.Errorf("AssignHostToApp failed, authorize on host transfer failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("AssignHostToApp failed, authorize on host transfer failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -584,24 +584,24 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 
 	result, err := s.CoreAPI.HostController().Module().AssignHostToApp(srvData.ctx, srvData.header, params)
 	if err != nil {
-		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,param:%+v,rid:%s", err, conf, params)
+		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,param:%+v,rid:%s", err, conf, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostEditRelationPoolFail)})
 		return
 	}
 	if !result.Result {
-		blog.Errorf("assign host to app, but assign to app http response error. err code:%d, err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, params)
+		blog.Errorf("assign host to app, but assign to app http response error. err code:%d, err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, params, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
 	// register host to new business
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
 	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), srvData.user, "assign host to app"); err != nil {
-		blog.Errorf("assign host to app, but save audit failed, err: %v", err)
+		blog.Errorf("assign host to app, but save audit failed, err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return
 	}
@@ -614,7 +614,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	data := new(metadata.HostToAppModule)
 	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
-		blog.Errorf("assign host to app module failed with decode body err: %v", err)
+		blog.Errorf("assign host to app module failed with decode body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -704,14 +704,14 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	if 0 == len(errmsg) {
 		// auth: register hosts
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
-			blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDArr, err)
+			blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", hostIDArr, err, srvData.rid)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 			return
 		}
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
 	} else {
-		blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData)
+		blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
 		return
 	}
@@ -862,7 +862,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
