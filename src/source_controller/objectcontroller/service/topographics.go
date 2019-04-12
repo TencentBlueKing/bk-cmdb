@@ -105,12 +105,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			"bk_inst_id":          datas[index].InstID,
 			"bk_supplier_account": ownerID,
 		}
-		_, err := datas[index].Metadata.Label.GetBusinessID()
-		if nil != err {
-			cond.Merge(meta.BizLabelNotExist)
-		} else {
-			cond.Set("metadata", datas[index].Metadata)
-		}
+
 		cnt, err := db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx)
 		if nil != err {
 			blog.Errorf("update topo graphics, search data error: %s", value, err.Error())

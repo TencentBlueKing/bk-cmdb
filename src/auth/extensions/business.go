@@ -99,8 +99,8 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error) {
 	var bizID int64
 	for idx, business := range businesses {
-		if idx == 0 && business.BKAppIDField != bizID {
-			return 0, fmt.Errorf("get multiple business id from businesses")
+		if idx != 0 && business.BKAppIDField != bizID {
+			return 0, fmt.Errorf("get multiple business id[%d:%d] from businesses", bizID, business.BKAppIDField)
 		}
 		bizID = business.BKAppIDField
 	}
