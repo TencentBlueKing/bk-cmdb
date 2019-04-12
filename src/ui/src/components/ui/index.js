@@ -14,6 +14,7 @@ import date from './form/date.vue'
 import dateRange from './form/date-range.vue'
 import time from './form/time.vue'
 import int from './form/int.vue'
+import float from './form/float.vue'
 import longchar from './form/longchar.vue'
 import singlechar from './form/singlechar.vue'
 import timezone from './form/timezone.vue'
@@ -23,6 +24,7 @@ import associateInput from './form/associate-input.vue'
 import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
+import collapse from './collapse/collapse'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -40,6 +42,7 @@ const install = (Vue, opts = {}) => {
         dateRange,
         time,
         int,
+        float,
         longchar,
         singlechar,
         timezone,
@@ -48,7 +51,8 @@ const install = (Vue, opts = {}) => {
         associateInput,
         tree,
         resize,
-        collapseTransition
+        collapseTransition,
+        collapse
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -72,6 +76,7 @@ export default {
     dateRange,
     time,
     int,
+    float,
     longchar,
     singlechar,
     timezone,

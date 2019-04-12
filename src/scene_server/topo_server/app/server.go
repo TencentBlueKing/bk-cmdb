@@ -16,21 +16,21 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	restful "github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
 	toposvr "configcenter/src/scene_server/topo_server/service"
+	"configcenter/src/storage/dal/mongo"
 )
 
 // TopoServer the topo server
@@ -41,16 +41,23 @@ type TopoServer struct {
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-
-	cfg, err := mapstr.NewFromInterface(current.ConfigMap)
-	if nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
+	topoMax := common.BKTopoBusinessLevelDefault
+	var err error
+	if current.ConfigMap["level.businessTopoMax"] != "" {
+		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+		if err != nil {
+			blog.Errorf("invalid business topo max value, err: %v", err)
+			return
+		}
 	}
+	t.Config.BusinessTopoLevelMax = topoMax
+	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
 
-	if err := cfg.MarshalJSONInto(&t.Config); nil != err {
-		blog.Errorf("failed to update config, error info is %s", err.Error())
-	}
 	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
+	for t.Core == nil {
+		time.Sleep(time.Second)
+		blog.V(3).Info("sleep for engine")
+	}
 	t.Service.SetConfig(t.Config, t.Core)
 }
 
@@ -61,62 +68,32 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.V(3).Infof("srv conf:", svrInfo)
-
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_TOPO, svrInfo.IP)
+	blog.V(5).Infof("srv conf:", svrInfo)
 
 	topoSvr := new(TopoServer)
 	topoSvr.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
 
-	if err != nil {
-		return fmt.Errorf("new backbone failed, err: %v", err)
-	}
-
 	topoService := toposvr.New()
 	topoSvr.Service = topoService
 
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(topoService.WebService()),
-		TLS:        backbone.TLSConfig{},
+	input := &backbone.BackboneParameter{
+		Regdiscv:     op.ServConf.RegDiscover,
+		ConfigPath:   op.ServConf.ExConfig,
+		ConfigUpdate: topoSvr.onTopoConfigUpdate,
+		SrvInfo:      svrInfo,
 	}
-
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
-	engine, err := backbone.NewBackbone(
-		ctx,
-		op.ServConf.RegDiscover,
-		types.CC_MODULE_TOPO,
-		op.ServConf.ExConfig,
-		topoSvr.onTopoConfigUpdate,
-		bonC)
-
-	if nil != err {
-		return fmt.Errorf("new engine failed, error is %s", err.Error())
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
 	topoSvr.Core = engine
 
 	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
-	topoService.SetConfig(topoSvr.Config, engine)
-
+	// topoService.SetConfig(topoSvr.Config, engine)
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(topoService.WebService())); err != nil {
+		return err
+	}
 	select {
 	case <-ctx.Done():
 	}

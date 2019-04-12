@@ -37,6 +37,7 @@ import bkUpload from './components/upload'
 import bkTimeline from './components/timeline'
 import bkProcess from './components/process'
 import bkCombox from './components/combox'
+import bkPagination from './components/pagination'
 
 import bkException from './components/exception'
 import locale from './locale'
@@ -81,7 +82,8 @@ const components = {
     bkTransfer,
     bkTree,
     bkUpload,
-    bkException
+    bkException,
+    bkPagination
 }
 
 export function install (Vue, opts = {}) {
@@ -166,7 +168,8 @@ export {
     locale,
     bkException,
     langPkg,
-    localeMixin
+    localeMixin,
+    bkPagination
 }
 
 // export default Object.assign(bkMagic, {install})

@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -68,7 +69,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 	}
 	if 0 != rowCount {
 		blog.Errorf("add user config, [%s] user api is exist", addQuery.Name)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
 		return
 	}
 
@@ -87,7 +88,7 @@ func (s *Service) AddUserConfig(req *restful.Request, resp *restful.Response) {
 
 	err = s.Instance.Table(common.BKTableNameUserAPI).Insert(ctx, userQuery)
 	if err != nil {
-		blog.Error("add user config, create user query failed, query:%+v err:%v", userQuery, err)
+		blog.Errorf("add user config, create user query failed, query:%+v err:%v", userQuery, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
@@ -123,12 +124,12 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	params = util.SetModOwner(params, ownerID)
 	rowCount, err := s.Instance.Table(common.BKTableNameUserAPI).Find(params).Count(ctx)
 	if nil != err {
-		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("query user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	if 1 != rowCount {
-		blog.Info("update user api config not permissions or not exists, params:%v", params)
+		blog.V(5).Infof("update user api config not permissions or not exists, params:%v", params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
@@ -138,13 +139,13 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 		dupParams = util.SetModOwner(dupParams, ownerID)
 		rowCount, getErr := s.Instance.Table(common.BKTableNameUserAPI).Find(dupParams).Count(ctx)
 		if nil != getErr {
-			blog.Error("query user api validate name duplicate fail, error information is %s, params:%v", getErr.Error(), dupParams)
+			blog.Errorf("query user api validate name duplicate fail, error information is %s, params:%v", getErr.Error(), dupParams)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 			return
 		}
 		if 0 < rowCount {
-			blog.Info("host user api  name duplicate , params:%v", dupParams)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+			blog.V(5).Infof("host user api  name duplicate , params:%v", dupParams)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
 			return
 		}
 	}
@@ -155,7 +156,7 @@ func (s *Service) UpdateUserConfig(req *restful.Request, resp *restful.Response)
 	data.OwnerID = ownerID
 	err = s.Instance.Table(common.BKTableNameUserAPI).Update(ctx, params, data)
 	if nil != err {
-		blog.Error("update user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("update user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
@@ -181,19 +182,19 @@ func (s *Service) DeleteUserConfig(req *restful.Request, resp *restful.Response)
 	params = util.SetModOwner(params, ownerID)
 	rowCount, err := s.Instance.Table(common.BKTableNameUserAPI).Find(params).Count(ctx)
 	if nil != err {
-		blog.Error("query user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("query user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	if 1 != rowCount {
-		blog.Info("host user api not permissions or not exists, params:%v", params)
+		blog.V(5).Infof("host user api not permissions or not exists, params:%v", params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommNotFound)})
 		return
 	}
 
 	err = s.Instance.Table(common.BKTableNameUserAPI).Delete(ctx, params)
 	if nil != err {
-		blog.Error("delete user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("delete user api fail, error information is %s, params:%v", err.Error(), params)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBDeleteFailed)})
 		return
 	}
@@ -243,14 +244,14 @@ func (s *Service) GetUserConfig(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	count, err := s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Count(ctx)
 	if err != nil {
-		blog.Error("get user api information failed, err:%v", err)
+		blog.Errorf("get user api information failed, err:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
 	result := make([]interface{}, 0)
 	err = s.Instance.Table(common.BKTableNameUserAPI).Find(condition).Fields(fieldArr...).Sort(sort).Start(uint64(start)).Limit(uint64(limit)).All(ctx, &result)
 	if err != nil {
-		blog.Error("get user api information failed, err: %v", err)
+		blog.Errorf("get user api information failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -283,7 +284,7 @@ func (s *Service) UserConfigDetail(req *restful.Request, resp *restful.Response)
 	result := new(meta.UserConfigMeta)
 	err = s.Instance.Table(common.BKTableNameUserAPI).Find(params).One(ctx, result)
 	if err != nil && !s.Instance.IsNotFoundError(err) {
-		blog.Error("get user api information error,input:%v error:%v", id, err)
+		blog.Errorf("get user api information error,input:%v error:%v", id, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -362,7 +363,7 @@ func (s *Service) GetUserCustomByUser(req *restful.Request, resp *restful.Respon
 
 	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
 	if nil != err && !s.Instance.IsNotFoundError(err) {
-		blog.Error("add  user custom failed, err: %v, params:%v", err, conds)
+		blog.Errorf("add  user custom failed, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -385,7 +386,7 @@ func (s *Service) GetDefaultUserCustom(req *restful.Request, resp *restful.Respo
 
 	err := s.Instance.Table(common.BKTableNameUserCustom).Find(conds).One(ctx, result)
 	if nil != err && !s.Instance.IsNotFoundError(err) {
-		blog.Error("get default user custom fail, err: %v, params:%v", err, conds)
+		blog.Errorf("get default user custom fail, err: %v, params:%v", err, conds)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}

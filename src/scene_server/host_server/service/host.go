@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -22,36 +21,34 @@ import (
 	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
 	hutil "configcenter/src/scene_server/host_server/util"
-	"configcenter/src/scene_server/validator"
 )
 
 type AppResult struct {
-	Result  bool        `json:result`
-	Code    int         `json:code`
-	Message interface{} `json:message`
-	Data    DataInfo    `json:data`
+	Result  bool        `json:"result"`
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+	Data    DataInfo    `json:"data"`
 }
 
 type DataInfo struct {
-	Count int                      `json:count`
-	Info  []map[string]interface{} `json:info`
+	Count int                      `json:"count"`
+	Info  []map[string]interface{} `json:"info"`
 }
 
 func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
-	ownerID, user := util.GetOwnerIDAndUser(req.Request.Header)
+	srvData := s.newSrvComm(req.Request.Header)
 
 	opt := new(meta.DeleteHostBatchOpt)
 	if err := json.NewDecoder(req.Request.Body).Decode(opt); err != nil {
-		blog.Errorf("delete host batch , but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("delete host batch , but decode body failed, err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
@@ -60,124 +57,119 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	for _, i := range hostIDArr {
 		iHostID, err := strconv.ParseInt(i, 10, 64)
 		if err != nil {
-			blog.Errorf("delete host batch, but got invalid host id, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsInvalid)})
+			blog.Errorf("delete host batch, but got invalid host id, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
 			return
 		}
 		iHostIDArr = append(iHostIDArr, iHostID)
 	}
 
 	condition := make(map[string]interface{})
-	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(ownerID).Data()
-	query := meta.QueryInput{Condition: condition}
-	query.Limit = 1
-	result, err := s.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDApp, req.Request.Header, &query)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("delete host in batch, but search instance failed, err: %v, result err: %v", err, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPReadBodyFailed)})
+	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).MapStr()
+	query := meta.QueryCondition{Condition: condition}
+	query.Limit.Limit = 1
+	query.Limit.Offset = 0
+	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, &query)
+	if err != nil {
+		blog.Errorf("delete host batch  SearchObjects http do error, err: %v,input:+v,rid:%s", err, opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
-	if err != nil || (err != nil && result.Result == false) {
-		blog.Errorf("delete host batch , but unmarshal result failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+	if !result.Result {
+		blog.Errorf("delete host in batch SearchObjects http reponse erro, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
 
 	if len(result.Data.Info) == 0 {
-		blog.Error("delete host batch, but can not found it's instance.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotFound)})
+		blog.Errorf("delete host batch, but can not found it's instance. input:%+v,rid:%s", opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotFound)})
 		return
 	}
 
 	appID, err := result.Data.Info[0].Int64(common.BKAppIDField)
 	if err != nil {
-		blog.Error("delete host batch, but got invalid app id, err: %v, appinfo:%v", err, result.Data.Info[0])
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		blog.Errorf("delete host batch, but got invalid app id, err: %v, appinfo:%+v,input:%s,rid:%s", err, result.Data.Info[0], opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
 
-	hostFields, err := s.GetHostAttributes(ownerID, req.Request.Header)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
 	if err != nil {
-		blog.Errorf("delete host batch failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+		blog.Errorf("delete host batch failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
 	var logConents []auditoplog.AuditLogExt
 	for _, hostID := range iHostIDArr {
-		logger := s.Logics.NewHostLog(req.Request.Header, ownerID)
-		if err := logger.WithPrevious(strconv.FormatInt(hostID, 10), hostFields); err != nil {
-			blog.Errorf("delet host batch, but get pre host data failed, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
+		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
+		if err := logger.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
+			blog.Errorf("delete host batch, but get pre host data failed, err: %v,input:%+v,rid:%s", err, opt, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 
-		opt := meta.ModuleHostConfigParams{
+		delOptConfig := meta.ModuleHostConfigParams{
 			HostID:        hostID,
 			ApplicationID: appID,
 		}
-		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(context.Background(), req.Request.Header, &opt)
-		if err != nil || (err == nil && !result.Result) {
-			blog.Errorf("delete host in batch, but delete module failed, err: %v, result err: %v", err, result.ErrMsg)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &delOptConfig)
+		if err != nil {
+			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v,input:+v,params:%s,rid:%s", err, opt, delOptConfig, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			return
+		}
+		if !result.Result {
+			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s,err msg:%s,input:+v,params:%s,rid:%s", result.Code, result.ErrMsg, opt, delOptConfig, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
 
-		delOp := hutil.NewOperation().WithInstID(hostID).WithObjID(common.BKInnerObjIDHost).Data()
-		delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKTableNameInstAsst, req.Request.Header, delOp)
-		if err != nil || (err == nil && !delResult.Result) {
-			blog.Errorf("delete host in batch, but delete object failed, err: %v, result err: %v", err, delResult.ErrMsg)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
-			return
-		}
-
-		if err := logger.WithCurrent(strconv.FormatInt(hostID, 10)); err != nil {
-			blog.Errorf("delet host batch, but get current host data failed, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
-			return
-		}
-
-		logConents = append(logConents, *logger.AuditLog(hostID))
+		logConents = append(logConents, *logger.AuditLog(srvData.ctx, hostID))
 	}
 
-	hostCond := make(map[string]interface{})
-	condInput := make(map[string]interface{})
-	hostCond[common.BKDBIN] = iHostIDArr
-	condInput[common.BKHostIDField] = hostCond
-	delResult, err := s.CoreAPI.ObjectController().Instance().DelObject(context.Background(), common.BKInnerObjIDHost, req.Request.Header, condInput)
+	hostCond := mapstr.MapStr{
+		common.BKDBIN: iHostIDArr,
+	}
+	condInput := &meta.DeleteOption{
+		Condition: mapstr.MapStr{
+			common.BKHostIDField: hostCond,
+		},
+	}
+	delResult, err := s.CoreAPI.CoreService().Instance().DeleteInstanceCascade(srvData.ctx, srvData.header, common.BKInnerObjIDHost, condInput)
 	if err != nil || (err == nil && !delResult.Result) {
-		blog.Errorf("delete host in batch, but delete host failed, err: %v, result err: %v", err, delResult.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDeleteFail)})
+		blog.Errorf("delete host in batch, but delete host failed, err: %v, result err: %v,rid:%s", err, delResult.ErrMsg, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDeleteFail)})
 		return
 	}
 
 	addHostLogs := common.KvMap{common.BKContentField: logConents, common.BKOpDescField: "delete host", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
-	auditResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, strconv.FormatInt(appID, 10), user, req.Request.Header, addHostLogs)
+	auditResult, err := s.CoreAPI.AuditController().AddHostLogs(srvData.ctx, srvData.ownerID, strconv.FormatInt(appID, 10), srvData.user, srvData.header, addHostLogs)
 	if err != nil || (err == nil && !auditResult.Result) {
-		blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v", err, auditResult.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrAuditSaveLogFaile)})
+		blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v,rid:%s", err, auditResult.ErrMsg, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrAuditSaveLogFaile)})
 		return
 	}
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	hostID := req.PathParameter("bk_host_id")
-	ownerID := util.GetOwnerID(pheader)
+	srvData := s.newSrvComm(req.Request.Header)
 
-	details, _, err := s.GetHostInstanceDetails(pheader, ownerID, hostID)
+	hostID := req.PathParameter("bk_host_id")
+
+	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, srvData.ownerID, hostID)
 	if err != nil {
-		blog.Errorf("get host defails failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		blog.Errorf("get host defails failed, err: %v,host:%s,rid:%s", err, hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	attribute, err := s.GetHostAttributes(ownerID, pheader)
+	attribute, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
 	if err != nil {
-		blog.Errorf("get host attribute fields failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		blog.Errorf("get host attribute fields failed, err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -200,20 +192,26 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 }
 
 func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+
 	hostID := req.PathParameter(common.BKHostIDField)
-	result, err := s.CoreAPI.HostController().Host().GetHostSnap(context.Background(), hostID, pheader)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("get host snap info failed, err: %v, result err: %v", err, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
+	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
+
+	if err != nil {
+		blog.Errorf("HostSnapInfohttp do error, err: %v,input:+v,rid:%s", err, hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPReadBodyFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("HostSnapInfohttp reponse erro, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
 
 	snap, err := logics.ParseHostSnap(result.Data.Data)
 	if err != nil {
-		blog.Errorf("get host snap info, but parse snap info failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetSnapshot)})
+		blog.Errorf("get host snap info, but parse snap info failed, err: %v, hostID:%v,rid:%s", err, hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -224,19 +222,18 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
 
 	hostList := new(meta.HostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
-		blog.Errorf("add host failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("add host failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if hostList.HostInfo == nil {
-		blog.Errorf("add host, but host info is nil.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
+		blog.Errorf("add host, but host info is nil.input:%+v,rid:%s", hostList, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
 
@@ -244,31 +241,31 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	if appID == 0 {
 		// get default app id
 		var err error
-		appID, err = s.GetDefaultAppIDWithSupplier(pheader)
+		appID, err = srvData.lgc.GetDefaultAppIDWithSupplier(srvData.ctx)
 		if err != nil {
-			blog.Errorf("add host, but get default appid failed, err: %v", err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CC_Err_Comm_APP_QUERY_FAIL)})
+			blog.Errorf("add host, but get default appid failed, err: %v,input:%+v,rid:%s", err, hostList, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 			return
 		}
 	}
 
-	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).Data()
-	cond[common.BKDefaultField] = common.DefaultResModuleFlag
-	moduleID, err := s.GetResoulePoolModuleID(pheader, cond)
+	cond := hutil.NewOperation().WithModuleName(common.DefaultResModuleName).WithAppID(appID).MapStr()
+	cond.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, cond)
 	if err != nil {
-		blog.Errorf("add host, but get module id failed, err: %s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
+		blog.Errorf("add host, but get module id failed, err: %s,input:%+v,rid:%s", err.Error(), hostList, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, util.GetOwnerID(pheader), pheader, hostList.HostInfo, hostList.InputType)
+	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
 	if err != nil {
-		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
+		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v,input:%+v,rid:%s", succ, updateErrRow, err, errRow, hostList, srvData.rid)
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
@@ -278,35 +275,38 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := common.BKDefaultOwnerID
+	srvData := s.newSrvComm(req.Request.Header)
 
 	agents := new(meta.AddHostFromAgentHostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(&agents); err != nil {
-		blog.Errorf("add host from agent failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("add host from agent failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if len(agents.HostInfo) == 0 {
-		blog.Errorf("add host from agent, but got 0 agents from body.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")})
+		blog.Errorf("add host from agent, but got 0 agents from body.input:%+v,rid:%s", agents, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "HostInfo")})
 		return
 	}
 
-	appID, err := s.GetDefaultAppID(ownerID, pheader)
-	if 0 == appID || nil != err {
-		blog.Errorf("add host from agent, but got invalid appid, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrAddHostToModule, err.Error())})
+	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
+	if err != nil {
+		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%#v,rid:%s", agents, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
+		return
+	}
+	if 0 == appID {
+		blog.Errorf("add host from agent, but got invalid default appid, err: %v,ownerID:%s,input:%#v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModule, "bussiness not found")})
 		return
 	}
 
 	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
-	moduleID, err := s.GetResoulePoolModuleID(pheader, opt.Data())
+	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, opt.MapStr())
 	if err != nil {
-		blog.Errorf("add host from agent , but get module id failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
+		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err, srvData.ownerID, agents, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -314,16 +314,16 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	addHost := make(map[int64]map[string]interface{})
 	addHost[1] = agents.HostInfo
 
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(appID, []int64{moduleID}, common.BKDefaultOwnerID, pheader, addHost, "")
+	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, common.BKDefaultOwnerID, addHost, "")
 	if err != nil {
-		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
+		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v,input:%+v,rid:%s", succ, updateErrRow, err, errRow, agents, srvData.rid)
 
 		retData := make(map[string]interface{})
 		retData["success"] = succ
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
@@ -332,73 +332,20 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
 
-func (s *Service) AddHistory(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-
-	data := make(mapstr.MapStr)
-	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("add host from agent failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-	content, ok := data["content"].(string)
-	if !ok || "" == content {
-		blog.Error("add history, but content is empty. data: %v", data)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
-		return
-
-	}
-	params := make(map[string]interface{}, 1)
-	params["content"] = content
-
-	result, err := s.CoreAPI.HostController().History().AddHistory(context.Background(), user, pheader, &meta.HistoryContent{Content: content})
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("add history failed, err: %v, result err: %v", err, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostHisCreateFail)})
-		return
-	}
-
-	resp.WriteEntity(meta.NewSuccessResp(result.Data))
-}
-
-func (s *Service) GetHistorys(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	start := req.PathParameter("start")
-	limit := req.PathParameter("limit")
-
-	result, err := s.CoreAPI.HostController().History().GetHistorys(context.Background(), user, start, limit, pheader)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("get history failed, err: %v, result err: %v", err, result.ErrMsg)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostHisGetFail)})
-		return
-	}
-
-	resp.WriteEntity(meta.GetHistoryResult{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result.Data,
-	})
-
-}
-
 func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
 
 	body := new(meta.HostCommonSearch)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
-		blog.Errorf("search host failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("search host failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	host, err := s.Logics.SearchHost(pheader, body, false)
+	host, err := srvData.lgc.SearchHost(srvData.ctx, body, false)
 	if err != nil {
-		blog.Errorf("search host failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
+		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostGetFail)})
 		return
 	}
 
@@ -409,20 +356,19 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
 
 	body := new(meta.HostCommonSearch)
 	if err := json.NewDecoder(req.Request.Body).Decode(body); err != nil {
-		blog.Errorf("search host failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("search host failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	host, err := s.Logics.SearchHost(pheader, body, true)
+	host, err := srvData.lgc.SearchHost(srvData.ctx, body, true)
 	if err != nil {
-		blog.Errorf("search host failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostGetFail)})
+		blog.Errorf("search host failed, err: %v,input:%+v,rid:%s", err, body, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -433,73 +379,77 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 }
 
 func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	user := util.GetUser(pheader)
-	data := make(map[string]interface{})
+	srvData := s.newSrvComm(req.Request.Header)
+
+	data := mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("update host batch failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("update host batch failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	hostIDStr, ok := data[common.BKHostIDField].(string)
-	if !ok {
-		blog.Errorf("update host batch failed, but without host id field.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFeildValidFail)})
-		return
-
-	}
-	delete(data, common.BKHostIDField)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	valid := validator.NewValidMap(ownerID, common.BKInnerObjIDHost, req.Request.Header, s.Engine)
-
-	hostFields, err := s.Logics.GetHostAttributes(ownerID, pheader)
+	hostIDStr, err := data.String(common.BKHostIDField)
 	if err != nil {
-		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		blog.Errorf("update host batch failed, but without host id field, err:%s.input:%+v,rid:%s", err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedString, common.BKHostIDField)})
+		return
+
+	}
+
+	businessMedata := data.Remove(common.MetadataField)
+	data.Remove(common.BKHostIDField)
+	hostFields, err := srvData.lgc.GetHostAttributes(srvData.ctx, srvData.ownerID, nil)
+	if err != nil {
+		blog.Errorf("update host batch, but get host attribute for audit failed, err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
-	audit := s.Logics.NewHostLog(pheader, common.BKDefaultOwnerID)
+
 
 	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
 	hostIDs := make([]int64, 0)
 	for _, id := range strings.Split(hostIDStr, ",") {
 		hostID, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
-			blog.Errorf("update host batch, but got invalid host id[%s], err: %v", id, err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsInvalid)})
+			blog.Errorf("update host batch, but got invalid host id[%s], err: %v,rid:%s", id, err, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsInvalid)})
 			return
 		}
 		hostIDs = append(hostIDs, hostID)
-
-		err = valid.ValidMap(data, common.ValidUpdate, hostID)
-		if nil != err {
-			blog.Errorf("update host batch, but invalid host failed, id[%s], err: %v", id, err)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostFeildValidFail)})
-			return
-
+		conds := mapstr.New()
+		if businessMedata != nil {
+			//conds.Set(common.MetadataField, businessMedata)
+			// TODO use metadata
 		}
-
-		if err := audit.WithPrevious(id, hostFields); err != nil {
-			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", id, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		conds.Set(common.BKHostIDField, hostID)
+		opt := &meta.UpdateOption{
+			Condition: conds,
+			Data:      mapstr.NewFromMap(data),
+		}
+        audit := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
+        if err := audit.WithPrevious(srvData.ctx, id, hostFields); err != nil {
+            blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", id, err)
+            resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
+            return
+        }
+        result, err := s.CoreAPI.CoreService().Instance().UpdateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDHost, opt)
+		if err != nil {
+			blog.Errorf("UpdateHostBatch UpdateObject http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, opt, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 			return
 		}
-		logPreConents[hostID] = *audit.AuditLog(hostID)
+		if !result.Result {
+            blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, srvData.rid)
+            resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+            return 
+        }
+
+		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
 	}
 
-	opt := common.KvMap{"condition": common.KvMap{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}, "data": data}
-	result, err := s.CoreAPI.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDHost, pheader, opt)
-	if err != nil || (err == nil && !result.Result) {
-		blog.Errorf("update host batch failed, ids[%v], err: %v, %v", hostIDs, err, result.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostUpdateFail)})
-		return
-	}
-
-	hostModuleConfig, err := s.Logics.GetConfigByCond(pheader, map[string][]int64{common.BKHostIDField: hostIDs})
+	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, map[string][]int64{common.BKHostIDField: hostIDs})
 	if err != nil {
-		blog.Errorf("update host batch failed, ids[%v], err: %v", hostIDs, err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostUpdateFail)})
+		blog.Errorf("update host batch failed, ids[%v], err: %v,input:%+v,rid:%s", hostIDs, err, data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
@@ -510,9 +460,11 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	logLastConents := make([]auditoplog.AuditLogExt, 0)
 	for _, hostID := range hostIDs {
-		if err := audit.WithPrevious(strconv.FormatInt(hostID, 10), hostFields); err != nil {
-			blog.Errorf("update host batch, but get host[%s] pre data for audit failed, err: %v", hostID, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+
+		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
+		if err := audit.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
+			blog.Errorf("update host batch, but get host[%v] pre data for audit failed, err: %v", hostID, err)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 			return
 		}
 		logContent := audit.Content
@@ -528,10 +480,10 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		logLastConents = append(logLastConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: preLogContent.ExtKey})
 	}
 	log := common.KvMap{common.BKContentField: logLastConents, common.BKOpDescField: "update host", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
-	aResult, err := s.CoreAPI.AuditController().AddHostLogs(context.Background(), common.BKDefaultOwnerID, appID, user, pheader, log)
+	aResult, err := s.CoreAPI.AuditController().AddHostLogs(srvData.ctx, srvData.ownerID, appID, srvData.user, srvData.header, log)
 	if err != nil || (err == nil && !aResult.Result) {
-		blog.Errorf("update host batch, but add host[%s] audit failed, err: %v, %v", hostIDs, err, aResult.ErrMsg)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostDetailFail)})
+		blog.Errorf("update host batch, but add host[%v] audit failed, err: %v, %v,rid:%s", hostIDs, err, aResult.ErrMsg, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
 
@@ -539,44 +491,43 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 }
 
 func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
 
 	hostList := new(meta.HostSyncList)
 	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
-		blog.Errorf("add host failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("add host failed with decode body err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if hostList.HostInfo == nil {
-		blog.Errorf("add host, but host info is nil.")
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsNeedSet)})
+		blog.Errorf("add host, but host info is nil.input:%+v,rid:%s", hostList, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
 	if 0 == len(hostList.ModuleID) {
-		blog.Errorf("host sync app  parameters required moduleID", hostList.ApplicationID)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
+		blog.Errorf("host sync app  parameters required moduleID,input:%+v,rid:%s", hostList, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)})
 		return
 	}
 
 	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommXXExceedLimit, "host_info ", common.BatchHostAddMaxRow)})
 		return
 	}
 
 	appConds := map[string]interface{}{
 		common.BKAppIDField: hostList.ApplicationID,
 	}
-	appInfo, err := s.GetAppDetails("", appConds, req.Request.Header)
+	appInfo, err := srvData.lgc.GetAppDetails(srvData.ctx, "", appConds)
 	if nil != err {
-		blog.Errorf("host sync app %d error:%s", hostList.ApplicationID, err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetAppFaild, err.Error())})
+		blog.Errorf("host sync app %d error:%s,input:%+v,rid:%s", hostList.ApplicationID, err.Error(), hostList, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 	if 0 == len(appInfo) {
-		blog.Errorf("host sync app %d not found, reply:%v", hostList.ApplicationID, appInfo)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetAppFaild, "not foud ")})
+		blog.Errorf("host sync app %d not found, reply:%+v,input:%+v,rid:%s", hostList.ApplicationID, appInfo, hostList, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetAppFaild, "not foud ")})
 		return
 	}
 
@@ -587,18 +538,19 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 			Value:    hostList.ModuleID,
 		},
 	}
-	moduleIDS, err := s.Logics.GetModuleIDByCond(req.Request.Header, moduleCond) //s.Logics.NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
+	moduleIDS, err := srvData.lgc.GetModuleIDByCond(srvData.ctx, moduleCond) //srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	if nil != err {
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, err.Error())})
+		blog.Errorf("NewHostSyncAppTop GetModuleIDByCond error. err:%s,input:%+v,rid:%s", err.Error(), hostList, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 	if len(moduleIDS) != len(hostList.ModuleID) {
 		blog.Errorf("not found part module: source:%v, db:%v", hostList.ModuleID, moduleIDS)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id")})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id")})
 		return
 
 	}
-	succ, updateErrRow, errRow, err := s.Logics.AddHost(hostList.ApplicationID, hostList.ModuleID, util.GetOwnerID(req.Request.Header), req.Request.Header, hostList.HostInfo, common.InputTypeApiNewHostSync)
+	succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, hostList.ApplicationID, hostList.ModuleID, srvData.ownerID, hostList.HostInfo, common.InputTypeApiNewHostSync)
 	if err != nil {
 		blog.Errorf("add host failed, succ: %v, update: %v, err: %v, %v", succ, updateErrRow, err, errRow)
 
@@ -607,7 +559,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 		retData["error"] = errRow
 		retData["update_error"] = updateErrRow
 		resp.WriteEntity(meta.Response{
-			BaseResp: meta.BaseResp{false, common.CCErrHostCreateFail, defErr.Error(common.CCErrHostCreateFail).Error()},
+			BaseResp: meta.BaseResp{Result: false, Code: common.CCErrHostCreateFail, ErrMsg: srvData.ccErr.Error(common.CCErrHostCreateFail).Error()},
 			Data:     retData,
 		})
 		return
@@ -616,15 +568,23 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	resp.WriteEntity(meta.NewSuccessResp(succ))
 }
 
+// MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time
+// Remove the host from the module or set.
+// The host belongs to the current module or host only, and puts the host into the idle machine of the current service.
+// When the host data is in multiple modules or sets. Disconnect the host from the module or set only
 func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Response) {
-
 	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	user := util.GetUser(pheader)
+	srvData := s.newSrvComm(req.Request.Header)
+
 	var data meta.SetHostConfigParams
 	if err := json.NewDecoder(req.Request.Body).Decode(&data); err != nil {
-		blog.Errorf("update host batch failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("MoveSetHost2IdleModule failed with decode body err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+	if 0 == data.ApplicationID {
+		blog.Errorf("MoveSetHost2IdleModule bk_biz_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
 		return
 	}
 
@@ -632,6 +592,13 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	condition := make(map[string][]int64)
 	hostIDArr := make([]int64, 0)
 	sModuleIDArr := make([]int64, 0)
+
+	if 0 == data.SetID && 0 == data.ModuleID {
+		blog.Errorf("MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time,input:%#v,rid:%s", data, util.GetHTTPCCRequestID(pheader))
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		return
+	}
+
 	if 0 != data.SetID {
 		condition[common.BKSetIDField] = []int64{data.SetID}
 	}
@@ -640,15 +607,15 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	condition[common.BKAppIDField] = []int64{data.ApplicationID}
-	hostResult, err := s.Logics.GetConfigByCond(pheader, condition) //logics.GetConfigByCond(req, m.CC.HostCtrl(), condition)
+	hostResult, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition) //logics.GetConfigByCond(req, m.CC.HostCtrl(), condition)
 	if nil != err {
-		blog.Errorf("read host from application  error:%v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+		blog.Errorf("read host from application  error:%v,input:%+v,rid:%s", err, data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
 
 	if 0 == len(hostResult) {
-		blog.Warnf("no host in set")
+		blog.Warnf("no host in set,rid:%s", srvData.rid)
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
 	}
@@ -662,29 +629,40 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	getModuleCond = append(getModuleCond, meta.ConditionItem{Field: common.BKModuleNameField, Operator: common.BKDBEQ, Value: common.DefaultResModuleName})
 	getModuleCond = append(getModuleCond, meta.ConditionItem{Field: common.BKAppIDField, Operator: common.BKDBEQ, Value: data.ApplicationID})
 
-	moduleIDArr, err := s.Logics.GetModuleIDByCond(pheader, getModuleCond) //GetSingleModuleID(req, conds, m.CC.ObjCtrl())
-	if nil != err || 0 == len(moduleIDArr) {
-		blog.Errorf("module params   error:%v", err)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
+	moduleIDArr, err := srvData.lgc.GetModuleIDByCond(srvData.ctx, getModuleCond) //GetSingleModuleID(req, conds, m.CC.ObjCtrl())
+	if nil != err {
+		blog.Errorf("module params   error:%v,input:%+v,rid:%s", err, data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	if 0 == len(moduleIDArr) {
+		blog.Errorf("module params   error:%v,input:%+v,rid:%s", err, data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 	moduleID := moduleIDArr[0]
 
+	// idle modle not change
+	if moduleID == data.ModuleID {
+		resp.WriteEntity(meta.NewSuccessResp(nil))
+		return
+	}
+
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
-	audit := s.Logics.NewHostModuleLog(pheader, hostIDArr)
+	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
 
 	for _, hostID := range hostIDArr {
 
-		bl, err := s.Logics.IsHostExistInApp(data.ApplicationID, hostID, pheader)
+		bl, err := srvData.lgc.IsHostExistInApp(srvData.ctx, data.ApplicationID, hostID)
 		if nil != err {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s", data.ApplicationID, hostID, err.Error())
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPPFail)})
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s,rid:%s", data.ApplicationID, hostID, err.Error(), srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 		if false == bl {
-			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s}", data.ApplicationID, hostID)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrHostNotINAPP)})
+			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s},rid:%s", data.ApplicationID, hostID, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotINAPP)})
 			return
 		}
 
@@ -693,10 +671,10 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		sCond := make(map[string][]int64)
 		sCond[common.BKAppIDField] = []int64{data.ApplicationID}
 		sCond[common.BKHostIDField] = []int64{hostID}
-		configResult, err := s.Logics.GetConfigByCond(pheader, sCond)
+		configResult, err := srvData.lgc.GetConfigByCond(srvData.ctx, sCond)
 		if nil != err {
-			blog.Errorf("remove hosthostconfig error, params:%v, error:%v", sCond, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			blog.Errorf("remove hosthostconfig error, params:%v, error:%v,input:%+v,rid:%s", sCond, err, data, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 		for _, config := range configResult {
@@ -710,46 +688,58 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 		moduleHostConfigParams := meta.ModuleHostConfigParams{HostID: hostID, ApplicationID: data.ApplicationID, ModuleID: sModuleIDArr}
 
-		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
-		if nil != err || !result.Result {
-			blog.Errorf("remove hosthostconfig error, params:%v, error:%s", moduleHostConfigParams, err)
-			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &moduleHostConfigParams)
+		if err != nil {
+			blog.Errorf("remove hosthostconfig http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, moduleHostConfigParams, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 			return
 		}
+		if !result.Result {
+			blog.Errorf("remove hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+			return
+		}
+
 		if toEmptyModule {
 			moduleHostConfigParams = meta.ModuleHostConfigParams{HostID: hostID, ModuleID: []int64{moduleID}, ApplicationID: data.ApplicationID}
-			result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(context.Background(), pheader, &moduleHostConfigParams)
-			if nil != err || !result.Result {
-				blog.Error("add modulehostconfig error, params:%v, error:%v", moduleHostConfigParams, err)
-				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+			result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(srvData.ctx, srvData.header, &moduleHostConfigParams)
+			if err != nil {
+				blog.Errorf("add hosthostconfig http do error, err: %v,input:%+v,param:%+v,rid:%s", err, data, moduleHostConfigParams, srvData.rid)
+				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+				return
+			}
+			if !result.Result {
+				blog.Errorf("add hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 				return
 			}
 		}
 
 	}
 
-	audit.SaveAudit(strconv.FormatInt(data.ApplicationID, 10), user, "host to empty module")
+	audit.SaveAudit(srvData.ctx, strconv.FormatInt(data.ApplicationID, 10), srvData.user, "host to empty module")
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 	return
 }
 
 func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response) {
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetActionLanguage(req))
+	srvData := s.newSrvComm(req.Request.Header)
+
 	input := &meta.CloneHostPropertyParams{}
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("CloneHostProperty , but decode body failed, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		blog.Errorf("CloneHostProperty , but decode body failed, err: %v,rid:%s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if 0 == input.AppID {
-		blog.Errorf("CloneHostProperty ,appliation not foud input:%v", input)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
+		blog.Errorf("CloneHostProperty ,appliation not foud input:%+v,rid:%s", input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, "ApplicationID")})
 		return
 	}
 
-	res, err := s.Logics.CloneHostProperty(input, input.AppID, input.CloudID, req.Request.Header)
+	res, err := srvData.lgc.CloneHostProperty(srvData.ctx, input, input.AppID, input.CloudID)
 	if nil != err {
 		blog.Errorf("CloneHostProperty ,appliation not int , err: %v, input:%v", err, input)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})

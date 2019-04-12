@@ -16,8 +16,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/conf"
@@ -29,11 +27,11 @@ import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/http/httpserver/webserver"
 	"configcenter/src/common/language"
-	//_ "configcenter/src/common/ssl"
+
+	restful "github.com/emicklei/go-restful" //_ "configcenter/src/common/ssl"
+	redis "gopkg.in/redis.v5"
 	//"configcenter/src/storage"
 	//"configcenter/src/storage/dbclient"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 type APIRequest struct {
@@ -128,13 +126,13 @@ func (a *APIResource) InitWaction() {
 func (a *APIResource) PreProcess(data []byte) (string, error) {
 	var req APIRequest
 	if err := json.Unmarshal(data, &req); err != nil {
-		blog.Error("fail to parse json, error:%s. data = %s.", err.Error(), string(data))
+		blog.Errorf("fail to parse json, error:%s. data = %s.", err.Error(), string(data))
 		return "", cchttp.InternalError(common.CC_ERR_Comm_JSON_DECODE, common.CC_ERR_Comm_JSON_DECODE_STR)
 	}
 
 	d, err := json.Marshal(req.Request)
 	if err != nil {
-		blog.Error("fail to encode json, error:%s", err.Error())
+		blog.Errorf("fail to encode json, error:%s", err.Error())
 		return "", cchttp.InternalError(common.CC_ERR_Comm_JSON_ENCODE, common.CC_ERR_Comm_JSON_ENCODE_STR)
 	}
 

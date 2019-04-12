@@ -54,6 +54,7 @@
 |singlechar|短字符|
 |longchar|长字符|
 |int|整形|
+|float|浮点|
 |enum|枚举类型|
 |date|日期|
 |time|时间|
@@ -190,6 +191,7 @@ data 字段说明
 |singlechar|短字符|
 |longchar|长字符|
 |int|整形|
+|float|浮点|
 |enum|枚举类型|
 |date|日期|
 |time|时间|
@@ -255,6 +257,7 @@ data 字段说明
 |singlechar|短字符|
 |longchar|长字符|
 |int|整形|
+|float|浮点|
 |enum|枚举类型|
 |date|日期|
 |time|时间|
@@ -343,6 +346,7 @@ data字段说明
 |singlechar|短字符|
 |longchar|长字符|
 |int|整形|
+|float|浮点|
 |enum|枚举类型|
 |date|日期|
 |time|时间|

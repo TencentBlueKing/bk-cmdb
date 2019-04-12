@@ -15,6 +15,7 @@ package blog
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -32,8 +33,21 @@ type GlogWriter struct{}
 
 // Write implements the io.Writer interface.
 func (writer GlogWriter) Write(data []byte) (n int, err error) {
-	glog.Info(string(data))
+	glog.InfoDepth(1, string(data))
 	return len(data), nil
+}
+
+// Output for mgo logger
+func (writer GlogWriter) Output(calldepth int, s string) error {
+	glog.InfoDepth(calldepth, s)
+	return nil
+}
+
+func (writer GlogWriter) Print(v ...interface{}) {
+	glog.InfoDepth(1, v...)
+}
+func (writer GlogWriter) Printf(format string, v ...interface{}) {
+	glog.InfoDepthf(1, format, v...)
 }
 
 var once sync.Once
@@ -62,8 +76,9 @@ func CloseLogs() {
 }
 
 var (
-	Info  = glog.Infof
-	Infof = glog.Infof
+	Info        = glog.Infof
+	Infof       = glog.Infof
+	InfofDepthf = glog.InfoDepthf
 
 	Warn  = glog.Warningf
 	Warnf = glog.Warningf
@@ -88,6 +103,14 @@ func Debug(args ...interface{}) {
 func InfoJSON(format string, args ...interface{}) {
 	params := []interface{}{}
 	for _, arg := range args {
+		if f, ok := arg.(errorFunc); ok {
+			params = append(params, f.Error())
+			continue
+		}
+		if f, ok := arg.(stringFunc); ok {
+			params = append(params, f.String())
+			continue
+		}
 		out, err := json.Marshal(arg)
 		if err != nil {
 			params = append(params, err.Error())
@@ -95,4 +118,31 @@ func InfoJSON(format string, args ...interface{}) {
 		params = append(params, out)
 	}
 	glog.InfoDepthf(1, format, params...)
+}
+
+func ErrorJSON(format string, args ...interface{}) {
+	params := []interface{}{}
+	for _, arg := range args {
+		if f, ok := arg.(errorFunc); ok {
+			params = append(params, f.Error())
+			continue
+		}
+		if f, ok := arg.(stringFunc); ok {
+			params = append(params, f.String())
+			continue
+		}
+		out, err := json.Marshal(arg)
+		if err != nil {
+			params = append(params, err.Error())
+		}
+		params = append(params, out)
+	}
+	glog.ErrorDepth(1, fmt.Sprintf(format, params...))
+}
+
+type errorFunc interface {
+	Error() string
+}
+type stringFunc interface {
+	String() string
 }

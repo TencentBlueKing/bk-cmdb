@@ -15,20 +15,19 @@ package service
 import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/mapstr"
-	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // LogicFunc the core logic function definition
-type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error)
+type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key
 type ParamsGetter func(name string) string
 
 // ParseOriginDataFunc parse the origin data
-type ParseOriginDataFunc func(data []byte) (frtypes.MapStr, error)
+type ParseOriginDataFunc func(data []byte) (mapstr.MapStr, error)
 
 // Action the http action
 type action struct {

@@ -21,20 +21,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
-)
 
-var (
-	CODE_SUCESS            = 0
-	CODE_ERROR_UPLOAD_FILE = 100
-	CODE_ERROR_OPEN_FILE   = 101
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
 )
 
 // ImportHost import host
@@ -72,8 +67,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-
-	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang)
+	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang, metadata.Metadata{})
 
 	if nil != err {
 		msg := getReturnStr(errCode, err.Error(), data)
@@ -81,7 +75,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, getReturnStr(0, "", nil))
+	c.String(http.StatusOK, getReturnStr(0, "", data))
 
 }
 
@@ -95,6 +89,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	pheader := c.Request.Header
 	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
 	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
 	if err != nil {
@@ -107,14 +102,16 @@ func (s *Service) ExportHost(c *gin.Context) {
 	file = xlsx.NewFile()
 
 	objID := common.BKInnerObjIDHost
-	fields, err := s.Logics.GetObjFieldIDs(objID, logics.GetFilterFields(objID), c.Request.Header)
+	filterFields := logics.GetFilterFields(objID)
+	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
+	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s error:%s", objID, err.Error())
+		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
 	}
-	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader)
+	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader, metadata.Metadata{})
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
@@ -133,7 +130,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Error("ExportHost save file error:%s", err.Error())
+		blog.Errorf("ExportHost save file error:%s", err.Error())
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -159,8 +156,16 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
-	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang)
+	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo)
 	if nil != err {
 		blog.Errorf("BuildDownLoadExcelTemplate object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)

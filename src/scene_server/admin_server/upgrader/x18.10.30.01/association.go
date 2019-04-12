@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -131,9 +132,10 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	}
 
 	properyMap := map[string]metadata.ObjAttDes{}
-	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s") }
+	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s", objID, propertyID) }
 	for _, property := range propertys {
 		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
+		blog.Infof("key %s: %+v", buildObjPropertyMapKey(property.ObjectID, property.PropertyID), property)
 	}
 
 	for _, asst := range assts {
@@ -158,12 +160,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			case common.FieldTypeMultiAsst:
 				asst.Mapping = metadata.OneToManyMapping
 			default:
+				blog.Infof("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
 				asst.Mapping = metadata.OneToOneMapping
 			}
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
 		}
-		_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
+		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
@@ -175,7 +178,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 		updateInstCond := condition.CreateCondition()
 		updateInstCond.Field("bk_obj_id").Eq(asst.ObjectID)
-		updateInstCond.Field("bk_asst_id").Eq(asst.AsstObjID)
+		updateInstCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
 		err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateInstCond.ToMapStr(), updateInst)
 		if err != nil {
 			return err
@@ -197,6 +200,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
 	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
 	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
+	if err != nil {
+		return err
+	}
 
 	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())

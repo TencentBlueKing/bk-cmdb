@@ -20,13 +20,14 @@ import (
 	"strconv"
 	"time"
 
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/emicklei/go-restful"
 )
 
 // CreateObject create a common object
@@ -42,29 +43,33 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	obj := &meta.Object{}
 	if jsErr := json.Unmarshal([]byte(value), obj); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
 	// save to the storage
-	obj.CreateTime = new(time.Time)
-	*obj.CreateTime = time.Now()
-	obj.LastTime = new(time.Time)
-	*obj.LastTime = time.Now()
+	if nil == obj.LastTime {
+		obj.LastTime = &metadata.Time{}
+		obj.LastTime.Time = time.Now()
+	}
+	if nil == obj.CreateTime {
+		obj.CreateTime = &metadata.Time{}
+		obj.CreateTime.Time = time.Now()
+	}
 	obj.OwnerID = ownerID
 
 	// get id
 	id, err := db.NextSequence(ctx, common.BKTableNameObjDes) // .GetIncID(common.BKTableNameObjDes)
 	if err != nil {
-		blog.Error("failed to get id , error info is %s", err.Error())
+		blog.Errorf("failed to get id , error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -76,7 +81,7 @@ func (cli *Service) CreateObject(req *restful.Request, resp *restful.Response) {
 		resp.WriteEntity(meta.CreateObjectResult{BaseResp: meta.SuccessBaseResp, Data: meta.RspID{ID: int64(id)}})
 		return
 	}
-	blog.Error("failed to insert the object, error info is %s", err.Error())
+	blog.Errorf("failed to insert the object, error info is %s", err.Error())
 
 	resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 
@@ -96,7 +101,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	pathParameters := req.PathParameters()
 	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get params, error info is %s ", err.Error())
+		blog.Errorf("failed to get params, error info is %s ", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -106,14 +111,14 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	if 0 == appID {
 		js, err := simplejson.NewFromReader(req.Request.Body)
 		if err != nil {
-			blog.Error("read http request body failed, error:%s", err.Error())
+			blog.Errorf("read http request body failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
 
 		condition, err = js.Map()
 		if nil != err {
-			blog.Error("fail to unmarshal json, error information is %s", err.Error())
+			blog.Errorf("fail to unmarshal json, error information is %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 			return
 		}
@@ -123,7 +128,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjDes).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Error("failed to select object by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object by condition(%+v), error is %v", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, cntErr.Error())})
 		return
 	}
@@ -134,7 +139,7 @@ func (cli *Service) DeleteObject(req *restful.Request, resp *restful.Response) {
 	}
 	// execute delete command
 	if delErr := db.Table(common.BKTableNameObjDes).Delete(ctx, condition); nil != delErr {
-		blog.Error("fail to delete object by id , error information is %s", delErr.Error())
+		blog.Errorf("fail to delete object by id , error information is %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
 	}
@@ -154,7 +159,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Error("read request body failed, error information is %s", err.Error())
+		blog.Errorf("read request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -162,7 +167,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	pathParameters := req.PathParameters()
 	appID, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get params, error info is %s", err.Error())
+		blog.Errorf("failed to get params, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -173,7 +178,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	// decode json string
 	data, jsErr := js.Map()
 	if nil != jsErr {
-		blog.Error("unmarshal json failed, error information is %v", jsErr)
+		blog.Errorf("unmarshal json failed, error information is %v", jsErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -181,7 +186,7 @@ func (cli *Service) UpdateObject(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	err = db.Table(common.BKTableNameObjDes).Update(ctx, condition, data)
 	if nil != err {
-		blog.Error("fail update object by condition, error information is %s", err.Error())
+		blog.Errorf("fail update object by condition, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, jsErr.Error())})
 		return
 	}
@@ -206,7 +211,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 	// decode json object
 	js, err := simplejson.NewFromReader(req.Request.Body)
 	if err != nil {
-		blog.Error("read request body failed, error information is %s", err.Error())
+		blog.Errorf("read request body failed, error information is %s", err.Error())
 		if nil != err {
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
@@ -235,7 +240,7 @@ func (cli *Service) SelectObjects(req *restful.Request, resp *restful.Response) 
 
 	selector = util.SetQueryOwner(selector, ownerID)
 	if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && !db.IsNotFoundError(selErr) {
-		blog.Error("select data failed, error information is %s", selErr.Error())
+		blog.Errorf("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}

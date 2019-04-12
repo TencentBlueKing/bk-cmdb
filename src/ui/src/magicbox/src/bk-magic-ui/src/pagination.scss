@@ -1,0 +1,31 @@
+@charset "utf-8";
+@import "./conf";
+
+.bk-page-count {
+    font-size: 14px;
+    .bk-selector {
+        width: 60px;
+        display: inline-block;
+        margin-left: 40px;
+        &::after{
+            content: '条';
+            position: absolute;
+            left: 65px;
+            top: 8px;
+        }
+        &::before{
+            content: '每页';
+            position: absolute;
+            left: -32px;
+            top: 8px;
+        }
+        .bk-selector-wrapper {
+            .bk-selector-input {
+                padding: 0 22px 0 10px;
+            }
+        }
+    }
+    .bk-total-page {
+        display: inline-block;
+    }   
+}

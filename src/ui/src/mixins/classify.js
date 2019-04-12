@@ -35,15 +35,9 @@ export default {
             return allModels
         },
         $model () {
-            let $model = {}
-            let $modelId = this.$classify.id
-            if ($modelId) {
-                const targetModel = this.$allModels.find(model => model['bk_obj_id'] === $modelId)
-                if (targetModel) {
-                    $model = targetModel
-                }
-            }
-            return $model
+            const objId = this.$route.params.objId || this.$route.meta.objId
+            const targetModel = this.$allModels.find(model => model['bk_obj_id'] === objId)
+            return targetModel || {}
         }
     }
 }

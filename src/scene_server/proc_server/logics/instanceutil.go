@@ -29,6 +29,7 @@ func getMustNeedHeader(header http.Header) http.Header {
 	mustNeedHeader.Set(common.BKHTTPOwnerID, util.GetOwnerID(header))
 	mustNeedHeader.Set(common.BKHTTPLanguage, util.GetLanguage(header))
 	mustNeedHeader.Set(common.BKHTTPHeaderUser, util.GetUser(header))
+	mustNeedHeader.Set(common.BKHTTPCCRequestID, util.GetHTTPCCRequestID(header))
 	return mustNeedHeader
 }
 
@@ -36,50 +37,56 @@ func getEventRefrshModuleKey(appID, moduleID int64) string {
 	return fmt.Sprintf("%d-%d", appID, moduleID)
 }
 
-func (lgc *Logics) addEventRefreshModuleItem(appID, moduleID int64, header http.Header) error {
+func (lgc *Logics) addEventRefreshModuleItem(appID, moduleID int64) error {
 
-	info := refreshHostInstModuleID{AppID: appID, ModuleID: moduleID, Header: getMustNeedHeader(header)}
+	info := refreshHostInstModuleID{AppID: appID, ModuleID: moduleID, Header: getMustNeedHeader(lgc.header)}
 	valInfo, err := json.Marshal(info)
 	if nil != err {
-		blog.Warnf("addEventRefreshModuleItem appID:%d, moduleID:%d, error:%s", appID, moduleID, err.Error())
+		blog.Warnf("addEventRefreshModuleItem appID:%d, moduleID:%d, error:%s,rid:%s", appID, moduleID, err.Error(), lgc.rid)
 		return nil
 	}
-	return lgc.cache.SAdd(common.RedisProcSrvHostInstanceRefreshModuleKey, string(valInfo)).Err()
+	err = lgc.cache.SAdd(common.RedisProcSrvHostInstanceRefreshModuleKey, string(valInfo)).Err()
+	if nil != err {
+		blog.Errorf("addEventRefreshModuleItem save info to cache appID:%d, infos:%v, redis sadd error:%s,rid:%s", appID, valInfo, err.Error(), lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrCommUtilHandleFail, "redis sadd", err.Error())
+	}
+	return nil
 }
 
-func (lgc *Logics) addEventRefreshModuleItems(appID int64, moduleIDs []int64, header http.Header) error {
-	mustNeedHeader := getMustNeedHeader(header)
+func (lgc *Logics) addEventRefreshModuleItems(ctx context.Context, appID int64, moduleIDs []int64) error {
+	mustNeedHeader := getMustNeedHeader(lgc.header)
 	valInfoArrs := make([]interface{}, 0)
 	for _, moduleID := range moduleIDs {
 		info := refreshHostInstModuleID{AppID: appID, ModuleID: moduleID, Header: mustNeedHeader}
 		valInfo, err := json.Marshal(info)
 		if nil != err {
-			blog.Warnf("addEventRefreshModuleItem appID:%d, moduleID:%d, error:%s", appID, moduleID, err.Error())
+			blog.Warnf("addEventRefreshModuleItem appID:%d, moduleID:%d,json marshal error:%s,rid:%s", appID, moduleID, err.Error(), lgc.rid)
 			continue
 		}
 		valInfoArrs = append(valInfoArrs, string(valInfo))
 	}
 	err := lgc.cache.SAdd(common.RedisProcSrvHostInstanceRefreshModuleKey, valInfoArrs...).Err()
 	if nil != err {
-		blog.Errorf("addEventRefreshModuleItem save info to cache appID:%d, infos:%v, error:%s", appID, valInfoArrs, err.Error())
+		blog.Errorf("addEventRefreshModuleItem save info to cache appID:%d, infos:%v, redis sadd error:%s,rid:%s", appID, valInfoArrs, err.Error(), lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrCommUtilHandleFail, "redis sadd", err.Error())
 	}
-	return err
+	return nil
 }
 
-func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Header, appID, moduleID int64) error {
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, appID, moduleID int64) error {
+	defErr := lgc.ccErr
 	dat := new(metadata.QueryInput)
 	dat.Condition = map[string]interface{}{common.BKAppIDField: appID, common.BKModuleIDField: moduleID, common.BKStatusField: metadata.ProcInstanceDetailStatusUnRegisterFailed}
 	dat.Limit = 200
 	dat.Start = 0
 	for {
-		ret, err := lgc.CoreAPI.ProcController().GetProcInstanceDetail(ctx, header, dat)
+		ret, err := lgc.CoreAPI.ProcController().GetProcInstanceDetail(ctx, lgc.header, dat)
 		if nil != err {
-			blog.Errorf("unregisterProcInstDetall  proc instance error:%s", err.Error())
+			blog.Errorf("unregisterProcInstDetall GetProcInstanceDetail http do error. proc instance error:%s,input:%+v,rid:%s", err.Error(), dat, lgc.rid)
 			return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !ret.Result {
-			blog.Errorf("unregisterProcInstDetall  proc instance return err msg %s", ret.ErrMsg)
+			blog.Errorf("unregisterProcInstDetall  GetProcInstanceDetail http reply error. proc instance return err code:%d, err msg %s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, dat, lgc.rid)
 			return defErr.New(ret.Code, ret.ErrMsg)
 		}
 		if 0 == ret.Data.Count {
@@ -97,63 +104,56 @@ func (lgc *Logics) unregisterProcInstDetall(ctx context.Context, header http.Hea
 			gseProc.Meta = item.Meta
 			gseProc.ModuleID = item.ModuleID
 			gseProc.Spec = item.Spec
-			err := lgc.unregisterProcInstanceToGse(gseProc, header)
+			err := lgc.unregisterProcInstanceToGse(ctx, gseProc)
 			if nil != err {
-				blog.Errorf("unregisterProcInstanceToGse  proc instance error:%s, gse proc %+v", err.Error(), gseProc)
-				return err
-			}
-			if !ret.Result {
-				blog.Errorf("unregisterProcInstanceToGse  proc instance return err msg %s, gse proc %+v", ret.ErrMsg, gseProc)
 				return err
 			}
 		}
 	}
-
-	return nil
 
 }
 
 // setProcInstDetallStatusUnregister modify process instance status to unregister in cmdb table
-func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, header http.Header, appID, moduleID int64) error {
+func (lgc *Logics) setProcInstDetallStatusUnregister(ctx context.Context, appID, moduleID int64) error {
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := lgc.ccErr
 
 	dat := new(metadata.ModifyProcInstanceDetail)
 	dat.Conds = map[string]interface{}{common.BKAppIDField: appID, common.BKModuleIDField: moduleID}
 	dat.Data = map[string]interface{}{common.BKStatusField: metadata.ProcInstanceDetailStatusUnRegisterFailed}
-	ret, err := lgc.CoreAPI.ProcController().ModifyProcInstanceDetail(ctx, header, dat)
+	ret, err := lgc.CoreAPI.ProcController().ModifyProcInstanceDetail(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("setProcInstDetallStatusUnregister  proc instance error:%s", err.Error())
+		blog.Errorf("setProcInstDetallStatusUnregister ModifyProcInstanceDetail http do error. proc instance error:%s,input:%+v,rid:%s", err.Error(), dat, lgc.rid)
 		return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("setProcInstDetallStatusUnregister  proc instance return err msg %s", ret.ErrMsg)
+		blog.Errorf("setProcInstDetallStatusUnregister  ModifyProcInstanceDetail http reply error. proc instance return err code:%s, err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, dat, lgc.rid)
 		return defErr.New(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
 }
 
-func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, header http.Header, appID, moduleID int64, instProc []*metadata.ProcInstanceModel) error {
+func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, appID, moduleID int64, instProc []*metadata.ProcInstanceModel) error {
 	delConds := common.KvMap{common.BKAppIDField: appID, common.BKModuleIDField: moduleID}
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	ret, err := lgc.CoreAPI.ProcController().DeleteProcInstanceModel(ctx, header, delConds)
+	defErr := lgc.ccErr
+	ret, err := lgc.CoreAPI.ProcController().DeleteProcInstanceModel(ctx, lgc.header, delConds)
 	if nil != err {
-		blog.Errorf("handleInstanceNum create proc instance error:%s", err.Error())
+		blog.Errorf("handleInstanceNum DeleteProcInstanceModel http do error. error:%s, input:%+v,rid:%s", err.Error(), delConds, lgc.rid)
 		return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("handleInstanceNum create proc instance return err msg %s", ret.ErrMsg)
+		blog.Errorf("handleInstanceNum  DeleteProcInstanceModel http reply error. err code:%d,err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, delConds, lgc.rid)
 		return defErr.New(ret.Code, ret.ErrMsg)
 	}
 	if 0 < len(instProc) {
-		ret, err := lgc.CoreAPI.ProcController().CreateProcInstanceModel(ctx, header, instProc)
+		ret, err := lgc.CoreAPI.ProcController().CreateProcInstanceModel(ctx, lgc.header, instProc)
 		if nil != err {
-			blog.Errorf("handleInstanceNum create proc instance error:%s", err.Error())
+			blog.Errorf("handleInstanceNum CreateProcInstanceModel http do error. create proc instance error:%s,input:%+v,rid:%s", err.Error(), instProc, lgc.rid)
 			return defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 		if !ret.Result {
-			blog.Errorf("handleInstanceNum create proc instance return err msg %s", ret.ErrMsg)
+			blog.Errorf("handleInstanceNum  CreateProcInstanceModel http do error. create proc instance err code:%d, err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, instProc, lgc.rid)
 			return defErr.New(ret.Code, ret.ErrMsg)
 		}
 	}
@@ -161,18 +161,18 @@ func (lgc *Logics) handleProcInstNumDataHandle(ctx context.Context, header http.
 	return nil
 }
 
-func (lgc *Logics) getProcInstInfoByModuleID(ctx context.Context, appID, moduleID int64, header http.Header) (maxHostInstID uint64, procInst map[string]metadata.ProcInstanceModel, err error) {
+func (lgc *Logics) getProcInstInfoByModuleID(ctx context.Context, appID, moduleID int64) (maxHostInstID uint64, procInst map[string]metadata.ProcInstanceModel, err error) {
 	dat := new(metadata.QueryInput)
 	dat.Condition = common.KvMap{common.BKModuleIDField: moduleID, common.BKAppIDField: appID}
 	dat.Limit = common.BKNoLimit
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	ret, err := lgc.CoreAPI.ProcController().GetProcInstanceModel(ctx, header, dat)
+	defErr := lgc.ccErr
+	ret, err := lgc.CoreAPI.ProcController().GetProcInstanceModel(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("getProcInstInfoByModuleID http error, error:%s", err.Error())
+		blog.Errorf("getProcInstInfoByModuleID http do error, error:%s,input:%+v,rid:%s", err.Error(), dat, lgc.rid)
 		return 0, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getProcInstInfoByModuleID  reply error error:%s", ret.ErrMsg)
+		blog.Errorf("getProcInstInfoByModuleID  htpp reply error. err code:%d,err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, dat, lgc.rid)
 		return 0, nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	procInst = make(map[string]metadata.ProcInstanceModel, 0)
@@ -188,22 +188,22 @@ func (lgc *Logics) getProcInstInfoByModuleID(ctx context.Context, appID, moduleI
 }
 
 func (lgc *Logics) getModuleBindProc(ctx context.Context, appID, moduleID int64, header http.Header) (setID int64, procID []int64, err error) {
-	supplierID := util.GetOwnerID(header)
+	supplierID := lgc.ownerID
 	var name string
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	name, appID, setID, err = lgc.getModuleNameByID(ctx, moduleID, header)
+	name, appID, setID, err = lgc.getModuleNameByID(ctx, moduleID)
 	if nil != err {
-		blog.Errorf("getModuleBindProc error:%s", err.Error())
+		blog.Errorf("getModuleBindProc error:%s,rid:%s", err.Error(), lgc.rid)
 		return 0, nil, err
 	}
 	dat := common.KvMap{common.BKModuleNameField: name, common.BKAppIDField: appID}
 	ret, err := lgc.CoreAPI.ProcController().GetProc2Module(ctx, header, dat)
 	if nil != err {
-		blog.Errorf("getModuleBindProc moduleID %d supplierID %s  http do error:%s", moduleID, supplierID, err.Error())
+		blog.Errorf("getModuleBindProc GetProc2Module http do error. moduleID %d supplierID %s  error:%s,input:%+v,,rid:%s", moduleID, supplierID, err.Error())
 		return 0, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getModuleBindProc moduleID %d supplierID %s  http reply error:%s", moduleID, supplierID, ret.ErrMsg)
+		blog.Errorf("getModuleBindProc GetProc2Module http reply error. moduleID %d supplierID %s, err code:%d, err msg:%s,input:%+v,rid:%d", moduleID, supplierID, ret.Code, ret.ErrMsg, dat, lgc.rid)
 		return 0, nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	for _, proc := range ret.Data {

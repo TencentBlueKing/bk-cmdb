@@ -13,9 +13,7 @@
 package metadata
 
 import (
-	"time"
-
-	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 )
 
 const (
@@ -45,6 +43,7 @@ const (
 
 // Attribute attribute metadata definition
 type Attribute struct {
+	Metadata          `field:"metadata" json:"metadata" bson:"metadata"`
 	ID                int64       `field:"id" json:"id" bson:"id"`
 	OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
@@ -65,12 +64,13 @@ type Attribute struct {
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
 	Option            interface{} `field:"option" json:"option" bson:"option"`
 	Description       string      `field:"description" json:"description" bson:"description"`
-	Creator           string      `field:"creator" json:"creator" bson:"creator"`
-	CreateTime        *time.Time  `json:"create_time" bson:"creaet_time"`
-	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
+
+	Creator    string `field:"creator" json:"creator" bson:"creator"`
+	CreateTime *Time  `json:"create_time" bson:"create_time"`
+	LastTime   *Time  `json:"last_time" bson:"last_time"`
 }
 
-// Attribute attribute metadata definition
+// AttributeGroup attribute metadata definition
 type AttributeGroup struct {
 	ID         int64  `field:"id" json:"id" bson:"id"`
 	OwnerID    string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -83,9 +83,9 @@ type AttributeGroup struct {
 }
 
 // Parse load the data from mapstr attribute into attribute instance
-func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
+func (cli *Attribute) Parse(data mapstr.MapStr) (*Attribute, error) {
 
-	err := SetValueToStructByTags(cli, data)
+	err := mapstr.SetValueToStructByTags(cli, data)
 	if nil != err {
 		return nil, err
 	}
@@ -94,12 +94,12 @@ func (cli *Attribute) Parse(data types.MapStr) (*Attribute, error) {
 }
 
 // ToMapStr to mapstr
-func (cli *Attribute) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(cli)
+func (cli *Attribute) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(cli)
 }
 
 // ObjAttDes 对象模型属性
 type ObjAttDes struct {
-	Attribute         `json:",inline"`
+	Attribute         `json:",inline" bson:",inline"`
 	PropertyGroupName string `json:"bk_property_group_name"`
 }

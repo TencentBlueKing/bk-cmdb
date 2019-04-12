@@ -192,7 +192,7 @@ func getAddAsstData(ownerID string) []Association {
 	return dataRows
 }
 
-func getObjAttDescData(ownerID string) []*metadata.Attribute {
+func getObjAttDescData(ownerID string) []*Attribute {
 
 	predataRows := AppRow()
 	predataRows = append(predataRows, SetRow()...)

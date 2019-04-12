@@ -13,68 +13,44 @@
 package eventclient
 
 import (
-	commontypes "configcenter/src/common/types"
-	"gopkg.in/redis.v5"
 	"net/http"
 	"testing"
+
+	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 )
 
-func TestNewEventContextByReq(t *testing.T) {
+func TestNewEventWithHeader(t *testing.T) {
 	type args struct {
-		pheader  http.Header
-		cacheCli *redis.Client
+		header http.Header
 	}
+
+	header := http.Header{}
+	header.Set(common.BKHTTPOwnerID, "0")
+	header.Set(common.BKHTTPCCTransactionID, "123")
+	header.Set(common.BKHTTPCCRequestID, "456")
 	tests := []struct {
 		name string
 		args args
-		want *EventContext
+		want *metadata.EventInst
 	}{
-		{"", args{http.Header{}, redis.NewClient(&redis.Options{DB: 0})}, &EventContext{
-			RequestID:   "xxx-xxxx-xxx-xxx",
-			RequestTime: commontypes.Now(),
-		}},
+		{
+			args: args{
+				header: header,
+			},
+			want: &metadata.EventInst{
+				OwnerID:   "0",
+				TxnID:     "123",
+				RequestID: "456",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewEventContextByReq(tt.args.pheader, tt.args.cacheCli); got.RequestID != "xxx-xxxx-xxx-xxx" {
-				t.Errorf("NewEventContextByReq() = %v, want %v", got.RequestID, tt.want.RequestID)
-			}
-		})
-	}
-}
-
-func TestEventContext_InsertEvent(t *testing.T) {
-	type fields struct {
-		RequestID   string
-		RequestTime commontypes.Time
-		ownerID     string
-		CacheCli    *redis.Client
-	}
-	type args struct {
-		eventType string
-		objType   string
-		action    string
-		curData   interface{}
-		preData   interface{}
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &EventContext{
-				RequestID:   tt.fields.RequestID,
-				RequestTime: tt.fields.RequestTime,
-				ownerID:     tt.fields.ownerID,
-				CacheCli:    tt.fields.CacheCli,
-			}
-			if err := c.InsertEvent(tt.args.eventType, tt.args.objType, tt.args.action, tt.args.curData, tt.args.preData); (err != nil) != tt.wantErr {
-				t.Errorf("EventContext.InsertEvent() error = %v, wantErr %v", err, tt.wantErr)
+			if got := NewEventWithHeader(tt.args.header); got.OwnerID != tt.want.OwnerID ||
+				got.TxnID != tt.want.TxnID ||
+				got.RequestID != tt.want.RequestID {
+				t.Errorf("NewEventWithHeader() = %v, want %v", got, tt.want)
 			}
 		})
 	}

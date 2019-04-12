@@ -2,13 +2,14 @@
     <div class="bk-timeline">
         <ul>
             <li class="bk-timeline-dot" :class="makeClass(item)" v-for="(item, index) in list" :key="index">
-                <div class="bk-timeline-time" v-if="item.tag !== ''" @click="toggle(item)">{{item.tag}}</div>
+                <!-- <div class="bk-timeline-time" v-if="item.tag !== ''" @click="toggle(item)">{{item.tag}}</div> -->
+                <div class="bk-timeline-time" v-if="item.tag !== ''" @click="toggle(item)" v-html="item.tag"></div>
                 <div class="bk-timeline-content">
                     <template v-if="isNode(item)">
                         <slot :name="'nodeContent' + index">{{nodeContent(item, index)}}</slot>
                     </template>
                     <template v-else>
-                        <div v-html="item.content"></div>                    
+                        <div v-html="item.content" :title="computedTitle(item.content)"></div>                    
                     </template>                      
                 </div> 
             </li>
@@ -23,6 +24,10 @@
             list: {
                 type: Array,
                 required: true
+            },
+            titleAble: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -49,6 +54,9 @@
             },
             nodeContent (data, index) {
                 this.$slots[`nodeContent${index}`] = [data.content]
+            },
+            computedTitle (str) {
+                return this.titleAble ? str.replace(/<[^>]+>/g, '') : ''
             }
         }
     }

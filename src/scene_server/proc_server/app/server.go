@@ -20,15 +20,12 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/proc_service/service"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
@@ -38,19 +35,6 @@ import (
 //Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
 
-	// clientset
-	apiMachConf := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       op.ServConf.Qps,
-		Burst:     op.ServConf.Burst,
-		TLSConfig: nil,
-	}
-
-	apiMachinery, err := apimachinery.NewApiMachinery(apiMachConf)
-	if err != nil {
-		return fmt.Errorf("create api machinery object failed. err: %v", err)
-	}
-
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		blog.Errorf("fail to new server information. err: %s", err.Error())
@@ -58,31 +42,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	procSvr := new(service.ProcServer)
-	procSvr.Logics = &logics.Logics{}
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
 
-	bkbsvr := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    container,
-		TLS:        backbone.TLSConfig{},
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: procSvr.OnProcessConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
 	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_PROC, svrInfo.IP)
-	bkbCfg := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      apiMachinery,
-		Server:       bkbsvr,
+	engine, err := backbone.NewBackbone(ctx, input)
+	if err != nil {
+		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_PROC,
-		op.ServConf.ExConfig,
-		procSvr.OnProcessConfigUpdate,
-		bkbCfg)
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
 		if nil == procSvr.Config {
@@ -101,15 +74,17 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new redis client failed, err: %s", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(apiMachConf, procSvr.EsbConfigChn)
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn)
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
 	procSvr.Engine = engine
-	procSvr.Logics.Engine = engine
-	procSvr.Logics.EsbServ = esbSrv
-	procSvr.SetCache(cacheDB)
+	procSvr.EsbServ = esbSrv
+	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
+	if err := backbone.StartServer(ctx, engine, container); err != nil {
+		return err
+	}
 
 	select {
 	case <-ctx.Done():

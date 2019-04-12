@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -29,8 +30,8 @@ import (
 
 var confC *CC
 
-func NewConfigCenter(ctx context.Context, zkAddr string, procName string, confPath string, handler *CCHandler) error {
-	disc := crd.NewZkRegDiscover(zkAddr, 10*time.Second)
+func NewConfigCenter(ctx context.Context, client *zk.ZkClient, procName string, confPath string, handler *CCHandler) error {
+	disc := crd.NewZkRegDiscover(client)
 	return New(ctx, procName, confPath, disc, handler)
 }
 
@@ -80,9 +81,6 @@ type CC struct {
 }
 
 func (c *CC) run() error {
-	if err := c.disc.Start(); err != nil {
-		return fmt.Errorf("start discover config center failed, err: %v", err)
-	}
 
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	procEvent, err := c.disc.Discover(procPath)
@@ -218,7 +216,7 @@ func (c *CC) syncProc() {
 	procPath := fmt.Sprintf("%s/%s", types.CC_SERVCONF_BASEPATH, c.procName)
 	data, err := c.disc.Read(procPath)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", procPath, err)
 		return
 	}
 
@@ -251,7 +249,7 @@ func (c *CC) syncLang() {
 	blog.V(5).Infof("start sync lang config from config center.")
 	data, err := c.disc.Read(types.CC_SERVLANG_BASEPATH)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVLANG_BASEPATH, err)
 		return
 	}
 
@@ -284,7 +282,7 @@ func (c *CC) syncErr() {
 	blog.V(5).Infof("start sync error config from config center.")
 	data, err := c.disc.Read(types.CC_SERVERROR_BASEPATH)
 	if err != nil {
-		blog.Errorf("sync process config failed, err: %v", err)
+		blog.Errorf("sync process config failed, node: %s, err: %v", types.CC_SERVERROR_BASEPATH, err)
 		return
 	}
 

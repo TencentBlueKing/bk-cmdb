@@ -14,12 +14,14 @@ import (
 	"testing"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/bson/primitive"
 	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 	"github.com/stretchr/testify/require"
-	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
-func requireCursorLength(t *testing.T, cursor mongo.Cursor, length int) {
+func requireCursorLength(t *testing.T, cursor *mongo.Cursor, length int) {
 	i := 0
 	for cursor.Next(context.Background()) {
 		i++
@@ -29,56 +31,36 @@ func requireCursorLength(t *testing.T, cursor mongo.Cursor, length int) {
 	require.Equal(t, i, length)
 }
 
-func stringSliceEquals(s1 []string, s2 []string) bool {
-	if len(s1) != len(s2) {
+func containsKey(doc bsonx.Doc, key ...string) bool {
+	_, err := doc.LookupErr(key...)
+	if err != nil {
 		return false
 	}
-
-	for i := range s1 {
-		if s1[i] != s2[i] {
-			return false
-		}
-	}
-
 	return true
 }
 
-func containsKey(keys bson.Keys, key string, prefix []string) bool {
-	for _, k := range keys {
-		if k.Name == key && stringSliceEquals(k.Prefix, prefix) {
-			return true
-		}
-	}
-
-	return false
-}
-
+// InsertExamples contains examples for insert operations.
 func InsertExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_insert")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 1
 
 		result, err := coll.InsertOne(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("item", "canvas"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("cotton"),
-				),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 28),
-					bson.EC.Double("w", 35.5),
-					bson.EC.String("uom", "cm"),
-				),
-			))
+			bson.D{
+				{"item", "canvas"},
+				{"qty", 100},
+				{"tags", bson.A{"cotton"}},
+				{"size", bson.D{
+					{"h", 28},
+					{"w", 35.5},
+					{"uom", "cm"},
+				}},
+			})
 
 		// End Example 1
 
@@ -91,7 +73,7 @@ func InsertExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(bson.EC.String("item", "canvas")),
+			bson.D{{"item", "canvas"}},
 		)
 
 		// End Example 2
@@ -107,44 +89,36 @@ func InsertExamples(t *testing.T, db *mongo.Database) {
 		result, err := coll.InsertMany(
 			context.Background(),
 			[]interface{}{
-				bson.NewDocument(
-					bson.EC.String("item", "journal"),
-					bson.EC.Int32("qty", 25),
-					bson.EC.ArrayFromElements("tags",
-						bson.VC.String("blank"),
-						bson.VC.String("red"),
-					),
-					bson.EC.SubDocumentFromElements("size",
-						bson.EC.Int32("h", 14),
-						bson.EC.Int32("w", 21),
-						bson.EC.String("uom", "cm"),
-					),
-				),
-				bson.NewDocument(
-					bson.EC.String("item", "mat"),
-					bson.EC.Int32("qty", 25),
-					bson.EC.ArrayFromElements("tags",
-						bson.VC.String("gray"),
-					),
-					bson.EC.SubDocumentFromElements("size",
-						bson.EC.Double("h", 27.9),
-						bson.EC.Double("w", 35.5),
-						bson.EC.String("uom", "cm"),
-					),
-				),
-				bson.NewDocument(
-					bson.EC.String("item", "mousepad"),
-					bson.EC.Int32("qty", 25),
-					bson.EC.ArrayFromElements("tags",
-						bson.VC.String("gel"),
-						bson.VC.String("blue"),
-					),
-					bson.EC.SubDocumentFromElements("size",
-						bson.EC.Int32("h", 19),
-						bson.EC.Double("w", 22.85),
-						bson.EC.String("uom", "cm"),
-					),
-				),
+				bson.D{
+					{"item", bsonx.String("journal")},
+					{"qty", bsonx.Int32(25)},
+					{"tags", bson.A{"blank", "red"}},
+					{"size", bson.D{
+						{"h", 14},
+						{"w", 21},
+						{"uom", "cm"},
+					}},
+				},
+				bson.D{
+					{"item", bsonx.String("mat")},
+					{"qty", bsonx.Int32(25)},
+					{"tags", bson.A{"gray"}},
+					{"size", bson.D{
+						{"h", 27.9},
+						{"w", 35.5},
+						{"uom", "cm"},
+					}},
+				},
+				bson.D{
+					{"item", "mousepad"},
+					{"qty", 25},
+					{"tags", bson.A{"gel", "blue"}},
+					{"size", bson.D{
+						{"h", 19},
+						{"w", 22.85},
+						{"uom", "cm"},
+					}},
+				},
 			})
 
 		// End Example 3
@@ -154,69 +128,67 @@ func InsertExamples(t *testing.T, db *mongo.Database) {
 	}
 }
 
+// QueryToplevelFieldsExamples contains examples for querying top-level fields.
 func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_query_top")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 6
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.Int32("qty", 50),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.Int32("qty", 75),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Int32("w", 30),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.Int32("qty", 45),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 10),
-					bson.EC.Double("w", 15.25),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"qty", 25},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"qty", 50},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"qty", 100},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"qty", 75},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30},
+					{"uom", "cm"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"qty", 45},
+				{"size", bson.D{
+					{"h", 10},
+					{"w", 15.25},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -232,7 +204,7 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(),
+			bson.D{},
 		)
 
 		// End Example 7
@@ -246,7 +218,7 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(bson.EC.String("status", "D")),
+			bson.D{{"status", "D"}},
 		)
 
 		// End Example 9
@@ -260,14 +232,7 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("status",
-					bson.EC.ArrayFromElements("$in",
-						bson.VC.String("A"),
-						bson.VC.String("D"),
-					),
-				),
-			))
+			bson.D{{"status", bson.D{{"$in", bson.A{"A", "D"}}}}})
 
 		// End Example 10
 
@@ -280,12 +245,10 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-				bson.EC.SubDocumentFromElements("qty",
-					bson.EC.Int32("$lt", 30),
-				),
-			))
+			bson.D{
+				{"status", "A"},
+				{"qty", bson.D{{"$lt", 30}}},
+			})
 
 		// End Example 11
 
@@ -298,18 +261,13 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.ArrayFromElements("$or",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("status", "A"),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.SubDocumentFromElements("qty",
-							bson.EC.Int32("$lt", 30),
-						),
-					),
-				),
-			))
+			bson.D{
+				{"$or",
+					bson.A{
+						bson.D{{"status", "A"}},
+						bson.D{{"qty", bson.D{{"$lt", 30}}}},
+					}},
+			})
 
 		// End Example 12
 
@@ -322,19 +280,13 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-				bson.EC.ArrayFromElements("$or",
-					bson.VC.DocumentFromElements(
-						bson.EC.SubDocumentFromElements("qty",
-							bson.EC.Int32("$lt", 30),
-						),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.Regex("item", "^p", ""),
-					),
-				),
-			))
+			bson.D{
+				{"status", "A"},
+				{"$or", bson.A{
+					bson.D{{"qty", bson.D{{"$lt", 30}}}},
+					bson.D{{"item", primitive.Regex{Pattern: "^p", Options: ""}}},
+				}},
+			})
 
 		// End Example 13
 
@@ -344,69 +296,67 @@ func QueryToplevelFieldsExamples(t *testing.T, db *mongo.Database) {
 
 }
 
+// QueryEmbeddedDocumentsExamples contains examples for querying embedded document fields.
 func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_query_embedded")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 14
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.Int32("qty", 50),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.Int32("qty", 75),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Int32("w", 30),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.Int32("qty", 45),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 10),
-					bson.EC.Double("w", 15.25),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"qty", 25},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"qty", 50},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"qty", 100},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"qty", 75},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30},
+					{"uom", "cm"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"qty", 45},
+				{"size", bson.D{
+					{"h", 10},
+					{"w", 15.25},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -422,13 +372,13 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-			))
+			bson.D{
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+			})
 
 		// End Example 15
 
@@ -441,13 +391,13 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("w", 21),
-					bson.EC.Int32("h", 14),
-					bson.EC.String("uom", "cm"),
-				),
-			))
+			bson.D{
+				{"size", bson.D{
+					{"w", 21},
+					{"h", 14},
+					{"uom", "cm"},
+				}},
+			})
 
 		// End Example 16
 
@@ -460,9 +410,8 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("size.uom", "in"),
-			))
+			bson.D{{"size.uom", "in"}},
+		)
 
 		// End Example 17
 
@@ -475,11 +424,11 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("size.h",
-					bson.EC.Int32("$lt", 15),
-				),
-			))
+			bson.D{
+				{"size.h", bson.D{
+					{"$lt", 15},
+				}},
+			})
 
 		// End Example 18
 
@@ -492,13 +441,13 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("size.h",
-					bson.EC.Int32("$lt", 15),
-				),
-				bson.EC.String("size.uom", "in"),
-				bson.EC.String("status", "D"),
-			))
+			bson.D{
+				{"size.h", bson.D{
+					{"$lt", 15},
+				}},
+				{"size.uom", "in"},
+				{"status", "D"},
+			})
 
 		// End Example 19
 
@@ -508,79 +457,47 @@ func QueryEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 }
 
+// QueryArraysExamples contains examples for querying array fields.
 func QueryArraysExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_query_array")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 20
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("blank"),
-					bson.VC.String("red"),
-				),
-				bson.EC.ArrayFromElements("dim_cm",
-					bson.VC.Int32(14),
-					bson.VC.Int32(21),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.Int32("qty", 50),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("red"),
-					bson.VC.String("blank"),
-				),
-				bson.EC.ArrayFromElements("dim_cm",
-					bson.VC.Int32(14),
-					bson.VC.Int32(21),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("red"),
-					bson.VC.String("blank"),
-					bson.VC.String("plain"),
-				),
-				bson.EC.ArrayFromElements("dim_cm",
-					bson.VC.Int32(14),
-					bson.VC.Int32(21),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.Int32("qty", 75),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("blank"),
-					bson.VC.String("red"),
-				),
-				bson.EC.ArrayFromElements("dim_cm",
-					bson.VC.Double(22.85),
-					bson.VC.Int32(30),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.Int32("qty", 45),
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("blue"),
-				),
-				bson.EC.ArrayFromElements("dim_cm",
-					bson.VC.Int32(10),
-					bson.VC.Double(15.25),
-				),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"qty", 25},
+				{"tags", bson.A{"blank", "red"}},
+				{"dim_cm", bson.A{14, 21}},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"qty", 50},
+				{"tags", bson.A{"red", "blank"}},
+				{"dim_cm", bson.A{14, 21}},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"qty", 100},
+				{"tags", bson.A{"red", "blank", "plain"}},
+				{"dim_cm", bson.A{14, 21}},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"qty", 75},
+				{"tags", bson.A{"blank", "red"}},
+				{"dim_cm", bson.A{22.85, 30}},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"qty", 45},
+				{"tags", bson.A{"blue"}},
+				{"dim_cm", bson.A{10, 15.25}},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -596,12 +513,8 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.ArrayFromElements("tags",
-					bson.VC.String("red"),
-					bson.VC.String("blank"),
-				),
-			))
+			bson.D{{"tags", bson.A{"red", "blank"}}},
+		)
 
 		// End Example 21
 
@@ -614,14 +527,9 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("tags",
-					bson.EC.ArrayFromElements("$all",
-						bson.VC.String("red"),
-						bson.VC.String("blank"),
-					),
-				),
-			))
+			bson.D{
+				{"tags", bson.D{{"$all", bson.A{"red", "blank"}}}},
+			})
 
 		// End Example 22
 
@@ -634,9 +542,9 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("tags", "red"),
-			))
+			bson.D{
+				{"tags", "red"},
+			})
 
 		// End Example 23
 
@@ -649,11 +557,11 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("dim_cm",
-					bson.EC.Int32("$gt", 25),
-				),
-			))
+			bson.D{
+				{"dim_cm", bson.D{
+					{"$gt", 25},
+				}},
+			})
 
 		// End Example 24
 
@@ -666,12 +574,12 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("dim_cm",
-					bson.EC.Int32("$gt", 15),
-					bson.EC.Int32("$lt", 20),
-				),
-			))
+			bson.D{
+				{"dim_cm", bson.D{
+					{"$gt", 15},
+					{"$lt", 20},
+				}},
+			})
 
 		// End Example 25
 
@@ -684,14 +592,14 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("dim_cm",
-					bson.EC.SubDocumentFromElements("$elemMatch",
-						bson.EC.Int32("$gt", 22),
-						bson.EC.Int32("$lt", 30),
-					),
-				),
-			))
+			bson.D{
+				{"dim_cm", bson.D{
+					{"$elemMatch", bson.D{
+						{"$gt", 22},
+						{"$lt", 30},
+					}},
+				}},
+			})
 
 		// End Example 26
 
@@ -704,11 +612,11 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("dim_cm.1",
-					bson.EC.Int32("$gt", 25),
-				),
-			))
+			bson.D{
+				{"dim_cm.1", bson.D{
+					{"$gt", 25},
+				}},
+			})
 
 		// End Example 27
 
@@ -721,11 +629,11 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("tags",
-					bson.EC.Int32("$size", 3),
-				),
-			))
+			bson.D{
+				{"tags", bson.D{
+					{"$size", 3},
+				}},
+			})
 
 		// End Example 28
 
@@ -735,80 +643,78 @@ func QueryArraysExamples(t *testing.T, db *mongo.Database) {
 
 }
 
+// QueryArrayEmbeddedDocumentsExamples contains examples for querying fields with arrays and embedded documents.
 func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_query_array_embedded")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 29
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 5),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "C"),
-						bson.EC.Int32("qty", 15),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "C"),
-						bson.EC.Int32("qty", 5),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 60),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "B"),
-						bson.EC.Int32("qty", 15),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 40),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "B"),
-						bson.EC.Int32("qty", 5),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "B"),
-						bson.EC.Int32("qty", 15),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "C"),
-						bson.EC.Int32("qty", 35),
-					),
-				),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 5},
+					},
+					bson.D{
+						{"warehouse", "C"},
+						{"qty", 15},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "C"},
+						{"qty", 5},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 60},
+					},
+					bson.D{
+						{"warehouse", "B"},
+						{"qty", 15},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 40},
+					},
+					bson.D{
+						{"warehouse", "B"},
+						{"qty", 5},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "B"},
+						{"qty", 15},
+					},
+					bson.D{
+						{"warehouse", "C"},
+						{"qty", 35},
+					},
+				}},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -824,12 +730,12 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock",
-					bson.EC.String("warehouse", "A"),
-					bson.EC.Int32("qty", 5),
-				),
-			))
+			bson.D{
+				{"instock", bson.D{
+					{"warehouse", "A"},
+					{"qty", 5},
+				}},
+			})
 
 		// End Example 30
 
@@ -842,12 +748,12 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock",
-					bson.EC.Int32("qty", 5),
-					bson.EC.String("warehouse", "A"),
-				),
-			))
+			bson.D{
+				{"instock", bson.D{
+					{"qty", 5},
+					{"warehouse", "A"},
+				}},
+			})
 
 		// End Example 31
 
@@ -860,11 +766,11 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock.0.qty",
-					bson.EC.Int32("$lte", 20),
-				),
-			))
+			bson.D{
+				{"instock.0.qty", bson.D{
+					{"$lte", 20},
+				}},
+			})
 
 		// End Example 32
 
@@ -877,11 +783,11 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock.qty",
-					bson.EC.Int32("$lte", 20),
-				),
-			))
+			bson.D{
+				{"instock.qty", bson.D{
+					{"$lte", 20},
+				}},
+			})
 
 		// End Example 33
 
@@ -894,14 +800,14 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock",
-					bson.EC.SubDocumentFromElements("$elemMatch",
-						bson.EC.Int32("qty", 5),
-						bson.EC.String("warehouse", "A"),
-					),
-				),
-			))
+			bson.D{
+				{"instock", bson.D{
+					{"$elemMatch", bson.D{
+						{"qty", 5},
+						{"warehouse", "A"},
+					}},
+				}},
+			})
 
 		// End Example 34
 
@@ -914,16 +820,16 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock",
-					bson.EC.SubDocumentFromElements("$elemMatch",
-						bson.EC.SubDocumentFromElements("qty",
-							bson.EC.Int32("$gt", 10),
-							bson.EC.Int32("$lte", 20),
-						),
-					),
-				),
-			))
+			bson.D{
+				{"instock", bson.D{
+					{"$elemMatch", bson.D{
+						{"qty", bson.D{
+							{"$gt", 10},
+							{"$lte", 20},
+						}},
+					}},
+				}},
+			})
 
 		// End Example 35
 
@@ -936,12 +842,12 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("instock.qty",
-					bson.EC.Int32("$gt", 10),
-					bson.EC.Int32("$lte", 20),
-				),
-			))
+			bson.D{
+				{"instock.qty", bson.D{
+					{"$gt", 10},
+					{"$lte", 20},
+				}},
+			})
 
 		// End Example 36
 
@@ -954,10 +860,10 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.Int32("instock.qty", 5),
-				bson.EC.String("instock.warehouse", "A"),
-			))
+			bson.D{
+				{"instock.qty", 5},
+				{"instock.warehouse", "A"},
+			})
 
 		// End Example 37
 
@@ -966,26 +872,24 @@ func QueryArrayEmbeddedDocumentsExamples(t *testing.T, db *mongo.Database) {
 	}
 }
 
+// QueryNullMissingFieldsExamples contains examples for querying fields that are null or missing.
 func QueryNullMissingFieldsExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_query_null_missing")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 38
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.Int32("_id", 1),
-				bson.EC.Null("item"),
-			),
-			bson.NewDocument(
-				bson.EC.Int32("_id", 2),
-			),
+			bson.D{
+				{"_id", 1},
+				{"item", nil},
+			},
+			bson.D{
+				{"_id", 2},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -1001,9 +905,9 @@ func QueryNullMissingFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.Null("item"),
-			))
+			bson.D{
+				{"item", nil},
+			})
 
 		// End Example 39
 
@@ -1016,11 +920,11 @@ func QueryNullMissingFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("item",
-					bson.EC.Int32("$type", 10),
-				),
-			))
+			bson.D{
+				{"item", bson.D{
+					{"$type", 10},
+				}},
+			})
 
 		// End Example 40
 
@@ -1033,11 +937,11 @@ func QueryNullMissingFieldsExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("item",
-					bson.EC.Boolean("$exists", false),
-				),
-			))
+			bson.D{
+				{"item", bson.D{
+					{"$exists", false},
+				}},
+			})
 
 		// End Example 41
 
@@ -1046,98 +950,96 @@ func QueryNullMissingFieldsExamples(t *testing.T, db *mongo.Database) {
 	}
 }
 
+// ProjectionExamples contains examples for specifying projections in find operations.
 func ProjectionExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_project")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 42
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.String("status", "A"),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 5),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.String("status", "A"),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Double("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "EC"),
-						bson.EC.Int32("qty", 5),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.String("status", "D"),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Double("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 60),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.String("status", "D"),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Int32("w", 30),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 40),
-					),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.String("status", "A"),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 10),
-					bson.EC.Double("w", 15.25),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "B"),
-						bson.EC.Int32("qty", 15),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "EC"),
-						bson.EC.Int32("qty", 35),
-					),
-				),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"status", "A"},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 5},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"status", "A"},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "EC"},
+						{"qty", 5},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"status", "D"},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 60},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"status", "D"},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30},
+					{"uom", "cm"},
+				}},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 40},
+					},
+				}},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"status", "A"},
+				{"size", bson.D{
+					{"h", 10},
+					{"w", 15.25},
+					{"uom", "cm"},
+				}},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "B"},
+						{"qty", 15},
+					},
+					bson.D{
+						{"warehouse", "EC"},
+						{"qty", 35},
+					},
+				}},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -1153,9 +1055,8 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			))
+			bson.D{{"status", "A"}},
+		)
 
 		// End Example 43
 
@@ -1166,38 +1067,34 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 44
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("item", 1),
-			bson.EC.Int32("status", 1),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"item", 1},
+			{"status", 1},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 44
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.False(t, containsKey(keys, "size", nil))
-			require.False(t, containsKey(keys, "instock", nil))
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.False(t, containsKey(doc, "size"))
+			require.False(t, containsKey(doc, "instock"))
 		}
 
 		require.NoError(t, cursor.Err())
@@ -1206,39 +1103,35 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 45
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("item", 1),
-			bson.EC.Int32("status", 1),
-			bson.EC.Int32("_id", 0),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"item", 1},
+			{"status", 1},
+			{"_id", 0},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 45
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-
-			require.False(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.False(t, containsKey(keys, "size", nil))
-			require.False(t, containsKey(keys, "instock", nil))
+			require.False(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.False(t, containsKey(doc, "size"))
+			require.False(t, containsKey(doc, "instock"))
 		}
 
 		require.NoError(t, cursor.Err())
@@ -1247,38 +1140,34 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 46
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("status", 0),
-			bson.EC.Int32("instock", 0),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"status", 0},
+			{"instock", 0},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 46
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.False(t, containsKey(keys, "status", nil))
-			require.True(t, containsKey(keys, "size", nil))
-			require.False(t, containsKey(keys, "instock", nil))
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.False(t, containsKey(doc, "status"))
+			require.True(t, containsKey(doc, "size"))
+			require.False(t, containsKey(doc, "instock"))
 		}
 
 		require.NoError(t, cursor.Err())
@@ -1287,43 +1176,39 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 47
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("item", 1),
-			bson.EC.Int32("status", 1),
-			bson.EC.Int32("size.uom", 1),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"item", 1},
+			{"status", 1},
+			{"size.uom", 1},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 47
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(true)
-			require.NoError(t, err)
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.True(t, containsKey(doc, "size"))
+			require.False(t, containsKey(doc, "instock"))
 
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.True(t, containsKey(keys, "size", nil))
-			require.False(t, containsKey(keys, "instock", nil))
-
-			require.True(t, containsKey(keys, "uom", []string{"size"}))
-			require.False(t, containsKey(keys, "h", []string{"size"}))
-			require.False(t, containsKey(keys, "w", []string{"size"}))
+			require.True(t, containsKey(doc, "size", "uom"))
+			require.False(t, containsKey(doc, "size", "h"))
+			require.False(t, containsKey(doc, "size", "w"))
 
 		}
 
@@ -1333,41 +1218,37 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 48
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("size.uom", 0),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"size.uom", 0},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 48
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(true)
-			require.NoError(t, err)
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.True(t, containsKey(doc, "size"))
+			require.True(t, containsKey(doc, "instock"))
 
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.True(t, containsKey(keys, "size", nil))
-			require.True(t, containsKey(keys, "instock", nil))
-
-			require.False(t, containsKey(keys, "uom", []string{"size"}))
-			require.True(t, containsKey(keys, "h", []string{"size"}))
-			require.True(t, containsKey(keys, "w", []string{"size"}))
+			require.False(t, containsKey(doc, "size", "uom"))
+			require.True(t, containsKey(doc, "size", "h"))
+			require.True(t, containsKey(doc, "size", "w"))
 
 		}
 
@@ -1377,53 +1258,46 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 49
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("item", 1),
-			bson.EC.Int32("status", 1),
-			bson.EC.Int32("instock.qty", 1),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"item", 1},
+			{"status", 1},
+			{"instock.qty", 1},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 49
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(true)
-			require.NoError(t, err)
-
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.False(t, containsKey(keys, "size", nil))
-			require.True(t, containsKey(keys, "instock", nil))
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.False(t, containsKey(doc, "size"))
+			require.True(t, containsKey(doc, "instock"))
 
 			instock, err := doc.LookupErr("instock")
 			require.NoError(t, err)
 
-			arr := instock.MutableArray()
+			arr := instock.Array()
 
-			for i := uint(0); i < uint(arr.Len()); i++ {
-				elem, err := arr.Lookup(i)
-				require.NoError(t, err)
+			for _, val := range arr {
+				require.Equal(t, bson.TypeEmbeddedDocument, val.Type())
+				subdoc := val.Document()
 
-				require.Equal(t, bson.TypeEmbeddedDocument, elem.Type())
-				subdoc := elem.MutableDocument()
-
-				require.Equal(t, 1, subdoc.Len())
+				require.Equal(t, 1, len(subdoc))
 				_, err = subdoc.LookupErr("qty")
 				require.NoError(t, err)
 			}
@@ -1435,164 +1309,158 @@ func ProjectionExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 50
 
-		projection := findopt.Projection(bson.NewDocument(
-			bson.EC.Int32("item", 1),
-			bson.EC.Int32("status", 1),
-			bson.EC.SubDocumentFromElements("instock",
-				bson.EC.Int32("$slice", -1),
-			),
-		))
-		require.NoError(t, err)
+		projection := bson.D{
+			{"item", 1},
+			{"status", 1},
+			{"instock", bson.D{
+				{"$slice", -1},
+			}},
+		}
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
-			projection,
+			bson.D{
+				{"status", "A"},
+			},
+			options.Find().SetProjection(projection),
 		)
 
 		// End Example 50
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(true)
-			require.NoError(t, err)
-
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "status", nil))
-			require.False(t, containsKey(keys, "size", nil))
-			require.True(t, containsKey(keys, "instock", nil))
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "status"))
+			require.False(t, containsKey(doc, "size"))
+			require.True(t, containsKey(doc, "instock"))
 
 			instock, err := doc.LookupErr("instock")
 			require.NoError(t, err)
-			require.Equal(t, instock.MutableArray().Len(), 1)
+			require.Equal(t, len(instock.Array()), 1)
 		}
 
 		require.NoError(t, cursor.Err())
 	}
 }
 
+// UpdateExamples contains examples of update operations.
 func UpdateExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_update")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 51
 
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "canvas"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 28),
-					bson.EC.Double("w", 35.5),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "mat"),
-				bson.EC.Int32("qty", 85),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 27.9),
-					bson.EC.Double("w", 35.5),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "mousepad"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 19),
-					bson.EC.Double("w", 22.85),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "P"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.Int32("qty", 50),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "P"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.Int32("qty", 75),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Int32("w", 30),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.Int32("qty", 45),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 10),
-					bson.EC.Double("w", 15.25),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "sketchbook"),
-				bson.EC.Int32("qty", 80),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "sketch pad"),
-				bson.EC.Int32("qty", 95),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Double("w", 30.5),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
+			bson.D{
+				{"item", "canvas"},
+				{"qty", 100},
+				{"size", bson.D{
+					{"h", 28},
+					{"w", 35.5},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "journal"},
+				{"qty", 25},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "mat"},
+				{"qty", 85},
+				{"size", bson.D{
+					{"h", 27.9},
+					{"w", 35.5},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "mousepad"},
+				{"qty", 25},
+				{"size", bson.D{
+					{"h", 19},
+					{"w", 22.85},
+					{"uom", "in"},
+				}},
+				{"status", "P"},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"qty", 50},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "P"},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"qty", 100},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"qty", 75},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30},
+					{"uom", "cm"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"qty", 45},
+				{"size", bson.D{
+					{"h", 10},
+					{"w", 15.25},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "sketchbook"},
+				{"qty", 80},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "sketch pad"},
+				{"qty", 95},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30.5},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -1608,18 +1476,18 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		result, err := coll.UpdateOne(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-			),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("$set",
-					bson.EC.String("size.uom", "cm"),
-					bson.EC.String("status", "P"),
-				),
-				bson.EC.SubDocumentFromElements("$currentDate",
-					bson.EC.Boolean("lastModified", true),
-				),
-			),
+			bson.D{
+				{"item", "paper"},
+			},
+			bson.D{
+				{"$set", bson.D{
+					{"size.uom", "cm"},
+					{"status", "P"},
+				}},
+				{"$currentDate", bson.D{
+					{"lastModified", true},
+				}},
+			},
 		)
 
 		// End Example 52
@@ -1630,16 +1498,16 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-			))
+			bson.D{
+				{"item", "paper"},
+			})
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
 			uom, err := doc.LookupErr("size", "uom")
@@ -1650,9 +1518,7 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 			require.NoError(t, err)
 			require.Equal(t, status.StringValue(), "P")
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-			require.True(t, containsKey(keys, "lastModified", nil))
+			require.True(t, containsKey(doc, "lastModified"))
 		}
 
 		require.NoError(t, cursor.Err())
@@ -1663,20 +1529,20 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		result, err := coll.UpdateMany(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("qty",
-					bson.EC.Int32("$lt", 50),
-				),
-			),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("$set",
-					bson.EC.String("size.uom", "cm"),
-					bson.EC.String("status", "P"),
-				),
-				bson.EC.SubDocumentFromElements("$currentDate",
-					bson.EC.Boolean("lastModified", true),
-				),
-			),
+			bson.D{
+				{"qty", bson.D{
+					{"$lt", 50},
+				}},
+			},
+			bson.D{
+				{"$set", bson.D{
+					{"size.uom", "cm"},
+					{"status", "P"},
+				}},
+				{"$currentDate", bson.D{
+					{"lastModified", true},
+				}},
+			},
 		)
 
 		// End Example 53
@@ -1687,18 +1553,18 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.SubDocumentFromElements("qty",
-					bson.EC.Int32("$lt", 50),
-				),
-			))
+			bson.D{
+				{"qty", bson.D{
+					{"$lt", 50},
+				}},
+			})
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
 			uom, err := doc.LookupErr("size", "uom")
@@ -1709,9 +1575,7 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 			require.NoError(t, err)
 			require.Equal(t, status.StringValue(), "P")
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-			require.True(t, containsKey(keys, "lastModified", nil))
+			require.True(t, containsKey(doc, "lastModified"))
 		}
 
 		require.NoError(t, cursor.Err())
@@ -1722,22 +1586,22 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		result, err := coll.ReplaceOne(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.ArrayFromElements("instock",
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "A"),
-						bson.EC.Int32("qty", 60),
-					),
-					bson.VC.DocumentFromElements(
-						bson.EC.String("warehouse", "B"),
-						bson.EC.Int32("qty", 40),
-					),
-				),
-			),
+			bson.D{
+				{"item", "paper"},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"instock", bson.A{
+					bson.D{
+						{"warehouse", "A"},
+						{"qty", 60},
+					},
+					bson.D{
+						{"warehouse", "B"},
+						{"qty", 40},
+					},
+				}},
+			},
 		)
 
 		// End Example 54
@@ -1748,29 +1612,25 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 		cursor, err := coll.Find(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-			))
+			bson.D{
+				{"item", "paper"},
+			})
 
 		require.NoError(t, err)
 
-		doc := bson.NewDocument()
+		doc := bsonx.Doc{}
 		for cursor.Next(context.Background()) {
-			doc.Reset()
-			err := cursor.Decode(doc)
+			doc = doc[:0]
+			err := cursor.Decode(&doc)
 			require.NoError(t, err)
 
-			keys, err := doc.Keys(false)
-			require.NoError(t, err)
-			require.Len(t, keys, 3)
-
-			require.True(t, containsKey(keys, "_id", nil))
-			require.True(t, containsKey(keys, "item", nil))
-			require.True(t, containsKey(keys, "instock", nil))
+			require.True(t, containsKey(doc, "_id"))
+			require.True(t, containsKey(doc, "item"))
+			require.True(t, containsKey(doc, "instock"))
 
 			instock, err := doc.LookupErr("instock")
 			require.NoError(t, err)
-			require.Equal(t, instock.MutableArray().Len(), 2)
+			require.Equal(t, len(instock.Array()), 2)
 
 		}
 
@@ -1779,68 +1639,66 @@ func UpdateExamples(t *testing.T, db *mongo.Database) {
 
 }
 
+// DeleteExamples contains examples of delete operations.
 func DeleteExamples(t *testing.T, db *mongo.Database) {
-	_, err := db.RunCommand(
-		context.Background(),
-		bson.NewDocument(bson.EC.Int32("dropDatabase", 1)),
-	)
-	require.NoError(t, err)
+	coll := db.Collection("inventory_delete")
 
-	coll := db.Collection("inventory")
+	err := coll.Drop(context.Background())
+	require.NoError(t, err)
 
 	{
 		// Start Example 55
 		docs := []interface{}{
-			bson.NewDocument(
-				bson.EC.String("item", "journal"),
-				bson.EC.Int32("qty", 25),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 14),
-					bson.EC.Int32("w", 21),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "notebook"),
-				bson.EC.Int32("qty", 50),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "P"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "paper"),
-				bson.EC.Int32("qty", 100),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 8.5),
-					bson.EC.Int32("w", 11),
-					bson.EC.String("uom", "in"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "planner"),
-				bson.EC.Int32("qty", 75),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Double("h", 22.85),
-					bson.EC.Int32("w", 30),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "D"),
-			),
-			bson.NewDocument(
-				bson.EC.String("item", "postcard"),
-				bson.EC.Int32("qty", 45),
-				bson.EC.SubDocumentFromElements("size",
-					bson.EC.Int32("h", 10),
-					bson.EC.Double("w", 15.25),
-					bson.EC.String("uom", "cm"),
-				),
-				bson.EC.String("status", "A"),
-			),
+			bson.D{
+				{"item", "journal"},
+				{"qty", 25},
+				{"size", bson.D{
+					{"h", 14},
+					{"w", 21},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
+			bson.D{
+				{"item", "notebook"},
+				{"qty", 50},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "P"},
+			},
+			bson.D{
+				{"item", "paper"},
+				{"qty", 100},
+				{"size", bson.D{
+					{"h", 8.5},
+					{"w", 11},
+					{"uom", "in"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "planner"},
+				{"qty", 75},
+				{"size", bson.D{
+					{"h", 22.85},
+					{"w", 30},
+					{"uom", "cm"},
+				}},
+				{"status", "D"},
+			},
+			bson.D{
+				{"item", "postcard"},
+				{"qty", 45},
+				{"size", bson.D{
+					{"h", 10},
+					{"w", 15.25},
+					{"uom", "cm"},
+				}},
+				{"status", "A"},
+			},
 		}
 
 		result, err := coll.InsertMany(context.Background(), docs)
@@ -1856,9 +1714,9 @@ func DeleteExamples(t *testing.T, db *mongo.Database) {
 
 		result, err := coll.DeleteMany(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "A"),
-			),
+			bson.D{
+				{"status", "A"},
+			},
 		)
 
 		// End Example 57
@@ -1872,9 +1730,9 @@ func DeleteExamples(t *testing.T, db *mongo.Database) {
 
 		result, err := coll.DeleteOne(
 			context.Background(),
-			bson.NewDocument(
-				bson.EC.String("status", "D"),
-			),
+			bson.D{
+				{"status", "D"},
+			},
 		)
 
 		// End Example 58
@@ -1887,7 +1745,7 @@ func DeleteExamples(t *testing.T, db *mongo.Database) {
 	{
 		// Start Example 56
 
-		result, err := coll.DeleteMany(context.Background(), bson.NewDocument())
+		result, err := coll.DeleteMany(context.Background(), bsonx.Doc{})
 
 		// End Example 56
 

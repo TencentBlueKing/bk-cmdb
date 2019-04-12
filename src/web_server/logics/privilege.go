@@ -24,15 +24,15 @@ func (lgc *Logics) GetUserAppPri(userName string, ownerID, lang string) (userPri
 	p.Engine = lgc.Engine
 	appRole := p.GetAppRole()
 	rolePrivi = make(map[string][]string)
-	blog.Infof("get app role result:%v", appRole)
+	blog.V(5).Infof("get app role result:%v", appRole)
 	if nil != appRole {
 		userPriveApp = p.GetUserPrivilegeApp(appRole)
-		blog.Infof("get user privi app:%v", userPriveApp)
+		blog.V(5).Infof("get user privi app:%v", userPriveApp)
 		if nil != userPriveApp {
 			for _, role := range appRole {
 				rolePrivilege := p.GetRolePrivilege(common.BKInnerObjIDApp, role)
 				rolePrivi[role] = rolePrivilege
-				blog.Infof("get role privilege:%v", rolePrivilege)
+				blog.V(5).Infof("get role privilege:%v", rolePrivilege)
 			}
 		}
 

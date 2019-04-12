@@ -24,11 +24,8 @@
             @mouseover="handleTooltipsOver"
             @mouseleave="handleTooltipsLeave">
             <a class="tooltips-option" href="javascript:void(0)"
-                @click="handleShowDetails">{{$t('Common["详情信息"]')}}</a>
-            <a class="tooltips-option tooltips-option-delete" href="javascript:void(0)"
-                v-if="hoverNode.level === 1"
-                @click="handleDeleteRelation">
-                {{$t('Common["删除关联"]')}}
+                @click="handleShowDetails">
+                {{$t('Common["详情信息"]')}}
             </a>
         </div>
         <cmdb-topo-details
@@ -128,7 +125,6 @@
             ...mapActions('objectRelation', ['getInstRelation', 'updateInstRelation']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
-            ...mapActions('objectCommonInst', ['searchInst']),
             ...mapActions('objectBiz', ['searchBusiness']),
             ...mapActions('hostSearch', ['getHostBaseInfo']),
             resetNetwork (node = null) {
@@ -159,6 +155,7 @@
                 return this.getInstRelation({
                     objId,
                     instId,
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: this.getRelationRequestId,
                         clearCache: true
@@ -385,7 +382,8 @@
             handleToggleNodeVisibility (legend) {
                 ['prev', 'next'].forEach(type => {
                     legend.node[type].forEach(node => {
-                        const level = legend.node.level === 0 ? [-1, 1] : [legend.node.level]
+                        const nodeLevel = legend.node.level
+                        const level = nodeLevel === 0 ? [-1, 1] : [nodeLevel > 0 ? (nodeLevel + 1) : (nodeLevel - 1)]
                         if (level.includes(node.level) && node.data['bk_obj_id'] === legend.id) {
                             node.hidden = legend.active
                         }
@@ -393,78 +391,6 @@
                 })
                 legend.active = !legend.active
                 this.resetNetwork(legend.node)
-            },
-            async handleDeleteRelation () {
-                try {
-                    const hoverNodeData = this.$tools.clone(this.hoverNode.data)
-                    const rootNodeData = this.rootNode.data
-                    const properties = await this.getObjectProperties(rootNodeData['bk_obj_id'])
-                    const relationProperty = properties.find(property => property['bk_asst_obj_id'] === hoverNodeData['bk_obj_id'])
-                    const relationAfterDeleted = this.getRelationAfterDeleted(this.rootNode, hoverNodeData)
-                    const data = {
-                        updateType: 'remove',
-                        objId: rootNodeData['bk_obj_id'],
-                        relation: relationAfterDeleted,
-                        id: relationProperty['bk_property_id'],
-                        multiple: relationProperty['bk_property_type'] === 'multiasst',
-                        value: hoverNodeData['bk_inst_id'],
-                        params: {}
-                    }
-                    if (rootNodeData['bk_obj_id'] === 'host') {
-                        data.params['bk_host_id'] = rootNodeData['bk_inst_id'].toString()
-                    } else {
-                        const keyMap = {
-                            host: 'bk_host_id',
-                            biz: 'bk_biz_id'
-                        }
-                        data[keyMap[rootNodeData['bk_obj_id']] || 'bk_inst_id'] = rootNodeData['bk_inst_id']
-                    }
-                    await this.updateInstRelation({
-                        params: data,
-                        config: {
-                            requestId: `update_${rootNodeData['bk_obj_id']}_relation`
-                        }
-                    })
-                    this.updateDeletedRelation(hoverNodeData)
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            updateDeletedRelation (deleteNodeData) {
-                const deleteNode = this.nodes.find(node => node.id === deleteNodeData['_id'])
-                const allDeleteNodes = [deleteNode, ...this.getAllDeleteNodes(deleteNode)]
-                this.nodes = this.nodes.filter(node => !allDeleteNodes.includes(node))
-                this.resetNetwork()
-                this.$http.cancelCache(`get_${this.$parent.objId}_${this.$parent.instId}_relation`)
-            },
-            getAllDeleteNodes (deleteNode) {
-                let allDeleteNodes = []
-                deleteNode.children.forEach(node => {
-                    allDeleteNodes = [...allDeleteNodes, node, ...this.getAllDeleteNodes(node)]
-                })
-                return allDeleteNodes
-            },
-            getObjectProperties (objId) {
-                return this.searchObjectAttribute({
-                    params: {
-                        'bk_supplier_account': this.supplierAccount,
-                        'bk_obj_id': objId
-                    },
-                    config: {
-                        requestId: `post_searchObjectAttribute_${objId}`,
-                        fromCache: true
-                    }
-                })
-            },
-            getRelationAfterDeleted (rootNode, hoverNodeData) {
-                const relation = []
-                rootNode.next.forEach(node => {
-                    const nodeData = node.data
-                    if (nodeData['bk_obj_id'] === hoverNodeData['bk_obj_id']) {
-                        relation.push(nodeData['bk_inst_id'])
-                    }
-                })
-                return relation
             },
             handleShowDetails () {
                 const nodeData = this.hoverNode.data

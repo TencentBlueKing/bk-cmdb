@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	restful "github.com/emicklei/go-restful"
@@ -31,23 +30,24 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, conds mapstr.MapStr) (map[string]interface{}, int) {
+func (lgc *Logics) GetAppTopo(ctx context.Context, appID int64, conds mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
-	apps, errCode := lgc.getAppInfo(user, pheader, appID)
-	if 0 != errCode {
-		return nil, 0
+	apps, err := lgc.getAppInfo(ctx, appID)
+	if err != nil {
+		return nil, err
 	}
 	if 0 == len(apps) {
 		blog.Errorf("GetAppTopo not find app by id:%d", appID)
-		return nil, common.CCErrCommNotFound
+		return nil, defErr.Error(common.CCErrCommNotFound)
 	}
 	appInfo := apps[0]
-	appName, ok := appInfo[common.BKAppNameField]
-	if nil == appName || false == ok {
+	appName, err := appInfo.String(common.BKAppNameField)
+	if err != nil {
 		appName = ""
 	}
 
-	ret := map[string]interface{}{
+	ret := mapstr.MapStr{
 		"Level":           3,
 		"ApplicationName": appName,
 		"ApplicationID":   strconv.FormatInt(appID, 10),
@@ -55,30 +55,30 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 	}
 
 	moduleFields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
-	modules, errCode := lgc.getModulesByConds(user, pheader, strconv.FormatInt(appID, 10), conds, moduleFields, "")
-	if 0 != errCode {
-		return nil, 0
+	modules, err := lgc.getModulesByConds(ctx, strconv.FormatInt(appID, 10), conds, moduleFields, "")
+	if err != nil {
+		return nil, err
 	}
-	modulesMap, errCode := getModuleMap(modules, appID)
-	if 0 != errCode {
-		return nil, 0
+	modulesMap, err := getModuleMap(modules, appID, lgc.rid, defErr)
+	if err != nil {
+		return nil, err
 	}
 
-	sets, errCode := lgc.getSets(user, pheader, appID)
-	if 0 != errCode {
-		return nil, 0
+	sets, err := lgc.getSets(ctx, appID)
+	if err != nil {
+		return nil, err
 	}
 	if 0 == len(sets) {
-		blog.Errorf("GetAppTopo not find set by app id:%d", appID)
-		return nil, common.CCErrCommNotFound
+		blog.Errorf("GetAppTopo not find set by app id:%d, rid:%s", appID, lgc.rid)
+		return nil, defErr.Error(common.CCErrCommNotFound)
 	}
-	retSets := make([]map[string]interface{}, 0)
+	retSets := make([]mapstr.MapStr, 0)
 	for _, setInfo := range sets {
 
-		setID, err := util.GetInt64ByInterface(setInfo[common.BKSetIDField])
+		setID, err := setInfo.Int64(common.BKSetIDField)
 		if nil != err {
-			blog.Error("GetAppTopo get set id by getsets  return  info:%v  error:%v", setInfo, err)
-			return nil, common.CCErrCommHTTPDoRequestFailed
+			blog.Errorf("GetAppTopo get set id by getsets  return  info:%v  error:%v.rid:%s", setInfo, err, lgc.rid)
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDSet, common.BKSetIDField, "int", err.Error())
 		}
 		setName, _ := setInfo[common.BKSetNameField]
 		if nil == setName {
@@ -86,9 +86,9 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 		}
 		moduleArr, ok := modulesMap[setID]
 		if false == ok {
-			moduleArr = make([]map[string]interface{}, 0)
+			moduleArr = make([]mapstr.MapStr, 0)
 		}
-		retSets = append(retSets, map[string]interface{}{
+		retSets = append(retSets, mapstr.MapStr{
 			"SetName":  setName,
 			"SetID":    strconv.FormatInt(setID, 10),
 			"Children": moduleArr,
@@ -97,44 +97,41 @@ func (lgc *Logics) GetAppTopo(user string, pheader http.Header, appID int64, con
 	}
 	ret["Children"] = retSets
 
-	return ret, 0
+	return ret, nil
 
 }
 
-func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]interface{}, int) {
+func getModuleMap(modules []mapstr.MapStr, appID int64, rid string, defErr errors.DefaultCCErrorIf) (map[int64][]mapstr.MapStr, errors.CCError) {
+
 	// key is setID
-	modulesMap := make(map[int64][]map[string]interface{})
+	modulesMap := make(map[int64][]mapstr.MapStr)
 	if 0 == len(modules) {
-		blog.Errorf("GetAppTopo not find module by app id:%d", appID)
-		return nil, common.CCErrCommNotFound
+		blog.Errorf("GetAppTopo not find module by app id:%d,rid:%s", appID, rid)
+		return nil, defErr.Error(common.CCErrCommNotFound)
 	}
 	strAppID := strconv.FormatInt(appID, 10)
-	for _, moduleI := range modules {
-		module, ok := moduleI.(map[string]interface{})
-		if false == ok {
-			blog.Error("GetAppTopo getmodule  return info error, module info:%v  error", module)
-			return nil, common.CCErrCommHTTPDoRequestFailed
-		}
+	for _, module := range modules {
 
-		setID, err := util.GetInt64ByInterface(module[common.BKSetIDField])
+		setID, err := module.Int64(common.BKSetIDField)
 		if nil != err {
-			blog.Error("GetAppTopo get set id by getmodues  return info  error, module info:%v  error", module)
-			return nil, common.CCErrCommHTTPDoRequestFailed
+			blog.Errorf("GetAppTopo get set id by getmodues  return info  error, module info:%v  error, rid:%s", module, rid)
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "SetID", "int", err.Error())
 		}
-		moduleName, _ := module[common.BKModuleNameField]
-		if nil == moduleName {
-			moduleName = ""
+		moduleName, err := module.String(common.BKModuleNameField)
+		if err != nil {
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleName", "string", err.Error())
+
 		}
 		moduleID, err := util.GetInt64ByInterface(module[common.BKModuleIDField])
 		if nil != err {
-			blog.Error("GetAppTopo get module id by getmodues  return info  error, module info:%v  error", module)
-			return nil, common.CCErrCommHTTPDoRequestFailed
+			blog.Errorf("GetAppTopo get module id by getmodues  return info  error, module info:%v  error, rid:%s", module, rid)
+			return nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleID", "int", err.Error())
 		}
-		_, ok = modulesMap[setID]
+		_, ok := modulesMap[setID]
 		if false == ok {
-			modulesMap[setID] = make([]map[string]interface{}, 0)
+			modulesMap[setID] = make([]mapstr.MapStr, 0)
 		}
-		modulesMap[setID] = append(modulesMap[setID], map[string]interface{}{
+		modulesMap[setID] = append(modulesMap[setID], mapstr.MapStr{
 			"SetID":         strconv.FormatInt(setID, 10),
 			"ModuleID":      strconv.FormatInt(moduleID, 10),
 			"ModuleName":    moduleName,
@@ -145,16 +142,17 @@ func getModuleMap(modules []interface{}, appID int64) (map[int64][]map[string]in
 
 	}
 
-	return modulesMap, 0
+	return modulesMap, nil
 }
 
+// TODO delete
 // GetDefaultTopo get resource topo
-func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[string]interface{}, error) {
+func GetDefaultTopo_delete(req *restful.Request, appID string, topoApi string) (map[string]interface{}, error) {
 	defaultTopo := make(map[string]interface{})
 	url := fmt.Sprintf("%s/topo/v1/topo/internal/%s/%s", topoApi, common.BKDefaultOwnerID, appID)
 	res, err := httpcli.ReqHttp(req, url, common.HTTPSelectGet, nil)
 	if err != nil {
-		blog.Error("getDefaultTopo error:%v", err)
+		blog.Errorf("getDefaultTopo error:%v", err)
 		return nil, err
 	}
 
@@ -162,23 +160,27 @@ func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[str
 	resMap := make(map[string]interface{})
 
 	err = json.Unmarshal([]byte(res), &resMap)
+	if err != nil {
+		blog.Errorf("json Unmarshal data:%s, err:%s", res, err.Error())
+		return nil, err
+	}
 	if resMap["result"].(bool) {
 
 		resMapData, ok := resMap["data"].(map[string]interface{})
 		if false == ok {
-			blog.Error("assign error resMap:%v", resMap)
+			blog.Errorf("assign error resMap:%v", resMap)
 			return defaultTopo, nil
 		}
 		defaultTopo["Children"] = make([]map[string]interface{}, 0)
 		resModule, ok := resMapData["module"].([]interface{})
 		if false == ok {
-			blog.Error("assign error resMapData:%v", resMapData)
+			blog.Errorf("assign error resMapData:%v", resMapData)
 			return defaultTopo, nil
 		}
 		for _, module := range resModule {
 			Module, ok := module.(map[string]interface{})
 			if false == ok {
-				blog.Error("assign error module:%v", module)
+				blog.Errorf("assign error module:%v", module)
 				continue
 			}
 			moduleMap := map[string]interface{}{
@@ -196,16 +198,14 @@ func GetDefaultTopo(req *restful.Request, appID string, topoApi string) (map[str
 		defaultTopo["ObjID"] = "set"
 	}
 
-	blog.Debug("defaultTopo:%v", defaultTopo)
 	return defaultTopo, nil
 }
 
 // AppendDefaultTopo combin  idle pool set
-func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]interface{}) map[string]interface{} {
+func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]interface{}, rid string) map[string]interface{} {
 	topoChildren, ok := topo["Children"].([]map[string]interface{})
 	if false == ok {
-		err := fmt.Sprintf("assign error topo.Children is not []map[string]interface{},topo:%v", topo)
-		blog.Error(err)
+		blog.Warnf("assign error topo.Children is not []map[string]interface{},topo:%#v,rid:%s", topo, rid)
 		return nil
 	}
 
@@ -219,39 +219,35 @@ func AppendDefaultTopo(topo map[string]interface{}, defaultTopo map[string]inter
 }
 
 // SetModuleHostCount get set host count
-func (lgc *Logics) SetModuleHostCount(data []map[string]interface{}, user string, pheader http.Header) error {
-	blog.Debug("setModuleHostCount data: %v", data)
+func (lgc *Logics) SetModuleHostCount(ctx context.Context, data []mapstr.MapStr) error {
 	for _, itemMap := range data {
-		blog.Debug("ObjID: %s", itemMap)
 
 		switch itemMap["ObjID"] {
 		case common.BKInnerObjIDModule:
 
-			mouduleId, getErr := util.GetIntByInterface(itemMap["ModuleID"])
+			mouduleID, getErr := itemMap.Int64("ModuleID")
 			if nil != getErr {
-				blog.Errorf("%v, %v", getErr, itemMap)
+				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap, lgc.rid)
+				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "module", "ModuleID", "int", getErr.Error())
+			}
+			appID, getErr := itemMap.Int64("ApplicationID")
+			if nil != getErr {
+				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap)
+				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "App", "ApplicationID", "int", getErr.Error())
+			}
+			hostNum, getErr := lgc.GetModuleHostCount(ctx, appID, mouduleID)
+			if nil != getErr {
 				return getErr
 			}
-			appId, getErr := util.GetIntByInterface(itemMap["ApplicationID"])
-			if nil != getErr {
-				blog.Errorf("%v, %v", getErr, itemMap)
-				return getErr
-			}
-			blog.Debug("mouduleId: %v", mouduleId)
-			hostNum, getErr := lgc.GetModuleHostCount(appId, mouduleId, user, pheader)
-			if nil != getErr {
-				return getErr
-			}
-			blog.Debug("hostNum: %v", hostNum)
 			itemMap["HostNum"] = hostNum
 		}
 
 		if nil != itemMap["Children"] {
-			children, ok := itemMap["Children"].([]map[string]interface{})
+			children, ok := itemMap["Children"].([]mapstr.MapStr)
 			if false == ok {
-				children = make([]map[string]interface{}, 0)
+				children = make([]mapstr.MapStr, 0)
 			}
-			lgc.SetModuleHostCount(children, user, pheader)
+			lgc.SetModuleHostCount(ctx, children)
 		} else {
 			children := make([]interface{}, 0)
 			itemMap["Children"] = children
@@ -261,102 +257,121 @@ func (lgc *Logics) SetModuleHostCount(data []map[string]interface{}, user string
 }
 
 // GetModuleHostCount get module host count
-func (lgc *Logics) GetModuleHostCount(appID, mouduleID interface{}, user string, pheader http.Header) (int, error) {
-
+func (lgc *Logics) GetModuleHostCount(ctx context.Context, appID, mouduleID interface{}) (int, error) {
 	param := mapstr.MapStr{
 		common.BKAppIDField:    appID,
 		common.BKModuleIDField: []interface{}{mouduleID},
 	}
 
-	result, err := lgc.CoreAPI.HostServer().HostSearchByModuleID(context.Background(), pheader, param)
+	result, err := lgc.CoreAPI.HostServer().HostSearchByModuleID(ctx, lgc.header, param)
 	if nil != err {
-		blog.Errorf("getModuleHostCount , error:%v", err)
+		blog.Errorf("getModuleHostCount http do error, error:%v,input:%#v,rid:%s", err, param, lgc.rid)
 		return 0, err
 	}
+	if !result.Result {
+		blog.Errorf("getModuleHostCount http response error, err code:%d, err msg:%d, input:%+v, rid:%s", result.Code, result.ErrMsg, param, lgc.rid)
+		return 0, err
+	}
+
 	rspV3MapData, ok := result.Data.([]interface{})
 	if false == ok {
-		blog.Error("assign error rspV3Map.data is not []interface{}, rspV3Map:%v", result.Data)
+		blog.Errorf("assign error rspV3Map.data is not []interface{}, rspV3Map:%#v,input:%#v,rid:%s", result.Data, param, lgc.rid)
 		return 0, nil
 	}
 	return len(rspV3MapData), nil
 }
 
-func (lgc *Logics) getSets(user string, pheader http.Header, appID int64) ([]mapstr.MapStr, int) {
+func (lgc *Logics) getSets(ctx context.Context, appID int64) ([]mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
 	page := mapstr.MapStr{"start": 0, "limit": common.BKNoLimit}
 	param := &params.SearchParams{Page: page, Condition: mapstr.MapStr{}}
 
 	appIDStr := strconv.FormatInt(appID, 10)
-	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(context.Background(), user, appIDStr, pheader, param)
+	result, err := lgc.CoreAPI.TopoServer().Instance().SearchSet(ctx, lgc.ownerID, appIDStr, lgc.header, param)
 	if err != nil {
-		blog.Error("get sets   error:%v", err)
-		return nil, common.CCErrCommHTTPDoRequestFailed
+		blog.Errorf("get sets   error:%v, cond:%+v,rid:%s", err, param, lgc.rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	return result.Data.Info, 0
+	if !result.Result {
+		blog.Errorf("get sets info http response error, err code:%d, err msg:%s, cond:%+v,rid:%s", result.Code, result.ErrMsg, param, lgc.rid)
+		return nil, defErr.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
 }
 
-func (lgc *Logics) getModules(user string, pheader http.Header, appID int64) ([]interface{}, int) {
+func (lgc *Logics) getModules(ctx context.Context, appID int64) ([]mapstr.MapStr, errors.CCError) {
 
 	fields := []string{common.BKModuleIDField, common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField, common.BKDefaultField}
 
-	return lgc.getModulesByConds(user, pheader, strconv.FormatInt(appID, 10), nil, fields, "")
+	return lgc.getModulesByConds(ctx, strconv.FormatInt(appID, 10), nil, fields, "")
 }
 
-func (lgc *Logics) getModulesByConds(user string, pheader http.Header, appIDStr string, conds map[string]interface{}, fields []string, sort string) ([]interface{}, int) {
+func (lgc *Logics) getModulesByConds(ctx context.Context, appIDStr string, conds map[string]interface{}, fields []string, sort string) ([]mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
 	searchParams := mapstr.MapStr{}
 	searchParams["fields"] = fields
 	searchParams["condition"] = conds
 	searchParams["page"] = mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": sort}
-	result, err := lgc.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appIDStr, pheader, searchParams)
+	result, err := lgc.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(ctx, appIDStr, lgc.header, searchParams)
 	if err != nil {
-		blog.Error("getModules   error:%v", err)
-		return nil, common.CCErrCommHTTPDoRequestFailed
+		blog.Errorf("getModules http do error,err:%v, cond:%+v,rid:%s", err, conds, lgc.rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	return getRspV3DataInfo("getModules", result.Result, result.Code, result.Data)
+	if !result.Result {
+		blog.Errorf("get app info http response error, err code:%d, err msg:%s, cond:%+v,rid:%s", result.Code, result.ErrMsg, searchParams, lgc.rid)
+		return nil, defErr.New(result.Code, result.ErrMsg)
+	}
+	return result.Data.Info, nil
 }
 
-func (lgc *Logics) getAppInfo(user string, pheader http.Header, appID int64) ([]mapstr.MapStr, int) {
+func (lgc *Logics) getAppInfo(ctx context.Context, appID int64) ([]mapstr.MapStr, errors.CCError) {
+	defErr := lgc.ccErr
 
 	page := mapstr.MapStr{"start": 0, "limit": 2}
 	condition := mapstr.MapStr{common.BKAppIDField: appID}
 	param := &params.SearchParams{Condition: condition, Page: page}
-	result, err := lgc.CoreAPI.TopoServer().Instance().SearchApp(context.Background(), user, pheader, param)
+	result, err := lgc.CoreAPI.TopoServer().Instance().SearchApp(ctx, lgc.ownerID, lgc.header, param)
 	if nil != err {
-		blog.Errorf("get app info error:%v", err)
-		return nil, common.CCErrCommHTTPDoRequestFailed
+		blog.Errorf("get app info error:%v, cond:%+v,rid:%s", err, condition, lgc.rid)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("get app info http response error, err code:%d, err msg:%s, cond:%+v,rid:%s", result.Code, result.ErrMsg, condition, lgc.rid)
+		return nil, defErr.New(result.Code, result.ErrMsg)
 	}
 
-	return result.Data.Info, 0
+	return result.Data.Info, nil
 }
 
-func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}) ([]interface{}, int) {
+func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}, rid string) ([]interface{}, int) {
 
 	if false == result {
 		return nil, code
 	}
 	dataMap, ok := data.(map[string]interface{})
 	if false == ok {
-		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
+		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%#v,rid:%s", logPrex, dataMap, rid)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 	dataInfo, ok := dataMap["info"].([]interface{})
 	if false == ok {
-		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%s", logPrex, dataMap)
+		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%#v", logPrex, dataMap, rid)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 	return dataInfo, 0
 }
 
-func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (bool, error) {
+func (lgc *Logics) CheckAppTopoIsThreeLevel(ctx context.Context) (bool, error) {
 
-	result, err := lgc.CoreAPI.TopoServer().Object().SelectModel(context.Background(), util.GetOwnerID(pheader), pheader)
+	result, err := lgc.CoreAPI.TopoServer().Object().SelectModel(ctx, lgc.ownerID, lgc.header)
 	if nil != err {
-		blog.Errorf("CheckAppTopoIsThreeLevel  error:%s ", err.Error())
-		return false, err
+		blog.Errorf("CheckAppTopoIsThreeLevel http do error.err:%s,input:%#v,rid:%s", err.Error(), lgc.ownerID, lgc.rid)
+		return false, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if false == result.Result {
-		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s, error:%s ", result.ErrMsg)
+		blog.Errorf("CheckAppTopoIsThreeLevel reply:%s ", result.ErrMsg)
 		return false, fmt.Errorf(result.ErrMsg)
 	}
 
@@ -377,17 +392,15 @@ func (lgc *Logics) CheckAppTopoIsThreeLevel(user string, pheader http.Header) (b
 	return true, nil
 }
 
-func (lgc *Logics) GetAppListByOwnerIDAndUin(ctx context.Context, pheader http.Header, ownerID, uin string) (appInfoArr []mapstr.MapStr, errCode int, err errors.CCError) {
-
-	pheader.Set(common.BKHTTPOwnerID, ownerID)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+func (lgc *Logics) GetAppListByOwnerIDAndUin(ctx context.Context, uin string) (appInfoArr []mapstr.MapStr, errCode int, err errors.CCError) {
+	defErr := lgc.ccErr
 
 	userLike := mapstr.MapStr{
 		common.BKDBLIKE: fmt.Sprintf("^%s,|,%s,|,%s$|^%s$", uin, uin, uin, uin),
 	}
 	var condItemArr []mapstr.MapStr
 	var conds mapstr.MapStr
-	if ownerID != uin {
+	if lgc.ownerID != uin {
 		condItemArr = append(condItemArr, mapstr.MapStr{common.CreatorField: userLike})
 		condItemArr = append(condItemArr, mapstr.MapStr{common.BKMaintainersField: userLike})
 		conds = mapstr.MapStr{common.BKDBOR: condItemArr}
@@ -397,14 +410,14 @@ func (lgc *Logics) GetAppListByOwnerIDAndUin(ctx context.Context, pheader http.H
 		s.Condition = conds
 	}
 
-	result, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, ownerID, common.BKInnerObjIDApp, pheader, s)
+	result, err := lgc.CoreAPI.TopoServer().Instance().InstSearch(ctx, lgc.ownerID, common.BKInnerObjIDApp, lgc.header, s)
 	if nil != err {
-		blog.Errorf("GetAppListByOwnerIDAndUin http do error, error:%s, request-id:%s", err.Error(), util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAppListByOwnerIDAndUin http do error, error:%s,input:%#v,rid:%s", err.Error(), s, lgc.rid)
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("GetAppListByOwnerIDAndUin http reply error, error code:%d, error message:%s, request-id:%s", result.Code, result.ErrMsg, util.GetHTTPCCRequestID(pheader))
+		blog.Errorf("GetAppListByOwnerIDAndUin http reply error, error code:%d, error message:%s,input:%#v,rid:%s", result.Code, result.ErrMsg, s, lgc.rid)
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.New(result.Code, result.ErrMsg)
 	}
 

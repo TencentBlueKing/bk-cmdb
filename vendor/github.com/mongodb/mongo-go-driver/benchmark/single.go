@@ -1,12 +1,18 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
 import (
 	"context"
 	"errors"
 
-	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/internal/testutil"
 	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 const (
@@ -21,7 +27,7 @@ func getClientDB(ctx context.Context) (*mongo.Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	client, err := mongo.NewClientFromConnString(cs)
+	client, err := mongo.NewClient(cs.String())
 	if err != nil {
 		return nil, err
 	}
@@ -43,15 +49,17 @@ func SingleRunCommand(ctx context.Context, tm TimerManager, iters int) error {
 	}
 	defer db.Client().Disconnect(ctx)
 
-	cmd := bson.NewDocument(bson.EC.Boolean("ismaster", true))
+	cmd := bsonx.Doc{{"ismaster", bsonx.Boolean(true)}}
 
 	tm.ResetTimer()
 	for i := 0; i < iters; i++ {
-		out, err := db.RunCommand(ctx, cmd)
+		var doc bsonx.Doc
+		err := db.RunCommand(ctx, cmd).Decode(&doc)
 		if err != nil {
 			return err
 		}
 		// read the document and then throw it away to prevent
+		out, err := doc.MarshalBSON()
 		if len(out) == 0 {
 			return errors.New("output of ismaster is empty")
 		}
@@ -82,7 +90,7 @@ func SingleFindOneByID(ctx context.Context, tm TimerManager, iters int) error {
 	coll := db.Collection("corpus")
 	for i := 0; i < iters; i++ {
 		id := int32(i)
-		res, err := coll.InsertOne(ctx, doc.Set(bson.EC.Int32("_id", id)))
+		res, err := coll.InsertOne(ctx, doc.Set("_id", bsonx.Int32(id)))
 		if err != nil {
 			return err
 		}
@@ -94,7 +102,7 @@ func SingleFindOneByID(ctx context.Context, tm TimerManager, iters int) error {
 	tm.ResetTimer()
 
 	for i := 0; i < iters; i++ {
-		res := coll.FindOne(ctx, bson.NewDocument(bson.EC.Int32("_id", int32(i))))
+		res := coll.FindOne(ctx, bsonx.Doc{{"_id", bsonx.Int32(int32(i))}})
 		if res == nil {
 			return errors.New("find one query produced nil result")
 		}
@@ -129,7 +137,7 @@ func singleInsertCase(ctx context.Context, tm TimerManager, iters int, data stri
 		return err
 	}
 
-	_, err = db.RunCommand(ctx, bson.NewDocument(bson.EC.String("create", "corpus")))
+	err = db.RunCommand(ctx, bsonx.Doc{{"create", bsonx.String("corpus")}}).Err()
 	if err != nil {
 		return err
 	}

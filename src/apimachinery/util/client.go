@@ -23,14 +23,15 @@ import (
 
 func NewClient(c *TLSClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
-	if (nil != c) && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
-		var err error
-		tlsConf, err = ssl.ClientTslConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
-		if err != nil {
-			return nil, err
-		}
-
+	if nil != c {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
+		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
+			var err error
+			tlsConf, err = ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	transport := &http.Transport{

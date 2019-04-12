@@ -14,6 +14,7 @@ package auth
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 
 	"configcenter/src/common"
@@ -36,7 +37,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	pathStr := c.Request.URL.Path
 	method := c.Request.Method
 
-	//admin have full privilege
+	// admin have full privilege
 	if nil != role {
 		irole := role.(string)
 		if "1" == irole {
@@ -51,12 +52,12 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 
 	userName = iuserName.(string)
 
-	//index page or static page
+	// index page or static page
 	if 0 == len(pathArr) || "" == pathArr[1] || "static" == pathArr[1] {
 		return true
 	}
 
-	//valid privilege url must match session
+	// valid privilege url must match session
 	if strings.Contains(pathStr, types.BK_CC_PRIVI_PATTERN) {
 		if pathArr[len(pathArr)-1] == userName {
 			return true
@@ -64,37 +65,110 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		blog.Error("privilege user name error")
 		return false
 	}
-	//search classfication return true
+	// search classfication return true
 	if strings.Contains(pathStr, types.BK_CC_CLASSIFIC) && method == common.HTTPSelectPost {
 		return true
 	}
 
-	//search object attr  return true
+	// search object attr  return true
 	if strings.Contains(pathStr, types.BK_CC_OBJECT_ATTR) && method == common.HTTPSelectPost {
 		return true
 	}
 
-	//usercustom return true
+	// usercustom return true
 	if strings.Contains(pathStr, types.BK_CC_USER_CUSTOM) {
 		return true
 	}
 
-	//objectatt group return true
+	// objectatt group return true
 	if strings.Contains(pathStr, types.BK_OBJECT_ATT_GROUP) {
 		return true
 	}
 
-	//favorites return true
+	// favorites return true
 	if strings.Contains(pathStr, types.BK_CC_HOST_FAVORITES) {
 		return true
 	}
 
-	//search object return true
+	// association kind search, but not batch
+	if strings.Contains(pathStr, types.BK_TOPO_ASSOCIATION_KIND_SEARCH) &&
+		!strings.Contains(pathStr, "batch") && method == http.MethodPost {
+		return true
+	}
+
+	// search inst association
+	if types.SearchInstAssociation == pathStr && method == http.MethodPost {
+		return true
+	}
+
+	// batch search topo association kind
+	if strings.HasSuffix(pathStr, types.BKTopoBatchSearchAssociationKind) && method == http.MethodPost {
+		return true
+	}
+
+	// get processes
+	if types.ProcSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get user api
+	if types.SearchUserAPIRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.SearchObjectAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get association kind between objects
+	if pathStr == types.CreateInstAssociation && method == http.MethodPost {
+		return true
+	}
+
+	// get objects
+	if pathStr == types.SearchObjects && method == http.MethodPost {
+		return true
+	}
+
+	// export objects excel
+	if types.ExportObjectExcelRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	if types.DeleteInstAssociationRegex.MatchString(pathStr) && method == http.MethodDelete {
+		return true
+	}
+
+	// export business hosts
+	if pathStr == types.ExportHosts && method == http.MethodPost {
+		return true
+	}
+
+	// search uniques info for a object.
+	if types.SearchObjectUniquesRegexp.MatchString(pathStr) && method == http.MethodGet {
+		return true
+	}
+
+	// get topo graph
+	if types.TopoGraphicsSearchRegexp.MatchString(pathStr) && method == http.MethodPost {
+		return true
+	}
+
+	// get object info
+	if pathStr == types.BK_TOPO_SEARCH_OBJECTS && method == http.MethodPost {
+		return true
+	}
+
+	// search object return true
 	if types.ObjectPatternRegexp.MatchString(pathStr) {
 		return true
 	}
 
-	//biz  search privilege, return true
+	// biz  search privilege, return true
+	if strings.Contains(pathStr, types.BK_FIND) {
+		return true
+	}
 	if strings.Contains(pathStr, types.BK_APP_SEARCH) || strings.Contains(pathStr, types.BK_SET_SEARCH) || strings.Contains(pathStr, types.BK_MODULE_SEARCH) || strings.Contains(pathStr, types.BK_INST_SEARCH) || strings.Contains(pathStr, types.BK_HOSTS_SEARCH) {
 		return true
 	}
@@ -116,19 +190,20 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	if strings.Contains(pathStr, types.BK_INST_ASSOCIATION_OWNER_SEARCH) {
 		return true
 	}
-	//valid resource config
-	if types.ResPatternRegexp.MatchString(pathStr) {
+
+	// valid resource config
+	if strings.HasSuffix(pathStr, types.ResPattern) || pathStr == types.ImportHosts {
 		blog.Debug("valid resource config: %v", pathStr)
 		sysPrivi := session.Get("sysPrivi")
 		return validSysConfigPrivi(sysPrivi, types.BK_CC_RESOURCE)
 
 	}
 
-	//valid inst  privilege  op
-	if strings.Contains(pathStr, types.BK_INSTS) && !strings.Contains(pathStr, types.BK_TOPO) {
+	// valid inst  privilege  op
+	if strings.Contains(pathStr, types.BK_INSTS) && !strings.Contains(pathStr, types.BK_TOPO) && !strings.Contains(pathStr, "association") {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
-			//common inst op valid
+			// common inst op valid
 			modelPrivi := session.Get("modelPrivi").(string)
 			if 0 == len(modelPrivi) {
 				blog.Error("get model privilege json error")
@@ -136,7 +211,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 			}
 			return validModelConfigPrivi(modelPrivi, method, pathArr)
 		} else {
-			//mainline inst op valid
+			// mainline inst op valid
 			var objName string
 			var mainLineObjIDArr []string
 			if method == common.HTTPCreate {

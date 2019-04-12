@@ -1,0 +1,22 @@
+{
+    "1112000": "Add device failed",
+    "1112001": "Search device failed",
+    "1112002": "Delete device failed",
+    "1112003": "Object ID or object name is not net collect device",
+    "1112004": "Add netDevice property failed",
+    "1112005": "Search netDevice property failed",
+    "1112006": "Delete netDevice property failed",
+    "1112007": "Property does not exist",
+    "1112008": "Device does not exist",
+    "1112009": "Format period field failed",
+    "1112010": "The device has configured properties and fail to delete it",
+    "1112011": "search collector failed",
+    "1112012": "update collector failed",
+    "1112013": "discover failed",
+    "1112014": "search report failed",
+    "1112015": "confirm changes failed",
+    "1112016": "search history failed",
+    "1112017": "Update device failed",
+    "1112018": "Update netDevice property failed",
+    "": ""
+}

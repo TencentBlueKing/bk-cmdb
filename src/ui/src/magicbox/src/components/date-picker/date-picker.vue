@@ -46,11 +46,17 @@
                 <!-- 日期选择面板End -->
 
                 <div class="time-set-panel" v-if="timer">
-                    <div class="time-item" v-for="(timeItem, index) in currentTime"><input type="number" name="" :value="timeItem">
-                        <span class="time-option fr">
+                    <div class="time-item" v-for="(timeItem, index) in currentTime">
+                        <input
+                            type="number"
+                            name=""
+                            :value="timeItem"
+                            v-on:blur="blurTime($event, index)"
+                            v-on:input="inputTime($event, index)">
+                        <!-- <span class="time-option fr">
                             <i class="up" @click="setTime('up', index)"></i>
                             <i class="down" @click="setTime('down', index)"></i>
-                        </span>
+                        </span> -->
                     </div>
                 </div>
             </div>
@@ -217,7 +223,8 @@
                 selectedValue: this.initDate || '',
                 currentDate: new Date(),
                 showDatePanel: false,
-                isSetTimer: false
+                isSetTimer: false,
+                firstTime: true
             }
         },
         computed: {
@@ -261,11 +268,21 @@
                 return nextMonthVisibleList
             },
             currentTime () {
-                const time = [
-                    this.formatValue(this.BkDate.currentTime.hour),
-                    this.formatValue(this.BkDate.currentTime.minute),
-                    this.formatValue(this.BkDate.currentTime.second)
-                ]
+                let time = []
+                if (this.firstTime) {
+                    time = [
+                        this.formatValue(this.BkDate.currentTime.hour),
+                        this.formatValue(this.BkDate.currentTime.minute),
+                        this.formatValue(this.BkDate.currentTime.second)
+                    ]
+                    this.firstTime = false
+                } else {
+                    time = [
+                        this.formatValue(this.BkDate.currentTime.hour),
+                        this.formatValue(this.BkDate.currentTime.minute),
+                        this.formatValue(this.BkDate.currentTime.second)
+                    ]
+                }
                 return time
             }
         },
@@ -310,7 +327,7 @@
 
                 // change 回调
                 if (this.selectedValue !== newSelectedDate) {
-                    this.$emit('change', this.selectedValue, newSelectedDate)
+                    this.$emit('change', newSelectedDate, this.selectedValue)
                 }
 
                 this.BkDate.setDate(newSelectedDate)
@@ -349,7 +366,7 @@
             },
 
             formatValue (value) {
-                return parseInt(value) < 10 ? '0' + value : value
+                return parseInt(value) < 10 ? '0' + parseInt(value) : value
             },
 
             // 高亮显示已选日期
@@ -420,39 +437,90 @@
             setTime (type, index) {
                 const option = ['hour', 'minute', 'second'][index]
                 let defaultTime = {...this.BkDate.currentTime}
+                defaultTime.hour = Number(defaultTime.hour)
+                defaultTime.minute = Number(defaultTime.minute)
+                defaultTime.second = Number(defaultTime.second)
                 switch (option) {
                     case 'hour':
                         if (type === 'up') {
-                            defaultTime.hour = defaultTime.hour + 1 < 24 ? defaultTime.hour + 1 : 0
+                            defaultTime.hour = defaultTime.hour + 1 < 24 ? (defaultTime.hour + 1 > 10 ? defaultTime.hour + 1 : '0' + (defaultTime.hour + 1)) : '00'
                         }
                         if (type === 'down') {
-                            defaultTime.hour = defaultTime.hour - 1 >= 0 ? defaultTime.hour - 1 : 23
+                            defaultTime.hour = defaultTime.hour - 1 >= 0 ? (defaultTime.hour - 1 > 10 ? defaultTime.hour - 1 : '0' + (defaultTime.hour - 1)) : 23
                         }
                         break
                     case 'minute':
                         if (type === 'up') {
-                            defaultTime.minute = defaultTime.minute + 1 < 60 ? defaultTime.minute + 1 : 0
+                            defaultTime.minute = defaultTime.minute + 1 < 60 ? (defaultTime.minute + 1 > 10 ? defaultTime.minute + 1 : '0' + (defaultTime.minute + 1)) : '00'
                         }
                         if (type === 'down') {
-                            defaultTime.minute = defaultTime.minute - 1 >= 0 ? defaultTime.minute - 1 : 59
+                            defaultTime.minute = defaultTime.minute - 1 >= 0 ? (defaultTime.minute - 1 > 10 ? defaultTime.minute - 1 : '0' + (defaultTime.minute - 1)) : 59
                         }
                         break
                     case 'second':
                         if (type === 'up') {
-                            defaultTime.second = defaultTime.second + 1 < 60 ? defaultTime.second + 1 : 0
+                            defaultTime.second = defaultTime.second + 1 < 60 ? (defaultTime.second + 1 > 10 ? defaultTime.second + 1 : '0' + (defaultTime.second + 1)) : '00'
                         }
                         if (type === 'down') {
-                            defaultTime.second = defaultTime.second - 1 >= 0 ? defaultTime.second - 1 : 59
+                            defaultTime.second = defaultTime.second - 1 >= 0 ? (defaultTime.second - 1 > 10 ? defaultTime.second - 1 : '0' + (defaultTime.second - 1)) : 59
                         }
                         break
                     default:
                 }
 
+                this.timeCommon(defaultTime)
+            },
+
+            // 输入时间
+            inputTime (event, index) {
+                let timeVal = event.target.value
+                const option = ['hour', 'minute', 'second'][index]
+                let defaultTime = {...this.BkDate.currentTime}
+                switch (option) {
+                    case 'hour':
+                        let hourRes = /^(2[0-3]|[0-1]?\d)$/
+                        defaultTime.hour = hourRes.test(timeVal) ? timeVal : ''
+                        break
+                    case 'minute':
+                        let minuteRes = /^[0-5]?[0-9]$/
+                        defaultTime.minute = minuteRes.test(timeVal) ? timeVal : ''
+                        break
+                    case 'second':
+                        let secondRes = /^[0-5]?[0-9]$/
+                        defaultTime.second = secondRes.test(timeVal) ? timeVal : ''
+                        break
+                    default:
+                }
+                this.timeCommon(defaultTime)
+            },
+            blurTime (event, index) {
+                const timeVal = event.target.value
+                const option = ['hour', 'minute', 'second'][index]
+                let defaultTime = {...this.BkDate.currentTime}
+                let timeInfo = (timeVal === '' ? '00' : (Number(timeVal) < 10 ? '0' + Number(timeVal) : timeVal)).slice(0, 2)
+                switch (option) {
+                    case 'hour':
+                        defaultTime.hour = timeInfo
+                        break
+                    case 'minute':
+                        defaultTime.minute = timeInfo
+                        break
+                    case 'second':
+                        defaultTime.second = timeInfo
+                        break
+                    default:
+                }
+
+                this.timeCommon(defaultTime)
+            },
+
+            // 提取公共方法
+            timeCommon (defaultTime) {
                 this.BkDate.currentTime = {...defaultTime}
                 this.showDate()
                 this.isSetTimer = true
                 if (this.selectedValue !== this.initDate) {
-                    this.$emit('change', this.selectedValue, this.initDate)
+                    this.$emit('change', this.initDate, this.selectedValue)
                 }
                 this.$emit('date-selected', this.selectedValue)
             },

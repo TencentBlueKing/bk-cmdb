@@ -190,11 +190,9 @@ func (ia *importAssociation) getAssociationInfo() error {
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).In(associationFlag)
 	cond.Field(common.BKObjIDField).Eq(ia.objID)
-	queryInput := &metadata.SearchAssociationObjectRequest{
-		Condition: cond.ToMapStr(),
-	}
+	queryInput := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 
-	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchObject(ia.ctx, ia.params.Header, queryInput)
+	rsp, err := ia.cli.clientSet.CoreService().Association().ReadModelAssociation(ia.ctx, ia.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[getAssociationInfo] failed to request the object controller , error info is %s, input:%+v, rid:%s", err.Error(), queryInput, ia.rid)
 		return ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -205,8 +203,8 @@ func (ia *importAssociation) getAssociationInfo() error {
 		return ia.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	for _, inst := range rsp.Data {
-		ia.asstIDInfoMap[inst.AssociationName] = inst
+	for index := range rsp.Data.Info {
+		ia.asstIDInfoMap[rsp.Data.Info[index].AssociationName] = &rsp.Data.Info[index]
 	}
 
 	return nil
@@ -223,7 +221,7 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 	cond.Field(common.BKObjIDField).In(objIDArr)
 	cond.Field(common.BKIsOnlyField).Eq(true)
 
-	rsp, err := ia.cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), ia.params.Header, cond.ToMapStr())
+	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), ia.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[getAssociationInfo] failed to  search attribute , error info is %s, input:%+v, rid:%s", err.Error(), cond, ia.rid)
 		return ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -234,7 +232,7 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 		return ia.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	for _, attr := range rsp.Data {
+	for _, attr := range rsp.Data.Info {
 		_, ok := ia.asstObjIDProperty[attr.ObjectID]
 		if !ok {
 			ia.asstObjIDProperty[attr.ObjectID] = make(map[string]metadata.Attribute)
@@ -340,13 +338,13 @@ func (ia *importAssociation) getInstDataByObjIDConds(objID, instIDKey string, co
 	}
 
 	fields = append(fields, instIDKey)
-	queryInput := &metadata.QueryInput{}
+	queryInput := &metadata.QueryCondition{}
 	queryInput.Condition = conds.ToMapStr()
-	queryInput.Fields = strings.Join(fields, ",")
+	queryInput.Fields = fields
 
-	instSearchResult, err := ia.cli.clientSet.ObjectController().Instance().SearchObjects(ia.ctx, objID, ia.params.Header, queryInput)
+	instSearchResult, err := ia.cli.clientSet.CoreService().Instance().ReadInstance(ia.ctx, ia.params.Header, objID, queryInput)
 	if err != nil {
-		blog.Errorf("[getInstDataByObjIDConds] failed to  search %s instance , error info is %s, input:%+v, rid:%s", err.Error(), queryInput, ia.rid)
+		blog.Errorf("[getInstDataByObjIDConds] failed to  search %s instance , error info is %s, input:%#v, rid:%s", objID, err.Error(), queryInput, ia.rid)
 		return nil, ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !instSearchResult.Result {
@@ -362,7 +360,6 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	if err != nil {
 		blog.Warnf("parseInstToImportAssociationInst get %s field from %s model error,error:%s, rid:%d ", instID, objID, err.Error(), ia.rid)
 		return
-		//return fmt.Errorf("%s model %s instIDKey  not fouud")
 	}
 
 	attrNameValMap := importAssociationInst{
@@ -383,7 +380,7 @@ func (ia *importAssociation) parseInstToImportAssociationInst(objID, instIDKey s
 	if isErr {
 		return
 	}
-	for key, _ := range attrNameValMap.attrNameVal {
+	for key := range attrNameValMap.attrNameVal {
 		_, ok := ia.instIDAttrKeyValMap[objID]
 		if !ok {
 			ia.instIDAttrKeyValMap[objID] = make(map[string][]*importAssociationInst)
@@ -401,16 +398,18 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 	if ok {
 		return
 	}
-	input := &metadata.DeleteAssociationInstRequest{
-		Condition: cond.ToMapStr(),
-	}
-	rsp, err := ia.cli.clientSet.ObjectController().Association().DeleteInst(ia.ctx, ia.params.Header, input)
+
+	result, err := ia.cli.clientSet.CoreService().Association().DeleteInstAssociation(ia.ctx, ia.params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
+		return
 	}
-	if !rsp.Result {
-		ia.parseImportDataErr[idx] = rsp.ErrMsg
+
+	if result.Result {
+		ia.parseImportDataErr[idx] = result.ErrMsg
+		return
 	}
+
 }
 
 func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID, assInstID int64) {
@@ -418,11 +417,11 @@ func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID,
 	if ok {
 		return
 	}
-	inst := &metadata.CreateAssociationInstRequest{}
-	inst.ObjectAsstId = asstFlag
-	inst.InstId = instID
-	inst.AsstInstId = assInstID
-	rsp, err := ia.cli.clientSet.ObjectController().Association().CreateInst(ia.ctx, ia.params.Header, inst)
+	inst := metadata.CreateOneInstanceAssociation{}
+	inst.Data.ObjectAsstID = asstFlag
+	inst.Data.InstID = instID
+	inst.Data.AsstInstID = assInstID
+	rsp, err := ia.cli.clientSet.CoreService().Association().CreateInstAssociation(ia.ctx, ia.params.Header, &inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
 	}
@@ -439,10 +438,7 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 	if asstMapping != metadata.OneToOneMapping {
 		cond.Field(common.BKAsstInstIDField).Eq(dstInstID)
 	}
-	input := &metadata.SearchAssociationInstRequest{
-		Condition: cond.ToMapStr(),
-	}
-	rsp, err := ia.cli.clientSet.ObjectController().Association().SearchInst(ia.ctx, ia.params.Header, input)
+	rsp, err := ia.cli.clientSet.CoreService().Association().ReadInstAssociation(ia.ctx, ia.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		return false, err
 	}
@@ -451,12 +447,12 @@ func (ia *importAssociation) isExistInstAsst(idx int, cond condition.Condition, 
 		return false, ia.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	if len(rsp.Data) == 0 {
+	if len(rsp.Data.Info) == 0 {
 		return false, nil
 	}
-	if rsp.Data[0].AsstInstID != dstInstID &&
+	if rsp.Data.Info[0].AsstInstID != dstInstID &&
 		asstMapping == metadata.OneToOneMapping {
-		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem)
+		return false, ia.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
 	return true, nil
@@ -509,6 +505,8 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return getEnumIDByName(val, option), nil
 	case common.FieldTypeInt:
 		return util.GetInt64ByInterface(val)
+	case common.FieldTypeFloat:
+		return util.GetFloat64ByInterface(val)
 	default:
 		return val, nil
 	}

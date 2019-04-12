@@ -51,8 +51,8 @@ var (
 	maxEventDataChan            int           = 10000
 	retry                       int           = 3
 	SPOPINTERVAL                time.Duration = time.Second * 30
-	timedTriggerTime            time.Duration = time.Hour * 1
-	timedTriggerLockExpire      time.Duration = time.Hour * 23
+	timedTriggerTime            time.Duration = time.Hour * 2
+	timedTriggerLockExpire      time.Duration = time.Minute * 30
 	GETTASKIDSPOPINTERVAL       time.Duration = time.Second * 5
 	timedTriggerTaskTime        time.Duration = time.Minute * 20
 )

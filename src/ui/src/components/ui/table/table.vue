@@ -138,10 +138,7 @@
                 type: [String, Boolean],
                 default: '#f1f7ff'
             },
-            rowCursor: {
-                type: String,
-                default: 'pointer'
-            },
+            rowCursor: String,
             stripe: {
                 type: Boolean,
                 default: false
@@ -236,6 +233,14 @@
                     return this.finalHeight - minusHeight + 'px'
                 }
                 return 'none'
+            },
+            cursor () {
+                if (this.rowCursor) {
+                    return this.rowCursor
+                } else if (typeof this.$listeners.handleRowClick === 'function') {
+                    return 'pointer'
+                }
+                return 'default'
             }
         },
         watch: {

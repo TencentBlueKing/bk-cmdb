@@ -13,9 +13,9 @@
 package api
 
 import (
-    "time"
-    
-    "configcenter/src/framework/core/input"
+	"time"
+
+	"configcenter/src/framework/core/input"
 )
 
 var (

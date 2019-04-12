@@ -5,7 +5,7 @@
                 <label class="options-label">{{$t("HostResourcePool['时间范围']")}}</label>
                 <cmdb-form-date-range class="options-filter" v-model="dateRange"></cmdb-form-date-range>
             </div>
-            <div class="options-group fl">
+            <div class="options-group fl" style="margin: 0">
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
                 <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
             </div>
@@ -186,7 +186,7 @@
         padding: 20px 0;
         .options-group{
             white-space: nowrap;
-            margin-right: 20px;
+            margin-right: 16px;
             .options-label{
                 display: inline-block;
                 vertical-align: middle;

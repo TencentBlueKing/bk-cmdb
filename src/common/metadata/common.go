@@ -13,26 +13,21 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"fmt"
 	"time"
 
-	"github.com/coccyx/timeparser"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
+	"github.com/gin-gonic/gin/json"
 )
 
-type BaseResp struct {
-	Result bool   `json:"result"`
-	Code   int    `json:"bk_error_code"`
-	ErrMsg string `json:"bk_error_msg"`
-}
+const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
 
-var SuccessBaseResp = BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr}
-
+// RespError
 type RespError struct {
 	// error message
 	Msg error
@@ -41,16 +36,15 @@ type RespError struct {
 	Data    interface{}
 }
 
-const defaultError = "{\"result\": false, \"bk_error_code\": 1199000, \"bk_error_msg\": %s}"
-
 func (r *RespError) Error() string {
 	br := new(Response)
 	br.Code = r.ErrCode
-	br.ErrMsg = r.Msg.Error()
 	if nil != r.Msg {
 		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
 			br.Code = ccErr.GetCode()
 			br.ErrMsg = ccErr.Error()
+		} else {
+			br.ErrMsg = r.Msg.Error()
 		}
 	}
 	br.Data = r.Data
@@ -84,10 +78,17 @@ type MapArrayResponse struct {
 // ResponseInstData
 type ResponseInstData struct {
 	BaseResp `json:",inline"`
-	Data     struct {
+	Data     InstDataInfo `json:"data"`
+	/*struct {
 		Count int             `json:"count"`
 		Info  []mapstr.MapStr `json:"info"`
-	} `json:"data"`
+	} `json:"data"`*/
+}
+
+// InstDataInfo response instance data result Data field
+type InstDataInfo struct {
+	Count int             `json:"count"`
+	Info  []mapstr.MapStr `json:"info"`
 }
 
 type ResponseDataMapStr struct {
@@ -103,7 +104,7 @@ type QueryInput struct {
 	Sort      string      `json:"sort,omitempty"`
 }
 
-//ConvTime ??????????cc_type key ??????time.Time
+//ConvTime cc_type key
 func (o *QueryInput) ConvTime() error {
 	conds, ok := o.Condition.(map[string]interface{})
 	if true != ok && nil != conds {
@@ -120,7 +121,7 @@ func (o *QueryInput) ConvTime() error {
 	return nil
 }
 
-//convTimeItem ????????,??????????cc_time_type
+//convTimeItem cc_time_type
 func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 
 	switch item.(type) {
@@ -220,8 +221,9 @@ type BkHostInfo struct {
 }
 
 type DefaultModuleHostConfigParams struct {
-	ApplicationID int64   `json:"bk_biz_id"`
-	HostID        []int64 `json:"bk_host_id"`
+	ApplicationID int64    `json:"bk_biz_id"`
+	HostID        []int64  `json:"bk_host_id"`
+	Metadata      Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 //common search struct

@@ -14,17 +14,16 @@ package discovery
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 
-	regd "configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/errors"
 )
 
-func newServerDiscover(disc *regd.RegDiscover, path string) (Interface, error) {
+func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
 		return nil, eventErr
@@ -41,16 +40,16 @@ func newServerDiscover(disc *regd.RegDiscover, path string) (Interface, error) {
 }
 
 type server struct {
-	sync.Mutex
+	sync.RWMutex
 	index        int
 	path         string
 	servers      []string
-	discoverChan <-chan *regd.DiscoverEvent
+	discoverChan <-chan *registerdiscover.DiscoverEvent
 }
 
 func (s *server) GetServers() ([]string, error) {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 
 	num := len(s.servers)
 	if num == 0 {
@@ -64,6 +63,17 @@ func (s *server) GetServers() ([]string, error) {
 		s.index = 0
 		return append(s.servers[num-1:], s.servers[:num-1]...), nil
 	}
+}
+
+// IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
+func (s *server) IsMaster(strAddrs string) bool {
+	s.RLock()
+	defer s.RUnlock()
+	if 0 < len(s.servers) {
+		return s.servers[0] == strAddrs
+	}
+	return false
+
 }
 
 func (s *server) run() {
@@ -103,9 +113,8 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		scheme := "http"
-		if server.Scheme == "https" {
-			scheme = "https"
+		if server.Scheme != "https" {
+			server.Scheme = "http"
 		}
 
 		if server.Port == 0 {
@@ -118,15 +127,15 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		host := fmt.Sprintf("%s://%s:%d", scheme, server.IP, server.Port)
+		host := server.Address()
 		newSvr = append(newSvr, host)
 	}
-	
+
 	s.Lock()
 	defer s.Unlock()
 
 	if len(newSvr) != 0 {
 		s.servers = newSvr
-		blog.V(3).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
+		blog.V(5).Infof("update component with new server instance[%s] about path: %s", strings.Join(newSvr, "; "), s.path)
 	}
 }

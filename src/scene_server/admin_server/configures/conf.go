@@ -14,13 +14,14 @@ package configures
 
 import (
 	"encoding/json"
-	"time"
+	"path/filepath"
 
 	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
@@ -35,10 +36,10 @@ type ConfCenter struct {
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(ctx context.Context, serv string) *ConfCenter {
+func NewConfCenter(ctx context.Context, client *zk.ZkClient) *ConfCenter {
 	return &ConfCenter{
 		ctx:          ctx,
-		confRegDiscv: confregdiscover.NewZkRegDiscover(serv, time.Second*60),
+		confRegDiscv: confregdiscover.NewZkRegDiscover(client),
 	}
 }
 
@@ -49,11 +50,6 @@ func (cc *ConfCenter) Ping() error {
 
 // Start the configure center module service
 func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
-	// start configure register and discover service
-	if err := cc.confRegDiscv.Start(); err != nil {
-		blog.Errorf("fail to start config register and discover service. err:%s", err.Error())
-		return err
-	}
 
 	// save configures
 	if err := cc.writeConfs2Center(confDir); err != nil {
@@ -81,15 +77,8 @@ func (cc *ConfCenter) Start(confDir, errres, languageres string) error {
 	go func() {
 		select {
 		case <-cc.ctx.Done():
-			cc.Stop()
 		}
 	}()
-	return nil
-}
-
-// Stop the configure center
-func (cc *ConfCenter) Stop() error {
-	cc.confRegDiscv.Stop()
 	return nil
 }
 
@@ -133,6 +122,9 @@ func (cc *ConfCenter) writeLanguageRes2Center(languageres string) error {
 	}
 
 	data, err := json.Marshal(languagepack)
+	if err != nil {
+		return err
+	}
 	key := types.CC_SERVLANG_BASEPATH
 	return cc.confRegDiscv.Write(key, data)
 }
@@ -156,9 +148,11 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules = append(modules, types.CC_MODULE_WEBSERVER)
 	modules = append(modules, types.CC_MODULE_EVENTSERVER)
 	modules = append(modules, types.CC_MODULE_TXC)
+	modules = append(modules, types.CC_MODULE_CORESERVICE)
+	modules = append(modules, types.CC_MODULE_SYNCHRONZESERVER)
 
 	for _, moduleName := range modules {
-		filePath := confRootPath + "/" + moduleName + ".conf"
+		filePath := filepath.Join(confRootPath, moduleName+".conf")
 		key := types.CC_SERVCONF_BASEPATH + "/" + moduleName
 		if err := cc.writeConfigure(filePath, key); err != nil {
 			blog.Warnf("fail to write configure of module(%s) into center", moduleName)

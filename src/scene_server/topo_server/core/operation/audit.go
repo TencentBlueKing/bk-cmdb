@@ -84,7 +84,7 @@ func (a *audit) Query(params types.ContextParams, data mapstr.MapStr) (interface
 		times, ok := conds[common.BKOpTimeField].([]interface{})
 		if ok {
 			if 2 != len(times) {
-				blog.Error("search operation log input params times error, info: %v", times)
+				blog.Errorf("search operation log input params times error, info: %v", times)
 				return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 			}
 

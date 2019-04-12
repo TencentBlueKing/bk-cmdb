@@ -30,9 +30,9 @@ import (
 )
 
 // GetImportInsts get insts from excel file
-func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
-	fields, err := lgc.GetObjFieldIDs(objID, nil, header)
+	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -53,7 +53,7 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 }
 
 //GetInstData get inst data
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta metadata.Metadata) ([]mapstr.MapStr, error) {
 
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
@@ -73,13 +73,15 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		common.BKObjIDField:   objID,
 	}
 	searchCond["page"] = nil
-
+	searchCond[metadata.BKMetadata] = meta
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
 	if nil != err || !result.Result {
+		blog.Errorf("get inst detail error:%v , search condition:%#v", err, searchCond)
 		return nil, errors.New(result.ErrMsg)
 	}
 
 	if 0 == result.Data.Count {
+		blog.Errorf("inst inst count is 0 ")
 		return nil, errors.New("no inst")
 	}
 
@@ -100,10 +102,10 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf) (resultData mapstr.MapStr, errCode int, err error) {
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
-	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang)
+	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang, meta)
 	if nil != err {
 		blog.Errorf("ImportInsts  get %s inst info from excel error, error:%s logID:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
 		return
@@ -125,6 +127,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
+	resultData.Merge(result.Data)
 	if !result.Result {
 		errCode = result.Code
 		err = defErr.New(result.Code, result.ErrMsg)
@@ -142,9 +145,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 				blog.Errorf("ImportHosts logics http request import %s association error:%s, rid:%s", objID, asstResultErr.Error(), util.GetHTTPCCRequestID(header))
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if len(asstResult.Data.ErrMsgMap) > 0 {
-				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
-			}
+			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
 			if result.Result && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)

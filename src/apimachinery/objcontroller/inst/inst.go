@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error) {
+func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metadata.QueryInput) (resp *metadata.QueryInstResult, err error) {
 	subPath := fmt.Sprintf("/insts/%s/search", objType)
-	resp = new(metatype.QueryInstResult)
+	resp = new(metadata.QueryInstResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -33,8 +33,8 @@ func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Hea
 	return
 }
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metatype.CreateInstResult, err error) {
-	resp = new(metatype.CreateInstResult)
+func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
+	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Post().
@@ -47,8 +47,8 @@ func (t *instance) CreateObject(ctx context.Context, objType string, h http.Head
 	return
 }
 
-func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error) {
-	resp = new(metatype.DeleteResult)
+func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error) {
+	resp = new(metadata.DeleteResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Delete().
@@ -61,8 +61,8 @@ func (t *instance) DelObject(ctx context.Context, objType string, h http.Header,
 	return
 }
 
-func (t *instance) UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error) {
-	resp = new(metatype.UpdateResult)
+func (t *instance) UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error) {
+	resp = new(metadata.UpdateResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
 
 	err = t.client.Put().

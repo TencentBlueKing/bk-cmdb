@@ -18,18 +18,27 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/validator"
 	"configcenter/src/storage/dal"
 )
 
+var admin = "admin"
+
 func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+
+	if count, err := db.Table("cc_ApplicationBase").Find(mapstr.MapStr{common.BKAppNameField: common.DefaultAppName}).Count(ctx); err != nil {
+		return err
+	} else if count >= 1 {
+		return nil
+	}
+
 	// add default biz
 	defaultBiz := map[string]interface{}{}
 	defaultBiz[common.BKAppNameField] = common.DefaultAppName
-	defaultBiz[common.BKMaintainersField] = "admin"
-	defaultBiz[common.BKProductPMField] = "admin"
+	defaultBiz[common.BKMaintainersField] = admin
+	defaultBiz[common.BKProductPMField] = admin
 	defaultBiz[common.BKTimeZoneField] = "Asia/Shanghai"
 	defaultBiz[common.BKLanguageField] = "1" //中文
 	defaultBiz[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
@@ -96,7 +105,7 @@ func addDefaultBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 	return nil
 }
 
-func fillEmptyFields(data map[string]interface{}, rows []*metadata.Attribute) []string {
+func fillEmptyFields(data map[string]interface{}, rows []*Attribute) []string {
 	filled := []string{}
 	for _, field := range rows {
 		fieldName := field.PropertyID

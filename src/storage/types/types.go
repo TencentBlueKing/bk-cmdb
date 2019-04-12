@@ -13,16 +13,16 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
 	"time"
 
-	"encoding/json"
-
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
+
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 type Transaction struct {
@@ -49,30 +49,45 @@ type TxStatus int
 // TxStatus enumerations
 const (
 	TxStatusOnProgress TxStatus = iota + 1
-	TxStatusCommited
+	TxStatusCommitted
 	TxStatusAborted
 	TxStatusException
 )
 
+func (s TxStatus) String() string {
+	switch s {
+	case TxStatusOnProgress:
+		return "OnProgress"
+	case TxStatusCommitted:
+		return "Commited"
+	case TxStatusAborted:
+		return "Aborted"
+	case TxStatusException:
+		return "Exception"
+	default:
+		return "Unknow"
+	}
+}
+
 type Document map[string]interface{}
 
 func (d Document) Decode(result interface{}) error {
-	out, err := json.Marshal(d)
+	out, err := bson.Marshal(d)
 	if nil != err {
 		return err
 	}
-	return json.Unmarshal(out, result)
+	return bson.Unmarshal(out, result)
 }
 
-func (d *Document) Encode(result interface{}) error {
-	if nil == result {
+func (d *Document) Encode(value interface{}) error {
+	if nil == value {
 		return nil
 	}
-	out, err := json.Marshal(result)
+	out, err := bson.Marshal(value)
 	if nil != err {
 		return err
 	}
-	return json.Unmarshal(out, d)
+	return bson.Unmarshal(out, d)
 }
 
 type Documents []Document
@@ -81,52 +96,97 @@ func (d Documents) Decode(result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	switch resultv.Elem().Kind() {
 	case reflect.Slice:
-		out, err := json.Marshal(d)
-		if nil != err {
-			return err
+		err := decodeBsonArray(d, result)
+		if err != nil {
+			return fmt.Errorf("Decode Document array error: %v", err)
 		}
-		err = json.Unmarshal(out, result)
-		if nil != err {
-			blog.Errorf("Decode Document error: %s, source is %#v", err.Error(), out)
-		}
-		return err
+		return nil
 	default:
 		if len(d) <= 0 {
 			return nil
 		}
-		out, err := json.Marshal(d[0])
+		out, err := bson.Marshal(d[0])
 		if nil != err {
-			return err
+			return fmt.Errorf("Decode Documents error when marshal2: %v, source is %s", err, d[0])
 		}
-		return json.Unmarshal(out, result)
+		err = bson.Unmarshal(out, result)
+		if nil != err {
+			return fmt.Errorf("Decode Documents error when unmarshal: %v, source is %s", err, out)
+		}
+		return nil
 	}
 }
 
-func (d *Documents) Encode(result interface{}) error {
-	if nil == result {
+func (d *Documents) Encode(value interface{}) error {
+	if nil == value {
 		return nil
 	}
-	resultv := reflect.ValueOf(result)
-	for resultv.CanAddr() {
-		resultv = resultv.Elem()
+	valuev := reflect.ValueOf(value)
+	for valuev.CanAddr() {
+		valuev = valuev.Elem()
 	}
-	switch resultv.Kind() {
+	switch valuev.Kind() {
 	case reflect.Slice:
-		out, err := json.Marshal(result)
-		if nil != err {
-			return err
+		err := decodeBsonArray(value, d)
+		if err != nil {
+			return fmt.Errorf("Encode Document array error: %v", err)
 		}
-		*d = []Document{}
-		blog.Infof("Encode slice %s", out)
-		return json.Unmarshal(out, d)
+		return nil
 	default:
-		out, err := json.Marshal(result)
+		out, err := bson.Marshal(value)
 		if nil != err {
-			return err
+			return fmt.Errorf("Encode Documents when marshal error: %v, source is %#v", err, value)
 		}
 		*d = []Document{Document{}}
-		return json.Unmarshal(out, &(*d)[0])
+		err = bson.Unmarshal(out, &(*d)[0])
+		if err != nil {
+			return fmt.Errorf("Encode Documents when unmarshal error: %v, source is %v", err, bson.Raw(out))
+		}
 	}
+	return nil
+}
+
+func decodeBsonArray(inArr, outArr interface{}) error {
+	in := struct{ Data interface{} }{Data: inArr}
+	bsonraw, err := bson.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("[decodeBsonArray] marshal error: %v, source: %#v", err, in)
+	}
+
+	out := struct{ Data []bson.Raw }{}
+	err = bson.Unmarshal(bsonraw, &out)
+	if err != nil {
+		return fmt.Errorf("[decodeBsonArray] unmarshal error: %v, source: %v", err, bson.Raw(bsonraw))
+	}
+
+	resultv := reflect.ValueOf(outArr)
+	if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
+		return errors.New("result argument must be a slice address")
+	}
+	slicev := resultv.Elem()
+	slicev = slicev.Slice(0, slicev.Cap())
+	elemt := slicev.Type().Elem()
+	idx := 0
+	for _, dataItem := range out.Data {
+		if slicev.Len() == idx {
+			elemp := reflect.New(elemt)
+			if err := bson.Unmarshal(dataItem, elemp.Interface()); nil != err {
+				return fmt.Errorf("[decodeBsonArray] unmarshal item error: %v, source: %v", err, bson.Raw(dataItem))
+			}
+			slicev = reflect.Append(slicev, elemp.Elem())
+			slicev = slicev.Slice(0, slicev.Cap())
+			idx++
+			continue
+		}
+
+		if err := bson.Unmarshal(dataItem, slicev.Index(idx).Addr().Interface()); nil != err {
+			return fmt.Errorf("[decodeBsonArray] unmarshal element error: %v, source: %v", err, bson.Raw(dataItem))
+		}
+		idx++
+	}
+	resultv.Elem().Set(slicev.Slice(0, idx))
+
+	return nil
 }
 
 const (
@@ -135,9 +195,9 @@ const (
 )
 
 type Page struct {
-	Limit uint64 `json:"limit,omitempty"`
-	Start uint64 `json:"start,omitempty"`
-	Sort  string `json:"sort,omitempty"`
+	Limit uint64 `json:"limit,omitempty" bson:"limit,omitempty"`
+	Start uint64 `json:"start,omitempty" bson:"start,omitempty"`
+	Sort  string `json:"sort,omitempty" bson:"sort,omitempty"`
 }
 
 func ParsePage(origin interface{}) *Page {
@@ -146,11 +206,11 @@ func ParsePage(origin interface{}) *Page {
 	}
 	page, ok := origin.(map[string]interface{})
 	if !ok {
-		out, err := json.Marshal(origin)
+		out, err := bson.Marshal(origin)
 		if err != nil {
 			return &Page{}
 		}
-		err = json.Unmarshal(out, &page)
+		err = bson.Unmarshal(out, &page)
 		if err != nil {
 			return &Page{}
 		}

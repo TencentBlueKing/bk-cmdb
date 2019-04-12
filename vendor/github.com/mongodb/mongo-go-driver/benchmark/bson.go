@@ -1,3 +1,9 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
 import (
@@ -6,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
 )
 
 const (
@@ -18,24 +25,25 @@ const (
 
 // utility functions for the bson benchmarks
 
-func loadSourceDocument(pathParts ...string) (*bson.Document, error) {
+func loadSourceDocument(pathParts ...string) (bsonx.Doc, error) {
 	data, err := ioutil.ReadFile(filepath.Join(pathParts...))
 	if err != nil {
 		return nil, err
 	}
-	doc, err := bson.ParseExtJSONObject(string(data))
+	doc := bsonx.Doc{}
+	err = bson.UnmarshalExtJSON(data, true, &doc)
 	if err != nil {
 		return nil, err
 	}
 
-	if doc.Len() == 0 {
+	if len(doc) == 0 {
 		return nil, errors.New("empty bson document")
 	}
 
 	return doc, nil
 }
 
-func loadSourceReader(pathParts ...string) (bson.Reader, error) {
+func loadSourceRaw(pathParts ...string) (bson.Raw, error) {
 	doc, err := loadSourceDocument(pathParts...)
 	if err != nil {
 		return nil, err
@@ -45,5 +53,23 @@ func loadSourceReader(pathParts ...string) (bson.Reader, error) {
 		return nil, err
 	}
 
-	return bson.Reader(raw), nil
+	return bson.Raw(raw), nil
+}
+
+func loadSourceD(pathParts ...string) (bson.D, error) {
+	data, err := ioutil.ReadFile(filepath.Join(pathParts...))
+	if err != nil {
+		return nil, err
+	}
+	doc := bson.D{}
+	err = bson.UnmarshalExtJSON(data, true, &doc)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(doc) == 0 {
+		return nil, errors.New("empty bson document")
+	}
+
+	return doc, nil
 }

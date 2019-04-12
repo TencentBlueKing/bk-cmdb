@@ -168,7 +168,7 @@
             },
             showMoreHost () {
                 this.$router.push({
-                    path: 'resource',
+                    name: 'resource',
                     query: {
                         ip: this.keyword,
                         exact: 0,

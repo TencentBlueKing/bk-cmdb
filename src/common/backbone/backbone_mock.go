@@ -19,13 +19,15 @@ import (
 	"configcenter/src/common/types"
 )
 
-func NewMockBackbone() *Engine {
-	return &Engine{
+func NewMockBackbone(c *Config) (*Engine, error) {
+	engine := &Engine{
 		CoreAPI:  apimachinery.NewMockApiMachinery(),
 		SvcDisc:  &mockDisc{},
 		Language: language.NewFromCtx(language.EmptyLanguageSetting),
 		CCErr:    errors.NewFromCtx(errors.EmptyErrorsSetting),
 	}
+
+	return engine, nil
 }
 
 type mockDisc struct{}

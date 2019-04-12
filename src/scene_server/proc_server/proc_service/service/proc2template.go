@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -30,15 +29,15 @@ import (
 )
 
 func (ps *ProcServer) GetProcBindTemplate(req *restful.Request, resp *restful.Response) {
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,appID:%v, rid:%s", err, appIDStr, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -46,7 +45,7 @@ func (ps *ProcServer) GetProcBindTemplate(req *restful.Request, resp *restful.Re
 	procIDStr := pathParams[common.BKProcessIDField]
 	procID, err := strconv.ParseInt(procIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,procID:%+v,rid:%s", err, procIDStr, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -54,12 +53,12 @@ func (ps *ProcServer) GetProcBindTemplate(req *restful.Request, resp *restful.Re
 	// search object instance
 	condition := make(map[string]interface{})
 	condition[common.BKAppIDField] = appID
-	input := new(meta.QueryInput)
+	input := new(meta.QueryCondition)
 	input.Condition = condition
 
-	tempRet, err := ps.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDConfigTemp, req.Request.Header, input)
+	tempRet, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDConfigTemp, input)
 	if err != nil || !tempRet.Result {
-		blog.Errorf("fail to GetProcBindTemplate when do searchobject. err:%v, errcode:%d, errmsg:%s", err, tempRet.Code, tempRet.ErrMsg)
+		blog.Errorf("fail to GetProcBindTemplate when do searchobject. err:%v, errcode:%d, errmsg:%s,rid:%s", err, tempRet.Code, tempRet.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrObjectSelectInstFailed)})
 		return
 	}
@@ -67,9 +66,9 @@ func (ps *ProcServer) GetProcBindTemplate(req *restful.Request, resp *restful.Re
 	condition[common.BKProcessIDField] = procID
 
 	// get process to templation by condition
-	proc2TempRet, err := ps.CoreAPI.ProcController().SearchProc2Template(context.Background(), req.Request.Header, condition)
+	proc2TempRet, err := ps.CoreAPI.ProcController().SearchProc2Template(srvData.ctx, srvData.header, condition)
 	if err != nil || !proc2TempRet.Result {
-		blog.Errorf("fail to GetProcessTemplate when do GetProc2Template. err:%v, errcode:%d, errmsg:%s", err, proc2TempRet.Code, proc2TempRet.ErrMsg)
+		blog.Errorf("fail to GetProcessTemplate when do GetProc2Template. err:%v, errcode:%d, errmsg:%s,rid:%s", err, proc2TempRet.Code, proc2TempRet.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcSelectBindToMoudleFaile)})
 		return
 	}
@@ -105,31 +104,29 @@ func (ps *ProcServer) GetProcBindTemplate(req *restful.Request, resp *restful.Re
 }
 
 func (ps *ProcServer) BindProc2Template(req *restful.Request, resp *restful.Response) {
-	user := util.GetUser(req.Request.Header)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,input:%+v,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	procID, err := strconv.ParseInt(pathParams[common.BKProcessIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,input:%+v:%s,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	tempID, err := strconv.ParseInt(pathParams[common.BKTemlateIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,input:%+v,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -142,45 +139,43 @@ func (ps *ProcServer) BindProc2Template(req *restful.Request, resp *restful.Resp
 	cell[common.BKOwnerIDField] = util.GetOwnerID(req.Request.Header)
 	params = append(params, cell)
 
-	ret, err := ps.CoreAPI.ProcController().CreateProc2Template(context.Background(), req.Request.Header, params)
+	ret, err := ps.CoreAPI.ProcController().CreateProc2Template(srvData.ctx, srvData.header, params)
 	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("fail to BindModuleProcess. err: %v, errcode:%d, errmsg: %s", err.Error(), ret.Code, ret.ErrMsg)
+		blog.Errorf("fail to BindModuleProcess. err: %v, errcode:%d, errmsg: %s,input:%+v,condtion:%+v,rid:%s", err, ret.Code, ret.ErrMsg, pathParams, params, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcBindToTemplateFailed)})
 		return
 	}
 
 	// save operation log
 	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("bind template [%d] to process [%d]", tempID, procID), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
-	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
+	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, srvData.header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (ps *ProcServer) DeleteProc2Template(req *restful.Request, resp *restful.Response) {
-	user := util.GetUser(req.Request.Header)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	language := util.GetLanguage(req.Request.Header)
-	defErr := ps.CCErr.CreateDefaultCCErrorIf(language)
+	srvData := ps.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	pathParams := req.PathParameters()
 	appIDStr := pathParams[common.BKAppIDField]
 	appID, err := strconv.ParseInt(appIDStr, 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,input:%+v,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	procID, err := strconv.ParseInt(pathParams[common.BKProcessIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v,input:%+v,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	tempID, err := strconv.ParseInt(pathParams[common.BKTemlateIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v", err)
+		blog.Errorf("params error :%v, input:%+v,rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -190,16 +185,16 @@ func (ps *ProcServer) DeleteProc2Template(req *restful.Request, resp *restful.Re
 	condition[common.BKProcessIDField] = procID
 	condition[common.BKTemlateIDField] = tempID
 
-	ret, err := ps.CoreAPI.ProcController().DeleteProc2Template(context.Background(), req.Request.Header, condition)
+	ret, err := ps.CoreAPI.ProcController().DeleteProc2Template(srvData.ctx, srvData.header, condition)
 	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("fail to delete process template bind. err: %v, errcode:%s, errmsg: %s", err, ret.Code, ret.ErrMsg)
+		blog.Errorf("fail to delete process template bind. err: %v, errcode:%s, errmsg: %s,input:%+v,condition:%+v,rid", err, ret.Code, ret.ErrMsg, pathParams, condition, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUnBindToTemplateFailed)})
 		return
 	}
 
 	// save operation log
 	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind template [%d] to process [%d]", tempID, procID), common.BKOpTypeField: auditoplog.AuditOpTypeDel}
-	ps.CoreAPI.AuditController().AddProcLog(context.Background(), ownerID, appIDStr, user, req.Request.Header, log)
+	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, req.Request.Header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }

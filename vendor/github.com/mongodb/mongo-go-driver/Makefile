@@ -1,13 +1,17 @@
-BSON_PKGS = $(shell ./etc/find_pkgs.sh ./bson)
-BSON_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./bson _test)
-MONGO_PKGS = $(shell ./etc/find_pkgs.sh ./mongo)
-MONGO_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./mongo _test)
-CORE_PKGS = $(shell ./etc/find_pkgs.sh ./core)
-CORE_TEST_PKGS = $(shell ./etc/find_pkgs.sh ./core _test)
-PKGS = $(BSON_PKGS) $(MONGO_PKGS) $(CORE_PKGS)
-TEST_PKGS = $(BSON_TEST_PKGS) $(MONGO_TEST_PKGS) $(CORE_TEST_PKGS)
+BSON_PKGS = $(shell etc/list_pkgs.sh ./bson)
+BSON_TEST_PKGS = $(shell etc/list_test_pkgs.sh ./bson)
+MONGO_PKGS = $(shell etc/list_pkgs.sh ./mongo)
+MONGO_TEST_PKGS = $(shell etc/list_test_pkgs.sh ./mongo)
+UNSTABLE_PKGS = $(shell etc/list_pkgs.sh ./x)
+UNSTABLE_TEST_PKGS = $(shell etc/list_test_pkgs.sh ./x)
+TAG_PKG = $(shell etc/list_pkgs.sh ./tag)
+TAG_TEST_PKG = $(shell etc/list_test_pkgs.sh ./tag)
+EXAMPLES_PKGS = $(shell etc/list_pkgs.sh ./examples)
+EXAMPLES_TEST_PKGS = $(shell etc/list_test_pkgs.sh ./examples)
+PKGS = $(BSON_PKGS) $(MONGO_PKGS) $(UNSTABLE_PKGS) $(TAG_PKG) $(EXAMPLES_PKGS)
+TEST_PKGS = $(BSON_TEST_PKGS) $(MONGO_TEST_PKGS) $(UNSTABLE_TEST_PKGS) $(TAG_PKG) $(EXAMPLES_TEST_PKGS)
 
-TEST_TIMEOUT = 300
+TEST_TIMEOUT = 600
 
 .PHONY: default
 default: check-fmt vet build-examples lint errcheck test-cover test-race
@@ -18,7 +22,7 @@ doc:
 
 .PHONY: build-examples
 build-examples:
-	go build $(BUILD_TAGS) ./examples/... ./core/examples/...
+	go build $(BUILD_TAGS) ./examples/... ./x/network/examples/...
 
 .PHONY: build
 build:
@@ -43,7 +47,7 @@ lint-add-whitelist:
 
 .PHONY: errcheck
 errcheck:
-	errcheck -exclude .errcheck-excludes ./bson/... ./mongo/... ./core/...
+	errcheck -exclude .errcheck-excludes ./bson/... ./mongo/... ./x/...
 
 .PHONY: test
 test:
@@ -95,7 +99,7 @@ update-notices:
 
 .PHONY: vet
 vet:
-	go tool vet -cgocall=false -composites=false -structtags=false -unusedstringmethods="Error" $(PKGS)
+	go vet -cgocall=false -composites=false -structtags=false -unusedstringmethods="Error" $(PKGS)
 
 
 # Evergreen specific targets
@@ -105,7 +109,7 @@ evg-test:
 
 .PHONY: evg-test-auth
 evg-test-auth:
-	go run -tags gssapi ./core/examples/count/main.go -uri $(MONGODB_URI)
+	go run -tags gssapi ./x/network/examples/count/main.go -uri $(MONGODB_URI)
 
 # benchmark specific targets and support
 perf:driver-test-data.tar.gz

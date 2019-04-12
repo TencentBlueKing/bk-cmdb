@@ -2,6 +2,7 @@
 	"field_type_singlechar": "short character",
 	"field_type_longchar": "long character",
 	"field_type_int": "number",
+	"field_type_float": "float",
 	"field_type_enum": "enumeration",
 	"field_type_date": "date",
 	"field_type_time": "time",

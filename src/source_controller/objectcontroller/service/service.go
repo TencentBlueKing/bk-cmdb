@@ -13,33 +13,34 @@
 package service
 
 import (
-	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
-
-	"configcenter/src/common/metadata"
+	"configcenter/src/common/eventclient"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
 	Cache    *redis.Client
+	EventC   eventclient.Client
 }
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -58,6 +59,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/meta/objectassts").To(s.SelectObjectAssociations))
 	ws.Route(ws.DELETE("/meta/objectasst/{id}").To(s.DeleteObjectAssociation))
 	ws.Route(ws.POST("/meta/objectasst").To(s.CreateObjectAssociation))
+	ws.Route(ws.POST("/meta/mainlineobjectasst").To(s.CreateMainlineObjectAssociation))
 	ws.Route(ws.PUT("/meta/objectasst/{id}").To(s.UpdateObjectAssociation))
 
 	ws.Route(ws.POST("/meta/objectatt/{id}").To(s.SelectObjectAttByID))
@@ -80,20 +82,26 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/meta/object/classification").To(s.CreateClassification))
 	ws.Route(ws.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
 
+	ws.Route(ws.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
+	ws.Route(ws.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
+	ws.Route(ws.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
+	ws.Route(ws.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
+
 	// association api
 	ws.Route(ws.POST("/association/action/search").To(s.SearchAssociationType))
 	ws.Route(ws.POST("/association/action/create").To(s.CreateAssociationType))
 	ws.Route(ws.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
 	ws.Route(ws.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
 
-	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))       // optimization: new api path
-	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))        // optimization: new api path
-	ws.Route(ws.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))    // optimization: new api path
-	ws.Route(ws.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
+	ws.Route(ws.POST("/object/association/action/search").To(s.SelectObjectAssociations))                 // optimization: new api path
+	ws.Route(ws.POST("/object/association/action/create").To(s.CreateObjectAssociation))                  // optimization: new api path
+	ws.Route(ws.POST("/object/association/mainline/action/create").To(s.CreateMainlineObjectAssociation)) // interface mainline association
+	ws.Route(ws.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))              // optimization: new api path
+	ws.Route(ws.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation))           // optimization: new api path
 
 	ws.Route(ws.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	ws.Route(ws.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	ws.Route(ws.DELETE("/inst/association/action/delete").To(s.DeleteInstAssociation))
+	ws.Route(ws.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
 
 	ws.Route(ws.POST("/topographics/search").To(s.SearchTopoGraphics))
 	ws.Route(ws.POST("/topographics/update").To(s.UpdateTopoGraphics))

@@ -99,6 +99,9 @@ const (
 	// FieldTypeInt the int field type
 	FieldTypeInt FieldDataType = "int"
 
+	// FieldTypeFloat the float field type
+	FieldTypeFloat FieldDataType = "float"
+
 	// FieldTypeEnum the enum field type
 	FieldTypeEnum FieldDataType = "enum"
 

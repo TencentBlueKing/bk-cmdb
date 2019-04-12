@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -22,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -100,12 +98,12 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 
 // GetImportHosts get import hosts
 // return inst array data, errmsg collection, error
-func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, header)
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -122,9 +120,9 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf) (resultData mapstr.MapStr, errCode int, err error) {
+func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang)
+	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
 	resultData = mapstr.New()
 
 	if nil != err {
@@ -149,11 +147,9 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if !result.Result {
-		resultData.Merge(result.Data)
-		errCode = result.Code
-		err = defErr.New(result.Code, result.ErrMsg)
-	}
+	resultData.Merge(result.Data)
+	errCode = result.Code
+	err = defErr.New(result.Code, result.ErrMsg)
 
 	if len(f.Sheets) > 2 {
 		asstInfoMap := GetAssociationExcelData(f.Sheets[1], common.HostAddMethodExcelAssociationIndexOffset)
@@ -166,9 +162,9 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 				blog.Errorf("ImportHosts logics http request import association error:%s, rid:%s", asstResultErr.Error(), util.GetHTTPCCRequestID(header))
 				return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 			}
-			if len(asstResult.Data.ErrMsgMap) > 0 {
-				resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
-			}
+
+			resultData.Set("asst_error", asstResult.Data.ErrMsgMap)
+
 			if result.Result && !asstResult.Result {
 				errCode = asstResult.Code
 				err = defErr.New(asstResult.Code, asstResult.ErrMsg)
@@ -180,30 +176,4 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	return
 
-}
-
-//httpRequest do http request
-func httpRequest(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.Info("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.POST(url, header, params)
-
-	return string(reply), err
-}
-
-//httpRequestGet do http get request
-func httpRequestGet(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.Info("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.GET(url, header, params)
-
-	return string(reply), err
 }

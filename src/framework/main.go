@@ -21,8 +21,6 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
@@ -34,7 +32,10 @@ import (
 	"configcenter/src/framework/core/monitor/metric"
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
-	_ "configcenter/src/framework/plugins" // load all plugins
+	_ "configcenter/src/framework/plugins"
+
+	"github.com/spf13/pflag"
+	// load all plugins
 )
 
 // APPNAME the name of this application, will be use as identification mark for monitoring
@@ -52,13 +53,13 @@ func main() {
 
 	log.SetLoger(&log.Logger{
 		Info: func(args ...interface{}) {
-			blog.Info("%v", args)
+			blog.Infof("%v", args)
 		},
 		Infof:  blog.Infof,
 		Fatal:  blog.Fatal,
 		Fatalf: blog.Fatalf,
 		Error: func(args ...interface{}) {
-			blog.Error("%v", args)
+			blog.Errorf("%v", args)
 		},
 		Errorf: blog.Errorf,
 	})
@@ -92,7 +93,9 @@ func main() {
 		client.NewForConfig(config.Get(), nil)
 	}
 
+	// initial the background framework manager.
 	api.Init()
+
 	defer func() {
 		blog.CloseLogs()
 		api.UnInit()
@@ -109,7 +112,7 @@ func main() {
 	server.RegisterActions(api.Actions()...)
 	server.RegisterActions(metricManager.Actions()...)
 
-	httpChan := make(chan error)
+	httpChan := make(chan error, 1)
 	go func() { httpChan <- server.ListenAndServe() }()
 
 	sigs := make(chan os.Signal, 1)

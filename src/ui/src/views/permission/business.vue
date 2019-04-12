@@ -22,13 +22,15 @@
                             :id="'business-authority-' + authority.id" 
                             :disabled="isMaintainers"
                             v-model="authorities.selected">
-                    <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
+                        <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
                     </label>
                 </span>
             </div>
         </div>
         <footer class="footer" v-if="!isMaintainers">
-            <bk-button type="primary" @click="updateAuthorities" :loading="$loading('updateAuthorities')">
+            <bk-button type="primary"
+                :loading="$loading('updateAuthorities')"
+                @click="updateAuthorities">
                 {{$t("Common['保存']")}}
             </bk-button>
         </footer>
@@ -54,7 +56,7 @@
                         name: 'Permission["拓扑编辑"]'
                     }, {
                         id: 'customapi',
-                        name: 'Permission["自定义查询"]'
+                        name: 'Permission["动态分组"]'
                     }, {
                         id: 'proconfig',
                         name: 'Permission["进程管理"]'
@@ -80,6 +82,10 @@
                 this.getBusinessRoleAuthorities()
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务权限管理"]'))
+            this.getBusinessRoles()
+        },
         methods: {
             ...mapActions('userPrivilege', [
                 'getRolePrivilege',
@@ -90,7 +96,7 @@
             ]),
             async getBusinessRoles () {
                 const res = await this.searchObjectAttribute({
-                    params: {bk_obj_id: 'biz'},
+                    params: this.$injectMetadata({bk_obj_id: 'biz'}),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
@@ -119,9 +125,6 @@
                 await this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
                 this.$success(this.$t('Common[\'保存成功\']'))
             }
-        },
-        created () {
-            this.getBusinessRoles()
         }
     }
 </script>
@@ -193,7 +196,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: pointer;
-            &.disabled{
+            &.disabled,
+            &.disabled input{
                 cursor: not-allowed;
             }
             input{
@@ -205,6 +209,9 @@
                     border-color: transparent !important;
                 }
             }
+        }
+        .cmdb-checkbox-text {
+            cursor: inherit;
         }
     }
     .footer{

@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/mongo"
 
 	"github.com/spf13/pflag"
 )
@@ -26,6 +27,7 @@ type ServerOption struct {
 // Config export
 type Config struct {
 	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
+	Mongo                mongo.Config
 }
 
 //NewServerOption create a ServerOption object

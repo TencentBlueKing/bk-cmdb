@@ -1,16 +1,18 @@
 <template>
     <ul class="form-enum-wrapper">
         <li class="form-item clearfix" v-for="(item, index) in enumList" :key="index">
-            <div class="enum-default cmdb-form-radio">
-                <input type="radio" 
-                :value="index" 
-                name="enum-radio" 
-                v-model="defaultIndex" 
-                v-tooltip="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
-                @change="handleChange(defaultIndex)" :disabled="isReadOnly">
-            </div>
-            <div class="enum-label">
-                {{$t('ModelManagement["枚举"]')}}{{index + 1}}
+            <div class="clearfix">
+                <div class="enum-default cmdb-form-radio">
+                    <input type="radio" 
+                    :value="index" 
+                    name="enum-radio" 
+                    v-model="defaultIndex" 
+                    v-tooltip="$t('ModelManagement[\'将设置为下拉选项默认选项\']')"
+                    @change="handleChange(defaultIndex)" :disabled="isReadOnly">
+                </div>
+                <div class="enum-label">
+                    {{$t('ModelManagement["枚举"]')}}{{index + 1}}
+                </div>
             </div>
             <div class="enum-id">
                 <div class="cmdb-form-item" :class="{'is-error': errors.has(`id${index}`)}">
@@ -130,7 +132,6 @@
                     is_default: false,
                     name: ''
                 })
-                this.handleInput()
             },
             deleteEnum (index) {
                 this.enumList.splice(index, 1)
@@ -157,10 +158,8 @@
                 float: left;
                 margin: 0;
                 padding: 8px 5px 0 0;
-                width: 55px;
                 height: 36px;
                 font-size: 16px;
-                text-align: right;
                 line-height: 1;
             }
             .enum-label {
@@ -181,7 +180,7 @@
             }
             .enum-name {
                 float: left;
-                width: 170px;
+                width: 180px;
                 input {
                     width: 100%;
                 }

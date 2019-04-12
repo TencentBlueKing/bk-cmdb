@@ -100,6 +100,9 @@
                 if (!this.disabled && !this.loading) {
                     this.$emit('click', e)
                 }
+                this.$nextTick(() => {
+                    this.$el.blur()
+                })
             }
         }
     }

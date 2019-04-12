@@ -22,14 +22,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
 )
 
 var sortFields = []string{
@@ -63,6 +64,13 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
 
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/import/"
@@ -85,9 +93,9 @@ func (s *Service) ImportObject(c *gin.Context) {
 		return
 	}
 
-	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang)
+	attrItems, errMsg, err := s.Logics.GetImportInsts(f, objID, pheader, 3, false, defLang, metaInfo)
 	if 0 == len(attrItems) {
-		msg := ""
+		var msg string
 		if nil != err {
 			msg = getReturnStr(common.CCErrWebFileContentFail, defErr.Errorf(common.CCErrWebFileContentFail, err.Error()).Error(), nil)
 		} else {
@@ -104,13 +112,14 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	logics.ConvAttrOption(attrItems)
 
-	blog.Debug("the object file content:%+v", attrItems)
+	blog.Debug("the object file content:%#v", attrItems)
 
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
 			"attr": attrItems,
 		},
+		metadata.BKMetadata: metaInfo,
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
@@ -167,7 +176,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 		//cell.SetValue([]string{"v1", "v2"})
 		keyVal, ok := itemMap[key]
 		if !ok {
-			blog.Warn("not fount the key(%s), skip it", key)
+			blog.Warnf("not fount the key(%s), skip it", key)
 			continue
 		}
 		blog.Debug("key:%s value:%v", key, keyVal)
@@ -219,8 +228,16 @@ func (s *Service) ExportObject(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
+	inputJson := c.PostForm(metadata.BKMetadata)
+	metaInfo := metadata.Metadata{}
+	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
+		return
+	}
+
 	// get the all attribute of the object
-	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header)
+	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
 	if nil != err {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
@@ -277,7 +294,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Error("ExportInst save file error:%s", err.Error())
+		blog.Errorf("ExportInst save file error:%s", err.Error())
 		fmt.Printf(err.Error())
 	}
 	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))

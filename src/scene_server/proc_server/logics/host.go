@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,29 +24,29 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, moduleID int64) (map[int64]*metadata.GseHost, error) {
+func (lgc *Logics) getHostByModuleID(ctx context.Context, moduleID int64) (map[int64]*metadata.GseHost, error) {
 	dat := map[string][]int64{
 		common.BKModuleIDField: []int64{moduleID},
 	}
-	supplierID := util.GetOwnerID(header)
+	supplierID := lgc.ownerID
 	intSupplierID, err := util.GetInt64ByInterface(supplierID)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	defErr := lgc.ccErr
 	if nil != err {
 		blog.Errorf("getHostByModuleID supplierID %s  not interger", supplierID)
 		return nil, err
 	}
 
-	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, header, dat)
+	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig http do error:%s", moduleID, supplierID, err.Error())
+		blog.Errorf("getHostByModuleID GetModulesHostConfig http do error. moduleID %d supplierID %s  error:%s,input:%+v,rid:%s", moduleID, supplierID, err.Error(), dat, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig http reply error:%s", moduleID, supplierID, ret.ErrMsg)
+		blog.Errorf("getHostByModuleID  GetModulesHostConfig http reply error.moduleID %d supplierID %s err code:%d,err msg:%s,input:%+v,rid:%s", moduleID, supplierID, ret.Code, ret.ErrMsg, dat, lgc.rid)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	if 0 == len(ret.Data) {
-		blog.V(3).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0", moduleID, supplierID)
+		blog.V(5).Infof("getHostByModuleID moduleID %d supplierID %s GetModulesHostConfig len equal 0,input:%+v,rid:%s", moduleID, supplierID, dat, lgc.rid)
 		return nil, nil
 	}
 	var hostIDs []int64
@@ -58,13 +57,13 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 	opt.Condition = mapstr.MapStr{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}
 	opt.Fields = fmt.Sprintf("%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField)
 	opt.Limit = common.BKNoLimit
-	hosts, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, header, opt)
+	hosts, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, lgc.header, opt)
 	if nil != err {
-		blog.Errorf("getHostByModuleID moduleID %d hostID:%v supplierID %s GetHosts http do error:%s", moduleID, hostIDs, supplierID, err.Error())
+		blog.Errorf("getHostByModuleID GetHosts http do error.moduleID %d hostID:%v supplierID %s GetHosts http do error:%s,input:%+v,rid:%s", moduleID, hostIDs, supplierID, err.Error(), opt, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hosts.Result {
-		blog.Errorf("getHostByModuleID moduleID %d hostID:%v supplierID %s GetHosts http reply error:%s", moduleID, hostIDs, supplierID, hosts.ErrMsg)
+		blog.Errorf("getHostByModuleID GetHosts http reply error. moduleID %d hostID:%v supplierID %s GetHosts http reply error:%s,input:%+v,rid:%s", moduleID, hostIDs, supplierID, hosts.ErrMsg, opt, lgc.rid)
 		return nil, defErr.New(hosts.Code, hosts.ErrMsg)
 	}
 
@@ -74,19 +73,19 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, header http.Header, mo
 
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if nil != err {
-			blog.Errorf("getHostByModuleID hostInfo %v  hostID   not interger", host)
+			blog.Errorf("getHostByModuleID hostInfo %+v  hostID   not interger,rid:%s", host, lgc.rid)
 			return nil, err
 		}
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if nil != err {
 			byteHost, _ := json.Marshal(host)
-			blog.Errorf("getHostByModuleID  hostInfo %v  cloudID  not interger, json:%s", host, string(byteHost))
+			blog.Errorf("getHostByModuleID  hostInfo %v  cloudID  not interger, host:%s,rid:%s", host, string(byteHost), lgc.rid)
 			return nil, err
 		}
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if !ok {
 			byteHost, _ := json.Marshal(host)
-			blog.Errorf("getHostByModuleID  hostInfo %v  innerip  not found, json:%s", host, string(byteHost))
+			blog.Errorf("getHostByModuleID  hostInfo %v  innerip  not found, host:%s,rid:%s", host, string(byteHost), lgc.rid)
 			return nil, err
 		}
 		item.HostID = hostID

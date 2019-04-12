@@ -14,7 +14,6 @@ package v2
 
 import (
 	"context"
-	"net/http"
 	"strings"
 
 	"configcenter/src/api_server/logics/v2/common/converter"
@@ -23,18 +22,14 @@ import (
 	"configcenter/src/common/blog"
 	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	user := util.GetUser(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
-	rid := util.GetHTTPCCRequestID(pheader)
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+	defLang := srvData.ccLang
 
 	err := req.Request.ParseForm()
 	if err != nil {
@@ -62,23 +57,23 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 		return
 	}
 
-	modulesMap, err := s.getModulesByAppId(appID, user, pheader)
-	blog.V(3).Infof("modules data:%v,input:%+v,rid:%s", modulesMap, formData, rid)
+	modulesMap, err := s.getModulesByAppId(srvData.ctx, appID, srvData)
+	blog.V(5).Infof("modules data:%v,input:%+v,rid:%s", modulesMap, formData, srvData.rid)
 	if nil != err {
-		blog.Errorf("getProcessPortByApplicationID error:%v,input:%+v,rid:%s", err, formData, rid)
+		blog.Errorf("getProcessPortByApplicationID error:%v,input:%+v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2Error(err, resp)
 		return
 	}
 
-	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByApplicationID(context.Background(), appID, pheader, modulesMap)
+	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByApplicationID(srvData.ctx, appID, srvData.header, modulesMap)
 	if err != nil {
-		blog.Errorf("getProcessPortByApplicationID  error:%v", err)
+		blog.Errorf("getProcessPortByApplicationID http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if !result.Result {
-		blog.Errorf("getProcessPortByApplicationID error:%s, input:%+v,rid:%s", result.ErrMsg, formData, rid)
+		blog.Errorf("getProcessPortByApplicationID http reply error.reply:%#v, input:%+v,rid:%s", result, formData, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
@@ -92,14 +87,13 @@ func (s *Service) getProcessPortByApplicationID(req *restful.Request, resp *rest
 }
 
 func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	defLang := s.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
+	defLang := srvData.ccLang
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Errorf("getProcessPortByIP error:%v", err)
+		blog.Errorf("getProcessPortByIP error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -108,28 +102,28 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 
 	res, msg := utils.ValidateFormData(formData, []string{"ips"})
 	if !res {
-		blog.Errorf("getProcessPortByIP error: %v", msg)
+		blog.Errorf("getProcessPortByIP error: %v,input:%#v,rid:%s", msg, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrAPIServerV2DirectErr, defErr.Errorf(common.CCErrAPIServerV2DirectErr, msg).Error(), resp)
 		return
 	}
 	ips := formData.Get("ips")
 	ipArr := strings.Split(ips, ",")
 	if len(ipArr) == 0 {
-		blog.Errorf("getProcessPortByIP error: ips is required")
+		blog.Errorf("getProcessPortByIP error: ips is required,input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ips").Error(), resp)
 		return
 	}
 	param := make(common.KvMap)
 	param["ipArr"] = ipArr
-	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByIP(context.Background(), pheader, param)
+	result, err := s.CoreAPI.ProcServer().OpenAPI().GetProcessPortByIP(srvData.ctx, srvData.header, param)
 	if err != nil {
-		blog.Errorf("getProcessPortByIP url error:%v", err)
+		blog.Errorf("getProcessPortByIP http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 
 	if !result.Result {
-		blog.Errorf("getProcessPortByIP error:%s", result.ErrMsg)
+		blog.Errorf("getProcessPortByIP http reply error.reply:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
@@ -142,9 +136,7 @@ func (s *Service) getProcessPortByIP(req *restful.Request, resp *restful.Respons
 	converter.RespSuccessV2(converter.ResV2ToForProcList(result.Data, defLang), resp)
 }
 
-func (s *Service) getModulesByAppId(appID string, user string, pheader http.Header) ([]mapstr.MapStr, ccError.CCError) {
-	rid := util.GetHTTPCCRequestID(pheader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+func (s *Service) getModulesByAppId(ctx context.Context, appID string, srvData *srvComm) ([]mapstr.MapStr, ccError.CCError) {
 
 	searchParams := mapstr.MapStr{
 		"condition": mapstr.MapStr{},
@@ -155,21 +147,21 @@ func (s *Service) getModulesByAppId(appID string, user string, pheader http.Head
 			"sort":  "",
 		},
 	}
-	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(context.Background(), appID, pheader, searchParams)
+	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByApp(ctx, appID, srvData.header, searchParams)
 	if nil != err {
-		blog.Errorf("getModulesByAppId error:%v", err.Error(), rid)
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+        blog.Errorf("getModulesByAppId http do error,err:%v,appID:%v,rid:%s", err.Error(), appID, srvData.rid)
+		return nil, srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !result.Result {
+		blog.Errorf("getModulesByAppId http do error,err code:%d, err msg:%v,appID:%v,rid:%s", result.Code, result.ErrMsg, appID, srvData.rid)
+		return nil, srvData.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	resData := make([]mapstr.MapStr, 0)
-	if result.Result {
-		for _, module := range result.Data.Info {
-			resData = append(resData, module)
-		}
-		return resData, nil
-	} else {
-		return nil, defErr.New(result.Code, result.ErrMsg)
+	for _, module := range result.Data.Info {
+		resData = append(resData, module)
 	}
+	return resData, nil
 
-	return nil, nil
 }

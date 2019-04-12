@@ -21,7 +21,6 @@ import (
 
 	"github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -39,7 +38,6 @@ type HttpClient interface {
 type Service struct {
 	Engine *backbone.Engine
 	Client HttpClient
-	Disc   discovery.DiscoveryInterface
 }
 
 const (
@@ -48,11 +46,11 @@ const (
 
 func (s *Service) V3WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() cErr.CCErrorIf {
+	getErrFunc := func() cErr.CCErrorIf {
 		return s.Engine.CCErr
 	}
 	ws.Path(rootPath).
-		Filter(rdapi.AllGlobalFilter(getErrFun)).
+		Filter(rdapi.AllGlobalFilter(getErrFunc)).
 		Produces(restful.MIME_JSON)
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
 	ws.Route(ws.POST("{.*}").Filter(s.URLFilterChan).To(s.Post))
@@ -111,7 +109,7 @@ func (s *Service) Do(req *restful.Request, resp *restful.Response) {
 		}
 		return
 	}
-	blog.V(3).Infof("success [%s] do request[url: %s]  ", response.Status, url)
+	blog.V(5).Infof("success [%s] do request[url: %s]  ", response.Status, url)
 
 	defer response.Body.Close()
 
@@ -166,16 +164,19 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	servers := make([]string, 0)
 	switch kind {
 	case TopoType:
-		servers, err = s.Disc.TopoServer().GetServers()
+		servers, err = s.Engine.Discovery().TopoServer().GetServers()
 
 	case ProcType:
-		servers, err = s.Disc.ProcServer().GetServers()
+		servers, err = s.Engine.Discovery().ProcServer().GetServers()
 
 	case EventType:
-		servers, err = s.Disc.EventServer().GetServers()
+		servers, err = s.Engine.Discovery().EventServer().GetServers()
 
 	case HostType:
-		servers, err = s.Disc.HostServer().GetServers()
+		servers, err = s.Engine.Discovery().HostServer().GetServers()
+
+	case DataCollectType:
+		servers, err = s.Engine.Discovery().DataCollect().GetServers()
 
 	}
 
@@ -196,10 +197,10 @@ func (s *Service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 func (s *Service) V3Healthz() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() cErr.CCErrorIf {
+	getErrFunc := func() cErr.CCErrorIf {
 		return s.Engine.CCErr
 	}
-	ws.Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.GET("healthz").To(s.healthz))
 

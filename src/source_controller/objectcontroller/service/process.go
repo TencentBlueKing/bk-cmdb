@@ -18,13 +18,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/mgo.v2/bson"
 	//"time"
 )
 
@@ -38,7 +38,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if nil != err {
-		blog.Error("read request body failed, error:%v", err)
+		blog.Errorf("read request body failed, error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -46,7 +46,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	input := make(map[string]interface{})
 	err = json.Unmarshal(value, &input)
 	if nil != err {
-		blog.Error("unmarshal json error:%v", err)
+		blog.Errorf("unmarshal json error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -59,7 +59,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	query = util.SetModOwner(query, ownerID)
 	err = db.Table(common.BKTableNameProcModule).Find(query).Limit(common.BKNoLimit).Sort(common.BKHostIDField).Fields(fields...).All(ctx, &result)
 	if err != nil {
-		blog.Error("fail to get module proc config %v", err)
+		blog.Errorf("fail to get module proc config %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 	}
@@ -67,12 +67,12 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	for _, item := range result {
 		itemMap, ok := item.(bson.M)
 		if false == ok {
-			blog.Error("assign error item is not bson.M,item:%v", item)
+			blog.Errorf("assign error item is not bson.M,item:%v", item)
 			continue
 		}
 		processID, err := util.GetIntByInterface(itemMap[common.BKProcIDField])
 		if nil != err {
-			blog.Error("GetIntByInterface err:%v", err)
+			blog.Errorf("GetIntByInterface err:%v", err)
 			continue
 		}
 		processIdArr = append(processIdArr, processID)
@@ -86,7 +86,7 @@ func (cli *Service) GetProcessesByModuleName(req *restful.Request, resp *restful
 	err = db.Table(common.BKTableNameBaseProcess).Find(procQuery).Sort(common.BKProcIDField).Limit(common.BKNoLimit).All(ctx, &resultProc)
 
 	if err != nil {
-		blog.Error("fail to get proc %v", err)
+		blog.Errorf("fail to get proc %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 	}

@@ -12,6 +12,8 @@
                     :selected-range-tmp="selectedDateRangeTmp"
                     :initDate="initStartDate"
                     :bkDate="bkDateStart"
+                    :type="'start'"
+                    :dateLimit="startDateMin"
                     :timer="timer"></date-picker>
 
                 <!-- 结束日期选择面板 -->
@@ -23,6 +25,8 @@
                     :selected-range-tmp="selectedDateRangeTmp"
                     :initDate="initEndDate"
                     :bkDate="bkDateEnd"
+                    :dateLimit="endDateMax"
+                    :type="'end'"
                     :timer="timer"></date-picker>
 
                 <!-- 日期快速选择配置 -->
@@ -261,6 +265,14 @@
                     )
                 },
                 default: 'bottom-right'
+            },
+            startDateMin: {
+                type: String,
+                default: ''
+            },
+            endDateMax: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -479,6 +491,7 @@
             selectedDateView () {
                 // let formatDateStart = moment(this.selectedDateRange[0]).format('YYYY-MM')
                 // let formatDateEnd = moment(this.selectedDateRange[1]).format('YYYY-MM')
+                let endDateTmp = ''
                 let formatDateStart = format(this.selectedDateRange[0], 'YYYY-MM')
                 let formatDateEnd = format(this.selectedDateRange[1], 'YYYY-MM')
 
@@ -494,12 +507,140 @@
                         addMonths(this.selectedDateRange[0], 1),
                         this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'
                     )
+                    endDateTmp = format(this.selectedDateRange[1], this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD') || ''
                 } else {
                     this.initEndDate = this.selectedDateView.split(' ' + this.rangeSeparator + ' ')[1]
+                    endDateTmp = this.initEndDate || ''
+                }
+                this.$emit('update:startDate', this.initStartDate)
+                this.$emit('update:endDate', endDateTmp)
+            },
+            startDate (value) {
+                if (!value || !this.endDate) {
+                    this.clear()
+                } else {
+                    this.initDateData(value, this.endDate)
+                    this.initStartDate = value
+                    this.handlerDate('start')
+                }
+            },
+            endDate (value) {
+                if (!value || !this.startDate) {
+                    this.clear()
+                } else {
+                    this.initDateData(this.startDate, value)
+                    this.initEndDate = value
+                    this.handlerDate('end')
                 }
             }
         },
         methods: {
+            handlerDate (type) {
+                const sdr = [format(new Date(), 'YYYY-MM-DD HH:mm:ss')]
+                const sdrt = [format(sdr[0], 'YYYY-MM-DD')]
+                const weekdays = [
+                    this.t('dateRange.datePicker.weekdays.sun'),
+                    this.t('dateRange.datePicker.weekdays.mon'),
+                    this.t('dateRange.datePicker.weekdays.tue'),
+                    this.t('dateRange.datePicker.weekdays.wed'),
+                    this.t('dateRange.datePicker.weekdays.thu'),
+                    this.t('dateRange.datePicker.weekdays.fri'),
+                    this.t('dateRange.datePicker.weekdays.sat')
+                ]
+                const bkDateStart = this.startDate ? new BkDate('start', weekdays, this.startDate) : new BkDate('start', weekdays)
+                const bkDateEnd = this.endDate ? new BkDate('end', weekdays, this.endDate) : new BkDate('end', weekdays)
+                let initStartDate = this.startDate ? format(this.startDate, 'YYYY-MM-DD') : format(subMonths(new Date(), 1), 'YYYY-MM-DD')
+                let initStartDateCopy = this.startDate ? format(this.startDate, 'YYYY-MM') : format(subMonths(new Date(), 1), 'YYYY-MM')
+                let initEndDate = this.endDate ? format(this.endDate, 'YYYY-MM-DD') : format(new Date(), 'YYYY-MM-DD')
+                let initEndDateCopy = this.endDate ? format(this.endDate, 'YYYY-MM') : format(new Date(), 'YYYY-MM')
+                if (initStartDateCopy === initEndDateCopy) {
+                    initEndDate = format(addMonths(initEndDate, 1), 'YYYY-MM-DD')
+                    bkDateStart.nextMonthDisabled = true
+                    bkDateStart.nextYearDisabled = true
+                    bkDateEnd.preMonthDisabled = true
+                    bkDateEnd.preYearDisabled = true
+                }
+                else {
+                    // 右边和左边相差 大于 12 个月即一年
+                    if (differenceInMonths(initEndDate, initStartDate) > 12) {
+                        bkDateEnd.preMonthDisabled = false
+                        bkDateEnd.preYearDisabled = false
+                        bkDateStart.nextMonthDisabled = false
+                        bkDateStart.nextYearDisabled = false
+                    }
+                    else {
+                        bkDateEnd.preYearDisabled = true
+                        bkDateStart.nextYearDisabled = true
+                        if (differenceInMonths(initEndDate, initStartDate) > 1) {
+                            bkDateEnd.preMonthDisabled = false
+                            bkDateStart.nextMonthDisabled = false
+                        }
+                        else {
+                            bkDateEnd.preMonthDisabled = true
+                            bkDateStart.nextMonthDisabled = true
+                        }
+                    }
+                }
+                bkDateStart.setDate(initStartDate)
+                bkDateEnd.setDate(initEndDate)
+                if (type === 'start') {
+                    this.bkDateStart = bkDateStart
+                }
+                if (type === 'end') {
+                    this.bkDateEnd = bkDateEnd
+                }
+            },
+
+            initDateData (startDate, endDate) {
+                if (this.ranges && Object.keys(this.ranges).length) {
+                    const defaultRanges = []
+                    Object.keys(this.ranges).forEach(range => {
+                        defaultRanges.push({
+                            text: range,
+                            value: this.ranges[range]
+                        })
+                    })
+                    this.defaultRanges.splice(0, this.defaultRanges.length, ...defaultRanges)
+                }
+
+                if (this.placeholder) {
+                    this.defaultPlaceholder = this.placeholder
+                }
+                let hour = ''
+                let minute = ''
+                let second = ''
+                hour = getHours(new Date(startDate))
+                minute = getMinutes(new Date(startDate))
+                second = getSeconds(new Date(startDate))
+                this.selectedDateRange.shift()
+                this.selectedDateRangeTmp.shift()
+                this.selectedDateRange.unshift(
+                    this.timer ?
+                        format(setHours(setMinutes(setSeconds(startDate, second), minute), hour), 'YYYY-MM-DD HH:mm:ss')
+                        : startDate
+                )
+                this.selectedDateRangeTmp.unshift(
+                    this.timer ?
+                        format(setHours(setMinutes(setSeconds(startDate, second), minute), hour), 'YYYY-MM-DD')
+                        : startDate
+                )
+                hour = getHours(new Date(endDate))
+                minute = getMinutes(new Date(endDate))
+                second = getSeconds(new Date(endDate))
+                this.selectedDateRange.pop()
+                this.selectedDateRangeTmp.pop()
+                this.selectedDateRange.push(
+                    this.timer ?
+                        format(setHours(setMinutes(setSeconds(endDate, second), minute), hour), 'YYYY-MM-DD HH:mm:ss')
+                        : endDate
+                )
+                this.selectedDateRangeTmp.push(
+                    this.timer ?
+                        format(setHours(setMinutes(setSeconds(endDate, second), minute), hour), 'YYYY-MM-DD')
+                        : endDate
+                )
+            },
+
             // 日期快速切换回调
             dateQuickSwitch (date) {
                 // 左边日期面板信息
@@ -577,7 +718,7 @@
                         this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'
                     )
                 }
-
+                
                 this.bkDateStart.setDate(this.initStartDate)
                 this.bkDateEnd.setDate(this.initEndDate)
             },

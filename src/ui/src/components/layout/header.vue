@@ -5,10 +5,10 @@
             <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
-            <h2 class="breadcrumbs-current">{{title}}</h2>
-            <i v-if="$classify.id === 'custom_query'" class="bk-icon icon-info-circle" v-tooltip="{content: $t('CustomQuery[\'保存后的查询可通过接口调用生效\']'), classes: 'custom-query-header-tooltip'}"></i>
+            <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
-        <div class="header-options fr">
+        <div class="header-options">
+            <cmdb-business-selector class="business-selector"></cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
                     {{userName}}({{userRole}})
@@ -38,6 +38,9 @@
                     </a>
                 </div>
             </div>
+            <div class="admin" v-if="admin" @click="toggleAdminView">
+                {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+            </div>
         </div>
     </header>
 </template>
@@ -52,7 +55,7 @@
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle']),
+            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             },
@@ -61,14 +64,17 @@
                     $classify
                 } = this
                 let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return this.$route.meta.customTitle ? this.headerTitle : title
+                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
+            toggleAdminView () {
+                this.$store.commit('setAdminView', !this.isAdminView)
+            },
             // 回退路由
             back () {
                 if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push(this.$route.meta.returnPath)
+                    this.$router.push({path: this.$route.meta.returnPath})
                 } else {
                     this.$store.commit('setHeaderStatus', {
                         back: false
@@ -140,7 +146,15 @@
         }
     }
     .header-options {
+        white-space: nowrap;
         text-align: right;
+        font-size: 0;
+    }
+    .business-selector {
+        display: inline-block;
+        width: 200px;
+        margin: 12px 0 0 20px;
+        vertical-align: top;
     }
     .user{
         display: inline-block;
@@ -149,8 +163,7 @@
         line-height: 60px;
         position: relative;
         .user-name{
-            padding: 0 20px;
-            margin: 0;
+            margin: 0 5px 0 20px;
             font-size: 14px;
             font-weight: bold;
             color: rgba(115,121,135,1);
@@ -191,11 +204,10 @@
     .helper {
         position: relative;
         display: inline-block;
-        width: 60px;
+        width: 50px;
         text-align: center;
         vertical-align: top;
         line-height: 60px;
-        border-left: 1px solid #ebf0f5;
         .helper-icon {
             font-size: 20px;
             cursor: pointer;
@@ -222,6 +234,20 @@
                     color: #498fe0;
                 }
             }
+        }
+    }
+    .admin {
+        display: inline-block;
+        padding: 0 30px;
+        line-height: 60px;
+        font-size: 14px;
+        color: #3a84ff;
+        border-left: 1px solid #ebf0f5;
+        cursor: pointer;
+        text-align: center;
+        vertical-align: top;
+        &:hover {
+            background-color: #f7f7f7;
         }
     }
 </style>

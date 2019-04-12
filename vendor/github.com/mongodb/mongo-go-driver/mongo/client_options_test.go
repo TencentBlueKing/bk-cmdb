@@ -1,3 +1,9 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package mongo
 
 import (
@@ -8,14 +14,17 @@ import (
 
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/core/connstring"
-	"github.com/mongodb/mongo-go-driver/core/readconcern"
-	"github.com/mongodb/mongo-go-driver/core/readpref"
-	"github.com/mongodb/mongo-go-driver/core/tag"
-	"github.com/mongodb/mongo-go-driver/core/writeconcern"
 	"github.com/mongodb/mongo-go-driver/internal/testutil"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/mongo/readconcern"
+	"github.com/mongodb/mongo-go-driver/mongo/readpref"
+	"github.com/mongodb/mongo-go-driver/mongo/writeconcern"
+	"github.com/mongodb/mongo-go-driver/tag"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+	"github.com/mongodb/mongo-go-driver/x/mongo/driver/topology"
+	"github.com/mongodb/mongo-go-driver/x/network/connstring"
 	"github.com/stretchr/testify/require"
+	"reflect"
 )
 
 func TestClientOptions_simple(t *testing.T) {
@@ -26,13 +35,13 @@ func TestClientOptions_simple(t *testing.T) {
 	}
 
 	cs := testutil.ConnString(t)
-	client, err := NewClientWithOptions(cs.String(), clientopt.AppName("foo"))
+	client, err := NewClientWithOptions(cs.String(), options.Client().SetAppName("foo"))
 	require.NoError(t, err)
 
 	require.Equal(t, "foo", client.connString.AppName)
 }
 
-func TestClientOptions_deferToConnString(t *testing.T) {
+func TestClientOptions_overrideConnString(t *testing.T) {
 	t.Parallel()
 
 	if testing.Short() {
@@ -42,17 +51,17 @@ func TestClientOptions_deferToConnString(t *testing.T) {
 	cs := testutil.ConnString(t)
 	uri := testutil.AddOptionsToURI(cs.String(), "appname=bar")
 
-	client, err := NewClientWithOptions(uri, clientopt.AppName("foo"))
+	client, err := NewClientWithOptions(uri, options.Client().SetAppName("foo"))
 	require.NoError(t, err)
 
-	require.Equal(t, "bar", client.connString.AppName)
+	require.Equal(t, "foo", client.connString.AppName)
 }
 
 func TestClientOptions_doesNotAlterConnectionString(t *testing.T) {
 	t.Parallel()
 
 	cs := connstring.ConnString{}
-	client, err := newClient(cs, clientopt.AppName("foobar"))
+	client, err := newClient(cs, options.Client().SetAppName("foobar"))
 	require.NoError(t, err)
 	if cs.AppName != "" {
 		t.Errorf("Creating a new Client should not alter the original connection string, but it did. got %s; want <empty>", cs.AppName)
@@ -79,41 +88,30 @@ func TestClientOptions_chainAll(t *testing.T) {
 		writeconcern.WTimeout(2*time.Second),
 	)
 	require.NoError(t, err)
-	opts := clientopt.BundleClient().
-		AppName("foo").
-		Auth(clientopt.Credential{
-			AuthMechanism:           "MONGODB-X509",
-			AuthMechanismProperties: map[string]string{"foo": "bar"},
-			AuthSource:              "$external",
-			Password:                "supersecurepassword",
-			Username:                "admin",
-		}).
-		ConnectTimeout(500 * time.Millisecond).
-		HeartbeatInterval(15 * time.Second).
-		Hosts([]string{
-			"mongodb://localhost:27018",
-			"mongodb://localhost:27019"}).
-		LocalThreshold(time.Second).
-		MaxConnIdleTime(30 * time.Second).
-		MaxConnsPerHost(150).
-		MaxIdleConnsPerHost(20).
-		ReadConcern(rc).
-		ReadPreference(rp).
-		ReplicaSet("foo").
-		ServerSelectionTimeout(time.Second).
-		Single(false).
-		SocketTimeout(2 * time.Second).
-		SSL(&clientopt.SSLOpt{
-			Enabled:                      true,
-			ClientCertificateKeyFile:     "client.pem",
-			ClientCertificateKeyPassword: nil,
-			Insecure:                     false,
-			CaFile:                       "ca.pem",
-		}).
-		WriteConcern(wc)
 
-	expectedClient := &clientopt.Client{
-		TopologyOptions: nil,
+	retryWrites := true
+	opts := options.Client().SetAppName("foo").SetAuth(options.Credential{
+		AuthMechanism:           "MONGODB-X509",
+		AuthMechanismProperties: map[string]string{"foo": "bar"},
+		AuthSource:              "$external",
+		Password:                "supersecurepassword",
+		Username:                "admin",
+	}).SetConnectTimeout(500 * time.Millisecond).SetHeartbeatInterval(15 * time.Second).SetHosts([]string{
+		"mongodb://localhost:27018",
+		"mongodb://localhost:27019",
+	}).SetLocalThreshold(time.Second).SetMaxConnIdleTime(30 * time.Second).SetMaxPoolSize(150).
+		SetReadConcern(rc).SetReadPreference(rp).SetReplicaSet("foo").
+		SetRetryWrites(retryWrites).SetServerSelectionTimeout(time.Second).
+		SetSingle(false).SetSocketTimeout(2 * time.Second).SetSSL(&options.SSLOpt{
+		Enabled:                      true,
+		ClientCertificateKeyFile:     "client.pem",
+		ClientCertificateKeyPassword: nil,
+		Insecure:                     false,
+		CaFile:                       "ca.pem",
+	}).SetWriteConcern(wc)
+
+	expectedClient := &options.ClientOptions{
+		TopologyOptions: []topology.Option{},
 		ConnString: connstring.ConnString{
 			AppName:                 "foo",
 			AuthMechanism:           "MONGODB-X509",
@@ -129,27 +127,25 @@ func TestClientOptions_chainAll(t *testing.T) {
 				"mongodb://localhost:27018",
 				"mongodb://localhost:27019",
 			},
-			LocalThresholdSet:         true,
-			LocalThreshold:            time.Second,
-			MaxConnIdleTime:           30 * time.Second,
-			MaxConnIdleTimeSet:        true,
-			MaxConnsPerHost:           150,
-			MaxConnsPerHostSet:        true,
-			MaxIdleConnsPerHost:       20,
-			MaxIdleConnsPerHostSet:    true,
-			ReplicaSet:                "foo",
-			ServerSelectionTimeoutSet: true,
-			ServerSelectionTimeout:    time.Second,
-			Connect:                   connstring.AutoConnect,
-			ConnectSet:                true,
-			SocketTimeout:             2 * time.Second,
-			SocketTimeoutSet:          true,
-			SSL:                       true,
-			SSLSet:                    true,
+			LocalThresholdSet:                  true,
+			LocalThreshold:                     time.Second,
+			MaxConnIdleTime:                    30 * time.Second,
+			MaxConnIdleTimeSet:                 true,
+			MaxPoolSize:                        150,
+			MaxPoolSizeSet:                     true,
+			ReplicaSet:                         "foo",
+			ServerSelectionTimeoutSet:          true,
+			ServerSelectionTimeout:             time.Second,
+			Connect:                            connstring.AutoConnect,
+			ConnectSet:                         true,
+			SocketTimeout:                      2 * time.Second,
+			SocketTimeoutSet:                   true,
+			SSL:                                true,
+			SSLSet:                             true,
 			SSLClientCertificateKeyFile:        "client.pem",
 			SSLClientCertificateKeyFileSet:     true,
 			SSLClientCertificateKeyPassword:    nil,
-			SSLClientCertificateKeyPasswordSet: true,
+			SSLClientCertificateKeyPasswordSet: false, // will not be set if it's nil
 			SSLInsecure:                        false,
 			SSLInsecureSet:                     true,
 			SSLCaFile:                          "ca.pem",
@@ -158,22 +154,58 @@ func TestClientOptions_chainAll(t *testing.T) {
 		ReadConcern:    rc,
 		ReadPreference: rp,
 		WriteConcern:   wc,
+		RetryWrites:    &retryWrites,
 	}
 
-	client, err := opts.Unbundle(connstring.ConnString{})
-	require.NoError(t, err)
-	require.NotNil(t, client)
-	require.Equal(t, expectedClient, client)
+	require.Equal(t, expectedClient, opts)
+}
+
+func TestClientOptions_sslOptions(t *testing.T) {
+	t.Parallel()
+
+	t.Run("TestEmptyOptionsNotSet", func(t *testing.T) {
+		ssl := &options.SSLOpt{}
+		c, err := NewClientWithOptions("mongodb://localhost", options.Client().SetSSL(ssl))
+		require.NoError(t, err)
+
+		require.Equal(t, c.connString.SSLClientCertificateKeyFile, "")
+		require.Equal(t, c.connString.SSLClientCertificateKeyFileSet, false)
+		require.Nil(t, c.connString.SSLClientCertificateKeyPassword)
+		require.Equal(t, c.connString.SSLClientCertificateKeyPasswordSet, false)
+		require.Equal(t, c.connString.SSLCaFile, "")
+		require.Equal(t, c.connString.SSLCaFileSet, false)
+	})
+
+	t.Run("TestNonEmptyOptionsSet", func(t *testing.T) {
+		f := func() string {
+			return "KeyPassword"
+		}
+
+		ssl := &options.SSLOpt{
+			ClientCertificateKeyFile:     "KeyFile",
+			ClientCertificateKeyPassword: f,
+			CaFile:                       "CaFile",
+		}
+		c, err := NewClientWithOptions("mongodb://localhost", options.Client().SetSSL(ssl))
+		require.NoError(t, err)
+
+		require.Equal(t, c.connString.SSLClientCertificateKeyFile, "KeyFile")
+		require.Equal(t, c.connString.SSLClientCertificateKeyFileSet, true)
+		require.Equal(t, reflect.ValueOf(c.connString.SSLClientCertificateKeyPassword).Pointer(), reflect.ValueOf(f).Pointer())
+		require.Equal(t, c.connString.SSLClientCertificateKeyPasswordSet, true)
+		require.Equal(t, c.connString.SSLCaFile, "CaFile")
+		require.Equal(t, c.connString.SSLCaFileSet, true)
+	})
 }
 
 func TestClientOptions_CustomDialer(t *testing.T) {
 	td := &testDialer{d: &net.Dialer{}}
-	opts := clientopt.Dialer(td)
+	opts := options.Client().SetDialer(td)
 	client, err := newClient(testutil.ConnString(t), opts)
 	require.NoError(t, err)
 	err = client.Connect(context.Background())
 	require.NoError(t, err)
-	_, err = client.ListDatabases(context.Background(), nil)
+	_, err = client.ListDatabases(context.Background(), bsonx.Doc{})
 	require.NoError(t, err)
 	got := atomic.LoadInt32(&td.called)
 	if got < 1 {

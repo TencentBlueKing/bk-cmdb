@@ -13,7 +13,6 @@
 package model
 
 import (
-	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -21,82 +20,24 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	frtypes "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 // Attribute attribute opeartion interface declaration
-type Attribute interface {
+type AttributeInterface interface {
 	Operation
-	Parse(data frtypes.MapStr) (*metadata.Attribute, error)
+	Parse(data mapstr.MapStr) error
 
-	Origin() metadata.Attribute
-
+	Attribute() *metadata.Attribute
+	SetAttribute(attr metadata.Attribute)
 	IsMainlineField() bool
-	// IsAssociationType() bool
-
-	SetSupplierAccount(supplierAccount string)
-	GetSupplierAccount() string
-
-	SetObjectID(objectID string)
-	GetObjectID() string
-
-	SetID(attributeID string)
-	GetID() string
-
-	SetName(attributeName string)
-	GetName() string
-
-	SetGroup(grp Group)
-	GetGroup() (Group, error)
-
-	SetGroupIndex(attGroupIndex int64)
-	GetGroupIndex() int64
-
-	SetUnint(unit string)
-	GetUnint() string
-
-	SetPlaceholder(placeHolder string)
-	GetPlaceholder() string
-
-	SetIsEditable(isEditable bool)
-	GetIsEditable() bool
-
-	SetIsPre(isPre bool)
-	GetIsPre() bool
-
-	SetIsReadOnly(isReadOnly bool)
-	GetIsReadOnly() bool
-
-	SetIsOnly(isOnly bool)
-	GetIsOnly() bool
-
-	SetIsRequired(isRequired bool)
-	GetIsRequired() bool
-
-	SetIsSystem(isSystem bool)
-	GetIsSystem() bool
-
-	SetIsAPI(isAPI bool)
-	GetIsAPI() bool
-
-	SetType(attributeType string)
-	GetType() string
-
-	SetOption(attributeOption interface{})
-	GetOption() interface{}
-
-	SetDescription(attributeDescription string)
-	GetDescription() string
-
-	SetCreator(attributeCreator string)
-	GetCreator() string
-
-	ToMapStr() (frtypes.MapStr, error)
+	ToMapStr() (mapstr.MapStr, error)
 }
 
-var _ Attribute = (*attribute)(nil)
+var _ AttributeInterface = (*attribute)(nil)
 
 // attribute the metadata structure definition of the model attribute
 type attribute struct {
@@ -107,8 +48,11 @@ type attribute struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *attribute) Origin() metadata.Attribute {
-	return a.attr
+func (a *attribute) Attribute() *metadata.Attribute {
+	return &a.attr
+}
+func (a *attribute) SetAttribute(attr metadata.Attribute) {
+	a.attr = attr
 }
 
 func (a *attribute) IsMainlineField() bool {
@@ -117,25 +61,26 @@ func (a *attribute) IsMainlineField() bool {
 
 func (a *attribute) searchObjects(objID string) ([]metadata.Object, error) {
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount).Field(common.BKObjIDField).Eq(objID)
 
-	condStr, err := cond.ToMapStr().ToJSON()
-	if nil != err {
-		return nil, err
+	input := metadata.QueryCondition{
+		Condition: cond.ToMapStr(),
 	}
-	rsp, err := a.clientSet.ObjectController().Meta().SelectObjects(context.Background(), a.params.Header, condStr)
-
+	rsp, err := a.clientSet.CoreService().Model().ReadModel(context.Background(), a.params.Header, &input)
 	if nil != err {
-		blog.Errorf("failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request the object controller, err: %s", err.Error())
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to search the object(%s), error info is %s", objID, rsp.ErrMsg)
-		return nil, a.params.Err.Error(rsp.Code)
+	if !rsp.Result {
+		blog.Errorf("failed to search the object(%s), err: %s", objID, rsp.ErrMsg)
+		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return rsp.Data, nil
+	models := []metadata.Object{}
+	for index := range rsp.Data.Info {
+		models = append(models, rsp.Data.Info[index].Spec)
+	}
+	return models, nil
 
 }
 
@@ -143,28 +88,31 @@ func (a *attribute) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.attr)
 }
 
-func (a *attribute) Parse(data frtypes.MapStr) (*metadata.Attribute, error) {
+func (a *attribute) Parse(data mapstr.MapStr) error {
 	attr, err := a.attr.Parse(data)
 	if nil != err {
-		return attr, err
+		return err
 	}
+
+	a.attr = *attr
 	if a.attr.IsOnly {
 		a.attr.IsRequired = true
 	}
+
 	if 0 == len(a.attr.PropertyGroup) {
 		a.attr.PropertyGroup = "default"
 	}
-	return nil, err
+
+	return err
 }
 
-func (a *attribute) ToMapStr() (frtypes.MapStr, error) {
-
-	rst := metadata.SetValueToMapStrByTags(&a.attr)
+func (a *attribute) ToMapStr() (mapstr.MapStr, error) {
+	rst := mapstr.SetValueToMapStrByTags(&a.attr)
 	return rst, nil
 
 }
 
-func (a *attribute) IsValid(isUpdate bool, data frtypes.MapStr) error {
+func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 
 	if a.attr.PropertyID == common.BKChildStr || a.attr.PropertyID == common.BKInstParentStr {
 		return nil
@@ -219,33 +167,27 @@ func (a *attribute) Create() error {
 
 	// check the property id repeated
 	a.attr.OwnerID = a.params.SupplierAccount
-	exists, err := a.IsExists()
-	if nil != err {
-		return err
-	}
-
-	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
-	}
 
 	// create a new record
-	rsp, err := a.clientSet.ObjectController().Meta().CreateObjectAtt(context.Background(), a.params.Header, &a.attr)
-
+	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{a.attr}}
+	rsp, err := a.clientSet.CoreService().Model().CreateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("faield to request the object controller, the error info is %s", err.Error())
+		blog.Errorf("faield to request the object controller, the err: %s", err.Error())
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
+	if !rsp.Result {
 		return err
 	}
 
-	a.attr.ID = rsp.Data.ID
+	for _, id := range rsp.Data.Created {
+		a.attr.ID = int64(id.ID)
+	}
 
 	return nil
 }
 
-func (a *attribute) Update(data frtypes.MapStr) error {
+func (a *attribute) Update(data mapstr.MapStr) error {
 
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldObjectID)
@@ -262,18 +204,21 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 	}
 
 	if exists {
-		return a.params.Err.Error(common.CCErrCommDuplicateItem)
+		return a.params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
-	rsp, err := a.clientSet.ObjectController().Meta().UpdateObjectAttByID(context.Background(), a.attr.ID, a.params.Header, data)
-
+	input := metadata.UpdateOption{
+		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(a.attr.ID).ToMapStr(),
+		Data:      data,
+	}
+	rsp, err := a.clientSet.CoreService().Model().UpdateModelAttrs(context.Background(), a.params.Header, a.attr.ObjectID, &input)
 	if nil != err {
-		blog.Errorf("failed to request object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request object controller, err: %s", err.Error())
 		return err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to update the object attribute(%s), error info is %s", a.attr.PropertyID, rsp.ErrMsg)
+	if !rsp.Result {
+		blog.Errorf("failed to update the object attribute(%s), err: %s", a.attr.PropertyID, rsp.ErrMsg)
 		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
 
@@ -281,25 +226,23 @@ func (a *attribute) Update(data frtypes.MapStr) error {
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
 
-	rsp, err := a.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), a.params.Header, cond.ToMapStr())
-
+	rsp, err := a.clientSet.CoreService().Model().ReadModelAttr(context.Background(), a.params.Header, a.attr.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("failed to request to object controller, error info is %s", err.Error())
+		blog.Errorf("failed to request to object controller, err: %s", err.Error())
 		return nil, err
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("failed to query the object controller, error info is %s", err.Error())
+	if !rsp.Result {
+		blog.Errorf("failed to query the object controller, cond: %#v, err: %s", cond, rsp.ErrMsg)
 		return nil, a.params.Err.Error(common.CCErrTopoObjectAttributeSelectFailed)
 	}
 
-	return rsp.Data, nil
+	return rsp.Data.Info, nil
 }
 func (a *attribute) IsExists() (bool, error) {
 
 	// check id
 	cond := condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyID).Eq(a.attr.PropertyID)
 	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
@@ -315,7 +258,6 @@ func (a *attribute) IsExists() (bool, error) {
 
 	// ceck nam
 	cond = condition.CreateCondition()
-	cond.Field(common.BKOwnerIDField).Eq(a.params.SupplierAccount)
 	cond.Field(metadata.AttributeFieldObjectID).Eq(a.attr.ObjectID)
 	cond.Field(metadata.AttributeFieldPropertyName).Eq(a.attr.PropertyName)
 	cond.Field(metadata.AttributeFieldID).NotIn([]int64{a.attr.ID})
@@ -332,7 +274,7 @@ func (a *attribute) IsExists() (bool, error) {
 	return false, nil
 }
 
-func (a *attribute) Save(data frtypes.MapStr) error {
+func (a *attribute) Save(data mapstr.MapStr) error {
 
 	if nil != data {
 		if _, err := a.attr.Parse(data); nil != err {
@@ -349,175 +291,36 @@ func (a *attribute) Save(data frtypes.MapStr) error {
 	return a.Update(data)
 }
 
-func (a *attribute) SetSupplierAccount(supplierAccount string) {
-
-	a.attr.OwnerID = supplierAccount
+func (a *attribute) SetGroup(grp GroupInterface) {
+	group := grp.Group()
+	a.attr.PropertyGroup = group.GroupID
+	a.attr.PropertyGroupName = group.GroupName
 }
 
-func (a *attribute) GetSupplierAccount() string {
-	return a.attr.OwnerID
-}
-
-func (a *attribute) SetObjectID(objectID string) {
-	a.attr.ObjectID = objectID
-}
-
-func (a *attribute) GetObjectID() string {
-	return a.attr.ObjectID
-}
-
-func (a *attribute) SetID(attributeID string) {
-	a.attr.PropertyID = attributeID
-}
-
-func (a *attribute) GetID() string {
-	return a.attr.PropertyID
-}
-
-func (a *attribute) SetName(attributeName string) {
-	a.attr.PropertyName = attributeName
-}
-
-func (a *attribute) GetName() string {
-	return a.attr.PropertyName
-}
-
-func (a *attribute) SetGroup(grp Group) {
-	a.attr.PropertyGroup = grp.GetID()
-	a.attr.PropertyGroupName = grp.GetName()
-}
-
-func (a *attribute) GetGroup() (Group, error) {
+func (a *attribute) GetGroup() (GroupInterface, error) {
 
 	cond := condition.CreateCondition()
 	cond.Field(metadata.GroupFieldGroupID).Eq(a.attr.PropertyGroup)
 	cond.Field(metadata.GroupFieldObjectID).Eq(a.attr.ObjectID)
-	cond.Field(metadata.GroupFieldSupplierAccount).Eq(a.attr.OwnerID)
 
-	rsp, err := a.clientSet.ObjectController().Meta().SelectPropertyGroupByObjectID(context.Background(), a.params.SupplierAccount, a.GetObjectID(), a.params.Header, cond.ToMapStr())
+	rsp, err := a.clientSet.CoreService().Model().ReadAttributeGroup(context.Background(), a.params.Header, a.attr.ObjectID, metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
-		blog.Errorf("[model-grp] failed to request the object controller, error info is %s", err.Error())
+		blog.Errorf("[model-grp] failed to request the object controller, err: %s", err.Error())
 		return nil, a.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	if common.CCSuccess != rsp.Code {
-		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), error info is %s", a.GetObjectID(), cond.ToMapStr(), rsp.ErrMsg)
-		return nil, a.params.Err.Error(rsp.Code)
+	if !rsp.Result {
+		blog.Errorf("[model-grp] failed to search the group of the object(%s) by the condition (%#v), err: %s", a.attr.ObjectID, cond.ToMapStr(), rsp.ErrMsg)
+		return nil, a.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	if 0 == len(rsp.Data) {
+	if 0 == len(rsp.Data.Info) {
 		return CreateGroup(a.params, a.clientSet, []metadata.Group{metadata.Group{GroupID: "default", GroupName: "Default", OwnerID: a.attr.OwnerID, ObjectID: a.attr.ObjectID}})[0], nil
 	}
 
-	return CreateGroup(a.params, a.clientSet, rsp.Data)[0], nil // should be one group
+	return CreateGroup(a.params, a.clientSet, rsp.Data.Info)[0], nil // should be one group
 }
 
-func (a *attribute) SetGroupIndex(attGroupIndex int64) {
-	a.attr.PropertyIndex = attGroupIndex
-}
-
-func (a *attribute) GetGroupIndex() int64 {
-	return a.attr.PropertyIndex
-}
-
-func (a *attribute) SetUnint(unit string) {
-	a.attr.Unit = unit
-}
-
-func (a *attribute) GetUnint() string {
-	return a.attr.Unit
-}
-
-func (a *attribute) SetPlaceholder(placeHolder string) {
-	a.attr.Placeholder = placeHolder
-}
-
-func (a *attribute) GetPlaceholder() string {
-	return a.attr.Placeholder
-}
-
-func (a *attribute) SetIsRequired(isRequired bool) {
-	a.attr.IsRequired = isRequired
-}
-func (a *attribute) GetIsRequired() bool {
-	return a.attr.IsRequired
-}
-func (a *attribute) SetIsEditable(isEditable bool) {
-	a.attr.IsEditable = isEditable
-}
-
-func (a *attribute) GetIsEditable() bool {
-	return a.attr.IsEditable
-}
-
-func (a *attribute) SetIsPre(isPre bool) {
-	a.attr.IsPre = isPre
-}
-
-func (a *attribute) GetIsPre() bool {
-	return a.attr.IsPre
-}
-
-func (a *attribute) SetIsReadOnly(isReadOnly bool) {
-	a.attr.IsReadOnly = isReadOnly
-}
-
-func (a *attribute) GetIsReadOnly() bool {
-	return a.attr.IsReadOnly
-}
-
-func (a *attribute) SetIsOnly(isOnly bool) {
-	a.attr.IsOnly = isOnly
-}
-
-func (a *attribute) GetIsOnly() bool {
-	return a.attr.IsOnly
-}
-
-func (a *attribute) SetIsSystem(isSystem bool) {
-	a.attr.IsSystem = isSystem
-}
-
-func (a *attribute) GetIsSystem() bool {
-	return a.attr.IsSystem
-}
-
-func (a *attribute) SetIsAPI(isAPI bool) {
-	a.attr.IsAPI = isAPI
-}
-
-func (a *attribute) GetIsAPI() bool {
-	return a.attr.IsAPI
-}
-
-func (a *attribute) SetType(attributeType string) {
-	a.attr.PropertyType = attributeType
-}
-
-func (a *attribute) GetType() string {
-	return a.attr.PropertyType
-}
-
-func (a *attribute) SetOption(attributeOption interface{}) {
-	a.attr.Option = attributeOption
-}
-
-func (a *attribute) GetOption() interface{} {
-	return a.attr.Option
-}
-
-func (a *attribute) SetDescription(attributeDescription string) {
-	a.attr.Description = attributeDescription
-}
-
-func (a *attribute) GetDescription() string {
-	return a.attr.Description
-}
-
-func (a *attribute) SetCreator(attributeCreator string) {
-	a.attr.Creator = attributeCreator
-}
-
-func (a *attribute) GetCreator() string {
-	return a.attr.Creator
+func (a *attribute) SetSupplierAccount(supplierAccount string) {
+	a.attr.OwnerID = supplierAccount
 }

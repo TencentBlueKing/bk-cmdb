@@ -6,94 +6,151 @@
 
 package bson
 
-import "bytes"
+import (
+	"github.com/mongodb/mongo-go-driver/bson/bsoncodec"
+	"github.com/mongodb/mongo-go-driver/bson/bsonrw"
+	"github.com/mongodb/mongo-go-driver/bson/bsontype"
+)
 
-// Marshal converts a BSON type to bytes.
-//
-// The value can be any one of the following types:
-//
-//   - bson.Marshaler
-//   - io.Reader
-//   - []byte
-//   - bson.Reader
-//   - any map with string keys
-//   - a struct (possibly with tags)
-//
-// In the case of a struct, the lowercased field name is used as the key for each exported
-// field but this behavior may be changed using a struct tag. The tag may also contain flags to
-// adjust the marshalling behavior for the field. The tag formats accepted are:
-//
-//     "[<key>][,<flag1>[,<flag2>]]"
-//
-//     `(...) bson:"[<key>][,<flag1>[,<flag2>]]" (...)`
-//
-// The following flags are currently supported:
-//
-//     omitempty  Only include the field if it's not set to the zero value for the type or to
-//                empty slices or maps.
-//
-//     minsize    Marshal an integer of a type larger than 32 bits value as an int32, if that's
-// 				  feasible while preserving the numeric value.
-//
-//     inline     Inline the field, which must be a struct or a map, causing all of its fields
-//                or keys to be processed as if they were part of the outer struct. For maps,
-//                keys must not conflict with the bson keys of other struct fields.
-//
-// An example:
-//
-//     type T struct {
-//         A bool
-//         B int    "myb"
-//         C string "myc,omitempty"
-//         D string `bson:",omitempty" json:"jsonkey"`
-//         E int64  ",minsize"
-//         F int64  "myf,omitempty,minsize"
-//     }
-func Marshal(value interface{}) ([]byte, error) {
-	var out bytes.Buffer
+const defaultDstCap = 256
 
-	err := NewEncoder(&out).Encode(value)
+var bvwPool = bsonrw.NewBSONValueWriterPool()
+var extjPool = bsonrw.NewExtJSONValueWriterPool()
+
+// Marshaler is an interface implemented by types that can marshal themselves
+// into a BSON document represented as bytes. The bytes returned must be a valid
+// BSON document if the error is nil.
+type Marshaler interface {
+	MarshalBSON() ([]byte, error)
+}
+
+// ValueMarshaler is an interface implemented by types that can marshal
+// themselves into a BSON value as bytes. The type must be the valid type for
+// the bytes returned. The bytes and byte type together must be valid if the
+// error is nil.
+type ValueMarshaler interface {
+	MarshalBSONValue() (bsontype.Type, []byte, error)
+}
+
+// Marshal returns the BSON encoding of val.
+//
+// Marshal will use the default registry created by NewRegistry to recursively
+// marshal val into a []byte. Marshal will inspect struct tags and alter the
+// marshaling process accordingly.
+func Marshal(val interface{}) ([]byte, error) {
+	return MarshalWithRegistry(DefaultRegistry, val)
+}
+
+// MarshalAppend will append the BSON encoding of val to dst. If dst is not
+// large enough to hold the BSON encoding of val, dst will be grown.
+func MarshalAppend(dst []byte, val interface{}) ([]byte, error) {
+	return MarshalAppendWithRegistry(DefaultRegistry, dst, val)
+}
+
+// MarshalWithRegistry returns the BSON encoding of val using Registry r.
+func MarshalWithRegistry(r *bsoncodec.Registry, val interface{}) ([]byte, error) {
+	dst := make([]byte, 0, 256) // TODO: make the default cap a constant
+	return MarshalAppendWithRegistry(r, dst, val)
+}
+
+// MarshalWithContext returns the BSON encoding of val using EncodeContext ec.
+func MarshalWithContext(ec bsoncodec.EncodeContext, val interface{}) ([]byte, error) {
+	dst := make([]byte, 0, 256) // TODO: make the default cap a constant
+	return MarshalAppendWithContext(ec, dst, val)
+}
+
+// MarshalAppendWithRegistry will append the BSON encoding of val to dst using
+// Registry r. If dst is not large enough to hold the BSON encoding of val, dst
+// will be grown.
+func MarshalAppendWithRegistry(r *bsoncodec.Registry, dst []byte, val interface{}) ([]byte, error) {
+	return MarshalAppendWithContext(bsoncodec.EncodeContext{Registry: r}, dst, val)
+}
+
+// MarshalAppendWithContext will append the BSON encoding of val to dst using
+// EncodeContext ec. If dst is not large enough to hold the BSON encoding of val, dst
+// will be grown.
+func MarshalAppendWithContext(ec bsoncodec.EncodeContext, dst []byte, val interface{}) ([]byte, error) {
+	sw := new(bsonrw.SliceWriter)
+	*sw = dst
+	vw := bvwPool.Get(sw)
+	defer bvwPool.Put(vw)
+
+	enc := encPool.Get().(*Encoder)
+	defer encPool.Put(enc)
+
+	err := enc.Reset(vw)
+	if err != nil {
+		return nil, err
+	}
+	err = enc.SetContext(ec)
 	if err != nil {
 		return nil, err
 	}
 
-	return out.Bytes(), nil
+	err = enc.Encode(val)
+	if err != nil {
+		return nil, err
+	}
+
+	return *sw, nil
 }
 
-// Unmarshal converts bytes into a BSON type.
-//
-// The value can be any one of the following types:
-//
-//   - bson.Unmarshaler
-//   - io.Writer
-//   - []byte
-//   - bson.Reader
-//   - any map with string keys
-//   - a struct (possibly with tags)
-//
-// In the case of struct values, only exported fields will be deserialized. The lowercased field
-// name is used as the key for each exported field, but this behavior may be changed using a struct
-// tag. The tag may also contain flags to adjust the unmarshaling behavior for the field. The tag
-// formats accepted are:
-//
-//     "[<key>][,<flag1>[,<flag2>]]"
-//
-//     `(...) bson:"[<key>][,<flag1>[,<flag2>]]" (...)`
-//
-// The target field or element types of out may not necessarily match the BSON values of the
-// provided data. The following conversions are made automatically:
-//
-//   - Numeric types are converted if at least the integer part of the value would be preserved
-//     correctly
-//
-// If the value would not fit the type and cannot be converted, it is silently skipped.
-//
-// Pointer values are initialized when necessary.
-func Unmarshal(in []byte, out interface{}) error {
-	return NewDecoder(bytes.NewReader(in)).Decode(out)
+// MarshalExtJSON returns the extended JSON encoding of val.
+func MarshalExtJSON(val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	return MarshalExtJSONWithRegistry(DefaultRegistry, val, canonical, escapeHTML)
 }
 
-// UnmarshalDocument converts bytes into a *bson.Document.
-func UnmarshalDocument(bson []byte) (*Document, error) {
-	return ReadDocument(bson)
+// MarshalExtJSONAppend will append the extended JSON encoding of val to dst.
+// If dst is not large enough to hold the extended JSON encoding of val, dst
+// will be grown.
+func MarshalExtJSONAppend(dst []byte, val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	return MarshalExtJSONAppendWithRegistry(DefaultRegistry, dst, val, canonical, escapeHTML)
+}
+
+// MarshalExtJSONWithRegistry returns the extended JSON encoding of val using Registry r.
+func MarshalExtJSONWithRegistry(r *bsoncodec.Registry, val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	dst := make([]byte, 0, defaultDstCap)
+	return MarshalExtJSONAppendWithContext(bsoncodec.EncodeContext{Registry: r}, dst, val, canonical, escapeHTML)
+}
+
+// MarshalExtJSONWithContext returns the extended JSON encoding of val using Registry r.
+func MarshalExtJSONWithContext(ec bsoncodec.EncodeContext, val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	dst := make([]byte, 0, defaultDstCap)
+	return MarshalExtJSONAppendWithContext(ec, dst, val, canonical, escapeHTML)
+}
+
+// MarshalExtJSONAppendWithRegistry will append the extended JSON encoding of
+// val to dst using Registry r. If dst is not large enough to hold the BSON
+// encoding of val, dst will be grown.
+func MarshalExtJSONAppendWithRegistry(r *bsoncodec.Registry, dst []byte, val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	return MarshalExtJSONAppendWithContext(bsoncodec.EncodeContext{Registry: r}, dst, val, canonical, escapeHTML)
+}
+
+// MarshalExtJSONAppendWithContext will append the extended JSON encoding of
+// val to dst using Registry r. If dst is not large enough to hold the BSON
+// encoding of val, dst will be grown.
+func MarshalExtJSONAppendWithContext(ec bsoncodec.EncodeContext, dst []byte, val interface{}, canonical, escapeHTML bool) ([]byte, error) {
+	sw := new(bsonrw.SliceWriter)
+	*sw = dst
+	ejvw := extjPool.Get(sw, canonical, escapeHTML)
+	defer extjPool.Put(ejvw)
+
+	enc := encPool.Get().(*Encoder)
+	defer encPool.Put(enc)
+
+	err := enc.Reset(ejvw)
+	if err != nil {
+		return nil, err
+	}
+	err = enc.SetContext(ec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = enc.Encode(val)
+	if err != nil {
+		return nil, err
+	}
+
+	return *sw, nil
 }

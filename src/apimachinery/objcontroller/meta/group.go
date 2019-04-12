@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"net/http"
 
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
-func (t *meta) CreatePropertyGroup(ctx context.Context, h http.Header, dat *metatype.Group) (resp *metatype.CreateObjectGroupResult, err error) {
+func (t *meta) CreatePropertyGroup(ctx context.Context, h http.Header, dat *metadata.Group) (resp *metadata.CreateObjectGroupResult, err error) {
 	subPath := "/meta/objectatt/group/new"
-	resp = new(metatype.CreateObjectGroupResult)
+	resp = new(metadata.CreateObjectGroupResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -33,9 +33,9 @@ func (t *meta) CreatePropertyGroup(ctx context.Context, h http.Header, dat *meta
 	return
 }
 
-func (t *meta) UpdatePropertyGroup(ctx context.Context, h http.Header, dat *metatype.UpdateGroupCondition) (resp *metatype.UpdateResult, err error) {
+func (t *meta) UpdatePropertyGroup(ctx context.Context, h http.Header, dat *metadata.UpdateGroupCondition) (resp *metadata.UpdateResult, err error) {
 	subPath := "/meta/objectatt/group/update"
-	resp = new(metatype.UpdateResult)
+	resp = new(metadata.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
@@ -46,9 +46,9 @@ func (t *meta) UpdatePropertyGroup(ctx context.Context, h http.Header, dat *meta
 	return
 }
 
-func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metatype.DeleteResult, err error) {
+func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/group/groupid/%s", groupID)
-	resp = new(metatype.DeleteResult)
+	resp = new(metadata.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
@@ -59,9 +59,9 @@ func (t *meta) DeletePropertyGroup(ctx context.Context, groupID string, h http.H
 	return
 }
 
-func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, dat []metatype.PropertyGroupObjectAtt) (resp *metatype.UpdateResult, err error) {
+func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, dat []metadata.PropertyGroupObjectAtt) (resp *metadata.UpdateResult, err error) {
 	subPath := "/meta/objectatt/group/property"
-	resp = new(metatype.UpdateResult)
+	resp = new(metadata.UpdateResult)
 	err = t.client.Put().
 		WithContext(ctx).
 		Body(dat).
@@ -72,9 +72,9 @@ func (t *meta) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, 
 	return
 }
 
-func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID, propertyID, groupID string, h http.Header) (resp *metatype.DeleteResult, err error) {
+func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID, propertyID, groupID string, h http.Header) (resp *metadata.DeleteResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s", ownerID, objID, propertyID, groupID)
-	resp = new(metatype.DeleteResult)
+	resp = new(metadata.DeleteResult)
 	err = t.client.Delete().
 		WithContext(ctx).
 		Body(nil).
@@ -85,9 +85,9 @@ func (t *meta) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID, objID,
 	return
 }
 
-func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
+func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string, objID string, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectGroupResult, err error) {
 	subPath := fmt.Sprintf("/meta/objectatt/group/property/owner/%s/object/%s", ownerID, objID)
-	resp = new(metatype.QueryObjectGroupResult)
+	resp = new(metadata.QueryObjectGroupResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).
@@ -98,9 +98,9 @@ func (t *meta) SelectPropertyGroupByObjectID(ctx context.Context, ownerID string
 	return
 }
 
-func (t *meta) SelectGroup(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metatype.QueryObjectGroupResult, err error) {
+func (t *meta) SelectGroup(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.QueryObjectGroupResult, err error) {
 	subPath := "/meta/objectatt/group/search"
-	resp = new(metatype.QueryObjectGroupResult)
+	resp = new(metadata.QueryObjectGroupResult)
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(dat).

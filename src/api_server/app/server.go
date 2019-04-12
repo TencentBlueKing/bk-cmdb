@@ -17,36 +17,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/app/options"
 	apisvc "configcenter/src/api_server/service"
 	"configcenter/src/api_server/service/v3"
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
+
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
-	}
-
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
 	}
 
 	v2Service := apisvc.NewService()
@@ -56,38 +42,20 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	v3Service.Disc, err = discovery.NewDiscoveryInterface(op.ServConf.RegDiscover)
-	if err != nil {
-		return fmt.Errorf("new proxy discovery instance failed, err: %v", err)
-	}
-
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
 	ctnr.Add(v2Service.WebService())
 	ctnr.Add(v3Service.V3WebService())
 	ctnr.Add(v3Service.V3Healthz())
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    ctnr,
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_APISERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
 
 	apiSvr := new(APIServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_APISERVER,
-		op.ServConf.ExConfig,
-		apiSvr.onHostConfigUpdate,
-		bonC)
-
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: apiSvr.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -95,8 +63,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	v2Service.SetEngine(engine)
 	v3Service.Engine = engine
 	apiSvr.Core = engine
+	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
+		return err
+	}
+
 	select {}
-	return nil
 }
 
 type APIServer struct {

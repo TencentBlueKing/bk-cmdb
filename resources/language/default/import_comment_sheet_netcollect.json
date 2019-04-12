@@ -1,0 +1,22 @@
+{
+    "import_device_comment_device_name":"设备名",
+    "import_device_comment_device_id":"设备ID",
+    "import_device_comment_obj_name":"模型名",
+    "import_device_comment_obj_id":"模型ID",
+    "import_device_comment_device_model":"设备型号",
+    "import_device_comment_vendor":"厂商",
+    
+    "import_property_comment_net_property_id":"网络设备属性ID",
+    "import_property_comment_property_id":"属性ID",
+    "import_property_comment_property_name":"属性名",
+    "import_property_comment_device_id":"设备ID",
+    "import_property_comment_device_name":"设备名",
+    "import_property_comment_object_id":"模型ID",
+    "import_property_comment_object_name":"模型名",
+    "import_property_comment_oid":"对象标识符",
+    "import_property_comment_unit":"单位",
+    "import_property_comment_period":"采集周期",
+    "import_property_comment_action":"采集方式",
+    
+    "":""
+}

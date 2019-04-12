@@ -1,6 +1,6 @@
 <template>
     <div class="verification-detail-wrapper">
-        <label class="form-label">
+        <div class="form-label">
             <span class="label-text">
                 {{$t('ModelManagement["校验规则"]')}}
                 <span class="color-danger">*</span>
@@ -10,9 +10,8 @@
                     <span>{{selectedName}}</span>
                     <i class="bk-icon icon-angle-down"></i>
                 </div>
-                <div class="verification-selector-mask" v-if="attribute.isShow"></div>
                 <bk-selector
-                    setting-key="bk_property_id"
+                    setting-key="id"
                     display-key="bk_property_name"
                     ref="attrSelector"
                     :multi-select="true"
@@ -21,35 +20,26 @@
                     @visible-toggle="toggleSelector"
                 ></bk-selector>
             </div>
-        </label>
-        <div class="radio-box">
-            <label class="label-text">
-                {{$t('ModelManagement["是否显示为实例名称"]')}}
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="isName" value="true" v-model="verificationInfo.isName">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
-            </label>
-            <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="isName" value="false" v-model="verificationInfo.isName">
-                <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
-            </label>
         </div>
+        <div class="verification-selector-mask" v-if="attribute.isShow"></div>
         <div class="radio-box">
             <label class="label-text">
                 {{$t('ModelManagement["是否为必须校验"]')}}
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" value="true" v-model="verificationInfo.required">
+                <input type="radio" name="required" :value="true" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
                 <span class="cmdb-radio-text">{{$t('ModelManagement["是"]')}}</span>
             </label>
             <label class="cmdb-form-radio cmdb-radio-small">
-                <input type="radio" name="required" value="false" v-model="verificationInfo.required">
+                <input type="radio" name="required" :value="false" :disabled="isReadOnly" v-model="verificationInfo['must_check']">
                 <span class="cmdb-radio-text">{{$t('ModelManagement["否"]')}}</span>
             </label>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveVerification">
+            <bk-button type="primary"
+            :disabled="isReadOnly || !verificationInfo.selected.length"
+            :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
+            @click="saveVerification">
                 {{$t('Common["确定"]')}}
             </bk-button>
             <bk-button type="default" @click="cancel">
@@ -73,62 +63,101 @@
             isEdit: {
                 type: Boolean,
                 default: false
+            },
+            attributeList: {
+                type: Array
             }
         },
         data () {
             return {
                 verificationInfo: {
                     selected: [],
-                    isName: false,
-                    required: false
+                    must_check: false
                 },
                 attribute: {
                     isShow: false,
-                    list: []
+                    list: this.attributeList
                 }
             }
         },
         computed: {
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             selectedName () {
                 let nameList = []
-                this.verificationInfo.selected.map(propertyId => {
-                    let attr = this.attribute.list.find(({bk_property_id: bkPropertyId}) => {
-                        return bkPropertyId === propertyId
-                    })
+                this.verificationInfo.selected.forEach(id => {
+                    let attr = this.attribute.list.find(attr => attr.id === id)
                     if (attr) {
                         nameList.push(attr['bk_property_name'])
                     }
                 })
                 return nameList.join(',')
+            },
+            params () {
+                let params = {
+                    must_check: this.verificationInfo['must_check'],
+                    keys: []
+                }
+                this.verificationInfo.selected.forEach(id => {
+                    params.keys.push({
+                        key_kind: 'property',
+                        key_id: id
+                    })
+                })
+                return params
             }
         },
         created () {
-            this.initAttrList()
+            if (this.isEdit) {
+                this.initData()
+            }
         },
         methods: {
-            ...mapActions('objectModelProperty', [
-                'searchObjectAttribute'
+            ...mapActions('objectUnique', [
+                'createObjectUniqueConstraints',
+                'updateObjectUniqueConstraints'
             ]),
-            toggleSelector (isShow) {
-                this.attribute.isShow = isShow
-                this.$refs.attrSelector.open = isShow
-            },
-            async initAttrList () {
-                const res = await this.searchObjectAttribute({
-                    params: {
-                        bk_obj_id: this.activeModel['bk_obj_id']
-                    },
-                    config: {
-                        requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
-                    }
+            initData () {
+                this.verificationInfo['must_check'] = this.verification['must_check']
+                this.verification.keys.forEach(key => {
+                    this.verificationInfo.selected.push(key['key_id'])
                 })
-                this.attribute.list = res
             },
-            saveVerification () {
-
+            toggleSelector (isShow) {
+                if (!this.isReadOnly) {
+                    this.$refs.attrSelector.open = isShow
+                    this.attribute.isShow = isShow
+                }
+            },
+            async saveVerification () {
+                if (this.isEdit) {
+                    await this.updateObjectUniqueConstraints({
+                        id: this.verification.id,
+                        objId: this.activeModel['bk_obj_id'],
+                        params: this.$injectMetadata(this.params, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
+                        config: {
+                            requestId: 'updateObjectUniqueConstraints'
+                        }
+                    })
+                    this.$emit('save')
+                } else {
+                    await this.createObjectUniqueConstraints({
+                        objId: this.activeModel['bk_obj_id'],
+                        params: this.$injectMetadata(this.params, {
+                            clone: true,
+                            inject: this.isInjectable
+                        }),
+                        config: {
+                            requestId: 'createObjectUniqueConstraints'
+                        }
+                    })
+                    this.$emit('save')
+                }
             },
             cancel () {
                 this.$emit('cancel')
@@ -146,7 +175,7 @@
             .verification-selector {
                 position: relative;
                 display: inline-block;
-                width: calc(100% - 145px);
+                width: 100%;
                 .bk-selector {
                     width: 100%;
                 }
@@ -159,9 +188,10 @@
                     font-size: 14px;
                     overflow: hidden;
                     &.open {
-                        padding: 5px 28px 5px 16px;
+                        padding: 5px 28px 5px 10px;
                         height: auto;
-                        line-height: 20px;
+                        min-height: 36px;
+                        line-height: 24px;
                         overflow: visible;
                         border-color: $cmdbBorderFocusColor;
                         .icon-angle-down {
@@ -169,15 +199,6 @@
                             transform: rotate(180deg);
                         }
                     }
-                }
-                .verification-selector-mask {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    right: 0;
-                    bottom: 0;
-                    width: 100%;
-                    height: 100%;
                 }
                 .icon-angle-down {
                     position: absolute;
@@ -188,12 +209,22 @@
                 }
             }
         }
+        .verification-selector-mask {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+        }
         .radio-box {
             .label-text {
                 width: 150px;
             }
             .cmdb-form-radio {
                 width: 114px;
+                vertical-align: middle;
             }
         }
     }

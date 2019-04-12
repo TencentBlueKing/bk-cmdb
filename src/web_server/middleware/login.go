@@ -13,10 +13,10 @@
 package middleware
 
 import (
-	"plugin"
+    "configcenter/src/apimachinery/discovery"
+    "plugin"
 	"strings"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -32,13 +32,12 @@ import (
 )
 
 var sLoginURL string
-var checkUrl string
 
 var Engine *backbone.Engine
 var CacheCli *redis.Client
 var LoginPlg *plugin.Plugin
 
-//ValidLogin   valid the user login status
+// ValidLogin valid the user login status
 func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
@@ -52,7 +51,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 		}
 
 		if isAuthed(c, config) {
-			//valid resource acess privilege
+			// valid resource access privilege
 			auth := auth.NewAuth()
 			ok := auth.ValidResAccess(pathArr, c)
 			if false == ok {
@@ -62,19 +61,26 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 				c.Abort()
 				return
 			}
-			//http request header add user
+			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
 			language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 			ownerID, _ := session.Get(common.WEBSessionOwnerUinKey).(string)
+			supplierID, _ := session.Get(common.WEBSessionSupplierID).(string)
 			c.Request.Header.Add(common.BKHTTPHeaderUser, userName)
 			c.Request.Header.Add(common.BKHTTPLanguage, language)
 			c.Request.Header.Add(common.BKHTTPOwnerID, ownerID)
+			c.Request.Header.Add(common.BKHTTPSupplierID, supplierID)
 
 			if path1 == "api" {
 				servers, err := disc.ApiServer().GetServers()
 				if nil != err || 0 == len(servers) {
-					blog.Fatal("api server addr not right")
+					blog.Errorf("no api server can be used. err: %v", err)
+					c.JSON(503, gin.H{
+						"status": "no api server can be used.",
+					})
+					c.Abort()
+					return
 				}
 				url := servers[0]
 				httpclient.ProxyHttp(c, url)
@@ -120,6 +126,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		} else if cookieOwnerID != session.Get(common.WEBSessionOwnerUinKey) {
 			session.Set(common.WEBSessionOwnerUinKey, cookieOwnerID)
 		}
+		session.Set(common.WEBSessionSupplierID, "0")
 
 		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
@@ -141,6 +148,10 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 	}
 	ownerID, ok := session.Get(common.WEBSessionOwnerUinKey).(string)
 	if !ok || "" == ownerID {
+		return user.LoginUser(c)
+	}
+	supplierID, ok := session.Get(common.WEBSessionSupplierID).(string)
+	if !ok || "" == supplierID {
 		return user.LoginUser(c)
 	}
 

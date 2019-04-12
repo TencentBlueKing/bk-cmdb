@@ -13,20 +13,28 @@
 package util
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
 	"time"
 
-	"github.com/coccyx/timeparser"
-
 	"configcenter/src/common"
+
+	"github.com/coccyx/timeparser"
 )
 
 var (
 	//需要转换的时间的标志
-	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField}
+	convTimeFields []string = []string{common.CreateTimeField, common.LastTimeField, common.ConfirmTimeField}
 )
 
 func GetCurrentTimeStr() string {
 	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func GetCurrentTimePtr() *time.Time {
+	now := time.Now()
+	return &now
 }
 
 func ConvParamsTime(data interface{}) interface{} {
@@ -151,6 +159,34 @@ func convItemToTime(val interface{}) (interface{}, error) {
 
 }
 
+var validPeriod = regexp.MustCompile("^\\d*[DHMS]$") // period regexp to check period
+
+// 00002H --> 2H
+// 0000D/0M ---> ∞
+// empty string / ∞ ---> ∞
+// regexp matched: positive integer (include positive integer begin with more the one '0') + [D/H/M/S]
+// eg. 0H, 000H, 0002H, 32M，34S...
+// examples of no matched:  1.4H, -2H, +2H ...
+func FormatPeriod(period string) (string, error) {
+	if common.Infinite == period || "" == period {
+		return common.Infinite, nil
+	}
+
+	if !validPeriod.MatchString(period) {
+		return "", fmt.Errorf("invalid period")
+	}
+
+	num, err := strconv.Atoi(period[:len(period)-1])
+	if nil != err {
+		return "", err
+	}
+	if 0 == num {
+		return common.Infinite, nil
+	}
+
+	return strconv.Itoa(num) + period[len(period)-1:], nil
+}
+
 type Ticker struct {
 	C      chan time.Time
 	ticker *time.Ticker
@@ -163,7 +199,10 @@ func (t *Ticker) Stop() {
 }
 
 func (t *Ticker) Tick() {
-	t.C <- time.Now()
+	select {
+	case t.C <- time.Now():
+	default:
+	}
 }
 
 func NewTicker(d time.Duration) *Ticker {

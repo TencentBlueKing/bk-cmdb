@@ -78,7 +78,6 @@ func LoadErrorResourceFromDir(dir string) (map[string]ErrorCode, error) {
 		language := items[len(items)-2 : len(items)-1]
 
 		// analysis error package file
-		fmt.Printf("loading error resource from %s\n", path)
 		data, rerr := ioutil.ReadFile(path)
 		if nil != rerr {
 			return rerr

@@ -29,7 +29,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-        return $http.post(`inst/${rootGetters.supplierAccount}/${objId}`, params, config)
+        return $http.post(`create/instance/object/${objId}`, params, config)
     },
 
     /**
@@ -42,7 +42,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateInst ({ commit, state, dispatch, rootGetters }, { objId, instId, params, config }) {
-        return $http.put(`inst/${rootGetters.supplierAccount}/${objId}/${instId}`, params, config)
+        return $http.put(`update/instance/object/${objId}/inst/${instId}`, params, config)
     },
 
     /**
@@ -55,7 +55,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchUpdateInst ({ commit, state, dispatch, rootGetters }, { objId, params, config }) {
-        return $http.put(`inst/${rootGetters.supplierAccount}/${objId}/batch`, params, config)
+        return $http.put(`updatemany/instance/object/${objId}`, params, config)
     },
     
     /**
@@ -69,11 +69,11 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchInst ({ commit, state, dispatch, rootGetters }, { params, config, objId }) {
-        return $http.post(`inst/association/search/owner/${rootGetters.supplierAccount}/object/${objId}`, params, config)
+        return $http.post(`find/instassociation/object/${objId}`, params, config)
     },
 
-    searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id' }) {
-        return $http.post(`inst/association/search/owner/${rootGetters.supplierAccount}/object/${objId}`, {
+    searchInstById ({ rootGetters }, { config, objId, instId, idKey = 'bk_inst_id', params }) {
+        return $http.post(`find/instassociation/object/${objId}`, Object.assign({
             condition: {
                 [objId]: [{
                     field: idKey,
@@ -86,7 +86,7 @@ const actions = {
                 start: 0,
                 limit: 1
             }
-        }, config).then(data => {
+        }, params), config).then(data => {
             return data.info[0] || {}
         })
     },
@@ -103,7 +103,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     deleteInst ({ commit, state, dispatch, rootGetters }, { objId, instId, config }) {
-        return $http.delete(`inst/${rootGetters.supplierAccount}/${objId}/${instId}`, config)
+        return $http.delete(`delete/instance/object/${objId}/inst/${instId}`, config)
     },
 
     /**
@@ -113,7 +113,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     batchDeleteInst ({ commit, state, dispatch, rootGetters }, {objId, config}) {
-        return $http.delete(`inst/${rootGetters.supplierAccount}/${objId}/batch`, config)
+        return $http.delete(`deletemany/instance/object/${objId}`, config)
     }
 }
 

@@ -19,6 +19,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -32,27 +34,27 @@ type HostLog struct {
 	Content *metadata.Content
 }
 
-func (lgc *Logics) NewHostLog(pheader http.Header, ownerID string) *HostLog {
+func (lgc *Logics) NewHostLog(ctx context.Context, ownerID string) *HostLog {
 	return &HostLog{
 		logic:   lgc,
-		header:  pheader,
+		header:  lgc.header,
 		ownerID: ownerID,
 		Content: new(metadata.Content),
 	}
 }
 
-func (h *HostLog) WithPrevious(hostID string, headers []metadata.Header) error {
+func (h *HostLog) WithPrevious(ctx context.Context, hostID string, headers []metadata.Header) errors.CCError {
 	var err error
 	if headers != nil || len(headers) != 0 {
 		h.Content.Headers = headers
 	} else {
-		h.Content.Headers, err = h.logic.GetHostAttributes(h.ownerID, h.header)
+		h.Content.Headers, err = h.logic.GetHostAttributes(ctx, h.ownerID, nil)
 		if err != nil {
 			return err
 		}
 	}
 
-	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(h.header, h.ownerID, hostID)
+	h.Content.PreData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, hostID)
 	if err != nil {
 		return err
 	}
@@ -60,9 +62,9 @@ func (h *HostLog) WithPrevious(hostID string, headers []metadata.Header) error {
 	return nil
 }
 
-func (h *HostLog) WithCurrent(hostID string) error {
+func (h *HostLog) WithCurrent(ctx context.Context, hostID string) errors.CCError {
 	var err error
-	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(h.header, h.ownerID, hostID)
+	h.Content.CurData, h.ip, err = h.logic.GetHostInstanceDetails(ctx, h.ownerID, hostID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +72,7 @@ func (h *HostLog) WithCurrent(hostID string) error {
 	return nil
 }
 
-func (h *HostLog) AuditLog(hostID int64) *auditoplog.AuditLogExt {
+func (h *HostLog) AuditLog(ctx context.Context, hostID int64) *auditoplog.AuditLogExt {
 	return &auditoplog.AuditLogExt{
 		ID:      hostID,
 		Content: h.Content,
@@ -92,24 +94,24 @@ type HostModuleLog struct {
 	desc      string
 }
 
-func (lgc *Logics) NewHostModuleLog(header http.Header, instID []int64) *HostModuleLog {
+func (lgc *Logics) NewHostModuleLog(instID []int64) *HostModuleLog {
 	return &HostModuleLog{
 		logic:     lgc,
 		instIDArr: instID,
 		pre:       make([]metadata.ModuleHost, 0),
 		cur:       make([]metadata.ModuleHost, 0),
-		header:    header,
+		header:    lgc.header,
 	}
 }
 
-func (h *HostModuleLog) WithPrevious() error {
+func (h *HostModuleLog) WithPrevious(ctx context.Context) errors.CCError {
 	var err error
-	h.pre, err = h.getHostModuleConfig()
+	h.pre, err = h.getHostModuleConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	h.hostInfos, err = h.getInnerIP()
+	h.hostInfos, err = h.getInnerIP(ctx)
 	if err != nil {
 		return err
 	}
@@ -117,17 +119,17 @@ func (h *HostModuleLog) WithPrevious() error {
 	return nil
 }
 
-func (h *HostModuleLog) WithCurrent() error {
+func (h *HostModuleLog) WithCurrent(ctx context.Context) errors.CCError {
 	var err error
-	h.cur, err = h.getHostModuleConfig()
+	h.cur, err = h.getHostModuleConfig(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
-	if err := h.WithCurrent(); err != nil {
+func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string) errors.CCError {
+	if err := h.WithCurrent(ctx); err != nil {
 		return err
 	}
 
@@ -153,12 +155,12 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 		moduleIDs = append(moduleIDs, val.ModuleID)
 	}
 
-	modules, err := h.getModules(moduleIDs)
+	modules, err := h.getModules(ctx, moduleIDs)
 	if err != nil {
 		return err
 	}
 
-	sets, err := h.getSets(setIDs)
+	sets, err := h.getSets(ctx, setIDs)
 	if err != nil {
 		return err
 	}
@@ -219,7 +221,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 
 		preModule := make([]interface{}, 0)
 		var preApp interface{}
-		for moduleID, _ := range preMap[instID] {
+		for moduleID := range preMap[instID] {
 			preModule = append(preModule, moduleMap[moduleID])
 			preApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID
@@ -228,7 +230,7 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 		curModule := make([]interface{}, 0)
 		var curApp interface{}
 
-		for moduleID, _ := range curMap[instID] {
+		for moduleID := range curMap[instID] {
 			curModule = append(curModule, moduleMap[moduleID])
 			curApp = moduleMap[moduleID].appID
 			ownerID = moduleMap[moduleID].ownerID
@@ -249,23 +251,33 @@ func (h *HostModuleLog) SaveAudit(appID, user, desc string) error {
 		h.desc = "host module change"
 	}
 	data := common.KvMap{common.BKContentField: logs, common.BKOpDescField: h.desc, common.BKOpTypeField: auditoplog.AuditOpTypeHostModule}
-	result, err := h.logic.CoreAPI.AuditController().AddHostLogs(context.Background(), ownerID, appID, user, h.header, data)
-	if err != nil || (err == nil && !result.Result) {
-		return fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := h.logic.CoreAPI.AuditController().AddHostLogs(ctx, ownerID, appID, user, h.header, data)
+	if err != nil {
+		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), data, h.logic.rid)
+		return h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, data, h.logic.rid)
+		return h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
 
-func (h *HostModuleLog) getHostModuleConfig() ([]metadata.ModuleHost, error) {
+func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
 	conds := map[string][]int64{common.BKHostIDField: h.instIDArr}
-	result, err := h.logic.CoreAPI.HostController().Module().GetModulesHostConfig(context.Background(), h.header, conds)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := h.logic.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, h.header, conds)
+	if err != nil {
+		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.logic.rid)
+		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getHostModuleConfig http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, conds, h.logic.rid)
+		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 	return result.Data, nil
 }
 
-func (h *HostModuleLog) getInnerIP() ([]mapstr.MapStr, error) {
+func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors.CCError) {
 	query := &metadata.QueryInput{
 		Start:     0,
 		Limit:     len(h.instIDArr),
@@ -274,48 +286,58 @@ func (h *HostModuleLog) getInnerIP() ([]mapstr.MapStr, error) {
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 
-	result, err := h.logic.CoreAPI.HostController().Host().GetHosts(context.Background(), h.header, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("%v, %v", err, result.ErrMsg)
+	result, err := h.logic.CoreAPI.HostController().Host().GetHosts(ctx, h.header, query)
+	if err != nil {
+		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
+		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetHosts http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
+		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
 }
 
-func (h *HostModuleLog) getModules(moduleIds []int64) ([]mapstr.MapStr, error) {
+func (h *HostModuleLog) getModules(ctx context.Context, moduleIds []int64) ([]mapstr.MapStr, errors.CCError) {
 	if moduleIds == nil {
 		return make([]mapstr.MapStr, 0), nil
 	}
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Condition: common.KvMap{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
-		Fields:    fmt.Sprintf("%s,%s,%s,%s,%s", common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField),
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKModuleIDField: common.KvMap{common.BKDBIN: moduleIds}},
+		Fields:    []string{common.BKModuleIDField, common.BKSetIDField, common.BKModuleNameField, common.BKAppIDField, common.BKOwnerIDField},
 	}
-
-	result, err := h.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, h.header, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get modules with id failed, err: %v, result err: %s", err, result.ErrMsg)
+	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDModule, query)
+	if err != nil {
+		blog.Errorf("getModules http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
+		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("getModules http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
+		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
 }
 
-func (h *HostModuleLog) getSets(setIDs []int64) ([]mapstr.MapStr, error) {
+func (h *HostModuleLog) getSets(ctx context.Context, setIDs []int64) ([]mapstr.MapStr, errors.CCError) {
 	if setIDs == nil {
 		return make([]mapstr.MapStr, 0), nil
 	}
-	query := &metadata.QueryInput{
-		Start:     0,
-		Limit:     common.BKNoLimit,
-		Condition: common.KvMap{common.BKSetIDField: common.KvMap{common.BKDBIN: setIDs}},
-		Fields:    fmt.Sprintf("%s,%s,%s", common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField),
+	query := &metadata.QueryCondition{
+		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
+		Condition: mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: setIDs}},
+		Fields:    []string{common.BKSetNameField, common.BKSetIDField, common.BKOwnerIDField},
 	}
-
-	result, err := h.logic.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, h.header, query)
-	if err != nil || (err == nil && !result.Result) {
-		return nil, fmt.Errorf("get modules with id failed, err: %v, result err: %s", err, result.ErrMsg)
+	result, err := h.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.header, common.BKInnerObjIDSet, query)
+	if err != nil {
+		blog.Errorf("getSets http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
+		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-
+	if !result.Result {
+		blog.Errorf("getSets http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, h.logic.rid)
+		return nil, h.logic.ccErr.New(result.Code, result.ErrMsg)
+	}
 	return result.Data.Info, nil
 }

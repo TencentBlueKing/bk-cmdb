@@ -13,9 +13,10 @@
 package util
 
 import (
+	"testing"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
-	"testing"
 )
 
 type errif struct {
@@ -51,27 +52,6 @@ func TestValidPropertyOption(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := ValidPropertyOption(tt.args.propertyType, tt.args.option, tt.args.errProxy); (err != nil) != tt.wantErr {
 				t.Errorf("ValidPropertyOption() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestIsAssocateProperty(t *testing.T) {
-	type args struct {
-		propertyType string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"", args{"property"}, false},
-		{"", args{common.FieldTypeSingleAsst}, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsAssocateProperty(tt.args.propertyType); got != tt.want {
-				t.Errorf("IsAssocateProperty() = %v, want %v", got, tt.want)
 			}
 		})
 	}

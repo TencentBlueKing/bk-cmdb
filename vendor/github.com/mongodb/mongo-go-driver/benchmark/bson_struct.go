@@ -1,7 +1,12 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package benchmark
 
 import (
-	"bytes"
 	"context"
 	"errors"
 
@@ -9,7 +14,7 @@ import (
 )
 
 func BSONFlatStructDecoding(ctx context.Context, tm TimerManager, iters int) error {
-	r, err := loadSourceReader(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
+	r, err := loadSourceRaw(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
 	if err != nil {
 		return err
 	}
@@ -18,8 +23,7 @@ func BSONFlatStructDecoding(ctx context.Context, tm TimerManager, iters int) err
 
 	for i := 0; i < iters; i++ {
 		out := flatBSON{}
-		dec := bson.NewDecoder(bytes.NewReader(r))
-		err := dec.Decode(&out)
+		err := bson.Unmarshal(r, &out)
 		if err != nil {
 			return err
 		}
@@ -28,24 +32,26 @@ func BSONFlatStructDecoding(ctx context.Context, tm TimerManager, iters int) err
 }
 
 func BSONFlatStructEncoding(ctx context.Context, tm TimerManager, iters int) error {
-	r, err := loadSourceReader(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
+	r, err := loadSourceRaw(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
 	if err != nil {
 		return err
 	}
 
 	doc := flatBSON{}
-	if err = bson.NewDecoder(bytes.NewReader(r)).Decode(&doc); err != nil {
+	err = bson.Unmarshal(r, &doc)
+	if err != nil {
 		return err
 	}
 
-	buf := bytes.NewBuffer([]byte{})
+	var buf []byte
 
 	tm.ResetTimer()
 	for i := 0; i < iters; i++ {
-		if err = bson.NewEncoder(buf).Encode(&doc); err != nil {
+		buf, err = bson.Marshal(doc)
+		if err != nil {
 			return err
 		}
-		if buf.Len() == 0 {
+		if len(buf) == 0 {
 			return errors.New("encoding failed")
 		}
 	}
@@ -53,24 +59,26 @@ func BSONFlatStructEncoding(ctx context.Context, tm TimerManager, iters int) err
 }
 
 func BSONFlatStructTagsEncoding(ctx context.Context, tm TimerManager, iters int) error {
-	r, err := loadSourceReader(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
+	r, err := loadSourceRaw(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
 	if err != nil {
 		return err
 	}
 
 	doc := flatBSONTags{}
-	if err = bson.NewDecoder(bytes.NewReader(r)).Decode(&doc); err != nil {
+	err = bson.Unmarshal(r, &doc)
+	if err != nil {
 		return err
 	}
 
-	buf := bytes.NewBuffer([]byte{})
+	var buf []byte
 
 	tm.ResetTimer()
 	for i := 0; i < iters; i++ {
-		if err = bson.NewEncoder(buf).Encode(&doc); err != nil {
+		buf, err = bson.MarshalAppend(buf[:0], doc)
+		if err != nil {
 			return err
 		}
-		if buf.Len() == 0 {
+		if len(buf) == 0 {
 			return errors.New("encoding failed")
 		}
 	}
@@ -78,7 +86,7 @@ func BSONFlatStructTagsEncoding(ctx context.Context, tm TimerManager, iters int)
 }
 
 func BSONFlatStructTagsDecoding(ctx context.Context, tm TimerManager, iters int) error {
-	r, err := loadSourceReader(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
+	r, err := loadSourceRaw(getProjectRoot(), perfDataDir, bsonDataDir, flatBSONData)
 	if err != nil {
 		return err
 	}
@@ -86,8 +94,7 @@ func BSONFlatStructTagsDecoding(ctx context.Context, tm TimerManager, iters int)
 	tm.ResetTimer()
 	for i := 0; i < iters; i++ {
 		out := flatBSONTags{}
-		dec := bson.NewDecoder(bytes.NewReader(r))
-		err := dec.Decode(&out)
+		err := bson.Unmarshal(r, &out)
 		if err != nil {
 			return err
 		}

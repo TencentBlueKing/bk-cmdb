@@ -6,6 +6,13 @@
             'bk-page-small': size === 'small'
         }
     ]">
+        <template v-if="paginationAble && location === 'left'">
+            <bk-pagination
+                :total-page="totalPage"
+                :pagination-count.sync="paginationCountTmp"
+                :pagination-list="paginationList">
+            </bk-pagination>
+        </template>
         <ul>
             <!-- 上一页 -->
             <li class="page-item" :class="{disabled: curPage === 1}" @click="prevPage">
@@ -57,6 +64,13 @@
                 </a>
             </li>
         </ul>
+        <template v-if="paginationAble && location === 'right'">
+            <bk-pagination
+                :total-page="totalPage"
+                :pagination-count.sync="paginationCountTmp"
+                :pagination-list="paginationList">
+            </bk-pagination>  
+        </template>
     </div>
 </template>
 <script>
@@ -66,17 +80,26 @@
      *  @desc 分页组件
      *  @param type {String} - 组件的类型，可选default和compact，默认为default
      *  @param size {String} - 组件的尺寸，可选default和small，默认为default
-     *  @param totalPage {Number} - 总页数，默认为20
+     *  @param totalPage {Number} - 总页数，默认为5
+     *  @param paginationCount {Number} - 每页显示数据量，默认为10
+     *  @param paginationAble {Boolean} - 开启自定义页码
+     *  @param location {Number} - 自定义页码位置，默认为left
+     *  @param paginationList {Array} - 自定义页码数组，默认为[10, 20, 50, 100]
      *  @param curPage {Number} - 当前页数，默认为1，支持.sync修饰符
      *  @event page-change {Event} - 当改变页码时，广播给父组件的事件
+     *  @event pagination-change {Event} - 当改变页码数时，广播给父组件的事件
      *  @example
      *  <bk-paging
          :cur-page.sync="curPage"
-         :total-page="totalPage"
+         :total-Count="totalCount"
          :type="'compact'"></bk-paging>
     */
+    import bkPagination from '../pagination/pagination.vue'
     export default {
         name: 'bk-paging',
+        components: {
+            bkPagination
+        },
         props: {
             type: {
                 type: String,
@@ -109,13 +132,39 @@
                 validator (value) {
                     return value >= 0
                 }
+            },
+            paginationCount: {
+                type: Number,
+                default: 10,
+                validator (value) {
+                    return value >= 0
+                }
+            },
+            paginationAble: {
+                type: Boolean,
+                default: false
+            },
+            location: {
+                type: String,
+                default: 'left',
+                validator (value) {
+                    return [
+                        'left',
+                        'right'
+                    ].indexOf(value) > -1
+                }
+            },
+            paginationList: {
+                type: Array,
+                default: () => [10, 20, 50, 100]
             }
         },
         data () {
             return {
                 pageSize: 5,
                 renderList: [],
-                curGroup: 1
+                curGroup: 1,
+                paginationCountTmp: this.paginationCount
             }
         },
         computed: {
@@ -123,7 +172,8 @@
                 if (this.totalPage >= this.curPage) {
                     return this.totalPage
                 }
-                console.error(this.t('paging.error'))
+                // console.error(this.t('paging.error'))
+                this.$emit('update:curPage', this.totalPage)
                 return this.curPage
             }
         },
@@ -136,7 +186,24 @@
             },
             totalPage (newVal) {
                 this.calcPageList(this.curPage)
+            },
+            paginationCountTmp (newVal) {
+                this.$emit('pagination-change', newVal)
+            },
+            paginationCount (newVal) {
+                this.paginationCountTmp = newVal
             }
+            // paginationIndex (newVal) {
+            //     this.totalPage = Math.ceil(this.totalCount / newVal)
+            //     this.calcPageList(this.curPage)
+            // },
+            // paginationCount (newVal) {
+            //     if (this.paginationList.includes(newVal)) {
+            //         this.paginationIndex = newVal
+            //     } else {
+            //         this.paginationIndex = this.paginationList[0]
+            //     }
+            // }
         },
         methods: {
             _array (size) {

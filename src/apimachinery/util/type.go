@@ -18,8 +18,6 @@ import (
 )
 
 type APIMachineryConfig struct {
-	// the address of zookeeper address, comma separated.
-	ZkAddr string
 	// request's qps value
 	QPS int64
 	// request's burst value

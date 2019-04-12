@@ -75,7 +75,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		defaultOwnerHeader := util.CopyHeader(params.Header)
 		defaultOwnerHeader.Set(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
 
-		asstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), defaultOwnerHeader, asstQuery)
+		asstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), defaultOwnerHeader, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -83,10 +83,10 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		if !asstRsp.Result {
 			return nil, params.Err.Error(asstRsp.Code)
 		}
-		expectAssts := asstRsp.Data
+		expectAssts := asstRsp.Data.Info
 		blog.Infof("copy asst for %s, %+v", params.SupplierAccount, expectAssts)
 
-		existAsstRsp, err := b.clientSet.ObjectController().Meta().SelectObjectAssociations(context.Background(), params.Header, asstQuery)
+		existAsstRsp, err := b.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: asstQuery})
 		if nil != err {
 			blog.Errorf("[operation-biz] failed to get default assts, error info is %s", err.Error())
 			return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -94,7 +94,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		if !existAsstRsp.Result {
 			return nil, params.Err.Error(existAsstRsp.Code)
 		}
-		existAssts := existAsstRsp.Data
+		existAssts := existAsstRsp.Data.Info
 
 	expectLoop:
 		for _, asst := range expectAssts {
@@ -107,7 +107,14 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 				}
 			}
 
-			createAsstRsp, err := b.clientSet.ObjectController().Meta().CreateObjectAssociation(context.Background(), params.Header, &asst)
+			var createAsstRsp *metadata.CreatedOneOptionResult
+			var err error
+			if asst.AsstKindID == common.AssociationKindMainline {
+				// bk_maineline is a inner association type that can only create in special case, so we separate bk_mainline association type creation with a independent method,
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
+			} else {
+				createAsstRsp, err = b.clientSet.CoreService().Association().CreateModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
+			}
 			if nil != err {
 				blog.Errorf("[operation-biz] failed to copy default assts, error info is %s", err.Error())
 				return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
@@ -119,9 +126,13 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		}
 	}
 
-	data.Set(common.BKOwnerIDField, params.SupplierAccount)
-	data.Set(common.BKSupplierIDField, common.BKDefaultSupplierID)
-
+	if util.IsExistSupplierID(params.Header) {
+		supplierID, err := util.GetSupplierID(params.Header)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, common.BKSupplierIDField)
+		}
+		data[common.BKSupplierIDField] = supplierID
+	}
 	bizInst, err := b.inst.CreateInst(params, obj, data)
 	if nil != err {
 		blog.Errorf("[opeartion-biz] failed to create business, error info is %s", err.Error())
@@ -146,7 +157,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	setData.Set(common.BKInstParentStr, bizID)
 	setData.Set(common.BKSetNameField, common.DefaultResSetName)
 	setData.Set(common.BKDefaultField, common.DefaultResSetFlag)
-	setData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	setInst, err := b.set.CreateSet(params, objSet, bizID, setData)
 	if nil != err {
@@ -173,7 +183,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	moduleData.Set(common.BKAppIDField, bizID)
 	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
-	moduleData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
 	if nil != err {
@@ -188,7 +197,6 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	faultModuleData.Set(common.BKAppIDField, bizID)
 	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
-	faultModuleData.Set(common.BKOwnerIDField, params.SupplierAccount)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {
@@ -219,7 +227,6 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	}
 
 	innerCond := condition.CreateCondition()
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.DeleteInst(params, bizObj, innerCond, true)
@@ -314,7 +321,6 @@ func (b *business) UpdateBusiness(params types.ContextParams, data mapstr.MapStr
 
 	innerCond := condition.CreateCondition()
 
-	innerCond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	innerCond.Field(common.BKAppIDField).Eq(bizID)
 
 	return b.inst.UpdateInst(params, data, obj, innerCond, bizID)

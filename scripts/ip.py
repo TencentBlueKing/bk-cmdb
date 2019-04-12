@@ -8,4 +8,4 @@ try:
     ip = s.getsockname()[0]
 finally:
     s.close()
-print ip
+print(ip)

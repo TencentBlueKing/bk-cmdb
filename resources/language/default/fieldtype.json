@@ -2,6 +2,7 @@
 	"field_type_singlechar": "短字符",
 	"field_type_longchar": "长字符",
 	"field_type_int": "数字",
+	"field_type_float": "浮点",
 	"field_type_enum": "枚举",
 	"field_type_date": "日期",
 	"field_type_time": "时间",

@@ -13,9 +13,34 @@
 package logics
 
 import (
+	"net/http"
+
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/language"
+	"configcenter/src/common/util"
 )
 
 type Logics struct {
 	*backbone.Engine
+	header  http.Header
+	rid     string
+	ccErr   errors.DefaultCCErrorIf
+	ccLang  language.DefaultCCLanguageIf
+	user    string
+	ownerID string
+}
+
+// NewLogics get logic handle
+func NewLogics(b *backbone.Engine, header http.Header) *Logics {
+	lang := util.GetLanguage(header)
+	return &Logics{
+		Engine:  b,
+		header:  header,
+		rid:     util.GetHTTPCCRequestID(header),
+		ccErr:   b.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:  b.Language.CreateDefaultCCLanguageIf(lang),
+		user:    util.GetUser(header),
+		ownerID: util.GetOwnerID(header),
+	}
 }

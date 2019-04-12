@@ -47,7 +47,7 @@
                 inst: {}
             }
         },
-        created () {
+        mounted () {
             this.init()
         },
         methods: {
@@ -61,6 +61,7 @@
                     this.getObjectProperties(),
                     this.searchGroup({
                         objId: this.objId,
+                        params: this.$injectMetadata(),
                         config: {
                             requestId: `get_${this.objId}_property_groups`
                         }
@@ -78,10 +79,10 @@
             },
             getObjectProperties () {
                 return this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         'bk_supplier_account': this.supplierAccount,
                         'bk_obj_id': this.objId
-                    },
+                    }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,
                         fromCache: true
@@ -120,7 +121,7 @@
             getInstDetails () {
                 return this.searchInst({
                     objId: this.objId,
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             [this.objId]: [{
                                 field: 'bk_inst_id',
@@ -130,7 +131,7 @@
                         },
                         fields: {},
                         page: {start: 0, limit: 1}
-                    }
+                    })
                 }).then(({info}) => info[0])
             },
             handleHideDetails () {

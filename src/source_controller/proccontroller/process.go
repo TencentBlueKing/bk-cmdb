@@ -41,11 +41,13 @@ func main() {
 	util.InitFlags()
 
 	if err := common.SavePid(); err != nil {
-		blog.Error("fail to save pid. err: %s", err.Error())
+		blog.Errorf("fail to save pid. err: %s", err.Error())
 	}
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Fatal(err)
+		blog.Errorf("process stoped by %v", err)
+		blog.CloseLogs()
+		os.Exit(1)
 	}
 }

@@ -1,3 +1,9 @@
+// Copyright (C) MongoDB, Inc. 2017-present.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
 package mongo
 
 import (
@@ -11,16 +17,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"github.com/mongodb/mongo-go-driver/x/bsonx"
+
+	"fmt"
+
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/internal/testutil/helpers"
-	"github.com/mongodb/mongo-go-driver/mongo/aggregateopt"
-	"github.com/mongodb/mongo-go-driver/mongo/countopt"
-	"github.com/mongodb/mongo-go-driver/mongo/deleteopt"
-	"github.com/mongodb/mongo-go-driver/mongo/distinctopt"
-	"github.com/mongodb/mongo-go-driver/mongo/findopt"
-	"github.com/mongodb/mongo-go-driver/mongo/mongoopt"
-	"github.com/mongodb/mongo-go-driver/mongo/replaceopt"
-	"github.com/mongodb/mongo-go-driver/mongo/updateopt"
+	"github.com/mongodb/mongo-go-driver/mongo/writeconcern"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,20 +87,21 @@ func compareVersions(t *testing.T, v1 string, v2 string) int {
 }
 
 func getServerVersion(db *Database) (string, error) {
-	serverStatus, err := db.RunCommand(
+	var serverStatus bsonx.Doc
+	err := db.RunCommand(
 		context.Background(),
-		bson.NewDocument(bson.EC.Int32("serverStatus", 1)),
-	)
+		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
+	).Decode(&serverStatus)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := serverStatus.Lookup("version")
+	version, err := serverStatus.LookupErr("version")
 	if err != nil {
 		return "", err
 	}
 
-	return version.Value().StringValue(), nil
+	return version.StringValue(), nil
 }
 
 // Test case for all CRUD spec tests.
@@ -113,18 +118,6 @@ func TestCRUDSpec(t *testing.T) {
 	}
 }
 
-func sanitizeCollectionName(name string) string {
-	// Collections can't have "$" in their names, so we substitute it with "%".
-	name = strings.Replace(name, "$", "%", -1)
-
-	// Namespaces can only have 120 bytes max.
-	if len("crud-spec-tests."+name) >= 119 {
-		name = name[:119-len("crud-spec-tests.")]
-	}
-
-	return name
-}
-
 func runCRUDTestFile(t *testing.T, filepath string, db *Database) {
 	content, err := ioutil.ReadFile(filepath)
 	require.NoError(t, err)
@@ -132,33 +125,38 @@ func runCRUDTestFile(t *testing.T, filepath string, db *Database) {
 	var testfile testFile
 	require.NoError(t, json.Unmarshal(content, &testfile))
 
-	if shouldSkip(t, &testfile, db) {
+	if shouldSkip(t, testfile.MinServerVersion, testfile.MaxServerVersion, db) {
 		return
 	}
 
 	for _, test := range testfile.Tests {
-		collName := sanitizeCollectionName(test.Description)
+		collName := sanitizeCollectionName("crud-spec-tests", test.Description)
 
-		_, _ = db.RunCommand(
+		_ = db.RunCommand(
 			context.Background(),
-			bson.NewDocument(bson.EC.String("drop", collName)),
+			bsonx.Doc{{"drop", bsonx.String(collName)}},
 		)
 
 		if test.Outcome.Collection != nil && len(test.Outcome.Collection.Name) > 0 {
-			_, _ = db.RunCommand(
+			_ = db.RunCommand(
 				context.Background(),
-				bson.NewDocument(bson.EC.String("drop", test.Outcome.Collection.Name)),
+				bsonx.Doc{{"drop", bsonx.String(test.Outcome.Collection.Name)}},
 			)
 		}
 
 		coll := db.Collection(collName)
 		docsToInsert := docSliceToInterfaceSlice(docSliceFromRaw(t, testfile.Data))
-		_, err = coll.InsertMany(context.Background(), docsToInsert)
+
+		wcColl, err := coll.Clone(options.Collection().SetWriteConcern(writeconcern.New(writeconcern.WMajority())))
+		require.NoError(t, err)
+		_, err = wcColl.InsertMany(context.Background(), docsToInsert)
 		require.NoError(t, err)
 
 		switch test.Operation.Name {
 		case "aggregate":
 			aggregateTest(t, db, coll, &test)
+		case "bulkWrite":
+			bulkWriteTest(t, wcColl, &test)
 		case "count":
 			countTest(t, coll, &test)
 		case "distinct":
@@ -193,14 +191,14 @@ func aggregateTest(t *testing.T, db *Database, coll *Collection, test *testCase)
 	t.Run(test.Description, func(t *testing.T) {
 		pipeline := test.Operation.Arguments["pipeline"].([]interface{})
 
-		opts := aggregateopt.BundleAggregate()
+		opts := options.Aggregate()
 
 		if batchSize, found := test.Operation.Arguments["batchSize"]; found {
-			opts = opts.BatchSize(int32(batchSize.(float64)))
+			opts = opts.SetBatchSize(int32(batchSize.(float64)))
 		}
 
 		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = opts.Collation(collationFromMap(collation.(map[string]interface{})))
+			opts = opts.SetCollation(collationFromMap(collation.(map[string]interface{})))
 		}
 
 		out := false
@@ -214,7 +212,7 @@ func aggregateTest(t *testing.T, db *Database, coll *Collection, test *testCase)
 		require.NoError(t, err)
 
 		if !out {
-			verifyCursorResults(t, cursor, test.Outcome.Result)
+			verifyCursorResult2(t, cursor, test.Outcome.Result)
 		}
 
 		if test.Outcome.Collection != nil {
@@ -228,25 +226,182 @@ func aggregateTest(t *testing.T, db *Database, coll *Collection, test *testCase)
 	})
 }
 
+func bulkWriteTest(t *testing.T, coll *Collection, test *testCase) {
+	t.Run(test.Description, func(t *testing.T) {
+		// TODO(GODRIVER-593): Figure out why this test fails
+		if test.Description == "BulkWrite with replaceOne operations" {
+			t.Skip("skipping replaceOne test")
+		}
+
+		requests := test.Operation.Arguments["requests"].([]interface{})
+		models := make([]WriteModel, len(requests))
+
+		for i, req := range requests {
+			reqMap := req.(map[string]interface{})
+
+			var filter map[string]interface{}
+			var document map[string]interface{}
+			var replacement map[string]interface{}
+			var update map[string]interface{}
+			var arrayFilters options.ArrayFilters
+			var arrayFiltersSet bool
+			var collation *options.Collation
+			var upsert bool
+			var upsertSet bool
+
+			argsMap := reqMap["arguments"].(map[string]interface{})
+			for k, v := range argsMap {
+				var err error
+
+				switch k {
+				case "filter":
+					filter = v.(map[string]interface{})
+				case "document":
+					document = v.(map[string]interface{})
+				case "replacement":
+					replacement = v.(map[string]interface{})
+				case "update":
+					update = v.(map[string]interface{})
+				case "upsert":
+					upsertSet = true
+					upsert = v.(bool)
+				case "collation":
+					collation = collationFromMap(v.(map[string]interface{}))
+				case "arrayFilters":
+					arrayFilters = options.ArrayFilters{
+						Filters: v.([]interface{}),
+					}
+					arrayFiltersSet = true
+				default:
+					fmt.Printf("unknown argument: %s\n", k)
+				}
+
+				if err != nil {
+					t.Fatalf("error parsing argument %s: %s", k, err)
+				}
+			}
+
+			for _, m := range []map[string]interface{}{filter, document, replacement, update} {
+				if m != nil {
+					replaceFloatsWithInts(m)
+				}
+			}
+
+			var model WriteModel
+			switch reqMap["name"] {
+			case "deleteOne":
+				dom := NewDeleteOneModel()
+				if filter != nil {
+					dom = dom.SetFilter(filter)
+				}
+				if collation != nil {
+					dom = dom.SetCollation(collation)
+				}
+				model = dom
+			case "deleteMany":
+				dmm := NewDeleteManyModel()
+				if filter != nil {
+					dmm = dmm.SetFilter(filter)
+				}
+				if collation != nil {
+					dmm = dmm.SetCollation(collation)
+				}
+				model = dmm
+			case "insertOne":
+				iom := NewInsertOneModel()
+				if document != nil {
+					iom = iom.SetDocument(document)
+				}
+				model = iom
+			case "replaceOne":
+				rom := NewReplaceOneModel()
+				if filter != nil {
+					rom = rom.SetFilter(filter)
+				}
+				if replacement != nil {
+					rom = rom.SetReplacement(replacement)
+				}
+				if upsertSet {
+					rom = rom.SetUpsert(upsert)
+				}
+				if collation != nil {
+					rom = rom.SetCollation(collation)
+				}
+				model = rom
+			case "updateOne":
+				uom := NewUpdateOneModel()
+				if filter != nil {
+					uom = uom.SetFilter(filter)
+				}
+				if update != nil {
+					uom = uom.SetUpdate(update)
+				}
+				if upsertSet {
+					uom = uom.SetUpsert(upsert)
+				}
+				if collation != nil {
+					uom = uom.SetCollation(collation)
+				}
+				if arrayFiltersSet {
+					uom = uom.SetArrayFilters(arrayFilters)
+				}
+				model = uom
+			case "updateMany":
+				umm := NewUpdateManyModel()
+				if filter != nil {
+					umm = umm.SetFilter(filter)
+				}
+				if update != nil {
+					umm = umm.SetUpdate(update)
+				}
+				if upsertSet {
+					umm = umm.SetUpsert(upsert)
+				}
+				if collation != nil {
+					umm = umm.SetCollation(collation)
+				}
+				if arrayFiltersSet {
+					umm = umm.SetArrayFilters(arrayFilters)
+				}
+				model = umm
+			default:
+				fmt.Printf("unknown operation: %s\n", doc.Lookup("name").StringValue())
+			}
+
+			models[i] = model
+		}
+
+		optsBytes, err := bson.Marshal(test.Operation.Arguments["options"])
+		if err != nil {
+			t.Fatalf("error marshalling options: %s", err)
+		}
+		optsDoc, err := bsonx.ReadDoc(optsBytes)
+		if err != nil {
+			t.Fatalf("error creating options doc: %s", err)
+		}
+
+		opts := options.BulkWrite()
+		for _, elem := range optsDoc {
+			k := elem.Key
+			val := optsDoc.Lookup(k)
+
+			switch k {
+			case "ordered":
+				opts = opts.SetOrdered(val.Boolean())
+			default:
+				fmt.Printf("unkonwn bulk write opt: %s\n", k)
+			}
+		}
+
+		res, err := coll.BulkWrite(ctx, models, opts)
+		verifyBulkWriteResult(t, res, test.Outcome.Result)
+		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
+	})
+}
+
 func countTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-
-		var opts []countopt.Count
-
-		if skip, found := test.Operation.Arguments["skip"]; found {
-			opts = append(opts, countopt.Skip(int64(skip.(float64))))
-		}
-
-		if limit, found := test.Operation.Arguments["limit"]; found {
-			opts = append(opts, countopt.Limit(int64(limit.(float64))))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, countopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actualCount, err := coll.Count(context.Background(), filter, opts...)
+		actualCount, err := executeCount(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
 		resultBytes, err := test.Outcome.Result.MarshalJSON()
@@ -261,26 +416,10 @@ func countTest(t *testing.T, coll *Collection, test *testCase) {
 
 func deleteManyTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-
-		var opts []deleteopt.Delete
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			mapCollation := collation.(map[string]interface{})
-			opts = append(opts, deleteopt.Collation(collationFromMap(mapCollation)))
-		}
-
-		actual, err := coll.DeleteMany(context.Background(), filter, opts...)
+		actual, err := executeDeleteMany(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected DeleteResult
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-		require.NoError(t, err)
-
-		require.Equal(t, expected.DeletedCount, actual.DeletedCount)
+		verifyDeleteResult(t, actual, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -288,26 +427,10 @@ func deleteManyTest(t *testing.T, coll *Collection, test *testCase) {
 
 func deleteOneTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-
-		var opts []deleteopt.Delete
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			mapCollation := collationFromMap(collation.(map[string]interface{}))
-			opts = append(opts, deleteopt.Collation(mapCollation))
-		}
-
-		actual, err := coll.DeleteOne(context.Background(), filter, opts...)
+		actual, err := executeDeleteOne(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected DeleteResult
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-		require.NoError(t, err)
-
-		require.Equal(t, expected.DeletedCount, actual.DeletedCount)
+		verifyDeleteResult(t, actual, test.Outcome.Result)
 
 		if test.Outcome.Collection != nil {
 			verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
@@ -317,123 +440,27 @@ func deleteOneTest(t *testing.T, coll *Collection, test *testCase) {
 
 func distinctTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		fieldName := test.Operation.Arguments["fieldName"].(string)
-
-		var filter map[string]interface{}
-
-		if filterArg, found := test.Operation.Arguments["filter"]; found {
-			filter = filterArg.(map[string]interface{})
-		}
-
-		var opts []distinctopt.Distinct
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			mapCollation := collationFromMap(collation.(map[string]interface{}))
-			opts = append(opts, distinctopt.Collation(mapCollation))
-		}
-
-		actual, err := coll.Distinct(context.Background(), fieldName, filter, opts...)
+		actual, err := executeDistinct(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		resultBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected []interface{}
-		require.NoError(t, json.NewDecoder(bytes.NewBuffer(resultBytes)).Decode(&expected))
-
-		require.Equal(t, len(expected), len(actual))
-
-		for i := range expected {
-			expectedElem := expected[i]
-			actualElem := actual[i]
-
-			iExpected := testhelpers.GetIntFromInterface(expectedElem)
-			iActual := testhelpers.GetIntFromInterface(actualElem)
-
-			require.Equal(t, iExpected == nil, iActual == nil)
-			if iExpected != nil {
-				require.Equal(t, *iExpected, *iActual)
-				continue
-			}
-
-			require.Equal(t, expected[i], actual[i])
-		}
+		verifyDistinctResult(t, actual, test.Outcome.Result)
 	})
 }
 
 func findTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-
-		var opts []findopt.Find
-
-		if sort, found := test.Operation.Arguments["sort"]; found {
-			opts = append(opts, findopt.Sort(sort.(map[string]interface{})))
-		}
-
-		if skip, found := test.Operation.Arguments["skip"]; found {
-			opts = append(opts, findopt.Skip(int64(skip.(float64))))
-		}
-
-		if limit, found := test.Operation.Arguments["limit"]; found {
-			opts = append(opts, findopt.Limit(int64(limit.(float64))))
-		}
-
-		if batchSize, found := test.Operation.Arguments["batchSize"]; found {
-			opts = append(opts, findopt.BatchSize(int32(batchSize.(float64))))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, findopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		cursor, err := coll.Find(context.Background(), filter, opts...)
+		cursor, err := executeFind(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		verifyCursorResults(t, cursor, test.Outcome.Result)
+		verifyCursorResult(t, cursor, test.Outcome.Result)
 	})
 }
 
 func findOneAndDeleteTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
+		actualResult := executeFindOneAndDelete(nil, coll, test.Operation.Arguments)
 
-		var opts []findopt.DeleteOne
-
-		if sort, found := test.Operation.Arguments["sort"]; found {
-			opts = append(opts, findopt.Sort(sort.(map[string]interface{})))
-		}
-
-		if projection, found := test.Operation.Arguments["projection"]; found {
-			opts = append(opts, findopt.Projection(projection.(map[string]interface{})))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, findopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actualResult := coll.FindOneAndDelete(context.Background(), filter, opts...)
-
-		jsonBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		actual := bson.NewDocument()
-		err = actualResult.Decode(actual)
-		if err == ErrNoDocuments {
-			var expected map[string]interface{}
-			err := json.NewDecoder(bytes.NewBuffer(jsonBytes)).Decode(&expected)
-			require.NoError(t, err)
-
-			require.Nil(t, expected)
-			return
-		}
-
-		require.NoError(t, err)
-
-		doc, err := bson.ParseExtJSONObject(string(jsonBytes))
-		require.NoError(t, err)
-
-		require.True(t, doc.Equal(actual))
+		verifySingleResult(t, actualResult, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -441,65 +468,9 @@ func findOneAndDeleteTest(t *testing.T, coll *Collection, test *testCase) {
 
 func findOneAndReplaceTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-		replacement := test.Operation.Arguments["replacement"].(map[string]interface{})
+		actualResult := executeFindOneAndReplace(nil, coll, test.Operation.Arguments)
 
-		// For some reason, the filter and replacement documents are unmarshaled with floats
-		// rather than integers, but the documents that are used to initially populate the
-		// collection are unmarshaled correctly with integers. To ensure that the tests can
-		// correctly compare them, we iterate through the filter and replacement documents and
-		// change any valid integers stored as floats to actual integers.
-		replaceFloatsWithInts(filter)
-		replaceFloatsWithInts(replacement)
-
-		var opts []findopt.ReplaceOne
-
-		if projection, found := test.Operation.Arguments["projection"]; found {
-			opts = append(opts, findopt.Projection(projection.(map[string]interface{})))
-		}
-
-		if returnDocument, found := test.Operation.Arguments["returnDocument"]; found {
-			switch returnDocument.(string) {
-			case "After":
-				opts = append(opts, findopt.ReturnDocument(mongoopt.After))
-			case "Before":
-				opts = append(opts, findopt.ReturnDocument(mongoopt.Before))
-			}
-		}
-
-		if sort, found := test.Operation.Arguments["sort"]; found {
-			opts = append(opts, findopt.Sort(sort.(map[string]interface{})))
-		}
-
-		if upsert, found := test.Operation.Arguments["upsert"]; found {
-			opts = append(opts, findopt.Upsert(upsert.(bool)))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, findopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actualResult := coll.FindOneAndReplace(context.Background(), filter, replacement, opts...)
-
-		jsonBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		actual := bson.NewDocument()
-		err = actualResult.Decode(actual)
-		if err == ErrNoDocuments {
-			var expected map[string]interface{}
-			err := json.NewDecoder(bytes.NewBuffer(jsonBytes)).Decode(&expected)
-			require.NoError(t, err)
-
-			require.Nil(t, expected)
-			return
-		}
-
-		require.NoError(t, err)
-		doc, err := bson.ParseExtJSONObject(string(jsonBytes))
-		require.NoError(t, err)
-
-		require.True(t, doc.Equal(actual))
+		verifySingleResult(t, actualResult, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -507,71 +478,8 @@ func findOneAndReplaceTest(t *testing.T, coll *Collection, test *testCase) {
 
 func findOneAndUpdateTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-		update := test.Operation.Arguments["update"].(map[string]interface{})
-
-		// For some reason, the filter and update documents are unmarshaled with floats
-		// rather than integers, but the documents that are used to initially populate the
-		// collection are unmarshaled correctly with integers. To ensure that the tests can
-		// correctly compare them, we iterate through the filter and update documents and
-		// change any valid integers stored as floats to actual integers.
-		replaceFloatsWithInts(filter)
-		replaceFloatsWithInts(update)
-
-		var opts []findopt.UpdateOne
-
-		if arrayFilters, found := test.Operation.Arguments["arrayFilters"]; found {
-			arrayFiltersSlice := arrayFilters.([]interface{})
-			opts = append(opts, findopt.ArrayFilters(arrayFiltersSlice...))
-		}
-
-		if projection, found := test.Operation.Arguments["projection"]; found {
-			opts = append(opts, findopt.Projection(projection.(map[string]interface{})))
-		}
-
-		if returnDocument, found := test.Operation.Arguments["returnDocument"]; found {
-			switch returnDocument.(string) {
-			case "After":
-				opts = append(opts, findopt.ReturnDocument(mongoopt.After))
-			case "Before":
-				opts = append(opts, findopt.ReturnDocument(mongoopt.Before))
-			}
-		}
-
-		if sort, found := test.Operation.Arguments["sort"]; found {
-			opts = append(opts, findopt.Sort(sort.(map[string]interface{})))
-		}
-
-		if upsert, found := test.Operation.Arguments["upsert"]; found {
-			opts = append(opts, findopt.Upsert(upsert.(bool)))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, findopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actualResult := coll.FindOneAndUpdate(context.Background(), filter, update, opts...)
-
-		jsonBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		actual := bson.NewDocument()
-		err = actualResult.Decode(actual)
-		if err == ErrNoDocuments {
-			var expected map[string]interface{}
-			err := json.NewDecoder(bytes.NewBuffer(jsonBytes)).Decode(&expected)
-			require.NoError(t, err)
-
-			require.Nil(t, expected)
-			return
-		}
-
-		require.NoError(t, err)
-
-		doc, err := bson.ParseExtJSONObject(string(jsonBytes))
-		require.NoError(t, err)
-
-		require.True(t, doc.Equal(actual))
+		actualResult := executeFindOneAndUpdate(nil, coll, test.Operation.Arguments)
+		verifySingleResult(t, actualResult, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -579,39 +487,10 @@ func findOneAndUpdateTest(t *testing.T, coll *Collection, test *testCase) {
 
 func insertManyTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		documents := test.Operation.Arguments["documents"].([]interface{})
-
-		// For some reason, the insertion documents are unmarshaled with a float rather than
-		// integer, but the documents that are used to initially populate the collection are
-		// unmarshaled correctly with integers. To ensure that the tests can correctly compare
-		// them, we iterate through the insertion documents and change any valid integers stored
-		// as floats to actual integers.
-		for i, doc := range documents {
-			docM := doc.(map[string]interface{})
-			replaceFloatsWithInts(docM)
-
-			documents[i] = docM
-		}
-
-		actual, err := coll.InsertMany(context.Background(), documents)
+		actual, err := executeInsertMany(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected struct{ InsertedIds map[string]interface{} }
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-		require.NoError(t, err)
-
-		replaceFloatsWithInts(expected.InsertedIds)
-
-		for i, elem := range actual.InsertedIDs {
-			actual.InsertedIDs[i] = elem.(*bson.Element).Value().Interface()
-		}
-
-		for _, val := range expected.InsertedIds {
-			require.Contains(t, actual.InsertedIDs, val)
-		}
+		verifyInsertManyResult(t, actual, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -619,30 +498,10 @@ func insertManyTest(t *testing.T, coll *Collection, test *testCase) {
 
 func insertOneTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		document := test.Operation.Arguments["document"].(map[string]interface{})
-
-		// For some reason, the insertion document is unmarshaled with a float rather than integer,
-		// but the documents that are used to initially populate the collection are unmarshaled
-		// correctly with integers. To ensure that the tests can correctly compare them, we iterate
-		// through the insertion document and change any valid integers stored as floats to actual
-		// integers.
-		replaceFloatsWithInts(document)
-
-		actual, err := coll.InsertOne(context.Background(), document)
+		actual, err := executeInsertOne(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected InsertOneResult
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-
-		expectedID := expected.InsertedID
-		if f, ok := expectedID.(float64); ok && f == math.Floor(f) {
-			expectedID = int64(f)
-		}
-
-		require.Equal(t, expectedID, actual.InsertedID.(*bson.Element).Value().Interface())
+		verifyInsertOneResult(t, actual, test.Outcome.Result)
 
 		verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
 	})
@@ -650,49 +509,10 @@ func insertOneTest(t *testing.T, coll *Collection, test *testCase) {
 
 func replaceOneTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-		replacement := test.Operation.Arguments["replacement"].(map[string]interface{})
-
-		// For some reason, the filter and replacement documents are unmarshaled with floats
-		// rather than integers, but the documents that are used to initially populate the
-		// collection are unmarshaled correctly with integers. To ensure that the tests can
-		// correctly compare them, we iterate through the filter and replacement documents and
-		// change any valid integers stored as floats to actual integers.
-		replaceFloatsWithInts(filter)
-		replaceFloatsWithInts(replacement)
-
-		var opts []replaceopt.Replace
-
-		if upsert, found := test.Operation.Arguments["upsert"]; found {
-			opts = append(opts, replaceopt.Upsert(upsert.(bool)))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, replaceopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actual, err := coll.ReplaceOne(context.Background(), filter, replacement, opts...)
+		actual, err := executeReplaceOne(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected struct {
-			MatchedCount  int64
-			ModifiedCount int64
-			UpsertedCount int64
-		}
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-
-		require.Equal(t, expected.MatchedCount, actual.MatchedCount)
-		require.Equal(t, expected.ModifiedCount, actual.ModifiedCount)
-
-		actualUpsertedCount := int64(0)
-		if actual.UpsertedID != nil {
-			actualUpsertedCount = 1
-		}
-
-		require.Equal(t, expected.UpsertedCount, actualUpsertedCount)
+		verifyUpdateResult(t, actual, test.Outcome.Result)
 
 		if test.Outcome.Collection != nil {
 			verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
@@ -702,54 +522,10 @@ func replaceOneTest(t *testing.T, coll *Collection, test *testCase) {
 
 func updateManyTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-		update := test.Operation.Arguments["update"].(map[string]interface{})
-
-		// For some reason, the filter and update documents are unmarshaled with floats
-		// rather than integers, but the documents that are used to initially populate the
-		// collection are unmarshaled correctly with integers. To ensure that the tests can
-		// correctly compare them, we iterate through the filter and update documents and
-		// change any valid integers stored as floats to actual integers.
-		replaceFloatsWithInts(filter)
-		replaceFloatsWithInts(update)
-
-		var opts []updateopt.Update
-
-		if arrayFilters, found := test.Operation.Arguments["arrayFilters"]; found {
-			arrayFiltersSlice := arrayFilters.([]interface{})
-			opts = append(opts, updateopt.ArrayFilters(arrayFiltersSlice...))
-		}
-
-		if upsert, found := test.Operation.Arguments["upsert"]; found {
-			opts = append(opts, updateopt.Upsert(upsert.(bool)))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, updateopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actual, err := coll.UpdateMany(context.Background(), filter, update, opts...)
+		actual, err := executeUpdateMany(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected struct {
-			MatchedCount  int64
-			ModifiedCount int64
-			UpsertedCount int64
-		}
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-
-		require.Equal(t, expected.MatchedCount, actual.MatchedCount)
-		require.Equal(t, expected.ModifiedCount, actual.ModifiedCount)
-
-		actualUpsertedCount := int64(0)
-		if actual.UpsertedID != nil {
-			actualUpsertedCount = 1
-		}
-
-		require.Equal(t, expected.UpsertedCount, actualUpsertedCount)
+		verifyUpdateResult(t, actual, test.Outcome.Result)
 
 		if test.Outcome.Collection != nil {
 			verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
@@ -759,54 +535,10 @@ func updateManyTest(t *testing.T, coll *Collection, test *testCase) {
 
 func updateOneTest(t *testing.T, coll *Collection, test *testCase) {
 	t.Run(test.Description, func(t *testing.T) {
-		filter := test.Operation.Arguments["filter"].(map[string]interface{})
-		update := test.Operation.Arguments["update"].(map[string]interface{})
-
-		// For some reason, the filter and update documents are unmarshaled with floats
-		// rather than integers, but the documents that are used to initially populate the
-		// collection are unmarshaled correctly with integers. To ensure that the tests can
-		// correctly compare them, we iterate through the filter and update documents and
-		// change any valid integers stored as floats to actual integers.
-		replaceFloatsWithInts(filter)
-		replaceFloatsWithInts(update)
-
-		var opts []updateopt.Update
-
-		if arrayFilters, found := test.Operation.Arguments["arrayFilters"]; found {
-			arrayFiltersSlice := arrayFilters.([]interface{})
-			opts = append(opts, updateopt.ArrayFilters(arrayFiltersSlice...))
-		}
-
-		if upsert, found := test.Operation.Arguments["upsert"]; found {
-			opts = append(opts, updateopt.Upsert(upsert.(bool)))
-		}
-
-		if collation, found := test.Operation.Arguments["collation"]; found {
-			opts = append(opts, updateopt.Collation(collationFromMap(collation.(map[string]interface{}))))
-		}
-
-		actual, err := coll.UpdateOne(context.Background(), filter, update, opts...)
+		actual, err := executeUpdateOne(nil, coll, test.Operation.Arguments)
 		require.NoError(t, err)
 
-		expectedBytes, err := test.Outcome.Result.MarshalJSON()
-		require.NoError(t, err)
-
-		var expected struct {
-			MatchedCount  int64
-			ModifiedCount int64
-			UpsertedCount int64
-		}
-		err = json.NewDecoder(bytes.NewBuffer(expectedBytes)).Decode(&expected)
-
-		require.Equal(t, expected.MatchedCount, actual.MatchedCount)
-		require.Equal(t, expected.ModifiedCount, actual.ModifiedCount)
-
-		actualUpsertedCount := int64(0)
-		if actual.UpsertedID != nil {
-			actualUpsertedCount = 1
-		}
-
-		require.Equal(t, expected.UpsertedCount, actualUpsertedCount)
+		verifyUpdateResult(t, actual, test.Outcome.Result)
 
 		if test.Outcome.Collection != nil {
 			verifyCollectionContents(t, coll, test.Outcome.Collection.Data)
@@ -814,118 +546,17 @@ func updateOneTest(t *testing.T, coll *Collection, test *testCase) {
 	})
 }
 
-func shouldSkip(t *testing.T, test *testFile, db *Database) bool {
+func shouldSkip(t *testing.T, minVersion string, maxVersion string, db *Database) bool {
 	versionStr, err := getServerVersion(db)
 	require.NoError(t, err)
 
-	if len(test.MinServerVersion) > 0 && compareVersions(t, test.MinServerVersion, versionStr) > 0 {
+	if len(minVersion) > 0 && compareVersions(t, minVersion, versionStr) > 0 {
 		return true
 	}
 
-	if len(test.MaxServerVersion) > 0 && compareVersions(t, test.MaxServerVersion, versionStr) < 0 {
+	if len(maxVersion) > 0 && compareVersions(t, maxVersion, versionStr) < 0 {
 		return true
 	}
 
 	return false
-}
-
-func verifyCollectionContents(t *testing.T, coll *Collection, result json.RawMessage) {
-	cursor, err := coll.Find(context.Background(), nil)
-	require.NoError(t, err)
-
-	verifyCursorResults(t, cursor, result)
-}
-
-func verifyCursorResults(t *testing.T, cursor Cursor, result json.RawMessage) {
-	for _, expected := range docSliceFromRaw(t, result) {
-		require.True(t, cursor.Next(context.Background()))
-
-		actual := bson.NewDocument()
-		require.NoError(t, cursor.Decode(actual))
-
-		require.True(t, expected.Equal(actual))
-	}
-
-	require.False(t, cursor.Next(context.Background()))
-	require.NoError(t, cursor.Err())
-}
-
-func collationFromMap(m map[string]interface{}) *mongoopt.Collation {
-	var collation mongoopt.Collation
-
-	if locale, found := m["locale"]; found {
-		collation.Locale = locale.(string)
-	}
-
-	if caseLevel, found := m["caseLevel"]; found {
-		collation.CaseLevel = caseLevel.(bool)
-	}
-
-	if caseFirst, found := m["caseFirst"]; found {
-		collation.CaseFirst = caseFirst.(string)
-	}
-
-	if strength, found := m["strength"]; found {
-		collation.Strength = int(strength.(float64))
-	}
-
-	if numericOrdering, found := m["numericOrdering"]; found {
-		collation.NumericOrdering = numericOrdering.(bool)
-	}
-
-	if alternate, found := m["alternate"]; found {
-		collation.Alternate = alternate.(string)
-	}
-
-	if maxVariable, found := m["maxVariable"]; found {
-		collation.MaxVariable = maxVariable.(string)
-	}
-
-	if backwards, found := m["backwards"]; found {
-		collation.Backwards = backwards.(bool)
-	}
-
-	return &collation
-}
-
-func docSliceFromRaw(t *testing.T, raw json.RawMessage) []*bson.Document {
-	jsonBytes, err := raw.MarshalJSON()
-	require.NoError(t, err)
-
-	array, err := bson.ParseExtJSONArray(string(jsonBytes))
-	require.NoError(t, err)
-
-	docs := make([]*bson.Document, 0)
-
-	for i := 0; i < array.Len(); i++ {
-		item, err := array.Lookup(uint(i))
-		require.NoError(t, err)
-		docs = append(docs, item.MutableDocument())
-	}
-
-	return docs
-}
-
-func docSliceToInterfaceSlice(docs []*bson.Document) []interface{} {
-	out := make([]interface{}, 0, len(docs))
-
-	for _, doc := range docs {
-		out = append(out, doc)
-	}
-
-	return out
-}
-
-func replaceFloatsWithInts(m map[string]interface{}) {
-	for key, val := range m {
-		if f, ok := val.(float64); ok && f == math.Floor(f) {
-			m[key] = int64(f)
-			continue
-		}
-
-		if innerM, ok := val.(map[string]interface{}); ok {
-			replaceFloatsWithInts(innerM)
-			m[key] = innerM
-		}
-	}
 }

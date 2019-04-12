@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
@@ -78,10 +79,16 @@ var procName2ID map[string]uint64
 //addBKApp add bk app
 func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
+	if count, err := db.Table("cc_ApplicationBase").Find(mapstr.MapStr{common.BKAppNameField: common.BKAppName}).Count(ctx); err != nil {
+		return err
+	} else if count >= 1 {
+		return nil
+	}
+
 	// add bk app
 	appModelData := map[string]interface{}{}
 	appModelData[common.BKAppNameField] = common.BKAppName
-	appModelData[common.BKMaintainersField] = "admin"
+	appModelData[common.BKMaintainersField] = admin
 	appModelData[common.BKTimeZoneField] = "Asia/Shanghai"
 	appModelData[common.BKLanguageField] = "1" //"中文"
 	appModelData[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
@@ -191,9 +198,9 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 		procName := procArr[0]
 		funcName := procArr[1]
 		portStr := procArr[2]
-		var protocal string
+		var protocol string
 		if len(procArr) > 3 {
-			protocal = procArr[3]
+			protocol = procArr[3]
 		}
 		procModelData := map[string]interface{}{}
 		procModelData[common.BKProcessNameField] = procName
@@ -203,8 +210,8 @@ func addBKProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config, bizID 
 		procModelData[common.BKOwnerIDField] = conf.OwnerID
 		procModelData[common.BKAppIDField] = bizID
 
-		protocal = strings.ToLower(protocal)
-		switch protocal {
+		protocol = strings.ToLower(protocol)
+		switch protocol {
 		case "udp":
 			procModelData[common.BKProtocol] = "2"
 		case "tcp":

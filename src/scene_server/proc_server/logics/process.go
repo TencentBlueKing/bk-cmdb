@@ -16,66 +16,67 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64, header http.Header) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64) ([]mapstr.MapStr, error) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID},
 	}
 
-	reqParam := new(metadata.QueryInput)
+	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, reqParam)
-	if err != nil || (err == nil && !ret.Result) {
-		return nil, fmt.Errorf("get process by procID(%+v) failed. err: %v", procID, err)
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, reqParam)
+	if err != nil {
+		blog.Errorf("GetProcbyProcIDArr SearchObjects http do error. get process by procID(%+v) failed. err: %v,input:%+v,rid:%s", procID, err, reqParam, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(ret.Code, ret.ErrMsg)
+		blog.Errorf("GetProcbyProcIDArr SearchObjects http reply error. get process by procID(%+v) failed. err code:%d,err msg:%s,input:%+v,rid:%s", procID, ret.Code, ret.ErrMsg, reqParam, lgc.rid)
+		return nil, lgc.ccErr.New(ret.Code, ret.ErrMsg)
 	}
 
 	if len(ret.Data.Info) < 1 {
-		return nil, fmt.Errorf("there is no process with procID(%d)", procID)
+		fmt.Errorf("there is no process with procID(%d),input:%+v,rid:%s", procID, reqParam, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommNotFound)
 	}
 
 	return ret.Data.Info, nil
 }
 
-func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header http.Header) (map[int64]*metadata.InlineProcInfo, error) {
-	ownerID := util.GetOwnerID(header)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64) (map[int64]*metadata.InlineProcInfo, error) {
+	ownerID := lgc.ownerID
+	defErr := lgc.ccErr
 	if 0 == len(procID) {
 		return nil, nil
 	}
 	gseProc := make(map[int64]*metadata.InlineProcInfo, 0)
-	dat := new(metadata.QueryInput)
+	dat := new(metadata.QueryCondition)
 	dat.Condition = mapstr.MapStr{common.BKProcessIDField: mapstr.MapStr{common.BKDBIN: procID}}
-	dat.Limit = common.BKNoLimit
-	ret, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(ctx, common.BKInnerObjIDProc, header, dat)
+	dat.Limit.Limit = common.BKNoLimit
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, dat)
 	if nil != err {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, ownerID, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, ownerID, err.Error(), lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s, logID:%s", procID, ownerID, ret.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s, logID:%s", procID, ownerID, ret.ErrMsg, lgc.rid)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 
 	}
 	if 0 == ret.Data.Count {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info, logID:%s", procID, ownerID, util.GetHTTPCCRequestID(header))
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  not found process info, logID:%s", procID, ownerID, lgc.rid)
 		return nil, nil
 	}
 	for _, proc := range ret.Data.Info {
 		procID, err := proc.Int64(common.BKProcessIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s, logID:%s", proc, string(byteHost), util.GetHTTPCCRequestID(header))
+			blog.Errorf("getHostByModuleID  proc %v  procID  not interger, json:%s, logID:%s", proc, string(byteHost), lgc.rid)
 			return nil, err
 		}
 		item := new(metadata.InlineProcInfo)
@@ -86,14 +87,14 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 			item.ProcNum, err = proc.Int64(common.BKProcInstNum)
 			if nil != err {
 				byteHost, _ := json.Marshal(proc)
-				blog.Errorf("getHostByModuleID  proc %v  procNum  not interger, json:%s, logID:%s", proc, string(byteHost), util.GetHTTPCCRequestID(header))
+				blog.Errorf("getHostByModuleID  proc %v  procNum  not interger, json:%s, logID:%s", proc, string(byteHost), lgc.rid)
 				return nil, err
 			}
 		}
 		item.AppID, err = proc.Int64(common.BKAppIDField)
 		if nil != err {
 			byteHost, _ := json.Marshal(proc)
-			blog.Errorf("getHostByModuleID  proc info  AppID  not interger, error:%s, json:%s, logID:%s", err.Error(), string(byteHost), util.GetHTTPCCRequestID(header))
+			blog.Errorf("getHostByModuleID  proc info  AppID  not interger, error:%s, json:%s, logID:%s", err.Error(), string(byteHost), lgc.rid)
 			return nil, err
 		}
 		item.FunID, err = proc.Int64(common.BKFuncIDField)
@@ -107,4 +108,25 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64, header h
 	}
 
 	return gseProc, nil
+}
+
+func (lgc *Logics) GetProcessbyProcID(ctx context.Context, procID string) (map[string]interface{}, error) {
+	condition := map[string]interface{}{
+		common.BKProcessIDField: procID,
+	}
+
+	reqParam := new(metadata.QueryCondition)
+	reqParam.Condition = condition
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, reqParam)
+	if nil != err {
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, lgc.ownerID, err.Error(), lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !ret.Result {
+		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s, logID:%s", procID, lgc.ownerID, ret.ErrMsg, lgc.rid)
+		return nil, lgc.ccErr.New(ret.Code, ret.ErrMsg)
+
+	}
+
+	return ret.Data.Info[0], nil
 }

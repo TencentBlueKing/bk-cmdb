@@ -11,12 +11,30 @@ export default {
     },
     computed: {
         $sortedGroups () {
+            const publicGroups = []
+            const metadataGroups = []
+            this.propertyGroups.forEach(group => {
+                if (this.$tools.getMetadataBiz(group)) {
+                    metadataGroups.push(group)
+                } else {
+                    publicGroups.push(group)
+                }
+            })
             const sortKey = 'bk_group_index'
-            const groups = [...this.propertyGroups].sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
-            return groups.concat([{
-                'bk_group_id': 'none',
-                'bk_group_name': this.$t('Common["更多属性"]')
-            }])
+            publicGroups.sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
+            metadataGroups.sort((groupA, groupB) => groupA[sortKey] - groupB[sortKey])
+            const allGroups = [
+                ...publicGroups,
+                ...metadataGroups,
+                {
+                    'bk_group_id': 'none',
+                    'bk_group_name': this.$t('Common["更多属性"]')
+                }
+            ]
+            allGroups.forEach((group, index) => {
+                group['bk_group_index'] = index
+            })
+            return allGroups
         },
         $sortedProperties () {
             const sortKey = 'bk_property_index'

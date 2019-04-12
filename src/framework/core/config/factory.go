@@ -1,27 +1,28 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except 
+ * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing, software distributed under
  * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and 
+ * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package config
 
 import (
 	"bufio"
 	"bytes"
-	"configcenter/src/framework/core/log"
-	"configcenter/src/framework/core/option"
 	"errors"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"configcenter/src/framework/core/log"
+	"configcenter/src/framework/core/option"
 )
 
 const separator = "."
@@ -37,12 +38,14 @@ func Init(opt *option.Options) error {
 	if "" != opt.Regdiscv {
 		cc := NewConfCenter(opt.Regdiscv)
 		dataCh := make(chan []byte)
-		errCh := make(chan error)
+		errCh := make(chan error, 1)
 		go func() {
 			defer cc.Stop()
 			err := cc.Start()
-			log.Errorf("configure center module start failed!. err:%s", err.Error())
-			errCh <- err
+			if err != nil {
+				log.Errorf("configure center module start failed!. err:%s", err.Error())
+				errCh <- err
+			}
 		}()
 
 		go func() {

@@ -20,12 +20,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // SearchAssociationType Search Association Type
@@ -36,6 +36,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
+	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
@@ -54,7 +55,7 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 	}
 
 	cond := request.Condition
-	cond = util.SetModOwner(cond, ownerID)
+	cond = util.SetQueryOwner(cond, ownerID)
 	result := []*meta.AssociationKind{}
 
 	if selErr := db.Table(common.BKTableNameAsstDes).Find(cond).Limit(uint64(request.Limit)).Start(uint64(request.Start)).Sort(request.Sort).All(ctx, &result); nil != selErr && !db.IsNotFoundError(selErr) {
@@ -62,9 +63,19 @@ func (cli *Service) SearchAssociationType(req *restful.Request, resp *restful.Re
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
+	cnt, err := db.Table(common.BKTableNameAsstDes).Find(cond).Count(ctx)
+	if nil != err {
+		blog.Errorf("select data failed, error information is %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
+		return
+	}
+
+	for index := range result {
+		cli.TranslateAssociationKind(defLang, result[index])
+	}
 
 	ret := &meta.SearchAssociationTypeResult{BaseResp: meta.SuccessBaseResp}
-	ret.Data.Count = len(result)
+	ret.Data.Count = int(cnt)
 	ret.Data.Info = result
 	resp.WriteEntity(ret)
 }

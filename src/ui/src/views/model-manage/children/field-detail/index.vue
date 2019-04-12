@@ -65,13 +65,13 @@
             <div class="cmdb-form-item">
                 <input type="text" class="cmdb-form-input"
                 v-model.trim="fieldInfo['unit']"
-                :isReadOnly="isReadOnly"
+                :disabled="isReadOnly"
                 :placeholder="$t('ModelManagement[\'请输入单位\']')">
             </div>
         </label>
         <div class="form-label">
             <span class="label-text">{{$t('ModelManagement["用户提示"]')}}</span>
-            <textarea v-model.trim="fieldInfo['placeholder']" :isReadOnly="isReadOnly"></textarea>
+            <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
         </div>
         <div class="btn-group">
             <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
@@ -87,6 +87,7 @@
 <script>
     import theFieldChar from './char'
     import theFieldInt from './int'
+    import theFieldFloat from './float'
     import theFieldEnum from './enum'
     import theConfig from './config'
     import { mapGetters, mapActions } from 'vuex'
@@ -94,6 +95,7 @@
         components: {
             theFieldChar,
             theFieldInt,
+            theFieldFloat,
             theFieldEnum,
             theConfig
         },
@@ -118,6 +120,9 @@
                 }, {
                     id: 'int',
                     name: this.$t('ModelManagement["数字"]')
+                }, {
+                    id: 'float',
+                    name: this.$t('ModelManagement["浮点"]')
                 }, {
                     id: 'enum',
                     name: this.$t('ModelManagement["枚举"]')
@@ -154,9 +159,11 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isPublicModel',
+                'isInjectable'
             ]),
             fieldType () {
                 let {
@@ -168,7 +175,7 @@
                 return type
             },
             isComponentShow () {
-                return ['singlechar', 'longchar', 'multichar', 'enum', 'int'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+                return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
             }
         },
         watch: {
@@ -176,6 +183,7 @@
                 if (!this.isEditField) {
                     switch (type) {
                         case 'int':
+                        case 'float':
                             this.fieldInfo.option = {
                                 min: '',
                                 max: ''
@@ -220,7 +228,9 @@
                 if (this.isEditField) {
                     await this.updateObjectAttribute({
                         id: this.field.id,
-                        params: this.fieldInfo,
+                        params: this.$injectMetadata(this.fieldInfo, {
+                            clone: true, inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'updateObjectAttribute'
                         }
@@ -230,12 +240,17 @@
                 } else {
                     let otherParams = {
                         creator: this.userName,
-                        bk_property_group: 'default',
+                        bk_property_group: (this.isPublicModel && !this.isAdminView) ? 'bizdefault' : 'default',
                         bk_obj_id: this.activeModel['bk_obj_id'],
                         bk_supplier_account: this.supplierAccount
                     }
                     await this.createObjectAttribute({
-                        params: {...this.fieldInfo, ...otherParams},
+                        params: this.$injectMetadata({
+                            ...this.fieldInfo,
+                            ...otherParams
+                        }, {
+                            inject: this.isInjectable
+                        }),
                         config: {
                             requestId: 'createObjectAttribute'
                         }
@@ -260,7 +275,7 @@
     }
     .field-detail {
         margin-bottom: 20px;
-        padding: 20px 0;
+        padding: 20px;
         background: #f3f8ff;
         .form-label:last-child {
             margin: 0;
@@ -272,13 +287,6 @@
             width: 90px;
             line-height: 22px;
             vertical-align: middle;
-        }
-    }
-    .btn-group {
-        margin: 30px 0 0 110px;
-        font-size: 0;
-        .bk-primary {
-            margin-right: 10px;
         }
     }
 </style>

@@ -42,7 +42,7 @@ func (v *valid) ValidatorCreate(params types.ContextParams, obj model.Object, da
 		common.BKSupplierIDField,
 		common.BKInstIDField,
 	}
-	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
+	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.Object().ObjectID, ignoreKeys, params.Header, params.Engin)
 	return validObj.ValidMap(datas, common.ValidCreate, -1)
 }
 func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, datas mapstr.MapStr, instID int64, cond condition.Condition) error {
@@ -59,7 +59,7 @@ func (v *valid) ValidatorUpdate(params types.ContextParams, obj model.Object, da
 		common.BKInstIDField,
 	}
 
-	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.GetID(), ignoreKeys, params.Header, params.Engin)
+	validObj := validator.NewValidMapWithKeyFields(params.SupplierAccount, obj.Object().ObjectID, ignoreKeys, params.Header, params.Engin)
 	query := &metadata.QueryInput{}
 	query.Fields = obj.GetInstIDFieldName()
 	if instID < 0 {

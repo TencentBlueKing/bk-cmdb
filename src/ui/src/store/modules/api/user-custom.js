@@ -11,14 +11,28 @@
 import $http from '@/api'
 
 const state = {
-    classifyNavigationKey: 'index_v4_classify_navigation',
-    recentlyKey: 'index_v4_recently',
     usercustom: {}
 }
 
 const getters = {
-    classifyNavigationKey: state => state.classifyNavigationKey,
-    recentlyKey: state => state.recentlyKey,
+    classifyNavigationKey: (state, getters, rootState, rootGetters) => {
+        const bizId = rootGetters['objectBiz/bizId']
+        const isAdminView = rootGetters['isAdminView']
+        const userName = rootGetters['userName']
+        return `${userName}_${isAdminView ? 'adminView' : bizId}_classify_navigation`
+    },
+    firstEntryKey: (state, getters, rootState, rootGetters) => {
+        const bizId = rootGetters['objectBiz/bizId']
+        const isAdminView = rootGetters['isAdminView']
+        const userName = rootGetters['userName']
+        return `${userName}_${isAdminView ? 'adminView' : bizId}_first_entry`
+    },
+    recentlyKey: (state, getters, rootState, rootGetters) => {
+        const bizId = rootGetters['objectBiz/bizId']
+        const isAdminView = rootGetters['isAdminView']
+        const userName = rootGetters['userName']
+        return `${userName}_${isAdminView ? 'adminView' : bizId}_recently`
+    },
     usercustom: state => state.usercustom
 }
 

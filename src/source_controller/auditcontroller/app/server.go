@@ -18,10 +18,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,6 +30,7 @@ import (
 	"configcenter/src/source_controller/auditcontroller/logics"
 	"configcenter/src/source_controller/auditcontroller/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 //Run ccapi server
@@ -42,45 +41,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %s", err.Error())
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %s", err.Error())
-	}
-
 	coreService := new(service.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_AUDITCONTROLLER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
-
 	audit := new(AuditController)
 	audit.Service = coreService
 	coreService.Logics = &logics.Logics{Instance: audit.Instance, Engine: audit.Service.Engine}
-	audit.Service.Engine, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_AUDITCONTROLLER,
-		op.ServConf.ExConfig,
-		audit.onAduitConfigUpdate,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: audit.onAduitConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	coreService.Engine = engine
+	coreService.Logics.Engine = engine
 
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
@@ -94,6 +70,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	if false == configReady {
 		return fmt.Errorf("Failed to get configuration")
+	}
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+		return err
 	}
 
 	select {
@@ -114,7 +93,7 @@ func (h *AuditController) onAduitConfigUpdate(previous, current cc.ProcessConfig
 		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %s", err.Error())
 		return

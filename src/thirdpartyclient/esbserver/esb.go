@@ -21,15 +21,18 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/thirdpartyclient/esbserver/gse"
+	"configcenter/src/thirdpartyclient/esbserver/nodeman"
 )
 
 type EsbClientInterface interface {
 	GseSrv() gse.GseClientInterface
+	NodemanSrv() nodeman.NodeManClientInterface
 }
 
 type esbsrv struct {
-	client rest.ClientInterface
-	gseSrv gse.GseClientInterface
+	client     rest.ClientInterface
+	gseSrv     gse.GseClientInterface
+	nodemanSrv nodeman.NodeManClientInterface
 	sync.RWMutex
 	esbConfig *esbutil.EsbConfigServ
 	c         *util.Capability
@@ -65,6 +68,19 @@ func (e *esbsrv) GseSrv() gse.GseClientInterface {
 		e.Lock()
 		e.gseSrv = gse.NewGsecClientInterface(e.client, e.esbConfig)
 		srv = e.gseSrv
+		e.Unlock()
+	}
+	return srv
+}
+
+func (e *esbsrv) NodemanSrv() nodeman.NodeManClientInterface {
+	e.RLock()
+	srv := e.nodemanSrv
+	e.RUnlock()
+	if nil == srv {
+		e.Lock()
+		e.nodemanSrv = nodeman.NewNodeManClientInterface(e.client, e.esbConfig)
+		srv = e.nodemanSrv
 		e.Unlock()
 	}
 	return srv

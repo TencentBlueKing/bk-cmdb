@@ -14,29 +14,27 @@ package v2
 
 import (
 	"context"
-	"errors"
-	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/api_server/logics/v2/common/converter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccError "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("getCustomerGroupList error:%v", err)
+		blog.Errorf("getCustomerGroupList error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -45,7 +43,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	strAppIDs := formData.Get("ApplicationIDs")
 
 	if "" == strAppIDs {
-		blog.Error("getCustomerGroupList error: param ApplicationIDs is empty!")
+		blog.Error("getCustomerGroupList error: param ApplicationIDs is empty!input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationIDs").Error(), resp)
 		return
 	}
@@ -61,10 +59,15 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 	// all application ids
 	for _, appID := range appIDs {
 
-		result, err := s.CoreAPI.HostServer().GetUserCustomQuery(context.Background(), appID, pheader, &postInput)
+		result, err := s.CoreAPI.HostServer().GetUserCustomQuery(srvData.ctx, appID, srvData.header, &postInput)
 		if err != nil {
-			blog.Error("getCustomerGroupList error:%v", err)
+			blog.Errorf("getCustomerGroupList http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 			converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+			return
+		}
+		if !result.Result {
+			blog.Errorf("getCustomerGroupList http reply error.reply:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
+			converter.RespFailV2(result.Code, result.ErrMsg, resp)
 			return
 		}
 
@@ -73,7 +76,7 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 
 		//translate cmdb v3 to v2 api result error,
 		if err != nil {
-			blog.Error("getCustomerGroupList error:%s, reply:%v", err.Error(), result.Data)
+			blog.Errorf("getCustomerGroupList error:%s, reply:%v,input:%#v,rid:%s", err.Error(), result.Data, formData, srvData.rid)
 			converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 			return
 		}
@@ -88,13 +91,12 @@ func (s *Service) getCustomerGroupList(req *restful.Request, resp *restful.Respo
 }
 
 func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restful.Response) {
-
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	srvData := s.newSrvComm(req.Request.Header)
+	defErr := srvData.ccErr
 
 	err := req.Request.ParseForm()
 	if err != nil {
-		blog.Error("getContentByCustomerGroupID error:%v", err)
+		blog.Errorf("getContentByCustomerGroupID error:%v,rid:%s", err, srvData.rid)
 		converter.RespFailV2(common.CCErrCommPostInputParseError, defErr.Error(common.CCErrCommPostInputParseError).Error(), resp)
 		return
 	}
@@ -109,21 +111,21 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 	pageSize := formData.Get("pageSize")
 
 	if "" == appID {
-		blog.Error("getContentByCustomerGroupID error: param ApplicationID is empty!")
+		blog.Error("getContentByCustomerGroupID error: param ApplicationID is empty!input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "ApplicationID").Error(), resp)
 		return
 	}
 
 	if "" == id {
-		blog.Error("getContentByCustomerGroupID error: param CustomerGroupID is empty!")
+		blog.Error("getContentByCustomerGroupID error: param CustomerGroupID is empty!input:%#v,rid:%s", formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommParamsNeedSet, defErr.Errorf(common.CCErrCommParamsNeedSet, "CustomerGroupID").Error(), resp)
 		return
 	}
 
-	name, err, errCode := s.GetNameByID(appID, id, pheader)
-	if nil != err {
-		blog.Errorf("getContentByCustomerGroupID error: get CustomerGroup name is error! %s", err.Error())
-		converter.RespFailV2(errCode, err.Error(), resp)
+	name, nameErr := s.GetNameByID(srvData.ctx, appID, id, srvData)
+	if nil != nameErr {
+		blog.Errorf("getContentByCustomerGroupID error: get CustomerGroup name is error! err:%s,input:%#v,rid:%s", nameErr, formData, srvData.rid)
+		converter.RespFailV2Error(err, resp)
 		return
 	}
 
@@ -146,10 +148,15 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 		pageSize = strconv.Itoa(common.BKNoLimit)
 	}
 
-	result, err := s.CoreAPI.HostServer().GetUserCustomQueryResult(context.Background(), appID, id, skip, pageSize, pheader)
+	result, err := s.CoreAPI.HostServer().GetUserCustomQueryResult(srvData.ctx, appID, id, skip, pageSize, srvData.header)
 	if nil != err {
-		blog.Errorf("http request  error:%v", err)
+		blog.Errorf("GetUserCustomQueryResult http do error.err:%v,input:%#v,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
+		return
+	}
+	if !result.Result {
+		blog.Errorf("GetUserCustomQueryResult http reply error.reply:%#v,input:%#v,rid:%s", result, formData, srvData.rid)
+		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
 	//translate cmdb v3 to v2 api result
@@ -157,7 +164,7 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 	//translate cmdb v3 to v2 api result error,
 	if err != nil {
-		blog.Error("getContentByCustomerGroupID  v%", result)
+		blog.Errorf("getContentByCustomerGroupID  %v", result)
 		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
 		return
 	}
@@ -181,20 +188,20 @@ func (s *Service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 
 }
 
-func (s *Service) GetNameByID(appID, id string, pheader http.Header) (string, error, int) {
+func (s *Service) GetNameByID(ctx context.Context, appID, id string, srvData *srvComm) (string, ccError.CCError) {
 
-	result, err := s.CoreAPI.HostServer().GetUserCustomQueryDetail(context.Background(), appID, id, pheader)
+	result, err := s.CoreAPI.HostServer().GetUserCustomQueryDetail(ctx, appID, id, srvData.header)
 	//http request error
 	if err != nil {
 		blog.Errorf("GetNameByID error:%v", err)
-		return "", nil, common.CCErrCommHTTPDoRequestFailed
+		return "", srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if result.Result {
 		name, _ := result.Data["name"].(string)
-		return name, nil, 0
+		return name, nil
 	} else {
-		return "", errors.New(result.ErrMsg), common.CCErrCommHTTPDoRequestFailed
+		return "", srvData.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 }

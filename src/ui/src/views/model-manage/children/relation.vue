@@ -1,6 +1,8 @@
 <template>
     <div class="model-relation-wrapper">
-        <bk-button class="create-btn" type="primary" @click="createRelation">
+        <bk-button class="create-btn" type="primary"
+            :disabled="isReadOnly || !authority.includes('update')"
+            @click="createRelation">
             {{$t('ModelManagement["新建关联"]')}}
         </bk-button>
         <cmdb-table
@@ -12,36 +14,41 @@
             :pagination.sync="table.pagination"
             :wrapperMinusHeight="220"
             @handleSortChange="handleSortChange">
-            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{'disabled': isReadOnly}">
-                    <template v-if="header.id==='mapping'">
-                        {{mappingMap[item.mapping]}}
-                    </template>
-                    <template v-else-if="header.id==='bk_asst_name'">
-                        {{getRelationName(item['bk_asst_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='bk_obj_name'">
-                        {{getModelName(item['bk_obj_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='bk_asst_obj_name'">
-                        {{getModelName(item['bk_asst_obj_id'])}}
-                    </template>
-                    <template v-else-if="header.id==='operation'">
-                        <span class="text-primary mr10" @click.stop="editRelation(item)">
-                            {{$t('Common["编辑"]')}}
-                        </span>
-                        <span class="text-primary" v-if="!item.ispre && !isReadOnly" @click.stop="deleteRelation(item, index)">
-                            {{$t('Common["删除"]')}}
-                        </span>
-                    </template>
-                    <template v-else>
-                        {{item[header.id]}}
-                    </template>
-                </div>
+            <template slot="bk_obj_asst_id" slot-scope="{ item }">
+                <span
+                    v-if="item.ispre"
+                    :class="['relation-pre', $i18n.locale]">
+                    {{$t('ModelManagement["内置"]')}}
+                </span>
+                <span class="relation-id">{{item['bk_obj_asst_id']}}</span>
+            </template>
+            <template slot="bk_asst_name" slot-scope="{ item }">
+                {{getRelationName(item['bk_asst_id'])}}
+            </template>
+            <template slot="mapping" slot-scope="{ item }">
+                {{mappingMap[item.mapping]}}
+            </template>
+            <template slot="bk_obj_name" slot-scope="{ item }">
+                {{getModelName(item['bk_obj_id'])}}
+            </template>
+            <template slot="bk_asst_obj_name" slot-scope="{ item }">
+                {{getModelName(item['bk_asst_obj_id'])}}
+            </template>
+            <template slot="operation" slot-scope="{ item }">
+                <button class="text-primary mr10"
+                    :disabled="!isEditable(item)"
+                    @click.stop="editRelation(item)">
+                    {{$t('Common["编辑"]')}}
+                </button>
+                <button class="text-primary"
+                    :disabled="!isEditable(item)"
+                    @click.stop="deleteRelation(item)">
+                    {{$t('Common["删除"]')}}
+                </button>
             </template>
         </cmdb-table>
         <cmdb-slider
-            :width="514"
+            :width="450"
             :title="slider.title"
             :isShow.sync="slider.isShow">
             <the-relation-detail
@@ -106,17 +113,32 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModel', [
-                'activeModel'
+                'activeModel',
+                'isInjectable'
             ]),
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
                 }
                 return false
+            },
+            authority () {
+                const cantEdit = ['process', 'plat']
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return []
+                }
+                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
+                    return ['search', 'update', 'delete']
+                }
+                return []
             }
         },
         created () {
+            if (!this.authority.includes('update')) {
+                this.table.header.pop()
+            }
             this.searchRelationList()
             this.initRelationList()
         },
@@ -126,6 +148,15 @@
                 'deleteObjectAssociation',
                 'searchAssociationType'
             ]),
+            isEditable (item) {
+                if (item.ispre || item['bk_asst_id'] === 'bk_mainline' || this.isReadOnly) {
+                    return false
+                }
+                if (!this.isAdminView) {
+                    return !!this.$tools.getMetadataBiz(item)
+                }
+                return true
+            },
             getRelationName (id) {
                 let relation = this.relationList.find(item => item.id === id)
                 if (relation) {
@@ -174,9 +205,9 @@
                 this.slider.title = this.$t('ModelManagement["编辑关联"]')
                 this.slider.isShow = true
             },
-            deleteRelation (relation, index) {
+            deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联关系？"]', relation['bk_property_name'], {name: relation['bk_property_name']}),
+                    title: this.$t('ModelManagement["确定删除关联关系?"]'),
                     confirmFn: async () => {
                         await this.deleteObjectAssociation({
                             id: relation.id,
@@ -196,20 +227,20 @@
             },
             searchAsSource () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             searchAsDest () {
                 return this.searchObjectAssociation({
-                    params: {
+                    params: this.$injectMetadata({
                         condition: {
                             'bk_asst_obj_id': this.activeModel['bk_obj_id']
                         }
-                    }
+                    })
                 })
             },
             saveRelation () {
@@ -226,5 +257,29 @@
 <style lang="scss" scoped>
     .create-btn {
         margin: 10px 0;
+    }
+    .relation-pre {
+        display: inline-block;
+        margin-right: -26px;
+        padding: 0 6px;
+        vertical-align: middle;
+        line-height: 32px;
+        border-radius: 4px;
+        background-color: #a4aab3;
+        color: #fff;
+        font-size: 20px;
+        transform: scale(0.5);
+        transform-origin: left center;
+        opacity: 0.4;
+        &.en {
+            margin-right: -40px;
+        }
+    }
+    .relation-id {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .text-primary {
+        cursor: pointer;
     }
 </style>

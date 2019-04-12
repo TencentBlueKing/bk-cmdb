@@ -11,9 +11,8 @@
     "1199009": "'%s' parameters must be integral",
     "1199010": "'%s' unassigned",
     "1199011": "'%s' the parameter is invalid or does not exist",
-    "1199012": "uniqueness does not pass",
     "1199013": "Failed to read Data field data",
-    "1199014": "data uniqueness check failed",
+    "1199014": "duplicated instances exist, fields [%s] duplicated",
     "1199015": "Data out of bounds",
 	"1199016": "Field regular check failed",
     "1199017": "Failed to query data",
@@ -30,7 +29,7 @@
     "1199029": "Function return value format problem",
     "1199030": "HTTP POST parsing failed",
     "1199031": "'%s' initialization failed",
-    "1199032": "params needs to be a string",
+    "1199032": "param '%s' should be a string",
     "1199033": "Failed to get field property, error: %s",
     "1199034": "'%s' data type should be enum",
     "1199035": " %s exceed the limit %d",
@@ -38,5 +37,8 @@
     "1199039": "%s field does not exist in %s",
     "1199040": "convert %s model field %s to %s error %s",
     "1199041": "handle %s error %s",
+    "1199042": "param '%s' should be a fload number",
+    "1199043": "The field value check does not pass, %s",
+    "1199044": "not all success",
     "":""
 }

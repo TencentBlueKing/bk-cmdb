@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -28,6 +29,7 @@ import (
 
 type ProctrlServer struct {
 	Core     *backbone.Engine
+	EventC   eventclient.Client
 	Instance dal.RDB
 	Cache    *redis.Client
 }
@@ -35,12 +37,12 @@ type ProctrlServer struct {
 func (ps *ProctrlServer) WebService() *restful.WebService {
 
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return ps.Core.CCErr
 	}
 	// v3
 
-	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 

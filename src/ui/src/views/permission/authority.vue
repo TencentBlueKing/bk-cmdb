@@ -302,7 +302,7 @@
         .system-list{
             white-space: nowrap;
             .system-item{
-                width: 115px;
+                min-width: 115px;
                 height: 32px;
                 margin: 0 0 0 5px;
             }
@@ -353,7 +353,6 @@
         }
     }
     label.cmdb-form-checkbox{
-        max-width: 130px;
         line-height: 32px;
         padding: 0;
         margin: 0;

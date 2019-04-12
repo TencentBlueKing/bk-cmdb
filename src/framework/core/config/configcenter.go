@@ -91,7 +91,7 @@ func (cc *ConfCenter) GetConfigureCxt() []byte {
 }
 
 func (cc *ConfCenter) dealConfChangeEvent(data []byte) error {
-	log.Info("%s configure has changed", types.CC_MODULE_OBJECTCONTROLLER)
+	log.Infof("%s configure has changed", types.CC_MODULE_OBJECTCONTROLLER)
 
 	cc.ctxLock.Lock()
 	defer cc.ctxLock.Unlock()

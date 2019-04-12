@@ -13,6 +13,7 @@
 package logics
 
 import (
+	"context"
 	"net/http"
 
 	"configcenter/src/common/auditoplog"
@@ -27,27 +28,27 @@ type TemplateLog struct {
 	Content *meta.Content
 }
 
-func (lgc *Logics) NewTemplate(pheader http.Header, ownerID string) *TemplateLog {
+func (lgc *Logics) NewTemplate() *TemplateLog {
 	return &TemplateLog{
 		logic:   lgc,
-		header:  pheader,
-		ownerID: ownerID,
+		header:  lgc.header,
+		ownerID: lgc.ownerID,
 		Content: new(meta.Content),
 	}
 }
 
-func (h *TemplateLog) WithPrevious(tempID int64, headers []meta.Header) error {
+func (h *TemplateLog) WithPrevious(ctx context.Context, tempID int64, headers []meta.Header) error {
 	var err error
 	if headers != nil || len(headers) != 0 {
 		h.Content.Headers = headers
 	} else {
-		h.Content.Headers, err = h.logic.GetTemplateAttributes(h.ownerID, h.header)
+		h.Content.Headers, err = h.logic.GetTemplateAttributes(ctx, h.ownerID)
 		if err != nil {
 			return err
 		}
 	}
 
-	h.Content.PreData, err = h.logic.GetTemplateInstanceDetails(h.header, h.ownerID, tempID)
+	h.Content.PreData, err = h.logic.GetTemplateInstanceDetails(ctx, tempID)
 	if err != nil {
 		return err
 	}
@@ -55,9 +56,9 @@ func (h *TemplateLog) WithPrevious(tempID int64, headers []meta.Header) error {
 	return nil
 }
 
-func (h *TemplateLog) WithCurrent(tempID int64) error {
+func (h *TemplateLog) WithCurrent(ctx context.Context, tempID int64) error {
 	var err error
-	h.Content.CurData, err = h.logic.GetTemplateInstanceDetails(h.header, h.ownerID, tempID)
+	h.Content.CurData, err = h.logic.GetTemplateInstanceDetails(ctx, tempID)
 	if err != nil {
 		return err
 	}

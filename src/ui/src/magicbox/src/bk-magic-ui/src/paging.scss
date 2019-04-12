@@ -3,7 +3,9 @@
 
 .bk-page {
     height: 36px;
-    display: inline-block;
+    // display: inline-block;
+    display: flex;
+    justify-content: space-between;
     .bk-icon {
         font-size: 14px;
     }

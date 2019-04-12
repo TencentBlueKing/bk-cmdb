@@ -18,7 +18,7 @@ license_content='''/*
 '''
 
 def update_license(target_file, temp_file):
-    print "update: " +target_file
+    print("update: " +target_file)
     with open(target_file,'r') as src_file, open(temp_file,'w') as tmp_file:
         tmp_file.write(license_content)
         is_begin=False
@@ -43,14 +43,14 @@ def main(argv):
     try:
         opts, _ = getopt.getopt(argv,"hd:",["help","dir="])
     except getopt.GetoptError:
-        print 'license.py -d <directory>'
+        print('license.py -d <directory>')
         sys.exit(2)
     if len(opts) == 0:
-        print 'license.py -d <directory>'
+        print('license.py -d <directory>')
         sys.exit(2)
     for opt, arg in opts:
         if opt in ('-h','--help'):
-            print 'license.py -d <directory>'
+            print('license.py -d <directory>')
             sys.exit()
         elif opt in ("-d", "--dir"):
             inner_dir = arg

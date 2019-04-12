@@ -13,9 +13,8 @@
 package service
 
 import (
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/metadata"
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -25,21 +24,25 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type Service struct {
 	Core     *backbone.Engine
 	Instance dal.RDB
+	EventC   eventclient.Client
 	Cache    *redis.Client
 	Logics   *logics.Logics
 }
 
 func (s *Service) WebService() *restful.WebService {
 	ws := new(restful.WebService)
-	getErrFun := func() errors.CCErrorIf {
+	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
+	ws.Path("/host/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON).Consumes(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -71,10 +74,25 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/usercustom/user/search/{bk_user}").To(s.GetUserCustomByUser))
 	ws.Route(ws.POST("/usercustom/default/search/{bk_user}").To(s.GetDefaultUserCustom))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	ws.Route(ws.POST("/transfer/host/default/module").To(s.TransferHostToDefaultModuleConfig))
 
 	ws.Route(ws.POST("/host/lock").To(s.LockHost))
 	ws.Route(ws.DELETE("/host/lock").To(s.UnlockHost))
 	ws.Route(ws.POST("/host/lock/search").To(s.QueryLockHost))
+
+	//Cloud host resource sync
+	ws.Route(ws.POST("/hosts/cloud/add").To(s.AddCloudTask))
+	ws.Route(ws.POST("/hosts/cloud/confirm").To(s.ResourceConfirm))
+	ws.Route(ws.POST("/hosts/cloud/nameCheck").To(s.TaskNameCheck))
+	ws.Route(ws.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
+	ws.Route(ws.POST("/hosts/cloud/search/").To(s.SearchCloudTask))
+	ws.Route(ws.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
+	ws.Route(ws.DELETE("/hosts/cloud/confirm/delete/{resourceID}").To(s.DeleteConfirm))
+	ws.Route(ws.POST("/hosts/cloud/confirm/search").To(s.SearchConfirm))
+	ws.Route(ws.POST("/hosts/cloud/syncHistory/add").To(s.AddSyncHistory))
+	ws.Route(ws.POST("/hosts/cloud/syncHistory/search").To(s.SearchSyncHistory))
+	ws.Route(ws.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
+	ws.Route(ws.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
 
 	return ws
 }

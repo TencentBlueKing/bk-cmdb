@@ -20,10 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -33,8 +29,11 @@ import (
 	"configcenter/src/scene_server/event_server/distribution"
 	svc "configcenter/src/scene_server/event_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -43,40 +42,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	service := svc.NewService(ctx)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(service.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_EVENTSERVER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
 
 	process := new(EventServer)
-	engine, err := backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_EVENTSERVER,
-		op.ServConf.ExConfig,
-		process.onHostConfigUpdate,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: process.onHostConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
@@ -84,32 +59,32 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.Engine = engine
 	process.Core = engine
 	process.Service = service
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	for {
 		if process.Config == nil {
 			time.Sleep(time.Second * 2)
 			blog.V(3).Info("config not found, retry 2s later")
 			continue
 		}
-		db, err := mongo.NewMgo(process.Config.MongoDB.BuildURI())
+		db, err := local.NewMgo(process.Config.MongoDB.BuildURI(), time.Minute)
 		if err != nil {
 			return fmt.Errorf("connect mongo server failed %s", err.Error())
 		}
 		process.Service.SetDB(db)
+
+		var rpccli rpc.Client
+		if process.Config.MongoDB.Transaction == "enable" {
+			rpccli, err = rpc.NewClientPool("tcp", engine.ServiceManageInterface.TMServer().GetServers, "/txn/v3/rpc")
+			if err != nil {
+				return fmt.Errorf("connect rpc server failed %s", err.Error())
+			}
+		}
 
 		cache, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
 			return fmt.Errorf("connect redis server failed %s", err.Error())
 		}
 		process.Service.SetCache(cache)
-
-		var rpccli *rpc.Client
-		if process.Config.RPC.Address != "" {
-			rpccli, err = rpc.Dial(process.Config.RPC.Address)
-			if err != nil {
-				return fmt.Errorf("connect rpc server failed %s", err.Error())
-			}
-		}
 
 		subcli, err := redis.NewFromConfig(process.Config.Redis)
 		if err != nil {
@@ -124,6 +99,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			errCh <- distribution.Start(ctx, cache, db, rpccli)
 		}()
 		break
+	}
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		return err
 	}
 	select {
 	case <-ctx.Done():

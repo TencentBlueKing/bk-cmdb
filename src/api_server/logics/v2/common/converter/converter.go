@@ -21,9 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coccyx/timeparser"
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/api_server/logics/v2/common/defs"
 	"configcenter/src/api_server/logics/v2/common/utils"
 	"configcenter/src/common"
@@ -33,6 +30,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/coccyx/timeparser"
+	"github.com/emicklei/go-restful"
 )
 
 // RespCommonResV2 turn the result without data into version V2
@@ -63,7 +63,6 @@ func RespSuccessV2(data interface{}, resp *restful.Response) {
 		RespFailV2(common.Json_Marshal_ERR, common.Json_Marshal_ERR_STR, resp)
 	}
 
-	blog.Debug("RespSuccessV2 data:%s", string(s))
 	io.WriteString(resp, string(s))
 }
 
@@ -164,7 +163,6 @@ func ResToV2ForRoleApp(resDataV3 metadata.InstResult, uin string, roleArr []stri
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module
 func ResToV2ForModuleList(result bool, message string, data interface{}) (interface{}, error) {
 
-	blog.Debug("respV3:%v", data)
 	resDataV2 := make([]string, 0)
 	resDataV3, err := getResDataV3(result, message, data)
 	if nil != err {
@@ -182,17 +180,9 @@ func ResToV2ForModuleList(result bool, message string, data interface{}) (interf
 }
 
 //ResToV2ForModuleList: convert cc v3 json data to cc v2 for module map list
-func ResToV2ForModuleMapList(result bool, message string, data interface{}) (interface{}, error) {
-	resDataV2 := make([]map[string]interface{}, 0)
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+func ResToV2ForModuleMapList(data metadata.InstResult) ([]mapstr.MapStr, error) {
+	resDataV2 := make([]mapstr.MapStr, 0)
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKSetIDField, common.BKModuleIDField, common.BKAppIDField})
 		if nil != err {
 			return nil, err
@@ -209,7 +199,7 @@ func ResToV2ForModuleMapList(result bool, message string, data interface{}) (int
 		}
 		moduleType = fmt.Sprintf("%v", moduleType)
 
-		resDataV2 = append(resDataV2, map[string]interface{}{
+		resDataV2 = append(resDataV2, mapstr.MapStr{
 			"ModuleID":      convMap[common.BKModuleIDField],
 			"ApplicationID": convMap[common.BKAppIDField],
 			"ModuleName":    itemMap[common.BKModuleNameField],
@@ -256,19 +246,9 @@ func ResToV2ForSetList(result bool, message string, data metadata.InstResult) (i
 }
 
 //ResToV2ForPlatList: convert cc v3 json data to cc v2 for plat
-func ResToV2ForPlatList(result bool, message string, data interface{}) (interface{}, error) {
-	blog.Debug("ResToV2ForPlatList, input: %s", data)
-
+func ResToV2ForPlatList(data metadata.InstResult) (interface{}, error) {
 	resDataV2 := make([]map[string]interface{}, 0)
-
-	resDataV3, err := getResDataV3(result, message, data)
-	if nil != err {
-		return nil, err
-	}
-	resDataInfoV3 := (resDataV3.(map[string]interface{}))["info"].([]interface{})
-
-	for _, item := range resDataInfoV3 {
-		itemMap := item.(map[string]interface{})
+	for _, itemMap := range data.Info {
 		convMap, err := convertFieldsIntToStr(itemMap, []string{common.BKCloudIDField})
 		if nil != err {
 			return nil, err
@@ -497,27 +477,27 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 	for _, item := range resDataArrV3 {
 		itemMap, ok := item.(map[string]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo item errors, %v", item)
 			return nil, 0, errors.New("data format errors")
 		}
 		host, ok := itemMap[common.BKInnerObjIDHost].(map[string]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  host item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		modules, ok := itemMap[common.BKInnerObjIDModule].([]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		sets, ok := itemMap[common.BKInnerObjIDSet].([]interface{})
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		innerIP, _ := host[common.BKHostInnerIPField]
 		if !ok {
-			blog.Error("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
+			blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo host innerip item errors, %v", itemMap)
 			return nil, 0, errors.New("data format errors")
 		}
 		hostName, _ := host[common.BKHostNameField]
@@ -527,7 +507,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, module := range modules {
 				moduleMap, ok := module.(map[string]interface{})
 				if false == ok {
-					blog.Error("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
+					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo  module item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				moduleName, _ = moduleMap[common.BKModuleNameField].(string)
@@ -539,7 +519,7 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 			for _, set := range sets {
 				setMap, ok := set.(map[string]interface{})
 				if false == ok {
-					blog.Error("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
+					blog.Errorf("ResToV2ForCustomerGroupResult data hostinfo set item errors, %v", itemMap)
 					return nil, 0, errors.New("data format errors")
 				}
 				setName, _ = setMap[common.BKSetNameField].(string)
@@ -571,7 +551,6 @@ func ResToV2ForCustomerGroupResult(result bool, message string, dataInfo interfa
 
 func ResToV2ForHostDataList(result bool, message string, data interface{}) (common.KvMap, error) {
 	resDataV3, err := getResDataV3(result, message, data)
-	blog.Debug("resDataV3:%v", resDataV3)
 	if nil != err {
 		return nil, err
 	}
@@ -581,8 +560,8 @@ func ResToV2ForHostDataList(result bool, message string, data interface{}) (comm
 	if "" != resDataV3 {
 		resDataArrV3, ok := resDataV3.([]interface{})
 		if !ok {
-			blog.Errorf("ResToV2ForHostDataList not array data :%+v", data)
-			return nil, errors.New(fmt.Sprintf("data is not array %+v", resDataV3))
+			blog.Errorf("ResToV2ForHostDataList not array data :%#v", data)
+			return nil, fmt.Errorf("data is not array %#v", resDataV3)
 		}
 		var operators []string
 		var bakOperators []string
@@ -793,20 +772,20 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 			}
 		} else if common.BKProtocol == key || "Protocol" == key {
 			//v2 api erturn use protocol name
-			protocal, ok := val.(string)
+			protocol, ok := val.(string)
 			if false == ok {
-				protocal = ""
+				protocol = ""
 			} else {
-				switch protocal {
+				switch protocol {
 				case "1":
-					protocal = "TCP"
+					protocol = "TCP"
 				case "2":
-					protocal = "UDP"
+					protocol = "UDP"
 				default:
-					protocal = ""
+					protocol = ""
 				}
 			}
-			mapItem[key] = protocal
+			mapItem[key] = protocol
 		} else if key == "osType" {
 
 			switch realVal := val.(type) {
@@ -874,7 +853,7 @@ func getOneLevelData(data []interface{}, appID interface{}) []map[string]interfa
 	for _, item := range data {
 		itemMap, ok := item.(map[string]interface{})
 		if false == ok {
-			blog.Error("Assert error item is not map[string]interface{},item %v", item)
+			blog.Errorf("Assert error item is not map[string]interface{},item %v", item)
 			continue
 		}
 		dataTemp := make(map[string]interface{})
@@ -950,42 +929,23 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 	default:
 		updateTime = ""
 	}
-	protocal, ok := itemMap[common.BKProtocol].(string)
+	protocol, ok := itemMap[common.BKProtocol].(string)
 	if false == ok {
-		protocal = ""
+		protocol = ""
 	} else {
-		switch protocal {
+		switch protocol {
 		case "1":
-			protocal = "TCP"
+			protocol = "TCP"
 		case "2":
-			protocal = "UDP"
+			protocol = "UDP"
 		default:
-			protocal = ""
-		}
-	}
-	bindIP, ok := itemMap[common.BKBindIP].(string)
-	if false == ok {
-		bindIP = ""
-	} else {
-		switch bindIP {
-		case "1":
-			bindIP = "127.0.0.1"
-		case "2":
-			bindIP = "0.0.0.0"
-		case "3":
-			bindIP = defLang.Language("apiv2_process_bind_innerip") //"第一内网IP"
-		case "4":
-			bindIP = defLang.Language("apiv2_process_bind_outerip") //"第一公网IP"
-		default:
-			bindIP = ""
+			protocol = ""
 		}
 	}
 
 	intAtuotimeGap, err := util.GetIntByInterface(itemMap["auto_time_gap"])
 	atuotimeGap := ""
-	if nil != err {
-		atuotimeGap = ""
-	} else {
+	if err == nil {
 		atuotimeGap = fmt.Sprintf("%d", intAtuotimeGap)
 	}
 
@@ -1010,7 +970,7 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 		"ProcessName": itemMap[common.BKProcessNameField],
 		"OpTimeout":   itemMap["timeout"],       //"0",
 		"KillCmd":     itemMap["face_stop_cmd"], //"",
-		"Protocol":    protocal,
+		"Protocol":    protocol,
 		"Seq":         itemMap["priority"], //0",
 		"ProcGrp":     "",
 		"Port":        itemMap[common.BKPort],
@@ -1026,7 +986,6 @@ func getOneProcData(data interface{}, defLang language.DefaultCCLanguageIf) inte
 //convertFieldsNilToString  convertor nil to empty string in map field
 func convertFieldsNilToString(itemMap map[string]interface{}, fields []string) map[string]interface{} {
 
-	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
 
 		val, ok := itemMap[field]
@@ -1167,7 +1126,6 @@ func convertToV2Time(val interface{}) string {
 //  convertToString interface{} to string
 func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 	tempMap := make(map[string]interface{})
-	blog.Debug(" itemMap: %v", itemMap)
 	for key, val := range itemMap {
 		filedInt, err := util.GetInt64ByInterface(val)
 		if nil != err {
@@ -1183,7 +1141,6 @@ func convertToString(itemMap map[string]interface{}) map[string]interface{} {
 func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map[string]interface{}, error) {
 
 	tempMap := make(map[string]interface{})
-	blog.Debug("fields %v , itemMap: %v", fields, itemMap)
 	for _, field := range fields {
 		item, ok := itemMap[field]
 		if !ok {
@@ -1200,7 +1157,7 @@ func convertFieldsIntToStr(itemMap map[string]interface{}, fields []string) (map
 		default:
 			filedInt, err := util.GetInt64ByInterface(item)
 			if nil != err {
-				blog.Debug("convert field %s to number fail!", field)
+				blog.Warnf("convert field %s to number fail!", field)
 				return nil, err
 			}
 			tempMap[field] = strconv.FormatInt(filedInt, 10)
@@ -1248,9 +1205,7 @@ func getV2KeyVal(key string, val interface{}) (string, string) {
 		v2Key = key
 	}
 
-	if nil == val {
-		val = ""
-	} else {
+	if nil != val {
 		if key == common.CreateTimeField || key == common.LastTimeField {
 			ts, ok := val.(time.Time)
 			if ok {

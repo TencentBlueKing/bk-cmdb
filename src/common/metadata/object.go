@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/mapstr"
 )
 
 const (
@@ -38,20 +38,21 @@ const (
 
 // Object object metadata definition
 type Object struct {
-	ID          int64      `field:"id" json:"id" bson:"id"`
-	ObjCls      string     `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
-	ObjIcon     string     `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
-	ObjectID    string     `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
-	ObjectName  string     `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
-	IsPre       bool       `field:"ispre" json:"ispre" bson:"ispre"`
-	IsPaused    bool       `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
-	Position    string     `field:"position" json:"position" bson:"position"`
-	OwnerID     string     `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Description string     `field:"description" json:"description" bson:"description"`
-	Creator     string     `field:"creator" json:"creator" bson:"creator"`
-	Modifier    string     `field:"modifier" json:"modifier" bson:"modifier"`
-	CreateTime  *time.Time `field:"create_time" json:"create_time" bson:"create_time"`
-	LastTime    *time.Time `field:"last_time" json:"last_time" bson:"last_time"`
+	Metadata    `field:"metadata" json:"metadata" bson:"metadata"`
+	ID          int64  `field:"id" json:"id" bson:"id"`
+	ObjCls      string `field:"bk_classification_id" json:"bk_classification_id" bson:"bk_classification_id"`
+	ObjIcon     string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon"`
+	ObjectID    string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	ObjectName  string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name"`
+	IsPre       bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsPaused    bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused"`
+	Position    string `field:"position" json:"position" bson:"position"`
+	OwnerID     string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Description string `field:"description" json:"description" bson:"description"`
+	Creator     string `field:"creator" json:"creator" bson:"creator"`
+	Modifier    string `field:"modifier" json:"modifier" bson:"modifier"`
+	CreateTime  *Time  `field:"create_time" json:"create_time" bson:"create_time"`
+	LastTime    *Time  `field:"last_time" json:"last_time" bson:"last_time"`
 }
 
 // GetDefaultInstPropertyName get default inst
@@ -127,6 +128,11 @@ func (o *Object) GetObjectType() string {
 	}
 }
 
+// GetObjectID get the object type
+func (o *Object) GetObjectID() string {
+	return o.ObjectID
+}
+
 // IsCommon is common object
 func (o *Object) IsCommon() bool {
 	switch o.ObjectID {
@@ -148,9 +154,9 @@ func (o *Object) IsCommon() bool {
 }
 
 // Parse load the data from mapstr object into object instance
-func (o *Object) Parse(data types.MapStr) (*Object, error) {
+func (o *Object) Parse(data mapstr.MapStr) (*Object, error) {
 
-	err := SetValueToStructByTags(o, data)
+	err := mapstr.SetValueToStructByTags(o, data)
 	if nil != err {
 		return nil, err
 	}
@@ -159,8 +165,8 @@ func (o *Object) Parse(data types.MapStr) (*Object, error) {
 }
 
 // ToMapStr to mapstr
-func (o *Object) ToMapStr() types.MapStr {
-	return SetValueToMapStrByTags(o)
+func (o *Object) ToMapStr() mapstr.MapStr {
+	return mapstr.SetValueToMapStrByTags(o)
 }
 
 // MainLineObject main line object definition

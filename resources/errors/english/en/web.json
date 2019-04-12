@@ -7,5 +7,10 @@
     "1111006": "Failed to get host data, error: %s",
     "1111007": "Failed to create EXCEL file, error: %",
     "1111008": "Failed to get instance data, error: %s",
-    "": ""
+    "1111009": "Failed to get add net device result, error: %s",
+    "1111010": "Failed to get add net property result, error: %s",
+    "1111011": "Failed to get net device data, error: %s",
+    "1111012": "Failed to get net property data, error: %s",
+     
+    "": ""	   
 }

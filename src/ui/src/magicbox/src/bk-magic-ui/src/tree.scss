@@ -37,8 +37,13 @@
         list-style-type:none;
         text-align:left;
         &.leaf {
-            padding-left: 15px;
+            padding-left: 18px;
         }
+    }
+    .search-no-data {
+        color: #999;
+        font-size: 16px;
+        text-align: left;
     }
     .tree-drag-node {
         .tree-expanded-icon {
@@ -49,10 +54,6 @@
         }
         .tree-node {
             display: inline-block;
-        }
-        .parent-node-left {
-            position: relative;
-            left: -3px;
         }
     }
     .tree-singe {

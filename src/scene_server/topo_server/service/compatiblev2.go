@@ -137,7 +137,7 @@ func (s *topoService) UpdateMultiModule(params types.ContextParams, pathParams, 
 
 	innerData, err := data.MapStr("data")
 	if nil != err {
-		blog.Error("[api-compatiblev2] failed to parse the data, error info is %s", err.Error())
+		blog.Errorf("[api-compatiblev2] failed to parse the data, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 

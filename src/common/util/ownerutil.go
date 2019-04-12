@@ -13,51 +13,53 @@
 package util
 
 import (
-	"gopkg.in/mgo.v2/bson"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 // SetQueryOwner returns condition that in default ownerid and request ownerid
 func SetQueryOwner(condition interface{}, ownerID string) map[string]interface{} {
-	switch cond := condition.(type) {
-	case map[string]interface{}:
-		if ownerID == common.BKSuperOwnerID {
-			return cond
-		}
-		if nil == cond {
-			return map[string]interface{}{
-				common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
-			}
-		}
-		cond[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}}
-		return cond
-	case nil:
+	if nil == condition {
 		if ownerID == common.BKSuperOwnerID {
 			return map[string]interface{}{}
 		}
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
+	}
+
+	var ret map[string]interface{}
+	switch cond := condition.(type) {
+	case map[string]interface{}:
+		ret = cond
+	case mapstr.MapStr:
+		ret = cond
 	default:
 		out, err := bson.Marshal(condition)
 		if err != nil {
-			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
 		}
-		val := map[string]interface{}{}
-		err = bson.Unmarshal(out, val)
+		ret = map[string]interface{}{}
+		err = bson.Unmarshal(out, &ret)
 		if err != nil {
-			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
 		}
-		if ownerID == common.BKSuperOwnerID {
-			return val
-		}
-		val[common.BKOwnerIDField] = ownerID
+	}
+
+	if ownerID == common.BKSuperOwnerID {
+		return ret
+	}
+
+	if nil == ret {
 		return map[string]interface{}{
 			common.BKOwnerIDField: map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}},
 		}
 	}
+	ret[common.BKOwnerIDField] = map[string]interface{}{common.BKDBIN: []string{common.BKDefaultOwnerID, ownerID}}
+	return ret
 }
 
 // SetModOwner set condition equal owner id, the condition must be a map or struct
@@ -70,39 +72,34 @@ func SetModOwner(condition interface{}, ownerID string) map[string]interface{} {
 			common.BKOwnerIDField: ownerID,
 		}
 	}
+
+	var ret map[string]interface{}
 	switch cond := condition.(type) {
 	case map[string]interface{}:
-		if ownerID == common.BKSuperOwnerID {
-			return cond
-		}
-		if nil == cond {
-			return map[string]interface{}{common.BKOwnerIDField: ownerID}
-		}
-		cond[common.BKOwnerIDField] = ownerID
-		return cond
+		ret = cond
+	case mapstr.MapStr:
+		ret = cond
 	case common.KvMap:
-		if ownerID == common.BKSuperOwnerID {
-			return cond
-		}
-		if nil == cond {
-			return map[string]interface{}{common.BKOwnerIDField: ownerID}
-		}
-		cond[common.BKOwnerIDField] = ownerID
-		return cond
+		ret = cond
 	default:
 		out, err := bson.Marshal(condition)
 		if err != nil {
-			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
 		}
-		val := map[string]interface{}{}
-		err = bson.Unmarshal(out, val)
+		ret = map[string]interface{}{}
+		err = bson.Unmarshal(out, &ret)
 		if err != nil {
-			blog.Fatalf("SetModOwner faile condition %#v, error %s", condition, err.Error())
+			blog.Errorf("SetModOwner faile condition %#v, error %s", condition, err.Error())
 		}
-		if ownerID == common.BKSuperOwnerID {
-			return val
-		}
-		val[common.BKOwnerIDField] = ownerID
-		return val
 	}
+
+	if ownerID == common.BKSuperOwnerID {
+		return ret
+	}
+	if nil == ret {
+		return map[string]interface{}{common.BKOwnerIDField: ownerID}
+	}
+	ret[common.BKOwnerIDField] = ownerID
+
+	return ret
 }

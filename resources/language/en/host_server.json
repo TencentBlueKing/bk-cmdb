@@ -26,5 +26,6 @@
     "host_str_asst_str_query_data_format_error": "Get %s Association Object %s Data Format",
     "plat_id_not_exist": "cloud area id does not exist",
     "plat_get_str_err": "search plat error %s",
+    "host_module_config_not_found":"host and module relationship does not exist",
     "": ""
 }

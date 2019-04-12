@@ -6,7 +6,7 @@
         <tbody v-show="table.list.length">
             <tr v-for="(item, rowIndex) in table.list"
                 :style="{
-                    cursor: table.rowCursor
+                    cursor: table.cursor
                 }"
                 :key="rowIndex"
                 @click="handleRowClick(item, rowIndex)"
@@ -108,7 +108,7 @@
         },
         components: {
             'data-content': {
-                props: ['head', 'item', 'layout', 'rowIndex'],
+                props: ['head', 'item', 'layout', 'rowIndex', 'colIndex'],
                 render (h) {
                     const table = this.layout.table
                     const column = this.head[table.valueKey]

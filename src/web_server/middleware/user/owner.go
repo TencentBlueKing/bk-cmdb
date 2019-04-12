@@ -48,8 +48,12 @@ func NewOwnerManager(userName, ownerID, language string) *OwnerManager {
 	return ownerManager
 }
 
+func (m *OwnerManager) SetHttpHeader(key, val string) {
+	m.header.Set(key, val)
+}
+
 func (m *OwnerManager) InitOwner() error {
-	blog.Infof("init owner %s", m.OwnerID)
+	blog.V(5).Infof("init owner %s", m.OwnerID)
 
 	exist, err := m.defaultAppIsExist()
 	if err != nil {
@@ -88,7 +92,7 @@ func (m *OwnerManager) InitOwner() error {
 }
 
 func (m *OwnerManager) addDefaultApp() error {
-	blog.Info("addDefaultApp %s", m.OwnerID)
+	blog.V(5).Infof("addDefaultApp %s", m.OwnerID)
 	params, err := m.getObjectFields(common.BKInnerObjIDApp)
 	if err != nil {
 		return err

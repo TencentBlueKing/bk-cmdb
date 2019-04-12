@@ -1,12 +1,10 @@
 <template>
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
-            <cmdb-business-selector
-                class="business-selector"
-                v-model="filter.bizId"
-            ></cmdb-business-selector>
-            <bk-button type="primary" class="api-btn" @click="showUserAPISlider('create')">
-                {{$t("CustomQuery['新增查询']")}}
+            <bk-button type="primary" class="api-btn"
+                :disabled="!authority.includes('update')"
+                @click="showUserAPISlider('create')">
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="api-input fr">
                 <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
@@ -31,8 +29,7 @@
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("CustomQuery['当前业务并无自定义查询，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
+                <p>{{$t("CustomQuery['动态分组空数据提示']")}}</p>
             </div>
         </cmdb-table>
         <cmdb-slider
@@ -43,8 +40,9 @@
             :beforeClose="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
+                :authority="authority"
                 :id="slider.id"
-                :bizId="filter.bizId"
+                :bizId="bizId"
                 :type="slider.type"
                 @delete="getUserAPIList"
                 @create="handleCreate"
@@ -56,7 +54,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import vDefine from './define'
     export default {
         components: {
@@ -65,7 +63,6 @@
         data () {
             return {
                 filter: {
-                    bizId: '',
                     name: ''
                 },
                 table: {
@@ -103,25 +100,25 @@
                     type: 'create',
                     id: null,
                     title: this.$t("CustomQuery['新增查询']")
-                }
+                },
+                authority: ['search', 'update', 'delete']
             }
         },
         computed: {
+            ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 let params = {
                     start: (this.table.pagination.current - 1) * this.table.pagination.size,
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.filter.bkBizId ? params['bk_biz_id'] = this.filter.bizId : void (0)
                 this.filter.name ? params['condition'] = {'name': this.filter.name} : void (0)
                 return params
             }
         },
-        watch: {
-            'filter.bizId' () {
-                this.getUserAPIList()
-            }
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
+            this.getUserAPIList()
         },
         methods: {
             ...mapActions('hostCustomApi', [
@@ -155,7 +152,7 @@
             },
             async getUserAPIList () {
                 const res = await this.searchCustomQuery({
-                    bizId: this.filter.bizId,
+                    bizId: this.bizId,
                     params: this.searchParams,
                     config: {
                         requestId: 'searchCustomQuery'
@@ -171,7 +168,7 @@
             showUserAPISlider (type) {
                 this.slider.isShow = true
                 this.slider.type = type
-                this.slider.title = this.$t('CustomQuery["新增查询"]')
+                this.slider.title = this.$t('CustomQuery["新建查询"]')
             },
             /* 显示自定义API详情 */
             showUserAPIDetails (userAPI) {

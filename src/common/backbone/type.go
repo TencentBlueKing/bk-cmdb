@@ -23,7 +23,6 @@ type Config struct {
 	RegisterPath string
 	RegisterInfo types.ServerInfo
 	CoreAPI      apimachinery.ClientSetInterface
-	Server       Server
 }
 
 type Server struct {

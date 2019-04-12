@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/metadata"
 )
 
 // ContextParams the logic function params
@@ -29,4 +30,5 @@ type ContextParams struct {
 	User            string
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
+	MetaData        *metadata.Metadata
 }

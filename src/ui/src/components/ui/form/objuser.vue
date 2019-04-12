@@ -151,6 +151,9 @@
             matchedUsers (matchedUsers) {
                 this.highlightIndex = -1
                 if (matchedUsers.length) {
+                    if (this.exclude) {
+                        this.highlightIndex = 0
+                    }
                     this.updateSuggestionPosition()
                 }
             },
@@ -448,25 +451,27 @@
                 })
             },
             updateScroller () {
-                const highlightIndex = this.highlightIndex
-                const $suggestionList = this.$refs.suggestionList
-                if (highlightIndex !== -1) {
-                    const $suggestionItem = this.$refs.suggestionItem[highlightIndex]
-                    const listClientHeight = $suggestionList.clientHeight
-                    const listScrollTop = $suggestionList.scrollTop
-                    const listScrollHeight = $suggestionList.scrollHeight
-                    const itemOffsetTop = $suggestionItem.offsetTop
-                    const itemOffsetHeight = $suggestionItem.offsetHeight
-                    if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
-                        return false
-                    } else if (itemOffsetTop <= listScrollTop) {
-                        $suggestionList.scrollTop = itemOffsetTop
-                    } else if ((itemOffsetTop + itemOffsetHeight) > (listScrollTop + listClientHeight)) {
-                        $suggestionList.scrollTop = itemOffsetTop + itemOffsetHeight - listClientHeight
+                this.$nextTick(() => {
+                    const highlightIndex = this.highlightIndex
+                    const $suggestionList = this.$refs.suggestionList
+                    if (highlightIndex !== -1) {
+                        const $suggestionItem = this.$refs.suggestionItem[highlightIndex]
+                        const listClientHeight = $suggestionList.clientHeight
+                        const listScrollTop = $suggestionList.scrollTop
+                        const listScrollHeight = $suggestionList.scrollHeight
+                        const itemOffsetTop = $suggestionItem.offsetTop
+                        const itemOffsetHeight = $suggestionItem.offsetHeight
+                        if (itemOffsetTop >= listScrollTop && (itemOffsetTop + itemOffsetHeight) <= (listScrollTop + listClientHeight)) {
+                            return false
+                        } else if (itemOffsetTop <= listScrollTop) {
+                            $suggestionList.scrollTop = itemOffsetTop
+                        } else if ((itemOffsetTop + itemOffsetHeight) > (listScrollTop + listClientHeight)) {
+                            $suggestionList.scrollTop = itemOffsetTop + itemOffsetHeight - listClientHeight
+                        }
+                    } else {
+                        $suggestionList.scrollTop = 0
                     }
-                } else {
-                    $suggestionList.scrollTop = 0
-                }
+                })
             },
             updateSuggestionPosition () {
                 this.updateTimer && clearTimeout(this.updateTimer)

@@ -19,12 +19,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateClassification create object's classification
@@ -38,13 +38,13 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error information is %s", err.Error())
+		blog.Errorf("read http request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	obj := &meta.Classification{}
 	if err = json.Unmarshal([]byte(value), obj); nil != err {
-		blog.Error("fail to unmarshal json, error information is %s", err.Error())
+		blog.Errorf("fail to unmarshal json, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 
@@ -53,7 +53,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 	// save to the storage
 	id, err := db.NextSequence(ctx, common.BKTableNameObjClassifiction)
 	if err != nil {
-		blog.Error("failed to get id, error info is %s", err.Error())
+		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -61,7 +61,7 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 	obj.OwnerID = ownerID
 	err = db.Table(common.BKTableNameObjClassifiction).Insert(ctx, obj)
 	if nil != err {
-		blog.Error("create objectcls failed, error:%s", err.Error())
+		blog.Errorf("create objectcls failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -81,7 +81,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get id, error info is %s", err.Error())
+		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -92,13 +92,13 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	if 0 == id {
 		value, err := ioutil.ReadAll(req.Request.Body)
 		if err != nil {
-			blog.Error("read http request body failed, error:%s", err.Error())
+			blog.Errorf("read http request body failed, error:%s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
 
 		if err := json.Unmarshal([]byte(value), &condition); nil != err {
-			blog.Error("fail to unmarshal json, error information is %s", err.Error())
+			blog.Errorf("fail to unmarshal json, error information is %s", err.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 			return
 		}
@@ -106,7 +106,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjClassifiction).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Error("failed to select object classification by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object classification by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -116,7 +116,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	}
 	// execute delete command
 	if delErr := db.Table(common.BKTableNameObjClassifiction).Delete(ctx, condition); nil != delErr {
-		blog.Error("fail to delete object by id , error: %s", delErr.Error())
+		blog.Errorf("fail to delete object by id , error: %s", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, delErr.Error())})
 		return
 
@@ -136,7 +136,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
-		blog.Error("failed to get id, error info is %s", err.Error())
+		blog.Errorf("failed to get id, error info is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsInvalid, err.Error())})
 		return
 	}
@@ -146,7 +146,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 	// decode json string
 	data := map[string]interface{}{}
 	if jsErr := json.NewDecoder(req.Request.Body).Decode(&data); nil != jsErr {
-		blog.Error("unmarshal json failed, error:%v", jsErr.Error())
+		blog.Errorf("unmarshal json failed, error:%v", jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -154,7 +154,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 	selector = util.SetModOwner(selector, ownerID)
 	// update object into storage
 	if updateErr := db.Table(common.BKTableNameObjClassifiction).Update(ctx, selector, data); nil != updateErr {
-		blog.Error("fail update object by condition, error:%v", updateErr.Error())
+		blog.Errorf("fail update object by condition, error:%v", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, updateErr.Error())})
 		return
 	}
@@ -175,7 +175,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	// decode json object
 	selector := map[string]interface{}{}
 	if jserr := json.NewDecoder(req.Request.Body).Decode(&selector); nil != jserr {
-		blog.Error("unmarshal failed, error:%v", jserr.Error())
+		blog.Errorf("unmarshal failed, error:%v", jserr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jserr.Error())})
 		return
 	}
@@ -187,7 +187,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
 	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
-		blog.Error("select data failed, error: %s", selErr.Error())
+		blog.Errorf("select data failed, error: %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
@@ -213,7 +213,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	// decode json object
 	selector := map[string]interface{}{}
 	if jsErr := json.NewDecoder(req.Request.Body).Decode(&selector); nil != jsErr {
-		blog.Error("unmarshal failed, error: %s", jsErr.Error())
+		blog.Errorf("unmarshal failed, error: %s", jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -224,7 +224,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 	selector = util.SetQueryOwner(selector, ownerID)
 	// select from storage
 	if selErr := db.Table(common.BKTableNameObjClassifiction).Find(selector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &clsResults); nil != selErr && !db.IsNotFoundError(selErr) {
-		blog.Error("select data failed, error:%s", selErr.Error())
+		blog.Errorf("select data failed, error:%s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, selErr.Error())})
 		return
 	}
@@ -237,7 +237,7 @@ func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *r
 		}
 		selector = util.SetQueryOwner(selector, ownerID)
 		if selErr := db.Table(common.BKTableNameObjDes).Find(selector).Limit(common.BKNoLimit).All(ctx, &clsResults[tmpidx].Objects); nil != selErr && db.IsNotFoundError(selErr) {
-			blog.Error("select data failed, error:%s", selErr.Error())
+			blog.Errorf("select data failed, error:%s", selErr.Error())
 			continue
 		}
 

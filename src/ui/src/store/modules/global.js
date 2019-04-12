@@ -23,6 +23,20 @@ const getters = {
     user: state => state.user,
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
+    isAdminView: (state, getters, rootState, rootGetters) => {
+        if (!getters.admin) {
+            return false
+        }
+        if (window.sessionStorage.hasOwnProperty('isAdminView')) {
+            return window.sessionStorage.getItem('isAdminView') === 'true'
+        } else {
+            window.sessionStorage.setItem('isAdminView', false)
+            return false
+        }
+    },
+    isBusinessSelected: (state, getters, rootState, rootGetters) => {
+        return rootGetters['objectBiz/bizId'] !== null
+    },
     language: state => state.language,
     supplier: state => state.supplier,
     supplierAccount: state => state.supplier.account,
@@ -62,6 +76,10 @@ const mutations = {
     },
     setHeaderTitle (state, headerTitle) {
         state.headerTitle = headerTitle
+    },
+    setAdminView (state, isAdminView) {
+        window.sessionStorage.setItem('isAdminView', isAdminView)
+        window.location.reload()
     }
 }
 

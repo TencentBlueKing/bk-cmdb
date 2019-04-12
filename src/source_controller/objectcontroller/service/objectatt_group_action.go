@@ -19,12 +19,12 @@ import (
 	"net/http"
 	"strconv"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 // CreatePropertyGroup to create property group
@@ -45,7 +45,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 	// read body data
 	val, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -54,7 +54,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 	propertyGroup := &meta.Group{}
 	jsErr := json.Unmarshal(val, propertyGroup)
 	if nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -93,21 +93,21 @@ func (cli *Service) UpdatePropertyGroup(req *restful.Request, resp *restful.Resp
 	// read body data
 	val, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 	propertyGroup := &meta.PropertyGroupCondition{}
 	jsErr := json.Unmarshal(val, propertyGroup)
 	if nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
 
 	propertyGroup.Condition = util.SetModOwner(propertyGroup.Condition, ownerID)
 	if updateErr := db.Table(common.BKTableNamePropertyGroup).Update(ctx, propertyGroup.Condition, propertyGroup.Data); nil != updateErr {
-		blog.Error("fail update object by condition, error:%v", updateErr.Error())
+		blog.Errorf("fail update object by condition, error:%v", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupUpdateFailed, updateErr.Error())})
 		return
 	}
@@ -131,7 +131,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read request body failed, error information is %s", err.Error())
+		blog.Errorf("read request body failed, error information is %s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -139,7 +139,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 	// selector := &metadata.PropertyGroup{Page: &metadata.BasePage{Limit: common.BKNoLimit}}
 	condition := map[string]interface{}{}
 	if jsErr := json.Unmarshal([]byte(value), &condition); nil != jsErr {
-		blog.Error("unmarshal failed, error information %s is %s", value, jsErr.Error())
+		blog.Errorf("unmarshal failed, error information %s is %s", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -150,7 +150,7 @@ func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 
 	results := make([]meta.Group, 0)
 	if selErr := db.Table(common.BKTableNamePropertyGroup).Find(condition).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr && db.IsNotFoundError(selErr) {
-		blog.Error("find object by selector failed, error information is %s", selErr.Error())
+		blog.Errorf("find object by selector failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupSelectFailed, selErr.Error())})
 		return
 	}
@@ -180,7 +180,7 @@ func (cli *Service) DeletePropertyGroup(req *restful.Request, resp *restful.Resp
 
 	id, conErr := strconv.Atoi(req.PathParameter("id"))
 	if nil != conErr {
-		blog.Error("id(%s) should be int value, error info is %s", req.PathParameter("id"), conErr.Error())
+		blog.Errorf("id(%s) should be int value, error info is %s", req.PathParameter("id"), conErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommParamsNeedInt, conErr.Error())})
 		return
 	}
@@ -189,7 +189,7 @@ func (cli *Service) DeletePropertyGroup(req *restful.Request, resp *restful.Resp
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNamePropertyGroup).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Error("failed to select object group by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object group by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupDeleteFailed, cntErr.Error())})
 		return
 	}
@@ -198,7 +198,7 @@ func (cli *Service) DeletePropertyGroup(req *restful.Request, resp *restful.Resp
 		return
 	}
 	if delErr := db.Table(common.BKTableNamePropertyGroup).Delete(ctx, condition); nil != delErr {
-		blog.Error("failed to delete property group  by condition, error:%v", delErr.Error())
+		blog.Errorf("failed to delete property group  by condition, error:%v", delErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupDeleteFailed, delErr.Error())})
 		return
 	}
@@ -222,7 +222,7 @@ func (cli *Service) UpdatePropertyGroupObjectAtt(req *restful.Request, resp *res
 	// read body data
 	val, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
@@ -231,7 +231,7 @@ func (cli *Service) UpdatePropertyGroupObjectAtt(req *restful.Request, resp *res
 	propertyGroupObjectAttArr := make([]meta.PropertyGroupObjectAtt, 0)
 	jsErr := json.Unmarshal(val, &propertyGroupObjectAttArr)
 	if nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
+		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(val), jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -253,7 +253,7 @@ func (cli *Service) UpdatePropertyGroupObjectAtt(req *restful.Request, resp *res
 		objectAttSelector = util.SetModOwner(objectAttSelector, ownerID)
 		// update the object attribute
 		if updateErr := db.Table(common.BKTableNameObjAttDes).Update(ctx, objectAttSelector, objectAttValue); nil != updateErr {
-			blog.Error("fail update object by condition, error:%v", updateErr.Error())
+			blog.Errorf("fail update object by condition, error:%v", updateErr.Error())
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupUpdateFailed, updateErr.Error())})
 			return
 		}
@@ -290,7 +290,7 @@ func (cli *Service) DeletePropertyGroupObjectAtt(req *restful.Request, resp *res
 
 	cnt, cntErr := db.Table(common.BKTableNameObjAttDes).Find(objectAttSelector).Count(ctx)
 	if nil != cntErr {
-		blog.Error("failed to select objectatt group by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select objectatt group by condition(%+v), error is %d", objectAttSelector, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupDeleteFailed, cntErr.Error())})
 		return
 	}
@@ -301,7 +301,7 @@ func (cli *Service) DeletePropertyGroupObjectAtt(req *restful.Request, resp *res
 
 	// update the object attribute
 	if updateErr := db.Table(common.BKTableNameObjAttDes).Update(ctx, objectAttSelector, objectAttValue); nil != updateErr {
-		blog.Error("fail update object by condition, error:%v", updateErr.Error())
+		blog.Errorf("fail update object by condition, error:%v", updateErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupUpdateFailed, updateErr.Error())})
 		return
 	}
@@ -323,7 +323,7 @@ func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *re
 
 	groupSelector := map[string]interface{}{}
 	if jsErr := json.NewDecoder(req.Request.Body).Decode(&groupSelector); nil != jsErr {
-		blog.Error("unmarshal failed,  is %s", jsErr.Error())
+		blog.Errorf("unmarshal failed,  is %s", jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
 		return
 	}
@@ -343,7 +343,7 @@ func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *re
 	results := make([]meta.Group, 0)
 	// select the object group
 	if selErr := db.Table(common.BKTableNamePropertyGroup).Find(groupSelector).Limit(uint64(page.Limit)).Start(uint64(page.Start)).Sort(page.Sort).All(ctx, &results); nil != selErr {
-		blog.Error("select data failed, error information is %s", selErr.Error())
+		blog.Errorf("select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectPropertyGroupSelectFailed, selErr.Error())})
 		return
 	}

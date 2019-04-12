@@ -279,7 +279,7 @@
         padding: 13px 20px;
         background-color: #f9f9f9;
         .config-button{
-            width: 110px;
+            min-width: 110px;
             margin: 0 0 0 10px;
             &:first-child{
                 margin: 0;

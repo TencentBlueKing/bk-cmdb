@@ -22,11 +22,12 @@ import (
 type RequestType string
 
 const (
-	UnknownType RequestType = "unknown"
-	TopoType    RequestType = "topo"
-	HostType    RequestType = "host"
-	ProcType    RequestType = "proc"
-	EventType   RequestType = "event"
+	UnknownType     RequestType = "unknown"
+	TopoType        RequestType = "topo"
+	HostType        RequestType = "host"
+	ProcType        RequestType = "proc"
+	EventType       RequestType = "event"
+	DataCollectType RequestType = "collect"
 )
 
 type V3URLPath string
@@ -41,6 +42,8 @@ func (u V3URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return ProcType, nil
 	case u.WithEvent(req):
 		return EventType, nil
+	case u.WithDataCollect(req):
+		return DataCollectType, nil
 	default:
 		return UnknownType, errors.New("unknown requested with backend process")
 	}
@@ -91,6 +94,63 @@ func (u *V3URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.HasPrefix(string(*u), rootPath+"/set/"):
 		from, to, isHit = rootPath, topoRoot, true
 
+	case strings.Contains(string(*u), "/objectclassification"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/classificationobject"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectattr"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/object"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectunique"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectattgroup"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectattgroupproperty"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectattgroupasst"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objecttopo"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/topomodelmainline"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/topoinst"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/topoassociationtype"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/objectassociation"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/instassociation"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/insttopo"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/instance"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/instassociationdetail"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/instassociationdetail"):
+		from, to, isHit = rootPath, topoRoot, true
+
+	case strings.Contains(string(*u), "/associationtype"):
+		from, to, isHit = rootPath, topoRoot, true
+
 	default:
 		isHit = false
 	}
@@ -123,6 +183,9 @@ func (u *V3URLPath) WithHost(req *restful.Request) (isHit bool) {
 		from, to, isHit = rootPath, hostRoot, true
 
 	case strings.HasPrefix(string(*u), rootPath+"/usercustom/"):
+		from, to, isHit = rootPath, hostRoot, true
+
+	case string(*u) == (rootPath + "/modulehost"):
 		from, to, isHit = rootPath, hostRoot, true
 
 	default:
@@ -162,6 +225,25 @@ func (u *V3URLPath) WithProc(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/proc/"):
 		from, to, isHit = rootPath+"/proc", procRoot, true
+
+	default:
+		isHit = false
+	}
+
+	if isHit {
+		u.revise(req, from, to)
+		return true
+	}
+	return false
+}
+
+func (u *V3URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
+	dataCollectRoot := "/collector/v3"
+	from, to := rootPath, dataCollectRoot
+
+	switch {
+	case strings.HasPrefix(string(*u), rootPath+"/collector/"):
+		from, to, isHit = rootPath+"/collector", dataCollectRoot, true
 
 	default:
 		isHit = false

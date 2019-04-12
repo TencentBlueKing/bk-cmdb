@@ -19,12 +19,12 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/event_server/types"
+
+	"gopkg.in/redis.v5"
 )
 
 var (
@@ -45,7 +45,7 @@ func (eh *EventHandler) StartHandleInsts() (err error) {
 			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stoped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 	}()
@@ -65,8 +65,8 @@ func (eh *EventHandler) StartHandleInsts() (err error) {
 }
 
 func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
-	blog.Info("handling event inst : %v", event.Raw)
-	defer blog.Info("done event inst : %v", event.ID)
+	blog.Infof("handling event inst : %v", event.Raw)
+	defer blog.Infof("done event inst : %v", event.ID)
 	if err = saveRunning(eh.cache, types.EventCacheEventRunningPrefix+fmt.Sprint(event.ID), timeout); err != nil {
 		if ErrProcessExists == err {
 			blog.Infof("%v process exist, continue", event.ID)
@@ -117,7 +117,7 @@ func (eh *EventHandler) handleInst(event *metadata.EventInstCtx) (err error) {
 
 	for _, origindist := range origindists {
 		subscribers := eh.findEventTypeSubscribers(origindist.GetType(), event.OwnerID)
-		if len(subscribers) <= 0 || "nil" == subscribers[0] {
+		if len(subscribers) <= 0 || nilstr == subscribers[0] {
 			blog.Infof("%v no subscriber，continue", origindist.GetType())
 			return eh.SaveEventDone(event)
 		}
@@ -248,7 +248,7 @@ func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
 
 	eh.cache.BRPopLPush(types.EventCacheEventQueueKey, types.EventCacheEventQueueDuplicateKey, time.Second*60).Scan(&eventstr)
 
-	if eventstr == "" || eventstr == "nil" {
+	if eventstr == "" || eventstr == nilstr {
 		return nil
 	}
 	eventbytes := []byte(eventstr)
@@ -259,3 +259,5 @@ func (eh *EventHandler) popEventInst() *metadata.EventInstCtx {
 	}
 	return &metadata.EventInstCtx{EventInst: event, Raw: eventstr}
 }
+
+const nilstr = "nil"

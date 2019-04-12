@@ -23,13 +23,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
+
+	"github.com/emicklei/go-restful"
 )
 
 // Subscribe  Subscribe events
@@ -40,7 +40,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	ownerID := util.GetOwnerID(pheader)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("add subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -53,10 +53,10 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	if sub.ConfirmMode == metadata.ConfirmmodeHttpstatus && sub.ConfirmPattern == "" {
 		sub.ConfirmPattern = "200"
 	}
-	sub.LastTime = &now
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
-	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", -1)
 
 	events := strings.Split(sub.SubscriptionForm, ",")
 	sort.Strings(events)
@@ -65,7 +65,7 @@ func (s *Service) Subscribe(req *restful.Request, resp *restful.Response) {
 	exists := []metadata.Subscription{}
 	err = s.db.Table(common.BKTableNameSubscription).Find(map[string]interface{}{common.BKSubscriptionNameField: sub.SubscriptionName, common.BKOwnerIDField: ownerID}).All(s.ctx, &exists)
 	if err != nil {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDuplicateItem)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "subscription_name")})
 		return
 	}
 
@@ -168,10 +168,10 @@ func (s *Service) Rebook(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	blog.Info("update subscription %v", id)
+	blog.Infof("update subscription %v", id)
 
 	sub := &metadata.Subscription{}
-	if err := json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
+	if err = json.NewDecoder(req.Request.Body).Decode(&sub); err != nil {
 		blog.Errorf("update subscription, but decode body failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -209,10 +209,10 @@ func (s *Service) rebook(id int64, ownerID string, sub *metadata.Subscription) e
 		sub.TimeOut = 10
 	}
 	now := metadata.Now()
-	sub.LastTime = &now
+	sub.LastTime = now
 	sub.OwnerID = ownerID
 
-	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", 0)
+	sub.SubscriptionForm = strings.Replace(sub.SubscriptionForm, " ", "", -1)
 	events := strings.Split(sub.SubscriptionForm, ",")
 	sort.Strings(events)
 	sub.SubscriptionForm = strings.Join(events, ",")

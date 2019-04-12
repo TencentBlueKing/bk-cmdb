@@ -14,11 +14,18 @@ package discovery
 
 import (
 	"fmt"
-	"time"
 
-	regd "configcenter/src/common/RegisterDiscover"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
+
+type ServiceManageInterface interface {
+	// 判断当前进程是否为master 进程， 服务注册节点的第一个节点
+	IsMaster() bool
+	TMServer() Interface
+}
 
 type DiscoveryInterface interface {
 	ApiServer() Interface
@@ -33,22 +40,21 @@ type DiscoveryInterface interface {
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
 	GseProcServ() Interface
+	CoreService() Interface
+	ServiceManageInterface
 }
 
 type Interface interface {
 	GetServers() ([]string, error)
 }
 
-func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
-	disc := regd.NewRegDiscoverEx(zkAddr, 10*time.Second)
-	if err := disc.Start(); nil != err {
-		return nil, err
-	}
+func NewDiscoveryInterface(client *zk.ZkClient) (DiscoveryInterface, error) {
+	disc := registerdiscover.NewRegDiscoverEx(client)
 
 	d := &discover{
-		servers: make(map[string]Interface),
+		servers: make(map[string]*server),
 	}
-	for component, _ := range types.AllModule {
+	for component := range types.AllModule {
 		if component == types.CC_MODULE_WEBSERVER {
 			continue
 		}
@@ -65,7 +71,7 @@ func NewDiscoveryInterface(zkAddr string) (DiscoveryInterface, error) {
 }
 
 type discover struct {
-	servers map[string]Interface
+	servers map[string]*server
 }
 
 func (d *discover) ApiServer() Interface {
@@ -114,4 +120,18 @@ func (d *discover) ProcCtrl() Interface {
 
 func (d *discover) GseProcServ() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
+}
+
+func (d *discover) CoreService() Interface {
+	return d.servers[types.CC_MODULE_CORESERVICE]
+}
+
+func (d *discover) TMServer() Interface {
+	return d.servers[types.CC_MODULE_TXC]
+}
+
+// IsMster current is master
+func (d *discover) IsMaster() bool {
+
+	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
 }

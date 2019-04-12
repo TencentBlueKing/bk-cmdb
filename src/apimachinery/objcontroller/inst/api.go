@@ -17,14 +17,14 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	metatype "configcenter/src/common/metadata"
+	"configcenter/src/common/metadata"
 )
 
 type InstanceInterface interface {
-	SearchObjects(ctx context.Context, objType string, h http.Header, dat *metatype.QueryInput) (resp *metatype.QueryInstResult, err error)
-	CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metatype.CreateInstResult, err error)
-	DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.DeleteResult, err error)
-	UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metatype.UpdateResult, err error)
+	SearchObjects(ctx context.Context, objType string, h http.Header, dat *metadata.QueryInput) (resp *metadata.QueryInstResult, err error)
+	CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error)
+	DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error)
+	UpdateObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.UpdateResult, err error)
 }
 
 func NewInstanceInterface(client rest.ClientInterface) InstanceInterface {

@@ -62,7 +62,7 @@ type Request struct {
 	verb    VerbType
 	params  url.Values
 	headers http.Header
-	body    io.Reader
+	body    []byte
 	ctx     context.Context
 
 	// prefixed url
@@ -73,7 +73,18 @@ type Request struct {
 	// request timeout value
 	timeout time.Duration
 
-	err error
+	peek bool
+	err  error
+}
+
+func (r *Request) WithParams(params map[string]string) *Request {
+	if r.params == nil {
+		r.params = make(url.Values)
+	}
+	for paramName, value := range params {
+		r.params[paramName] = append(r.params[paramName], value)
+	}
+	return r
 }
 
 func (r *Request) WithParam(paramName, value string) *Request {
@@ -98,6 +109,11 @@ func (r *Request) WithHeaders(header http.Header) *Request {
 	return r
 }
 
+func (r *Request) Peek() *Request {
+	r.peek = true
+	return r
+}
+
 func (r *Request) WithContext(ctx context.Context) *Request {
 	r.ctx = ctx
 	return r
@@ -116,7 +132,7 @@ func (r *Request) SubResource(subPath string) *Request {
 
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
@@ -130,7 +146,7 @@ func (r *Request) Body(body interface{}) *Request {
 		fallthrough
 	case reflect.Slice:
 		if valueOf.IsNil() {
-			r.body = bytes.NewReader([]byte(""))
+			r.body = []byte("")
 			return r
 		}
 		break
@@ -140,19 +156,18 @@ func (r *Request) Body(body interface{}) *Request {
 
 	default:
 		r.err = errors.New("body should be one of interface, map, pointer or slice value")
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
 	data, err := json.Marshal(body)
 	if nil != err {
 		r.err = err
-		r.body = bytes.NewReader([]byte(""))
+		r.body = []byte("")
 		return r
 	}
 
-	blog.V(4).Infof("http request uri:%s body:%s, rid:%s", r.subPath, string(data), commonUtil.GetHTTPCCRequestID(r.headers))
-	r.body = bytes.NewReader(data)
+	r.body = data
 	return r
 }
 
@@ -200,20 +215,19 @@ func (r *Request) Do() *Result {
 		client = http.DefaultClient
 	}
 
-	maxRetryCycle := 3
-	retries := 0
-
 	hosts, err := r.capability.Discover.GetServers()
 	if err != nil {
 		result.Err = err
 		return result
 	}
 
+	maxRetryCycle := 3
+	var retries int
 	for try := 0; try < maxRetryCycle; try++ {
 		for index, host := range hosts {
 			retries = try + index
 			url := host + r.WrapURL().String()
-			req, err := http.NewRequest(string(r.verb), url, r.body)
+			req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
 			if err != nil {
 				result.Err = err
 				return result
@@ -242,6 +256,9 @@ func (r *Request) Do() *Result {
 
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 
@@ -261,13 +278,20 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
+					if r.peek {
+						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					}
 					return result
 				}
 				body = data
 			}
-			blog.V(4).Infof("http request uri:%s body:%s, rid:%s", r.subPath, string(body), commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
 			result.Body = body
 			result.StatusCode = resp.StatusCode
+			if r.peek {
+				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
+			}
+
 			return result
 		}
 
@@ -286,7 +310,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, verb: %s, request: %s", latency, r.verb, url)
 	}
 }
 
@@ -308,7 +332,7 @@ func (r *Result) Into(obj interface{}) error {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
-			return err
+			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
 	}
 	return nil

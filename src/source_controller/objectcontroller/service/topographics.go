@@ -18,12 +18,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateClassification create object's classification
@@ -37,24 +38,33 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("search topo graphics, but read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
-	blog.Infof("search param %s", value)
-
 	selector := meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &selector); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
+		blog.Errorf("search topo graphics, but failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
-	selector.SetSupplierAccount(ownerID)
+	cond := mapstr.MapStr{
+		"scope_type":          selector.ScopeType,
+		"scope_id":            selector.ScopeID,
+		"bk_supplier_account": ownerID,
+	}
+	_, err = selector.Metadata.Label.GetBusinessID()
+	if nil == err {
+		cond.Merge(meta.PublicAndBizCondition(selector.Metadata))
+	} else {
+		cond.Merge(meta.BizLabelNotExist)
+	}
+
 	results := []meta.TopoGraphics{}
-	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(selector).All(ctx, &results); nil != selErr {
-		blog.Error("select data failed, error information is %s", selErr.Error())
+	if selErr := db.Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx, &results); nil != selErr {
+		blog.Errorf("search topo graphics, but select data failed, error information is %s", selErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
 		return
 	}
@@ -73,39 +83,55 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 	// execute
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read http request body failed, error:%s", err.Error())
+		blog.Errorf("update topo graphics, but read http request body failed, error:%s", err.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	datas := []meta.TopoGraphics{}
 	if jsErr := json.Unmarshal(value, &datas); nil != jsErr {
-		blog.Error("failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
+		blog.Errorf("update topo graphics, but failed to unmarshal the data, data is %s, error info is %s ", value, jsErr.Error())
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
 	for index := range datas {
 		datas[index].SetSupplierAccount(ownerID)
-		err = db.Table(common.BKTableNameTopoGraphics).Insert(ctx, datas[index].FillBlank())
-		if cli.Instance.IsDuplicatedError(err) {
-			condition := meta.TopoGraphics{}
-			condition.SetScopeType(*datas[index].ScopeType)
-			condition.SetScopeID(*datas[index].ScopeID)
-			condition.SetNodeType(*datas[index].NodeType)
-			condition.SetObjID(*datas[index].ObjID)
-			condition.SetInstID(*datas[index].InstID)
-			condition.SetSupplierAccount(ownerID)
-			if err = cli.Instance.Table(common.BKTableNameTopoGraphics).Update(context.Background(), condition, datas[index]); err != nil {
-				blog.Error("update data failed, error information is %s", err.Error())
+		cond := mapstr.MapStr{
+			"scope_type":          datas[index].ScopeType,
+			"scope_id":            datas[index].ScopeID,
+			"node_type":           datas[index].NodeType,
+			"bk_obj_id":           datas[index].ObjID,
+			"bk_inst_id":          datas[index].InstID,
+			"bk_supplier_account": ownerID,
+		}
+		_, err := datas[index].Metadata.Label.GetBusinessID()
+		if nil != err {
+			cond.Merge(meta.BizLabelNotExist)
+		} else {
+			cond.Set("metadata", datas[index].Metadata)
+		}
+		cnt, err := db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx)
+		if nil != err {
+			blog.Errorf("update topo graphics, search data error: %s", value, err.Error())
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBSelectFailed, err.Error())})
+			return
+		}
+		if 0 == cnt {
+			err = db.Table(common.BKTableNameTopoGraphics).Insert(ctx, datas[index])
+			if nil != err {
+				blog.Errorf("update topo graphics, but insert data failed, err:%s", err.Error())
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
+				return
+			}
+		} else {
+			if err = cli.Instance.Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond, datas[index]); err != nil {
+				blog.Errorf("update topo graphics, but update failed, err: %s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBUpdateFailed, err.Error())})
 				return
 			}
-		} else if err != nil {
-			blog.Error("insert data failed, error information is %s", err.Error())
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommDBInsertFailed, err.Error())})
-			return
 		}
+
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})

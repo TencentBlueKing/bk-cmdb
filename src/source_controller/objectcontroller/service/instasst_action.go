@@ -13,13 +13,12 @@
 package service
 
 import (
+	"configcenter/src/common/mapstr"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"time"
-
-	"github.com/emicklei/go-restful"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -27,6 +26,8 @@ import (
 	"configcenter/src/common/metadata"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CreateInstAssociation create instance association map
@@ -57,7 +58,7 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 
 	// find object id
 	objCond := map[string]interface{}{
-		meta.AssociationFieldAsstID:          request.ObjectAsstId,
+		meta.AssociationFieldAsstID:          request.ObjectAsstID,
 		meta.AssociationFieldSupplierAccount: ownerID,
 	}
 
@@ -65,7 +66,14 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	err = db.Table(common.BKTableNameObjAsst).Find(objCond).One(ctx, &objResult)
 	if nil != err {
 		blog.Errorf("not found object association error :%v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstId)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsInvalid, request.ObjectAsstID)})
+		return
+	}
+
+	// bk_mainline shouldn't be use
+	if objResult.AsstKindID == common.AssociationKindMainline {
+		blog.Errorf("use inner association type: %v is forbidden", common.AssociationKindMainline)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable, request.ObjectAsstID)})
 		return
 	}
 
@@ -81,12 +89,11 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 		ID:                int64(id),
 		ObjectID:          objResult.ObjectID,
 		AsstObjectID:      objResult.AsstObjID,
-		ObjectAsstID:      request.ObjectAsstId,
-		InstID:            request.InstId,
-		AsstInstID:        request.AsstInstId,
+		ObjectAsstID:      request.ObjectAsstID,
+		InstID:            request.InstID,
+		AsstInstID:        request.AsstInstID,
 		AssociationKindID: objResult.AsstKindID,
 		OwnerID:           ownerID,
-		CreateTime:        time.Now(),
 	}
 
 	err = db.Table(common.BKTableNameInstAsst).Insert(ctx, data)
@@ -99,14 +106,32 @@ func (cli *Service) CreateInstAssociation(req *restful.Request, resp *restful.Re
 	result := &meta.CreateAssociationInstResult{BaseResp: meta.SuccessBaseResp}
 	result.Data.ID = data.ID
 
-	ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-	err = ec.InsertEvent(metadata.EventTypeAssociation, data.ObjectID, metadata.EventActionCreate, data, nil)
+	srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+	srcevent.EventType = metadata.EventTypeAssociation
+	srcevent.ObjType = data.ObjectID
+	srcevent.Action = metadata.EventActionCreate
+	srcevent.Data = []metadata.EventData{
+		{
+			CurData: data,
+		},
+	}
+	err = cli.EventC.Push(ctx, srcevent)
 	if err != nil {
 		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
-	err = ec.InsertEvent(metadata.EventTypeAssociation, data.AsstObjectID, metadata.EventActionCreate, data, nil)
+
+	destevent := eventclient.NewEventWithHeader(req.Request.Header)
+	destevent.EventType = metadata.EventTypeAssociation
+	destevent.ObjType = data.AsstObjectID
+	destevent.Action = metadata.EventActionCreate
+	destevent.Data = []metadata.EventData{
+		{
+			CurData: data,
+		},
+	}
+	err = cli.EventC.Push(ctx, destevent)
 	if err != nil {
 		blog.Errorf("create event error:%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Data: result.Data, Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
@@ -125,21 +150,16 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 
-	value, err := ioutil.ReadAll(req.Request.Body)
+	id, err := strconv.ParseInt(req.PathParameter("association_id"), 10, 64)
 	if err != nil {
-		blog.Errorf("read http request body failed, error:%s", err.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
-		return
+		blog.Errorf("delete inst association, but failed to parse association_id, err: %s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
 	}
 
-	request := &meta.DeleteAssociationInstRequest{}
-	if jsErr := json.Unmarshal([]byte(value), request); nil != jsErr {
-		blog.Errorf("failed to unmarshal the data, data is %s, error info is %s ", string(value), jsErr.Error())
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, jsErr.Error())})
-		return
+	cond := mapstr.MapStr{
+		common.BKOwnerIDField: ownerID,
+		"id":                  id,
 	}
-
-	cond := util.SetModOwner(request.Condition.ToMapInterface(), ownerID)
 
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
@@ -161,19 +181,38 @@ func (cli *Service) DeleteInstAssociation(req *restful.Request, resp *restful.Re
 	}
 
 	for _, asst := range assts {
-		ec := eventclient.NewEventContextByReq(req.Request.Header, cli.Cache)
-		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.ObjectID, metadata.EventActionCreate, nil, asst)
+		srcevent := eventclient.NewEventWithHeader(req.Request.Header)
+		srcevent.EventType = metadata.EventTypeAssociation
+		srcevent.ObjType = asst.ObjectID
+		srcevent.Action = metadata.EventActionDelete
+		srcevent.Data = []metadata.EventData{
+			{
+				PreData: asst,
+			},
+		}
+		err = cli.EventC.Push(ctx, srcevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
-		err = ec.InsertEvent(metadata.EventTypeAssociation, asst.AsstObjectID, metadata.EventActionCreate, nil, asst)
+
+		destevent := eventclient.NewEventWithHeader(req.Request.Header)
+		destevent.EventType = metadata.EventTypeAssociation
+		destevent.ObjType = asst.AsstObjectID
+		destevent.Action = metadata.EventActionDelete
+		destevent.Data = []metadata.EventData{
+			{
+				PreData: asst,
+			},
+		}
+		err = cli.EventC.Push(ctx, destevent)
 		if err != nil {
 			blog.Errorf("create event error:%v", err)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 			return
 		}
+
 	}
 
 	result := &meta.DeleteAssociationInstResult{BaseResp: meta.SuccessBaseResp, Data: "success"}

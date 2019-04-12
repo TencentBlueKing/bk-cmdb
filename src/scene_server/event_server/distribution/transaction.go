@@ -18,14 +18,14 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 	ccredis "configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/types"
+
+	"gopkg.in/redis.v5"
 )
 
 func (th *TxnHandler) Run() (err error) {
@@ -37,25 +37,27 @@ func (th *TxnHandler) Run() (err error) {
 			err = fmt.Errorf("system error: %v", syserror)
 		}
 		if err != nil {
-			blog.Info("event inst handle process stoped by %v", err)
+			blog.Infof("event inst handle process stoped by %v", err)
 			blog.Errorf("%s", debug.Stack())
 		}
 		th.wg.Wait()
 	}()
 
 	blog.Info("transaction handle process started")
+	th.wg.Add(1)
 	go th.fetchTimeout()
+	th.wg.Add(1)
 	go th.watchTransaction()
 outer:
-	for txnID := range th.commited {
-		blog.V(4).Infof("transaction %v commited", txnID)
+	for txnID := range th.committed {
+		blog.V(4).Infof("transaction %v committed", txnID)
 		for {
 			err = th.cache.RPopLPush(common.EventCacheEventTxnQueuePrefix+txnID, common.EventCacheEventQueueKey).Err()
 			if ccredis.IsNilErr(err) {
 				break
 			}
 			if err != nil {
-				blog.Warnf("move commited event to event queue failed: %v, we will try again later", err)
+				blog.Warnf("move committed event to event queue failed: %v, we will try again later", err)
 				continue outer
 			}
 		}
@@ -71,30 +73,30 @@ outer:
 }
 
 func (th *TxnHandler) watchTransaction() {
-	th.wg.Add(1)
 	defer th.wg.Done()
 	if th.rc == nil {
 		return
 	}
 
-	stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
-	if err != nil {
-		blog.Errorf("WatchTransaction faile %v", err)
-		return
-	}
-	defer stream.Close()
-	txn := daltypes.Transaction{}
-	var recvErr error
-	for recvErr = stream.Recv(&txn); recvErr != nil || th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
-		go th.handleTxn(txn)
-	}
-	if recvErr != nil {
-		blog.Errorf("watch stream stoped with error: %v", recvErr)
+	for !th.shouldClose.IsSet() {
+		stream, err := th.rc.CallStream(daltypes.CommandWatchTransactionOperation, nil)
+		if err != nil {
+			blog.Errorf("WatchTransaction faile %v", err)
+			return
+		}
+		txn := daltypes.Transaction{}
+		var recvErr error
+		for recvErr = stream.Recv(&txn); recvErr == nil && !th.shouldClose.IsSet(); recvErr = stream.Recv(&txn) {
+			go th.handleTxn(txn)
+		}
+		if recvErr != nil {
+			blog.Errorf("watch stream stoped with error: %v", recvErr)
+		}
+		stream.Close()
 	}
 }
 
 func (th *TxnHandler) fetchTimeout() {
-	th.wg.Add(1)
 	defer th.wg.Done()
 	ticker := util.NewTicker(time.Second * 60)
 	opt := redis.ZRangeBy{
@@ -115,11 +117,24 @@ func (th *TxnHandler) fetchTimeout() {
 		}
 
 		txns := []daltypes.Transaction{} //Transaction
-		if err := th.db.Table(common.BKTableNameTransaction).Find(dal.NewFilterBuilder().In(common.BKTxnIDField, txnIDs)).All(th.ctx, &txns); err != nil {
+		tranCond := mongo.NewCondition()
+		tranCond.Element(&mongo.In{Key: common.BKTxnIDField, Val: txnIDs})
+		if err := th.db.Table(common.BKTableNameTransaction).Find(tranCond.ToMapStr()).All(th.ctx, &txns); err != nil {
 			blog.Warnf("fetch transaction from mongo failed: %v, we will try again later", err)
 			continue
 		}
 		blog.V(4).Infof("fetch transaction by score %v, resturns %v, txns: %v", opt.Max, txnIDs, txns)
+		if len(txnIDs) != len(txns) {
+			m := map[string]bool{}
+			for index := range txns {
+				m[txns[index].TxnID] = true
+			}
+			for _, txnID := range txnIDs {
+				if !m[txnID] {
+					txns = append(txns, daltypes.Transaction{TxnID: txnID, Status: daltypes.TxStatusException})
+				}
+			}
+		}
 		go th.handleTxn(txns...)
 	}
 }
@@ -130,8 +145,8 @@ func (th *TxnHandler) handleTxn(txns ...daltypes.Transaction) {
 		switch txn.Status {
 		case daltypes.TxStatusOnProgress:
 			continue
-		case daltypes.TxStatusCommited:
-			th.commited <- txn.TxnID
+		case daltypes.TxStatusCommitted:
+			th.committed <- txn.TxnID
 		case daltypes.TxStatusAborted, daltypes.TxStatusException:
 			droped = append(droped, txn.TxnID)
 		default:

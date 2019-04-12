@@ -6,14 +6,14 @@ const customRules = {
     singlechar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s]){0,256}$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,256}$/.test(value)
             /* eslint-enable */
         }
     },
     longchar: {
         validate: value => {
             /* eslint-disable */
-            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。\."'\\\/\s]){0,2000}$/.test(value)
+            return /^([a-zA-Z0-9]|[\u4e00-\u9fa5]|[\(\)\+\-《》_,，；:;“”‘’。@#\."'\\\/\s]){0,2000}$/.test(value)
             /* eslint-enable */
         }
     },
@@ -66,7 +66,27 @@ const customRules = {
     },
     fieldId: {
         validate: (value) => {
-            return /^[a-zA-Z0-9_]{1,20}$/.test(value)
+            return /^[a-z0-9_]{1,20}$/.test(value)
+        }
+    },
+    float: {
+        validate: (value) => {
+            return /^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$/.test(value)
+        }
+    },
+    oid: {
+        validate: (value) => {
+            return /^(\d+)?(\.\d+)+$/.test(value)
+        }
+    },
+    hourFormat: {
+        validate: (value) => {
+            return /^[1-5]?[0-9]$/.test(value)
+        }
+    },
+    dayFormat: {
+        validate: (value) => {
+            return /^((20|21|22|23|[0-1]\d):[0-5][0-9])?$/.test(value)
         }
     }
 }
@@ -85,9 +105,13 @@ const dictionary = {
             enumId: () => '请输入正确的内容',
             enumName: () => '请输入正确的内容',
             number: () => '请输入正确的内容',
+            float: () => '请输入正确的内容',
             isBigger: () => '必须大于最小值',
             repeat: () => '重复的值',
-            fieldId: () => '请输入正确的内容'
+            fieldId: () => '请输入正确的内容',
+            oid: () => '请输入正确的内容',
+            hourFormat: () => '请输入0-59之间的数字',
+            dayFormat: () => '请输入00:00-23:59之间的时间'
         },
         custom: {
             asst: {
@@ -108,9 +132,13 @@ const dictionary = {
             enumId: () => 'Please enter the correct content',
             enumName: () => 'Please enter the correct content',
             number: () => 'Please enter the correct content',
+            float: () => 'Please enter the correct content',
             isBigger: () => 'Must be greater than the minimum',
             repeat: () => 'This value should not be repeated',
-            fieldId: () => 'Please enter the correct content'
+            fieldId: () => 'Please enter the correct content',
+            oid: () => 'Please enter the correct content',
+            hourFormat: () => 'Please enter the number between 0-59',
+            dayFormat: () => 'Please enter the time between 00:00-23:59'
         },
         custom: {
             asst: {

@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,12 +23,24 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, header http.Header, appID int64, appInfo mapstr.MapStr) error {
+func copyHeader(header http.Header) http.Header {
+	newHeader := make(http.Header, 0)
+	for key, values := range header {
+		for _, v := range values {
+			newHeader.Add(key, v)
+		}
+	}
+
+	return newHeader
+}
+
+func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, appID int64, appInfo mapstr.MapStr) error {
 	ownerID, err := appInfo.String(common.BKOwnerIDField)
 	if nil != err {
 		blog.Errorf("RefreshHostInstanceByApp error  appID:%d, appInfo:%+v, error:%s", appID, appInfo, err.Error())
 		return err
 	}
+	header := copyHeader(lgc.header)
 	if nil == header {
 		header = make(http.Header, 0)
 	}
@@ -37,16 +48,19 @@ func (lgc *Logics) RefreshHostInstanceByApp(ctx context.Context, header http.Hea
 		header.Set(common.BKHTTPOwnerID, ownerID)
 		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
+	// use new header, so, new logics struct
+	newLgc := lgc.NewFromHeader(header)
 
-	moduleIDs, err := lgc.GetModueleIDByAppID(ctx, header, appID)
+	moduleIDs, err := newLgc.GetModueleIDByAppID(ctx, appID)
 	if nil != err {
-		blog.Errorf("RefreshHostInstanceByApp error   appID:%d, appInfo:%+v,  error:%s", appID, appInfo, err.Error())
+		blog.Errorf("RefreshHostInstanceByApp error   appID:%d, appInfo:%+v,  error:%s,rid:%s", appID, appInfo, err.Error(), newLgc.rid)
 		return err
 	}
-	return lgc.addEventRefreshModuleItems(appID, moduleIDs, header)
+	return newLgc.addEventRefreshModuleItems(ctx, appID, moduleIDs)
 }
 
-func (lgc *Logics) RefreshAllHostInstance(ctx context.Context, header http.Header) error {
+func (lgc *Logics) RefreshAllHostInstance(ctx context.Context) error {
+	header := copyHeader(lgc.header)
 	if nil == header {
 		header = make(http.Header, 0)
 	}
@@ -54,45 +68,47 @@ func (lgc *Logics) RefreshAllHostInstance(ctx context.Context, header http.Heade
 		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
-	fields := fmt.Sprintf("%s,%s", common.BKAppIDField, common.BKOwnerIDField)
-	appInfoArr, err := lgc.GetAppList(ctx, header, fields)
+	newLgc := lgc.NewFromHeader(header)
+	fields := []string{common.BKAppIDField, common.BKOwnerIDField}
+	appInfoArr, err := newLgc.GetAppList(ctx, fields)
 	if nil != err {
-		blog.Errorf("RefreshAllHostInstance error:%s", err.Error())
+		blog.Errorf("RefreshAllHostInstance error:%s,rid:%s", err.Error(), newLgc.rid)
 		return err
 	}
 	for _, appInfo := range appInfoArr {
 		appID, err := appInfo.Int64(common.BKAppIDField)
 		if nil != err {
-			blog.Warnf("RefreshAllHostInstance get appID by app Info:%+v error:%s", appInfo, err.Error())
+			blog.Warnf("RefreshAllHostInstance get appID by app Info:%+v error:%s,rid:%s", appInfo, err.Error(), newLgc.rid)
 			continue
 		}
 		ownerID, err := appInfo.String(common.BKOwnerIDField)
 		if nil != err {
-			blog.Warnf("RefreshAllHostInstance get supplier accout by app Info:%+v error:%s", appInfo, err.Error())
+			blog.Warnf("RefreshAllHostInstance get supplier accout by app Info:%+v error:%s,rid:%s", appInfo, err.Error(), newLgc.rid)
 			continue
 		}
+		newHeader := copyHeader(lgc.header)
 		header.Set(common.BKHTTPOwnerID, ownerID)
-		err = lgc.RefreshHostInstanceByApp(ctx, header, appID, appInfo)
+		newLgc := lgc.NewFromHeader(newHeader)
+		err = newLgc.RefreshHostInstanceByApp(ctx, appID, appInfo)
 		if nil != err {
-			blog.Warnf("RefreshAllHostInstance RefreshHostInstanceByApp by app Info:%+v error:%s", appInfo, err.Error())
+			blog.Warnf("RefreshAllHostInstance RefreshHostInstanceByApp by app Info:%+v error:%s,rid:%s", appInfo, err.Error(), newLgc.rid)
 			continue
 		}
 	}
 	return nil
 }
 
-func (lgc *Logics) timedTriggerRefreshHostInstance() {
+func (lgc *Logics) timedTriggerRefreshHostInstance(ctx context.Context) {
 	go func() {
 		triggerChn := time.NewTicker(timedTriggerTime)
 		for range triggerChn.C {
-			lgc.cache.Del(common.RedisProcSrvHostInstanceAllRefreshLockKey)
 			locked, err := lgc.cache.SetNX(common.RedisProcSrvHostInstanceAllRefreshLockKey, "", timedTriggerLockExpire).Result()
 			if nil != err {
 				blog.Errorf("locked refresh  error:%s", err.Error())
 				continue
 			}
 			if locked {
-				err := lgc.RefreshAllHostInstance(context.Background(), nil)
+				err := lgc.RefreshAllHostInstance(ctx)
 				if nil != err {
 					blog.Errorf("RefreshAllHostInstance error:%s", err.Error())
 					continue

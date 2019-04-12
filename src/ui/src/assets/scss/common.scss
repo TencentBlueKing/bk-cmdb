@@ -13,6 +13,7 @@ body {
     overflow: hidden;
     font-family: "pingFang-SC-Regular,Microsoft Yahei,Arial";
     color: $cmdbTextColor;
+    background: #fff;
 }
 
 ul,
@@ -35,6 +36,7 @@ a:focus {
 
 .clearfix {
     zoom: 1;
+
     &:before,
     &:after {
         content: "";
@@ -69,10 +71,12 @@ div.cmdb-form-item {
     position: relative;
     display: inline-block;
     width: 100%;
+
     &.is-error {
         input.cmdb-form-input {
             border-color: $cmdbDangerColor;
         }
+
         .form-error {
             position: absolute;
             top: 100%;
@@ -84,6 +88,7 @@ div.cmdb-form-item {
     }
 
 }
+
 input.cmdb-form-input {
     width: 100%;
     height: 36px;
@@ -92,9 +97,11 @@ input.cmdb-form-input {
     border: 1px solid $cmdbBorderColor;
     border-radius: 2px;
     outline: none;
+
     &:focus {
         border-color: $cmdbBorderFocusColor;
     }
+
     &:disabled {
         background-color: #fafafa;
         color: #aaa;
@@ -103,7 +110,7 @@ input.cmdb-form-input {
 }
 
 .cmdb-form-checkbox {
-    font-size: 14px;
+    font-size: 0;
     color: #737987;
     margin-right: 30px;
     line-height: 18px;
@@ -118,6 +125,7 @@ input.cmdb-form-input {
         font-size: 14px;
         cursor: pointer;
         vertical-align: middle;
+        font-size: 14px;
         @include ellipsis;
     }
 
@@ -137,14 +145,17 @@ input.cmdb-form-input {
 
         &:checked {
             background-position: -33px -62px;
+
             &[disabled] {
                 color: #ccc;
                 background-position: -99px -62px;
             }
         }
+
         &[disabled] {
             background-position: -66px -62px;
             cursor: default;
+
             &+.bk-checkbox-text {
                 color: #ccc;
                 cursor: default;
@@ -160,10 +171,12 @@ input.cmdb-form-input {
 
             &:checked {
                 background-position: -33px -95px;
+
                 &[disabled] {
                     background-position: -99px -95px;
                 }
             }
+
             &[disabled] {
                 background-position: -66px -95px;
             }
@@ -171,7 +184,7 @@ input.cmdb-form-input {
     }
 }
 
-.cmdb-form-radio{
+.cmdb-form-radio {
     font-size: 14px;
     color: #737987;
     margin-right: 30px;
@@ -179,14 +192,14 @@ input.cmdb-form-input {
     display: inline-block;
     padding: 7px 0;
 
-    .cmdb-radio-text{
+    .cmdb-radio-text {
         font-style: normal;
         font-weight: normal;
         cursor: pointer;
         vertical-align: middle;
     }
 
-    input[type=radio]{
+    input[type=radio] {
         width: 18px;
         height: 18px;
         outline: none;
@@ -203,34 +216,39 @@ input.cmdb-form-input {
 
         &:checked {
             background-position: -33px 0;
-            &[disabled]{
+
+            &[disabled] {
                 color: #ccc;
                 background-position: -99px 0;
             }
         }
-        &[disabled]{
+
+        &[disabled] {
             background-position: -66px 0;
             cursor: default;
-            & + .bk-radio-text{
+
+            &+.bk-radio-text {
                 color: #ccc;
                 cursor: default;
             }
         }
     }
 
-    &.cmdb-radio-small{
-        input[type=radio]{
+    &.cmdb-radio-small {
+        input[type=radio] {
             width: 14px;
             height: 14px;
             background-position: 0 -33px;
 
             &:checked {
                 background-position: -33px -33px;
-                &[disabled]{
+
+                &[disabled] {
                     background-position: -99px -33px;
                 }
             }
-            &[disabled]{
+
+            &[disabled] {
                 background-position: -66px -33px;
             }
         }
@@ -247,14 +265,27 @@ input.cmdb-form-input {
 }
 
 .text-primary {
-    color: #3c96ff;
+    color: #3c96ff !important;
+
+    -webkit-appearance: none;
+    border: none;
+    outline: 0;
+    background-color: transparent;
+    cursor: pointer;
     &:hover {
         color: #0082ff;
+    }
+
+    &.disabled,
+    &:disabled {
+        opacity: .385;
+        cursor: not-allowed !important;
     }
 }
 
 .text-danger {
     color: #ff5656;
+
     &:hover {
         color: #f72239;
     }
@@ -262,6 +293,12 @@ input.cmdb-form-input {
 
 .color-danger {
     color: #ff5656;
+}
+.color-warning {
+    color: #ffb400;
+}
+.color-success {
+    color: #30d878;
 }
 
 .mask {
@@ -282,8 +319,10 @@ input.cmdb-form-input {
     border: none !important;
     height: 100% !important;
     padding: 0 20px;
+
     .bk-tab2-content {
         height: calc(100% - 58px) !important;
+
         section {
             height: 100% !important;
         }
@@ -299,9 +338,11 @@ input.cmdb-form-input {
     border-color: #0082ff;
     background: #fff;
 }
+
 button.bk-button.bk-danger {
     background: #fff;
     color: $cmdbDangerColor;
+
     &:hover {
         border-color: $cmdbDangerHoverColor;
         color: $cmdbDangerHoverColor;
@@ -318,6 +359,7 @@ button.bk-button.bk-danger {
         height: 30px;
         line-height: 30px;
     }
+
     .bk-selector-icon {
         top: 9px;
     }
@@ -330,9 +372,11 @@ button.bk-button.bk-danger {
 /* form-error -----------start----------- */
 
 .form-component.error {
+
     input[name="date-select"],
     .bk-selector-input,
     .form-int-input,
+    .form-float-input,
     .form-longchar-input,
     .form-singlechar-input,
     .member-container {
@@ -373,6 +417,7 @@ button.bk-button.bk-danger {
 
     &[x-placement^="top"] {
         margin-bottom: 5px;
+
         .tooltip-arrow {
             border-width: 5px 5px 0 5px;
             border-left-color: transparent !important;
@@ -473,6 +518,7 @@ button.bk-button.bk-danger {
         p {
             margin-bottom: 10px;
         }
+
         .bk-button {
             margin-top: 10px;
         }
@@ -480,4 +526,3 @@ button.bk-button.bk-danger {
 }
 
 /* table -------end------- */
-

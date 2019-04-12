@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/RegisterDiscover"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 )
@@ -33,7 +33,7 @@ type RegDiscover struct {
 	ip      string
 	port    uint
 	isSSL   bool
-	rd      *RegisterDiscover.RegDiscover
+	rd      *registerdiscover.RegDiscover
 	rootCtx context.Context
 	cancel  context.CancelFunc
 	apiSevs []*types.APIServerServInfo
@@ -46,7 +46,7 @@ func NewRegDiscover(zkserv string, ip string, port uint, isSSL bool) *RegDiscove
 		ip:      ip,
 		port:    port,
 		isSSL:   isSSL,
-		rd:      RegisterDiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
+		rd:      registerdiscover.NewRegDiscoverEx(zkserv, 10*time.Second),
 		apiSevs: []*types.APIServerServInfo{},
 	}
 }
@@ -63,7 +63,7 @@ func (r *RegDiscover) Start() error {
 
 	//start regdiscover
 	if err := r.rd.Start(); err != nil {
-		blog.Error("fail to start register and discover serv. err:%s", err.Error())
+		blog.Errorf("fail to start register and discover serv. err:%s", err.Error())
 		return err
 	}
 
@@ -150,7 +150,7 @@ func (r *RegDiscover) registerWebServer() error {
 
 	data, err := json.Marshal(webServInfo)
 	if err != nil {
-		blog.Error("fail to marshal web server info to json. err:%s", err.Error())
+		blog.Errorf("fail to marshal web server info to json. err:%s", err.Error())
 		return err
 	}
 

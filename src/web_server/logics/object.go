@@ -22,15 +22,17 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 // GetObjectData get object data
-func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header) ([]interface{}, error) {
+func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, meta metadata.Metadata) ([]interface{}, error) {
 
 	condition := mapstr.MapStr{
 		"condition": []string{
 			objID,
 		},
+		"metadata": meta,
 	}
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectData(context.Background(), header, condition)

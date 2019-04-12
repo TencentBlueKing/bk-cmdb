@@ -14,57 +14,51 @@ package logics
 
 import (
 	"context"
-	"net/http"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
-func (lgc *Logics) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) errors.CCError {
+func (lgc *Logics) LockHost(ctx context.Context, input *metadata.HostLockRequest) errors.CCError {
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	hostLockResult, err := lgc.CoreAPI.HostController().Host().LockHost(ctx, header, input)
+	hostLockResult, err := lgc.CoreAPI.HostController().Host().LockHost(ctx, lgc.header, input)
 	if nil != err {
-		blog.Errorf("lock host, http request error, error:%s,logID:%s", err.Error())
-		return defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {
-		blog.Errorf("lock host, add host lock  error, error code:%d error message:%s,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, util.GetHTTPCCRequestID(header))
-		return defErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
+		blog.Errorf("lock host, add host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, input, lgc.rid)
+		return lgc.ccErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
 	}
 	return nil
 }
 
-func (lgc *Logics) UnlockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) errors.CCError {
+func (lgc *Logics) UnlockHost(ctx context.Context, input *metadata.HostLockRequest) errors.CCError {
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-
-	hostUnlockResult, err := lgc.CoreAPI.HostController().Host().UnlockHost(ctx, header, input)
+	hostUnlockResult, err := lgc.CoreAPI.HostController().Host().UnlockHost(ctx, lgc.header, input)
 	if nil != err {
-		blog.Errorf("unlock host, http request error, error:%s,logID:%s", err.Error())
-		return defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("unlock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostUnlockResult.Result {
-		blog.Errorf("unlock host, release host lock  error, error code:%d error message:%s,logID:%s", hostUnlockResult.Code, hostUnlockResult.ErrMsg, util.GetHTTPCCRequestID(header))
-		return defErr.New(hostUnlockResult.Code, hostUnlockResult.ErrMsg)
+		blog.Errorf("unlock host, release host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostUnlockResult.Code, hostUnlockResult.ErrMsg, input, lgc.rid)
+		return lgc.ccErr.New(hostUnlockResult.Code, hostUnlockResult.ErrMsg)
 	}
 	return nil
 }
 
-func (lgc *Logics) QueryHostLock(ctx context.Context, header http.Header, input *metadata.QueryHostLockRequest) (map[string]bool, errors.CCError) {
+func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostLockRequest) (map[string]bool, errors.CCError) {
 
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	hostLockResult, err := lgc.CoreAPI.HostController().Host().QueryHostLock(ctx, header, input)
+	hostLockResult, err := lgc.CoreAPI.HostController().Host().QueryHostLock(ctx, lgc.header, input)
 	if nil != err {
-		blog.Errorf("query lock host, http request error, error:%s,logID:%s", err.Error())
-		return nil, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("query lock host, http request error, error:%s,input:%+v,logID:%s", err.Error(), input, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !hostLockResult.Result {
-		blog.Errorf("unlock host, query host lock  error, error code:%d error message:%s,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, util.GetHTTPCCRequestID(header))
-		return nil, defErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
+		blog.Errorf("query host lock  error, error code:%d error message:%s,input:%+v,logID:%s", hostLockResult.Code, hostLockResult.ErrMsg, input, lgc.rid)
+		return nil, lgc.ccErr.New(hostLockResult.Code, hostLockResult.ErrMsg)
 	}
 	hostLockMap := make(map[string]bool, 0)
 	for _, ip := range input.IPS {
@@ -75,22 +69,4 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, header http.Header, input 
 	}
 
 	return hostLockMap, nil
-}
-
-func diffHostLockIP(ips []string, hostInfos []map[string]interface{}) []string {
-	mapInnerIP := make(map[string]bool, 0)
-	for _, hostInfo := range hostInfos {
-		innerIP, ok := hostInfo[common.BKHostInnerIPField].(string)
-		if ok {
-			mapInnerIP[innerIP] = true
-		}
-	}
-	var diffIPS []string
-	for _, ip := range ips {
-		_, ok := mapInnerIP[ip]
-		if !ok {
-			diffIPS = append(diffIPS, ip)
-		}
-	}
-	return diffIPS
 }

@@ -37,9 +37,8 @@ func (ps *ProctrlServer) CreateProcInstanceModel(req *restful.Request, resp *res
 		return
 	}
 
-	blog.Infof("will create process instance model: %+v", reqParam)
+	blog.V(5).Infof("will create process instance model: %+v", reqParam)
 
-	blog.V(3).Infof("will create process instance model: %+v", reqParam)
 	if 0 == len(reqParam) {
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
@@ -72,7 +71,7 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		return
 	}
 
-	blog.Infof("will get process instance model. condition: %v", reqParam)
+	blog.V(5).Infof("will get process instance model. condition: %v", reqParam)
 
 	cnt, err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam.Condition).Count(ctx)
 	if err != nil {
@@ -80,7 +79,7 @@ func (ps *ProctrlServer) GetProcInstanceModel(req *restful.Request, resp *restfu
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetInstanceModel)})
 		return
 	}
-	blog.V(3).Infof("will get process instance model. condition: %v", reqParam)
+	blog.V(5).Infof("will get process instance model. condition: %v", reqParam)
 	data := make([]meta.ProcInstanceModel, 0)
 	err = ps.Instance.Table(common.BKTableNameProcInstanceModel).Find(reqParam.Condition).Fields(strings.Split(reqParam.Fields, ",")...).
 		Sort(reqParam.Sort).Start(uint64(reqParam.Start)).Limit(uint64(reqParam.Limit)).All(ctx, &data)
@@ -110,9 +109,7 @@ func (ps *ProctrlServer) DeleteProcInstanceModel(req *restful.Request, resp *res
 	}
 	reqParam = util.SetModOwner(reqParam, util.GetOwnerID(req.Request.Header))
 
-	blog.Infof("will delete process instance model. condition: %+v", reqParam)
-
-	blog.V(3).Infof("will delete process instance model. condition: %+v", reqParam)
+	blog.V(5).Infof("will delete process instance model. condition: %+v", reqParam)
 	if err := ps.Instance.Table(common.BKTableNameProcInstanceModel).Delete(ctx, reqParam); err != nil {
 		blog.Errorf("delete process instance model failed. err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})

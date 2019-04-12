@@ -20,17 +20,17 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 
-	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/eventclient"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/objectcontroller/app/options"
 	"configcenter/src/source_controller/objectcontroller/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
 )
 
@@ -41,44 +41,21 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	c := &util.APIMachineryConfig{
-		ZkAddr:    op.ServConf.RegDiscover,
-		QPS:       1000,
-		Burst:     2000,
-		TLSConfig: nil,
-	}
-
-	machinery, err := apimachinery.NewApiMachinery(c)
-	if err != nil {
-		return fmt.Errorf("new api machinery failed, err: %v", err)
-	}
-
 	coreService := new(service.Service)
-	server := backbone.Server{
-		ListenAddr: svrInfo.IP,
-		ListenPort: svrInfo.Port,
-		Handler:    restful.NewContainer().Add(coreService.WebService()),
-		TLS:        backbone.TLSConfig{},
-	}
-
-	regPath := fmt.Sprintf("%s/%s/%s", types.CC_SERV_BASEPATH, types.CC_MODULE_OBJECTCONTROLLER, svrInfo.IP)
-	bonC := &backbone.Config{
-		RegisterPath: regPath,
-		RegisterInfo: *svrInfo,
-		CoreAPI:      machinery,
-		Server:       server,
-	}
 
 	objCtr := new(ObjectController)
 	objCtr.Service = coreService
-	objCtr.Core, err = backbone.NewBackbone(ctx, op.ServConf.RegDiscover,
-		types.CC_MODULE_OBJECTCONTROLLER,
-		op.ServConf.ExConfig,
-		objCtr.onObjectConfigUpdate,
-		bonC)
+	input := &backbone.BackboneParameter{
+		ConfigUpdate: objCtr.onObjectConfigUpdate,
+		ConfigPath:   op.ServConf.ExConfig,
+		Regdiscv:     op.ServConf.RegDiscover,
+		SrvInfo:      svrInfo,
+	}
+	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	objCtr.Core = engine
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
 		if nil == objCtr.Config {
@@ -91,7 +68,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-
+	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+		return err
+	}
 	select {
 	case <-ctx.Done():
 	}
@@ -109,7 +88,7 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
 
-	instance, err := mongo.NewMgo(h.Config.Mongo.BuildURI())
+	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
 		return
@@ -122,6 +101,8 @@ func (h *ObjectController) onObjectConfigUpdate(previous, current cc.ProcessConf
 		return
 	}
 	h.Cache = cache
+	ec := eventclient.NewClientViaRedis(cache, instance)
+	h.EventC = ec
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

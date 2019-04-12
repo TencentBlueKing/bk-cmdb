@@ -19,14 +19,14 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	cccondition "configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 //SearchIdentifier get identifier
@@ -175,7 +175,7 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		for appID, modulenames := range appmodulenames {
 			proc2modules := []metadata.ProcessModule{}
 			cond := cccondition.CreateCondition().Field(common.BKAppIDField).Eq(appID).Field(common.BKModuleNameField).In(modulenames)
-			err = cli.Instance.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, proc2modules)
+			err = cli.Instance.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, &proc2modules)
 			if err != nil && !cli.Instance.IsNotFoundError(err) {
 				blog.Errorf("SearchIdentifier error:%s", err.Error())
 				resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.New(common.CCErrObjectSelectIdentifierFailed, err.Error())})
@@ -212,13 +212,13 @@ func (cli *Service) SearchIdentifier(req *restful.Request, resp *restful.Respons
 		}
 		// fill module
 		appmodulename2moduleIDs := map[string][]int64{}
-		for _, rela := range modulehosts[inst.HostID] {
+		for _, relate := range modulehosts[inst.HostID] {
 			mod := &metadata.HostIdentModule{
-				SetID:    rela.SetID,
-				ModuleID: rela.ModuleID,
-				BizID:    rela.AppID,
+				SetID:    relate.SetID,
+				ModuleID: relate.ModuleID,
+				BizID:    relate.AppID,
 			}
-			inst.HostIdentModule[fmt.Sprint(rela.ModuleID)] = mod
+			inst.HostIdentModule[fmt.Sprint(relate.ModuleID)] = mod
 
 			if biz, ok := bizs[mod.BizID]; ok {
 				mod.BizName = biz.BizName

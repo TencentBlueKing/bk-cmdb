@@ -15,8 +15,7 @@ class DockerfileTemplate(Template):
     delimiter='$'
 
 def generate_docker_file(image, src_dir, dst_dir, output):
-    
-    #print src_dir
+
     run_cmd_params = []
     copy_cmd_params = []
     list_dirs = os.walk(src_dir)
@@ -52,15 +51,15 @@ def main(argv):
     try:
         opts, _ = getopt.getopt(argv,"ht:i:o:",["help","target=","base_image=","output="])
     except getopt.GetoptError:
-        print 'generate.py -t <target>  -i <base_image> -o <output>'
+        print('generate.py -t <target>  -i <base_image> -o <output>')
         sys.exit(2)
     if len(opts) == 0:
-        print 'generate.py -t <target> -i <base_image> -o <output>'
+        print('generate.py -t <target> -i <base_image> -o <output>')
         sys.exit(2)
-    #print opts
+
     for opt, arg in opts:
         if opt in ('-h','--help'):
-            print 'generate.py -t <target> -i <base_image> -o <output>'
+            print('generate.py -t <target> -i <base_image> -o <output>')
             sys.exit()
         elif opt in ("-t", "--target"):
             target = arg
@@ -68,7 +67,7 @@ def main(argv):
             image = arg
         elif opt in ("-o","--output"):
             output = arg
-    #print image, target
+
     list_dir(image, os.path.abspath(target), output)
 
 if __name__=="__main__":

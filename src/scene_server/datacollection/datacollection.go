@@ -13,12 +13,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"runtime"
-
-	"github.com/spf13/pflag"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,22 +27,58 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/datacollection/app"
 	"configcenter/src/scene_server/datacollection/app/options"
+
+	"github.com/spf13/pflag"
 )
 
 func main() {
 	common.SetIdentification(types.CC_MODULE_DATACOLLECTION)
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
+	var mock bool
+	var collector string
+	pflag.CommandLine.BoolVar(&mock, "mock", false, "send mock message")
+	pflag.CommandLine.StringVar(&collector, "collector", "", "collector name that send mock message send to")
 
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
-
 	util.InitFlags()
+
+	if mock {
+		if err := sigmock(collector); err != nil {
+			fmt.Printf("sigmock failed %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("sigmock success\n")
+		return
+	}
+
+	blog.InitLogs()
+	defer blog.CloseLogs()
+	if err := common.SavePid(); err != nil {
+		blog.Error("fail to save pid. err: %s", err.Error())
+	}
 
 	if err := app.Run(context.Background(), op); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Fatal(err)
+		blog.Errorf("process stoped by %v", err)
+		blog.CloseLogs()
+		os.Exit(1)
 	}
+}
+
+func sigmock(collector string) error {
+	body := bytes.NewBufferString(`{"name":"` + collector + `"}`)
+	resp, err := http.Post("127.0.0.1:12140", "application/json", body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 {
+		respbody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("%s", respbody)
+	}
+	return nil
 }

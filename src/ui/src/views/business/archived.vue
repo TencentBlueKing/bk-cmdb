@@ -14,7 +14,7 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="isInfoShow">{{$t('Inst["恢复业务"]')}}</bk-button>
+                <bk-button type="primary" size="mini" @click="handleRecovery(item)" :disabled="!authority.includes('update')">{{$t('Inst["恢复业务"]')}}</bk-button>
             </template>
         </cmdb-table>
     </div>
@@ -32,24 +32,28 @@
                     current: 1,
                     size: 10,
                     count: 0
-                },
-                isInfoShow: false
+                }
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'isAdminView', 'userName']),
             ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
             customBusinessColumns () {
-                return this.usercustom['biz_table_columns']
+                return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
+            },
+            authority () {
+                return this.$store.getters['userPrivilege/modelAuthority']('biz')
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
-                    params: {
+                    params: this.$injectMetadata({
                         bk_obj_id: 'biz',
                         bk_supplier_account: this.supplierAccount
-                    },
+                    }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
@@ -114,16 +118,11 @@
                 }
             },
             handleRecovery (biz) {
-                this.isInfoShow = true
                 this.$bkInfo({
                     title: this.$t('Inst["是否确认恢复业务？"]'),
                     content: this.$t('Inst["恢复业务提示"]', {bizName: biz['bk_biz_name']}),
                     confirmFn: () => {
-                        this.isInfoShow = false
                         this.recoveryBiz(biz)
-                    },
-                    cancelFn: () => {
-                        this.isInfoShow = false
                     }
                 })
             },

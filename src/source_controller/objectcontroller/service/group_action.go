@@ -17,14 +17,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/emicklei/go-restful"
-	"github.com/rs/xid"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/emicklei/go-restful"
+	"github.com/rs/xid"
 )
 
 //CreateUserGroup create group
@@ -40,21 +40,21 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	js, err := simplejson.NewJson([]byte(value))
 	if err != nil {
-		blog.Error("create user group failed, err msg : %v", err)
+		blog.Errorf("create user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
 	data, err := js.Map()
 	if err != nil {
-		blog.Error("create user group failed, err msg : %v", err)
+		blog.Errorf("create user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -64,7 +64,7 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 	data = util.SetModOwner(data, ownerID)
 	err = db.Table(common.BKTableNameUserGroup).Insert(ctx, data)
 	if nil != err {
-		blog.Error("create user group error :%v", err)
+		blog.Errorf("create user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -87,21 +87,21 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	groupID := pathParams["group_id"]
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	js, err := simplejson.NewJson([]byte(value))
 	if err != nil {
-		blog.Error("update user group failed, err msg : %v", err)
+		blog.Errorf("update user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 
 	data, err := js.Map()
 	if err != nil {
-		blog.Error("update user group failed, err msg : %v", err)
+		blog.Errorf("update user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -111,7 +111,7 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 	cond = util.SetModOwner(cond, ownerID)
 	err = db.Table(common.BKTableNameUserGroup).Update(ctx, cond, data)
 	if nil != err {
-		blog.Error("update user group error :%v", err)
+		blog.Errorf("update user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -137,7 +137,7 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 	cond = util.SetModOwner(cond, ownerID)
 	err := db.Table(common.BKTableNameUserGroup).Delete(ctx, cond)
 	if nil != err {
-		blog.Error("delete user group error :%v", err)
+		blog.Errorf("delete user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -157,20 +157,20 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 
 	value, err := ioutil.ReadAll(req.Request.Body)
 	if err != nil {
-		blog.Error("read json data error :%v", err)
+		blog.Errorf("read json data error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommHTTPReadBodyFailed, err.Error())})
 		return
 	}
 
 	js, err := simplejson.NewJson([]byte(value))
 	if err != nil {
-		blog.Error("get user group failed, err msg : %v", err)
+		blog.Errorf("get user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
 	cond, err := js.Map()
 	if err != nil {
-		blog.Error("get user group failed, err msg : %v", err)
+		blog.Errorf("get user group failed, err msg : %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
 		return
 	}
@@ -178,7 +178,7 @@ func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response
 	var result []interface{}
 	err = db.Table(common.BKTableNameUserGroup).Find(cond).All(ctx, &result)
 	if nil != err {
-		blog.Error("get user group error :%v", err)
+		blog.Errorf("get user group error :%v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}

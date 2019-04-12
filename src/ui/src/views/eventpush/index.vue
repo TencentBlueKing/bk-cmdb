@@ -1,7 +1,7 @@
 <template>
     <div class="push-wrapper">
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary" @click="createPush">{{$t('EventPush["新增推送"]')}}</bk-button>
+            <bk-button type="primary" @click="createPush">{{$t('Common["新建"]')}}</bk-button>
         </div>
         <cmdb-table
             rowCursor="default"
@@ -24,15 +24,14 @@
                 </template>
                 <div class="empty-info" slot="data-empty">
                     <p>{{$t("Common['暂时没有数据']")}}</p>
-                    <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
-                    <bk-button class="process-btn" type="primary" @click="createPush">{{$t("EventPush['新增推送']")}}</bk-button>
+                    <p>{{$t("EventPush['事件推送功能能够实现当配置信息发生变化的时候，实时通知到关联的系统中，目前支持 http 的推送方式']")}}</p>
                 </div>
         </cmdb-table>
         <cmdb-slider
             :isShow.sync="slider.isShow"
             :title="slider.title"
             :width="564"
-            :beforeClose="handleSliderBeforeClose">
+            :beforeClose="handleBeforeSliderClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
@@ -92,12 +91,16 @@
                 }
             }
         },
+        created () {
+            this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
+            this.getTableData()
+        },
         methods: {
             ...mapActions('eventSub', [
                 'searchSubscription',
                 'unsubcribeEvent'
             ]),
-            handleSliderBeforeClose () {
+            handleBeforeSliderClose () {
                 if (this.$refs.detail.isCloseConfirmShow()) {
                     return new Promise((resolve, reject) => {
                         this.$bkInfo({
@@ -177,9 +180,6 @@
                 this.table.pagination.current = page
                 this.getTableData()
             }
-        },
-        created () {
-            this.getTableData()
         },
         components: {
             vPushDetail

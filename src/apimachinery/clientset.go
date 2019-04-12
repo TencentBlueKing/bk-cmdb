@@ -16,6 +16,7 @@ import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/apimachinery/auditcontroller"
+	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
 	"configcenter/src/apimachinery/flowctrl"
@@ -41,17 +42,13 @@ type ClientSetInterface interface {
 	AuditController() auditcontroller.AuditCtrlInterface
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
+	CoreService() coreservice.CoreServiceClientInterface
 
 	Healthz() healthz.HealthzInterface
 }
 
-func NewApiMachinery(c *util.APIMachineryConfig) (ClientSetInterface, error) {
+func NewApiMachinery(c *util.APIMachineryConfig, discover discovery.DiscoveryInterface) (ClientSetInterface, error) {
 	client, err := util.NewClient(c.TLSConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	discover, err := discovery.NewDiscoveryInterface(c.ZkAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -198,4 +195,14 @@ func (cs *ClientSet) Healthz() healthz.HealthzInterface {
 		Throttle: cs.throttle,
 	}
 	return healthz.NewHealthzClient(c, cs.discover)
+}
+
+func (cs *ClientSet) CoreService() coreservice.CoreServiceClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.CoreService(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}
+	return coreservice.NewCoreServiceClient(c, cs.version)
 }

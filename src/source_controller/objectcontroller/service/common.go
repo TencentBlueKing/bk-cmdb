@@ -17,14 +17,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"configcenter/src/storage/dal"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/validator"
+	"configcenter/src/storage/dal"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -138,8 +137,8 @@ func (cli *Service) TranslatePropertyName(defLang language.DefaultCCLanguageIf, 
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
 }
 
-func (cli *Service) TranslateDescription(defLang language.DefaultCCLanguageIf, att *meta.Attribute) string {
-	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_description_"+att.PropertyID), att.Description)
+func (cli *Service) TranslatePlaceholder(defLang language.DefaultCCLanguageIf, att *meta.Attribute) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Description)
 }
 
 func (cli *Service) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *meta.Attribute, val interface{}) interface{} {
@@ -156,4 +155,10 @@ func (cli *Service) TranslatePropertyGroupName(defLang language.DefaultCCLanguag
 
 func (cli *Service) TranslateClassificationName(defLang language.DefaultCCLanguageIf, att *meta.Classification) string {
 	return util.FirstNotEmptyString(defLang.Language("classification_"+att.ClassificationID), att.ClassificationName, att.ClassificationID)
+}
+
+func (cli *Service) TranslateAssociationKind(defLang language.DefaultCCLanguageIf, kind *meta.AssociationKind) {
+	kind.AssociationKindName = util.FirstNotEmptyString(defLang.Language("unique_kind_name_"+kind.AssociationKindID), kind.AssociationKindName)
+	kind.SourceToDestinationNote = util.FirstNotEmptyString(defLang.Language("unique_kind_src_to_dest_"+kind.AssociationKindID), kind.SourceToDestinationNote)
+	kind.DestinationToSourceNote = util.FirstNotEmptyString(defLang.Language("unique_kind_dest_to_src_"+kind.AssociationKindID), kind.DestinationToSourceNote)
 }

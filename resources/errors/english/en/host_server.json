@@ -21,7 +21,7 @@
 	"1110020": "Save field configuration failed",
 	"1110021": "Failed to get field configuration",
 	"1110022": "Failed to get default field configuration",
-	"1110023": "Host '%s' does not belong to current business",
+	"1110023": "Host ID '%v' does not belong to current business",
 	"1110024": "Failed to get service for host '%s'",
 	"1110025": "Deletion of host '%s' from resource pool failed, error:%s",
 	"1110026": "The relationship between the newly added host '%s' and the module failed, error:%s",
@@ -29,7 +29,16 @@
 	"1110028": "Failed to modify host relationship",
 	"1110029": "Failed to add host to module",
 	"1110030": "Failed to add host to module, error:%s",
-	
+	"1110031": "Failed to create cloud synchronization task",
+	"1110032": "Failed to update synchronization history",
+	"1110033": "Failed to add to resource confirm, error: %s",
+	"1110034": "Failure to obtain resource confirmation instance",
+	"1110035": "Failed to add resource instance to confirm history",
+	"1110036": "Failed to obtain cloud task instance",
+	"1110037": "Failed to obtain resource confirm history",
+	"1110038": "Task name already exits",
+	"1110039": "Fail to start cloud Synchronize",
+
 	"1110040": "Create custom query failed, error %s",
 	"1110041": "Modify custom query failed, error %s",
 	"1110042": "Delete custom query failed, error %s",
@@ -41,5 +50,12 @@
 	"1110048": "%v appliction not found",
 	"1110049": "Failed to get module information, error %s",
 	"1110050": "Get host agent status, error %s",
+	"1110051": "The resource pool was not found",
+	"1110052": "The host is already in the resource pool",
+	"1110053": "Failed to get resource pool information, error message: %s",
+	"1110054": "%s module not found",
+	"1110055": "The host failed to delete the business.",
+
+	"1110080": "Fail to add host to resource pool",
 	"": ""
 }

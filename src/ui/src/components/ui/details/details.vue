@@ -1,49 +1,44 @@
 <template>
     <div class="details-layout">
-        <slot name="details-header"></slot>
-        <template v-for="(group, groupIndex) in $sortedGroups">
-            <div class="property-group"
-                :key="groupIndex"
-                v-if="$groupedProperties[groupIndex].length">
-                <h3 class="group-name">
-                    <span class="group-toggle"
-                        @click="handleToggleGroup(group)"
-                        :class="{collapse: collapseStatus[group['bk_group_id']]}">
-                        <i class="bk-icon icon-angle-down"></i>
-                        {{group['bk_group_name']}}
-                    </span>
-                </h3>
-                <cmdb-collapse-transition @after-enter="checkScrollbar" @after-leave="checkScrollbar">
-                    <ul class="property-list clearfix"
-                        v-show="!collapseStatus[group['bk_group_id']]">
-                        <li class="property-item clearfix fl"
-                            v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
-                            :key="propertyIndex"
-                            :title="getTitle(inst, property)">
-                            <span class="property-name fl">{{property['bk_property_name']}}</span>
-                            <span class="property-value clearfix fl" v-if="property.unit">
-                                <span class="property-value-text fl">{{inst[property['bk_property_id']] || '--'}}</span>
-                                <span class="property-value-unit fl">{{property.unit}}</span>
-                            </span>
-                            <span class="property-value fl" v-else>{{inst[property['bk_property_id']] || '--'}}</span>
-                        </li>
-                    </ul>
-                </cmdb-collapse-transition>
-            </div>
-        </template>
+        <div ref="detailsWrapper">
+            <slot name="details-header"></slot>
+            <template v-for="(group, groupIndex) in $sortedGroups">
+                <div class="property-group"
+                    :key="groupIndex"
+                    v-if="$groupedProperties[groupIndex].length">
+                    <cmdb-collapse
+                        :label="group['bk_group_name']"
+                        :collapse.sync="collapseStatus[group['bk_group_id']]">
+                        <ul class="property-list clearfix">
+                            <li class="property-item clearfix fl"
+                                v-for="(property, propertyIndex) in $groupedProperties[groupIndex]"
+                                :key="propertyIndex"
+                                :title="getTitle(inst, property)">
+                                <span class="property-name fl">{{property['bk_property_name']}}</span>
+                                <span class="property-value clearfix fl" v-if="property.unit">
+                                    <span class="property-value-text fl">{{getValue(property)}}</span>
+                                    <span class="property-value-unit fl">{{property.unit}}</span>
+                                </span>
+                                <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                            </li>
+                        </ul>
+                    </cmdb-collapse>
+                </div>
+            </template>
+        </div>
         <div class="details-options"
             v-if="showOptions"
             :class="{sticky: scrollbar}">
             <slot name="details-options" >
                 <bk-button class="button-edit" type="primary"
                     v-if="showEdit"
-                    :disabled="!$authorized.update"
+                    :disabled="!authority.includes('update')"
                     @click="handleEdit">
                     {{editText}}
                 </bk-button>
                 <bk-button class="button-delete" type="danger"
                     v-if="showDelete"
-                    :disabled="!$authorized.delete"
+                    :disabled="!authority.includes('delete')"
                     @click="handleDelete">
                     {{deleteText}}
                 </bk-button>
@@ -82,6 +77,12 @@
             showDelete: {
                 type: Boolean,
                 default: true
+            },
+            authority: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
@@ -101,10 +102,10 @@
             }
         },
         mounted () {
-            RESIZE_EVENTS.addResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.addResizeListener(this.$refs.detailsWrapper, this.checkScrollbar)
         },
         beforeDestroy () {
-            RESIZE_EVENTS.removeResizeListener(this.$el, this.checkScrollbar)
+            RESIZE_EVENTS.removeResizeListener(this.$el.detailsWrapper, this.checkScrollbar)
         },
         methods: {
             checkScrollbar () {
@@ -118,6 +119,10 @@
             },
             getTitle (inst, property) {
                 return `${property['bk_property_name']}: ${inst[property['bk_property_id']] || '--'} ${property.unit}`
+            },
+            getValue (property) {
+                const value = this.inst[property['bk_property_id']]
+                return String(value).length ? value : '--'
             },
             handleEdit () {
                 this.$emit('on-edit', this.inst)
