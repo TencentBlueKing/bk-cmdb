@@ -7,8 +7,16 @@ import {
 
 const authActionMap = {
     'findMany': 'search',
-    'create': 'update'
+    'create': 'update',
+    'archive': 'delete'
 }
+
+const businessAuth = [
+    AUTH.C_BUSINESS,
+    AUTH.U_BUSINESS,
+    AUTH.R_BUSINESS,
+    AUTH.BUSINESS_ARCHIVE
+]
 
 const modelAuth = [
     AUTH.C_INST,
@@ -30,16 +38,14 @@ const eventAuth = [
     AUTH.R_EVENT
 ]
 
-const CONFIG = {
-    origin: {
-        url: 'auth/verify',
-        method: 'post',
-        data: []
-    },
-    redirect: {
-        url: `topo/privilege/user/detail/0/${window.User.name}`,
-        method: 'get'
-    }
+const origin = {
+    url: 'auth/verify',
+    method: 'post',
+    data: []
+}
+const redirect = {
+    url: `topo/privilege/user/detail/0/${window.User.name}`,
+    method: 'get'
 }
 
 const isAdmin = window.User.admin === '1'
@@ -56,7 +62,7 @@ const defaultMeta = {
 
 
 const transformResponse = data => {
-    const payload = CONFIG.origin.data
+    const payload = origin.data
     const modelConfig = flatternModelConfig(data.model_config)
     const backConfig = data.sys_config.back_config || []
     const globalBusi = data.sys_config.global_busi || []
@@ -70,6 +76,11 @@ const transformResponse = data => {
             meta.is_pass = true
         } else {
             if (modelAuth.includes(auth)) {
+                setModelMeta(meta, modelConfig)
+            } else if (businessAuth.includes(auth)) {
+                meta.parent_layers = [{
+                    resource_model: 'biz'
+                }]
                 setModelMeta(meta, modelConfig)
             } else if (resourceAuth.includes(auth)) {
                 setSystemMeta('resource', meta, globalBusi)
@@ -108,14 +119,14 @@ const flatternModelConfig = (modelConfig = {}) => {
 
 export default {
     request: config => {
-        if (isSameRequest(CONFIG.origin, config)) {
-            CONFIG.origin.data = config.data
-            Object.assign(config, CONFIG.redirect)
+        if (isSameRequest(origin, config)) {
+            origin.data = config.data
+            Object.assign(config, redirect)
         }
         return config
     },
     response: response => {
-        if (isRedirectResponse(CONFIG.redirect, response)) {
+        if (isRedirectResponse(redirect, response)) {
             const data = transformResponse(response.data.data)
             Object.assign(response.data, {
                 data: data
