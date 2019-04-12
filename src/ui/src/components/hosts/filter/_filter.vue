@@ -62,7 +62,7 @@
                     @click.stop="handleCollectionBox">
                     <i class="icon-cc-collection"></i>
                 </bk-button>
-                <div class="collection-form" ref="collectionTips" v-click-outside="handleCloseCollection" :style="{ 'opacity': isFirstCollections ? 1 : 0 }">
+                <div class="collection-form" ref="collectionTips" v-click-outside="handleCloseCollection" v-show="collection.show">
                     <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
                     <div class="form-group">
                         <input type="text" class="form-name cmdb-form-input"
@@ -158,8 +158,7 @@
                 confirm: {
                     instance: null,
                     id: null
-                },
-                isFirstCollections: false
+                }
             }
         },
         computed: {
@@ -481,19 +480,17 @@
                 }
             },
             handleCloseCollection () {
-                this.confirm.instance && this.confirm.instance.setVisible(false)
+                this.confirm.instance && this.confirm.instance.destroy()
                 this.collection.name = ''
                 this.collection.content = ''
                 this.collection.show = false
             },
             handleCollectionBox (event) {
-                this.isFirstCollections = true
                 if (this.collection.show) {
                     this.handleCloseCollection()
                     return
                 }
                 this.collection.show = true
-                this.confirm.instance && this.confirm.instance.destroy()
                 this.confirm.instance = this.$tooltips({
                     duration: -1,
                     theme: 'light',
@@ -615,7 +612,6 @@
         color: #3c96ff;
         z-index: 9999;
         background-color: #fff;
-        transform: 0.5 all;
         .form-group {
             margin: 15px 0 0 0;
             position: relative;
