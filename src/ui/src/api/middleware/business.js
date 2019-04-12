@@ -4,20 +4,18 @@ import {
 } from './util.js'
 import Cookies from 'js-cookie'
 
-const CONFIG = {
-    origin: {
-        url: 'auth/business-list',
-        method: 'get'
-    },
-    redirect: {
-        url: `biz/search/0`,
-        method: 'post',
-        data: {
-            'fields': ['bk_biz_id', 'bk_biz_name'],
-            'condition': {
-                'bk_data_status': {
-                    '$ne': 'disabled'
-                }
+const origin = {
+    url: 'auth/business-list',
+    method: 'get'
+}
+const redirect = {
+    url: 'biz/search/0',
+    method: 'post',
+    data: {
+        'fields': ['bk_biz_id', 'bk_biz_name'],
+        'condition': {
+            'bk_data_status': {
+                '$ne': 'disabled'
             }
         }
     }
@@ -25,13 +23,13 @@ const CONFIG = {
 
 export default {
     request: config => {
-        if (isSameRequest(CONFIG.origin, config)) {
-            Object.assign(config, CONFIG.redirect)
+        if (isSameRequest(origin, config)) {
+            Object.assign(config, redirect)
         }
         return config
     },
     response: response => {
-        if (isRedirectResponse(CONFIG.redirect, response)) {
+        if (isRedirectResponse(redirect, response)) {
             const cookieBizId = Cookies.get('bk_privi_biz_id')
             const authorizedBizIds = cookieBizId ? cookieBizId.split('-') : []
             const authorizedBusiness = response.data.data.info.filter(business => {
