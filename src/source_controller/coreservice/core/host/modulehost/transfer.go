@@ -272,17 +272,18 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 		bizID = t.srcBizID
 	}
 	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKAppIDField).NotEq(bizID)
 	cond.Field(common.BKHostIDField).Eq(hostID)
-	condMap := util.SetQueryOwner(cond, ctx.SupplierAccount)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	cnt, dbErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
+	cnt, dbErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).Count(ctx)
 	if dbErr != nil {
 		blog.ErrorJSON("validParameterHostBelongbiz find data error. err:%s,cond:%s, rid:%s", dbErr.Error(), condMap, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	if cnt == 0 {
-		blog.ErrorJSON("validParameterHostBelongbiz not found data.cond:%s, rid:%s", condMap, ctx.ReqID)
+
+	if cnt > 0 {
+		blog.ErrorJSON("validParameterHostBelongbiz has belong to other business.cond:%s, rid:%s", condMap, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostID, bizID)
 	}
 	return nil
