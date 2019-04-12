@@ -73,7 +73,7 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 			})
 		}
 	}
-	if err != nil {
+	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
 	}
 
@@ -102,7 +102,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 			})
 		}
 	}
-	if err != nil {
+	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
 	}
 
@@ -132,15 +132,12 @@ func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *m
 			})
 		}
 	}
-	if err != nil {
+	if len(exceptionArr) > 0 {
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
 	}
 
 	return nil, nil
 }
-
-
-
 
 // GetHostModuleRelation get host module relation
 func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
