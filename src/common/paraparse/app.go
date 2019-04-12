@@ -47,6 +47,8 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 			} else {
 				output[i.Field] = i.Value
 			}
+		case common.BKDBLIKE:
+			output[i.Field] = i.Value
 
 		default:
 			d := make(map[string]interface{})
