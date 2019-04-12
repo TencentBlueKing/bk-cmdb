@@ -455,7 +455,7 @@
             getCollectionParams () {
                 const params = this.getParams()
                 const info = {
-                    'bk_biz_id': this.collectionContent.business || -1,
+                    'bk_biz_id': this.bizId || -1,
                     'exact_search': this.ip.exact,
                     'bk_host_innerip': this.ip['bk_host_innerip'],
                     'bk_host_outerip': this.ip['bk_host_outerip'],
