@@ -30,6 +30,7 @@ import objectUnique from './modules/api/object-unique.js'
 import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
+import userPrivilege from './modules/api/user-privilege.js'
 import globalModels from './modules/api/global-models.js'
 import cloudDiscover from './modules/api/cloud-discover'
 import netCollectDevice from './modules/api/net-collect-device.js'
@@ -69,6 +70,7 @@ export default new Vuex.Store({
         operationAudit,
         procConfig,
         userCustom,
+        userPrivilege,
         globalModels,
         cloudDiscover,
         netCollectDevice,
