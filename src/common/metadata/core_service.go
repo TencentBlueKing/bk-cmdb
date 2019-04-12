@@ -220,3 +220,10 @@ type TransferHostsCrossBusinessRequest struct {
 	HostIDArr        []int64 `json:"bk_host_id"`
 	DstModuleIDArr   []int64 `json:"bk_module_ids"`
 }
+
+// HostModuleRelationRequest gethost module relation request parameter
+type HostModuleRelationRequest struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostID        []int64 `json:"bk_host_ids"`
+	ModuleID      []int64 `json:"bk_module_ids"`
+}

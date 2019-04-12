@@ -558,6 +558,8 @@ const (
 	CCErrHostModuleNotExist = 1110054
 	// CCErrDeleteHostFromBusiness Delete the host under the business
 	CCErrDeleteHostFromBusiness = 1110055
+	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
+	CCErrHostNotBelongIDLEModuleErr = 1110056
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
