@@ -57,11 +57,6 @@
                         @click="exportField">
                         {{$t('HostResourcePool[\'导出选中\']')}}
                     </bk-button>
-                    <!-- <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                        <input type="hidden" name="bk_host_id" :value="table.checked">
-                        <input type="hidden" name="export_custom_fields" :value="usercustom[columnsConfigKey]">
-                        <input type="hidden" name="bk_biz_id" value="-1">
-                    </form> -->
                     <cmdb-clipboard-selector class="options-clipboard"
                         :list="clipboardList"
                         :disabled="!table.checked.length"
