@@ -85,19 +85,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 
 	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, input.ModuleID, input.IsIncrement)
 
-	// 在HostModule的validParameterModule 方法中判断默认模块不可以与普通模块同时存在，
-	// 是为了保证数据的证据性。 这里是为了保证逻辑的正确性。
-	// 保证主机只可以在用户新加的普通模块中转移
-	exit, err := transfer.HasInnerModule(ctx)
-	if err != nil {
-		blog.ErrorJSON("TrasferHostModule HasDefaultModule error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
-		return nil, err
-	}
-	if !exit {
-		blog.ErrorJSON("TrasferHostModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ApplicationID, input.ModuleID)
-	}
-	err = transfer.ValidParameter(ctx)
+	err := transfer.ValidParameter(ctx)
 	if err != nil {
 		blog.ErrorJSON("TrasferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
@@ -125,6 +113,8 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
 	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
 
+	transfer.SetCrossBusiness(ctx, input.SrcApplicationID)
+
 	err := transfer.ValidParameter(ctx)
 	if err != nil {
 		blog.ErrorJSON("TransferHostCrossBusiness ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
@@ -147,6 +137,36 @@ func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *m
 	}
 
 	return nil, nil
+}
+
+
+
+
+// GetHostModuleRelation get host module relation
+func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+	moduleHostCond := condition.CreateCondition()
+	if input.ApplicationID > 0 {
+		moduleHostCond.Field(common.BKAppIDField).Eq(input.ApplicationID)
+	}
+	if len(input.HostID) > 0 {
+		moduleHostCond.Field(common.BKHostIDField).In(input.HostID)
+	}
+	if len(input.ModuleID) > 0 {
+		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleID)
+	}
+	cond := moduleHostCond.ToMapStr()
+	if len(cond) == 0 {
+		return nil, nil
+	}
+	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
+	hostModuleArr := make([]metadata.ModuleHost, 0)
+	err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &hostModuleArr)
+	if err != nil {
+		blog.ErrorJSON("GetHostModuleRelation query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return hostModuleArr, nil
 }
 
 func (mh *ModuleHost) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
@@ -185,7 +205,7 @@ func (mh *ModuleHost) getHostIDModuleMapByHostID(ctx core.ContextParams, appID i
 	var dataArr []metadata.ModuleHost
 	err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &dataArr)
 	if err != nil {
-		blog.ErrorJSON("getHostIDMOduleIDMapByHostID query db error. err:%s, cond:%#v,rid:%s", err.Error(), cond, ctx.ReqID)
+		blog.ErrorJSON("getHostIDMOduleIDMapByHostID query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	result := make(map[int64][]metadata.ModuleHost, 0)

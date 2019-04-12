@@ -21,3 +21,17 @@ import (
 func (hm *hostManager) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
 	return hm.moduleHost.TransferHostToInnerModule(ctx, input)
 }
+
+// TransferHostModule transfer host to  module
+func (hm *hostManager) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferHostModule(ctx, input)
+}
+
+// TransferHostCrossBusiness transfer host to other business module
+func (hm *hostManager) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferHostCrossBusiness(ctx, input)
+}
+
+func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+	return hm.moduleHost.GetHostModuleRelation(ctx, input)
+}
