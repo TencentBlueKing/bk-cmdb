@@ -72,7 +72,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
@@ -97,7 +97,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Update,
@@ -123,7 +123,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Delete,
@@ -143,7 +143,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
@@ -175,7 +175,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.FindMany,
@@ -188,7 +188,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.Create,
@@ -206,7 +206,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Update,
@@ -226,7 +226,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Delete,
@@ -260,7 +260,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -397,7 +397,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	// find object association with a association kind list.
 	if ps.hitPattern(findObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -427,7 +427,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 	// find object instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -558,7 +558,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
@@ -581,7 +581,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Find,
@@ -612,7 +612,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Update,
@@ -645,7 +645,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			})
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.UpdateMany,
@@ -669,7 +669,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
@@ -700,7 +700,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Delete,
@@ -726,7 +726,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -773,7 +773,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
@@ -797,7 +797,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
@@ -836,7 +836,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("create object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -865,7 +865,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("delete object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
@@ -895,7 +895,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("update object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
@@ -914,7 +914,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -932,7 +932,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
@@ -950,7 +950,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object topology graphic, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
@@ -966,7 +966,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 	if ps.hitRegexp(updateObjectTopologyGraphicLatestRegexp, http.MethodPost) {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Update,
@@ -1002,7 +1002,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
@@ -1031,7 +1031,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
@@ -1061,7 +1061,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
@@ -1080,7 +1080,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
@@ -1097,7 +1097,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -1138,7 +1138,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
@@ -1168,7 +1168,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
@@ -1242,7 +1242,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttributeGroup,
@@ -1267,7 +1267,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
@@ -1310,7 +1310,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
@@ -1352,7 +1352,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
@@ -1395,7 +1395,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
@@ -1463,7 +1463,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
@@ -1481,7 +1481,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
@@ -1500,7 +1500,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModelTopology,
@@ -1520,7 +1520,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -1545,7 +1545,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -1570,7 +1570,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
