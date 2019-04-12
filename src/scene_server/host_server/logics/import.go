@@ -38,7 +38,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 	var err error
 	instance.defaultFields, err = lgc.getHostFields(ctx, ownerID)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("get host fields failed, err: %v", err)
+		return nil, nil, nil, nil, err
 	}
 
 	hostIDMap, err := instance.GetHostIDByHostInfoArr(ctx, hostInfos)
@@ -92,7 +92,6 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 			key := generateHostCloudKey(innerIP, iSubArea)
 			intHostID, existInDB = hostIDMap[key]
 		}
-
 		var preData mapstr.MapStr
 		// remove unchangeable fields
 		delete(host, common.BKHostIDField)
@@ -263,18 +262,19 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 
 	hostID := int64(result.Data.Created.ID)
 
-	opt := &metadata.ModuleHostConfigParams{
+	opt := &metadata.HostsModuleRelation{
 		ApplicationID: appID,
 		ModuleID:      moduleID,
-		HostID:        hostID,
+		HostID:        []int64{hostID},
 	}
-	hResult, err := h.CoreAPI.HostController().Module().AddModuleHostConfig(h.ctx, h.pheader, opt)
+	hResult, err := h.CoreAPI.CoreService().Host().TransferHostModule(h.ctx, h.pheader, opt)
 	if err != nil {
 		blog.Errorf("add host module by ip:%s  err:%s,input:%+v,rid:%s", ip, err.Error(), opt, h.rid)
 		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
-	} else if err == nil && !hResult.Result {
+	}
+	if !hResult.Result {
 		blog.Errorf("add host module by ip:%s  err code:%d,err msg:%s,input:%+v,rid:%s", ip, hResult.Code, hResult.ErrMsg, opt, h.rid)
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, hResult.ErrMsg))
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, hResult.Data[0].Message))
 	}
 
 	return hostID, nil
