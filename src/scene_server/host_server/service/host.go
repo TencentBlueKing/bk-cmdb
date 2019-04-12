@@ -347,7 +347,7 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
+	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx)
 	if err != nil {
 		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%#v,rid:%s", agents, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: err})
