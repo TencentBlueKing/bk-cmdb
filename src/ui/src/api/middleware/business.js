@@ -30,11 +30,14 @@ export default {
     },
     response: response => {
         if (isRedirectResponse(redirect, response)) {
-            const cookieBizId = Cookies.get('bk_privi_biz_id')
-            const authorizedBizIds = cookieBizId ? cookieBizId.split('-') : []
-            const authorizedBusiness = response.data.data.info.filter(business => {
-                return authorizedBizIds.some(id => id === business.bk_biz_id.toString())
-            })
+            let authorizedBusiness = response.data.data.info
+            if (window.User.admin !== '1') {
+                const cookieBizId = Cookies.get('bk_privi_biz_id')
+                const authorizedBizIds = cookieBizId ? cookieBizId.split('-') : []
+                authorizedBusiness = authorizedBusiness.filter(business => {
+                    return authorizedBizIds.some(id => id === business.bk_biz_id.toString())
+                })
+            }
             response.data.data = {
                 count: authorizedBusiness.length,
                 info: authorizedBusiness
