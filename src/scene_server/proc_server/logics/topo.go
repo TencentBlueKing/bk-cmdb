@@ -71,11 +71,11 @@ func (lgc *Logics) getModuleIDByProcID(ctx context.Context, appID, procID int64)
 	// get process by module
 	ret, err := lgc.CoreAPI.ProcController().GetProc2Module(ctx, lgc.header, condition)
 	if nil != err {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %s  http do error:%s,query:%+v,rid:%s", appID, procID, err.Error(), condition, lgc.rid)
+		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http do error:%s,query:%+v,rid:%s", appID, procID, err.Error(), condition, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %s  http reply error:%s,query:%+v,rid:%s", appID, procID, ret.ErrMsg, condition, lgc.rid)
+		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http reply error:%s,query:%+v,rid:%s", appID, procID, ret.ErrMsg, condition, lgc.rid)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	var moduleIDs []int64
@@ -98,11 +98,11 @@ func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, hostID int64) ([]met
 	}
 	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, dat)
 	if nil != err {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig http do error:%s,query:%+v,rid:%s", hostID, err.Error(), dat, lgc.rid)
+		blog.Errorf("GetModuleIDByHostID  GetModulesHostConfig http do error:%s, query:%#v, rid:%s", err.Error(), dat, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("GetModuleIDByHostID appID %d module id %d GetModulesHostConfig reply error:%s,query:%+v,rid:%s", hostID, ret.ErrMsg, dat, lgc.rid)
+		blog.Errorf("GetModuleIDByHostID  GetModulesHostConfig reply error:%s, query:%#v, rid:%s", ret.ErrMsg, dat, lgc.rid)
 		return nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 

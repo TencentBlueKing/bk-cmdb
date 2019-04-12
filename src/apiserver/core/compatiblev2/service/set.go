@@ -92,7 +92,7 @@ func (s *service) getSets(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.TopoServer().Instance().SearchSet(srvData.ctx, srvData.ownerID, appID, srvData.header, param)
 
 	if err != nil {
-		blog.Errorf("getSets  error:%v,input:%#s,rid:%s", err, formData, srvData.rid)
+		blog.Errorf("getSets  error:%v, input:%#v ,rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
@@ -203,12 +203,12 @@ func (s *service) getModulesByProperty(req *restful.Request, resp *restful.Respo
 
 	result, err := s.CoreAPI.TopoServer().OpenAPI().SearchModuleByProperty(srvData.ctx, appID, srvData.header, param)
 	if err != nil {
-		blog.Errorf("getModulesByProperty http do error, err:%v,srvData.rid:%s", err, formData, srvData.rid)
+		blog.Errorf("getModulesByProperty http do error, err:%v, input:%#v, rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
-		blog.Errorf("getModulesByProperty http do error, err:%v,srvData.rid:%s", err, formData, srvData.rid)
+		blog.Errorf("getModulesByProperty http do error, err:%v, input:%#v, rid:%s", err, formData, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
