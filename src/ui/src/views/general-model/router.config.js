@@ -55,7 +55,8 @@ export default [{
                     app.$store.commit('auth/setParentMeta', {
                         parent_layers: [{
                             resource_type: 'model',
-                            resource_id: model.id
+                            resource_id: model.id,
+                            resource_model: modelId
                         }]
                     })
                     const bizId = getMetadataBiz(model)
