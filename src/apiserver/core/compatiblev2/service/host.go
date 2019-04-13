@@ -425,12 +425,12 @@ func (s *service) updateHostModule(req *restful.Request, resp *restful.Response)
 		result, err = s.Engine.CoreAPI.HostServer().MoveHost2FaultModule(srvData.ctx, srvData.header, &hostModuleParam)
 	}
 	if err != nil {
-		blog.Errorf("updateHostModule http do error,err:%v,input:%#v,hostTransType:%s,param:%#v or %#v,rid:%s", err, hostTransType, input, hostModuleParam, srvData.rid)
+		blog.Errorf("updateHostModule http do error. err:%v, hostTransType:%s, input:%#v, param:%#v, rid:%s", err, hostTransType, input, hostModuleParam, srvData.rid)
 		converter.RespFailV2(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), resp)
 		return
 	}
 	if !result.Result {
-		blog.Errorf("updateHostModule http reply error,reply:%#v,input:%#v,hostTransType:%s,param:%#v or %#v,rid:%s", result, hostTransType, input, hostModuleParam, srvData.rid)
+		blog.Errorf("updateHostModule http reply error,reply:%#v, hostTransType:%s, input:%#v, param:%#v, rid:%s", result, hostTransType, input, hostModuleParam, srvData.rid)
 		converter.RespFailV2(result.Code, result.ErrMsg, resp)
 		return
 	}
