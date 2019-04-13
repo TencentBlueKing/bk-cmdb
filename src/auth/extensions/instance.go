@@ -126,13 +126,18 @@ func (am *AuthManager) extractObjectIDFromInstances(instances ...InstanceSimplif
 }
 
 func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) ([]meta.ResourceAttribute, error) {
+	businessID, err := am.extractBusinessIDFromInstances(instances...)
+	if err != nil {
+		return nil, fmt.Errorf("extract business id from instances failed, err: %+v", err)
+	}
+	
 	objectID, err := am.extractObjectIDFromInstances(instances...)
 	if err != nil {
 		blog.Errorf("MakeResourcesByInstances failed, extract object id from instances failed, err: %+v", err)
 		return nil, fmt.Errorf("extract object id from instances failed, err: %+v", err)
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectID)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectID)
 	if err != nil {
 		blog.Errorf("MakeResourcesByInstances failed, collect objects by id failed, err: %+v", err)
 		return nil, fmt.Errorf("extract object by id failed, err: %+v", err)
