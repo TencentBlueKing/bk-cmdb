@@ -249,8 +249,13 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	logContent = *logger.AuditLog(templateID)
 	logs := common.KvMap{common.BKContentField: logContent, common.BKOpDescField: "update template", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, user, srvData.header, logs)
-	if nil != err || !result.Result {
-		blog.Errorf("delete config template failed, but add template[%s] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, err, result.ErrMsg, data, srvData.rid)
+	if nil != err {
+		blog.Errorf("delete config template failed, but add template[%d] audit failed, err:%s, input:%+v,rid:%s", templateID, err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("delete config template failed, but add template[%d] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, result.Code, result.ErrMsg, data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}

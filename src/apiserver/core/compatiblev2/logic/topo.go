@@ -232,7 +232,7 @@ func (lgc *Logics) SetModuleHostCount(ctx context.Context, data []mapstr.MapStr)
 			}
 			appID, getErr := itemMap.Int64("ApplicationID")
 			if nil != getErr {
-				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap)
+				blog.Errorf("SetModuleHostCount error. err:%v, info:%#v, rid:%s", getErr, itemMap, lgc.rid)
 				return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, "App", "ApplicationID", "int", getErr.Error())
 			}
 			hostNum, getErr := lgc.GetModuleHostCount(ctx, appID, mouduleID)
@@ -352,7 +352,7 @@ func getRspV3DataInfo(logPrex string, result bool, code int, data interface{}, r
 	}
 	dataMap, ok := data.(map[string]interface{})
 	if false == ok {
-		blog.Errorf("%s rspV3 json get data.info error, body:%s  error:%#v,rid:%s", logPrex, dataMap, rid)
+		blog.Errorf("%s rspV3 json get data.info error, body:%#v, rid:%s", logPrex, dataMap, rid)
 		return nil, common.CCErrCommJSONUnmarshalFailed
 	}
 	dataInfo, ok := dataMap["info"].([]interface{})

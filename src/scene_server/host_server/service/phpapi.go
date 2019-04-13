@@ -846,7 +846,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	for key, _ := range appMap {
+	for key := range appMap {
 		appID = key
 	}
 
@@ -868,7 +868,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		})
 		return
 	}
-	for key, _ := range setMap {
+	for key := range setMap {
 		setID = key
 	}
 
@@ -883,7 +883,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetSetFaild, err.Error())})
 		return
 	}
-	for key, _ := range moduleMap {
+	for key := range moduleMap {
 		moduleID = key
 	}
 
