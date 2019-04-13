@@ -383,7 +383,8 @@
         "立即添加": "Add",
         "暂无字段": "Empty",
         "确认要删除此分组": "Confirm to delete this group",
-        "编辑分组": "Modify group"
+        "编辑分组": "Modify group",
+        "模型配置提示": "Please select one model at least"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
