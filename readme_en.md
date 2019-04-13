@@ -6,37 +6,40 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/bk-cmdb/pulls)
 
 > **Note**: The `master` branch may be in an *unstable or even broken state* during development.
-Please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch in order to get stable binaries.
+To get stable binaries, please use [releases](https://github.com/tencent/bk-cmdb/releases) instead of the `master` branch.
 
-BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management serivce database. 
+BlueKing Configuration Management DataBase (bk-cmdb) is an enterprise level configuration management service database. 
 
-bk-cmdb provide user complete new way of self define model management. Users can not only can easily expand the built-in model attributes, but also can add models and associations at any time according to different enterprise requirements, and incorporate networks, middleware, and virtual resources into the bk-cmdb. It also adds more new features that meet the needs of the certain requirement. For example: machine data snapshots, automatic data discovery, active push of change events, more granular rights management, and expandable service topology, etc. 
+bk-cmdb provides users a complete new way to self-define model management. Not only can users easily expand the built-in model attributes, but also add models and associations at any time according to different enterprise requirements, and incorporate networks, middleware, and virtual resources into the bk-cmdb. It also adds more new features that meet the needs of certain requirements. For example: machine data snapshots, automatic data discovery, active push of event changes, more fine-grained permission management, and scalable service topology, etc. 
 
-The core of the new version focuses on resources. We divide the atomic resources managed by CMDB into host, process, and generic objects, and build an atomic operation layer on these resources. On top of these atomic operations, we built a scenario layer that is closer to the user's operations. The scenario layer completes the user's request through a combination of different resources.
+The main focus of the new release is resources. We divide the atomic resources managed by CMDB into hosts, processes, and generic objects, and build an atomic operation layer on these resources. On top of these atomic operations, we built a scenario layer that is closer to user operations. The scenario layer completes users’ requests through a combination of operations of different resources.
 
-bk-cmdb uses golang as a development language. It is high performance and easy to develop. In addition, it adopts micro-service architecture design, which has strong scalability, easy to monitor and support smooth upgrade，At the same time, the system's deployment release can support traditional methods and container methods.
+bk-cmdb uses golang. It is of high performance and easy to develop. In addition, it adopts microservice architecture design, which has strong scalability, is easily monitored and supports smooth upgrade. Besides traditional methods, deployment through Docker is supported.
 
-The open source version will be in both BlueKing Community Edition and Enterprise Edition and be updated simultaneously. Our goal is to create a unified configuration management platform that can be compatible with different industries and different architectures, and to become the industry's leading free and open source CMDB with good versatility and ease of use. We welcome colleagues who are interested in participating in it.
+Source code of BlueKing’s Community Edition and Enterprise Edition is consistent and synchronized upon changes. Our goal is to create a unified configuration management platform that is compatible with different industries and different architectures, and to become industry-leading free and open-source CMDB with good versatility and ease of use. We welcome participation of interested developers.
 
 ## Overview
 * [Architecture Design (In Chinese)](docs/overview/architecture.md)
-* [code directory (In Chinese)](docs/overview/code_framework.md)
-* [Design philosophy (In Chinese)](docs/overview/design.md)
-* [Use Scenario (In Chinese)](docs/overview/usecase.md)
+* [Code Directory (In Chinese)](docs/overview/code_framework.md)
+* [Design Philosophy (In Chinese)](docs/overview/design.md)
+* [Use Case (In Chinese)](docs/overview/usecase.md)
 
 ## Features
-* Topological host management: host basic attributes, host snapshot data, host ownership management
+* Topological host management: basic attributes, snapshot data, ownership management
 * Organizational Structure Management: Scalable Business-Based Organizational Structure Management
-* Model management: Manage business, cluster, host and other built-in models, and customizable model management.
+* Model management: Management of business, cluster, host and other built-in models, and customizable model management.
 * Process Management: Module-based host process management
 * Event registration and push: provide callback-based event registration and push
-* Universal Rights Management: Flexible User Group Based Rights Management
+* Universal Rights Management: Flexible User Group Based Permission Management
 * Operation Audit: Auditing and Backtracking of User Operational Behavior
 
-If you want to know more about the above features, please refer to the [Function Description (In Chinese)](http://bk.tencent.com/document/bkprod/000120.html)
+If you want to know more about the above features, please refer to the [Feature Description (In Chinese)](http://bk.tencent.com/document/bkprod/000120.html)
+
+## Experience
+[Hands-on Training of BlueKing CMDB Docker Deployment](docs/wiki/container-support.md)
 
 ## Getting started
-* [Download and Compile (In Chinese)](docs/overview/source_compile.md)
+* [Download and Compilation (In Chinese)](docs/overview/source_compile.md)
 * [Installation and Deployment (In Chinese)](docs/overview/installation.md)
 * [API Instructions (In Chinese)](docs/apidoc/readme.md)
 
@@ -54,10 +57,10 @@ If you want to know more about the above features, please refer to the [Function
 
 ## Contributing
 For bk-cmdb branch management, issues, and pr specifications, read the [bk-cmdb Contributing Guide (In Chinese)](docs/CONTRIBUTING.md).
+[Tencent Open Source Incentive Plan](https://opensource.tencent.com/contribution) aims to encourage developers’ participation and contribution. Welcome everybody.
 
 ## FAQ
-
 https://github.com/Tencent/bk-cmdb/wiki/FAQ
 
 ## License
-Bk-cmdb is based on the MIT protocol. Please refer to [LICENSE](LICENSE) for details.
+Bk-cmdb is based on the MIT License. Please refer to [LICENSE](LICENSE) for details.
