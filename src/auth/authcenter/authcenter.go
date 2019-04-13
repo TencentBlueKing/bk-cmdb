@@ -147,7 +147,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
-	
+
 	// filter out SkipAction, which set by api server to skip authorization
 	noSkipResources := make([]meta.ResourceAttribute, 0)
 	for _, resource := range a.Resources {
@@ -161,7 +161,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 		blog.V(5).Infof("Authorize skip. auth attribute: %+v", a)
 		return meta.Decision{Authorized: true}, nil
 	}
-	
+
 	batchresult, err := ac.AuthorizeBatch(ctx, a.User, a.Resources...)
 	noAuth := make([]string, 0)
 	for i, item := range batchresult {
@@ -415,9 +415,13 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 		Exact:    true,
 	}
 
-	appList, err := ac.authClient.GetAuthorizedResources(ctx, info)
-	if err != nil {
-		return nil, err
+	var appList []AuthorizedResource
+	var err error
+	if !ac.Config.Enable {
+		appList, err = ac.authClient.GetAuthorizedResources(ctx, info)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	businessIDs := make([]int64, 0)
@@ -462,12 +466,16 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 			},
 		},
 		DataType: "array",
-		Exact: true,
+		Exact:    true,
 	}
 
-	authorizedAudits, err := ac.authClient.GetAuthorizedResources(ctx, info)
-	if err != nil {
-		return nil, err
+	var authorizedAudits []AuthorizedResource
+	var err error
+	if !ac.Config.Enable {
+		authorizedAudits, err = ac.authClient.GetAuthorizedResources(ctx, info)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return authorizedAudits, nil

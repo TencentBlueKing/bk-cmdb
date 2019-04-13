@@ -1,4 +1,5 @@
 import { NAV_AUDIT_ANALYSE } from '@/dictionary/menu'
+import { R_AUDIT } from '@/dictionary/auth'
 const path = '/auditing'
 
 export default {
@@ -15,7 +16,7 @@ export default {
             adminView: true
         },
         auth: {
-            view: '',
+            view: R_AUDIT,
             operation: []
         }
     }
