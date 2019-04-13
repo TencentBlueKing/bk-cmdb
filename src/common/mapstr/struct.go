@@ -13,7 +13,6 @@
 package mapstr
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -190,47 +189,17 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 }
 
 func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, error) {
-
+	if !returnVal.CanSet() {
+		return returnVal, fmt.Errorf("can not set to value %v", returnVal)
+	}
+	t := returnVal.Type()
+	if returnVal.IsNil() {
+		returnVal.Set(reflect.MakeMap(t))
+	}
 	mapKeys := inputVal.MapKeys()
 	for _, key := range mapKeys {
-
 		value := inputVal.MapIndex(key)
-		if !returnVal.CanSet() || !value.IsValid() || !value.CanInterface() {
-			continue
-		}
-
-		switch returnVal.Type().Elem().Kind() {
-		default:
-			return returnVal, errors.New("not support:" + returnVal.Type().Elem().Kind().String() + fmt.Sprintf(" value: %v", value.Interface()))
-		case reflect.Interface:
-			returnVal.Set(reflect.ValueOf(map[string]interface{}{key.String(): value.Interface()}))
-		case reflect.String:
-			returnVal.Set(reflect.ValueOf(map[string]string{key.String(): fmt.Sprintf("%v", value.Interface())}))
-		case reflect.Int:
-			returnVal.Set(reflect.ValueOf(map[string]int{key.String(): toInt(value.Interface())}))
-		case reflect.Int8:
-			returnVal.Set(reflect.ValueOf(map[string]int8{key.String(): int8(toInt(value.Interface()))}))
-		case reflect.Int16:
-			returnVal.Set(reflect.ValueOf(map[string]int16{key.String(): int16(toInt(value.Interface()))}))
-		case reflect.Int32:
-			returnVal.Set(reflect.ValueOf(map[string]int32{key.String(): int32(toInt(value.Interface()))}))
-		case reflect.Int64:
-			returnVal.Set(reflect.ValueOf(map[string]int64{key.String(): int64(toInt(value.Interface()))}))
-		case reflect.Uint:
-			returnVal.Set(reflect.ValueOf(map[string]uint{key.String(): uint(toUint(value.Interface()))}))
-		case reflect.Uint16:
-			returnVal.Set(reflect.ValueOf(map[string]uint16{key.String(): uint16(toUint(value.Interface()))}))
-		case reflect.Uint32:
-			returnVal.Set(reflect.ValueOf(map[string]uint32{key.String(): uint32(toUint(value.Interface()))}))
-		case reflect.Uint64:
-			returnVal.Set(reflect.ValueOf(map[string]uint64{key.String(): uint64(toUint(value.Interface()))}))
-		case reflect.Uint8:
-			returnVal.Set(reflect.ValueOf(map[string]uint8{key.String(): uint8(toUint(value.Interface()))}))
-		case reflect.Float32:
-			returnVal.Set(reflect.ValueOf(map[string]float32{key.String(): float32(toFloat(value.Interface()))}))
-		case reflect.Float64:
-			returnVal.Set(reflect.ValueOf(map[string]float64{key.String(): toFloat(value.Interface())}))
-		}
+		returnVal.SetMapIndex(key, value)
 	}
 
 	return returnVal, nil
