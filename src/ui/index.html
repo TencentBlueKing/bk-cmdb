@@ -24,6 +24,8 @@
         window.Supplier = {
             account: '0'
         }
+        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
+        window.API_PREFIX = API_HOST + 'api/' + Site.version
     </script>
   </body>
 </html>

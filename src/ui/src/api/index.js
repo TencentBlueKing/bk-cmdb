@@ -6,9 +6,7 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-const Site = window.Site
-window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
-window.API_PREFIX = window.API_HOST + 'api/' + Site.version
+import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -18,8 +16,27 @@ const axiosInstance = Axios.create({
 })
 
 // axios实例拦截器
+axiosInstance.interceptors.request.use(
+    config => {
+        middlewares.forEach(middleware => {
+            if (typeof middleware.request === 'function') {
+                config = middleware.request(config)
+            }
+        })
+        return config
+    },
+    error => {
+        return Promise.reject(error)
+    }
+)
+
 axiosInstance.interceptors.response.use(
     response => {
+        middlewares.forEach(middleware => {
+            if (typeof middleware.response === 'function') {
+                response = middleware.response(response)
+            }
+        })
         return response
     },
     error => {
@@ -150,7 +167,7 @@ function handleReject (error, config) {
         const { status, data } = error.response
         const nextError = { message: error.message }
         if (status === 401) {
-            window.location.href = Site.login
+            window.location.href = window.Site.login
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {

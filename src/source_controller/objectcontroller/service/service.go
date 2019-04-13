@@ -109,6 +109,19 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/openapi/proc/getProcModule").To(s.GetProcessesByModuleName))
 	ws.Route(ws.DELETE("/openapi/set/delhost").To(s.DeleteSetHost))
 
+	ws.Route(ws.POST("/privilege/group/{bk_supplier_account}").To(s.CreateUserGroup))
+	ws.Route(ws.PUT("/privilege/group/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroup))
+	ws.Route(ws.DELETE("/privilege/group/{bk_supplier_account}/{group_id}").To(s.DeleteUserGroup))
+	ws.Route(ws.POST("/privilege/group/{bk_supplier_account}/search").To(s.SearchUserGroup))
+
+	ws.Route(ws.POST("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.CreateUserGroupPrivi))
+	ws.Route(ws.PUT("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.UpdateUserGroupPrivi))
+	ws.Route(ws.GET("/privilege/group/detail/{bk_supplier_account}/{group_id}").To(s.GetUserGroupPrivi))
+
+	ws.Route(ws.POST("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.CreateRolePri))
+	ws.Route(ws.GET("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.GetRolePri))
+	ws.Route(ws.PUT("/role/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}").To(s.UpdateRolePri))
+
 	ws.Route(ws.GET("/system/{flag}/{bk_supplier_account}").To(s.GetSystemFlag))
 
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
