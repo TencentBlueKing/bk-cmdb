@@ -30,7 +30,7 @@
             <div class="authority-group model clearfix">
                 <h2 class="authority-group-title"><span>{{$t('Permission["模型权限"]')}}</span></h2>
                 <div class="authority-group-content">
-                    <div class="authority-type model" v-for="(classify,classifyIndex) in classifications"
+                    <div class="authority-type model" v-for="(classify,classifyIndex) in localClassifications"
                         :key="classifyIndex"
                         v-if="classify.models.length">
                         <h3 class="classify-name clearfix" :title="classify.name" @click="classify.open = !classify.open">
@@ -134,7 +134,7 @@
                         selectedAuthorities: []
                     }
                 },
-                classifications: [],
+                localClassifications: [],
                 groupAuthorities: {},
                 hideClassify: ['bk_host_manage', 'bk_biz_topo']
             }
@@ -142,6 +142,9 @@
         computed: {
             ...mapGetters('userPrivilege', [
                 'roles'
+            ]),
+            ...mapGetters('objectModelClassify', [
+                'classifications'
             ]),
             updateParams () {
                 const updateParams = {}
@@ -151,7 +154,7 @@
                         updateParams.sys_config[config] = this.sysConfig[config].selectedAuthorities
                     }
                 }
-                this.classifications.map((classify) => {
+                this.localClassifications.map((classify) => {
                     classify.models.map((model) => {
                         if (model.selectedAuthorities.length) {
                             updateParams['model_config'] = updateParams['model_config'] || {}
@@ -186,7 +189,7 @@
                 this.$emit('cancel')
             },
             checkAllModelAuthorities (classifyIndex, modelIndex, event) {
-                const model = this.classifications[classifyIndex]['models'][modelIndex]
+                const model = this.localClassifications[classifyIndex]['models'][modelIndex]
                 if (event.target.checked) {
                     model.selectedAuthorities = ['search', 'update', 'delete']
                 } else {
@@ -211,7 +214,7 @@
             },
             /* 模型权限没有选择'查询'，则无'新增'、编辑'、删除'权限 */
             checkOtherAuthorities (classifyIndex, modelIndex, event) {
-                const model = this.classifications[classifyIndex]['models'][modelIndex]
+                const model = this.localClassifications[classifyIndex]['models'][modelIndex]
                 if (!event.target.checked) {
                     model.selectedAuthorities = []
                 }
@@ -232,9 +235,9 @@
                 }
             },
             initClassifications () {
-                const classifications = []
+                const localClassifications = []
                 // 1.去掉停用模型
-                let activeClassifications = this.$classifications.map(classification => {
+                let activeClassifications = this.classifications.map(classification => {
                     const activeClassification = { ...classification }
                     activeClassification['bk_objects'] = activeClassification['bk_objects'].filter(model => !model['bk_ispaused'])
                     return activeClassification
@@ -263,7 +266,7 @@
                             }
                             models.push(Object.assign({}, model, { selectedAuthorities }))
                         })
-                        classifications.push({
+                        localClassifications.push({
                             id: classify['bk_classification_id'],
                             name: classify['bk_classification_name'],
                             open: true,
@@ -271,7 +274,7 @@
                         })
                     }
                 })
-                this.classifications = classifications
+                this.localClassifications = localClassifications
             }
         }
     }
