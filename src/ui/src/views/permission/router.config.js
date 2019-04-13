@@ -22,7 +22,9 @@ export default [{
             i18n: 'Nav["业务权限管理"]',
             path: path.business,
             order: 1,
-            parent: NAV_PERMISSION
+            parent: NAV_PERMISSION,
+            onlyAdminView: true,
+            adminView: true
         },
         auth: {
             view: SYSTEM_MANAGEMENT,
@@ -39,7 +41,9 @@ export default [{
             i18n: 'Nav["系统权限管理"]',
             path: path.system,
             order: 2,
-            parent: NAV_PERMISSION
+            parent: NAV_PERMISSION,
+            onlyAdminView: true,
+            adminView: true
         },
         auth: {
             view: SYSTEM_MANAGEMENT,

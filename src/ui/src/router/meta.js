@@ -7,6 +7,7 @@ export default class Meta {
             order: 1,
             parent: null,
             adminView: true,
+            onlyAdminView: false,
             requireBusiness: false
         }, data.menu || {})
 

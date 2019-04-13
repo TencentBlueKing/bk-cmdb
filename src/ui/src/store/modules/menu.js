@@ -34,7 +34,9 @@ const getters = {
             const meta = (route.meta || {})
             const auth = meta.auth || {}
             const menu = meta.menu
-            const shouldShow = rootGetters.isAdminView ? menu && menu.adminView : !!menu
+            const shouldShow = rootGetters.isAdminView
+                ? menu && menu.adminView
+                : menu && menu.onlyAdminView ? false : !!menu
             if (shouldShow) {
                 const authorized = auth.view ? rootGetters['auth/isAuthorized'](auth.view, { type: 'view' }) : true
                 if (authorized) {

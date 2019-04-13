@@ -26,6 +26,7 @@ export default {
             path: path,
             order: 5,
             parent: NAV_MODEL_MANAGEMENT,
+            onlyAdminView: true,
             adminView: true
         },
         auth: {
