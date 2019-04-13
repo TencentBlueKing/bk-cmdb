@@ -26,7 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
