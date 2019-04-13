@@ -3,11 +3,17 @@ export const getFullUrl = url => {
 }
 
 export const isSameRequest = (origin, config) => {
-    return origin.url === config.url
-        && origin.method.toLowerCase() === config.method
+    const sameUrl = origin.url === config.url
+    const sameMethod = origin.method.toLowerCase() === config.method
+    const isSame = sameUrl && sameMethod
+    if (isSame) {
+        config.intercepted = true
+    }
+    return isSame
 }
 
 export const isRedirectResponse = (redirect, { config }) => {
-    return getFullUrl(redirect.url) === config.url
+    return config.intercepted
+        && getFullUrl(redirect.url) === config.url
         && redirect.method.toLowerCase() === config.method
 }
