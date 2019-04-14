@@ -70,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return errors.New("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 
 	redisAddress := webSvr.Config.Session.Host
