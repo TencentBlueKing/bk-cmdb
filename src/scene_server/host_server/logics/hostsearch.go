@@ -425,7 +425,7 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 	moduleInfoArr := make([]mapstr.MapStr, 0)
 	for _, appLevelInfo := range appInfoLevelInst {
 		for _, setLevelInfo := range appLevelInfo.setInfoMap {
-			for mdouleID, _ := range setLevelInfo.moduleInfoMap {
+			for mdouleID := range setLevelInfo.moduleInfoMap {
 				moduleInfo, ok := sh.cacheInfoMap.moduleInfoMap[mdouleID]
 				if false == ok {
 					blog.Warnf("hostSearch not found module id, moduleID:%d, hostModuleMap:%v, rid:%s", mdouleID, sh.cacheInfoMap.moduleInfoMap, sh.ccRid)
