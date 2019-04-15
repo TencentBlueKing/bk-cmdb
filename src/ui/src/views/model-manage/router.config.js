@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { getMetadataBiz } from '@/utils/tools'
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
@@ -24,27 +25,24 @@ export default [{
     name: 'model',
     path: modelPath,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'model',
             i18n: 'Nav["模型"]',
             path: modelPath,
             order: 1,
-            parent: NAV_MODEL_MANAGEMENT,
-            adminView: true
+            parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         }
-    }
+    })
 }, {
     name: 'modelDetails',
     path: '/model/details/:modelId',
     component: () => import('./children/index.vue'),
-    meta: {
+    meta: new Meta({
         auth: {
-            view: '',
             operation: [
                 OPERATION.U_MODEL,
                 OPERATION.D_MODEL
@@ -65,5 +63,5 @@ export default [{
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return !!model
         }
-    }
+    })
 }]
