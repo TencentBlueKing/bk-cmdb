@@ -18,6 +18,24 @@ const businessAuth = [
     AUTH.BUSINESS_ARCHIVE
 ]
 
+const businessResourceAuth = [
+    AUTH.U_HOST,
+    AUTH.R_HOST,
+    AUTH.HOST_TO_RESOURCE,
+
+    AUTH.R_PROCESS,
+    AUTH.C_PROCESS,
+    AUTH.U_PROCESS,
+    AUTH.D_PROCESS,
+    AUTH.PROCESS_BIND_MODULE,
+    AUTH.PROCESS_UNBIND_MODULE,
+
+    AUTH.R_CUSTOM_QUERY,
+    AUTH.C_CUSTOM_QUERY,
+    AUTH.U_CUSTOM_QUERY,
+    AUTH.D_CUSTOM_QUERY
+]
+
 const modelAuth = [
     AUTH.C_INST,
     AUTH.U_INST,
@@ -88,6 +106,8 @@ const transformResponse = data => {
                 setSystemMeta('event', meta, backConfig)
             } else if (auth === AUTH.R_AUDIT) {
                 setSystemMeta('audit', meta, backConfig)
+            } else if (businessResourceAuth.includes(auth)) {
+                meta.is_pass = true
             }
         }
         return meta

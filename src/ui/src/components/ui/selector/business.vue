@@ -31,7 +31,10 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['bizId'])
+            ...mapGetters('objectBiz', ['bizId']),
+            requireBusiness () {
+                return this.$route.meta.requireBusiness
+            }
         },
         watch: {
             localSelected (localSelected, prevSelected) {
@@ -40,11 +43,7 @@
                     window.location.reload()
                     return
                 }
-                if (this.$route.meta.requireBusiness) {
-                    this.$http.setHeader('bk_biz_id', localSelected)
-                } else {
-                    this.$http.deleteHeader('bk_biz_id')
-                }
+                this.setHeader()
                 this.$emit('input', localSelected)
                 this.$emit('on-select', localSelected)
                 this.setLocalSelected()
@@ -56,6 +55,9 @@
             },
             bizId (value) {
                 this.localSelected = value
+            },
+            requireBusiness () {
+                this.setHeader()
             }
         },
         beforeCreate () {
@@ -73,6 +75,13 @@
             this.$http.deleteHeader('bk_biz_id')
         },
         methods: {
+            setHeader () {
+                if (this.requireBusiness) {
+                    this.$http.setHeader('bk_biz_id', this.localSelected)
+                } else {
+                    this.$http.deleteHeader('bk_biz_id')
+                }
+            },
             setLocalSelected () {
                 const selected = this.value || parseInt(window.localStorage.getItem('selectedBusiness'))
                 const exist = this.authorizedBusiness.some(business => business['bk_biz_id'] === selected)
