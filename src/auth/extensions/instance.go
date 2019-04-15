@@ -137,6 +137,9 @@ func (am *AuthManager) collectObjectsByInstances(ctx context.Context, header htt
 			blog.Errorf("extractObjectIDFromInstances failed, get models by object id failed, input len %d and output len %d not equal, input: %+v, output: %+v, businessID: %d", len(objectIDs), len(objects), objectIDs, objects, businessID)
 			return nil, fmt.Errorf("unexpect error, some models maybe not found")
 		}
+		if bizIDObjID2ObjMap[businessID] == nil {
+			bizIDObjID2ObjMap[businessID] = make(map[string]metadata.Object)
+		}
 		for _, object := range objects {
 			bizIDObjID2ObjMap[businessID][object.ObjectID] = object
 		}
