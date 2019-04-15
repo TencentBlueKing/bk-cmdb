@@ -86,7 +86,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 	ID := req.PathParameter("id")
 
 	if "" == ID || "0" == ID {
-		blog.Errorf("update host favourite failed, with id  %id,rid:%s", ID, srvData.rid)
+		blog.Errorf("update host favourite failed, with id  %d,rid:%s", ID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}

@@ -108,12 +108,6 @@ func (h *HostServer) WebService() *restful.WebService {
 func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
-	h.Config.Gse.ZkAddress = current.ConfigMap["gse.addr"]
-	h.Config.Gse.ZkUser = current.ConfigMap["gse.user"]
-	h.Config.Gse.ZkPassword = current.ConfigMap["gse.pwd"]
-	h.Config.Gse.RedisPort = current.ConfigMap["gse.port"]
-	h.Config.Gse.RedisPassword = current.ConfigMap["gse.redis_pwd"]
-
 	h.Config.Redis.Address = current.ConfigMap["redis.host"]
 	h.Config.Redis.Database = current.ConfigMap["redis.database"]
 	h.Config.Redis.Password = current.ConfigMap["redis.pwd"]

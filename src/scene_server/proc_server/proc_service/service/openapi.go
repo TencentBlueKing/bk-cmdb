@@ -225,7 +225,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			}
 			procModuleData, err := ps.getProcessBindModule(appId, procID, srvData.header)
 			if err != nil {
-				blog.Errorf("fail to getProcessBindModule in GetProcessPortByIP. err: %s,appID:%v,procID:%v,rid:%d", err.Error(), appId, procID, srvData.rid)
+				blog.Errorf("fail to getProcessBindModule in GetProcessPortByIP. err: %s,appID:%v,procID:%v,rid:%s", err.Error(), appId, procID, srvData.rid)
 				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 				return
 			}
@@ -544,7 +544,7 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 			}
 			isDefault64, err := util.GetInt64ByInterface(modArr[common.BKDefaultField])
 			if nil != err {
-				blog.Errorf("GetProcessBindModule get module default error:%s,rid:%d", err.Error(), srvData.rid)
+				blog.Errorf("GetProcessBindModule get module default error:%s,rid:%s", err.Error(), srvData.rid)
 				continue
 
 			} else {

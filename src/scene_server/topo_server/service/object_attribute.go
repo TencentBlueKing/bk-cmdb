@@ -13,12 +13,13 @@
 package service
 
 import (
+	"fmt"
+	
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"fmt"
 )
 
 // CreateObjectAttribute create a new object attribute

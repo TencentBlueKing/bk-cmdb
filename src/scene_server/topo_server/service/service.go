@@ -192,7 +192,16 @@ func (s *Service) Actions() []*httpserver.Action {
 				}
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
-				metadata := metadata.NewMetaDataFromMap(mData)
+
+				md := new(MetaShell)
+				if len(value) != 0 {
+					if err := json.Unmarshal(value, md); err != nil {
+						blog.Errorf("parse metadata from request failed, err: %v", err)
+						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+						return
+					}
+				}
+
 				handlerContext := types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
@@ -202,7 +211,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.Engine,
-					MetaData:        metadata,
+					MetaData:        md.Metadata,
 				}
 				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
 
@@ -223,4 +232,8 @@ func (s *Service) Actions() []*httpserver.Action {
 
 	}
 	return httpactions
+}
+
+type MetaShell struct {
+	Metadata *metadata.Metadata `json:"metadata"`
 }

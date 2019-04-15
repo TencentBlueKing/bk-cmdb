@@ -286,12 +286,13 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 
 func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header http.Header, hosts ...HostSimplify) (int64, error) {
 	var businessID int64
-	for idx, host := range hosts {
+	for _, host := range hosts {
 		bizID := host.BKAppIDField
 		// we should ignore metadata.LabelBusinessID field not found error
-		if idx > 0 && bizID != businessID {
-			return 0, fmt.Errorf("authorization failed, get multiple business ID from hosts")
-		}
+		// TODO: confirm this, when a import hosts to resource pool.
+		// if idx > 0 && bizID != businessID {
+		// 	return 0, fmt.Errorf("authorization failed, get multiple business ID[%d:%d] from hosts", bizID, businessID)
+		// }
 		businessID = bizID
 	}
 	return am.correctBusinessID(ctx, header, businessID)
