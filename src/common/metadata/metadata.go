@@ -79,7 +79,7 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	if false == exist {
 		return NewPublicOrBizConditionByBizID(0)
 	}
-	
+
 	businessID, err = util.GetInt64ByInterface(bizID)
 	if err != nil {
 		blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
@@ -88,7 +88,7 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	return NewPublicOrBizConditionByBizID(businessID)
 }
 
-// NewPublicOrBizConditionByBizID new a query condition 
+// NewPublicOrBizConditionByBizID new a query condition
 func NewPublicOrBizConditionByBizID(businessID int64) mapstr.MapStr {
 	condArr := make([]mapstr.MapStr, 0)
 	condArr = append(condArr, BizLabelNotExist)
@@ -149,7 +149,7 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 	if ok == false {
 		return 0, fmt.Errorf("invalid input, not mapstr struct")
 	}
-	
+
 	return ParseBizIDFromMetadata(metadata)
 }
 
@@ -174,28 +174,6 @@ func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
 		return 0, fmt.Errorf("invalid biz id value, parse int failed, id: %+v, err: %+v", rawBizID, err)
 	}
 	return bizID, nil
-}
-
-func NewMetaDataFromMap(mapData mapstr.MapStr) *Metadata {
-	data, exsit := mapData.Get(BKMetadata)
-	if !exsit {
-		return nil
-	}
-
-	tmp, ok := data.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	label, ok := tmp[BKLabel].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	bizID, ok := label[LabelBusinessID].(string)
-	if !ok {
-		return nil
-	}
-
-	return &Metadata{Label: Label{LabelBusinessID: bizID}}
 }
 
 // Metadata  used to define the metadata for the resources
