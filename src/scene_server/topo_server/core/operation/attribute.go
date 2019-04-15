@@ -66,9 +66,18 @@ func (a *attribute) SetProxy(modelFactory model.Factory, instFactory inst.Factor
 
 func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapstr.MapStr) (model.AttributeInterface, error) {
 
+	var businessID int64
+	var err error
+	if params.MetaData != nil {
+		businessID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			blog.Errorf("[operation-attr] failed to parse biz id field, error info is %s", data, err.Error())
+			return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+		}
+	}
 	att := a.modelFactory.CreateAttribute(params)
 
-	err := att.Parse(data)
+	err = att.Parse(data)
 	if nil != err {
 		blog.Errorf("[operation-attr] failed to parse the attribute data (%#v), error info is %s", data, err.Error())
 		return nil, err
@@ -82,7 +91,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	}
 
 	// auth: check authorization
-	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, objID); err != nil {
+	if err := a.authManager.AuthorizeByObjectID(params.Context, params.Header, meta.Update, businessID, objID); err != nil {
 		blog.V(2).Infof("check authorization for create model attribute failed, err: %+v", err)
 		return nil, err
 	}

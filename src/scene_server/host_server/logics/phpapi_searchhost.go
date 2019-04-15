@@ -107,7 +107,7 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 	for _, host := range res.Data.Info {
 		HostID, err := host.Int64(common.BKHostIDField)
 		if nil != err {
-			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, phpapi.rid)
+			blog.Errorf("getHostMapByCond  hostID not integer, err:%s,input:%s,host:%+v,rid:%s", err.Error(), condition, host, phpapi.rid)
 			return nil, nil, phpapi.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 		}
 
@@ -152,7 +152,7 @@ func (phpapi *PHPAPI) GetCustomerPropertyByOwner(ctx context.Context, objType st
 	}
 	res, err := phpapi.logic.CoreAPI.CoreService().Model().ReadModelAttr(ctx, phpapi.header, common.BKInnerObjIDHost, searchBody)
 	if nil != err {
-		blog.Errorf("GetCustomerPropertyByOwner  http do  error, err:%s,param:%+v,objType:%s", err.Error(), searchBody, objType, phpapi.rid)
+		blog.Errorf("GetCustomerPropertyByOwner  http do  error, err:%s,param:%+v,objType:%s, rid:%s", err.Error(), searchBody, objType, phpapi.rid)
 		return nil, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
@@ -183,7 +183,7 @@ func (phpapi *PHPAPI) getObjByCondition(ctx context.Context, dat *meta.QueryCond
 
 	res, err := phpapi.logic.CoreAPI.CoreService().Instance().ReadInstance(ctx, phpapi.header, objType, dat)
 	if nil != err {
-		blog.Errorf("getObjByCondition  http do  error, err:%s,param:%+v,objType:%s", err.Error(), dat, objType, phpapi.rid)
+		blog.Errorf("getObjByCondition  http do  error, err:%s, param:%+v, objType:%s, rid:%s", err.Error(), dat, objType, phpapi.rid)
 		return nil, phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if false == res.Result {

@@ -34,6 +34,7 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	cond := condition.CreateCondition().Field(common.BKFieldID).In(uniqueIDs)
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 	resp, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjUnique, queryCond)
+	// resp, err := am.clientSet.CoreService().Model().ReadModelAttrUnique(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model unique by id: %+v failed, err: %+v", uniqueIDs, err)
 	}
@@ -58,7 +59,34 @@ func (am *AuthManager) collectUniqueByUniqueIDs(ctx context.Context, header http
 	return uniques, nil
 }
 
+func (am *AuthManager) ExtractBusinessIDFromUniques(uniques ...ModelUniqueSimplify) (int64, error) {
+	if len(uniques) == 0 {
+		return 0, fmt.Errorf("no object found")
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, unique := range uniques {
+		businessIDs = append(businessIDs, unique.BusinessID)
+	}
+
+	businessIDs = util.IntArrayUnique(businessIDs)
+	
+	if len(businessIDs) > 1 {
+		return 0, fmt.Errorf("uniques belongs to multiple business: [%+v]", businessIDs)
+	}
+
+	if len(businessIDs) == 0 {
+		return 0, fmt.Errorf("unexpected error, no business found with uniques: %+v", uniques)
+	}
+	return businessIDs[0], nil
+}
+
 func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...ModelUniqueSimplify) ([]meta.ResourceAttribute, error) {
+	businessID, err := am.ExtractBusinessIDFromUniques(uniques...)
+	if err != nil {
+		blog.Errorf("makeResourceByUnique failed, ExtractBusinessIDFromUniques failed, err: %+v", err)
+		return nil, fmt.Errorf("extract business id from model uniques failed, err: %+v", err)
+	}
 	objectIDs := make([]string, 0)
 	for _, unique := range uniques {
 		objectIDs = append(objectIDs, unique.ObjID)
@@ -73,7 +101,7 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 		return nil, fmt.Errorf("model id not found")
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		blog.Errorf("makeResourceByUnique failed, collectObjectsByObjectIDs failed, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object id failed, err: %+v", err)
@@ -82,12 +110,6 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 	if len(objects) == 0 {
 		blog.Errorf("makeResourceByUnique failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v", objectIDs, err)
 		return nil, fmt.Errorf("collect object by id not found")
-	}
-
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		blog.Errorf("makeResourceByUnique failed, extract business id failed, uniques: %+v, err: %+v", uniques, err)
-		return nil, fmt.Errorf("extract business id failed, err: %+v", err)
 	}
 
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
@@ -228,16 +250,26 @@ func (am *AuthManager) AuthorizeByUniqueID(ctx context.Context, header http.Head
 	if err != nil {
 		return fmt.Errorf("get uniques by id failed, err: %+v", err)
 	}
+	
+	businessID, err := am.ExtractBusinessIDFromUniques(uniques...)
+	if err != nil {
+		return fmt.Errorf("extract business id by uniques failed, err: %+v", err)
+	}
 
 	objectIDs := make([]string, 0)
 	for _, unique := range uniques {
 		objectIDs = append(objectIDs, unique.ObjID)
 	}
 
-	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+	return am.AuthorizeByObjectID(ctx, header, action, businessID, objectIDs...)
 }
 
 func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...ModelUniqueSimplify) error {
+	bizID, err := am.ExtractBusinessIDFromUniques(uniques...)
+	if err != nil {
+		return fmt.Errorf("extract business id from model uniques failed, err: %+v", err)
+	}
+
 	objectIDs := make([]string, 0)
 	for _, unique := range uniques {
 		objectIDs = append(objectIDs, unique.ObjID)
@@ -248,17 +280,7 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 		if action == meta.Find || action == meta.FindMany {
 			objectAction = action
 		}
-		return am.AuthorizeByObjectID(ctx, header, objectAction, objectIDs...)
-	}
-
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
-	if err != nil {
-		return fmt.Errorf("get model by id failed, err: %+v", err)
-	}
-
-	bizID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		return fmt.Errorf("extract business id from model failed, err: %+v", err)
+		return am.AuthorizeByObjectID(ctx, header, objectAction, bizID, objectIDs...)
 	}
 
 	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
@@ -269,8 +291,8 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
-func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, header http.Header, objectID string) error {
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectID)
+func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, header http.Header, businessID int64, objectID string) error {
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectID)
 	if err != nil {
 		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, get model by id: %s failed, err: %+v", objectID, err)
 		return fmt.Errorf("get model by id %s failed, err: %+v", objectID, err)
@@ -301,7 +323,7 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 				Action: meta.Create,
 			},
 			SupplierAccount: parentResource.SupplierAccount,
-			BusinessID:      parentResource.BusinessID,
+			BusinessID:      businessID,
 			Layers:          layers,
 		}
 		resources = append(resources, resource)

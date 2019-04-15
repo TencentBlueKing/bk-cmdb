@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+
 	"github.com/spf13/pflag"
 )
 
@@ -78,4 +79,5 @@ type Config struct {
 type AppInfo struct {
 	AppCode string `json:"appCode""`
 	URL     string `json:"url"`
+	Enable  bool
 }

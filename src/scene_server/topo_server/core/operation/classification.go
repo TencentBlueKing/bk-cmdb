@@ -14,11 +14,9 @@ package operation
 
 import (
 	"context"
-	"fmt"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -64,22 +62,6 @@ func (c *classification) SetProxy(modelFactory model.Factory, instFactory inst.F
 	c.asst = asst
 	c.obj = obj
 }
-
-// func (c *classification) FindSingleClassification(params types.ContextParams, classificationID string) (model.Classification, error) {
-//
-// 	cond := condition.CreateCondition()
-// 	cond.Field(metadata.ClassFieldClassificationID).Eq(classificationID)
-//
-// 	objs, err := c.FindClassification(params, cond)
-// 	if nil != err {
-// 		blog.Errorf("[operation-cls] failed to find the supplier account(%s) classification(%s), error info is %s", params.SupplierAccount, classificationID, err.Error())
-// 		return nil, err
-// 	}
-// 	for _, item := range objs {
-// 		return item, nil
-// 	}
-// 	return nil, params.Err.Error(common.CCErrTopoObjectClassificationSelectFailed)
-// }
 
 func (c *classification) CreateClassification(params types.ContextParams, data mapstr.MapStr) (model.Classification, error) {
 	cls := c.modelFactory.CreateClassification(params)
@@ -138,37 +120,21 @@ func (c *classification) DeleteClassification(params types.ContextParams, id int
 		return err
 	}
 
-	// auth: check authorization
-	classes := make([]metadata.Classification, 0)
-	for _, clsItem := range clsItems {
-		class := clsItem.Classify()
-		classes = append(classes, class)
-	}
-	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Delete, classes...); err != nil {
-		return params.Err.New(common.CCErrCommAuthorizeFailed, err.Error())
-	}
-
-	// auth: deregister classification to iam
-	if err := c.authManager.DeregisterClassificationByRawID(params.Context, params.Header, id); err != nil {
-		blog.Errorf("deregister classification to iam failed, err: %+v", err)
-		return params.Err.New(common.CCErrCommUnRegistResourceToIAMFailed, err.Error())
-	}
-
 	for _, cls := range clsItems {
 		objs, err := cls.GetObjects()
 		if nil != err {
 			return err
 		}
 
-		class := cls.Classify()
-		if err := c.authManager.DeregisterClassification(params.Context, params.Header, class); err != nil {
+		if 0 != len(objs) {
+			blog.Warnf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", cls.Classify().ClassificationID)
+			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
+		}
+
+		if err := c.authManager.DeregisterClassification(params.Context, params.Header, cls.Classify()); err != nil {
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 
-		if 0 != len(objs) {
-			blog.Errorf("[operation-cls] the classification(%s) has some obejcts, forbidden to delete", class.ClassificationID)
-			return params.Err.Error(common.CCErrTopoObjectClassificationHasObject)
-		}
 	}
 
 	rsp, err := c.clientSet.CoreService().Model().DeleteModelClassification(context.Background(), params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
@@ -302,21 +268,15 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	}
 
 	// auth: check authorization
-	if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
-		blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
-		return err
-	}
+	// if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
+	// 	blog.V(2).Infof("update classification %s failed, authorization failed, err: %+v", class, err)
+	// 	return err
+	// }
 
 	err := cls.Update(data)
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err
-	}
-
-	// auth: register classification to iam
-	if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, id); err != nil {
-		blog.Errorf("[operation-cls]failed to update the classification(%#v), update register failed, error info is %s", cls, err.Error())
-		return fmt.Errorf("register classification to iam failed, err: %+v", err)
 	}
 
 	return nil

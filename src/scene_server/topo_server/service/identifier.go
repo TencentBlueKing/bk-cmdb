@@ -32,7 +32,6 @@ func (s *Service) ParseSearchIdentifierOriginData(data []byte) (mapstr.MapStr, e
 	return result, nil
 }
 
-// CreateInst create a new inst
 func (s *Service) SearchIdentifier(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	param, ok := data["origin"].(*metadata.SearchIdentifierParam)
 	if !ok {

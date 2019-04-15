@@ -26,6 +26,11 @@ type DefaultCCErrorIf interface {
 	// Errorf returns an error with error code
 	Errorf(errCode int, args ...interface{}) error
 
+	// CCError returns an error with error code
+	CCError(errCode int) CCErrorCoder
+	// CCErrorf returns an error with error code
+	CCErrorf(errCode int, args ...interface{}) CCErrorCoder
+
 	// New create a new error with error code and message
 	New(errorCode int, msg string) error
 }

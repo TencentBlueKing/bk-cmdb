@@ -64,9 +64,8 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -238,24 +237,20 @@ func (s *Service) ExportObject(c *gin.Context) {
 	if nil != err {
 		blog.Error("export model, but get object data failed, err: %v", err)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg)
+		c.String(http.StatusOK, msg)
 		return
 	}
-
-	blog.Debug("the result:%+v", arrItems)
 
 	// construct the excel file
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
 
 	file = xlsx.NewFile()
-
 	sheet, err = file.AddSheet(objID)
-
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusOK, msg)
 		return
 	}
 
