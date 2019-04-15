@@ -84,7 +84,8 @@ func (s *Service) ImportHost(c *gin.Context) {
 
 // ExportHost export host
 func (s *Service) ExportHost(c *gin.Context) {
-
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
 
@@ -96,7 +97,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
 	if err != nil {
-		blog.Errorf("export host, but get hosts info failed, err: %v", err)
+		blog.Errorf("export host failed, get hosts by id [%+v] failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
 		return
@@ -109,14 +110,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
+		blog.Errorf("ExportHost failed, get object [%s] fields failed, err: %+v, rid: %s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
 	}
 	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader, metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost object:%s error:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -133,7 +134,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportHost save file error:%s", err.Error())
+		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
