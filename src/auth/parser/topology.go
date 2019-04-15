@@ -62,7 +62,7 @@ func (ps *parseStream) business() *parseStream {
 	// TODO: update this api format.
 	if ps.hitRegexp(createBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
 					Action: meta.Create,
@@ -87,7 +87,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Business,
 					Action:     meta.Update,
@@ -113,7 +113,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Business,
 					Action:     meta.Update,
@@ -139,7 +139,7 @@ func (ps *parseStream) business() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Business,
 					Action:     meta.Delete,
@@ -154,7 +154,7 @@ func (ps *parseStream) business() *parseStream {
 	// TODO: update this api format
 	if ps.hitRegexp(findBusinessRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Business,
 					Action: meta.FindMany,
@@ -173,7 +173,7 @@ func (ps *parseStream) business() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Business,
 					Action:     meta.Archive,
@@ -209,7 +209,7 @@ func (ps *parseStream) mainline() *parseStream {
 	// create mainline object operation.
 	if ps.hitPattern(createMainlineObjectPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Create,
@@ -222,7 +222,7 @@ func (ps *parseStream) mainline() *parseStream {
 	// delete mainline object operation
 	if ps.hitRegexp(deleteMainlineObjectRegexp, http.MethodDelete) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
 					Action: meta.Delete,
@@ -236,7 +236,7 @@ func (ps *parseStream) mainline() *parseStream {
 	// get mainline object operation
 	if ps.hitRegexp(findMainlineObjectTopoRegexp, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.MainlineModelTopology,
 					Action: meta.Find,
@@ -260,7 +260,7 @@ func (ps *parseStream) mainline() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -285,7 +285,7 @@ func (ps *parseStream) mainline() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -310,7 +310,7 @@ func (ps *parseStream) mainline() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
@@ -343,7 +343,7 @@ func (ps *parseStream) associationType() *parseStream {
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.FindMany,
@@ -356,7 +356,7 @@ func (ps *parseStream) associationType() *parseStream {
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.Create,
@@ -379,7 +379,7 @@ func (ps *parseStream) associationType() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Update,
@@ -404,7 +404,7 @@ func (ps *parseStream) associationType() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Delete,
@@ -438,7 +438,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	// search object association operation
 	if ps.RequestCtx.URI == findObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -451,7 +451,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	// create object association operation
 	if ps.RequestCtx.URI == createObjectAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.Create,
@@ -475,7 +475,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelAssociation,
 					Action:     meta.Update,
@@ -500,7 +500,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelAssociation,
 					Action:     meta.Delete,
@@ -514,7 +514,7 @@ func (ps *parseStream) objectAssociation() *parseStream {
 	// find object association with a association kind list.
 	if ps.RequestCtx.URI == findObjectAssociationWithAssociationKindPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -544,7 +544,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	// find object instance's association operation.
 	if ps.RequestCtx.URI == findObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -557,7 +557,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 	// create object's instance association operation.
 	if ps.RequestCtx.URI == createObjectInstanceAssociationPattern && ps.RequestCtx.Method == http.MethodPost {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.Create,
@@ -581,7 +581,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceAssociation,
 					Action:     meta.Delete,
@@ -621,7 +621,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 	// create object instance operation.
 	if ps.hitRegexp(createObjectInstanceRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
@@ -638,7 +638,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Find,
@@ -668,7 +668,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Update,
@@ -693,7 +693,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.UpdateMany,
@@ -717,7 +717,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
@@ -747,7 +747,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Delete,
@@ -778,7 +778,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -809,7 +809,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -841,7 +841,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -866,7 +866,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
 					Action: meta.FindMany,
@@ -885,7 +885,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 	// find object/s instance list details operation.
 	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
@@ -903,7 +903,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
@@ -938,7 +938,7 @@ func (ps *parseStream) object() *parseStream {
 	// create common object operation.
 	if ps.hitPattern(createObjectPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.Create,
@@ -951,7 +951,7 @@ func (ps *parseStream) object() *parseStream {
 	// create common object batch operation.
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.CreateMany,
@@ -975,7 +975,7 @@ func (ps *parseStream) object() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Delete,
@@ -1000,7 +1000,7 @@ func (ps *parseStream) object() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.Model,
 					Action:     meta.Update,
@@ -1014,7 +1014,7 @@ func (ps *parseStream) object() *parseStream {
 	// get object operation.
 	if ps.hitPattern(findObjectsPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.FindMany,
@@ -1027,7 +1027,7 @@ func (ps *parseStream) object() *parseStream {
 	// find object's topology operation.
 	if ps.hitPattern(findObjectTopologyPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Find,
@@ -1040,7 +1040,7 @@ func (ps *parseStream) object() *parseStream {
 	// find object's topology graphic operation.
 	if ps.hitRegexp(findObjectTopologyGraphicRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Find,
@@ -1053,7 +1053,7 @@ func (ps *parseStream) object() *parseStream {
 	// update object's topology graphic operation.
 	if ps.hitRegexp(updateObjectTopologyGraphicRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Update,
@@ -1085,7 +1085,7 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	// create object's classification operation.
 	if ps.hitPattern(createObjectClassificationPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
 					Action: meta.Create,
@@ -1109,7 +1109,7 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Delete,
@@ -1134,7 +1134,7 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
 					Action:     meta.Update,
@@ -1148,7 +1148,7 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	// find object's classification list operation.
 	if ps.hitPattern(findObjectClassificationListPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
 					Action: meta.FindMany,
@@ -1161,7 +1161,7 @@ func (ps *parseStream) ObjectClassification() *parseStream {
 	// find all the objects belongs to a classification
 	if ps.hitRegexp(findObjectsBelongsToClassificationRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
 					Action: meta.FindMany,
@@ -1194,7 +1194,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Create,
@@ -1212,7 +1212,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Find,
@@ -1231,7 +1231,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 	// update object's attribute group operation.
 	if ps.hitPattern(updateObjectAttributeGroupPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
@@ -1243,7 +1243,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 
 	if ps.hitPattern(updateObjectAttributeGroupPropertyPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Update,
@@ -1267,7 +1267,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelAttributeGroup,
 					Action:     meta.Delete,
@@ -1285,7 +1285,7 @@ func (ps *parseStream) objectAttributeGroup() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Delete,
@@ -1317,7 +1317,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
@@ -1341,7 +1341,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
 					Action:     meta.Delete,
@@ -1366,7 +1366,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
 					Action:     meta.Update,
@@ -1380,7 +1380,7 @@ func (ps *parseStream) objectAttribute() *parseStream {
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Find,
@@ -1425,7 +1425,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
@@ -1469,7 +1469,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
@@ -1513,7 +1513,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelModule,
@@ -1551,7 +1551,7 @@ func (ps *parseStream) ObjectModule() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelModule,
@@ -1597,7 +1597,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
@@ -1627,7 +1627,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
@@ -1652,7 +1652,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
@@ -1682,7 +1682,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelSet,
@@ -1707,7 +1707,7 @@ func (ps *parseStream) ObjectSet() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelSet,
@@ -1736,7 +1736,7 @@ func (ps *parseStream) objectUnique() *parseStream {
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
@@ -1756,7 +1756,7 @@ func (ps *parseStream) objectUnique() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Update,
@@ -1782,7 +1782,7 @@ func (ps *parseStream) objectUnique() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Delete,
@@ -1802,7 +1802,7 @@ func (ps *parseStream) objectUnique() *parseStream {
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueRegexp, http.MethodGet) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
@@ -1833,7 +1833,7 @@ func (ps *parseStream) audit() *parseStream {
 	// add object unique operation.
 	if ps.hitPattern(searchAuditlog, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
 					Action: meta.FindMany,

@@ -225,7 +225,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		if permit.ShouldSkipAuthorize(&rsc) {
 			// this resource should be skipped, do not need to verify in auth center.
 			decisions[index].Authorized = true
-			blog.V(5).Infof("skip resource authorize for resource: %+v", rsc)
+			blog.V(5).Infof("skip authorization for resource: %+v", rsc)
 			continue
 		}
 
