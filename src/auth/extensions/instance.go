@@ -187,6 +187,10 @@ func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http
 }
 
 func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.Header, action meta.Action, objID string, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -199,6 +203,10 @@ func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, instances: %+v", instances)
 		return nil
@@ -222,6 +230,10 @@ func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromInstances(instances...)
 	if err != nil {
@@ -245,6 +257,10 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 }
 
 func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
@@ -253,6 +269,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
@@ -261,6 +281,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister instances failed, get instance by id failed, err: %+v", err)
@@ -269,6 +293,10 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
@@ -277,6 +305,9 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromInstances(instances...)
@@ -295,6 +326,9 @@ func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromInstances(instances...)
@@ -314,6 +348,10 @@ func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Head
 
 // AuthorizeInstanceCreateByObjectID authorize create priority by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
 	if err != nil {
 		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, extract business id from objects failed, objects: %+v, err: %+v", objects, err)

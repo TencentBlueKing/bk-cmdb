@@ -115,6 +115,10 @@ func (am *AuthManager) makeResourcesByClassifications(header http.Header, action
 }
 
 func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classifications ...metadata.Classification) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, classifications: %+v", classifications)
 		return nil
@@ -133,6 +137,10 @@ func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header htt
 }
 
 func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(classifications) == 0 {
 		return nil
 	}
@@ -156,6 +164,10 @@ func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, header http.Header, classificationIDs ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(classificationIDs) == 0 {
 		return nil
 	}
@@ -168,6 +180,10 @@ func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, h
 }
 
 func (am *AuthManager) RegisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(classifications) == 0 {
 		return nil
 	}
@@ -185,6 +201,10 @@ func (am *AuthManager) RegisterClassification(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(classifications) == 0 {
 		return nil
 	}

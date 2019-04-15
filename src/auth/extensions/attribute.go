@@ -163,6 +163,10 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 }
 
 func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributes) == 0 {
 		return nil
 	}
@@ -180,6 +184,10 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributes) == 0 {
 		return nil
 	}
@@ -197,6 +205,10 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeIDs) == 0 {
 		return nil
 	}
@@ -213,6 +225,10 @@ func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributes) == 0 {
 		return nil
 	}
@@ -238,6 +254,10 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributes) == 0 {
 		return nil
 	}
@@ -255,6 +275,10 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeIDs) == 0 {
 		return nil
 	}
@@ -271,6 +295,10 @@ func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, h
 }
 
 func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeIDs) == 0 {
 		return nil
 	}
