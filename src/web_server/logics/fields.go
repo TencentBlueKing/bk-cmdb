@@ -56,7 +56,7 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta *metadata.Metadata) (map[string]Property, error) {
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
@@ -91,9 +91,9 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadata.Metadata) ([]PropertyGroup, error) {
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metadata.Metadata) ([]PropertyGroup, error) {
 	ownerID := util.GetOwnerID(header)
-    condition := mapstr.MapStr{
+	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,
 		common.BKOwnerIDField: common.BKDefaultOwnerID,
 		"page": mapstr.MapStr{
@@ -126,7 +126,7 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadat
 
 }
 
-func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header, conds mapstr.MapStr, meta metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
 
 	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, conds, meta)
 	if nil != err {
@@ -142,13 +142,13 @@ func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.He
 
 }
 
-func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDs(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
 	sort := fmt.Sprintf("-%s,bk_property_index", common.BKIsRequiredField)
 	return lgc.getObjFieldIDsBySort(objID, sort, header, nil, meta)
 
 }
 
-func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta metadata.Metadata) ([]Property, error) {
+func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
 
 	condition := mapstr.MapStr{
 		common.BKObjIDField:   objID,

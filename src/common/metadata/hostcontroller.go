@@ -231,8 +231,8 @@ type CloudTaskInfo struct {
 	OwnerID         string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-// TransferHostToDefaultModuleConfig transfer host to default module
-type TransferHostToDefaultModuleConfig struct {
+// TransferHostToInnerModule transfer host to inner module eg:idle module ,fault module
+type TransferHostToInnerModule struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	ModuleID      int64   `json:"bk_module_id"`
 	HostID        []int64 `json:"bk_host_id"`

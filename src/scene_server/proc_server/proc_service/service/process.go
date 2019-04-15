@@ -39,7 +39,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.Atoi(appIDStr)
 	if err != nil {
-		blog.Errorf("convert appid from string to int failed!, err: %s, input:%s,rid:%s", err.Error(), appID, srvData.rid)
+		blog.Errorf("convert appid from string to int failed!, err: %s, appID:%d,rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -314,7 +314,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		// take snapshot before operation
 		details, err := ps.getProcDetail(req, ownerID, appID, int(procID))
 		if err != nil {
-			blog.Errorf("get inst detail error: %v, procID:%s,rid:%s", err, procID, srvData.rid)
+			blog.Errorf("get inst detail error: %v, procID:%d, rid:%s", err, procID, srvData.rid)
 			continue
 		}
 

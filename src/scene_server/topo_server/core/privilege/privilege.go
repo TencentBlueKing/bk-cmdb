@@ -119,7 +119,7 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	rsp, err := u.client.ObjectController().Privilege().GetSystemFlag(context.Background(), supplierAccount, common.HostCrossBizField, u.params.Header)
 	if nil != err {
 		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
-		//		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	} else {
 		gPrivilege.IsHostCrossBiz = rsp.Result
 	}

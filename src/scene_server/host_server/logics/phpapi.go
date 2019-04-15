@@ -56,7 +56,7 @@ func (lgc *Logics) UpdateHost(ctx context.Context, input map[string]interface{},
 
 	mapData, ok := updateData.(map[string]interface{})
 	if !ok {
-		blog.Errorf("UpdateHost params data must be object, input :%+v", input, lgc.rid)
+		blog.Errorf("UpdateHost params data must be object, input :%+v, rid:%s", input, lgc.rid)
 		return nil, http.StatusBadRequest, lgc.ccErr.Errorf(common.CCErrCommParamsInvalid, "data")
 	}
 
@@ -476,14 +476,14 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		if dstHostMapData, ok := dstHostMap[id]; ok {
 			ip, ok := dstHostMapData[common.BKHostInnerIPField].(string)
 			if false == ok {
-				blog.Errorf("CloneHostProperty not found innerip , raw data format hostMap:%+v, input:%+v", dstHostMapData, input, lgc.rid)
+				blog.Errorf("CloneHostProperty not found innerip , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
 				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "convert fail")
 
 			}
 
 			hostID, err := util.GetInt64ByInterface(dstHostMapData[common.BKHostIDField])
 			if nil != err {
-				blog.Errorf("CloneHostProperty not found host id  , raw data format hostMap:%+v, input:%+v", dstHostMapData, input, lgc.rid)
+				blog.Errorf("CloneHostProperty not found host id  , raw data format hostMap:%+v, input:%+v, rid:%s", dstHostMapData, input, lgc.rid)
 				return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", "convert fail")
 			}
 			existIPMap[ip] = hostID
@@ -525,21 +525,21 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 
 	// 克隆主机, 已存在的修改，不存在的新增；dstIpArr: 全部要克隆的主机，existIpArr：已存在的要克隆的主机
 	blog.V(5).Infof("existIpArr:%+v, input:%+v,rid:%s", existIPMap, input, lgc.rid)
-	for dstIpV, _ := range dstIPMap {
-		if dstIpV == input.OrgIP {
-			blog.V(5).Infof("clone host updateHostMain err:dstIp and orgIp cannot be the same,srcIP:%s, dstIP:%s, input:%+v,rid:%s", input.OrgIP, dstIpV, input, lgc.rid)
+	for dstIPV := range dstIPMap {
+		if dstIPV == input.OrgIP {
+			blog.V(5).Infof("clone host updateHostMain err:dstIp and orgIp cannot be the same,srcIP:%s, dstIP:%s, input:%+v,rid:%s", input.OrgIP, dstIPV, input, lgc.rid)
 			continue
 		}
 		blog.V(5).Infof("hostMapData:%+v,rid:%s", hostMapData, lgc.rid)
-		hostID, oK := existIPMap[dstIpV]
+		hostID, oK := existIPMap[dstIPV]
 		if true == oK {
 			blog.V(5).Infof("clone update")
 			hostCondition := map[string]interface{}{
-				common.BKHostInnerIPField: dstIpV,
+				common.BKHostInnerIPField: dstIPV,
 				common.BKHostIDField:      hostID,
 			}
 
-			updateHostData[common.BKHostInnerIPField] = dstIpV
+			updateHostData[common.BKHostInnerIPField] = dstIPV
 			delete(updateHostData, common.BKHostIDField)
 			delete(updateHostData, common.BKAssetIDField)
 			res, err := phpapi.UpdateHostMain(ctx, hostCondition, updateHostData, appID)
@@ -561,7 +561,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 				return nil, lgc.ccErr.New(resDelRelation.Code, resDelRelation.ErrMsg)
 			}
 		} else {
-			hostMapData[common.BKHostInnerIPField] = dstIpV
+			hostMapData[common.BKHostInnerIPField] = dstIPV
 			addHostMapData := hostMapData
 			delete(addHostMapData, common.BKHostIDField)
 			addHostMapData[common.BKAssetIDField] = xid.New().String()
@@ -569,7 +569,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			if nil != err {
 				return nil, err
 			}
-			blog.V(5).Infof("CloneHostProperty dstIP:%s, cloneHostId:%+v, input:%+v,rid:%s", dstIpV, cloneHostId, input, lgc.rid)
+			blog.V(5).Infof("CloneHostProperty dstIP:%s, cloneHostId:%+v, input:%+v,rid:%s", dstIPV, cloneHostId, input, lgc.rid)
 			hostID = cloneHostId
 
 		}
