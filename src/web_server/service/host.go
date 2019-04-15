@@ -67,7 +67,11 @@ func (s *Service) ImportHost(c *gin.Context) {
 	}
 
 	// del file
-	defer os.Remove(filePath)
+	defer func(filePath string, rid string){
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("ImportHost, remove temporary file failed, err: %+v, rid: %s", err, rid)
+		}
+	}(filePath, rid)
 
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
