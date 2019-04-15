@@ -522,11 +522,19 @@ func (o *object) Update(data mapstr.MapStr) error {
 }
 
 func (o *object) Parse(data mapstr.MapStr) error {
-
-	err := mapstr.SetValueToStructByTags(&o.obj, data)
-	if nil != err {
+	tmp, err := data.ToJSON()
+	if err != nil {
 		return err
 	}
+
+	if err = json.Unmarshal(tmp, &o.obj); err != nil {
+		return err
+	}
+
+	// err = mapstr.SetValueToStructByTags(&o.obj, data)
+	// if nil != err {
+	// 	return err
+	// }
 
 	return nil
 }

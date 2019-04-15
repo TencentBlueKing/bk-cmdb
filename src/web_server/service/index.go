@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/blog"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -49,17 +50,26 @@ func (s *Service) Index(c *gin.Context) {
 	if nil == modelPrivi {
 		strModelPrivi = ""
 	} else {
-		cstrModelPrivi, _ := json.Marshal(modelPrivi)
+		cstrModelPrivi, err := json.Marshal(modelPrivi)
+		if err != nil {
+			blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v", modelPrivi, err)
+		}
 		strModelPrivi = string(cstrModelPrivi)
 	}
 	if nil == sysPrivi {
 		strSysPrivi = ""
 	} else {
-		cstrSysPrivi, _ := json.Marshal(sysPrivi)
+		cstrSysPrivi, err := json.Marshal(sysPrivi)
+		if err != nil {
+			blog.Errorf("marshal system privilege failed, info: %+v, err: %v", sysPrivi, err)
+		}
 		strSysPrivi = string(cstrSysPrivi)
 	}
 
-	mainLineObjIDB, _ := json.Marshal(mainLineObjIDArr)
+	mainLineObjIDB, err := json.Marshal(mainLineObjIDArr)
+	if err != nil {
+		blog.Errorf("marshal mainline failed, info: %+v, err: %v", mainLineObjIDArr, err)
+	}
 	mainLineObjIDStr = string(mainLineObjIDB)
 
 	session.Set("userPriviApp", string(strUserPriveApp))
