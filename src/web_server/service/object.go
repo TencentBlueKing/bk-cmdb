@@ -234,7 +234,13 @@ func (s *Service) ExportObject(c *gin.Context) {
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	requestBody := ExportObjectBody{}
-	c.BindJSON(&requestBody)
+	err := c.BindJSON(&requestBody)
+	if err != nil {
+		blog.Error("export model failed, parse request body to json failed, err: %v", err)
+		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
+		c.String(http.StatusBadRequest, msg)
+		return
+	}
 	metaInfo := metadata.NewMetaDataFromBusinessID(requestBody.Metadata.Label.BkBizID)
 
 	// get the all attribute of the object
