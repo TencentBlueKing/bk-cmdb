@@ -22,11 +22,6 @@
                     <i class="icon-cc-resources"></i>
                     {{$t('Association["拓扑"]')}}
                 </bk-button>
-                <bk-button class="options-button" :type="activeComponent === 'cmdbRelationTree' ? 'primary' : 'default'"
-                    @click.prevent="activeComponent = 'cmdbRelationTree'">
-                    <i class="icon-cc-tree"></i>
-                    {{$t('Association["树形"]')}}
-                </bk-button>
             </div>
         </div>
         <div class="relation-component">
@@ -39,12 +34,10 @@
 
 <script>
     import cmdbRelationTopology from './_topology.vue'
-    import cmdbRelationTree from './_tree.vue'
     import cmdbRelationUpdate from './_update.vue'
     export default {
         components: {
             cmdbRelationTopology,
-            cmdbRelationTree,
             cmdbRelationUpdate
         },
         props: {

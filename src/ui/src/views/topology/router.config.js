@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     U_HOST,
@@ -15,7 +16,7 @@ export default {
     name: 'topology',
     path: path,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'topology',
             i18n: 'Nav["业务拓扑"]',
@@ -25,9 +26,8 @@ export default {
             adminView: false
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         },
         requireBusiness: true
-    }
+    })
 }

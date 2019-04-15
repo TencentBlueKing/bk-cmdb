@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     C_CUSTOM_QUERY,
@@ -19,7 +20,7 @@ export default {
     name: 'customQuery',
     path: path,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'customQuery',
             i18n: 'Nav["动态分组"]',
@@ -29,9 +30,8 @@ export default {
             adminView: false
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         },
         requireBusiness: true
-    }
+    })
 }

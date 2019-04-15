@@ -31,12 +31,14 @@ const getters = {
     menus: (state, getters, rootState, rootGetters) => {
         const menus = clone(MENU)
         viewRouters.forEach(route => {
-            const meta = (route.meta || {})
+            const meta = route.meta || {}
             const auth = meta.auth || {}
-            const menu = meta.menu
-            const shouldShow = rootGetters.isAdminView
-                ? menu && menu.adminView
-                : menu && menu.onlyAdminView ? false : !!menu
+            const menu = meta.menu || false
+            const shouldShow = menu
+                ? rootGetters.isAdminView
+                    ? menu.adminView
+                    : menu.businessView
+                : true
             if (shouldShow) {
                 const authorized = auth.view ? rootGetters['auth/isAuthorized'](auth.view, { type: 'view' }) : true
                 if (authorized) {
