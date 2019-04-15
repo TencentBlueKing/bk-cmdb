@@ -107,6 +107,9 @@ func (am *AuthManager) extractBusinessIDFromDynamicGroups(dynamicGroups ...Dynam
 }
 
 func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http.Header, action meta.Action, dynamicGroups ...DynamicGroupSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
 
 	// extract business id
 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
@@ -121,6 +124,10 @@ func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(dynamicGroups) == 0 {
 		return nil
 	}
@@ -144,6 +151,10 @@ func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header
 }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -156,6 +167,10 @@ func (am *AuthManager) UpdateRegisteredDynamicGroupByID(ctx context.Context, hea
 }
 
 func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(dynamicGroups) == 0 {
 		return nil
 	}
@@ -173,6 +188,10 @@ func (am *AuthManager) RegisterDynamicGroups(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -184,6 +203,10 @@ func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(dynamicGroups) == 0 {
 		return nil
 	}
@@ -201,6 +224,10 @@ func (am *AuthManager) DeregisterDynamicGroups(ctx context.Context, header http.
 }
 
 func (am *AuthManager) DeregisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}

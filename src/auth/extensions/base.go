@@ -98,6 +98,10 @@ func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.Re
 	return nil
 }
 
+func (am *AuthManager) Enabled() bool {
+	return am.Authorize.Enabled()
+}
+
 // this functions works to parse business id from metadata's label
 // if the business id key is exist in the label, then it will check
 // the value and parse form it. otherwise it will return with 0.
