@@ -78,7 +78,7 @@
         },
         methods: {
             toggleAdminView () {
-                this.$store.commit('setAdminView', { isAdminView: !this.isAdminView, _this: this })
+                this.$store.commit('setAdminView', !this.isAdminView)
             },
             // 回退路由
             back () {

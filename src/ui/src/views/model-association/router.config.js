@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
     C_RELATION,
@@ -17,18 +18,16 @@ export default {
     name: 'modelAssociation',
     path: path,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'modelAssociation',
             i18n: 'Nav["关联类型"]',
             path: path,
             order: 4,
-            parent: NAV_MODEL_MANAGEMENT,
-            adminView: true
+            parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         }
-    }
+    })
 }

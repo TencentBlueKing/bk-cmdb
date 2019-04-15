@@ -83,9 +83,8 @@ const mutations = {
     setHeaderTitle (state, headerTitle) {
         state.headerTitle = headerTitle
     },
-    setAdminView (state, params) {
-        window.sessionStorage.setItem('isAdminView', params.isAdminView)
-        params._this.$router.push({ name: 'index' })
+    setAdminView (state, isAdminView) {
+        window.sessionStorage.setItem('isAdminView', isAdminView)
         window.location.reload()
     }
 }
