@@ -41,16 +41,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 }
 
-type Gse struct {
-	ZkAddress     string
-	ZkUser        string
-	ZkPassword    string
-	RedisPort     string
-	RedisPassword string
-}
-
 type Config struct {
-	Gse   Gse
 	Redis redis.Config
 	Auth  authcenter.AuthConfig
 }

@@ -118,7 +118,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	result, err := s.CoreAPI.HostController().User().DeleteUserConfig(srvData.ctx, appID, ID, srvData.header)
 	if err != nil {
-		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v:%+v,rid:%s", err.Error(), appID, srvData.rid)
+		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}

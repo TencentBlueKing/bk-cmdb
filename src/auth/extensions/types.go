@@ -211,16 +211,23 @@ type ModelUniqueSimplify struct {
 	ID    uint64 `field:"id" json:"id" bson:"id"`
 	ObjID string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
 	Ispre bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	BusinessID int64
 }
 
-func (is *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
+func (cls *ModelUniqueSimplify) Parse(data mapstr.MapStr) (*ModelUniqueSimplify, error) {
 
-	err := mapstr.SetValueToStructByTags(is, data)
+	err := mapstr.SetValueToStructByTags(cls, data)
+	if nil != err {
+		return nil, err
+	}
+	
+	// parse business id
+	cls.BusinessID, err = metadata.ParseBizIDFromData(data)
 	if nil != err {
 		return nil, err
 	}
 
-	return is, err
+	return cls, err
 }
 
 type ProcessSimplify struct {

@@ -24,8 +24,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return false
 	case rsc.Type == meta.ResourceSync:
 		return true
-	case rsc.Type == meta.DynamicGrouping && rsc.Action == meta.FindMany || rsc.Action == meta.Find:
-		return true
+	// case rsc.Type == meta.DynamicGrouping && rsc.Action == meta.FindMany || rsc.Action == meta.Find:
+	// 	return true
 
 	case rsc.Type == meta.ModelClassification && rsc.Action == meta.FindMany:
 		return true
@@ -52,8 +52,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	case rsc.Type == meta.ModelInstanceAssociation:
 		return true
 
-	case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):
-		return true
+	// case rsc.Type == meta.ModelInstance && (rsc.Action == meta.Find || rsc.Action == meta.FindMany):
+	// 	return true
 
 	// all the network data collector related operation is all authorized for now.
 	case rsc.Type == meta.NetDataCollector:
