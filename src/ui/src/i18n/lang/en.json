@@ -235,7 +235,7 @@
         "收起": "Collapse",
         "展开": "Expand",
         "主机身份": "Host Identifier",
-        "事件推送功能能够实现当配置信息发生变化的时候，实时通知到关联的系统中，目前支持 http 的推送方式": "The event push function can realize real-time notification to the associated system when the configuration information changes, and currently supports the push mode of http."
+        "事件推送功能提示": "The event push function can realize real-time notification to the associated system when the configuration information changes, and currently supports the push mode of http."
     },
     "Permission": {
         "权限管理": "Permission Manage",

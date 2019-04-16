@@ -4,7 +4,7 @@
             <bk-button type="primary"
                 :disabled="!$isAuthorized(OPERATION.C_EVENT)"
                 @click="createPush">
-                {{$t('EventPush["新增推送"]')}}
+                {{$t('Common["新建"]')}}
             </bk-button>
         </div>
         <cmdb-table
@@ -38,13 +38,7 @@
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("EventPush['当前并无推送，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn"
-                    type="primary"
-                    :disabled="!$isAuthorized(OPERATION.C_EVENT)"
-                    @click="createPush">
-                    {{$t("EventPush['新增推送']")}}
-                </bk-button>
+                <p>{{$t("EventPush['事件推送功能提示']")}}</p>
             </div>
         </cmdb-table>
         <cmdb-slider

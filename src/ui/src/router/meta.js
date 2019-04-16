@@ -1,19 +1,22 @@
 export default class Meta {
     constructor (data = {}) {
-        const menu = Object.assign({
-            id: null,
-            i18n: null,
-            path: null,
-            order: 1,
-            parent: null,
-            adminView: true,
-            requireBusiness: false
-        }, data.menu || {})
+        let menu = false
+        if (data.menu) {
+            menu = Object.assign({
+                id: null,
+                i18n: null,
+                path: null,
+                order: 1,
+                parent: null,
+                adminView: true,
+                businessView: true
+            }, data.menu)
+        }
 
         const auth = Object.assign({
-            view: '',
+            view: null,
             operation: []
-        })
+        }, data.auth)
 
         return {
             ...data,
