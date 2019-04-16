@@ -16,13 +16,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
+	
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"configcenter/src/framework/core/errors"
 )
 
 // Property object fields
@@ -60,11 +61,14 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
-		return nil, err
+		return nil, fmt.Errorf("get object fields failed, err: %+v", err)
 	}
 	groups, err := lgc.getObjectGroup(objID, header, meta)
 	if nil != err {
-		return nil, err
+		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
+	}
+	if len(groups) == 0 {
+		return nil, errors.New("get attribute group by object not found")
 	}
 
 	ret := make(map[string]Property)
@@ -105,15 +109,15 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group http do error, err:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
-		return nil, err
+		blog.Errorf("get %s fields group failed, err:%+v, rid:%s", objID, err, util.GetHTTPCCRequestID(header))
+		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)
 	}
 	if !result.Result {
-		blog.Errorf("get %s fields group  http reply error. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
-		return nil, err
+		blog.Errorf("get %s fields group result failed. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		return nil, fmt.Errorf("get attribute group result false, result: %+v", result)
 	}
 	fields := result.Data
-	ret := []PropertyGroup{}
+	ret := make([]PropertyGroup, 0)
 	for _, mapField := range fields {
 		propertyGroup := PropertyGroup{}
 		propertyGroup.Index = mapField.GroupIndex

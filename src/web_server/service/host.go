@@ -34,13 +34,14 @@ import (
 
 // ImportHost import host
 func (s *Service) ImportHost(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	file, err := c.FormFile("file")
 	if nil != err {
-		blog.Errorf("Import Host get file error:%s", err.Error())
+		blog.Errorf("ImportHost failed, get file from form data failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileNoFound, defErr.Error(common.CCErrWebFileNoFound).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -51,21 +52,30 @@ func (s *Service) ImportHost(c *gin.Context) {
 	dir := webCommon.ResourcePath + "/import/"
 	_, err = os.Stat(dir)
 	if nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("ImportHost failed, save form data to local file failed, mkdir failed, err: %+v, rid: %s", err, rid)
+			c.String(http.StatusInternalServerError, fmt.Sprintf("save form data to local file failed, mkdir failed, err: %+v", err))
+			return
+		}
 	}
 	filePath := fmt.Sprintf("%s/importhost-%d-%d.xlsx", dir, time.Now().UnixNano(), randNum)
-	err = c.SaveUploadedFile(file, filePath)
-	if nil != err {
+	if err := c.SaveUploadedFile(file, filePath); nil != err {
+		blog.Errorf("ImportHost failed, save form data to local file failed, save data as excel failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
 	}
 
 	// del file
-	defer os.Remove(filePath)
+	defer func(filePath string, rid string) {
+		if err := os.Remove(filePath); err != nil {
+			blog.Errorf("ImportHost, remove temporary file failed, err: %+v, rid: %s", err, rid)
+		}
+	}(filePath, rid)
 
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
+		blog.Errorf("ImportHost failed, open form data as excel file failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -73,6 +83,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 	data, errCode, err := s.Logics.ImportHosts(context.Background(), f, c.Request.Header, defLang, &metadata.Metadata{})
 
 	if nil != err {
+		blog.Errorf("ImportHost failed, import logic failed, err: %+v, rid: %s", err, rid)
 		msg := getReturnStr(errCode, err.Error(), data)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -84,6 +95,7 @@ func (s *Service) ImportHost(c *gin.Context) {
 
 // ExportHost export host
 func (s *Service) ExportHost(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
 
 	appIDStr := c.PostForm("bk_biz_id")
 	hostIDStr := c.PostForm("bk_host_id")
@@ -96,7 +108,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 
 	hostInfo, err := s.Logics.GetHostData(appIDStr, hostIDStr, pheader)
 	if err != nil {
-		blog.Errorf("export host, but get hosts info failed, err: %v", err)
+		blog.Errorf("ExportHost failed, get hosts by id [%+v] failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
 		c.String(http.StatusInternalServerError, msg)
 		return
@@ -109,14 +121,14 @@ func (s *Service) ExportHost(c *gin.Context) {
 	customFields := logics.GetCustomFields(filterFields, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, filterFields, customFields, c.Request.Header, &metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost get %s field error:%s", objID, err.Error())
+		blog.Errorf("ExportHost failed, get host model fields failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
 	}
 	err = s.Logics.BuildHostExcelFromData(context.Background(), objID, fields, nil, hostInfo, file, pheader, &metadata.Metadata{})
 	if nil != err {
-		blog.Errorf("ExportHost object:%s error:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(c.Request.Header))
+		blog.Errorf("ExportHost failed, BuildHostExcelFromData failed, object:%s, err:%+v, rid:%s", objID, err, rid)
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -125,7 +137,11 @@ func (s *Service) ExportHost(c *gin.Context) {
 	dirFileName := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	_, err = os.Stat(dirFileName)
 	if nil != err {
-		os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm)
+		if err := os.MkdirAll(dirFileName, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("ExportHost failed, make local dir to save export file failed, err: %+v, rid: %s", err, rid)
+			c.String(http.StatusInternalServerError, fmt.Sprintf("make local dir to save export file failed, err: %+v", err))
+			return
+		}
 	}
 	fileName := fmt.Sprintf("%dhost.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
@@ -133,7 +149,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
-		blog.Errorf("ExportHost save file error:%s", err.Error())
+		blog.Errorf("ExportHost failed, save file failed, err: %+v, rid: %s", err, rid)
 		reply := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -141,19 +157,26 @@ func (s *Service) ExportHost(c *gin.Context) {
 	logics.AddDownExcelHttpHeader(c, "host.xlsx")
 	c.File(dirFileName)
 
-	os.Remove(dirFileName)
-
+	if err := os.Remove(dirFileName); err != nil {
+		blog.Errorf("ExportHost success, but remove host.xlsx file failed, err: %+v, rid: %s", err, rid)
+	}
 }
 
 // BuildDownLoadExcelTemplate build download excel template
 func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
+	rid := util.GetHTTPCCRequestID(c.Request.Header)
+
 	logics.SetProxyHeader(c)
 	objID := c.Param(common.BKObjIDField)
 	randNum := rand.Uint32()
 	dir := webCommon.ResourcePath + "/template/"
 	_, err := os.Stat(dir)
 	if nil != err {
-		os.MkdirAll(dir, os.ModeDir|os.ModePerm)
+		if err := os.MkdirAll(dir, os.ModeDir|os.ModePerm); err != nil {
+			blog.Errorf("BuildDownLoadExcelTemplate failed, make template dir failed, err: %+v, rid: %s", err, rid)
+			c.String(http.StatusInternalServerError, fmt.Sprintf("make template dir failed, err: %+v", err))
+			return
+		}
 	}
 	language := logics.GetLanguageByHTTPRequest(c)
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
@@ -169,7 +192,7 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
 	err = s.Logics.BuildExcelTemplate(objID, file, c.Request.Header, defLang, metaInfo)
 	if nil != err {
-		blog.Errorf("BuildDownLoadExcelTemplate object:%s error:%s", objID, err.Error())
+		blog.Errorf("BuildDownLoadExcelTemplate failed, build excel template failed, object:%s error:%s", objID, err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
 		c.Writer.Write([]byte(reply))
 		return
@@ -179,7 +202,9 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 
 	// http.ServeFile(c.Writer, c.Request, file)
 	c.File(file)
-	os.Remove(file)
+	if err := os.Remove(file); err != nil {
+		blog.Errorf("BuildDownLoadExcelTemplate success, but remove template file after response failed, err: %+v, rid: %s", err, rid)
+	}
 	return
 }
 
