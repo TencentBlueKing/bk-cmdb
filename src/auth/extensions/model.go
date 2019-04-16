@@ -164,6 +164,10 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 
 // AuthorizeByObjectID authorize model by id
 func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, businessID int64, objectIDs ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objectIDs) == 0 {
 		return nil
 	}
@@ -182,6 +186,10 @@ func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Head
 
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany || action == meta.ModelTopologyView) {
 		blog.V(4).Infof("skip authorization for reading, models: %+v", objects)
 		return nil
@@ -198,6 +206,10 @@ func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header
 
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
 	if err != nil {
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
@@ -207,6 +219,10 @@ func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, head
 }
 
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:   resourceType,
@@ -220,6 +236,10 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -235,6 +255,10 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 }
 
 func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, businessID int64, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -249,6 +273,10 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	return nil
 }
 func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, businessID int64, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -262,6 +290,10 @@ func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, head
 	return am.UpdateRegisteredObjects(ctx, header, businessID, objects...)
 }
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -277,10 +309,18 @@ func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	return am.RegisterObject(ctx, header, objects...)
 }
 
 func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objectIDs) == 0 {
 		return nil
 	}
