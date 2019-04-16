@@ -84,11 +84,10 @@
                     instId: this.instId,
                     params: this.$injectMetadata(),
                     config: {
-                        requestId: `get_getInstRelation_${this.objId}_${this.instId}`,
-                        fromCache: true
+                        requestId: `get_getInstRelation_${this.objId}_${this.instId}`
                     }
                 }).then(data => {
-                    const next = data[0].next.filter(obj => !this.ignore.includes(obj['bk_obj_id']))
+                    const next = data[0].prev.filter(obj => !this.ignore.includes(obj['bk_obj_id']))
                     next.forEach(obj => {
                         obj.show = false
                     })
