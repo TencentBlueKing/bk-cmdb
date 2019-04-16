@@ -13,7 +13,8 @@
 package metadata
 
 import (
-	"configcenter/src/common/json"
+
+	//"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 )
 
@@ -40,20 +41,10 @@ type Classification struct {
 // Parse load the data from mapstr classification into classification instance
 func (cli *Classification) Parse(data mapstr.MapStr) (*Classification, error) {
 
-	tmp, err := data.ToJSON()
-	if err != nil {
+	err := mapstr.SetValueToStructByTags(cli, data)
+	if nil != err {
 		return nil, err
 	}
-
-	if err = json.Unmarshal(tmp, cli); err != nil {
-		return nil, err
-	}
-
-	// TODO: recheck this, find a solution.
-	// err = mapstr.SetValueToStructByTags(cli, data)
-	// if nil != err {
-	// 	return nil, err
-	// }
 
 	return cli, err
 }
