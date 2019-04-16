@@ -96,10 +96,12 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
 	if nil != err {
+		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v", sHostCond, err)
 		return hostInfo, err
 	}
 
 	if !result.Result {
+		blog.Errorf("GetHostData failed, search condition: %+v, result: %+v", sHostCond, result)
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 

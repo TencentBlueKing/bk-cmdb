@@ -35,7 +35,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 		blog.Errorf("get host by business %d failed, err: %+v", businessSimplify.BKAppIDField, err)
 		return err
 	}
-	resources := ih.authManager.MakeResourcesByHosts(*header, authmeta.EmptyAction, bizID, hosts...)
+	resources := ih.authManager.MakeResourcesByHosts(*header, authmeta.EmptyAction, hosts...)
 
 	// step2 get host by business from iam
 	rs := &authmeta.ResourceAttribute{
