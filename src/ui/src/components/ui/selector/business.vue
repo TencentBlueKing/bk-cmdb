@@ -60,9 +60,6 @@
                 this.setHeader()
             }
         },
-        beforeCreate () {
-            this.$http.deleteHeader('bk_biz_id')
-        },
         async created () {
             this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             if (this.authorizedBusiness.length) {
@@ -70,9 +67,6 @@
             } else {
                 this.$error(this.$t('Common["您没有业务权限"]'))
             }
-        },
-        beforeDestroy () {
-            this.$http.deleteHeader('bk_biz_id')
         },
         methods: {
             setHeader () {

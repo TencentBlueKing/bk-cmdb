@@ -100,14 +100,14 @@ const transformResponse = data => {
                     resource_model: 'biz'
                 }]
                 setModelMeta(meta, modelConfig)
+            } else if (businessResourceAuth.includes(auth) && resource.bk_biz_id) {
+                meta.is_pass = true
             } else if (resourceAuth.includes(auth)) {
                 setSystemMeta('resource', meta, globalBusi)
             } else if (eventAuth.includes(auth)) {
                 setSystemMeta('event', meta, backConfig)
             } else if (auth === AUTH.R_AUDIT) {
                 setSystemMeta('audit', meta, backConfig)
-            } else if (businessResourceAuth.includes(auth)) {
-                meta.is_pass = true
             }
         }
         return meta
