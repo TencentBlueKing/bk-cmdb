@@ -145,9 +145,17 @@
                     isShowModelAsst: this.isShowAsst,
                     topoModelList: this.$tools.clone(this.localTopoModelList)
                 }
-                this.$store.commit('globalModels/setCustomModelConfig', this.localModelConfig)
-                this.$emit('save', displayConfig)
-                this.$emit('cancel')
+                const topoModelConfig = {
+                    ...this.localModelConfig,
+                    isShowModelName: this.isShowName,
+                    isShowModelAsst: this.isShowAsst
+                }
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    topoModelConfig
+                }).then(() => {
+                    this.$emit('save', displayConfig)
+                    this.$emit('cancel')
+                })
             },
             reset () {
                 this.isShowName = true
