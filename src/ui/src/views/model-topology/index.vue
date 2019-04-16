@@ -155,10 +155,6 @@
                     properties: {},
                     title: this.$t('ModelManagement["拓扑显示设置"]')
                 },
-                // displayConfig: {
-                //     isShowModelName: true,
-                //     isShowModelAsst: true
-                // },
                 topoTooltip: {
                     hoverNode: null,
                     hoverNodeTimer: null,
