@@ -272,8 +272,8 @@
             },
             displayConfig () {
                 return {
-                    isShowModelName: this.modelConfig.isShowModelName || true,
-                    isShowModelAsst: this.modelConfig.isShowModelAsst || true
+                    isShowModelName: this.modelConfig.isShowModelName === undefined ? true : this.modelConfig.isShowModelName,
+                    isShowModelAsst: this.modelConfig.isShowModelAsst === undefined ? true : this.modelConfig.isShowModelAsst
                 }
             }
         },
