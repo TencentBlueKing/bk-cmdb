@@ -10,18 +10,12 @@
                     </bk-button>
                 </div>
                 <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default submit" form="exportForm"
-                        :disabled="!table.checked.length">
+                    <bk-button class="models-button" type="default"
+                        :disabled="!table.checked.length"
+                        @click="handleExport">
                         <i class="icon-cc-derivation"></i>
                     </bk-button>
                 </div>
-                <form id="exportForm" :action="url.export" method="POST" hidden>
-                    <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
-                    <input type="hidden" name="export_custom_fields" :value="usercustom[customConfigKey]">
-                    <input type="hidden" name="metadata"
-                        v-if="!isPublicModel"
-                        :value="JSON.stringify($injectMetadata().metadata)">
-                </form>
                 <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
                     <bk-button class="models-button"
                         :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_INST)"
@@ -660,6 +654,19 @@
                     return true
                 }
                 return true
+            },
+            handleExport () {
+                const data = new FormData()
+                data.append('bk_inst_id', this.table.checked.join(','))
+                data.append('export_custom_fields', this.usercustom[this.customConfigKey])
+                if (!this.isPublicModel) {
+                    data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                }
+                this.$http.download({
+                    url: this.url.export,
+                    method: 'post',
+                    data
+                })
             }
         }
     }

@@ -61,7 +61,8 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    }
+    },
+    download: download
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -231,6 +232,39 @@ function getCancelToken () {
         cancelToken,
         cancelExcutor
     }
+}
+
+function download (options = {}) {
+    const { url, method = 'post', data } = options
+    const config = Object.assign({
+        globalError: false,
+        originalResponse: true,
+        responseType: 'blob'
+    }, options.config)
+    if (!url) {
+        $error('Empty download url')
+        return false
+    }
+    let promise
+    if (methodsWithData.includes(method)) {
+        promise = $http[method](url, data, config)
+    } else {
+        promise = $http[method](url, config)
+    }
+    promise.then(response => {
+        const disposition = response.headers['content-disposition']
+        const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+        const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
+            type: response.headers['content-type']
+        }))
+        const link = document.createElement('a')
+        link.style.display = 'none'
+        link.href = downloadUrl
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    })
 }
 
 export default $http
