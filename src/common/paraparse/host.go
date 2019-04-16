@@ -66,18 +66,9 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			queryCondItem[i.Operator] = i.Value
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
-			//d := make(map[string]interface{})
-			queryCondItem, ok := output[i.Field].(map[string]interface{})
-			if !ok {
-				queryCondItem = make(map[string]interface{})
-			}
-			valStr, ok := i.Value.(string)
-			if ok {
-				queryCondItem[i.Operator] = SpeceialCharChange(valStr)
-			} else {
-				queryCondItem[i.Operator] = i.Value
-			}
-			output[i.Field] = queryCondItem
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
 		default:
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
