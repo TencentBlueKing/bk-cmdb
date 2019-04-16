@@ -155,7 +155,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
+				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v", err)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}

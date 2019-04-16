@@ -28,9 +28,11 @@ import (
 /*
  * business related auth interface
  */
+ 
+ // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
-	condition := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &condition)
+	cond := metadata.QueryCondition{}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
 		blog.Errorf("list business failed, err: %v", err)
 		return nil, err
