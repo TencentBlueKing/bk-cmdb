@@ -124,7 +124,7 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 			return fmt.Errorf("unsupport the type %s %v", structField.Name, structField.Type.Kind())
 
 		case reflect.Map:
-			if _, err := setMapToReflectValue(fieldValue, reflect.ValueOf(tagVal)); nil != err {
+			if _, err := setMapToReflectValue(structField, fieldValue, reflect.ValueOf(tagVal)); nil != err {
 				return err
 			}
 
@@ -188,21 +188,55 @@ func setStructByMapStr(targetType reflect.Type, targetValue reflect.Value, value
 	return nil
 }
 
-func setMapToReflectValue(returnVal, inputVal reflect.Value) (reflect.Value, error) {
+func setMapToReflectValue(structField reflect.StructField, returnVal, inputVal reflect.Value) (retVal reflect.Value, err error) {
 	if !returnVal.CanSet() {
 		return returnVal, fmt.Errorf("can not set to value %v", returnVal)
 	}
-	t := returnVal.Type()
-	if returnVal.IsNil() {
-		returnVal.Set(reflect.MakeMap(t))
-	}
-	mapKeys := inputVal.MapKeys()
-	for _, key := range mapKeys {
-		value := inputVal.MapIndex(key)
-		returnVal.SetMapIndex(key, value)
+	retVal = *(&returnVal)
+	t := retVal.Type()
+	if retVal.IsNil() {
+		retVal.Set(reflect.MakeMap(t))
 	}
 
-	return returnVal, nil
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("not support data type. field name: ", structField.Name, ", err:", r)
+			switch x := r.(type) {
+			case string:
+				err = fmt.Errorf(x)
+			case error:
+				err = x
+			default:
+				err = fmt.Errorf("%#v", r)
+			}
+		}
+	}()
+
+	mapKeys := inputVal.MapKeys()
+	for _, key := range mapKeys {
+		if !inputVal.MapIndex(key).CanInterface() {
+			return retVal, fmt.Errorf("not support data type. field name: %v", structField.Name)
+		}
+		value := inputVal.MapIndex(key).Interface()
+		switch rawVal := value.(type) {
+		case float64:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case float32:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int64:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int32:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case int:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case string:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		default:
+			return retVal, fmt.Errorf("not support data type. field name: %v", structField.Name)
+		}
+	}
+
+	return returnVal, err
 }
 
 func isEmptyValue(v reflect.Value) bool {
