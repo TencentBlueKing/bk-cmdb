@@ -141,6 +141,10 @@ type AuthCenter struct {
 	authClient *authClient
 }
 
+func (ac *AuthCenter) Enabled() bool {
+	return ac.Config.Enable
+}
+
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
 	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
