@@ -335,6 +335,7 @@
                 this.displayConfig.isShowModelAsst = displayConfig.isShowModelAsst
                 this.localTopoModelList = displayConfig.topoModelList
                 this.updateNetwork()
+                this.networkInstance.setOptions({ nodes: { fixed: !this.topoEdit.isEdit } })
             },
             handleRelationSave (params) {
                 const fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
