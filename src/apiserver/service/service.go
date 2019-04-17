@@ -55,7 +55,6 @@ type service struct {
 }
 
 func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
-	s.enableAuth = false
 	s.enableAuth = enableAuth
 	s.engine = engine
 	s.client = httpClient
@@ -71,7 +70,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
-	if auth.Enable {
+	if s.authorizer.Enabled() == false {
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
@@ -89,6 +88,10 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 
 func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		if s.authorizer.Enabled() == false {
+			return
+		}
+
 		if req.Request.URL.Path == "/api/v3/auth/verify" {
 			fchain.ProcessFilter(req, resp)
 			return

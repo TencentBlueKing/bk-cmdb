@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -32,6 +32,13 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	ownerID := util.GetOwnerID(pheader)
+	rid := util.GetHTTPCCRequestID(pheader)
+
+	if s.authorizer.Enabled() == false {
+		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		return
+	}
 
 	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
@@ -77,6 +84,13 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
+
+	if s.authorizer.Enabled() == false {
+		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		return
+	}
 
 	userInfo := meta.UserInfo{
 		UserName:        util.GetUser(pheader),

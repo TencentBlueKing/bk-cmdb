@@ -46,5 +46,6 @@
     "1199048": "permission deny",
     "1199049": "register resource to IAM failed",
     "1199050": "unregister resource to IAM failed",
+    "1199051": "inappropriate calling, auth is disabled",
     "":""
 }
