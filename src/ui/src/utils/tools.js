@@ -73,7 +73,7 @@ export function getPropertyText (property, item) {
             return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return String(propertyValue).length ? propertyValue : '--'
+    return (propertyValue !== null && String(propertyValue).length) ? propertyValue : '--'
 }
 
 /**
