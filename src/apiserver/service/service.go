@@ -89,6 +89,8 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		if s.authorizer.Enabled() == false {
+			blog.V(9).Infof("auth disabled, skip auth filter")
+			fchain.ProcessFilter(req, resp)
 			return
 		}
 
