@@ -790,23 +790,15 @@ func convMapInterface(data map[string]interface{}) map[string]interface{} {
 
 			switch realVal := val.(type) {
 			case string:
-				switch realVal {
-				case common.HostOSTypeEnumLinux:
-					mapItem[key] = "linux"
-					mapItem["OSType"] = "linux"
-				case common.HostOSTypeEnumWindows:
-					mapItem[key] = "windows"
-					mapItem["OSType"] = "windows"
-				default:
-					mapItem[key] = realVal
-					mapItem["OSType"] = realVal
-				}
+				mapItem[key] = getOSTypeByEnumID(realVal)
+
 			case nil:
 				mapItem[key] = ""
 			default:
 				mapItem[key] = realVal
 			}
 
+			mapItem["OSType"] = mapItem[key]
 		} else if v3key == common.BKCloudIDField {
 			switch rawVal := val.(type) {
 			case []mapstr.MapStr:
