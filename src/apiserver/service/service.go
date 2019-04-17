@@ -70,7 +70,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
-	if s.authorizer.Enabled() == false {
+	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
