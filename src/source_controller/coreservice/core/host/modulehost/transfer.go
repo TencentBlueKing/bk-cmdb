@@ -61,7 +61,9 @@ func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64,
 func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(ctx)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	err := t.validParameterInst(ctx)
