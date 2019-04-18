@@ -34,6 +34,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -145,6 +146,16 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 
 }
 
+func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	actionObject := action{
+		Method:                     method,
+		Path:                       path,
+		HandlerFunc:                handlerFunc,
+		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+	}
+	s.actions = append(s.actions, actionObject)
+}
+
 // Actions return the all actions
 func (s *Service) Actions() []*httpserver.Action {
 
@@ -172,6 +183,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
+				blog.V(5).Infof("request body: %s", value)
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {

@@ -116,6 +116,10 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 }
 
 func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -131,6 +135,10 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if am.RegisterModuleEnabled == false {
 		return nil
 	}
@@ -156,6 +164,10 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(modules) == 0 {
 		return nil
 	}
@@ -182,6 +194,10 @@ func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) UpdateRegisteredModuleByID(ctx context.Context, header http.Header, moduleIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(moduleIDs) == 0 {
 		return nil
 	}
@@ -197,6 +213,10 @@ func (am *AuthManager) UpdateRegisteredModuleByID(ctx context.Context, header ht
 }
 
 func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -212,6 +232,10 @@ func (am *AuthManager) DeregisterModuleByID(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(modules) == 0 {
 		return nil
 	}
@@ -232,6 +256,10 @@ func (am *AuthManager) RegisterModule(ctx context.Context, header http.Header, m
 }
 
 func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Header, moduleIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(moduleIDs) == 0 {
 		return nil
 	}
@@ -247,6 +275,10 @@ func (am *AuthManager) RegisterModuleByID(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) DeregisterModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(modules) == 0 {
 		return nil
 	}

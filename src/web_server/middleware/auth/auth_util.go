@@ -28,10 +28,14 @@ import (
 )
 
 var (
+	createObjectInstanceBizRegexp   = regexp.MustCompile(`.*/create/instance/object/[^\s/]+/?$`)
 	createObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/?$`)
 	deleteObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	deleteObjectInstanceBizRegexp   = regexp.MustCompile(`.*/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	deleteObjectInstanceBatchRegexp = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/batch/?$`)
 	updateObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	updateObjectInstanceBizRegexp   = regexp.MustCompile(`.*/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
+	updateObjectInstanceBatchRegexp = regexp.MustCompile(`.*/updatemany/instance/object/[^\s/]+/?$`)
 	searchObjectInstanceRegexp      = regexp.MustCompile(`.*/inst/search/[^\s/]+/[^\s/]+/?$`)
 	searchObjectInstAndAssoRegexp   = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/detail/?$`)
 	instSearchRegexp                = regexp.MustCompile(`.*/inst/search/owner/[^\s/]+/object/[^\s/]+/?$`)
@@ -56,11 +60,20 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 	case createObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
 		objName = pathArr[len(pathArr)-1]
 
+	case createObjectInstanceBizRegexp.MatchString(pathStr) && method == http.MethodPost:
+		objName = pathArr[len(pathArr)-1]
+
 	case deleteObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodDelete:
 		objName = pathArr[len(pathArr)-2]
 
 	case updateObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPut:
 		objName = pathArr[len(pathArr)-2]
+
+	case updateObjectInstanceBizRegexp.MatchString(pathStr) && method == http.MethodPut:
+		objName = pathArr[len(pathArr)-3]
+
+	case updateObjectInstanceBatchRegexp.MatchString(pathStr) && method == http.MethodPut:
+		objName = pathArr[len(pathArr)-1]
 
 	case searchObjectInstanceRegexp.MatchString(pathStr) && method == http.MethodPost:
 		objName = pathArr[len(pathArr)-1]
@@ -83,11 +96,14 @@ func validModelConfigPrivi(modelPrivi string, method string, pathArr []string) b
 	case deleteObjectInstanceBatchRegexp.MatchString(pathStr) && method == http.MethodDelete:
 		objName = pathArr[len(pathArr)-2]
 
+	case deleteObjectInstanceBizRegexp.MatchString(pathStr) && method == http.MethodDelete:
+		objName = pathArr[len(pathArr)-3]
+
 	}
 
 	priviArr, ok := mPrivi[objName]
 	if false == ok {
-		blog.Error("get object privilege  error")
+		blog.Error("get object privilege for %s error", objName)
 		return false
 	}
 
