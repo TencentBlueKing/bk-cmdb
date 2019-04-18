@@ -109,14 +109,16 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 }
 
 func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (mapstr.MapStr, error) {
-
-	datas := []metadata.PropertyGroupObjectAtt{}
-	err := json.Unmarshal(data, &datas)
+	requestBody := struct{
+		data []metadata.PropertyGroupObjectAtt `json:"data",field:"json"`
+		metadata metadata.Metadata `json:"metadata",field:"metadata"`
+	}{}
+	err := json.Unmarshal(data, &requestBody)
 	if nil != err {
 		return nil, err
 	}
 	result := mapstr.MapStr{}
-	result.Set("origin", datas)
+	result.Set("origin", requestBody.data)
 	return result, nil
 }
 
