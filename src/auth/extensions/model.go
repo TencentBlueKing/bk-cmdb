@@ -120,29 +120,18 @@ func (am *AuthManager) ExtractBusinessIDFromObject(object metadata.Object) (int6
 	return metadata.BizIDFromMetadata(object.Metadata)
 }
 
-func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (int64, error) {
-	if len(objects) == 0 {
-		return 0, fmt.Errorf("no object found")
-	}
-	
-	businessIDs := make([]int64, 0)
+func (am *AuthManager) ExtractBusinessIDFromObjects(objects ...metadata.Object) (map[int64]int64, error) {
+	objID2BizIDMap := make(map[int64]int64, 0)
 	for _, object := range objects {
 		bizID, err := am.ExtractBusinessIDFromObject(object)
 		if err != nil {
-			return 0, fmt.Errorf("parse business id from model failed, model: %+v, err: %+v", object, err)
+			return nil, fmt.Errorf("parse business id from model failed, model: %+v, err: %+v", object, err)
 		}
-		businessIDs = append(businessIDs, bizID)
-	}
-
-	businessIDs = util.IntArrayUnique(businessIDs)
-	if len(businessIDs) > 1 {
-		return 0, fmt.Errorf("models belongs to multiple business: [%+v]", businessIDs)
+		objID2BizIDMap[object.ID] = bizID
 	}
 	
-	if len(businessIDs) == 0 {
-		return 0, fmt.Errorf("unexpected error, no business found with objects: %+v", objects)
-	}
-	return businessIDs[0], nil
+	blog.V(5).Infof("ExtractBusinessIDFromObjects result: %+v", objID2BizIDMap)
+	return objID2BizIDMap, nil
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects
@@ -175,6 +164,10 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 
 // AuthorizeByObjectID authorize model by id
 func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, businessID int64, objectIDs ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objectIDs) == 0 {
 		return nil
 	}
@@ -193,6 +186,10 @@ func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Head
 
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany || action == meta.ModelTopologyView) {
 		blog.V(4).Infof("skip authorization for reading, models: %+v", objects)
 		return nil
@@ -209,10 +206,8 @@ func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header
 
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
 func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	// step1: extract business ID from object, business ID from all objects must be identical to one value
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		return fmt.Errorf("authrize create instance failed, extract business id from models failed, err: %+v", err)
+	if am.Enabled() == false {
+		return nil
 	}
 
 	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
@@ -220,10 +215,14 @@ func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, head
 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
 	}
 
-	return am.authorize(ctx, header, businessID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Type:   resourceType,
@@ -237,6 +236,10 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 }
 
 func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -252,6 +255,10 @@ func (am *AuthManager) RegisterObject(ctx context.Context, header http.Header, o
 }
 
 func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.Header, businessID int64, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -266,6 +273,10 @@ func (am *AuthManager) UpdateRegisteredObjects(ctx context.Context, header http.
 	return nil
 }
 func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, header http.Header, businessID int64, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -279,6 +290,10 @@ func (am *AuthManager) UpdateRegisteredObjectsByRawIDs(ctx context.Context, head
 	return am.UpdateRegisteredObjects(ctx, header, businessID, objects...)
 }
 func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objects) == 0 {
 		return nil
 	}
@@ -294,10 +309,18 @@ func (am *AuthManager) DeregisterObject(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) RegisterMainlineObject(ctx context.Context, header http.Header, objects ...metadata.Object) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	return am.RegisterObject(ctx, header, objects...)
 }
 
 func (am *AuthManager) DeregisterMainlineModelByObjectID(ctx context.Context, header http.Header, businessID int64, objectIDs ...string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(objectIDs) == 0 {
 		return nil
 	}

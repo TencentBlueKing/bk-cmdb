@@ -42,6 +42,11 @@ func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, cli
 
 // Run do start synchronize
 func (d *AuthSynchronizer) Run() error {
+	if d.AuthConfig.Enable == false {
+		blog.Info("authConfig is disabled, exit now")
+		return nil
+	}
+
 	blog.Infof("auth synchronize start...")
 
 	// init queue

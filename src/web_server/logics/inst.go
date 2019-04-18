@@ -129,6 +129,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 	}
 
 	params := mapstr.MapStr{}
+	params[metadata.BKMetadata] = meta
 	params["input_type"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
 	params[common.MetadataField] = meta

@@ -86,6 +86,11 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
 
+	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
+	if err != nil {
+		return nil, fmt.Errorf("parse business id from metadata failed, err: %+v", err)
+	}
+
 	var rowErr map[int64]error
 	results := &BatchResult{}
 	if batchInfo.InputType != common.InputTypeExcel {
@@ -150,7 +155,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
+				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v", err)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
@@ -173,6 +178,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 				}
 
+			}
+
+			// create with metadata
+			if bizID != 0 {
+				colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 			}
 		}
 

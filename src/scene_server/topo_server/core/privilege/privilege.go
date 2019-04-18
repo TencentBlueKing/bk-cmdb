@@ -130,7 +130,7 @@ func (u *userGroupPermission) GetUserPermission(supplierAccount, userName string
 	rspSearchGroup, err := u.client.ObjectController().Privilege().SearchUserGroup(context.Background(), supplierAccount, u.params.Header, cond.ToMapStr())
 	if nil != err {
 		blog.Errorf("[privilege] failed to request object controller, error info is %s", err.Error())
-		return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		// return nil, u.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !rspSearchGroup.Result {

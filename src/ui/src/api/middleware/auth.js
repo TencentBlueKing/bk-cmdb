@@ -18,6 +18,24 @@ const businessAuth = [
     AUTH.BUSINESS_ARCHIVE
 ]
 
+const businessResourceAuth = [
+    AUTH.U_HOST,
+    AUTH.R_HOST,
+    AUTH.HOST_TO_RESOURCE,
+
+    AUTH.R_PROCESS,
+    AUTH.C_PROCESS,
+    AUTH.U_PROCESS,
+    AUTH.D_PROCESS,
+    AUTH.PROCESS_BIND_MODULE,
+    AUTH.PROCESS_UNBIND_MODULE,
+
+    AUTH.R_CUSTOM_QUERY,
+    AUTH.C_CUSTOM_QUERY,
+    AUTH.U_CUSTOM_QUERY,
+    AUTH.D_CUSTOM_QUERY
+]
+
 const modelAuth = [
     AUTH.C_INST,
     AUTH.U_INST,
@@ -82,6 +100,8 @@ const transformResponse = data => {
                     resource_model: 'biz'
                 }]
                 setModelMeta(meta, modelConfig)
+            } else if (businessResourceAuth.includes(auth) && resource.bk_biz_id) {
+                meta.is_pass = true
             } else if (resourceAuth.includes(auth)) {
                 setSystemMeta('resource', meta, globalBusi)
             } else if (eventAuth.includes(auth)) {
