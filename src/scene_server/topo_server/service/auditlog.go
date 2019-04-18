@@ -105,7 +105,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
-	objectID := pathParams("obj_id")
+	objectID := pathParams("bk_obj_id")
 	if len(objectID) == 0 {
 		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)

@@ -126,7 +126,7 @@ func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg in
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		if _, err := io.WriteString(resp, rsp); nil != err {
-			blog.Errorf("faield to write string, error info is %s", err.Error())
+			blog.Errorf("failed to write string, error info is %s", err.Error())
 		}
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
@@ -167,6 +167,7 @@ func (s *Service) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				// get the language
 				language := util.GetLanguage(req.Request.Header)
@@ -183,7 +184,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
-				blog.V(5).Infof("request body: %s", value)
+				blog.V(9).Infof("request path: %s, body: %s, rid: %s", act.Path, value, rid)
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
