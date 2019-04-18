@@ -298,7 +298,21 @@ func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header ht
 	return am.correctBusinessID(ctx, header, businessID)
 }
 
-func (am *AuthManager) MakeResourcesByHosts(header http.Header, action meta.Action, hosts ...HostSimplify) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
+	businessIDs := make([]int64, 0)
+	for _, host := range hosts {
+		businessIDs = append(businessIDs, host.BKAppIDField)
+	}
+	businessIDs = util.IntArrayUnique(businessIDs)
+	bizIDCorrectMap := make(map[int64]int64)
+	for _, businessID := range businessIDs {
+		bizID, err := am.correctBusinessID(ctx, header, businessID)
+		if err != nil {
+			return nil, fmt.Errorf("correct host related business id failed, err: %+v", err)
+		}
+		bizIDCorrectMap[businessID] = bizID
+	}
+	
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, host := range hosts {
 		resource := meta.ResourceAttribute{
@@ -309,13 +323,13 @@ func (am *AuthManager) MakeResourcesByHosts(header http.Header, action meta.Acti
 				InstanceID: host.BKHostIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      host.BKAppIDField,
+			BusinessID:      bizIDCorrectMap[host.BKAppIDField],
 		}
-
 		resources = append(resources, resource)
 	}
+	
 	blog.V(9).Infof("host resources for iam: %+v", resources)
-	return resources
+	return resources, nil
 }
 
 func (am *AuthManager) makeHostsResourcesGroupByBusiness(header http.Header, action meta.Action, hosts ...HostSimplify) map[int64][]meta.ResourceAttribute {
@@ -370,7 +384,10 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByHosts(header, action, hosts...)
+	resources, err := am.MakeResourcesByHosts(ctx, header, action, hosts...)
+	if err != nil {
+		return fmt.Errorf("make host resources failed, err: %+v", err)
+	}
 	return am.batchAuthorize(ctx, header, resources...)
 }
 
@@ -405,7 +422,10 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByHosts(header, action, hosts...)
+	resources, err := am.MakeResourcesByHosts(ctx, header, action, hosts...)
+	if err != nil {
+		return nil , fmt.Errorf("make resource failed, err: %+v", err)
+	}
 
 	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
 	if err != nil {
@@ -434,7 +454,10 @@ func (am *AuthManager) UpdateRegisteredHosts(ctx context.Context, header http.He
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, hosts...)
+	resources, err := am.MakeResourcesByHosts(ctx, header, meta.EmptyAction, hosts...)
+	if err != nil {
+		return fmt.Errorf("make resource failed, err: %+v", err)
+	}
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -487,7 +510,10 @@ func (am *AuthManager) RegisterHosts(ctx context.Context, header http.Header, ho
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, hosts...)
+	resources, err := am.MakeResourcesByHosts(ctx, header, meta.EmptyAction, hosts...)
+	if err != nil {
+		return fmt.Errorf("make resource failed, err: %+v", err)
+	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -518,7 +544,10 @@ func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, 
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByHosts(header, meta.EmptyAction, hosts...)
+	resources, err := am.MakeResourcesByHosts(ctx, header, meta.EmptyAction, hosts...)
+	if err != nil {
+		return fmt.Errorf("make resource failed, err: %+v", err)
+	}
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
