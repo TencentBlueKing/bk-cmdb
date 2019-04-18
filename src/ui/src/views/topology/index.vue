@@ -733,7 +733,7 @@
         .topo-tree{
             padding: 0 0 0 20px;
             margin: 10px 0 0 0;
-            height: calc(100% - 100px);
+            height: calc(100% - 20px);
             @include scrollbar-y;
             .tree-node {
                 font-size: 0;
