@@ -25,11 +25,11 @@
                 <div class="topo-example">
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["自定义模型"]')}}</span>
+                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
                     </p>
                     <p class="example-item">
                         <i></i>
-                        <span>{{$t('ModelManagement["内置模型"]')}}</span>
+                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
                     </p>
                 </div>
             </div>
