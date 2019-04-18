@@ -48,7 +48,7 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 	if err != nil {
-		return nil, fmt.Errorf("create module failed, err: %+v", module)
+		return nil, err
 	}
 
 	moduleID, err := module.GetInstID()
