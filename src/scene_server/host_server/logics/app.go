@@ -118,12 +118,13 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 // ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
 func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64) ([]int64, error) {
 	defErr := lgc.ccErr
-	conf := map[string][]int64{
-		common.BKAppIDField:  []int64{appID},
-		common.BKHostIDField: hostIDArray,
+
+	conf := &metadata.HostModuleRelationRequest{
+		ApplicationID: appID,
+		HostID:        hostIDArray,
 	}
 
-	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, conf)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, conf)
 	if err != nil {
 		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
