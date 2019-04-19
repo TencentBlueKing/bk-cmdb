@@ -107,6 +107,7 @@
                         ref="multipleForm"
                         :properties="properties.host"
                         :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
                         :save-disabled="saveDisabled"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
@@ -221,6 +222,7 @@
         },
         data () {
             return {
+                objectUnique: [],
                 properties: {
                     biz: [],
                     host: [],
@@ -529,7 +531,13 @@
                 this.tab.attribute.inst.edit = originalItem['host']
                 this.tab.attribute.type = 'update'
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'host',
+                    params: this.$injectMetadata({}, {
+                        inject: this.$route.name !== 'resource'
+                    })
+                })
                 this.tab.attribute.type = 'multiple'
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
