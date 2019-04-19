@@ -229,6 +229,24 @@ type HostModuleRelationRequest struct {
 	ModuleID      []int64 `json:"bk_module_ids"`
 }
 
+// Empty empty struct
+func (h *HostModuleRelationRequest) Empty() bool {
+	if h.ApplicationID != 0 {
+		return false
+	}
+	if len(h.SetID) != 0 {
+		return false
+	}
+	if len(h.ModuleID) != 0 {
+		return false
+	}
+
+	if len(h.HostID) != 0 {
+		return false
+	}
+	return true
+}
+
 // DeleteHostRequest delete host from application
 type DeleteHostRequest struct {
 	ApplicationID int64   `json:"bk_biz_id"`
