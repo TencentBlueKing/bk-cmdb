@@ -184,7 +184,7 @@ func (s *Service) initPrivilege() {
 
 func (s *Service) initGraphics() {
 	s.addAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", s.SelectObjectTopoGraphics, nil)
-	s.addAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", s.UpdateObjectTopoGraphics, s.ParseOriginGraphicsUpdateInput)
+	s.addPublicAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", s.UpdateObjectTopoGraphics, s.ParseOriginGraphicsUpdateInput)
 }
 func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
