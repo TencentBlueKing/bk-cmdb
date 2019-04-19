@@ -53,7 +53,8 @@ func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams 
 
 	// auth: register set
 	if err := s.AuthManager.RegisterSetByID(params.Context, params.Header, setID); err != nil {
-		return nil, fmt.Errorf("create set failed, %+v", err)
+		blog.Errorf("create set success,but register to iam failed, err:  %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return set, nil
 }
@@ -78,12 +79,13 @@ func (s *Service) DeleteSets(params types.ContextParams, pathParams, queryParams
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
+	// auth: deregister set
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
+		blog.Errorf("delete sets failed, deregister sets from iam failed, %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, cond.Delete.InstID)
 
-	// auth: register set
-	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, cond.Delete.InstID...); err != nil {
-		return nil, fmt.Errorf("deregister sets from iam failed, %+v", err)
-	}
 	return nil, err
 }
 
@@ -113,16 +115,18 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 		return nil, err
 	}
 
+	// auth: deregister set
+	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
+		blog.Errorf("delete set failed, deregister set from iam failed, %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
 
 	if err != nil {
 		return nil, fmt.Errorf("delete sets failed, %+v", err)
 	}
 
-	// auth: deregister set
-	if err := s.AuthManager.DeregisterSetByID(params.Context, params.Header, setID); err != nil {
-		return nil, fmt.Errorf("deregister set from iam failed, %+v", err)
-	}
 	return nil, nil
 }
 
@@ -154,7 +158,8 @@ func (s *Service) UpdateSet(params types.ContextParams, pathParams, queryParams 
 
 	// auth: update register set
 	if err := s.AuthManager.UpdateRegisteredSetByID(params.Context, params.Header, setID); err != nil {
-		return nil, fmt.Errorf("update registered set failed, %+v", err)
+		blog.Errorf("update set success, but update registered set failed, %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return nil, nil
 }

@@ -88,7 +88,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	}
 	if err := ps.AuthManager.RegisterProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
 		blog.Warnf("create process sucess, but register to iam failed, err: %+v, process: %+v, rid: %s", err, processSimplify, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 

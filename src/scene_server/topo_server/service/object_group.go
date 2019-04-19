@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -34,7 +35,8 @@ func (s *Service) CreateObjectGroup(params types.ContextParams, pathParams, quer
 
 	// auth: register attribute group
 	if err := s.AuthManager.RegisterModelAttributeGroup(params.Context, params.Header, rsp.Group()); err != nil {
-		return nil, fmt.Errorf("register attribute group to iam failed, err: %+v", err)
+		blog.Errorf("create object group success, but register attribute group to iam failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return rsp.ToMapStr()
 }
@@ -82,7 +84,8 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 
 	// auth: register attribute group
 	if err := s.AuthManager.UpdateRegisteredModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
-		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+		blog.Errorf("update object group success, but update attribute group to iam failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 	return nil, nil
 }
@@ -96,29 +99,29 @@ func (s *Service) DeleteObjectGroup(params types.ContextParams, pathParams, quer
 
 	data.Remove(metadata.BKMetadata)
 
+	// auth: deregister attribute group
+	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
+		blog.Errorf("delete object group failed, deregister attribute group to iam failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
 	err = s.Core.GroupOperation().DeleteObjectGroup(params, gid)
 	if nil != err {
 		return nil, err
 	}
 
-	// auth: deregister attribute group
-	if err := s.AuthManager.DeregisterModelAttributeGroupByID(params.Context, params.Header, gid); err != nil {
-		return nil, fmt.Errorf("deregister attribute group to iam failed, err: %+v", err)
-	}
 	return nil, nil
 }
 
 func (s *Service) ParseUpdateObjectAttributeGroupPropertyInput(data []byte) (mapstr.MapStr, error) {
-	requestBody := struct{
-		data []metadata.PropertyGroupObjectAtt `json:"data",field:"json"`
-		metadata metadata.Metadata `json:"metadata",field:"metadata"`
+	requestBody := struct {
+		Data []metadata.PropertyGroupObjectAtt `json:"data" field:"json"`
 	}{}
 	err := json.Unmarshal(data, &requestBody)
 	if nil != err {
 		return nil, err
 	}
 	result := mapstr.MapStr{}
-	result.Set("origin", requestBody.data)
+	result.Set("origin", requestBody.Data)
 	return result, nil
 }
 
@@ -145,10 +148,6 @@ func (s *Service) UpdateObjectAttributeGroupProperty(params types.ContextParams,
 
 func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	data.Remove(metadata.BKMetadata)
-	err := s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
-	if nil != err {
-		return nil, err
-	}
 
 	// query attribute groups with given condition, so that update them to iam after updated
 	searchCondition := condition.CreateCondition()
@@ -171,7 +170,13 @@ func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathPar
 
 	// auth: deregister attribute group
 	if err := s.AuthManager.DeregisterModelAttributeGroup(params.Context, params.Header, attributeGroups...); err != nil {
-		return nil, fmt.Errorf("update attribute group to iam failed, err: %+v", err)
+		blog.Errorf("delete object attribute group failed, deregister from iam failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
+	err = s.Core.GroupOperation().DeleteObjectAttributeGroup(params, pathParams("bk_object_id"), pathParams("property_id"), pathParams("group_id"))
+	if nil != err {
+		return nil, err
 	}
 	return nil, nil
 }
