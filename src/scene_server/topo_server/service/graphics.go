@@ -21,13 +21,15 @@ import (
 )
 
 func (s Service) ParseOriginGraphicsUpdateInput(data []byte) (mapstr.MapStr, error) {
-	datas := make([]metadata.TopoGraphics, 0)
-	err := json.Unmarshal(data, &datas)
+	requestBody := struct{
+		data []metadata.TopoGraphics `json:"data",field:"data"`
+	}{}
+	err := json.Unmarshal(data, &requestBody)
 	if nil != err {
 		return nil, err
 	}
 	result := mapstr.New()
-	result.Set("origin", datas)
+	result.Set("origin", requestBody.data)
 	return result, nil
 }
 func (s *Service) SelectObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
