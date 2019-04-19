@@ -151,6 +151,9 @@ func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metad
 	if len(input.ModuleID) > 0 {
 		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleID)
 	}
+	if len(input.SetID) > 0 {
+		moduleHostCond.Field(common.BKSetIDField).In(input.SetID)
+	}
 	cond := moduleHostCond.ToMapStr()
 	if len(cond) == 0 {
 		return nil, nil
@@ -164,6 +167,37 @@ func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metad
 	}
 
 	return hostModuleArr, nil
+}
+
+// DeleteHost delete host module relation and host info
+func (mh *ModuleHost) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+
+	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, nil, false)
+	transfer.SetDeleteHost(ctx)
+
+	err := transfer.ValidParameter(ctx)
+	if err != nil {
+		blog.ErrorJSON("TransferHostToInnerModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		return nil, err
+	}
+
+	var exceptionArr []metadata.ExceptionResult
+	for _, hostID := range input.HostIDArr {
+		err := transfer.Transfer(ctx, hostID)
+		if err != nil {
+			blog.ErrorJSON("TransferHostToInnerModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+				Message:     err.Error(),
+				Code:        int64(err.GetCode()),
+				OriginIndex: hostID,
+			})
+		}
+	}
+	if len(exceptionArr) > 0 {
+		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceTransferHostModuleErr)
+	}
+
+	return nil, nil
 }
 
 func (mh *ModuleHost) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
