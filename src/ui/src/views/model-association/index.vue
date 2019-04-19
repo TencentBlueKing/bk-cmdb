@@ -7,8 +7,8 @@
                 {{$t('Common["新建"]')}}
             </bk-button>
             <label class="search-input">
-                <i class="bk-icon icon-search" @click="searchRelation"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation">
+                <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
+                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
             </label>
         </p>
         <cmdb-table
@@ -104,7 +104,10 @@
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
-                }
+                },
+                isSearch: false,
+                sendSearchText: '',
+                keepSearchText: ''
             }
         },
         computed: {
@@ -125,11 +128,11 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.searchText.length) {
+                if (this.sendSearchText.length && this.isSearch) {
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
-                                '$regex': this.searchText
+                                '$regex': this.sendSearchText
                             }
                         }
                     })
@@ -138,6 +141,11 @@
             },
             authority () {
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+            }
+        },
+        watch: {
+            searchText (searchText) {
+                this.sendSearchText = searchText
             }
         },
         created () {
@@ -153,7 +161,14 @@
                 'deleteAssociationType',
                 'searchAssociationListWithAssociationKindList'
             ]),
-            searchRelation () {
+            searchRelation (fromClick) {
+                if (fromClick) {
+                    this.isSearch = true
+                    this.sendSearchText = this.searchText
+                    this.searchParams.page.start = 0
+                } else {
+                    this.sendSearchText = this.keepSearchText
+                }
                 this.searchAssociationType({
                     params: this.searchParams,
                     config: {
@@ -163,6 +178,10 @@
                     this.table.list = data.info
                     this.searchUsageCount()
                     this.table.pagination.count = data.count
+                    if (fromClick) {
+                        this.keepSearchText = this.searchText
+                        this.table.pagination.current = 1
+                    }
                     this.$http.cancel('post_searchAssociationType')
                 })
             },
