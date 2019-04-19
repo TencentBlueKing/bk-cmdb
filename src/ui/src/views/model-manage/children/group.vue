@@ -498,19 +498,21 @@
                     return false
                 }
                 this.updatePropertyGroup({
-                    params: properties.map(property => {
-                        return {
-                            condition: {
-                                'bk_obj_id': this.objId,
-                                'bk_property_id': property['bk_property_id'],
-                                'bk_supplier_account': property['bk_supplier_account']
-                            },
-                            data: {
-                                'bk_property_group': property['bk_property_group'],
-                                'bk_property_index': property['bk_property_index']
+                    params: this.$injectMetadata({
+                        data: properties.map(property => {
+                            return {
+                                condition: {
+                                    'bk_obj_id': this.objId,
+                                    'bk_property_id': property['bk_property_id'],
+                                    'bk_supplier_account': property['bk_supplier_account']
+                                },
+                                data: {
+                                    'bk_property_group': property['bk_property_group'],
+                                    'bk_property_index': property['bk_property_index']
+                                }
                             }
-                        }
-                    }),
+                        })
+                    }, { inject: this.isInjectable }),
                     config: {
                         requestId: `put_updatePropertyGroup_${this.objId}`,
                         cancelWhenRouteChange: false
