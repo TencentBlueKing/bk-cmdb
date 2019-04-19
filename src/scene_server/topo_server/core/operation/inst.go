@@ -355,12 +355,12 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	for _, delInst := range deleteIDS {
-		preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
+		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
+		innerCond.Field(common.BKAsstObjIDField).Eq(delInst.obj.GetObjectID())
 		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		err := c.asst.CheckBeAssociation(params, obj, innerCond)
+		err := c.asst.CheckBeAssociation(params, delInst.obj, innerCond)
 		if nil != err {
 			return err
 		}
@@ -368,7 +368,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// this instance has not be bind to another instance, we can delete all the associations it created
 		// by the association with other instances.
 		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+		innerCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
 		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
@@ -377,23 +377,23 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 
 		// delete this instance now.
 		delCond := condition.CreateCondition()
-		delCond.Field(obj.GetInstIDFieldName()).In(delInst.instID)
-		if obj.IsCommon() {
-			delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+		delCond.Field(delInst.obj.GetInstIDFieldName()).In(delInst.instID)
+		if delInst.obj.IsCommon() {
+			delCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
 		}
 		// clear association
-		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, delInst.obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, delCond.ToMapStr(), rsp.ErrMsg)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", delInst.obj.GetObjectID(), delCond.ToMapStr(), rsp.ErrMsg)
 			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
-		NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
+		NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CommitDeleteLog(preAudit, nil, nil)
 	}
 	return nil
 }
