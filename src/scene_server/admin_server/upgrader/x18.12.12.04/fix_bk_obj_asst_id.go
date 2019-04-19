@@ -15,6 +15,7 @@ package x18_12_12_04
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -35,7 +36,11 @@ func fixBKObjAsstID(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	for _, objasst := range objassts {
-		if countCharacter(objasst.AssociationName, '_') > 1 {
+		name := objasst.AssociationName
+		if common.GetObjByType(objasst.AsstObjID) == common.BKInnerObjIDObject {
+			name = strings.TrimPrefix(name, "bk_")
+		}
+		if countCharacter(name, '_') > 1 {
 			continue
 		}
 
