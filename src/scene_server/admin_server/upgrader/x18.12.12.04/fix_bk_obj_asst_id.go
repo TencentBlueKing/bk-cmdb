@@ -22,8 +22,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
-
-	"github.com/rs/xid"
 )
 
 func fixBKObjAsstID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
@@ -37,8 +35,8 @@ func fixBKObjAsstID(ctx context.Context, db dal.RDB, conf *upgrader.Config) erro
 	}
 
 	for _, objasst := range objassts {
-		if strings.objasst.AssociationName {
-
+		if countCharacter(objasst.AssociationName, '_') > 1 {
+			continue
 		}
 
 		cond := condition.CreateCondition()
@@ -72,7 +70,7 @@ func buildObjAsstID(asst metadata.Association) string {
 	return fmt.Sprintf("%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID)
 }
 
-func countSubString(src, sub string) int {
+func countCharacter(src string, sub rune) int {
 	count := 0
 	for _, s := range src {
 		if s == sub {
