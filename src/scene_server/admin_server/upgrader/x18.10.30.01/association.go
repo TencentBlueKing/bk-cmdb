@@ -110,12 +110,12 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
-func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+type Association struct {
+	metadata.Association `bson:",inline"`
+	ObjectAttID          string `bson:"bk_object_att_id"`
+}
 
-	type Association struct {
-		metadata.Association `bson:",inline"`
-		ObjectAttID          string `bson:"bk_object_att_id"`
-	}
+func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	assts := []Association{}
 	err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts)
@@ -141,7 +141,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
-			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
+			asst.AssociationName = buildObjAsstID(asst)
 			asst.Mapping = metadata.OneToOneMapping
 			asst.OnDelete = metadata.NoAction
 			if (asst.ObjectID == common.BKInnerObjIDModule && asst.AsstObjID == common.BKInnerObjIDSet) ||
@@ -152,7 +152,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			}
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
-			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
+			asst.AssociationName = buildObjAsstID(asst)
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
 			case common.FieldTypeSingleAsst:
@@ -220,8 +220,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	return nil
 }
 
-func buildObjAsstID(srcObj string, propertyID string) string {
-	return fmt.Sprintf("%s_%s", srcObj, propertyID)
+func buildObjAsstID(asst Association) string {
+	return fmt.Sprintf("%s_%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID, asst.ObjectAttID)
 }
 
 func ptrue() *bool {
