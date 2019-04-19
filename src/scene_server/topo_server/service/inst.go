@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -98,7 +97,8 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 
 	instanceID, err := setInst.GetInstID()
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, instance: %+v, err: %+v", setInst, err)
+		blog.Errorf("create instance failed, unexpected error, create instance success, but get id failed, instance: %+v, err: %+v", setInst, err)
+		return nil, err
 	}
 
 	// auth: register instances to iam
