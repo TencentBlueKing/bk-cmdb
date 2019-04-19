@@ -119,6 +119,7 @@
                         ref="multipleForm"
                         :properties="properties"
                         :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
                         :save-disabled="!$isAuthorized(OPERATION.U_INST)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
@@ -182,6 +183,7 @@
         data () {
             return {
                 OPERATION,
+                objectUnique: [],
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -564,7 +566,13 @@
                     this.attribute.type = 'details'
                 }
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: this.objId,
+                    params: this.$injectMetadata({}, {
+                        inject: !this.isPublicModel
+                    })
+                })
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true
