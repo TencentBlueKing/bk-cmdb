@@ -2,6 +2,7 @@
     <div class="form-time">
         <bk-date-picker class="form-date-picker"
             :timer="true"
+            :placeholder="$t('Common[\'请选择时间\']')"
             :init-date="initDate || ''"
             :start-date="startDate"
             :end-date="endDate"
