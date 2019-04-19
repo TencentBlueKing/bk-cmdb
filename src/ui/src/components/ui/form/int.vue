@@ -15,8 +15,10 @@
         name: 'cmdb-form-int',
         props: {
             value: {
-                type: Number,
-                default: null
+                default: null,
+                validator (val) {
+                    return typeof val === 'number' || val === '' || val === null
+                }
             },
             disabled: {
                 type: Boolean,
