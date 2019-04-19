@@ -74,3 +74,17 @@ func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParam
 	}
 	return relationArr, nil
 }
+
+func (s *coreService) DeleteHost(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := &metadata.DeleteHostRequest{}
+	if err := data.MarshalJSONInto(inputData); nil != err {
+		blog.Errorf("DeleteHost MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	exceptionArr, err := s.core.HostOperation().DeleteHost(params, inputData)
+	if err != nil {
+		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
+		return exceptionArr, err
+	}
+	return nil, nil
+}
