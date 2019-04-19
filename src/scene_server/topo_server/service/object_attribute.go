@@ -13,8 +13,7 @@
 package service
 
 import (
-	"fmt"
-	
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
@@ -33,7 +32,8 @@ func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, 
 	// auth: register resource
 	attribute := attr.Attribute()
 	if err := s.AuthManager.RegisterModelAttribute(params.Context, params.Header, *attribute); err != nil {
-		return nil, fmt.Errorf("register model attribute to auth failed, err: %+v", err)
+		blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return attr.ToMapStr()
@@ -69,7 +69,8 @@ func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, 
 
 	// auth: update registered resource
 	if err := s.AuthManager.UpdateRegisteredModelAttributeByID(params.Context, params.Header, id); err != nil {
-		return nil, fmt.Errorf("update registered model attribute to auth failed, err: %+v", err)
+		blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return nil, err
@@ -92,12 +93,13 @@ func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, 
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
-
 	// auth: update registered resource
 	if err := s.AuthManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
-		return nil, fmt.Errorf("update registered model attribute to auth failed, err: %+v", err)
+		blog.Errorf("delete object attribute failed, deregistered model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
+
+	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }
