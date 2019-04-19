@@ -22,7 +22,17 @@
                     v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
-                <div class="topo-example">
+                <div class="topo-example" v-if="!isAdminView">
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
+                    </p>
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
+                    </p>
+                </div>
+                <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
                         <span>{{$t('ModelManagement["自定义模型"]')}}</span>
