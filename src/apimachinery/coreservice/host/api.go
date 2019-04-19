@@ -78,3 +78,18 @@ func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, in
 		Into(resp)
 	return
 }
+
+// DeleteHost delete host
+func (h *host) DeleteHost(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/delete/host"
+
+	err = h.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
