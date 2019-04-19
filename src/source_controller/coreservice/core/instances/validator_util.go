@@ -33,6 +33,12 @@ type IntOption struct {
 	Max string `bson:"max" json:"max"`
 }
 
+// FloatOption float option
+type FloatOption struct {
+	Min string `bson:"min" json:"min"`
+	Max string `bson:"max" json:"max"`
+}
+
 func getString(val interface{}) string {
 	if val == nil {
 		return ""
@@ -107,7 +113,7 @@ func ParseEnumOption(val interface{}) EnumOption {
 	return enumOptions
 }
 
-//parseIntOption  parse int data in option
+// parseIntOption  parse int data in option
 func parseIntOption(val interface{}) IntOption {
 	intOption := IntOption{}
 	if nil == val || "" == val {
@@ -115,15 +121,36 @@ func parseIntOption(val interface{}) IntOption {
 	}
 	switch option := val.(type) {
 	case string:
-
 		intOption.Min = gjson.Get(option, "min").Raw
 		intOption.Max = gjson.Get(option, "max").Raw
-
 	case map[string]interface{}:
+		intOption.Min = getString(option["min"])
+		intOption.Max = getString(option["max"])
+	case bson.M:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
 	}
 	return intOption
+}
+
+// parseFloatOption  parse float data in option
+func parseFloatOption(val interface{}) FloatOption {
+	floatOption := FloatOption{}
+	if nil == val || "" == val {
+		return floatOption
+	}
+	switch option := val.(type) {
+	case string:
+		floatOption.Min = gjson.Get(option, "min").Raw
+		floatOption.Max = gjson.Get(option, "max").Raw
+	case map[string]interface{}:
+		floatOption.Min = getString(option["min"])
+		floatOption.Max = getString(option["max"])
+	case bson.M:
+		floatOption.Min = getString(option["min"])
+		floatOption.Max = getString(option["max"])
+	}
+	return floatOption
 }
 
 // FillLostedFieldValue fill the value in inst map data
