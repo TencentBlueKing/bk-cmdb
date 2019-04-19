@@ -14,7 +14,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -73,7 +72,8 @@ func (s *Service) UpdateObjectGroup(params types.ContextParams, pathParams, quer
 	}
 	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCond)
 	if err != nil {
-		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+		blog.Errorf("search attribute group by condition failed, err: %+v", err)
+		return nil, err
 	}
 	attributeGroups := make([]metadata.Group, 0)
 	for _, item := range result.Data.Info {
@@ -159,7 +159,8 @@ func (s *Service) DeleteObjectAttributeGroup(params types.ContextParams, pathPar
 	}
 	result, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(params.Context, params.Header, common.BKTableNamePropertyGroup, &queryCondition)
 	if err != nil {
-		return nil, fmt.Errorf("search attribute group by condition failed, err: %+v", err)
+		blog.Errorf("search attribute group by condition failed, err: %+v", err)
+		return nil, err
 	}
 	attributeGroups := make([]metadata.Group, 0)
 	for _, item := range result.Data.Info {
