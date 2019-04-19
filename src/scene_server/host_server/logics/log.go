@@ -264,8 +264,10 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 }
 
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
-	conds := map[string][]int64{common.BKHostIDField: h.instIDArr}
-	result, err := h.logic.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, h.header, conds)
+	conds := &metadata.HostModuleRelationRequest{
+		HostID: h.instIDArr,
+	}
+	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
 		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
