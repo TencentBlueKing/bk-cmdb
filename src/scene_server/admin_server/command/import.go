@@ -35,7 +35,7 @@ func backup(ctx context.Context, db dal.RDB, opt *option) error {
 	exportOpt := *opt
 	exportOpt.position = file
 	exportOpt.mini = false
-	exportOpt.scope = "all"
+	exportOpt.scope = scopeAll
 	err := export(ctx, db, &exportOpt)
 	if nil != err {
 		return err
@@ -94,7 +94,8 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 			if node.mark == actionUpdate {
 				fmt.Printf("--- \033[36m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 				if !opt.dryrun {
-					instID, err := node.getInstID()
+					var instID uint64
+					instID, err = node.getInstID()
 					if nil != err {
 						return err
 					}
@@ -115,19 +116,20 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 		for objID, sdeletes := range ipt.sdelete {
 			for _, sdelete := range sdeletes {
 				// fmt.Printf("\n--- \033[36mdelete parent node %s %+v\033[0m\n", objID, sdelete)
-
-				instID, err := getInt64(sdelete[common.GetInstIDField(objID)])
+				var instID uint64
+				instID, err = getInt64(sdelete[common.GetInstIDField(objID)])
 				if nil != err {
 					return err
 				}
 
-				cur.BizTopo.walk(func(node *Node) error {
-					nodeID, err := node.getInstID()
+				err = cur.BizTopo.walk(func(node *Node) error {
+					var nodeID uint64
+					nodeID, err = node.getInstID()
 					if nil != err {
 						return err
 					}
 					if node.ObjID == objID && nodeID == instID {
-						node.walk(func(child *Node) error {
+						childErr := node.walk(func(child *Node) error {
 							childID, err := child.getInstID()
 							if nil != err {
 								return err
@@ -142,7 +144,7 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 									return fmt.Errorf("get host count error: %s", err.Error())
 								}
 								if count > 0 {
-									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", node.Data[common.BKModuleNameField], err.Error())
+									return fmt.Errorf("there are %d hosts binded to module %v, please unbind them first and try again ", count, node.Data[common.BKModuleNameField])
 								}
 							}
 
@@ -164,10 +166,15 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 							}
 							return nil
 						})
-						return fmt.Errorf("break")
+						if childErr != nil {
+							return childErr
+						}
 					}
 					return nil
 				})
+				if err != nil && err.Error() != "break" {
+					return err
+				}
 
 			}
 		}
@@ -198,6 +205,7 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 		topo.Data[common.BKOwnerIDField] = opt.OwnerID
 		curTopo := curProcs[topo.Data[common.BKProcessNameField].(string)]
 		if curTopo != nil {
+			var procID uint64
 			procID, err := getInt64(curTopo.Data[common.BKProcessIDField])
 			if nil != err {
 				return fmt.Errorf("cur process has no bk_process_id field, %s", err.Error())
@@ -244,7 +252,7 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 				if !opt.dryrun {
 					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
 					if nil != err {
-						return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+						return fmt.Errorf("delete process module by %+v, error: %v", delcondition, err)
 					}
 				}
 			}
@@ -324,16 +332,16 @@ var ignoreKeys = map[string]bool{
 	common.BKInstIDField:    true,
 }
 
-func getUpdateData(n *Node) map[string]interface{} {
-	data := map[string]interface{}{}
-	for key, value := range n.Data {
-		if ignoreKeys[key] {
-			continue
-		}
-		data[key] = value
-	}
-	return data
-}
+// func getUpdateData(n *Node) map[string]interface{} {
+// 	data := map[string]interface{}{}
+// 	for key, value := range n.Data {
+// 		if ignoreKeys[key] {
+// 			continue
+// 		}
+// 		data[key] = value
+// 	}
+// 	return data
+// }
 
 // compareSlice returns whether slice a,b exactly equal
 func compareSlice(a, b []string) bool {
@@ -397,7 +405,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 			ownerID, ok := app[common.BKOwnerIDField].(string)
 			if !ok {
-				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %s", app, err.Error())
+				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %v", app, err)
 			}
 			node.Data[common.BKAppIDField] = bizID
 			node.Data[common.BKOwnerIDField] = ownerID

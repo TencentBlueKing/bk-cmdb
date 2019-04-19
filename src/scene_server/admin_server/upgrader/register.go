@@ -47,10 +47,10 @@ func RegistUpgrader(version string, handlerFunc func(context.Context, dal.RDB, *
 	defer registlock.Unlock()
 	v := Upgrader{version: version, do: handlerFunc}
 	upgraderPool = append(upgraderPool, v)
-	// blog.Infof("registed upgrader for version %s", v.version)
+	// blog.Infof("registered upgrader for version %s", v.version)
 }
 
-// Upgrade uprade the db datas to newest verison
+// Upgrade uprade the db datas to newest version
 // we use date instead of version later since 2018.09.04, because the version wasn't manage by the developer
 // ps: when use date instead of version, the date should add x prefix cause x > v
 func Upgrade(ctx context.Context, db dal.RDB, conf *Config) (err error) {

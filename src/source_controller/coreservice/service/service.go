@@ -34,6 +34,7 @@ import (
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/storage/dal"
@@ -46,7 +47,7 @@ import (
 // CoreServiceInterface the topo service methods used to init
 type CoreServiceInterface interface {
 	WebService() *restful.WebService
-	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf)
+	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
 }
 
 // New ceate topo servcie instance
@@ -64,7 +65,7 @@ type coreService struct {
 	core     core.Core
 }
 
-func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) {
+func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engin = engin
@@ -80,21 +81,23 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	var db dal.DB
 	var dbErr error
 	if cfg.Mongo.Transaction == "enable" {
-		db, dbErr = remote.NewWithDiscover(engin.Discover.TMServer().GetServers, cfg.Mongo)
+		blog.Infof("connecting to transaction manager")
+		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-			return
+			return dbErr
 		}
 	} else {
 		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
 		if dbErr != nil {
 			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-			return
+			return dbErr
 		}
 	}
 	// connect the remote mongodb
 
-	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s))
+	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), datasynchronize.New(db, s))
+	return nil
 }
 
 // WebService the web service

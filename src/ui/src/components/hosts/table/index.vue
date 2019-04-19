@@ -19,6 +19,7 @@
                 </bk-button>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
+                    <input type="hidden" name="export_custom_fields" :value="usercustom[columnsConfigKey]">
                     <input type="hidden" name="bk_biz_id" value="-1">
                     <input type="hidden" name="metadata"
                         v-if="$route.name !== 'resource'"

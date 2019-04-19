@@ -265,11 +265,12 @@ input.cmdb-form-input {
 }
 
 .text-primary {
+    color: #3c96ff !important;
+
     -webkit-appearance: none;
     border: none;
     outline: 0;
     background-color: transparent;
-    color: #3c96ff;
     cursor: pointer;
     &:hover {
         color: #0082ff;

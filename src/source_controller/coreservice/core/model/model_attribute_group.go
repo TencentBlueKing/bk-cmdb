@@ -57,7 +57,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(ctx core.ContextParams, 
 		return dataResult, err
 	}
 	if isExists {
-		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %s", ctx.ReqID, inputParam.Data.GroupName, err.Error())
+		blog.Errorf("request(%s): it is to failed to check the group name (%s) if it is exists, error info is %#v", ctx.ReqID, inputParam.Data.GroupName, err)
 		return dataResult, ctx.Error.Errorf(common.CCErrCommDuplicateItem, inputParam.Data.GroupName)
 	}
 	id, err := g.save(ctx, inputParam.Data)

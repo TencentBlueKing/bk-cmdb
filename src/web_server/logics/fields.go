@@ -56,28 +56,32 @@ type PropertyPrimaryVal struct {
 }
 
 // GetObjFieldIDs get object fields
-func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
+func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFields []string, header http.Header, meta metadata.Metadata) (map[string]Property, error) {
 
 	fields, err := lgc.getObjFieldIDs(objID, header, meta)
 	if nil != err {
 		return nil, err
 	}
-	groups, err := lgc.getObjectGroup(objID, header)
+	groups, err := lgc.getObjectGroup(objID, header, meta)
 	if nil != err {
 		return nil, err
 	}
 
 	ret := make(map[string]Property)
-	index := 0
+	indexCustom := 0
+	indexOthers := len(customFields)
 
 	for _, group := range groups {
 		for _, field := range fields {
 			if field.Group == group.ID {
 				if util.InStrArr(filterFields, field.ID) {
 					field.NotExport = true
+				} else if util.InStrArr(customFields, field.ID) {
+					field.ExcelColIndex = indexCustom
+					indexCustom++
 				} else {
-					field.ExcelColIndex = index
-					index++
+					field.ExcelColIndex = indexOthers
+					indexOthers++
 				}
 				ret[field.ID] = field
 
@@ -87,16 +91,25 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, header ht
 	return ret, nil
 }
 
-func (lgc *Logics) getObjectGroup(objID string, header http.Header) ([]PropertyGroup, error) {
+func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta metadata.Metadata) ([]PropertyGroup, error) {
 	ownerID := util.GetActionOnwerIDByHTTPHeader(header)
-	condition := mapstr.MapStr{common.BKObjIDField: objID, common.BKOwnerIDField: common.BKDefaultOwnerID, "page": mapstr.MapStr{"start": 0, "limit": common.BKNoLimit, "sort": common.BKPropertyGroupIndexField}}
+	condition := mapstr.MapStr{
+		common.BKObjIDField:   objID,
+		common.BKOwnerIDField: common.BKDefaultOwnerID,
+		"page": mapstr.MapStr{
+			"start": 0,
+			"limit": common.BKNoLimit,
+			"sort":  common.BKPropertyGroupIndexField,
+		},
+		metadata.BKMetadata: meta,
+	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectGroup(context.Background(), header, ownerID, objID, condition)
 	if nil != err {
-		blog.Errorf("get %s fields group return:%s, err:%s, rid:%s", objID, result, err.Error(), util.GetHTTPCCRequestID(header))
+		blog.Errorf("get %s fields group http do error, err:%s, rid:%s", objID, err.Error(), util.GetHTTPCCRequestID(header))
 		return nil, err
 	}
 	if !result.Result {
-		blog.Errorf("get %s fields group  return:%s data not array, error code:%s, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
+		blog.Errorf("get %s fields group  http reply error. error code:%d, error message:%s, rid:%s", objID, result.Code, result.ErrMsg, util.GetHTTPCCRequestID(header))
 		return nil, err
 	}
 	fields := result.Data

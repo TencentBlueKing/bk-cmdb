@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -85,8 +86,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 
 	var rowErr map[int64]error
 	results := &BatchResult{}
-	if common.InputTypeExcel != batchInfo.InputType || nil == batchInfo.BatchInfo {
-		return results, nil
+	if batchInfo.InputType != common.InputTypeExcel {
+		return results, fmt.Errorf("unexpected input_type: %s", batchInfo.InputType)
+	}
+	if batchInfo.BatchInfo == nil {
+		return results, fmt.Errorf("BatchInfo empty")
 	}
 
 	for errIdx, err := range rowErr {
@@ -241,7 +245,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", err.Error())
+		blog.Errorf("[operation-module]  failed to search the host module configures, err: %s", rsp.ErrMsg)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

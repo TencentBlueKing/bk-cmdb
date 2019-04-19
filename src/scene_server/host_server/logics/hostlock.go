@@ -70,21 +70,3 @@ func (lgc *Logics) QueryHostLock(ctx context.Context, input *metadata.QueryHostL
 
 	return hostLockMap, nil
 }
-
-func diffHostLockIP(ips []string, hostInfos []map[string]interface{}) []string {
-	mapInnerIP := make(map[string]bool, 0)
-	for _, hostInfo := range hostInfos {
-		innerIP, ok := hostInfo[common.BKHostInnerIPField].(string)
-		if ok {
-			mapInnerIP[innerIP] = true
-		}
-	}
-	var diffIPS []string
-	for _, ip := range ips {
-		_, ok := mapInnerIP[ip]
-		if !ok {
-			diffIPS = append(diffIPS, ip)
-		}
-	}
-	return diffIPS
-}

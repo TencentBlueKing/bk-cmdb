@@ -28,7 +28,7 @@ type Collection struct {
 	Processor  string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 	TxnID      string // 事务ID,uuid
 	collection string // 集合名
-	rpc        *rpc.Client
+	rpc        rpc.Client
 }
 
 // Find 查询多个并反序列化到 Result
@@ -89,9 +89,6 @@ func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	msg.Collection = c.collection
 	if err := msg.Selector.Encode(filter); err != nil {
 		return err
-	}
-	if c.TxnID != "" {
-		msg.TxnID = c.TxnID
 	}
 
 	// set txn

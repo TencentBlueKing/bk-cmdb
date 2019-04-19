@@ -22,6 +22,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/storage/mongodb"
+	"configcenter/src/storage/mongodb/options/deleteopt"
+	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
 
@@ -72,8 +74,7 @@ func (tm *Manager) UnSubscribe(ch chan<- *types.Transaction) {
 }
 
 func (tm *Manager) Publish() {
-	for {
-		event := <-tm.eventChan
+	for event := range tm.eventChan {
 		tm.pubsubMutex.Lock()
 		for subscriber := range tm.subscribers {
 			select {
@@ -116,6 +117,7 @@ func (tm *Manager) reconcileCache() {
 }
 
 func (tm *Manager) reconcilePersistence() {
+	const Limit int64 = 100
 	ticker := time.NewTicker(tm.txnLifeLimit * 2)
 	for {
 		select {
@@ -123,31 +125,56 @@ func (tm *Manager) reconcilePersistence() {
 			ticker.Stop()
 			return
 		case <-ticker.C:
+			blog.Infof("reconciling persistence")
 			txns := []types.Transaction{}
-			err := tm.db.Collection(common.BKTableNameTransaction).Find(tm.ctx, nil, nil, &txns)
-			if err != nil {
-				blog.Errorf("reconcile persistence faile: %v, we will retry %v later", err, tm.txnLifeLimit)
-				continue
+			opt := findopt.Many{
+				Opts: findopt.Opts{
+					Limit: Limit,
+					Skip:  0,
+				},
 			}
 
-			for _, txn := range txns {
-				if time.Since(txn.LastTime) > tm.txnLifeLimit {
-					tranCond := mongo.NewCondition()
-					tranCond.Element(&mongo.Eq{Key: common.BKTxnIDField, Val: txn.TxnID})
-					filter := tranCond.ToMapStr()
-					update := types.Document{
-						"status":             types.TxStatusException,
-						common.LastTimeField: time.Now(),
-					}
-					_, err := tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, filter, update, nil)
-					if nil != err {
-						// the reconcile will handle this error, so we will not return this error
-						blog.Errorf("save transaction [%s] status to %#v faile: %s", txn.TxnID, txn.Status, err.Error())
-					}
-					ntxn := txn
-					tm.eventChan <- &ntxn
+			tranCond := mongo.NewCondition()
+			tranCond.Element(&mongo.Eq{Key: "status", Val: types.TxStatusOnProgress})
+			for {
+				err := tm.db.Collection(common.BKTableNameTransaction).Find(tm.ctx, tranCond.ToMapStr(), &opt, &txns)
+				if err != nil {
+					blog.Errorf("reconcile persistence faile: %v, we will retry %v later", err, tm.txnLifeLimit*2)
+					break
 				}
+
+				if len(txns) <= 0 {
+					break
+				}
+
+				for _, txn := range txns {
+					if time.Since(txn.LastTime) > tm.txnLifeLimit {
+
+						updateCond := mongo.NewCondition()
+						updateCond.Element(&mongo.Eq{Key: common.BKTxnIDField, Val: txn.TxnID})
+						update := types.Document{
+							"status":             types.TxStatusException,
+							common.LastTimeField: time.Now(),
+						}
+						_, err := tm.db.Collection(common.BKTableNameTransaction).UpdateOne(tm.ctx, updateCond.ToMapStr(), update, nil)
+						if nil != err {
+							// the reconcile will handle this error, so we will not return this error
+							blog.Errorf("save transaction [%s] status to %v faile: %s", txn.TxnID, types.TxStatusException, err.Error())
+						}
+						ntxn := txn
+						tm.eventChan <- &ntxn
+					}
+				}
+				txns = txns[:0]
 			}
+
+			removeCond := mongo.NewCondition()
+			removeCond.Element(&mongo.Gt{Key: common.LastTimeField, Val: time.Now().Add(time.Hour * 24 * 2)})
+			if _, err := tm.db.Collection(common.BKTableNameTransaction).DeleteMany(tm.ctx, removeCond.ToMapStr(), &deleteopt.Many{}); err != nil {
+				blog.Errorf("delete outdate transaction faile: %s", err.Error())
+			}
+
+			blog.Infof("reconcile persistence finish")
 		}
 	}
 }
@@ -229,15 +256,13 @@ func (tm *Manager) Commit(txnID string) error {
 	}
 	txnerr := session.CommitTransaction()
 	defer func() {
-		if txnerr == nil {
-			session.Close()
-			tm.removeSession(txnID)
-		}
+		session.Close()
+		tm.removeSession(txnID)
 	}()
 	if nil != txnerr {
 		session.Txninst.Status = types.TxStatusException
 	} else {
-		session.Txninst.Status = types.TxStatusCommited
+		session.Txninst.Status = types.TxStatusCommitted
 	}
 	tm.eventChan <- session.Txninst
 

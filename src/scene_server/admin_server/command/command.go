@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 
@@ -27,6 +26,10 @@ import (
 )
 
 const bkbizCmdName = "bkbiz"
+
+const (
+	scopeAll = "all"
+)
 
 // Parse run app command
 func Parse(args []string) error {
@@ -52,7 +55,7 @@ func Parse(args []string) error {
 	bkbizfs.BoolVar(&exportflag, "export", false, "export flag")
 	bkbizfs.BoolVar(&miniflag, "mini", false, "mini flag, only export required fields")
 	bkbizfs.BoolVar(&importflag, "import", false, "import flag")
-	bkbizfs.StringVar(&scope, "scope", "all", "export scope, could be [biz] or [process], default all")
+	bkbizfs.StringVar(&scope, "scope", scopeAll, "export scope, could be [biz] or [process], default all")
 	bkbizfs.StringVar(&filepath, "file", "", "export/import filepath")
 	bkbizfs.StringVar(&configposition, "config", "conf/api.conf", "The config path. e.g conf/api.conf")
 	bkbizfs.StringVar(&bizName, "biz_name", "蓝鲸", "export/import the specified business topo")
@@ -82,7 +85,7 @@ func Parse(args []string) error {
 	}
 
 	if exportflag {
-		mode := ""
+		var mode string
 		if miniflag {
 			mode = "mini"
 		} else {
@@ -91,7 +94,7 @@ func Parse(args []string) error {
 		}
 		fmt.Printf("exporting %s business to %s in \033[34m%s\033[0m mode\n", bizName, filepath, mode)
 		if err := export(ctx, db, opt); err != nil {
-			blog.Errorf("export error: %s", err.Error())
+			fmt.Printf("export error: %s", err.Error())
 			os.Exit(2)
 		}
 		fmt.Printf("blueking %s has been export to %s\n", bizName, filepath)
@@ -102,16 +105,16 @@ func Parse(args []string) error {
 			fmt.Printf("importing %s business from %s\n", bizName, filepath)
 		}
 		opt.mini = false
-		opt.scope = "all"
+		opt.scope = scopeAll
 		if err := importBKBiz(ctx, db, opt); err != nil {
-			blog.Errorf("import error: %s", err.Error())
+			fmt.Printf("import error: %s", err.Error())
 			os.Exit(2)
 		}
 		if !dryrunflag {
 			fmt.Printf("%s business has been import from %s\n", bizName, filepath)
 		}
 	} else {
-		blog.Errorf("invalide argument")
+		fmt.Printf("invalide argument")
 	}
 
 	os.Exit(0)

@@ -215,18 +215,14 @@ func (r *Request) Do() *Result {
 		client = http.DefaultClient
 	}
 
-	maxRetryCycle := 3
-	retries := 0
-
-	hosts, err := r.
-		capability.
-		Discover.
-		GetServers()
+	hosts, err := r.capability.Discover.GetServers()
 	if err != nil {
 		result.Err = err
 		return result
 	}
 
+	maxRetryCycle := 3
+	var retries int
 	for try := 0; try < maxRetryCycle; try++ {
 		for index, host := range hosts {
 			retries = try + index
@@ -314,7 +310,7 @@ func (r *Request) tryThrottle(url string) {
 	}
 
 	if latency := time.Since(now); latency > maxLatency {
-		blog.V(3).Infof("Throttling request took %d ms, request: %s %s", latency, r.verb, url)
+		blog.V(3).Infof("Throttling request took %d ms, verb: %s, request: %s", latency, r.verb, url)
 	}
 }
 

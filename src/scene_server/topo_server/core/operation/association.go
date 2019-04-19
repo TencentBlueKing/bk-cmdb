@@ -139,8 +139,11 @@ func (a *association) SearchInstAssociation(params types.ContextParams, query *m
 	return rsp.Data.Info, nil
 }
 
+// CreateCommonAssociation create a common association, in topo model scene, which doesn't include bk_mainline association type
 func (a *association) CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error) {
-
+	if data.AsstKindID == common.AssociationKindMainline {
+		return nil, params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
 	if len(data.AsstKindID) == 0 || len(data.AsstObjID) == 0 || len(data.ObjectID) == 0 {
 		blog.Errorf("[operation-asst] failed to create the association , association kind id associate/object id is required")
 		return nil, params.Err.Error(common.CCErrorTopoAssociationMissingParameters)
@@ -195,8 +198,6 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		blog.Errorf("[operation-asst] failed to create the association (%#v) , err: %s", data, rspAsst.ErrMsg)
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
-
-	data.ID = int64(rspAsst.Data.Created.ID)
 
 	return data, nil
 }
@@ -259,10 +260,13 @@ func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, 
 		return params.Err.Error(common.CCErrTopoGotMultipleAssociationInstance)
 	}
 
+	if result.Data.Info[0].AsstKindID == common.AssociationKindMainline {
+		return params.Err.Error(common.CCErrorTopoAssociationKindMainlineUnavailable)
+	}
+
 	// find instance(s) belongs to this association
 	cond = condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(result.Data.Info[0].ObjectID)
-	cond.Field(common.AssociatedObjectIDField).Eq(result.Data.Info[0].AsstObjID)
+	cond.Field(common.AssociationObjAsstIDField).Eq(result.Data.Info[0].AssociationName)
 	query := metadata.QueryInput{Condition: cond.ToMapStr()}
 	insts, err := a.SearchInstAssociation(params, &query)
 	if err != nil {
@@ -400,9 +404,27 @@ func (a *association) CheckBeAssociation(params types.ContextParams, obj model.O
 	if len(exists) > 0 {
 		beAsstObject := []string{}
 		for _, asst := range exists {
+			instRsp, err := a.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, asst.ObjectID,
+				&metadata.QueryCondition{Condition: mapstr.MapStr{common.BKInstIDField: asst.InstID}})
+			if err != nil {
+				return params.Err.Error(common.CCErrObjectSelectInstFailed)
+			}
+			if !instRsp.Result {
+				return params.Err.New(instRsp.Code, instRsp.ErrMsg)
+			}
+			if len(instRsp.Data.Info) <= 0 {
+				// 作为补充而存在，删除实例主机已经不存在的脏实例关联
+				if delErr := a.DeleteInstAssociation(params, condition.CreateCondition().
+					Field(common.BKObjIDField).Eq(asst.ObjectID).Field(common.BKAsstInstIDField).Eq(asst.InstID)); delErr != nil {
+					return delErr
+				}
+				continue
+			}
 			beAsstObject = append(beAsstObject, asst.ObjectID)
 		}
-		return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		if len(beAsstObject) > 0 {
+			return params.Err.Errorf(common.CCErrTopoInstHasBeenAssociation, beAsstObject)
+		}
 	}
 	return nil
 }
@@ -459,28 +481,6 @@ func (a *association) SearchType(params types.ContextParams, request *metadata.S
 
 	return a.clientSet.CoreService().Association().ReadAssociation(context.Background(), params.Header, &input)
 
-	needComb := true
-	if KindIDCond, ok := request.Condition[common.AssociationKindIDField]; ok {
-		if kindIDSearchCond, ok := KindIDCond.(map[string]interface{}); ok {
-			needComb = false
-			kindIDSearchCond[common.BKDBNE] = common.AssociationKindMainline
-			request.Condition[common.AssociationKindIDField] = kindIDSearchCond
-		}
-	}
-	if needComb {
-		cond := condition.CreateCondition()
-		cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
-		nAsstKindCond := cond.ToMapStr()
-		if 0 == len(request.Condition) {
-			request.Condition = make(map[string]interface{})
-		}
-		for key, val := range nAsstKindCond {
-			request.Condition[key] = val
-		}
-	}
-
-	return a.clientSet.ObjectController().Association().SearchType(context.TODO(), params.Header, request)
-
 }
 
 func (a *association) CreateType(params types.ContextParams, request *metadata.AssociationKind) (resp *metadata.CreateAssociationTypeResult, err error) {
@@ -506,8 +506,6 @@ func (a *association) DeleteType(params types.ContextParams, asstTypeID int) (re
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(asstTypeID)
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
-	cond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)
-
 	query := &metadata.SearchAssociationTypeRequest{
 		Condition: cond.ToMapStr(),
 	}

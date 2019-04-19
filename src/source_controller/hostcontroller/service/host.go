@@ -55,7 +55,7 @@ func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
 	condition = util.SetModOwner(condition, ownerID)
 	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
 	if err != nil {
-		blog.Errorf("get host by id[%s] failed, err: %v", hostID, err)
+		blog.Errorf("get host by id[%d] failed, err: %v", hostID, err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
 		return
 	}
@@ -385,7 +385,7 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		// delete relation in default app module
 		_, err := s.Logics.DelSingleHostModuleRelation(ctx, pheader, hostID, params.OwnerModuleID, params.OwnerApplicationID, ownerID)
 		if nil != err {
-			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v")
+			blog.Errorf("assign host to app, but delete host module relationship failed, err: %v", err)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrTransferHostFromPool)})
 			return
 		}
@@ -448,4 +448,26 @@ func (s *Service) GetModulesHostConfig(req *restful.Request, resp *restful.Respo
 		BaseResp: meta.SuccessBaseResp,
 		Data:     result,
 	})
+}
+
+func (s *Service) TransferHostToDefaultModuleConfig(req *restful.Request, resp *restful.Response) {
+	header := req.Request.Header
+	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	rid := util.GetHTTPCCRequestID(header)
+
+	input := new(meta.TransferHostToDefaultModuleConfig)
+	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
+		blog.Errorf("move host to resourece pool failed, err: %v", err)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err := s.Logics.TransferHostToDefaultModuleConfig(ctx, input, header)
+	if err != nil {
+		blog.Errorf("TransferHostToDefaultModuleConfig error. err:%v, input:%#v,rid:%s", err, input, rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+		return
+	}
+	resp.WriteEntity(meta.NewSuccessResp(nil))
 }

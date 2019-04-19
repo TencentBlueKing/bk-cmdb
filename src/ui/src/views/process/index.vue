@@ -11,7 +11,7 @@
             <bk-button class="process-btn" type="primary"
                 :disabled="!authority.includes('update')"
                 @click="handleCreate">
-                {{$t("ProcessManagement['新增进程']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
@@ -32,11 +32,6 @@
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
-            <div class="empty-info" slot="data-empty">
-                <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("ProcessManagement['当前业务并无进程，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="handleCreate">{{$t("ProcessManagement['新增进程']")}}</bk-button>
-            </div>
         </cmdb-table>
         <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">

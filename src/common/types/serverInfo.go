@@ -12,6 +12,10 @@
 
 package types
 
+import (
+	"fmt"
+)
+
 // zk path
 const (
 	CC_SERV_BASEPATH      = "/cc/services/endpoints"
@@ -37,6 +41,8 @@ const (
 	CC_MODULE_CORESERVICE      = "coreservice"
 	GSE_MODULE_PROCSERVER      = "gseprocserver"
 	CC_MODULE_TXC              = "txc"
+	// CC_MODULE_SYNCHRONZESERVER multiple cmdb synchronize data server
+	CC_MODULE_SYNCHRONZESERVER = "sync"
 )
 
 // AllModule all cc module
@@ -55,6 +61,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:      true,
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
+	CC_MODULE_SYNCHRONZESERVER: true,
 }
 
 // cc functionality define
@@ -137,4 +144,9 @@ type TopoServInfo struct {
 // EventServInfo topo server information
 type EventServInfo struct {
 	ServerInfo
+}
+
+// Address convert struct to host address
+func (s *ServerInfo) Address() string {
+	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }

@@ -229,7 +229,7 @@ func (coll *Collection) InsertOne(ctx context.Context, document interface{},
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 	oldns := coll.namespace()
@@ -302,7 +302,7 @@ func (coll *Collection) InsertMany(ctx context.Context, documents []interface{},
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -381,7 +381,7 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter interface{},
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -433,7 +433,7 @@ func (coll *Collection) DeleteMany(ctx context.Context, filter interface{},
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -480,7 +480,7 @@ func (coll *Collection) updateOrReplaceOne(ctx context.Context, filter,
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -593,7 +593,7 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter interface{}, upda
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -681,7 +681,7 @@ func (coll *Collection) ReplaceOne(ctx context.Context, filter interface{},
 //
 // See https://docs.mongodb.com/manual/aggregation/.
 func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
-	opts ...*options.AggregateOptions) (Cursor, error) {
+	opts ...*options.AggregateOptions) (*Cursor, error) {
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -702,12 +702,10 @@ func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
-		wc = nil
-	}
-
 	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
+
+	if sess.TransactionRunning() {
+		wc = nil
 		rc = nil
 	}
 
@@ -722,7 +720,7 @@ func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
 		Clock:        coll.client.clock,
 	}
 
-	cursor, err := driver.Aggregate(
+	batchCursor, err := driver.Aggregate(
 		ctx, cmd,
 		coll.client.topology,
 		coll.readSelector,
@@ -732,56 +730,12 @@ func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
 		coll.registry,
 		aggOpts,
 	)
+	if err != nil {
+		return nil, replaceTopologyErr(err)
+	}
 
+	cursor, err := newCursor(batchCursor, coll.registry)
 	return cursor, replaceTopologyErr(err)
-}
-
-// Count gets the number of documents matching the filter.
-func (coll *Collection) Count(ctx context.Context, filter interface{},
-	opts ...*options.CountOptions) (int64, error) {
-
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	f, err := transformDocument(coll.registry, filter)
-	if err != nil {
-		return 0, err
-	}
-
-	sess := sessionFromContext(ctx)
-
-	err = coll.client.ValidSession(sess)
-	if err != nil {
-		return 0, err
-	}
-
-	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
-		rc = nil
-	}
-
-	oldns := coll.namespace()
-	cmd := command.Count{
-		NS:          command.Namespace{DB: oldns.DB, Collection: oldns.Collection},
-		Query:       f,
-		ReadPref:    coll.readPreference,
-		ReadConcern: rc,
-		Session:     sess,
-		Clock:       coll.client.clock,
-	}
-
-	count, err := driver.Count(
-		ctx, cmd,
-		coll.client.topology,
-		coll.readSelector,
-		coll.client.id,
-		coll.client.topology.SessionPool,
-		coll.registry,
-		opts...,
-	)
-
-	return count, replaceTopologyErr(err)
 }
 
 // CountDocuments gets the number of documents matching the filter.
@@ -807,7 +761,7 @@ func (coll *Collection) CountDocuments(ctx context.Context, filter interface{},
 	}
 
 	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
+	if sess.TransactionRunning() {
 		rc = nil
 	}
 
@@ -904,7 +858,7 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 	}
 
 	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
+	if sess.TransactionRunning() {
 		rc = nil
 	}
 
@@ -936,7 +890,7 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 
 // Find finds the documents matching a model.
 func (coll *Collection) Find(ctx context.Context, filter interface{},
-	opts ...*options.FindOptions) (Cursor, error) {
+	opts ...*options.FindOptions) (*Cursor, error) {
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -955,7 +909,7 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 	}
 
 	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
+	if sess.TransactionRunning() {
 		rc = nil
 	}
 
@@ -969,7 +923,7 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 		Clock:       coll.client.clock,
 	}
 
-	cursor, err := driver.Find(
+	batchCursor, err := driver.Find(
 		ctx, cmd,
 		coll.client.topology,
 		coll.readSelector,
@@ -978,7 +932,11 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 		coll.registry,
 		opts...,
 	)
+	if err != nil {
+		return nil, replaceTopologyErr(err)
+	}
 
+	cursor, err := newCursor(batchCursor, coll.registry)
 	return cursor, replaceTopologyErr(err)
 }
 
@@ -1003,7 +961,7 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 	}
 
 	rc := coll.readConcern
-	if sess != nil && (sess.TransactionInProgress()) {
+	if sess.TransactionRunning() {
 		rc = nil
 	}
 
@@ -1040,7 +998,7 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 		}
 	}
 
-	cursor, err := driver.Find(
+	batchCursor, err := driver.Find(
 		ctx, cmd,
 		coll.client.topology,
 		coll.readSelector,
@@ -1053,7 +1011,8 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 		return &SingleResult{err: replaceTopologyErr(err)}
 	}
 
-	return &SingleResult{cur: cursor, reg: coll.registry}
+	cursor, err := newCursor(batchCursor, coll.registry)
+	return &SingleResult{cur: cursor, reg: coll.registry, err: replaceTopologyErr(err)}
 }
 
 // FindOneAndDelete find a single document and deletes it, returning the
@@ -1079,7 +1038,7 @@ func (coll *Collection) FindOneAndDelete(ctx context.Context, filter interface{}
 
 	oldns := coll.namespace()
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -1139,7 +1098,7 @@ func (coll *Collection) FindOneAndReplace(ctx context.Context, filter interface{
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -1189,8 +1148,11 @@ func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}
 		return &SingleResult{err: err}
 	}
 
-	if len(u) > 0 && !strings.HasPrefix(u[0].Key, "$") {
-		return &SingleResult{err: errors.New("update document must contain key beginning with '$")}
+	err = ensureDollarKey(u)
+	if err != nil {
+		return &SingleResult{
+			err: err,
+		}
 	}
 
 	sess := sessionFromContext(ctx)
@@ -1201,7 +1163,7 @@ func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
@@ -1238,7 +1200,7 @@ func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}
 // supports resumability in the case of some errors. The collection must have read concern majority or no read concern
 // for a change stream to be created successfully.
 func (coll *Collection) Watch(ctx context.Context, pipeline interface{},
-	opts ...*options.ChangeStreamOptions) (Cursor, error) {
+	opts ...*options.ChangeStreamOptions) (*ChangeStream, error) {
 	return newChangeStream(ctx, coll, pipeline, opts...)
 }
 
@@ -1261,7 +1223,7 @@ func (coll *Collection) Drop(ctx context.Context) error {
 	}
 
 	wc := coll.writeConcern
-	if sess != nil && sess.TransactionRunning() {
+	if sess.TransactionRunning() {
 		wc = nil
 	}
 
