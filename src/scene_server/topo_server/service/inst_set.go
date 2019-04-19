@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -48,7 +47,8 @@ func (s *Service) CreateSet(params types.ContextParams, pathParams, queryParams 
 
 	setID, err := set.GetInstID()
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error, create set success, but get id field failed")
+		blog.Errorf("unexpected error, create set success, but get id field failed, err: %+v", err)
+		return nil, err
 	}
 
 	// auth: register set
@@ -111,7 +111,7 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 
 	if nil != err {
-		blog.Errorf("failed to search the set, %s", err.Error())
+		blog.Errorf("delete set failed, failed to search the set, %+v", err)
 		return nil, err
 	}
 
@@ -124,7 +124,8 @@ func (s *Service) DeleteSet(params types.ContextParams, pathParams, queryParams 
 	err = s.Core.SetOperation().DeleteSet(params, obj, bizID, []int64{setID})
 
 	if err != nil {
-		return nil, fmt.Errorf("delete sets failed, %+v", err)
+		blog.Errorf("delete sets failed, %+v", err)
+		return nil, err
 	}
 
 	return nil, nil
@@ -147,13 +148,14 @@ func (s *Service) UpdateSet(params types.ContextParams, pathParams, queryParams 
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDSet)
 	if nil != err {
-		blog.Errorf("failed to search the set, %s", err.Error())
+		blog.Errorf("update set failed,failed to search the set, %+v", err)
 		return nil, err
 	}
 
 	err = s.Core.SetOperation().UpdateSet(params, data, obj, bizID, setID)
 	if err != nil {
-		return nil, fmt.Errorf("update set failed, err: %+v", err)
+		blog.Errorf("update set failed, err: %+v", err)
+		return nil, err
 	}
 
 	// auth: update register set
@@ -183,7 +185,8 @@ func (s *Service) SearchSet(params types.ContextParams, pathParams, queryParams 
 		Condition: mapstr.New(),
 	}
 	if err = data.MarshalJSONInto(paramsCond); nil != err {
-		return nil, err
+		blog.Errorf("search set failed, decode parameter condition failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
 	paramsCond.Condition[common.BKAppIDField] = bizID
