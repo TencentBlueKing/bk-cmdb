@@ -5,7 +5,7 @@
             :value="value"
             :maxlength="maxlength"
             :disabled="disabled"
-            @input="handleInput($event)"
+            @blur="handleInput($event)"
             @change="handleChange">
     </div>
 </template>
