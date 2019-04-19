@@ -743,6 +743,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		blog.Errorf("GetHostIDByCond get hosts failed, err: %v", err)
 		return err
 	}
+	
 	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
 		Field:    common.BKHostIDField,
 		Operator: common.BKDBIN,
