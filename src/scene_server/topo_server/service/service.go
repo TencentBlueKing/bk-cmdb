@@ -147,11 +147,20 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 }
 
 func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
+}
+
+func (s *Service) addPublicAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, true)
+}
+
+func (s *Service) addActionEx(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc, publicOnly bool) {
 	actionObject := action{
 		Method:                     method,
 		Path:                       path,
 		HandlerFunc:                handlerFunc,
 		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+		PublicOnly:                 publicOnly,
 	}
 	s.actions = append(s.actions, actionObject)
 }
@@ -206,15 +215,6 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 
-				md := new(MetaShell)
-				if len(value) != 0 {
-					if err := json.Unmarshal(value, md); err != nil {
-						blog.Errorf("parse metadata from request failed, err: %v", err)
-						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
-						return
-					}
-				}
-
 				handlerContext := types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
@@ -224,8 +224,21 @@ func (s *Service) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.Engine,
-					MetaData:        md.Metadata,
 				}
+
+				// parse metadata for none public only handler
+				if act.PublicOnly == false {
+					md := new(MetaShell)
+					if len(value) != 0 {
+						if err := json.Unmarshal(value, md); err != nil {
+							blog.Errorf("parse metadata from request failed, err: %v", err)
+							s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+							return
+						}
+					}
+					handlerContext.MetaData = md.Metadata
+				}
+
 				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
 
 				if dataErr == nil {
