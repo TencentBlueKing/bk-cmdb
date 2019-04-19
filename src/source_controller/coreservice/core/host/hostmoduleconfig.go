@@ -35,3 +35,8 @@ func (hm *hostManager) TransferHostCrossBusiness(ctx core.ContextParams, input *
 func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
 	return hm.moduleHost.GetHostModuleRelation(ctx, input)
 }
+
+// DeleteHost delete host module relation and host info
+func (hm *hostManager) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.DeleteHost(ctx, input)
+}
