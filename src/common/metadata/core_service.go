@@ -224,6 +224,13 @@ type TransferHostsCrossBusinessRequest struct {
 // HostModuleRelationRequest gethost module relation request parameter
 type HostModuleRelationRequest struct {
 	ApplicationID int64   `json:"bk_biz_id"`
+	SetID         []int64 `json:"bk_set_ids"`
 	HostID        []int64 `json:"bk_host_ids"`
 	ModuleID      []int64 `json:"bk_module_ids"`
+}
+
+// DeleteHostRequest delete host from application
+type DeleteHostRequest struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostIDArr     []int64 `json:"bk_host_ids"`
 }
