@@ -371,8 +371,10 @@
                     config: {
                         requestId: 'updateModel'
                     }
-                }).then(() => {
-                    this.$http.cancel('post_searchClassificationsObjects')
+                })
+                this.$store.commit('objectModelClassify/updateModel', {
+                    bk_ispaused: ispaused,
+                    bk_obj_id: this.activeModel.bk_obj_id
                 })
                 this.setActiveModel({ ...this.activeModel, ...{ bk_ispaused: ispaused } })
             },

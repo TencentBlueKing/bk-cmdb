@@ -140,20 +140,21 @@ const mutations = {
             })
         }
     },
-    updateModel (state, updateModel) {
-        const {
-            bk_classification_id: bkClassificationId,
-            bk_obj_id: bkObjId
-        } = updateModel
-        const currentClassify = state.classifications.find(classify => classify['bk_classification_id'] === bkClassificationId)
-        const curModel = currentClassify['bk_objects'].find(model => model['bk_obj_id'] === bkObjId)
-        if (updateModel.hasOwnProperty('position')) {
-            curModel['position'] = updateModel['position']
-        }
-    },
     deleteClassify (state, classificationId) {
         const index = state.classifications.findIndex(({ bk_classification_id: bkClassificationId }) => bkClassificationId === classificationId)
         state.classifications.splice(index, 1)
+    },
+    updateModel (state, data) {
+        const models = []
+        state.classifications.forEach(classification => {
+            (classification['bk_objects'] || []).forEach(model => {
+                models.push(model)
+            })
+        })
+        const model = models.find(model => model.bk_obj_id === data.bk_obj_id)
+        if (model) {
+            Object.assign(model, data)
+        }
     }
 }
 
