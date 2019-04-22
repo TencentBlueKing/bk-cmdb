@@ -251,6 +251,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	}
 
+	// TODO hoffer host can not exist, not exist create
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range data.Ips {
@@ -262,6 +263,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
@@ -296,17 +298,18 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	if 0 == len(errmsg) {
 		// auth: register hosts
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
-			blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", hostIDArr, err, srvData.rid)
+			blog.Errorf("register host to iam failed, hosts: %+v, err: %v, errmsg:%#v, rid:%s", hostIDArr, err, errmsg, srvData.rid)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 			return
 		}
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
-	} else {
-		blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
-		return
 	}
+
+	blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData.rid)
+	resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
+	return
+
 }
 
 // GetHostModuleRelation  query host and module relation,

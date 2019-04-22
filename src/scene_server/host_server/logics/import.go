@@ -276,9 +276,8 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleID [
 		blog.Errorf("add host module by ip:%s , result:%#v, input:%#v, rid:%s", ip, hResult.Code, opt, h.rid)
 		if len(hResult.Data) > 0 {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, hResult.Data[0].Message))
-		} else {
-			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, err.Error()))
 		}
+		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip, hResult.ErrMsg))
 	}
 
 	return hostID, nil

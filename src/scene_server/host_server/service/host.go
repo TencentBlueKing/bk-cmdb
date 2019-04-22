@@ -654,6 +654,13 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 			Value:    hostList.ModuleID,
 		},
 	}
+	if len(hostList.ModuleID) > 1 {
+		moduleCond = append(moduleCond, meta.ConditionItem{
+			Field:    common.BKDefaultField,
+			Operator: common.BKDBEQ,
+			Value:    0,
+		})
+	}
 	moduleIDS, err := srvData.lgc.GetModuleIDByCond(srvData.ctx, moduleCond) //srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
 	if nil != err {
 		blog.Errorf("NewHostSyncAppTop GetModuleIDByCond error. err:%s,input:%+v,rid:%s", err.Error(), hostList, srvData.rid)
@@ -662,9 +669,8 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 	if len(moduleIDS) != len(hostList.ModuleID) {
 		blog.Errorf("not found part module: source:%v, db:%v", hostList.ModuleID, moduleIDS)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrTopoGetModuleFailed, " not found part moudle id")})
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed)})
 		return
-
 	}
 
 	// auth: check authorization
@@ -753,7 +759,30 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	for _, cell := range hostResult {
 		hostIDArr = append(hostIDArr, cell.HostID)
 	}
+	moduleCond := []meta.ConditionItem{
+		meta.ConditionItem{
+			Field:    common.BKAppIDField,
+			Operator: common.BKDBEQ,
+			Value:    data.ApplicationID,
+		},
+		meta.ConditionItem{
+			Field:    common.BKDefaultField,
+			Operator: common.BKDBEQ,
+			Value:    common.DefaultResModuleFlag,
+		},
+	}
 
+	moduleIDArr, err := srvData.lgc.GetModuleIDByCond(srvData.ctx, moduleCond)
+	if err != nil {
+		blog.Errorf("MoveSetHost2IdleModule GetModuleIDByCond error. err:%s, input:%#v, param:%#v, rid:%s", err.Error(), data, moduleCond, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+	}
+	if len(moduleIDArr) == 0 {
+		blog.Errorf("MoveSetHost2IdleModule GetModuleIDByCond error. err:%s, input:%#v, param:%#v, rid:%s", err.Error(), data, moduleCond, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, "idle module")})
+		return
+	}
+	idleModuleID := moduleIDArr[0]
 	moduleHostConfigParams := make(map[string]interface{})
 	moduleHostConfigParams[common.BKAppIDField] = data.ApplicationID
 	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
@@ -799,19 +828,20 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	var exceptionArr []meta.ExceptionResult
 	for _, hostID := range hostIDArr {
 		hostMHArr, ok := hostIDMHMap[hostID]
-		if ok {
+		if !ok {
 			// ignore  not exist the host under the current business,
 			continue
 		}
 		toEmptyModule := true
 		var newModuleIDArr []int64
 		for _, item := range hostMHArr {
-			if 0 != data.SetID && item.SetID == data.SetID {
-				continue
-			}
 			if 0 != data.ModuleID && item.ModuleID == data.ModuleID {
 				continue
 			}
+			if 0 != data.SetID && 0 == data.ModuleID && item.SetID == data.SetID {
+				continue
+			}
+
 			toEmptyModule = false
 			newModuleIDArr = append(newModuleIDArr, item.ModuleID)
 		}
@@ -820,6 +850,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		if toEmptyModule {
 			input := &meta.TransferHostToInnerModule{
 				ApplicationID: data.ApplicationID,
+				ModuleID:      idleModuleID,
 				HostID:        []int64{hostID},
 			}
 			opResult, err = srvData.lgc.CoreAPI.CoreService().Host().TransferHostToInnerModule(srvData.ctx, srvData.header, input)
@@ -836,16 +867,18 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			ccErr := srvData.ccErr.CCError(common.CCErrCommHTTPDoRequestFailed)
 			exceptionArr = append(exceptionArr, meta.ExceptionResult{Code: int64(ccErr.GetCode()), Message: ccErr.Error(), OriginIndex: hostID})
 		}
-		if len(opResult.Data) > 0 {
-			blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, srvData.rid)
-			exceptionArr = append(exceptionArr, opResult.Data...)
-		} else {
-			blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, srvData.rid)
-			exceptionArr = append(exceptionArr, meta.ExceptionResult{
-				Code:        int64(opResult.Code),
-				Message:     opResult.ErrMsg,
-				OriginIndex: hostID,
-			})
+		if !opResult.Result {
+			if len(opResult.Data) > 0 {
+				blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, srvData.rid)
+				exceptionArr = append(exceptionArr, opResult.Data...)
+			} else {
+				blog.Errorf("MoveSetHost2IdleModule handle reply error. result:%#v, to idle module:%v, input:%#v, hostID:%d, rid:%s", opResult, toEmptyModule, data, hostID, srvData.rid)
+				exceptionArr = append(exceptionArr, meta.ExceptionResult{
+					Code:        int64(opResult.Code),
+					Message:     opResult.ErrMsg,
+					OriginIndex: hostID,
+				})
+			}
 		}
 
 	}
@@ -883,7 +916,7 @@ func (s *Service) ip2hostID(srvData *srvComm, ip string, cloudID int64) (hostID 
 		return 0, err
 	}
 	if len(hostIDArr) == 0 {
-		return 0, fmt.Errorf("ip %d:%s not found", cloudID, ip)
+		return 0, nil
 	}
 
 	hostMapData, ok := hostMap[hostIDArr[0]]

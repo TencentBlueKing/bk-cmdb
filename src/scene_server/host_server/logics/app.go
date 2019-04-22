@@ -149,6 +149,7 @@ func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArr
 }
 
 func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
+	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
@@ -174,8 +175,11 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr
 func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	params.ParseCommonParams(cond, condc)
+	condMap := mapstr.NewFromMap(condc)
+	condMap.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
+
 	query := &metadata.QueryCondition{
-		Condition: mapstr.NewFromMap(condc),
+		Condition: condMap,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
 		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    []string{common.BKAppIDField},
@@ -205,6 +209,7 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 
 func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
+	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
