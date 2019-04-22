@@ -4,7 +4,7 @@
             <div class="sideslider" :style="{width: `${width}px`}">
                 <div class="sideslider-title" ref="title">
                     <slot name="title">
-                        <h3 class="title">
+                        <h3 class="title" :title="title">
                             <span class="vm">{{title}}</span>
                         </h3>
                     </slot>
@@ -162,6 +162,7 @@
         font-weight: bold;
         margin: 0;
         background: #f9f9f9;
+        white-space: nowrap;
         .icon-mainframe{
             position: relative;
             top: 0px;
@@ -172,6 +173,9 @@
         }
         .title{
             font-size: 14px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
     }
     .sideslider-content{
