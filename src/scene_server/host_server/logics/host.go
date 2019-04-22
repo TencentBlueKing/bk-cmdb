@@ -84,10 +84,6 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 // GetConfigByCond get hosts owened set, module info, where hosts must match condition specify by cond.
 func (lgc *Logics) GetConfigByCond(ctx context.Context, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
 
-	if input.ApplicationID == 0 && len(input.ModuleID) == 0 && len(input.HostID) == 0 {
-		return nil, nil
-	}
-
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &input)
 	if err != nil {
 		blog.Errorf("GetConfigByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), input, lgc.rid)
@@ -242,9 +238,7 @@ const (
 // GetHostIDByCond query hostIDs by condition base on cc_ModuleHostConfig
 // available condition fields are bk_supplier_account, bk_biz_id, bk_host_id, bk_module_id, bk_set_id
 func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
-	if cond.ApplicationID == 0 && len(cond.ModuleID) == 0 && len(cond.HostID) == 0 && len(cond.ModuleID) == 0 {
-		return nil, nil
-	}
+
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
 		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, lgc.rid)
@@ -272,10 +266,6 @@ func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr [
 // GetHostModuleRelation  query host and module relation,
 // condition key use appID, moduleID,setID,HostID
 func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
-
-	if cond.ApplicationID == 0 && len(cond.ModuleID) == 0 && len(cond.HostID) == 0 {
-		return nil, nil
-	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {

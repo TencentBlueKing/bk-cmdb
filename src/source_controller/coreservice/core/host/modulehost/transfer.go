@@ -95,7 +95,6 @@ func (t *transferHostModule) SetDeleteHost(ctx core.ContextParams) {
 
 func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	err := t.validHost(ctx, hostID)
-
 	if err != nil {
 		return err
 	}
@@ -314,7 +313,6 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 	if err != nil {
 		return err
 	}
-
 	if cnt == 0 {
 		blog.ErrorJSON("validParameter not found host error. cond:%s, rid:%s", hostCond.ToMapStr(), ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHostNotExist, hostID)

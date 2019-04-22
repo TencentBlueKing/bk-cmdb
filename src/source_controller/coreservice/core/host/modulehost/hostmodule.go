@@ -141,6 +141,10 @@ func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *m
 
 // GetHostModuleRelation get host module relation
 func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+	if input.Empty() {
+		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
 	moduleHostCond := condition.CreateCondition()
 	if input.ApplicationID > 0 {
 		moduleHostCond.Field(common.BKAppIDField).Eq(input.ApplicationID)
