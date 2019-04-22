@@ -22,7 +22,17 @@
                     v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
-                <div class="topo-example">
+                <div class="topo-example" v-if="!isAdminView">
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
+                    </p>
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
+                    </p>
+                </div>
+                <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
                         <span>{{$t('ModelManagement["自定义模型"]')}}</span>
@@ -277,7 +287,9 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
+                        return !this.isModelInTopo(model)
+                            && !this.specialModel.includes(model['bk_obj_id'])
+                            && !model.bk_ispaused
                     })
                     return classify
                 })

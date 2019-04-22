@@ -57,6 +57,7 @@
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
                         :properties="properties"
                         :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
                         :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
@@ -92,6 +93,7 @@
         data () {
             return {
                 OPERATION,
+                objectUnique: [],
                 properties: [],
                 slider: {
                     show: false,
@@ -159,7 +161,11 @@
                 'batchUpdateProcess',
                 'searchProcessById'
             ]),
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'process',
+                    params: {}
+                })
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true
