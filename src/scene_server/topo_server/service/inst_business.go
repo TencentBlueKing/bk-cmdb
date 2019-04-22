@@ -47,7 +47,7 @@ func (s *Service) CreateBusiness(params types.ContextParams, pathParams, queryPa
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
-		blog.Errorf("create business, but register to iam failed, err: %v", err)
+		blog.Errorf("create business success, but register to iam failed, err: %v", err)
 		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
@@ -71,7 +71,7 @@ func (s *Service) DeleteBusiness(params types.ContextParams, pathParams, queryPa
 
 	// auth: deregister business to iam
 	if err := s.AuthManager.DeregisterBusinessesByID(params.Context, params.Header, bizID); err != nil {
-		blog.Errorf("deregister business failed, err: %+v", err)
+		blog.Errorf("delete business failed, deregister business failed, err: %+v", err)
 		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
@@ -100,7 +100,8 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 	// auth: update registered business to iam
 	if err := s.AuthManager.UpdateRegisteredBusinessByID(params.Context, params.Header, bizID); err != nil {
-		return nil, fmt.Errorf("update registered business failed, err: %+v", err)
+		blog.Errorf("update business success, but update registered business failed, err: %+v", err)
+		return nil, params.Err.Errorf(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return nil, nil
@@ -263,7 +264,8 @@ func (s *Service) CreateDefaultBusiness(params types.ContextParams, pathParams, 
 
 	// auth: register business to iam
 	if err := s.AuthManager.RegisterBusinessesByID(params.Context, params.Header, businessID); err != nil {
-		return nil, fmt.Errorf("register business failed, err: %+v", err)
+		blog.Errorf("create default business failed, register business failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return business, nil

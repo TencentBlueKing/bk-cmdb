@@ -21,13 +21,15 @@ import (
 )
 
 func (s *Service) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr, error) {
-	rst := []string{}
-	err := json.Unmarshal(data, &rst)
+	requestBody := struct {
+		Data []string `json:"data" field:"data"`
+	}{}
+	err := json.Unmarshal(data, &requestBody)
 	if nil != err {
 		return nil, err
 	}
 	result := mapstr.MapStr{}
-	result.Set("origin", rst)
+	result.Set("origin", requestBody.Data)
 	return result, nil
 }
 

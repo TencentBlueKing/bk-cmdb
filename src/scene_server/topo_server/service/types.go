@@ -35,6 +35,7 @@ type action struct {
 	Path                       string
 	HandlerFunc                LogicFunc
 	HandlerParseOriginDataFunc ParseOriginDataFunc
+	PublicOnly bool
 }
 
 // API the API interface
