@@ -61,7 +61,6 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("val_type_bool"), //"布尔",
 		"isrequired":             lang.Language("val_type_bool"), //"布尔",
 		"isreadonly":             lang.Language("val_type_bool"), //"布尔",
-		"isonly":                 lang.Language("val_type_bool"), //"布尔",
 	}
 	return fieldType
 }
@@ -80,7 +79,6 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("is_editable"),                //"是否可编辑",
 		"isrequired":             lang.Language("property_is_required"),       //"是否必填",
 		"isreadonly":             lang.Language("property_is_readonly"),       //"是否只读",
-		"isonly":                 lang.Language("property_is_only"),           //"是否唯一",
 	}
 
 	return fields
