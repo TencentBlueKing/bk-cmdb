@@ -1848,7 +1848,8 @@ func (ps *parseStream) audit() *parseStream {
 }
 
 var (
-	findUserPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/user/detail/[0-9]+/[^\s/]+/?$`)
+	findPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+	postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
 )
 
 func (ps *parseStream) privilege() *parseStream {
@@ -1856,8 +1857,7 @@ func (ps *parseStream) privilege() *parseStream {
 		return ps
 	}
 
-	// add object unique operation.
-	if ps.hitRegexp(findUserPrivilege, http.MethodGet) {
+	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
