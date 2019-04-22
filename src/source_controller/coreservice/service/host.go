@@ -55,7 +55,7 @@ func (s *coreService) TransferHostCrossBusiness(params core.ContextParams, pathP
 	}
 	exceptionArr, err := s.core.HostOperation().TransferHostCrossBusiness(params, inputData)
 	if err != nil {
-		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
+		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), data, exceptionArr, params.ReqID)
 		return exceptionArr, err
 	}
 	return nil, nil

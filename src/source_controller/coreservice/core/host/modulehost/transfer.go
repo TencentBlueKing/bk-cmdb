@@ -134,7 +134,7 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 func (t *transferHostModule) deleteHost(ctx core.ContextParams, hostID int64) (mapstr.MapStr, errors.CCErrorCoder) {
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
-	hostCondMap := util.SetQueryOwner(hostCond, ctx.SupplierAccount)
+	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), ctx.SupplierAccount)
 	hostInfoArr := make([]mapstr.MapStr, 0)
 	err := t.mh.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(ctx, &hostInfoArr)
 	if err != nil {
@@ -149,7 +149,7 @@ func (t *transferHostModule) deleteHost(ctx core.ContextParams, hostID int64) (m
 	delMoudleHost := condition.CreateCondition()
 	delMoudleHost.Field(common.BKHostIDField).Eq(hostID)
 	delMoudleHost.Field(common.BKAppIDField).Eq(t.bizID)
-	delMoudleHostMap := util.SetQueryOwner(hostCond, ctx.SupplierAccount)
+	delMoudleHostMap := util.SetQueryOwner(delMoudleHost.ToMapStr(), ctx.SupplierAccount)
 	err = t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delMoudleHostMap)
 	if err != nil {
 		blog.ErrorJSON("deleteHost delete module hsot realtion error. err:%s, cond:%s, rid:%s", err.Error(), delMoudleHostMap, ctx.ReqID)

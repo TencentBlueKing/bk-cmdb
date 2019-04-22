@@ -53,7 +53,7 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 	}
 	if !exit {
 		blog.ErrorJSON("TransferHostToInnerModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ApplicationID, input.ModuleID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
 	}
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
