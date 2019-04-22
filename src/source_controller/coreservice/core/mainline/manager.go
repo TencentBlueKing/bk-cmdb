@@ -295,7 +295,13 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(withDetail bool) error 
 				return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
 			}
 		} else {
-			parentInstanceID = im.bkBizID
+			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+			// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
+			if topoInstance.ObjectID == common.BKInnerObjIDSet {
+				continue
+			}
+			blog.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)
+			return fmt.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)
 		}
 		blog.V(7).Infof("model: %s, instance: %d, parent: %d", topoInstance.ObjectID, topoInstance.InstanceID, parentInstanceID)
 		
