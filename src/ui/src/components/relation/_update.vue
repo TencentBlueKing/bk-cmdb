@@ -24,7 +24,6 @@
         </div>
         <cmdb-table class="new-association-table"
             :loading="$loading()"
-            :height="500"
             :pagination.sync="table.pagination"
             :sort="table.sort"
             :header="table.header"
