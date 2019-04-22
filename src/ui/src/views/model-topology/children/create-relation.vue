@@ -166,7 +166,7 @@
                         id: asstId,
                         name: asstId
                     }
-                })
+                }).filter(relation => relation.id !== 'bk_mainline')
                 this.relationInfo['bk_asst_id'] = this.relationList[0].id
             },
             async searchModelRelationList () {
