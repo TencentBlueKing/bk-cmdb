@@ -125,7 +125,9 @@
                 await this.bindRolePrivilege({
                     bkObjId: 'biz',
                     bkPropertyId: this.selectedBusinessRole,
-                    params: this.authorities.selected,
+                    params: {
+                        data: this.authorities.selected
+                    },
                     config: {
                         requestId: 'updateAuthorities'
                     }
