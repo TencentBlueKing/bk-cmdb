@@ -560,6 +560,8 @@ const (
 	CCErrDeleteHostFromBusiness = 1110055
 	// CCErrHostNotBelongIDLEModuleErr hostID[%#v] not belong to business
 	CCErrHostNotBelongIDLEModuleErr = 1110056
+	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
+	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001

@@ -38,7 +38,6 @@
 	"1110037": "Failed to obtain resource confirm history",
 	"1110038": "Task name already exits",
 	"1110039": "Fail to start cloud Synchronize",
-
 	"1110040": "Create custom query failed, error %s",
 	"1110041": "Modify custom query failed, error %s",
 	"1110042": "Delete custom query failed, error %s",
@@ -55,8 +54,9 @@
 	"1110053": "Failed to get resource pool information, error message: %s",
 	"1110054": "%s module not found",
 	"1110055": "The host failed to delete the business.",
-	"1110056": "hostID[%#v] not belong to business idle module", 
-
+	"1110056": "hostID[%#v] not belong to business idle module",
+	"1110057": "Module does not exist or there are multiple built-in modules",
+	
 	"1110080": "Fail to add host to resource pool",
 	"": ""
 }
