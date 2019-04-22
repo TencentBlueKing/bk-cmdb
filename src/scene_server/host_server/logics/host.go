@@ -72,10 +72,13 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 	}
 
 	hostInfo := result.Data
+	if len(hostInfo) == 0 {
+		return nil, "", nil
+	}
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
 		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, lgc.rid)
-		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", err.Error())
+		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
 
 	}
 	return hostInfo, ip, nil
@@ -165,7 +168,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		}
 
 		hostID = int64(result.Data.Created.ID)
-
 	} else if false == isIncrement {
 		//Not an additional relationship model
 		return nil
@@ -195,8 +197,18 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		ModuleID:      []int64{moduleID},
 		IsIncrement:   false,
 	}
-	lgc.CoreAPI.CoreService().Host().TransferHostModule(ctx, lgc.header, params)
-
+	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferHostModule(ctx, lgc.header, params)
+	if ccErr != nil {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, err.Error(), lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !hmResult.Result {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, lgc.rid)
+		if len(hmResult.Data) > 0 {
+			return lgc.ccErr.New(int(hmResult.Data[0].Code), hmResult.Data[0].Message)
+		}
+		return lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
+	}
 	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
 	if err := hmAudit.WithPrevious(ctx); err != nil {
 		return err
@@ -351,6 +363,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
+
 	input := &metadata.DeleteHostRequest{
 		ApplicationID: bizID,
 		HostIDArr:     hostIDArr,
