@@ -107,13 +107,15 @@
                         header = {
                             objId: 'set',
                             id: 'bk_set_name',
-                            name: this.$t("Hosts['集群']")
+                            name: this.$t("Hosts['集群']"),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_module_name') {
                         header = {
                             objId: 'module',
                             id: 'bk_module_name',
-                            name: this.$t("Hosts['模块']")
+                            name: this.$t("Hosts['模块']"),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_biz_name') {
                         header = {
