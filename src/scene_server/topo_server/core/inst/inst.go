@@ -127,7 +127,7 @@ func (cli *inst) Create() error {
 
 	cli.datas.Set(common.BKOwnerIDField, cli.params.SupplierAccount)
 
-    rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
+	rsp, err := cli.clientSet.CoreService().Instance().CreateInstance(context.Background(), cli.params.Header, cli.target.GetObjectID(), &metadata.CreateModelInstance{Data: cli.datas})
 	if nil != err {
 		blog.Errorf("failed to create object instance, error info is %s", err.Error())
 		return err
@@ -135,7 +135,7 @@ func (cli *inst) Create() error {
 
 	if !rsp.Result {
 		blog.Errorf("failed to create object instance ,error info is %v", rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoInstCreateFailed)
+		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	cli.datas.Set(cli.target.GetInstIDFieldName(), rsp.Data.Created.ID)
@@ -194,7 +194,7 @@ func (cli *inst) Update(data mapstr.MapStr) error {
 
 	if !rsp.Result {
 		blog.Errorf("failed to update the object(%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
-		return cli.params.Err.Error(common.CCErrTopoInstUpdateFailed)
+		return cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	// read the new data
@@ -263,7 +263,7 @@ func (cli *inst) IsExists() (bool, error) {
 
 	if !rsp.Result {
 		blog.Errorf("failed to search the object (%s) instances, error info is %s", tObj.ObjectID, rsp.ErrMsg)
-		return false, cli.params.Err.Error(common.CCErrTopoInstSelectFailed)
+		return false, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
 	return 0 != rsp.Data.Count, nil

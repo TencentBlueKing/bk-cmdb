@@ -86,6 +86,8 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
 			err = valid.validInt(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
 		case common.FieldTypeEnum:
 			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:
@@ -135,6 +137,8 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
 			err = valid.validInt(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
 		case common.FieldTypeEnum:
 			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:
