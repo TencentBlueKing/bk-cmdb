@@ -7,6 +7,12 @@ export default {
         propertyGroups: {
             type: Array,
             required: true
+        },
+        objectUnique: {
+            type: Array,
+            default () {
+                return []
+            }
         }
     },
     computed: {
@@ -19,8 +25,13 @@ export default {
             }])
         },
         $sortedProperties () {
+            const unique = this.objectUnique.find(unique => unique.must_check) || {}
+            const uniqueKeys = unique.keys || []
             const sortKey = 'bk_property_index'
-            const properties = this.properties.filter(property => !property['bk_isapi'])
+            const properties = this.properties.filter(property => {
+                return !property['bk_isapi'] &&
+                    !uniqueKeys.some(key => key.key_id === property.id)
+            })
             return properties.sort((propertyA, propertyB) => propertyA[sortKey] - propertyB[sortKey])
         },
         $groupedProperties () {

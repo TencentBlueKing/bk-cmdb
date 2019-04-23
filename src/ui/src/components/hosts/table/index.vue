@@ -103,6 +103,7 @@
                         :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
+                        :object-unique="objectUnique"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -216,6 +217,7 @@
         },
         data () {
             return {
+                objectUnique: [],
                 properties: {
                     biz: [],
                     host: [],
@@ -526,7 +528,10 @@
                 this.tab.attribute.inst.edit = originalItem['host']
                 this.tab.attribute.type = 'update'
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'host'
+                })
                 this.tab.attribute.type = 'multiple'
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
