@@ -55,6 +55,13 @@ export function getPropertyText (property, item) {
     const propertyId = property['bk_property_id']
     const propertyType = property['bk_property_type']
     let propertyValue = item[propertyId]
+    if (
+        propertyValue === null ||
+        propertyValue === undefined ||
+        propertyValue === ''
+    ) {
+        return '--'
+    }
     if (propertyType === 'enum') {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
@@ -69,11 +76,9 @@ export function getPropertyText (property, item) {
     } else if (propertyType === 'foreignkey') {
         if (Array.isArray(propertyValue)) {
             propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
-        } else {
-            return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return (propertyValue !== null && String(propertyValue).length) ? propertyValue : '--'
+    return propertyValue
 }
 
 /**
