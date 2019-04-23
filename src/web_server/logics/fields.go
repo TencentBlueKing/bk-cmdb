@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	lang "configcenter/src/common/language"
@@ -130,9 +130,8 @@ func (lgc *Logics) getObjectGroup(objID string, header http.Header, meta *metada
 
 }
 
-func (lgc *Logics) getAsstObjectPrimaryFieldByObjID(objID string, header http.Header, conds mapstr.MapStr, meta *metadata.Metadata) ([]Property, error) {
-
-	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, conds, meta)
+func (lgc *Logics) getObjectPrimaryFieldByObjID(objID string, header http.Header, meta *metadata.Metadata) ([]Property, error) {
+	fields, err := lgc.getObjFieldIDsBySort(objID, common.BKPropertyIDField, header, nil, meta)
 	if nil != err {
 		return nil, err
 	}
@@ -177,11 +176,32 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
+	uniques, err := lgc.CoreAPI.ObjectController().Unique().Search(context.Background(), header, objID)
+	if nil != err {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, err, util.GetHTTPCCRequestID(header))
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !uniques.Result {
+		blog.Errorf("getObjectPrimaryFieldByObjID get unique for %s error: %v ,rid:%s", objID, uniques, util.GetHTTPCCRequestID(header))
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(uniques.Code, uniques.ErrMsg)
+	}
+
+	keyIDs := map[uint64]bool{}
+	for _, unique := range uniques.Data {
+		if unique.MustCheck {
+			for _, key := range unique.Keys {
+				keyIDs[key.ID] = true
+			}
+			break
+		}
+	}
+	if len(keyIDs) <= 0 {
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
+	}
+
 	ret := []Property{}
-
 	for _, mapField := range result.Data {
-
-		fieldIsOnly := mapField.IsOnly
+		fieldIsOnly := keyIDs[uint64(mapField.ID)]
 		fieldName := mapField.PropertyName
 		fieldID := mapField.PropertyID
 		fieldType := mapField.PropertyType
