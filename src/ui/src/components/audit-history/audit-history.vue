@@ -118,7 +118,10 @@
                 }
             },
             refresh (isClickSearch) {
-                if (isClickSearch) this.sendOperator = this.operator
+                if (isClickSearch) {
+                    this.pagination.current = 1
+                    this.sendOperator = this.operator
+                }
                 this.getOperationLog({
                     params: this.getParams(isClickSearch),
                     config: {
@@ -128,7 +131,6 @@
                 }).then(data => {
                     this.list = data.info
                     this.pagination.count = data.count
-                    if (isClickSearch) this.pagination.current = 1
                 })
             },
             getParams (isClickSearch) {
