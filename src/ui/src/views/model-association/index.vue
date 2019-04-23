@@ -105,9 +105,7 @@
                     defaultSort: '-ispre',
                     sort: '-ispre'
                 },
-                isSearch: false,
-                sendSearchText: '',
-                keepSearchText: ''
+                sendSearchText: ''
             }
         },
         computed: {
@@ -128,7 +126,7 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.sendSearchText.length && this.isSearch) {
+                if (this.sendSearchText.length) {
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
@@ -141,11 +139,6 @@
             },
             authority () {
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
-            }
-        },
-        watch: {
-            searchText (searchText) {
-                this.sendSearchText = searchText
             }
         },
         created () {
@@ -163,11 +156,8 @@
             ]),
             searchRelation (fromClick) {
                 if (fromClick) {
-                    this.isSearch = true
                     this.sendSearchText = this.searchText
                     this.searchParams.page.start = 0
-                } else {
-                    this.sendSearchText = this.keepSearchText
                 }
                 this.searchAssociationType({
                     params: this.searchParams,
@@ -178,10 +168,7 @@
                     this.table.list = data.info
                     this.searchUsageCount()
                     this.table.pagination.count = data.count
-                    if (fromClick) {
-                        this.keepSearchText = this.searchText
-                        this.table.pagination.current = 1
-                    }
+                    if (fromClick) this.table.pagination.current = 1
                     this.$http.cancel('post_searchAssociationType')
                 })
             },
