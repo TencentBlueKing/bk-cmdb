@@ -64,8 +64,6 @@
                 dateRange: [],
                 operator: '',
                 sendOperator: '',
-                keepOperator: '',
-                isSearch: false,
                 header: [{
                     id: 'op_desc',
                     name: this.$t("HostResourcePool['变更内容']")
@@ -99,11 +97,6 @@
                 ]
             }
         },
-        watch: {
-            operator (operator) {
-                this.sendOperator = operator
-            }
-        },
         created () {
             this.initDateRange()
             this.refresh()
@@ -125,12 +118,7 @@
                 }
             },
             refresh (isClickSearch) {
-                if (isClickSearch) {
-                    this.isSearch = true
-                    this.sendOperator = this.operator
-                } else {
-                    this.sendOperator = this.keepOperator
-                }
+                if (isClickSearch) this.sendOperator = this.operator
                 this.getOperationLog({
                     params: this.getParams(isClickSearch),
                     config: {
@@ -140,10 +128,7 @@
                 }).then(data => {
                     this.list = data.info
                     this.pagination.count = data.count
-                    if (isClickSearch) {
-                        this.keepOperator = this.operator
-                        this.pagination.current = 1
-                    }
+                    if (isClickSearch) this.pagination.current = 1
                 })
             },
             getParams (isClickSearch) {
@@ -157,7 +142,7 @@
                 if (!isNaN(this.instId)) {
                     condition['inst_id'] = this.instId
                 }
-                if (this.sendOperator && this.isSearch) {
+                if (this.sendOperator) {
                     condition.operator = this.sendOperator
                 }
                 return {
