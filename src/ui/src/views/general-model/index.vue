@@ -10,14 +10,12 @@
                     </bk-button>
                 </div>
                 <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default submit" form="exportForm"
-                        :disabled="!table.checked.length">
+                    <bk-button class="models-button" type="default" form="exportForm"
+                        :disabled="!table.checked.length"
+                        @click="handleExport">
                         <i class="icon-cc-derivation"></i>
                     </bk-button>
                 </div>
-                <form id="exportForm" :action="url.export" method="POST" hidden>
-                    <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
-                </form>
                 <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
                     <bk-button class="models-button"
                         :disabled="!table.checked.length || !authority.includes('update')"
@@ -630,6 +628,15 @@
                     return true
                 }
                 return true
+            },
+            handleExport () {
+                const data = new FormData()
+                data.append('bk_inst_id', this.table.checked.join(','))
+                this.$http.download({
+                    url: this.url.export,
+                    method: 'post',
+                    data
+                })
             }
         }
     }
