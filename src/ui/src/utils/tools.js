@@ -132,7 +132,7 @@ export function getInstFormValues (properties, inst = {}) {
         } else if (['date', 'time'].includes(propertyType)) {
             const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
             values[propertyId] = formatedTime || null
-        } else if (['int'].includes(propertyType)) {
+        } else if (['int', 'float'].includes(propertyType)) {
             values[propertyId] = ['', undefined].includes(inst[propertyId]) ? null : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
             values[propertyId] = !!inst[propertyId]
