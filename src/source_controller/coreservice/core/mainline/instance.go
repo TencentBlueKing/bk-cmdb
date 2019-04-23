@@ -28,6 +28,12 @@ func (m *topoManager) SearchMainlineInstanceTopo(bkBizID int64, withDetail bool)
         blog.Errorf("get mainline model topo info failed, %+v", err)
         return nil, fmt.Errorf("get mainline model topo info failed, %+v", err)
     }
+	mainline, err := json.Marshal(bizTopoNode)
+	if err != nil {
+		blog.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
+		return nil, fmt.Errorf("dump model mainline data failed, err: %+v", err)
+	}
+	blog.V(9).Infof("model mainline: %s", mainline)
     
     im, err := NewInstanceMainline(m.DbProxy, bkBizID)
     im.SetModelTree(bizTopoNode)
