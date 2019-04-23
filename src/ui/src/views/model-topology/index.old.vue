@@ -266,7 +266,8 @@
         computed: {
             ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'getModelById'
             ]),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
@@ -879,12 +880,13 @@
                 this.network.nodes.forEach(node => {
                     const image = new Image()
                     image.onload = () => {
+                        const model = this.getModelById(node.data.bk_obj_id)
                         this.networkDataSet.nodes.update({
                             id: node.id,
                             image: {
                                 unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                     name: node.data['node_name'],
-                                    iconColor: this.$tools.getMetadataBiz(node.data) ? '#3c96ff' : '#868b97',
+                                    iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
                                     backgroundColor: '#fff'
                                 }))}`,
                                 selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
