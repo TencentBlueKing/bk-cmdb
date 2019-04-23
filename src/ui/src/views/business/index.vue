@@ -25,21 +25,21 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     v-model="filter.value"
-                    @on-selected="getTableData">
+                    @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handleFilterData">
                 <input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handleFilterData">
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    @click="handleFilterData"></i>
             </div>
         </div>
         <cmdb-table class="business-table" ref="table"
@@ -137,7 +137,8 @@
                     id: '',
                     value: '',
                     type: '',
-                    options: []
+                    options: [],
+                    available: false
                 },
                 slider: {
                     show: false,
@@ -174,6 +175,9 @@
             'filter.id' (id) {
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
+            },
+            'filter.value' () {
+                this.filter.available = false
             },
             'slider.show' (show) {
                 if (!show) {
@@ -284,6 +288,11 @@
                     config: Object.assign({requestId: 'post_searchBusiness_list'}, config)
                 })
             },
+            handleFilterData () {
+                this.table.pagination.current = 1
+                this.filter.available = true
+                this.getTableData()
+            },
             getTableData () {
                 this.getBusinessList().then(data => {
                     this.table.list = this.$tools.flatternList(this.properties, data.info)
@@ -303,7 +312,11 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && String(this.filter.value).length) {
+                if (
+                    this.filter.available &&
+                    this.filter.id &&
+                    String(this.filter.value).length
+                ) {
                     const filterType = this.filter.type
                     let filterValue = this.filter.value
                     if (filterType === 'bool') {
