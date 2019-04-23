@@ -187,3 +187,31 @@ func (t *auditctl) AddSetLogs(ctx context.Context, ownerID string, businessID st
 		Into(resp)
 	return
 }
+
+func (t *auditctl) AddAssociationLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/association/%s/%s/%s", ownerID, businessID, user)
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (t *auditctl) AddAssociationLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := fmt.Sprintf("/associations/%s/%s/%s", ownerID, businessID, user)
+
+	err = t.client.Post().
+		WithContext(ctx).
+		Body(logs).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

@@ -56,7 +56,7 @@ func (s *Service) AddAppLog(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-//操作日志
+// 操作日志
 func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
@@ -88,7 +88,7 @@ func (s *Service) AddSetLog(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
-//插入多行主机操作日志型操作
+// 插入多行主机操作日志型操作
 func (s *Service) AddSetLogs(req *restful.Request, resp *restful.Response) {
 	language := util.GetLanguage(req.Request.Header)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
@@ -178,6 +178,69 @@ func (s *Service) AddModuleLogs(req *restful.Request, resp *restful.Response) {
 	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, common.BKInnerObjIDModule, params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("add module log error:%s", err.Error())
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+}
+
+// 插入多行 Association 操作日志型操作
+func (s *Service) AddAssociationLogs(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	strAppID := req.PathParameter("biz_id")
+	user := req.PathParameter("user")
+
+	appID, err := util.GetInt64ByInterface(strAppID)
+	if nil != err {
+		blog.Errorf("AddAssociationLogs json unmarshal error:%s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		return
+	}
+
+	params := new(metadata.AuditSetsParams)
+	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
+		blog.Errorf("AddAssociationLogs json unmarshal failed,error:%s", err.Error())
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, "instance_association", params.Content, params.OpDesc, ownerID, user)
+	if nil != err {
+		blog.Errorf("AddAssociationLogs add instance association log error:%s", err.Error())
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		return
+	}
+	resp.WriteEntity(metadata.NewSuccessResp(nil))
+}
+
+func (s *Service) AddAssociationLog(req *restful.Request, resp *restful.Response) {
+	language := util.GetLanguage(req.Request.Header)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
+	ctx := util.GetDBContext(context.Background(), req.Request.Header)
+	ownerID := util.GetOwnerID(req.Request.Header)
+	strAppID := req.PathParameter("biz_id")
+	user := req.PathParameter("user")
+
+	appID, err := util.GetInt64ByInterface(strAppID)
+	if nil != err {
+		blog.Errorf("AddAssociationLog failed, parse business from path failed, err: %+v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+		return
+	}
+
+	params := new(metadata.AuditAssociationLogParams)
+	if err = json.NewDecoder(req.Request.Body).Decode(params); err != nil {
+		blog.Errorf("AddAssociationLog json unmarshal failed, err: %+v", err)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		return
+	}
+
+	err = s.Logics.AddLogWithStr(ctx, appID, params.AssociationID, params.OpType, "instance_association", params.Content, "", params.OpDesc, ownerID, user)
+	if nil != err {
+		blog.Errorf("AddAssociationLog add application log error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}
