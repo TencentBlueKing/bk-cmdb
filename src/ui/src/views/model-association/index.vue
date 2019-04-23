@@ -156,8 +156,8 @@
             ]),
             searchRelation (fromClick) {
                 if (fromClick) {
+                    this.table.pagination.current = 1
                     this.sendSearchText = this.searchText
-                    this.searchParams.page.start = 0
                 }
                 this.searchAssociationType({
                     params: this.searchParams,
@@ -168,7 +168,6 @@
                     this.table.list = data.info
                     this.searchUsageCount()
                     this.table.pagination.count = data.count
-                    if (fromClick) this.table.pagination.current = 1
                     this.$http.cancel('post_searchAssociationType')
                 })
             },
