@@ -1,6 +1,6 @@
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
+
 import {
-    SYSTEM_TOPOLOGY,
     U_MODEL
 } from '@/dictionary/auth'
 

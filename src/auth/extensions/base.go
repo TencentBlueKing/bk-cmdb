@@ -16,9 +16,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
+	"configcenter/src/common/metadata"
 )
 
 // correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
@@ -29,11 +31,16 @@ func (am *AuthManager) correctBusinessID(ctx context.Context, header http.Header
 	if err != nil {
 		return 0, fmt.Errorf("get business:%d detailed failed, err: %+v", businessID, err)
 	}
+	if len(businesses) != 1 {
+		return 0, fmt.Errorf("get business:%d failed, not found", businessID)
+	}
 	business := businesses[0]
 
+	// set resource pool as global
 	if business.IsDefault == 1 {
 		return 0, nil
 	}
+
 	return business.BKAppIDField, nil
 }
 
@@ -58,6 +65,30 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 	return nil
 }
 
+func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, resources ...meta.ResourceAttribute) error {
+	commonInfo, err := parser.ParseCommonInfo(&header)
+	if err != nil {
+		return fmt.Errorf("authentication failed, parse user info from header failed, %+v", err)
+	}
+
+	decisions, err := am.Authorize.AuthorizeBatch(ctx, commonInfo.User, resources...)
+	if err != nil {
+		return fmt.Errorf("authorize failed, err: %+v", err)
+	}
+
+	messages := make([]string, 0)
+	for _, decision := range decisions {
+		if decision.Authorized == false {
+			messages = append(messages, fmt.Sprintf("authorize failed, reason: %s", decision.Reason))
+		}
+	}
+	if len(messages) > 0 {
+		return fmt.Errorf(strings.Join(messages, "\n"))
+	}
+
+	return nil
+}
+
 func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.ResourceAttribute) error {
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -65,4 +96,14 @@ func (am *AuthManager) updateResources(ctx context.Context, resources ...meta.Re
 		}
 	}
 	return nil
+}
+
+// this functions works to parse business id from metadata's label
+// if the business id key is exist in the label, then it will check
+// the value and parse form it. otherwise it will return with 0.
+func extractBusinessID(m metadata.Label) (int64, error) {
+	if _, exist := m[metadata.LabelBusinessID]; exist {
+		return m.Int64(metadata.LabelBusinessID)
+	}
+	return 0, nil
 }

@@ -4,11 +4,11 @@
             :loading="$loading('getModuleList')"
             :header="table.header"
             :list="table.list"
-            :wrapperMinusHeight="150"
+            :wrapper-minus-height="150"
             :sortable="false">
             <template slot="is_bind" slot-scope="{ item }">
                 <bk-button type="primary"
-                    v-if="item['is_bind'] === '1'"
+                    v-if="item['is_bind'] === 1"
                     :loading="$loading(`${item['bk_module_name']}Bind`)"
                     :disabled="!unbindModuleAuth"
                     @click="unbindModule(item)">
@@ -32,9 +32,11 @@
     export default {
         props: {
             processId: {
+                type: [String, Number],
                 required: true
             },
             bizId: {
+                type: [String, Number],
                 required: true
             }
         },
@@ -56,9 +58,6 @@
                 }
             }
         },
-        created () {
-            this.getModuleList()
-        },
         computed: {
             bindModuleAuth () {
                 return this.$isAuthorized(OPERATION.PROCESS_BIND_MODULE)
@@ -66,6 +65,9 @@
             unbindModuleAuth () {
                 return this.$isAuthorized(OPERATION.PROCESS_UNBIND_MODULE)
             }
+        },
+        created () {
+            this.getModuleList()
         },
         methods: {
             ...mapActions('procConfig', [
@@ -109,8 +111,8 @@
                 this.calcMaxHeight()
             },
             sortModule (data) {
-                let bindedModule = []
-                let unbindModule = []
+                const bindedModule = []
+                const unbindModule = []
                 data.forEach(module => {
                     module['is_bind'] ? bindedModule.push(module) : unbindModule.push(module)
                 })
@@ -128,7 +130,6 @@
         }
     }
 </script>
-
 
 <style lang="scss" scoped>
     .module-bind-wrapper {

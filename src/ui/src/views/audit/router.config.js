@@ -1,5 +1,4 @@
 import { NAV_AUDIT_ANALYSE } from '@/dictionary/menu'
-
 const path = '/auditing'
 
 export default {

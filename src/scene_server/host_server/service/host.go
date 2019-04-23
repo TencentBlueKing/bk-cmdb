@@ -21,9 +21,9 @@ import (
 
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/logics"
@@ -68,8 +68,8 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 
 	// check authorization
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Delete, iHostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Delete, iHostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", iHostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -81,7 +81,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	query.Limit.Offset = 0
 	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, &query)
 	if err != nil {
-		blog.Errorf("delete host batch  SearchObjects http do error, err: %v,input:+v,rid:%s", err, opt, srvData.rid)
+		blog.Errorf("delete host batch  SearchObjects http do error, err: %v, input:%#v, rid:%s", err, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
@@ -112,8 +112,8 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	}
 
 	// auth: unregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, iHostIDArr...); err != nil {
-		blog.Errorf("deregister host failed, err: %v", err)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, iHostIDArr...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", iHostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -133,12 +133,12 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 		result, err := s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &delOptConfig)
 		if err != nil {
-			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v,input:+v,params:%s,rid:%s", err, opt, delOptConfig, srvData.rid)
+			blog.Errorf("delete host batch  DelModuleHostConfig http do error, err: %v, input:%#v, params:%s, rid:%s", err, opt, delOptConfig, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 			return
 		}
 		if !result.Result {
-			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s,err msg:%s,input:+v,params:%s,rid:%s", result.Code, result.ErrMsg, opt, delOptConfig, srvData.rid)
+			blog.Errorf("delete host batch  DelModuleHostConfig http response error, err code:%s, err msg:%s, input:%#v ,params:%s, rid:%s", result.Code, result.ErrMsg, opt, delOptConfig, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
@@ -191,8 +191,8 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	hostIDInt64 := details[common.BKHostIDField].(int64)
 	// check authorization
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, hostIDInt64); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, hostIDInt64); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDInt64, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -236,8 +236,8 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 
 	// check authorization
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, hostIDInt64); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, hostIDInt64); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDInt64, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -246,12 +246,12 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
 
 	if err != nil {
-		blog.Errorf("HostSnapInfohttp do error, err: %v,input:+v,rid:%s", err, hostID, srvData.rid)
+		blog.Errorf("HostSnapInfohttp do error, err: %v ,input:%#v, rid:%s", err, hostID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPReadBodyFailed)})
 		return
 	}
 	if !result.Result {
-		blog.Errorf("HostSnapInfohttp reponse erro, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, hostID, srvData.rid)
+		blog.Errorf("HostSnapInfohttp reponse erro, err code:%d,err msg:%s, input:%#v, rid:%s", result.Code, result.ErrMsg, hostID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}
@@ -269,9 +269,9 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	})
 }
 
+// add host to host resource pool
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
-
 	hostList := new(meta.HostList)
 	if err := json.NewDecoder(req.Request.Body).Decode(hostList); err != nil {
 		blog.Errorf("add host failed with decode body err: %v,rid:%s", err, srvData.rid)
@@ -306,20 +306,6 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	// check permission to register host
-	/*
-		if shouldContinue := s.verifyModulePermission(&req.Request.Header, resp, moduleID, authmeta.Update); shouldContinue == false {
-			return
-		}
-	*/
-	// check authorization to create host
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, req.Request.Header, appID); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
-
 	hostIDs, succ, updateErrRow, errRow, err := srvData.lgc.AddHost(srvData.ctx, appID, []int64{moduleID}, srvData.ownerID, hostList.HostInfo, hostList.InputType)
 	retData := make(map[string]interface{})
 	if err != nil {
@@ -336,8 +322,8 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 
 	// register hosts
 	// auth: check authorization
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDs...); err != nil {
-		blog.Errorf("register hosts to iam failed, err: %v", err)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDs, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -376,8 +362,8 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 	// check authorization
 	// is AddHostFromAgent's authentication the same with common api?
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, appID); err != nil {
-		blog.Errorf("check business authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, srvData.header, appID); err != nil {
+		blog.Errorf("check add host authorization failed, business: %+v, err: %v", appID, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -411,8 +397,8 @@ func (s *Service) AddHostFromAgent(req *restful.Request, resp *restful.Response)
 
 	// register hosts
 	// auth: register hosts
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDs...); err != nil {
-		blog.Errorf("register hosts to iam failed, err: %v", err)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDs, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -439,7 +425,7 @@ func (s *Service) SearchHost(req *restful.Request, resp *restful.Response) {
 
 	hostIDArray := host.ExtractHostIDs()
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, *hostIDArray...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, *hostIDArray...); err != nil {
 		blog.Errorf("check host authorization failed, hostID: %+v, err: %+v", hostIDArray, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
@@ -470,8 +456,8 @@ func (s *Service) SearchHostWithAsstDetail(req *restful.Request, resp *restful.R
 
 	// auth: check authorization
 	hostIDArray := host.ExtractHostIDs()
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, *hostIDArray...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, *hostIDArray...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArray, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -520,8 +506,8 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -690,8 +676,8 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostList.ApplicationID); err != nil {
-		blog.Errorf("check business authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, srvData.header, hostList.ApplicationID); err != nil {
+		blog.Errorf("check add hosts authorization failed, business: %d, err: %v", hostList.ApplicationID, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -713,8 +699,8 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 
 	// register host to iam
 	// auth: check authorization
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDs...); err != nil {
-		blog.Errorf("register authorization failed, err: %v", err)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDs, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -742,7 +728,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	//get host in set
+	// get host in set
 	condition := make(map[string][]int64)
 	hostIDArr := make([]int64, 0)
 	sModuleIDArr := make([]int64, 0)
@@ -796,7 +782,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 	moduleID := moduleIDArr[0]
 
-	// idle modle not change
+	// idle model not change
 	if moduleID == data.ModuleID {
 		resp.WriteEntity(meta.NewSuccessResp(nil))
 		return
@@ -807,21 +793,20 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	audit := srvData.lgc.NewHostModuleLog(hostIDArr)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostToBizIdleModule, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 	// step2. check permission for target business
-	if err := s.AuthManager.AuthorizeBusinessesByID(srvData.ctx, req.Request.Header, authmeta.Update, hostIDArr...); err != nil {
-		blog.Errorf("check business authorization failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, srvData.header, data.ApplicationID); err != nil {
+		blog.Errorf("check add host authorization failed, business: %d, err: %v", data.ApplicationID, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 	// step3. deregister host from iam
-	// auth: check authorization
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
-		blog.Errorf("deregister hosts failed, err: %v", err)
+	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
@@ -830,12 +815,12 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 		bl, err := srvData.lgc.IsHostExistInApp(srvData.ctx, data.ApplicationID, hostID)
 		if nil != err {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s,rid:%s", data.ApplicationID, hostID, err.Error(), srvData.rid)
+			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%d}, error:%s,rid:%s", data.ApplicationID, hostID, err.Error(), srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 			return
 		}
 		if false == bl {
-			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%s},rid:%s", data.ApplicationID, hostID, srvData.rid)
+			blog.Errorf("host do not belong to the current application; error, params:{appid:%d, hostid:%d},rid:%s", data.ApplicationID, hostID, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotINAPP)})
 			return
 		}
@@ -869,7 +854,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 			return
 		}
 		if !result.Result {
-			blog.Errorf("remove hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+			blog.Errorf("remove hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, data, moduleHostConfigParams, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 			return
 		}
@@ -883,7 +868,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 				return
 			}
 			if !result.Result {
-				blog.Errorf("add hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, moduleHostConfigParams, srvData.rid)
+				blog.Errorf("add hosthostconfig  http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, data, moduleHostConfigParams, srvData.rid)
 				resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 				return
 			}
@@ -895,8 +880,8 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	// register host to iam
 	// auth: check authorization
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, req.Request.Header, hostIDArr...); err != nil {
-		blog.Errorf("register hosts failed, err: %v", err)
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
@@ -962,8 +947,8 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		return
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Find, srcHostID); err != nil {
-		blog.Errorf("check authorization for src host failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, srcHostID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", srcHostID, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -975,8 +960,8 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 		return
 	}
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, req.Request.Header, authmeta.Update, dstHostID); err != nil {
-		blog.Errorf("check authorization for dst host failed, err: %v", err)
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", dstHostID, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}

@@ -154,7 +154,7 @@
                 return edgeConfig
             },
             options () {
-                const {node, edge} = this.config.label
+                const { node, edge } = this.config.label
                 return {
                     nodes: {
                         font: {
@@ -194,7 +194,7 @@
                     this.config = this.backupConfig
                 }
             },
-            toggleCollapseStatus ({id}) {
+            toggleCollapseStatus ({ id }) {
                 const previousState = this.collapseStatus[id]
                 this.hideAssociation()
                 this.$set(this.collapseStatus, id, !previousState)
@@ -225,12 +225,12 @@
                 const previousState = this.config.edge[id]
                 this.$set(this.config.edge, id, typeof previousState === 'undefined' ? false : !previousState)
             },
-            isModelAllChecked ({id}) {
+            isModelAllChecked ({ id }) {
                 const associations = this.associations[id]
                 const checked = associations.filter(association => this.edgeConfig[association['bk_inst_id']])
                 return checked.length === associations.length
             },
-            isModelPartialChecked ({id}) {
+            isModelPartialChecked ({ id }) {
                 const associations = this.associations[id]
                 const checked = associations.filter(association => this.edgeConfig[association['bk_inst_id']])
                 return checked.length !== 0 && checked.length !== associations.length

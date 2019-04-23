@@ -71,18 +71,13 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -100,20 +95,15 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Update,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -131,20 +121,15 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelUnique,
 					Action:     meta.Delete,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -157,18 +142,13 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -195,7 +175,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 	// find association kind operation
 	if ps.hitPattern(findManyAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.FindMany,
@@ -208,7 +188,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 	// create association kind operation
 	if ps.hitPattern(createAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.AssociationType,
 					Action: meta.Create,
@@ -226,7 +206,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Update,
@@ -246,7 +226,7 @@ func (ps *parseStream) associationTypeLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.AssociationType,
 					Action:     meta.Delete,
@@ -280,7 +260,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	// search object association operation
 	if ps.hitPattern(findObjectAssociationLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -307,11 +287,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					BusinessID: bizID,
@@ -320,7 +295,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
 				},
 			)
 		}
@@ -360,11 +334,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					Basic: meta.Basic{
@@ -372,7 +341,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
 					BusinessID: bizID,
 				})
 		}
@@ -413,11 +381,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					Basic: meta.Basic{
@@ -425,7 +388,6 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: model.ID,
 					},
-					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}},
 					BusinessID: bizID,
 				})
 		}
@@ -435,7 +397,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 	// find object association with a association kind list.
 	if ps.hitPattern(findObjectAssociationWithAssociationKindLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelAssociation,
 					Action: meta.FindMany,
@@ -465,7 +427,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 	// find object instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -497,12 +459,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
-
 			var instID int64
 			if model.ObjectID == asst.ObjectID {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int()
@@ -517,7 +473,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: instID,
 					},
-					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 					BusinessID: bizID,
 				})
 		}
@@ -551,12 +507,6 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
-
 			var instID int64
 			if model.ObjectID == asst.ObjectID {
 				instID = asst.InstID
@@ -571,7 +521,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: instID,
 					},
-					Layers:     []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+					Layers:     []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 					BusinessID: bizID,
 				})
 		}
@@ -607,18 +557,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -635,18 +580,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.Find,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -670,20 +610,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Update,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -701,11 +636,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ids := []int64{}
 		gjson.GetBytes(ps.RequestCtx.Body, "update.#.inst_id").ForEach(
@@ -715,12 +645,12 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			})
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.UpdateMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -738,18 +668,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.DeleteMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -773,20 +698,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstance,
 					Action:     meta.Delete,
 					InstanceID: instID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -806,7 +726,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:       meta.ModelInstanceTopology,
 					Action:     meta.Find,
@@ -830,34 +750,14 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
-		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get object id in metadata failed, err: %v", err)
-			return ps
-		}
-
-		instID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
-		if err != nil {
-			ps.err = fmt.Errorf("find object instance, but get instance id %s", ps.RequestCtx.Elements[7])
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
+			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstanceTopology,
-					Action:     meta.Find,
-					InstanceID: instID,
-				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[5],
-					},
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
 				},
 			},
 		}
-
 		return ps
 	}
 
@@ -873,7 +773,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceTopology,
@@ -896,18 +796,13 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -941,7 +836,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("create object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -970,7 +865,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("delete object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
@@ -1000,7 +895,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("update object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Model,
@@ -1019,7 +914,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -1037,7 +932,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
@@ -1055,7 +950,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			blog.Warnf("find object topology graphic, but get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
@@ -1071,7 +966,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 	if ps.hitRegexp(updateObjectTopologyGraphicLatestRegexp, http.MethodPost) {
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
 					Action: meta.Update,
@@ -1107,7 +1002,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
@@ -1136,7 +1031,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
@@ -1166,7 +1061,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelClassification,
@@ -1185,7 +1080,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelClassification,
@@ -1202,7 +1097,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
@@ -1242,19 +1137,14 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1272,24 +1162,19 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1313,11 +1198,6 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 				ps.err = err
 				return ps
 			}
-			cls, err := ps.getCls(model[0].ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
 					BusinessID: bizID,
@@ -1326,7 +1206,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 						Action:     meta.Update,
 						InstanceID: group.ID,
 					},
-					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 				})
 		}
 		return ps
@@ -1361,20 +1241,15 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttributeGroup,
 					Action:     meta.Delete,
 					InstanceID: groupID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1392,7 +1267,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttributeGroup,
@@ -1434,20 +1309,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelAttribute,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1460,21 +1329,21 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		modelEn := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
-		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: modelEn})
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-		cls, err := ps.getCls(model[0].ObjCls)
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
 		attrID, err := strconv.ParseInt(ps.RequestCtx.Elements[4], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("delete object attribute, but got invalid attribute id %s", ps.RequestCtx.Elements[4])
+			return ps
+		}
+
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
 			return ps
 		}
 
@@ -1483,14 +1352,14 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
 					Action:     meta.Delete,
 					InstanceID: attrID,
 				},
-				Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model[0].ID}},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1509,18 +1378,31 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
+		attr, err := ps.getModelAttribute(mapstr.MapStr{common.BKFieldID: attrID})
+		if err != nil {
+			ps.err = fmt.Errorf("delete object attribute, but fetch attribute by %v failed %v", mapstr.MapStr{common.BKFieldID: attrID}, err)
+			return ps
+		}
+
+		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: attr[0].ObjectID})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.ModelAttribute,
 					Action:     meta.Update,
 					InstanceID: attrID,
 				},
+				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 			},
 		}
 		return ps
@@ -1530,7 +1412,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
 		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
 		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
+			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
 		}
 
 		modelCond := gjson.GetBytes(ps.RequestCtx.Body, common.BKObjIDField).Value()
@@ -1540,11 +1422,6 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 		for _, model := range models {
-			cls, err := ps.getCls(model.ObjCls)
-			if err != nil {
-				ps.err = err
-				return ps
-			}
 
 			ps.Attribute.Resources = append(ps.Attribute.Resources,
 				meta.ResourceAttribute{
@@ -1553,7 +1430,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 						Type:   meta.ModelAttribute,
 						Action: meta.FindMany,
 					},
-					Layers: []meta.Item{{Type: meta.ModelClassification, InstanceID: cls.ID}, {Type: meta.Model, InstanceID: model.ID}},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model.ID}},
 				})
 		}
 		return ps
@@ -1586,7 +1463,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
@@ -1604,7 +1481,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,
@@ -1623,7 +1500,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModelTopology,
@@ -1643,7 +1520,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -1668,7 +1545,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineInstanceTopology,
@@ -1693,7 +1570,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModel,

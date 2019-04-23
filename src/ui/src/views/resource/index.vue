@@ -19,22 +19,22 @@
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
-            :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-            :delete-disabled="!$isAuthorized(OPERATION.D_HOST)"
-            :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :edit-disabled="!$isAuthorized(OPERATION.U_RESOURCE_HOST)"
+            :delete-disabled="!$isAuthorized(OPERATION.D_RESOURCE_HOST)"
+            :save-disabled="!$isAuthorized(OPERATION.U_RESOURCE_HOST)"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
                     <bk-button class="options-button" type="primary" style="margin-left: 0"
-                        :disabled="!$isAuthorized(OPERATION.C_HOST)"
+                        :disabled="!$isAuthorized(OPERATION.C_RESOURCE_HOST)"
                         @click="importInst.show = true">
                         {{$t('HostResourcePool[\'导入主机\']')}}
                     </bk-button>
                     <cmdb-selector class="options-business-selector"
                         :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.HOST_ASSIGN)"
-                        :list="business"
+                        :disabled="!table.checked.length"
+                        :list="authorizedBusiness"
                         :auto-select="false"
                         setting-key="bk_biz_id"
                         display-key="bk_biz_name"
@@ -42,12 +42,12 @@
                         @on-selected="handleAssignHosts">
                     </cmdb-selector>
                     <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_HOST)"
+                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_RESOURCE_HOST)"
                         @click="handleMultipleEdit">
                         {{$t('BusinessTopology[\'修改\']')}}
                     </bk-button>
                     <bk-button class="options-button options-button-delete" type="default"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_HOST)"
+                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_RESOURCE_HOST)"
                         @click="handleMultipleDelete">
                         {{$t('Common[\'删除\']')}}
                     </bk-button>
@@ -82,11 +82,11 @@
             </div>
         </cmdb-hosts-table>
         <cmdb-slider :is-show.sync="importInst.show" :title="$t('HostResourcePool[\'批量导入\']')">
-           <bk-tab :active-name.sync="importInst.active" slot="content">
+            <bk-tab :active-name.sync="importInst.active" slot="content">
                 <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
-                        :templateUrl="importInst.templateUrl"
-                        :importUrl="importInst.importUrl"
+                        :template-url="importInst.templateUrl"
+                        :import-url="importInst.importUrl"
                         @success="getHostList(true)"
                         @partialSuccess="getHostList(true)">
                         <span slot="download-desc" style="display: inline-block;vertical-align: top;">
@@ -154,7 +154,7 @@
         computed: {
             ...mapGetters(['userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['business', 'bizId']),
+            ...mapGetters('objectBiz', ['authorizedBusiness', 'bizId']),
             columnsConfigKey () {
                 return `${this.userName}_$resource_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
@@ -214,9 +214,9 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: false}),
+                    }, { inject: false }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -253,12 +253,9 @@
             },
             routeToHistory () {
                 this.$router.push({
-                    name: 'modelHistory',
+                    name: 'history',
                     params: {
                         objId: 'host'
-                    },
-                    query: {
-                        relative: '/resource'
                     }
                 })
             },
@@ -297,6 +294,8 @@
                     this.assignBusiness = ''
                     this.$refs.resourceTable.table.checked = []
                     this.$refs.resourceTable.handlePageChange(1)
+                }).catch(e => {
+                    this.assignBusiness = ''
                 })
             },
             getConfirmContent (business) {
@@ -306,22 +305,22 @@
                     content = render('p', [
                         render('span', 'Selected '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, this.table.checked.length),
                         render('span', ' Hosts Transfer to Idle machine under '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, business['bk_biz_name'])
                     ])
                 } else {
                     content = render('p', [
                         render('span', '选中的 '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, this.table.checked.length),
                         render('span', ' 个主机转移到 '),
                         render('span', {
-                            style: {color: '#3c96ff'}
+                            style: { color: '#3c96ff' }
                         }, business['bk_biz_name']),
                         render('span', ' 下的空闲机模块')
                     ])
@@ -371,12 +370,17 @@
                 })
             },
             openAgentApp () {
-                let agentAppUrl = window.Site.agent
-                if (agentAppUrl) {
-                    if (agentAppUrl.indexOf('paasee-g.o.qcloud.com') !== -1) {
-                        window.top.postMessage(JSON.stringify({action: 'open_other_app', app_code: 'bk_nodeman'}), '*')
+                const agent = window.Site.agent
+                if (agent) {
+                    const topWindow = window.top
+                    const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                    if (isPaasConsole) {
+                        topWindow.postMessage(JSON.stringify({
+                            action: 'open_other_app',
+                            app_code: 'bk_nodeman'
+                        }), '*')
                     } else {
-                        window.open(agentAppUrl)
+                        window.open(agent)
                     }
                 } else {
                     this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))

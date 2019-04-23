@@ -2,20 +2,20 @@
     <div class="group-wrapper">
         <cmdb-main-inject
             inject-type="prepend"
-            :class="['btn-group', 'clearfix', {sticky: !!scrollTop}]">
+            :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新增模型"]')}}
+                    {{$t('ModelManagement["新建模型"]')}}
                 </bk-button>
                 <bk-button type="primary"
                     v-else
                     v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
                     @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新增模型"]')}}
+                    {{$t('ModelManagement["新建模型"]')}}
                 </bk-button>
                 <bk-button type="default"
                     :disabled="!$isAuthorized(OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
@@ -30,7 +30,21 @@
                     @click="modelType = 'enable'">
                     {{$t('ModelManagement["启用模型"]')}}
                 </bk-button>
+                <bk-tooltip
+                    :content="$t('ModelManagement[\'停用模型提示\']')"
+                    placenment="bottom"
+                    v-if="!disabledClassifications.length">
+                    <bk-button class="model-type-button disabled"
+                        v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
+                        size="mini"
+                        :disabled="!disabledClassifications.length"
+                        :type="modelType === 'disabled' ? 'primary' : 'default'"
+                        @click="modelType = 'disabled'">
+                        {{$t('ModelManagement["停用模型"]')}}
+                    </bk-button>
+                </bk-tooltip>
                 <bk-button class="model-type-button disabled"
+                    v-else
                     size="mini"
                     :disabled="!disabledClassifications.length"
                     :type="modelType === 'disabled' ? 'primary' : 'default'"
@@ -57,15 +71,15 @@
                         </i>
                     </template>
                 </div>
-                <ul class="model-list clearfix" >
+                <ul class="model-list clearfix">
                     <li class="model-item"
-                    :class="{
-                        'ispaused': model['bk_ispaused'],
-                        'ispre': isInner(model)
-                    }"
-                    v-for="(model, modelIndex) in classification['bk_objects']"
-                    :key="modelIndex"
-                    @click="modelClick(model)">
+                        :class="{
+                            'ispaused': model['bk_ispaused'],
+                            'ispre': isInner(model)
+                        }"
+                        v-for="(model, modelIndex) in classification['bk_objects']"
+                        :key="modelIndex"
+                        @click="modelClick(model)">
                         <div class="icon-box">
                             <i class="icon" :class="[model['bk_obj_icon']]"></i>
                         </div>
@@ -80,7 +94,7 @@
         <bk-dialog
             class="group-dialog dialog"
             :close-icon="false"
-            :hasHeader="false"
+            :has-header="false"
             :width="600"
             :padding="0"
             :quick-close="false"
@@ -92,13 +106,13 @@
                         <div class="label-title">
                             {{$t('ModelManagement["唯一标识"]')}}<span class="color-danger">*</span>
                         </div>
-                        <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyId')}">
+                        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyId') }">
                             <input type="text" class="cmdb-form-input"
-                            name="classifyId"
-                            :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
-                            :disabled="groupDialog.isEdit"
-                            v-model.trim="groupDialog.data['bk_classification_id']"
-                            v-validate="'required|classifyId'">
+                                name="classifyId"
+                                :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
+                                :disabled="groupDialog.isEdit"
+                                v-model.trim="groupDialog.data['bk_classification_id']"
+                                v-validate="'required|classifyId'">
                             <p class="form-error">{{errors.first('classifyId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
@@ -108,13 +122,13 @@
                             {{$t('ModelManagement["名称"]')}}
                         </span>
                         <span class="color-danger">*</span>
-                        <div class="cmdb-form-item" :class="{'is-error': errors.has('classifyName')}">
-                            <input type="text" 
-                            class="cmdb-form-input"
-                            name="classifyName"
-                            :placeholder="$t('ModelManagement[\'请输入名称\']')"
-                            v-model.trim="groupDialog.data['bk_classification_name']"
-                            v-validate="'required|classifyName'">
+                        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('classifyName') }">
+                            <input type="text"
+                                class="cmdb-form-input"
+                                name="classifyName"
+                                :placeholder="$t('ModelManagement[\'请输入名称\']')"
+                                v-model.trim="groupDialog.data['bk_classification_name']"
+                                v-validate="'required|classifyName'">
                             <p class="form-error">{{errors.first('classifyName')}}</p>
                         </div>
                     </label>
@@ -127,7 +141,7 @@
         </bk-dialog>
         <the-create-model
             :is-show.sync="modelDialog.isShow"
-            :title="$t('ModelManagement[\'新增模型\']')"
+            :title="$t('ModelManagement[\'新建模型\']')"
             @confirm="saveModel">
         </the-create-model>
     </div>
@@ -136,13 +150,13 @@
 <script>
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
-    import theModel from './children'
+    // import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
-    import {addMainScrollListener, removeMainScrollListener} from '@/utils/main-scroller'
+    import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
-            theModel,
+            // theModel,
             theCreateModel,
             cmdbMainInject
         },
@@ -160,9 +174,6 @@
                         bk_classification_name: '',
                         id: ''
                     }
-                },
-                model: {
-                    modelId: 'modelId'
                 },
                 modelDialog: {
                     isShow: false
@@ -212,6 +223,9 @@
                 this.scrollTop = event.target.scrollTop
             }
             addMainScrollListener(this.scrollHandler)
+            this.searchClassificationsObjects({
+                params: this.$injectMetadata()
+            })
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
@@ -240,8 +254,6 @@
                 return !!this.$tools.getMetadataBiz(classification)
             },
             isInner (model) {
-                const metadata = model.metadata || {}
-                const label = metadata.label || {}
                 return !this.$tools.getMetadataBiz(model)
             },
             showGroupDialog (isEdit, group) {
@@ -272,12 +284,13 @@
                 if (res.includes(false)) {
                     return
                 }
-                let params = this.$injectMetadata({
+                const params = this.$injectMetadata({
                     bk_supplier_account: this.supplierAccount,
                     bk_classification_id: this.groupDialog.data['bk_classification_id'],
                     bk_classification_name: this.groupDialog.data['bk_classification_name']
                 })
                 if (this.groupDialog.isEdit) {
+                    // eslint-disable-next-line
                     const res = await this.updateClassification({
                         id: this.groupDialog.data.id,
                         params,
@@ -285,13 +298,13 @@
                             requestId: 'updateClassification'
                         }
                     })
-                    this.updateClassify({...params, ...{id: this.groupDialog.data.id}})
+                    this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id } })
                 } else {
                     const res = await this.createClassification({
                         params,
-                        config: {requestId: 'createClassification'}
+                        config: { requestId: 'createClassification' }
                     })
-                    this.updateClassify({...params, ...{id: res.id}})
+                    this.updateClassify({ ...params, ...{ id: res.id } })
                 }
                 this.hideGroupDialog()
             },
@@ -318,7 +331,7 @@
                     bk_obj_id: data['bk_obj_id'],
                     userName: this.userName
                 })
-                await this.createObject({params, config: {requestId: 'createModel'}})
+                await this.createObject({ params, config: { requestId: 'createModel' } })
                 this.$http.cancel('post_searchClassificationsObjects')
                 this.searchClassificationsObjects({
                     params: this.$injectMetadata()

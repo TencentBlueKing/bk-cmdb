@@ -77,6 +77,7 @@ type UpdateUniqueRequest struct {
 	MustCheck bool        `json:"must_check" bson:"must_check"`
 	Keys      []UniqueKey `json:"keys" bson:"keys"`
 	LastTime  Time        `json:"last_time" bson:"last_time"`
+	Metadata  `field:"metadata" json:"metadata" bson:"metadata"`
 }
 
 type UpdateUniqueResult struct {

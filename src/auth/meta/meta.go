@@ -58,7 +58,9 @@ type Basic struct {
 	Name string
 
 	// the instance id of this resource, which could be a model's instance id.
+	// InstanceIDEx is a extend for instanceID which can only be integer, but some resources only have string format id.
 	InstanceID int64
+	InstanceIDEx string
 }
 
 // BackendResourceLayer represent one resource layer
@@ -102,28 +104,30 @@ const (
 	// unknown action, which is also unsupported actions.
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
+	SkipAction Action = "skip"
 
-	Excute Action = "excute"
+	Execute Action = "execute"
 
 	// move resource pool hosts to a business idle module
 	MoveResPoolHostToBizIdleModule Action = "moveResPoolHostToBizIdleModule"
+	AddHostToResourcePool          Action = "addHostToResourcePool"
+	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToBizFaultModule       Action = "moveHostToBizFaultModule"
 	MoveHostToBizIdleModule        Action = "moveHostToBizIdleModule"
-	MoveHostFromModuleToResPool    Action = "moveHostFromModuleToResPool"
 	MoveHostToAnotherBizModule     Action = "moveHostToAnotherBizModule"
 	CleanHostInSetOrModule         Action = "cleanHostInSetOrModule"
 	MoveHostsToBusinessOrModule    Action = "moveHostsToBusinessOrModule"
-	AddHostToResourcePool          Action = "addHostToResourcePool"
 	MoveHostToModule               Action = "moveHostToModule"
 	TransferHost                   Action = "transferHost"
 
 	// process actions
 	BoundModuleToProcess   Action = "boundModuleToProcess"
 	UnboundModuleToProcess Action = "unboundModelToProcess"
-	FindBoundModuleProcess Action = "findBoundModuleProcess"
 
-	// topo
-	ModelTopologyView Action = "modelTopologyView"
+	// system base
+	ModelTopologyView      Action = "modelTopologyView"
+	ModelTopologyOperation Action = "modelTopologyOperation"
+	AdminEntrance          Action = "adminEntrance"
 )
 
 type InitConfig struct {

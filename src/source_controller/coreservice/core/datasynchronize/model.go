@@ -70,7 +70,6 @@ func (m *model) SaveSynchronize(ctx core.ContextParams) errors.CCError {
 	default:
 		return ctx.Error.Errorf(common.CCErrCoreServiceSyncDataClassifyNotExistError, m.dataType, m.DataClassify)
 	}
-	return nil
 }
 
 func (m *model) saveSynchronizeModelClassificationRelation(ctx core.ContextParams) errors.CCError {

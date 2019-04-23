@@ -47,5 +47,6 @@ func (ih *IAMHandler) HandleBusinessSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync all business")
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

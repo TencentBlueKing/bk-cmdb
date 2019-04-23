@@ -19,6 +19,7 @@
         name: 'cmdb-selector',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {

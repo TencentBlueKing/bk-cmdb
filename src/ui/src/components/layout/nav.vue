@@ -1,11 +1,11 @@
 <template>
     <nav class="nav-layout"
-        :class="{'sticked': navStick, 'admin-view': isAdminView}"
+        :class="{ 'sticked': navStick, 'admin-view': isAdminView }"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
-            :class="{unfold: unfold, flexible: !navStick}">
-            <div class="logo" @click="$router.push({name: 'index'})">
+            :class="{ unfold: unfold, flexible: !navStick }">
+            <div class="logo" @click="$router.push({ name: 'index' })">
                 <span class="logo-text">
                     {{$t('Nav["蓝鲸配置平台"]')}}
                 </span>
@@ -16,22 +16,23 @@
             <ul class="menu-list">
                 <li class="menu-item"
                     v-for="(menu, index) in menus"
+                    :key="index"
                     :class="{
                         active: active === menu.id,
                         'is-open': open === menu.id,
                         'is-link': menu.path
                     }">
                     <h3 class="menu-info clearfix"
-                        :class="{'menu-link': menu.path}"
+                        :class="{ 'menu-link': menu.path }"
                         @click="handleMenuClick(menu)">
                         <i :class="['menu-icon', menu.icon]"></i>
                         <span class="menu-name">{{menu.i18n ? $t(menu.i18n) : menu.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
                             v-if="menu.submenu && menu.submenu.length"
-                            :class="{open: menu.id === open}">
+                            :class="{ open: menu.id === open }">
                         </i>
                     </h3>
-                    <div class="menu-submenu" 
+                    <div class="menu-submenu"
                         v-if="menu.submenu && menu.submenu.length"
                         :style="getMenuModelsStyle(menu)">
                         <router-link class="submenu-link" exact
@@ -65,136 +66,85 @@
     </nav>
 </template>
 <script>
-import { mapGetters } from 'vuex'
-import MENU, { NAV_COLLECT } from '@/dictionary/menu'
-import MODEL_ROUTER_CONFIG, { GET_MODEL_PATH } from '@/views/general-model/router.config'
-export default {
-    data () {
-        return {
-            NAV_COLLECT,
-            routerLinkHeight: 42,
-            timer: null
-        }
-    },
-    computed: {
-        ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
-        ...mapGetters('menu', ['active', 'open']),
-        ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
-        collectMenus () {
-            const collectMenus = []
-            const collectedModelIds = this.usercustom[this.classifyNavigationKey] || []
-            const getModelById = this.$store.getters['objectModelClassify/getModelById']
-            collectedModelIds.forEach((modelId, index) => {
-                const model = getModelById(modelId)
-                if (model) {
-                    collectMenus.push({
-                        id: model.bk_obj_id,
-                        name: model.bk_obj_name,
-                        path: GET_MODEL_PATH(modelId),
-                        order: index
-                    })
-                }
-            })
-            return collectMenus
-        },
-        menus () {
-            const menus = this.$tools.clone(MENU)
-            const routes = this.$router.options.routes
-            const isAuthorized = this.$store.getters['auth/isAuthorized']
-            routes.forEach(route => {
-                const meta = (route.meta || {})
-                const auth = meta.auth || {}
-                const menu = meta.menu
-                const shouldShow = this.isAdminView ? menu && menu.adminView : menu
-                if (shouldShow) {
-                    const authorized = auth.view ? isAuthorized(...auth.view.split('.'), true) : true
-                    if (authorized) {
-                        if (menu.parent) {
-                            const parent = menus.find(parent => parent.id === menu.parent) || {}
-                            const submenu = parent.submenu || []
-                            submenu.push(menu)
-                        } else {
-                            const parent = menus.find(parent => parent.id === menu.id) || {}
-                            Object.assign(parent, menu)
-                        }
-                    }
-                }
-            })
-            const collectMenu = menus.find(menu => menu.id === NAV_COLLECT) || {}
-            const collectSubmenu = collectMenu.submenu || []
-            Array.prototype.push.apply(collectSubmenu, this.collectMenus)
-            const availableMenus = menus.filter(menu => {
-                return menu.path ||
-                    (Array.isArray(menu.submenu) && menu.submenu.length)
-            })
-            availableMenus.forEach(menu => {
-                if (Array.isArray(menu.submenu)) {
-                    menu.submenu.sort((prev, next) => prev.order - next.order)
-                }
-            })
-            return availableMenus
-        },
-        unfold () {
-            return this.navStick || !this.navFold
-        },
-        // 展开的分类子菜单高度
-        openedMenuHeight () {
-            const openedMenu = this.menus.find(menu => menu.id === this.open)
-            if (openedMenu) {
-                const submenuCount = (openedMenu.submenu || []).length
-                return submenuCount * this.routerLinkHeight
-            }
-            return 0
-        }
-    },
-    methods: {
-        handleMouseEnter () {
-            if (this.timer) {
-                clearTimeout(this.timer)
-            }
-            this.$store.commit('setNavStatus', { fold: false })
-        },
-        handleMouseLeave () {
-            this.timer = setTimeout(() => {
-                this.$store.commit('setNavStatus', { fold: true })
-            }, 300)
-        },
-        // 分类点击事件
-        handleMenuClick (menu) {
-            this.checkPath(menu)
-            this.toggleMenu(menu)
-        },
-        getMenuModelsStyle (menu) {
+    import { mapGetters } from 'vuex'
+    // eslint-disable-next-line
+    import MENU, { NAV_COLLECT } from '@/dictionary/menu'
+    // eslint-disable-next-line
+    import MODEL_ROUTER_CONFIG, { GET_MODEL_PATH } from '@/views/general-model/router.config'
+    export default {
+        data () {
             return {
-                height: (this.unfold && menu.id === this.open) ? this.openedMenuHeight + 'px' : 0
+                NAV_COLLECT,
+                routerLinkHeight: 42,
+                timer: null
             }
         },
-        // 被点击的有对应的路由，则跳转
-        checkPath (menu) {
-            if (menu.path) {
-                this.$router.push({path: menu.path})
+        computed: {
+            ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
+            ...mapGetters('menu', ['active', 'open', 'menus']),
+            ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
+            unfold () {
+                return this.navStick || !this.navFold
+            },
+            // 展开的分类子菜单高度
+            /* eslint-disable */
+            openedMenuHeight () {
+                const openedMenu = this.menus.find(menu => menu.id === this.open)
+                if (openedMenu) {
+                    const submenuCount = (openedMenu.submenu || []).length
+                    return submenuCount * this.routerLinkHeight
+                }
             }
+            /* eslint-disable end */
         },
-        // 切换展开的分类
-        toggleMenu (menu) {
-            const openMenu = menu.id === this.open ? null : menu.id
-            this.$store.commit('menu/setOpenMenu', openMenu)
-        },
-        // 切换导航展开固定
-        toggleNavStick () {
-            this.$store.commit('setNavStatus', {
-                fold: !this.navFold,
-                stick: !this.navStick
-            })
-        },
-        handleDeleteCollection (model) {
-            const customNavigation = this.usercustom[this.classifyNavigationKey] || []
-            this.$store.dispatch('userCustom/saveUsercustom', {
-                [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
-            })
+        methods: {
+            handleMouseEnter () {
+                if (this.timer) {
+                    clearTimeout(this.timer)
+                }
+                this.$store.commit('setNavStatus', { fold: false })
+            },
+            handleMouseLeave () {
+                this.timer = setTimeout(() => {
+                    this.$store.commit('setNavStatus', { fold: true })
+                }, 300)
+            },
+            // 分类点击事件
+            handleMenuClick (menu) {
+                this.checkPath(menu)
+                this.toggleMenu(menu)
+            },
+            getMenuModelsStyle (menu) {
+                return {
+                    height: (this.unfold && menu.id === this.open) ? this.openedMenuHeight + 'px' : 0
+                }
+            },
+            // 被点击的有对应的路由，则跳转
+            checkPath (menu) {
+                if (menu.path) {
+                    this.$router.push({ path: menu.path })
+                }
+            },
+            // 切换展开的分类
+            toggleMenu (menu) {
+                const openMenu = menu.id === this.open ? null : menu.id
+                this.$store.commit('menu/setOpenMenu', openMenu)
+            },
+            // 切换导航展开固定
+            toggleNavStick () {
+                this.$store.commit('setNavStatus', {
+                    fold: !this.navFold,
+                    stick: !this.navStick
+                })
+            },
+            handleDeleteCollection (model) {
+                const customNavigation = this.usercustom[this.classifyNavigationKey] || []
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
+                })
+            }
         }
     }
-}
 </script>
 <style lang="scss" scoped>
 $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);

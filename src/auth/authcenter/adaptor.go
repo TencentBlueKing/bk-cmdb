@@ -21,6 +21,26 @@ import (
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
+// ResourceTypeID is resource's type in auth center.
+func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
+	var err error
+	info := new(ResourceInfo)
+	info.ResourceName = attribute.Basic.Name
+
+	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
+	if err != nil {
+		return info, err
+	}
+	info.ResourceType = *resourceTypeID
+
+	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
+}
+
 // Adaptor is a middleware wrapper which works for converting concepts
 // between bk-cmdb and blueking auth center. Especially the policies
 // in auth center.
@@ -30,17 +50,16 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	case meta.Business:
 		iamResourceType = SysBusinessInstance
 
-	case meta.ModelUnique,
+	case meta.Model,
+		meta.ModelUnique,
 		meta.ModelAttribute,
 		meta.ModelAttributeGroup:
-
-		fallthrough
-	case meta.Model:
 		if businessID > 0 {
 			iamResourceType = BizModel
 		} else {
 			iamResourceType = SysModel
 		}
+
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
 		iamResourceType = BizTopoInstance
 
@@ -88,7 +107,16 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = SysEventPushing
 	case meta.DynamicGrouping:
 		iamResourceType = BizCustomQuery
-
+	case meta.AuditLog:
+		if businessID <= 0 {
+			iamResourceType = SysAuditLog
+		} else {
+			iamResourceType = BizAuditLog
+		}
+	case meta.SystemBase:
+		iamResourceType = SysSystemBase
+	case meta.UserCustom:
+		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	default:
@@ -96,26 +124,6 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 	}
 
 	return &iamResourceType, nil
-}
-
-// ResourceTypeID is resource's type in auth center.
-func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
-	var err error
-	info := new(ResourceInfo)
-	info.ResourceName = attribute.Basic.Name
-
-	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
-	if err != nil {
-		return info, err
-	}
-	info.ResourceType = *resourceTypeID
-
-	info.ResourceID, err = GenerateResourceID(info.ResourceType, attribute)
-	if err != nil {
-		return nil, err
-	}
-
-	return info, nil
 }
 
 // ResourceTypeID is resource's type in auth center.
@@ -131,6 +139,7 @@ const (
 	SysModel            ResourceTypeID = "sysModel"
 	SysInstance         ResourceTypeID = "sysInstance"
 	SysAssociationType  ResourceTypeID = "sysAssociationType"
+	SysAuditLog         ResourceTypeID = "sysAuditLog"
 )
 
 // Business Resource
@@ -143,6 +152,11 @@ const (
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
+	BizAuditLog        ResourceTypeID = "bizAuditLog"
+)
+
+const (
+	UserCustom ResourceTypeID = "userCustom"
 )
 
 type ActionID string
@@ -170,7 +184,6 @@ const (
 	// located system/host/assignHostsToBusiness in auth center.
 	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
 	BindModule            ActionID = "bindModule"
-	BindModuleQuery       ActionID = "bindModuleQuery"
 	AdminEntrance         ActionID = "adminEntrance"
 )
 
@@ -178,13 +191,26 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
 		r.Basic.Type == meta.ModelUnique ||
 		r.Basic.Type == meta.ModelAttribute {
-		if r.Action == meta.Delete || r.Action == meta.Update {
+		if r.Action == meta.Delete || r.Action == meta.Update || r.Action == meta.Create {
 			return Edit, nil
 		}
 	}
-	if r.Action == meta.Archive {
-		return Archive, nil
+
+	if r.Basic.Type == meta.Business {
+		if r.Action == meta.Archive {
+			return Archive, nil
+		}
+
+		// edit a business.
+		if r.Action == meta.Create {
+			return Create, nil
+		}
+
+		if r.Action == meta.Update {
+			return Edit, nil
+		}
 	}
+
 	if r.Action == meta.Find || r.Action == meta.Delete || r.Action == meta.Create {
 		if r.Basic.Type == meta.MainlineModel {
 			return ModelTopologyOperation, nil
@@ -206,8 +232,19 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 			return BindModule, nil
 		}
 
-		if r.Action == meta.FindBoundModuleProcess {
-			return BindModuleQuery, nil
+	}
+
+	if r.Basic.Type == meta.HostInstance {
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Edit, nil
+		}
+
+		if r.Action == meta.AddHostToResourcePool {
+			return Create, nil
+		}
+
+		if r.Action == meta.MoveResPoolHostToBizIdleModule {
+			return Create, nil
 		}
 	}
 
@@ -231,12 +268,14 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostToBizFaultModule,
 		meta.MoveHostToBizIdleModule,
-		meta.MoveHostFromModuleToResPool,
 		meta.MoveHostToAnotherBizModule,
 		meta.CleanHostInSetOrModule,
 		meta.TransferHost,
 		meta.MoveHostToModule:
-		return ModuleTransfer, nil
+		return Edit, nil
+
+	case meta.MoveHostFromModuleToResPool:
+		return Delete, nil
 
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool
@@ -247,7 +286,12 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
-
+	case meta.ModelTopologyView:
+		return ModelTopologyView, nil
+	case meta.ModelTopologyOperation:
+		return ModelTopologyOperation, nil
+	case meta.AdminEntrance:
+		return AdminEntrance, nil
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)

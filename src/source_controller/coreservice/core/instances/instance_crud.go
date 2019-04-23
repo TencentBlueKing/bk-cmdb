@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
@@ -97,6 +98,7 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 	if tableName == common.BKTableNameBaseInst {
 		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %s", tableName, condition.ToMapStr())
 	instHandler := m.dbProxy.Table(tableName).Find(condition.ToMapStr())
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
@@ -106,6 +108,7 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 		instHandler = instHandler.Sort(fileld)
 	}
 	err = instHandler.Start(uint64(inputParam.Limit.Offset)).Limit(uint64(inputParam.Limit.Limit)).All(ctx, &results)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %s, results: %+v", tableName, condition.ToMapStr(), results)
 
 	return results, err
 }

@@ -1,7 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
+import StatusError from './StatusError.js'
+
 import preload from '@/setup/preload'
+import afterload from '@/setup/afterload'
 import $http from '@/api'
 
 import index from '@/views/index/router.config'
@@ -20,14 +23,27 @@ import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 
-import {
-    GET_AUTH_META,
-    GET_MODEL_INST_AUTH_META
-} from '@/dictionary/auth'
-
 Vue.use(Router)
 
-const statusRouter = [
+export const viewRouters = [
+    index,
+    audit,
+    businessModel,
+    customQuery,
+    eventpush,
+    history,
+    hosts,
+    modelAssociation,
+    modelTopology,
+    process,
+    resource,
+    topology,
+    ...generalModel,
+    ...business,
+    ...model
+]
+
+const statusRouters = [
     {
         name: '403',
         path: '/403',
@@ -40,60 +56,44 @@ const statusRouter = [
         name: 'error',
         path: '/error',
         components: require('@/views/status/error')
+    }, {
+        name: 'requireBusiness',
+        path: '/require-business',
+        components: require('@/views/status/require-business')
     }
 ]
+
+const redirectRouters = [{
+    path: '*',
+    redirect: {
+        name: '404'
+    }
+}, {
+    path: '/',
+    redirect: {
+        name: index.name
+    }
+}]
 
 const router = new Router({
     mode: 'hash',
     routes: [
-        {
-            path: '*',
-            redirect: {
-                name: '404'
-            }
-        }, {
-            path: '/',
-            redirect: {
-                name: index.name
-            }
-        },
-        ...statusRouter,
-        ...generalModel,
-        index,
-        audit,
-        ...business,
-        businessModel,
-        customQuery,
-        eventpush,
-        history,
-        hosts,
-        ...model,
-        modelAssociation,
-        modelTopology,
-        process,
-        resource,
-        topology
+        ...redirectRouters,
+        ...statusRouters,
+        ...viewRouters
     ]
 })
-
-const getAuthMeta = (type, to, meta) => {
-    if (meta === GET_MODEL_INST_AUTH_META) {
-        const models = router.app.$store.getters['objectModelClassify/models']
-        return GET_MODEL_INST_AUTH_META(to.params.objId, type, models)
-    }
-    return GET_AUTH_META(type)
-}
 
 const getAuth = to => {
     const auth = to.meta.auth || {}
     const view = auth.view
-    const operation = Array.isArray(auth.operation) ? auth.operation : []
-    const operationAuthMeta = operation.map(type => getAuthMeta(type, to, auth.meta))
-    if (view) {
-        operationAuthMeta.push(getAuthMeta(view, to, auth.meta))
-    }
-    if (operationAuthMeta.length) {
-        return router.app.$store.dispatch('auth/getOperationAuth', operationAuthMeta)
+    const operation = auth.operation || []
+    const routerAuth = view ? [view, ...operation] : operation
+    if (routerAuth.length) {
+        return router.app.$store.dispatch('auth/getAuth', {
+            type: 'operation',
+            list: routerAuth
+        })
     }
     return Promise.resolve([])
 }
@@ -104,8 +104,7 @@ const isViewAuthorized = to => {
     if (!view) {
         return true
     }
-    const authMeta = getAuthMeta(view, to, auth.meta)
-    const viewAuth = router.app.$store.getters['auth/isAuthorized'](authMeta.resource_type, authMeta.action)
+    const viewAuth = router.app.$store.getters['auth/isAuthorized'](view)
     return viewAuth
 }
 
@@ -118,6 +117,10 @@ const cancelRequest = () => {
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 const setMenuState = to => {
+    const isStatusRoute = statusRouters.some(route => route.name === to.name)
+    if (isStatusRoute) {
+        return false
+    }
     const menu = to.meta.menu || {}
     const menuId = menu.id
     const parentId = menu.parent
@@ -125,6 +128,32 @@ const setMenuState = to => {
     if (parentId) {
         router.app.$store.commit('menu/setOpenMenu', parentId)
     }
+}
+
+const checkAuthDynamicMeta = (to, from) => {
+    router.app.$store.commit('auth/clearDynamicMeta')
+    const auth = to.meta.auth || {}
+    const setDynamicMeta = auth.setDynamicMeta
+    if (typeof setDynamicMeta === 'function') {
+        setDynamicMeta(to, from, router.app)
+    }
+}
+
+const checkAvailable = (to, from) => {
+    if (typeof to.meta.checkAvailable === 'function') {
+        return to.meta.checkAvailable(to, from, router.app)
+    }
+    return true
+}
+
+const checkBusiness = to => {
+    const getters = router.app.$store.getters
+    const isAdminView = getters.isAdminView
+    if (isAdminView || !to.meta.requireBusiness) {
+        return true
+    }
+    const authorizedBusiness = getters['objectBiz/authorizedBusiness']
+    return authorizedBusiness.length
 }
 
 const isShouldShow = to => {
@@ -136,37 +165,69 @@ const isShouldShow = to => {
     return true
 }
 
+const setupStatus = {
+    preload: true,
+    afterload: true
+}
+
 router.beforeEach((to, from, next) => {
-    router.app.$nextTick(async () => {
+    Vue.nextTick(async () => {
         try {
-            const isStatusPage = statusRouter.some(status => status.name === to.name)
-            if (isStatusPage) {
-                next()
-            } else if (!isShouldShow(to)) {
+            if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
                 setLoading(true)
                 setMenuState(to)
+
                 await cancelRequest()
-                await preload(router.app)
-                const auth = await getAuth(to)
-                const viewAuth = isViewAuthorized(to)
-                if (viewAuth) {
-                    next()
-                } else {
-                    setLoading(false)
-                    next({ name: '403' })
+                if (setupStatus.preload) {
+                    await preload(router.app)
                 }
+
+                checkAuthDynamicMeta(to, from)
+
+                const isAvailable = checkAvailable(to, from)
+                if (!isAvailable) {
+                    throw new StatusError({ name: '404' })
+                }
+                await getAuth(to)
+                const viewAuth = isViewAuthorized(to)
+                if (!viewAuth) {
+                    throw new StatusError({ name: '403' })
+                }
+
+                const isBusinessCheckPass = checkBusiness(to)
+                if (!isBusinessCheckPass) {
+                    throw new StatusError({ name: 'requireBusiness' })
+                }
+
+                next()
             }
         } catch (e) {
+            console.log(e)
+            if (e instanceof StatusError) {
+                next({ name: e.name })
+            } else {
+                next({ name: 'error' })
+            }
             setLoading(false)
-            next({name: 'error'})
+        } finally {
+            setupStatus.preload = false
         }
     })
 })
 
 router.afterEach((to, from) => {
-    setLoading(false)
+    try {
+        if (setupStatus.afterload) {
+            afterload(router.app, to, from)
+        }
+    } catch (e) {
+        // ignore
+    } finally {
+        setupStatus.afterload = false
+        setLoading(false)
+    }
 })
 
 export default router

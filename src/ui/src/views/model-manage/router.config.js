@@ -1,3 +1,4 @@
+import { getMetadataBiz } from '@/utils/tools'
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
     C_MODEL_GROUP,
@@ -47,7 +48,22 @@ export default [{
             operation: [
                 OPERATION.U_MODEL,
                 OPERATION.D_MODEL
-            ]
+            ],
+            setDynamicMeta: (to, from, app) => {
+                const modelId = to.params.modelId
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                const bizId = getMetadataBiz(model)
+                if (bizId) {
+                    app.$store.commit('auth/setBusinessMeta', {
+                        bk_biz_id: bizId
+                    })
+                }
+            }
+        },
+        checkAvailable: (to, from, app) => {
+            const modelId = to.params.modelId
+            const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+            return !!model
         }
     }
 }]

@@ -200,7 +200,8 @@ const (
 
 const (
 	// BKFieldID the id definition
-	BKFieldID = "id"
+	BKFieldID   = "id"
+	BKFieldName = "name"
 
 	// BKDefaultField the default field
 	BKDefaultField = "default"
@@ -628,6 +629,8 @@ const DefaultAppName string = "资源池"
 
 const DefaultCloudName string = "default area"
 
+const DefaultInstName string = "实例名"
+
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
@@ -849,6 +852,7 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
+	HostOSTypeEnumAIX     = "3"
 )
 
 // integer const

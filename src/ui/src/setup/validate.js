@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import { language } from '@/i18n'
-import veeValidate, {Validator} from 'vee-validate'
+import veeValidate, { Validator } from 'vee-validate'
 
 const customRules = {
     singlechar: {
@@ -148,7 +148,7 @@ const dictionary = {
     }
 }
 
-for (let rule in customRules) {
+for (const rule in customRules) {
     Validator.extend(rule, customRules[rule])
 }
 Validator.localize(language)

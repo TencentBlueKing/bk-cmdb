@@ -25,16 +25,14 @@ import (
 func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string) ([]authmeta.BackendResource, error) {
 	iamResources, err := ih.authManager.Authorize.ListResources(context.Background(), ra)
 	if err != nil {
-		blog.Errorf("synchronize failed, ListResources failed, task: %s, err: %+v", taskName, err)
+		blog.Errorf("synchronize failed, ListResources from iam failed, task: %s, err: %+v", taskName, err)
 		return nil, err
 	}
 
+	blog.V(5).Infof("ih.authManager.Authorize.ListResources result: %+v", iamResources)
 	realResources := make([]authmeta.BackendResource, 0)
 	for _, iamResource := range iamResources {
 		if len(iamResource) == 0 {
-			continue
-		}
-		if len(iamIDPrefix) == 0 {
 			continue
 		}
 		if strings.HasPrefix(iamResource[len(iamResource)-1].ResourceID, iamIDPrefix) {
@@ -45,7 +43,7 @@ func (ih *IAMHandler) getIamResources(taskName string, ra *authmeta.ResourceAttr
 	return realResources, nil
 }
 
-func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute) error {
+func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribute, iamIDPrefix string, resources []authmeta.ResourceAttribute, skipDeregister bool) error {
 	iamResources, err := ih.getIamResources(taskName, ra, iamIDPrefix)
 	if err != nil {
 		blog.Errorf("task: %s, get iam resources failed, err: %+v", taskName, err)
@@ -99,6 +97,10 @@ func (ih *IAMHandler) diffAndSync(taskName string, ra *authmeta.ResourceAttribut
 		}
 	}
 
+	if skipDeregister == true {
+		return nil
+	}
+	
 	// deregister resource id that hasn't been hit
 	if len(resources) == 0 {
 		blog.Info("cmdb resource not found of current category, skip deregister resource for safety.")

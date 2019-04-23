@@ -13,15 +13,13 @@
 package app
 
 import (
-	"configcenter/src/framework/core/errors"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"plugin"
 	"strings"
 	"time"
-
-	"github.com/holmeswang/contrib/sessions"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -32,6 +30,8 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
+
+	"github.com/holmeswang/contrib/sessions"
 )
 
 type WebServer struct {
@@ -70,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return errors.New("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 
 	redisAddress := webSvr.Config.Session.Host
@@ -125,8 +125,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	select {}
-	return nil
-
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
@@ -157,6 +155,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
+	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
+	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
 	w.Config.ConfigMap = current.ConfigMap
 
 }

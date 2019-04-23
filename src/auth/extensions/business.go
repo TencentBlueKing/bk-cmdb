@@ -28,9 +28,11 @@ import (
 /*
  * business related auth interface
  */
+ 
+ // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
-	condition := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &condition)
+	cond := metadata.QueryCondition{}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
 		blog.Errorf("list business failed, err: %v", err)
 		return nil, err
@@ -42,7 +44,7 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 		businessSimplify := BusinessSimplify{}
 		_, err := businessSimplify.Parse(business)
 		if err != nil {
-			blog.Errorf("parse business %+v simplify information failed, err: %+v", business, err)
+			blog.Errorf("parse businesses %+v simplify information failed, err: %+v", business, err)
 			continue
 		}
 
@@ -60,15 +62,16 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
-		blog.V(3).Infof("get instances by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
+		blog.V(3).Infof("get businesses by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get businesses by id failed, err: %+v", err)
 	}
+	blog.V(5).Infof("get businesses by id result: %+v", result)
 	instances := make([]BusinessSimplify, 0)
 	for _, cls := range result.Data.Info {
 		instance := BusinessSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("parse business from db data failed, err: %+v", err)
 		}
 		instances = append(instances, instance)
 	}
@@ -86,7 +89,6 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 				InstanceID: business.BKAppIDField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      business.BKAppIDField,
 		}
 
 		resources = append(resources, resource)
@@ -97,8 +99,8 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSimplify) (int64, error) {
 	var bizID int64
 	for idx, business := range businesses {
-		if idx == 0 && business.BKAppIDField != bizID {
-			return 0, fmt.Errorf("get multiple business id from businesses")
+		if idx != 0 && business.BKAppIDField != bizID {
+			return 0, fmt.Errorf("get multiple business id[%d:%d] from businesses", bizID, business.BKAppIDField)
 		}
 		bizID = business.BKAppIDField
 	}
@@ -118,7 +120,20 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 	return am.authorize(ctx, header, bizID, resources...)
 }
 
+func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	if err != nil {
+		return fmt.Errorf("authorize businesses failed, get business by id failed, err: %+v", err)
+	}
+
+	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+}
+
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -132,30 +147,46 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
-	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	if len(ids) == 0 {
+		return nil
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
-	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+	if len(ids) == 0 {
+		return nil
 	}
-	return am.UpdateRegisteredInstances(ctx, header, instances...)
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered businesses failed, get businesses by id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredBusiness(ctx, header, businesses...)
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
-	if err != nil {
-		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+	if len(ids) == 0 {
+		return nil
 	}
-	return am.DeregisterClassification(ctx, header, instances...)
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("deregister businesses failed, get businesses by id failed, err: %+v", err)
+	}
+	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -163,6 +194,10 @@ func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if len(businessIDs) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)
@@ -171,6 +206,10 @@ func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if len(businesses) == 0 {
+		return nil
+	}
+
 	// make auth resources
 	resources := am.MakeResourcesByBusiness(header, meta.EmptyAction, businesses...)
 
@@ -178,6 +217,10 @@ func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if len(businessIDs) == 0 {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)

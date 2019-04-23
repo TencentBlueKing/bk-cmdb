@@ -30,7 +30,7 @@ export default [{
             adminView: true
         },
         auth: {
-            view: R_BUSINESS,
+            view: '',
             operation: Object.values(OPERATION)
         }
     }
@@ -40,7 +40,7 @@ export default [{
     component: () => import('./archived.vue'),
     meta: {
         auth: {
-            view: '',
+            view: BUSINESS_ARCHIVE,
             operation: [BUSINESS_ARCHIVE]
         }
     }

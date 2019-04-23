@@ -24,7 +24,7 @@
                 </i>
             </div>
             <div class="filter-group"
-                v-for="(property, index) in customFieldProperties"
+                v-for="property in customFieldProperties"
                 :key="property['bk_property_id']">
                 <label class="filter-label">{{getFilterLabel(property)}}</label>
                 <div class="filter-field clearfix">
@@ -54,11 +54,11 @@
                     </component>
                 </div>
             </div>
-            <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
+            <div class="filter-button clearfix" :class="{ sticky: layout.scroll }">
                 <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
                 <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
-                    :class="{collecting: collection.show}"
+                    :class="{ collecting: collection.show }"
                     @click="collection.show = true">
                     <i class="icon-cc-collection"></i>
                 </bk-button>
@@ -165,6 +165,7 @@
                 'applyingProperties',
                 'applyingConditions'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             filterConfigProperties () {
                 const properties = {}
                 Object.keys(this.properties).forEach(objId => {
@@ -267,9 +268,9 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: this.$route.name !== 'resource'}),
+                    }, { inject: this.$route.name !== 'resource' }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -283,7 +284,7 @@
             },
             getFilterLabel (property) {
                 const objId = property['bk_obj_id']
-                const propertyModel = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const propertyModel = this.models.find(model => model['bk_obj_id'] === objId)
                 return `${propertyModel['bk_obj_name']} - ${property['bk_property_name']}`
             },
             getOperatorType (property) {
@@ -326,7 +327,7 @@
                         let value = propertyCondition.value
                         if (!['', null].includes(value)) {
                             if (propertyCondition.operator === '$in') {
-                                let splitValue = [...(new Set(value.split(',').map(val => val.trim())))]
+                                const splitValue = [...(new Set(value.split(',').map(val => val.trim())))]
                                 value = splitValue.length > 1 ? [...splitValue, value] : splitValue
                             }
                             objParams.condition.push({
@@ -395,8 +396,8 @@
                     'bk_host_outerip': true,
                     exact: 0
                 }
-                for (let objId in this.condition) {
-                    for (let propertyId in this.condition[objId]) {
+                for (const objId in this.condition) {
+                    for (const propertyId in this.condition[objId]) {
                         this.condition[objId][propertyId].value = ''
                     }
                 }
@@ -420,10 +421,10 @@
                     '$regex': '~',
                     '$in': '~'
                 }
-                params.condition.forEach(({condition, bk_obj_id: objId}) => {
+                params.condition.forEach(({ condition, bk_obj_id: objId }) => {
                     if (!['biz'].includes(objId) && condition.length) {
                         const objContent = []
-                        condition.forEach(({field, operator, value}) => {
+                        condition.forEach(({ field, operator, value }) => {
                             objContent.push(`${field}${operatorMap[operator]}${Array.isArray(value) ? value.join(',') : value}`)
                         })
                         content.push(`${objId}: ${objContent.join(' | ')}`)
@@ -456,8 +457,8 @@
                     'ip_list': params.ip.data
                 }
                 const queryParams = []
-                params.condition.forEach(({condition, bk_obj_id: objId}) => {
-                    condition.forEach(({field, operator, value}) => {
+                params.condition.forEach(({ condition, bk_obj_id: objId }) => {
+                    condition.forEach(({ field, operator, value }) => {
                         queryParams.push({
                             'bk_obj_id': objId,
                             field,
@@ -625,7 +626,7 @@
             font-size: 12px;
         }
         .form-name {
-            color: $cmdbTextColor;    
+            color: $cmdbTextColor;
         }
         .form-error {
             position: absolute;

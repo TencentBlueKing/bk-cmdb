@@ -60,7 +60,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: groupType,
-					ResourceID: []ResourceID{
+					ResourceID: []RscTypeAndID{
 						{ResourceType: groupType, ResourceID: strconv.FormatInt(cls.ID, 10)},
 					},
 					ResourceName: cls.ClassificationName,
@@ -80,20 +80,14 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 	// init model description
 	for _, model := range configs.Models {
 		bizID, _ := model.Metadata.Label.GetBusinessID()
-		clsID := clsName2ID[fmt.Sprintf("%d:%s", bizID, model.ObjCls)]
-		if clsID <= 0 {
-			return fmt.Errorf("classification id not found")
-		}
 
 		scopeType := ScopeTypeIDSystem
 		ScopeID := SystemIDCMDB
-		groupType := SysModelGroup
 		modelType := SysModel
 
 		if bizID > 0 {
 			scopeType = ScopeTypeIDBiz
 			ScopeID = strconv.FormatInt(bizID, 10)
-			groupType = BizModelGroup
 			modelType = BizModel
 		}
 
@@ -103,8 +97,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: modelType,
-					ResourceID: []ResourceID{
-						{ResourceType: groupType, ResourceID: strconv.FormatInt(clsID, 10)},
+					ResourceID: []RscTypeAndID{
 						{ResourceType: modelType, ResourceID: strconv.FormatInt(model.ID, 10)},
 					},
 					ResourceName: model.ObjectName,
@@ -129,7 +122,7 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 			Resources: []ResourceEntity{
 				{
 					ResourceType: SysBusinessInstance,
-					ResourceID: []ResourceID{
+					ResourceID: []RscTypeAndID{
 						{ResourceType: SysBusinessInstance, ResourceID: strconv.FormatInt(biz.BizID, 10)},
 					},
 					ResourceName: biz.BizName,

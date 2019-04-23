@@ -19,8 +19,6 @@ import (
 	"strings"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -51,10 +49,9 @@ type InstOperationInterface interface {
 }
 
 // NewInstOperation create a new inst operation instance
-func NewInstOperation(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) InstOperationInterface {
+func NewInstOperation(client apimachinery.ClientSetInterface) InstOperationInterface {
 	return &commonInst{
-		clientSet:   client,
-		authManager: authManager,
+		clientSet: client,
 	}
 }
 
@@ -65,14 +62,15 @@ type InputKey string
 type InstID int64
 
 type BatchResult struct {
-	Errors       []string `json:"error"`
-	Success      []string `json:"success"`
-	UpdateErrors []string `json:"update_error"`
+	Errors         []string `json:"error"`
+	Success        []string `json:"success"`
+	SuccessCreated []int64  `json:"success_created"`
+	SuccessUpdated []int64  `json:"success_updated"`
+	UpdateErrors   []string `json:"update_error"`
 }
 
 type commonInst struct {
 	clientSet    apimachinery.ClientSetInterface
-	authManager  *extensions.AuthManager
 	modelFactory model.Factory
 	instFactory  inst.Factory
 	asst         AssociationOperationInterface
@@ -102,12 +100,6 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
-
-	// auth: check authorization
-	if err := c.authManager.AuthorizeResourceCreateByObject(params.Context, params.Header, meta.Update, object); err != nil {
-		blog.V(2).Infof("create unique for model %d failed, authorization failed, err: %+v", object.ID, err)
-		return nil, err
-	}
 
 	// all the instances's name should not be same,
 	// so we need to check first.
@@ -158,7 +150,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 			}
 			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
+				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v", err)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
@@ -204,17 +196,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 	}
 
-	// auth register new created
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, createdInstanceIDs...); err != nil {
-		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
-		return nil, err
-	}
-
-	// auth update registered instances
-	if err := c.authManager.UpdateRegisteredInstanceByID(params.Context, params.Header, updatedInstanceIDs...); err != nil {
-		blog.V(2).Infof("update registered instances to iam failed, err: %+v", err)
-		return nil, err
-	}
+	results.SuccessCreated = createdInstanceIDs
+	results.SuccessUpdated = updatedInstanceIDs
 
 	return results, nil
 }
@@ -262,17 +245,6 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
-		return nil, err
-	}
-
-	instanceID, err := item.GetInstID()
-	if err != nil {
-		return nil, fmt.Errorf("unexpected error, create instance success, but get id failed, err: %+v", err)
-	}
-
-	// auth: register instances to iam
-	if err := c.authManager.RegisterInstancesByID(params.Context, params.Header, instanceID); err != nil {
-		blog.V(2).Infof("register instances to iam failed, err: %+v", err)
 		return nil, err
 	}
 
@@ -885,6 +857,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
 		input := &metadata.QueryCondition{Condition: queryCond}
+		input.Limit.Offset = int64(cond.Start)
+		input.Limit.Limit = int64(cond.Limit)
+		input.Fields = strings.Split(cond.Fields, ",")
+		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
 		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())

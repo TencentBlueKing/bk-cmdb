@@ -50,9 +50,8 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       SysModel,
-		ResourceTypeName:     "模型",
-		ParentResourceTypeID: SysModelGroup,
+		ResourceTypeID:   SysModel,
+		ResourceTypeName: "模型",
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -148,38 +147,6 @@ var expectSystemResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       SysHostInstance,
-		ResourceTypeName:     "主机",
-		ParentResourceTypeID: "",
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          ModuleTransfer,
-				ActionName:        "分配到业务",
-				IsRelatedResource: true,
-			},
-		},
-	},
-	{
 		ResourceTypeID:       SysEventPushing,
 		ResourceTypeName:     "事件推送",
 		ParentResourceTypeID: "",
@@ -221,10 +188,39 @@ var expectSystemResourceType = []ResourceType{
 				ActionName:        "管理页面入口",
 				IsRelatedResource: false,
 			},
+		},
+	},
+	{
+		ResourceTypeID:       SysAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Actions: []Action{
 			{
-				ActionID:          ModelTopologyView,
-				ActionName:        "模型拓扑视图",
+				ActionID:          Get,
+				ActionName:        "查询",
 				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysHostInstance,
+		ResourceTypeName:     "主机（资源池）",
+		ParentResourceTypeID: "",
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
 			},
 		},
 	},

@@ -14,6 +14,7 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -43,116 +44,235 @@ func (am *AuthManager) CollectInstancesByModelID(ctx context.Context, header htt
 		instance := InstanceSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("get instances by object failed, err: %+v", err)
 		}
 		instances = append(instances, instance)
 	}
 	return instances, nil
 }
 
-func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header http.Header, instanceIDs ...string) ([]InstanceSimplify, error) {
+func (am *AuthManager) collectInstancesByInstanceIDs(ctx context.Context, header http.Header, objectID string, instanceIDs ...string) ([]InstanceSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	instanceIDs = util.StrArrayUnique(instanceIDs)
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKInstIDField).In(instanceIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, objectID, &cond)
 	if err != nil {
-		blog.V(3).Infof("get instances by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get instances by id failed, err: %+v", err)
+		blog.V(5).Infof("collectInstancesByInstanceIDs failed, get instances by id failed, id: %+v, err: %+v", instanceIDs, err)
+		return nil, fmt.Errorf("get instances by id failed, id: %+v, err: %+v", instanceIDs, err)
 	}
 	instances := make([]InstanceSimplify, 0)
 	for _, cls := range result.Data.Info {
 		instance := InstanceSimplify{}
 		_, err = instance.Parse(cls)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			blog.V(5).Infof("collectInstancesByInstanceIDs failed, parse instance from db data failed, instance: %+v, err: %+v", cls, err)
+			return nil, fmt.Errorf("parse instance from db data failed, err: %+v", err)
 		}
 		instances = append(instances, instance)
 	}
 	return instances, nil
 }
 
-func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]InstanceSimplify, error) {
+func (am *AuthManager) collectInstancesByRawIDs(ctx context.Context, header http.Header, modelID string, ids ...int64) ([]InstanceSimplify, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
-
 	cond := metadata.QueryCondition{
-		Condition: condition.CreateCondition().Field(common.BKFieldID).In(ids).ToMapStr(),
+		Condition: condition.CreateCondition().Field(common.GetInstIDField(modelID)).In(ids).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDObject, &cond)
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, modelID, &cond)
 	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
-		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
+		blog.V(3).Infof("get instance by id failed, err: %+v", err)
+		return nil, fmt.Errorf("get instance by id failed, err: %+v", err)
 	}
 	instances := make([]InstanceSimplify, 0)
-	for _, cls := range result.Data.Info {
-		classification := InstanceSimplify{}
-		_, err = classification.Parse(cls)
+	for _, inst := range result.Data.Info {
+		instance := InstanceSimplify{}
+		_, err = instance.Parse(inst)
 		if err != nil {
-			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+			return nil, fmt.Errorf("get instance by object failed, err: %+v", err)
 		}
-		instances = append(instances, classification)
+		instances = append(instances, instance)
 	}
 	return instances, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromInstances(classifications ...InstanceSimplify) (int64, error) {
-	var businessID int64
-	for idx, instance := range classifications {
-		bizID := instance.BizID
-		// we should ignore metadata.LabelBusinessID field not found error
-		if idx > 0 && bizID != businessID {
-			return 0, fmt.Errorf("authorization failed, get multiple business ID from objects")
-		}
-		businessID = bizID
+func (am *AuthManager) extractBusinessIDFromInstances(instances ...InstanceSimplify) (int64, error) {
+	if len(instances) == 0 {
+		return 0, fmt.Errorf("get")
 	}
-	return businessID, nil
+	businessIDs := make([]int64, 0)
+	for _, instance := range instances {
+		// we should ignore metadata.LabelBusinessID field not found error
+		businessIDs = append(businessIDs, instance.BizID)
+	}
+	if len(businessIDs) > 1 {
+		blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances")
+		return 0, fmt.Errorf("get multiple business ID from objects")
+	}
+	return businessIDs[0], nil
 }
 
-func (am *AuthManager) MakeResourcesByInstances(header http.Header, action meta.Action, businessID int64, instances ...InstanceSimplify) []meta.ResourceAttribute {
-	resources := make([]meta.ResourceAttribute, 0)
+// collectObjectsByInstances collect all instances's related model, group by map
+// it support cross multiple business and objects
+func (am *AuthManager) collectObjectsByInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) (map[int64]metadata.Object, error) {
+	// construct parameters for querying models
+	businessObjectsMap := map[int64][]string{}
 	for _, instance := range instances {
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Action:     action,
-				Type:       meta.ModelInstance,
-				Name:       instance.Name,
-				InstanceID: instance.ID,
-			},
-			SupplierAccount: util.GetOwnerID(header),
-			BusinessID:      businessID,
-		}
-
-		resources = append(resources, resource)
+		businessObjectsMap[instance.BizID] = append(businessObjectsMap[instance.BizID], instance.ObjectID)
 	}
-	return resources
+	
+	// get models group by business
+	bizIDObjID2ObjMap := map[int64]map[string]metadata.Object{}
+	for businessID, objectIDs := range businessObjectsMap {
+		objectIDs = util.StrArrayUnique(objectIDs)
+		objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
+		if err != nil {
+			blog.Errorf("extractObjectIDFromInstances failed, get models by businessID and object id failed, bizID: %+v, objectIDs: %+v, err: %+v", businessID, objectIDs, err)
+			return nil, fmt.Errorf("get models by objectIDs and business id failed")
+		}
+		if len(objectIDs) != len(objects) {
+			blog.Errorf("extractObjectIDFromInstances failed, get models by object id failed, input len %d and output len %d not equal, input: %+v, output: %+v, businessID: %d", len(objectIDs), len(objects), objectIDs, objects, businessID)
+			return nil, fmt.Errorf("unexpect error, some models maybe not found")
+		}
+		if bizIDObjID2ObjMap[businessID] == nil {
+			bizIDObjID2ObjMap[businessID] = make(map[string]metadata.Object)
+		}
+		for _, object := range objects {
+			bizIDObjID2ObjMap[businessID][object.ObjectID] = object
+		}
+	}
+	
+	// get instance's model one by one
+	instanceIDObjectMap := map[int64]metadata.Object{}
+	for _, instance := range instances {
+		objectMap, exist := bizIDObjID2ObjMap[instance.BizID]
+		if exist == false {
+			blog.Errorf("extractObjectIDFromInstances failed, instance's model not found, biz id %d not in bizIDObjID2ObjMap %+v", instance.BizID, bizIDObjID2ObjMap)
+			return nil, fmt.Errorf("get model by instance failed, unexpected err, business id:%d related models not found", instance.BizID)
+		}
+		
+		object, exist := objectMap[instance.ObjectID]
+		if exist == false {
+			blog.Errorf("extractObjectIDFromInstances failed, instance's model not found, instances: %+v, objectMap: %+v", instance, objectMap)
+			return nil, fmt.Errorf("get model by instance failed, not found")
+		}
+		instanceIDObjectMap[instance.InstanceID] = object
+	}
+	
+	blog.V(5).Infof("collectObjectsByInstances result: %+v", instanceIDObjectMap)
+	return instanceIDObjectMap, nil
+}
+
+func (am *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) ([]meta.ResourceAttribute, error) {
+	if len(instances) == 0 {
+		return nil, nil
+	}
+
+	businessID, err := am.extractBusinessIDFromInstances(instances...)
+	if err != nil {
+		return nil, fmt.Errorf("extract business id from instances failed, err: %+v", err)
+	}
+
+	instanceIDObjectMap, err := am.collectObjectsByInstances(ctx, header, instances...)
+	if err != nil {
+		blog.Errorf("MakeResourcesByInstances failed, collect objects by id failed, err: %+v", err)
+		return nil, fmt.Errorf("extract object by id failed, err: %+v", err)
+	}
+	
+	// group instance by object
+	objectIDInstancesMap := map[int64][]InstanceSimplify{}
+	objectIDMap := map[int64]metadata.Object{}
+	for _, instance := range instances {
+		object, exist := instanceIDObjectMap[instance.InstanceID]
+		if exist == false {
+			blog.Errorf("MakeResourcesByInstances failed, unexpected err, instance related object not found, instance: %+v, instanceIDObjectMap: %+v", instance, instanceIDObjectMap)
+			return nil, errors.New("unexpected err, get instance related model failed, not found")
+		}
+		objectIDInstancesMap[object.ID] = append(objectIDInstancesMap[object.ID], instance)
+		objectIDMap[object.ID] = object
+	}
+
+	resultResources := make([]meta.ResourceAttribute, 0)
+	for objID, instances := range objectIDInstancesMap {
+		object := objectIDMap[objID]
+		
+		parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, object)
+		if err != nil {
+			blog.Errorf("MakeResourcesByObjects failed, make parent auth resource by objects failed, object: %+v, err: %+v", object, err)
+			return nil, fmt.Errorf("make parent auth resource by objects failed, err: %+v", err)
+		}
+		if len(parentResources) != 1 {
+			blog.Errorf("MakeResourcesByInstances failed, make parent auth resource by objects failed, get %d with object %s", len(parentResources), object.ObjectID)
+			return nil, fmt.Errorf("make parent auth resource by objects failed, get %d with object %s", len(parentResources), object.ID)
+		}
+		
+		parentResource := parentResources[0]
+		resources := make([]meta.ResourceAttribute, 0)
+		for _, instance := range instances {
+			layers := parentResource.Layers
+			layers = append(layers, meta.Item{
+				Type:       parentResource.Type,
+				Action:     parentResource.Action,
+				Name:       parentResource.Name,
+				InstanceID: parentResource.InstanceID,
+			})
+			resource := meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Action:     action,
+					Type:       meta.ModelInstance,
+					Name:       instance.Name,
+					InstanceID: instance.InstanceID,
+				},
+				SupplierAccount: util.GetOwnerID(header),
+				BusinessID:      businessID,
+				Layers:          layers,
+			}
+
+			resources = append(resources, resource)
+		}
+		resultResources = append(resultResources, resources...)
+	}
+	return resultResources, nil
+}
+
+func (am *AuthManager) AuthorizeByInstanceID(ctx context.Context, header http.Header, action meta.Action, objID string, ids ...int64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	
+	instances, err := am.collectInstancesByRawIDs(ctx,header, objID, ids...)
+	if err != nil {
+		return fmt.Errorf("collect instance of model: %s by id %+v failed, err: %+v", objID, ids, err)
+	}
+	return am.AuthorizeByInstances(ctx, header, action, instances...)
 }
 
 func (am *AuthManager) AuthorizeByInstances(ctx context.Context, header http.Header, action meta.Action, instances ...InstanceSimplify) error {
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromInstances(instances...)
-	if err != nil {
-		return fmt.Errorf("authorize instances failed, extract business id from instance failed, err: %+v", err)
+	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, instances: %+v", instances)
+		return nil
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, action, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, action, instances...)
+	if err != nil {
+		blog.Errorf("AuthorizeByInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
-	return am.authorize(ctx, header, bizID, resources...)
+	return am.batchAuthorize(ctx, header, resources...)
 }
 
 func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
-	// extract business id
-	bizID, err := am.extractBusinessIDFromInstances(instances...)
-	if err != nil {
-		return fmt.Errorf("authorize instances failed, extract business id from instances failed, err: %+v", err)
-	}
-
 	// make auth resources
-	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, instances...)
+	if err != nil {
+		blog.Errorf("UpdateRegisteredInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -163,18 +283,18 @@ func (am *AuthManager) UpdateRegisteredInstances(ctx context.Context, header htt
 	return nil
 }
 
-func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectInstancesByRawIDs(ctx, header, ids...)
+func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
-		return fmt.Errorf("update registered classifications failed, get classfication by id failed, err: %+v", err)
+		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredInstances(ctx, header, instances...)
 }
@@ -182,43 +302,69 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header http.Header, ids ...int64) error {
 	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
 	if err != nil {
-		return fmt.Errorf("deregister instance failed, get instance by id failed, err: %+v", err)
+		return fmt.Errorf("deregister instances failed, get instance by id failed, err: %+v", err)
 	}
 	return am.DeregisterClassification(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, ids ...int64) error {
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
+	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
 	}
-	return am.RegisterClassification(ctx, header, instances...)
+	return am.RegisterInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
-	if err != nil {
-		return fmt.Errorf("register classifications failed, extract business id from classification failed, err: %+v", err)
-	}
-
+func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, instances...)
+	if err != nil {
+		blog.Errorf("RegisterInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
+	}
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
 
 func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromInstances(instances...)
+	// make auth resources
+	resources, err := am.MakeResourcesByInstances(ctx, header, meta.EmptyAction, instances...)
 	if err != nil {
-		return fmt.Errorf("deregister classifications failed, extract business id from classification failed, err: %+v", err)
+		blog.Errorf("DeregisterInstances failed, make resource by instances failed, err: %+v", err)
+		return fmt.Errorf("make resource by instances failed, err: %+v", err)
 	}
 
-	// make auth resources
-	resources := am.MakeResourcesByInstances(header, meta.EmptyAction, bizID, instances...)
-
 	return am.Authorize.DeregisterResource(ctx, resources...)
+}
+
+// AuthorizeInstanceCreateByObjectID authorize create priority by object, plz be note this method only overlay model read/update/delete, without create
+func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+	if err != nil {
+		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v", objects, err)
+		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
+	}
+
+	resources := make([]meta.ResourceAttribute, 0)
+	for _, parentResource := range parentResources {
+		layers := parentResource.Layers
+		layers = append(layers, meta.Item{
+			Type:       parentResource.Basic.Type,
+			Action:     parentResource.Basic.Action,
+			Name:       parentResource.Basic.Name,
+			InstanceID: parentResource.Basic.InstanceID,
+		})
+		resource := meta.ResourceAttribute{
+			Basic: meta.Basic{
+				Type:   meta.ModelInstance,
+				Action: meta.Create,
+			},
+			SupplierAccount: parentResource.SupplierAccount,
+			BusinessID:      parentResource.BusinessID,
+			Layers:          layers,
+		}
+		resources = append(resources, resource)
+	}
+
+	return am.batchAuthorize(ctx, header, resources...)
 }

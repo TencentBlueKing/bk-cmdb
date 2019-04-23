@@ -161,7 +161,9 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 
 	// apiserver 1100XXX
-	CCErrGetAuthorizedAppListFromAuthFailed = 1100001
+	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
+	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
+	CCErrAPINoObjectInstancesIsFound           = 1100003
 
 	// toposerver 1101XXX
 	// CCErrTopoInstCreateFailed unable to create the instance
@@ -596,6 +598,25 @@ const (
 
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
+
+	// CCErrCoreServiceHostNotBelongBusiness hostID [%#v] does not belong of  businessID [%d]
+	CCErrCoreServiceHostNotBelongBusiness = 1113002
+	// CCErrCoreServiceHostNotExist hostID [%#v] does not exist
+	CCErrCoreServiceHostNotExist = 1113003
+	// ModuleID [%#v] has not belong of  businessID [%d]
+	CCErrCoreServiceHasModuleNotBelongBusiness = 1113004
+	// CCErrCoreServiceModuleContainDefaultModuleErr  translate host to multiple module not contain default module
+	CCErrCoreServiceModuleContainDefaultModuleErr = 1113005
+	// CCErrCoreServiceBusinessNotExist Business [%#v] does not exist
+	CCErrCoreServiceBusinessNotExist = 1113006
+	// CCErrCoreServiceDefaultModuleNotExist Business [%#v] default module does not exist
+	CCErrCoreServiceDefaultModuleNotExist = 1113007
+	// CCErrCoreServiceModuleNotDefaultModuleErr   businessID [%d] of moduleID[%d] not default module
+	CCErrCoreServiceModuleNotDefaultModuleErr = 1113008
+	// CCErrCoreServiceTransferHostModuleErr   transfer module host config error. error detail in return data
+	CCErrCoreServiceTransferHostModuleErr = 1113009
+	// CCErrCoreServiceEventPushEventFailed failed to sent event
+	CCErrCoreServiceEventPushEventFailed = 1113010
 
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900

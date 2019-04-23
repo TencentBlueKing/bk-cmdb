@@ -30,7 +30,7 @@ export default {
         },
         auth: {
             view: R_EVENT,
-            operation: Object.keys(OPERATION)
+            operation: Object.values(OPERATION)
         }
     }
 }

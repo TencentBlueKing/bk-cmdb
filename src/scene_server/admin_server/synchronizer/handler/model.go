@@ -38,7 +38,7 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 	}
 	blog.V(4).Infof("list model by business %d result: %+v", businessID, objects)
 
-	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, businessID, objects...)
+	resources, err := ih.authManager.MakeResourcesByObjects(context.Background(), *header, authmeta.EmptyAction, objects...)
 	if err != nil {
 		blog.Errorf("make iam resource from models failed, err: %+v", err)
 		return nil
@@ -56,5 +56,6 @@ func (ih *IAMHandler) HandleModelSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync model for business: %d", businessSimplify.BKAppIDField)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

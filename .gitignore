@@ -1,0 +1,11 @@
+src/bin/*
+src/*/*/cmdb_*
+src/apiserver/*apiserver
+src/apiserver/cmdb_*
+src/scene_server/*/*server
+src/scene_server/*/*collection
+src/source_controller/*/*controller
+src/source_controller/*/coreservice
+src/web*/*server
+src/web*/cmdb_*
+

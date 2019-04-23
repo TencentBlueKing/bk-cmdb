@@ -15,7 +15,6 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -34,11 +33,12 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 
 	objectID := pathParams(common.BKObjIDField)
 
+	// TODO: remove this, this has already be done in api server
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
-		blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
+	// 	blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
@@ -75,10 +75,10 @@ func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, que
 	data.Remove(metadata.BKMetadata)
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-		blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+	// 	blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
@@ -112,10 +112,10 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-		blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
+	// 	blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
+	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+	// }
 
 	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
@@ -141,11 +141,22 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
+	if len(uniques) == 0 {
+		return uniques, nil
+	}
+
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByUnique(params.Context, params.Header, meta.Update, uniques...); err != nil {
-		blog.Errorf("update model unique failed, authorization failed, unique: %+v, err: %+v", uniques, err)
+	ids := make([]int64, 0)
+	for _, unique := range uniques {
+		ids = append(ids, int64(unique.ID))
+	}
+
+	/*
+	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
+		blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
 		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
 	}
+	*/
 
 	return uniques, nil
 }

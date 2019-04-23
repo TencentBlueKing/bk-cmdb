@@ -298,7 +298,7 @@ func (ps *parseStream) process() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:       meta.Process,
-					Action:     meta.FindBoundModuleProcess,
+					Action:     meta.Find,
 					InstanceID: procID,
 				},
 			},

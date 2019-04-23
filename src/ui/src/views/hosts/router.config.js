@@ -2,15 +2,13 @@ import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     R_HOST,
     U_HOST,
-    HOST_TO_RESOURCE,
-    TOPO_TRANSFER_HOST
+    HOST_TO_RESOURCE
 } from '@/dictionary/auth'
 
 export const OPERATION = {
     U_HOST,
     R_HOST,
-    HOST_TO_RESOURCE,
-    TOPO_TRANSFER_HOST
+    HOST_TO_RESOURCE
 }
 
 const path = '/hosts'
@@ -29,8 +27,9 @@ export default {
             adminView: false
         },
         auth: {
-            view: R_HOST,
+            view: '',
             operation: Object.values(OPERATION)
-        }
+        },
+        requireBusiness: true
     }
 }

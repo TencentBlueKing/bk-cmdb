@@ -29,12 +29,13 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	header := task.Header.(http.Header)
 
 	// step1 construct instances resource query parameter for iam
-	bizID, err := ih.authManager.ExtractBusinessIDFromObjects(object)
+	bizIDMap, err := ih.authManager.ExtractBusinessIDFromObjects(object)
 	if err != nil {
 		blog.Errorf("extract business id from model failed, model: %+v, err: %+v", object, err)
 		return err
 	}
-	objectResource, err := ih.authManager.MakeResourcesByObjects(context.Background(), header, authmeta.EmptyAction, bizID, object)
+	bizID := bizIDMap[object.ID]
+	objectResource, err := ih.authManager.MakeResourcesByObjects(context.Background(), header, authmeta.EmptyAction, object)
 	if err != nil {
 		blog.Errorf("make auth resource from model failed, model: %+v, err: %+v", object, err)
 		return err
@@ -60,8 +61,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 		blog.Errorf("", err)
 		return err
 	}
-
-	resources := ih.authManager.MakeResourcesByInstances(header, authmeta.EmptyAction, bizID, instances...)
+	resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, instances...)
 	if err != nil {
 		blog.Errorf("diff and sync resource between iam and cmdb failed, err: %+v", err)
 		return nil
@@ -69,5 +69,6 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 
 	taskName := fmt.Sprintf("sync instance for business: %d model: %s", bizID, object.ObjectID)
 	iamIDPrefix := ""
-	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources)
+	skipDeregister := false
+	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }

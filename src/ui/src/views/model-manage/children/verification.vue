@@ -12,16 +12,16 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220">
+            :wrapper-minus-height="220">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
-                <div :key="index" :class="{'disabled': isReadOnly}">
-                    <template v-if="header.id==='keys'">
+                <div :key="index" :class="{ 'disabled': isReadOnly }">
+                    <template v-if="header.id === 'keys'">
                         {{getRuleName(item.keys)}}
                     </template>
-                    <template v-else-if="header.id==='must_check'">
+                    <template v-else-if="header.id === 'must_check'">
                         {{item['must_check'] ? $t('ModelManagement["是"]') : $t('ModelManagement["否"]')}}
                     </template>
-                    <template v-else-if="header.id==='operation'">
+                    <template v-else-if="header.id === 'operation'">
                         <button class="text-primary mr10"
                             :disabled="!isEditable(item)"
                             @click.stop="editVerification(item)">
@@ -39,14 +39,14 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-verification-detail
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEdit="slider.isEdit"
+                :is-read-only="isReadOnly"
+                :is-edit="slider.isEdit"
                 :verification="slider.verification"
-                :attributeList="attributeList"
+                :attribute-list="attributeList"
                 @save="saveVerification"
                 @cancel="slider.isShow = false">
             </the-verification-detail>
@@ -122,10 +122,7 @@
                 'deleteObjectUniqueConstraints'
             ]),
             isEditable (item) {
-                if (item.ispre) {
-                    return false
-                }
-                if (this.isReadOnly) {
+                if (item.ispre || this.isReadOnly) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -134,10 +131,10 @@
                 return true
             },
             getRuleName (keys) {
-                let name = []
+                const name = []
                 keys.forEach(key => {
                     if (key['key_kind'] === 'property') {
-                        let attr = this.attributeList.find(({id}) => id === key['key_id'])
+                        const attr = this.attributeList.find(({ id }) => id === key['key_id'])
                         if (attr) {
                             name.push(attr['bk_property_name'])
                         }
@@ -149,6 +146,8 @@
                 this.attributeList = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: this.activeModel['bk_obj_id']
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.activeModel['bk_obj_id']}`
@@ -172,7 +171,7 @@
             },
             deleteVerification (verification) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除唯一校验？"]', this.getRuleName(verification.keys), {name: this.getRuleName(verification.keys)}),
+                    title: this.$tc('ModelManagement["确定删除唯一校验？"]', this.getRuleName(verification.keys), { name: this.getRuleName(verification.keys) }),
                     confirmFn: async () => {
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
@@ -188,7 +187,7 @@
             async searchVerification () {
                 const res = await this.searchObjectUniqueConstraints({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
                     config: {
                         requestId: 'searchObjectUniqueConstraints'
                     }
@@ -204,4 +203,3 @@
         margin: 10px 0;
     }
 </style>
-

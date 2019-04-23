@@ -46,10 +46,39 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 	attributes := make([]metadata.Attribute, 0)
 	for _, item := range resp.Data.Info {
 		attribute := metadata.Attribute{}
-		attribute.Parse(item)
+		_, err := attribute.Parse(item)
+		if err != nil {
+			blog.Errorf("collectAttributesByAttributeIDs %+v failed, parse attribute %+v failed, err: %+v ", attributeIDs, item, err)
+			return nil, fmt.Errorf("parse attribute from db data failed, err: %+v", err)
+		}
 		attributes = append(attributes, attribute)
 	}
 	return attributes, nil
+}
+
+func (am *AuthManager) ExtractBusinessIDFromModelAttributes(attributes ...metadata.Attribute) (int64, error) {
+	if len(attributes) == 0 {
+		return 0, fmt.Errorf("no object found")
+	}
+
+	businessIDs := make([]int64, 0)
+	for _, attribute := range attributes {
+		bizID, err := metadata.BizIDFromMetadata(attribute.Metadata)
+		if err != nil {
+			return 0, fmt.Errorf("parse business id failed, err: %+v", err)
+		}
+		businessIDs = append(businessIDs, bizID)
+	}
+
+	businessIDs = util.IntArrayUnique(businessIDs)
+	if len(businessIDs) > 1 {
+		return 0, fmt.Errorf("attributes belongs to multiple business: [%+v]", businessIDs)
+	}
+
+	if len(businessIDs) == 0 {
+		return 0, fmt.Errorf("unexpected error, no business found with attributes: %+v", attributes)
+	}
+	return businessIDs[0], nil
 }
 
 func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error) {
@@ -58,19 +87,19 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 	for _, attribute := range attributes {
 		objectIDs = append(objectIDs, attribute.ObjectID)
 	}
+	
+	businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
+	if err != nil {
+		return nil, fmt.Errorf("extract business id from model attribute failed, err: %+v", err)
+	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, objectIDs...)
+	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
 	if err != nil {
 		return nil, fmt.Errorf("register model attributes failed, get related models failed, err: %+v", err)
 	}
 	objectMap := map[string]metadata.Object{}
 	for _, object := range objects {
 		objectMap[object.ObjectID] = object
-	}
-
-	businessID, err := am.ExtractBusinessIDFromObjects(objects...)
-	if err != nil {
-		return nil, fmt.Errorf("make auth resource for model attribute failed, err: %+v", err)
 	}
 
 	classificationIDs := make([]string, 0)
@@ -134,6 +163,10 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 }
 
 func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if len(attributes) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -147,6 +180,10 @@ func (am *AuthManager) RegisterModelAttribute(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if len(attributes) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -160,6 +197,10 @@ func (am *AuthManager) DeregisterModelAttribute(ctx context.Context, header http
 }
 
 func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if len(attributeIDs) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -172,12 +213,20 @@ func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
+	if len(attributes) == 0 {
+		return nil
+	}
+	
 	if am.RegisterModelAttributeEnabled == false {
+		businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
+		if err != nil {
+			return fmt.Errorf("extract business id from model attributes failed, err: %+v", businessID)
+		}
 		objectIDs := make([]string, 0)
 		for _, attribute := range attributes {
 			objectIDs = append(objectIDs, attribute.ObjectID)
 		}
-		return am.AuthorizeByObjectID(ctx, header, meta.Update, objectIDs...)
+		return am.AuthorizeByObjectID(ctx, header, meta.Update, businessID, objectIDs...)
 	}
 
 	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)
@@ -189,6 +238,10 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
+	if len(attributes) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -202,6 +255,10 @@ func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, heade
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if len(attributeIDs) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -214,6 +271,10 @@ func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, h
 }
 
 func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+	if len(attributeIDs) == 0 {
+		return nil
+	}
+
 	if am.RegisterModelAttributeEnabled == false {
 		return nil
 	}
@@ -223,10 +284,5 @@ func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.H
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)
 	}
 
-	objectIDs := make([]string, 0)
-	for _, attribute := range attributes {
-		objectIDs = append(objectIDs, attribute.ObjectID)
-	}
-
-	return am.AuthorizeByObjectID(ctx, header, action, objectIDs...)
+	return am.AuthorizeModelAttribute(ctx, header, action, attributes...)
 }

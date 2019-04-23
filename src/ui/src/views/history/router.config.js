@@ -1,17 +1,16 @@
-import {
-    R_INST,
-    GET_MODEL_INST_AUTH_META
-} from '@/dictionary/auth'
-
 export default {
     name: 'history',
     path: '/history/:objId',
     component: () => import('./index.vue'),
     meta: {
         auth: {
-            view: R_INST,
-            meta: GET_MODEL_INST_AUTH_META,
-            operation: [R_INST]
+            view: '',
+            operation: []
+        },
+        checkAvailable: (to, from, app) => {
+            const modelId = to.params.objId
+            const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+            return model && !model.bk_ispaused
         }
     }
 }

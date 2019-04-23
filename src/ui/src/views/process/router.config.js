@@ -33,8 +33,9 @@ export default {
             adminView: false
         },
         auth: {
-            view: R_PROCESS,
+            view: '',
             operation: Object.values(OPERATION)
-        }
+        },
+        requireBusiness: true
     }
 }

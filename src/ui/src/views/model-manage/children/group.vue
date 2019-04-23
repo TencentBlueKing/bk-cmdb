@@ -1,5 +1,5 @@
 <template>
-    <div class="group-layout" v-bkloading="{isLoading: $loading()}">
+    <div class="group-layout" v-bkloading="{ isLoading: $loading() }">
         <div class="group"
             v-for="(group, index) in groupedProperties"
             :key="index">
@@ -42,7 +42,7 @@
                     </i>
                     <i class="options-icon bk-icon icon-delete"
                         v-tooltip="$t('ModelManagement[\'删除分组\']')"
-                        :class="{disabled: ['none', 'default'].includes(group.info['bk_group_id'])}"
+                        :class="{ disabled: ['none', 'default'].includes(group.info['bk_group_id']) }"
                         @click="handleDeleteGroup(group, index)">
                     </i>
                 </div>
@@ -63,8 +63,8 @@
                 @change="handleDragChange"
                 @end="handleDragEnd">
                 <li class="property-item fl"
-                    v-for="(property, index) in group.properties"
-                    :key="index"
+                    v-for="(property, _index) in group.properties"
+                    :key="_index"
                     :title="property['bk_property_name']">
                     {{property['bk_property_name']}}
                 </li>
@@ -172,7 +172,7 @@
             },
             groupedPropertiesCount () {
                 const count = {}
-                this.groupedProperties.forEach(({info, properties}) => {
+                this.groupedProperties.forEach(({ info, properties }) => {
                     const groupId = info['bk_group_id']
                     count[groupId] = properties.length
                 })
@@ -247,7 +247,7 @@
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: this.objId,
-                    params: this.$injectMetadata(),
+                    params: this.$injectMetadata({}, { inject: this.isInjectable }),
                     config: {
                         requestId: `get_searchGroup_${this.objId}`,
                         cancelPrevious: true
@@ -259,6 +259,8 @@
                     params: this.$injectMetadata({
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_searchObjectAttribute_${this.objId}`,

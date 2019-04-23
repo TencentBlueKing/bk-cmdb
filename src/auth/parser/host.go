@@ -22,7 +22,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userAPI().
 		userCustom().
 		hostFavorite().
-		cloudResourceSync()
+		cloudResourceSync().
+		hostSnapshot()
 
 	return ps
 }
@@ -185,7 +186,7 @@ func (ps *parseStream) userAPI() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.DynamicGrouping,
-					Action: meta.Excute,
+					Action: meta.Execute,
 					Name:   ps.RequestCtx.Elements[5],
 				},
 			},
@@ -263,6 +264,7 @@ const (
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
 	findHostsWithConditionPattern     = "/api/v3/hosts/search"
+	findHostsDetailsPattern           = "/api/v3/hosts/search/asstdetail"
 	updateHostInfoBatchPattern        = "/api/v3/hosts/batch"
 	findHostsWithModulesPattern       = "/api/v3/hosts/findmany/modulehost"
 )
@@ -309,14 +311,8 @@ func (ps *parseStream) host() *parseStream {
 
 	// add new hosts to resource pool
 	if ps.hitPattern(addHostsToHostPoolPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
-				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.AddHostToResourcePool,
@@ -335,11 +331,11 @@ func (ps *parseStream) host() *parseStream {
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
+			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveHostFromModuleToResPool,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -369,21 +365,14 @@ func (ps *parseStream) host() *parseStream {
 
 	// move resource pool hosts to a business idle module operation.
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
-			meta.ResourceAttribute{
-				BusinessID: bizID,
+			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveResPoolHostToBizIdleModule,
+					Action: meta.SkipAction,
 				},
 			},
 		}
-
 		return ps
 	}
 
@@ -492,6 +481,25 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.FindMany,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(findHostsDetailsPattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
 			ps.err = err
@@ -652,5 +660,33 @@ func (ps *parseStream) cloudResourceSync() *parseStream {
 		return ps
 	}
 
+	return ps
+}
+
+var (
+	findHostSnapshotAPIRegexp = regexp.MustCompile(`^/api/v3/hosts/snapshot/[0-9]+/?$`)
+)
+
+func (ps *parseStream) hostSnapshot() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findHostSnapshotAPIRegexp, http.MethodGet) {
+		if len(ps.RequestCtx.Elements) != 5 {
+			ps.err = errors.New("find host snapshot details query, but got invalid uri")
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
 	return ps
 }

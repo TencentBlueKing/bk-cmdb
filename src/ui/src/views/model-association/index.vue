@@ -2,7 +2,7 @@
     <div class="relation-wrapper">
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
+                :disabled="!isAdminView || !$isAuthorized(OPERATION.C_RELATION)"
                 @click="createRelation">
                 {{$t('Common["新建"]')}}
             </bk-button>
@@ -47,11 +47,11 @@
             class="relation-slider"
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-relation
                 slot="content"
                 class="slider-content"
-                :isEdit="slider.isEdit"
+                :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"
                 @cancel="slider.isShow = false">
@@ -62,7 +62,7 @@
 
 <script>
     import theRelation from './_detail'
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import { OPERATION } from './router.config'
     export default {
         components: {
@@ -112,8 +112,9 @@
             }
         },
         computed: {
+            ...mapGetters(['isAdminView']),
             searchParams () {
-                let params = {
+                const params = {
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.size,
                         limit: this.table.pagination.size,
@@ -134,7 +135,8 @@
         },
         created () {
             const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
-            if (!updateAuth) {
+            const deleteAuth = this.$isAuthorized(this.OPERATION.D_RELATION)
+            if (!this.isAdminView || !(updateAuth || deleteAuth)) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
@@ -160,15 +162,15 @@
                 })
             },
             async searchUsageCount () {
-                let asstIds = []
-                this.table.list.forEach(({bk_asst_id: asstId}) => asstIds.push(asstId))
+                const asstIds = []
+                this.table.list.forEach(({ bk_asst_id: asstId }) => asstIds.push(asstId))
                 const res = await this.searchAssociationListWithAssociationKindList({
                     params: {
                         asst_ids: asstIds
                     }
                 })
                 this.table.list.forEach(item => {
-                    let asst = res.associations.find(({bk_asst_id: asstId}) => asstId === item['bk_asst_id'])
+                    const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item['bk_asst_id'])
                     if (asst) {
                         this.$set(item, 'count', asst.assts.length)
                     }
@@ -188,7 +190,7 @@
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], {name: relation['bk_asst_name']}),
+                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
                     confirmFn: async () => {
                         await this.deleteAssociationType({
                             id: relation.id,
@@ -219,7 +221,6 @@
         }
     }
 </script>
-
 
 <style lang="scss" scoped>
     .operation-box {
