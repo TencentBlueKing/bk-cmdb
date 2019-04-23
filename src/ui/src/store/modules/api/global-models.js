@@ -57,8 +57,12 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchModelAction ({ commit, state, dispatch }) {
+    searchModelAction ({ commit, state, dispatch, rootGetters }) {
         return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/search`).then(data => {
+            data = data.filter(node => {
+                const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
+                return model && !model.bk_ispaused
+            })
             commit('setGraphicsData', data)
             return data
         })
