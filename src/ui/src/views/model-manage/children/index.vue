@@ -260,6 +260,7 @@
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
                 this.setActiveModel({...this.activeModel, ...this.modelParams})
+                this.$store.commit('setHeaderTitle', this.activeModel['bk_obj_name'])
                 this.isEditName = false
             },
             async initObject () {
