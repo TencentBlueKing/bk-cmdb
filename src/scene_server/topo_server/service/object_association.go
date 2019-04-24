@@ -120,7 +120,8 @@ func (s *topoService) ImportInstanceAssociation(params types.ContextParams, path
 	objID := pathParams("obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {
-		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
+		blog.Errorf("ImportInstanceAssociation, json unmarshal error, objID:%S, err: %v", objID, err)
+		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
 	resp, err := s.core.AssociationOperation().ImportInstAssociation(context.Background(), params, objID, request.AssociationInfoMap)
