@@ -224,6 +224,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.Engine,
+					ReqID:           rid,
 				}
 
 				// parse metadata for none public only handler
