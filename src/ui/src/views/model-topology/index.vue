@@ -262,7 +262,9 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
+                        return !this.isModelInTopo(model) &&
+                            !this.specialModel.includes(model['bk_obj_id']) &&
+                            !model.bk_ispaused
                     })
                     return classify
                 })

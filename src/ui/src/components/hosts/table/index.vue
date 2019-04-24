@@ -103,6 +103,7 @@
                         :authority="authority"
                         :properties="properties.host"
                         :propertyGroups="propertyGroups"
+                        :object-unique="objectUnique"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -216,6 +217,7 @@
         },
         data () {
             return {
+                objectUnique: [],
                 properties: {
                     biz: [],
                     host: [],
@@ -263,7 +265,7 @@
                 columnsConfig: {
                     show: false,
                     selected: [],
-                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_module_name', 'bk_set_name']
+                    disabledColumns: ['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name', 'bk_set_name']
                 },
                 transfer: {
                     show: false
@@ -526,7 +528,10 @@
                 this.tab.attribute.inst.edit = originalItem['host']
                 this.tab.attribute.type = 'update'
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'host'
+                })
                 this.tab.attribute.type = 'multiple'
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
