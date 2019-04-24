@@ -210,7 +210,7 @@ func (s *Service) AddAssociationLogs(req *restful.Request, resp *restful.Respons
 	err = s.Logics.AddLogMulti(ctx, appID, params.OpType, "instance_association", params.Content, params.OpDesc, ownerID, user)
 	if nil != err {
 		blog.Errorf("AddAssociationLogs add instance association log error:%s", err.Error())
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
+		resp.WriteError(http.StatusInternalServerError, err)
 		return
 	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))

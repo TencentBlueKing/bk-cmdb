@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -685,7 +684,7 @@ func (a *association) SearchInst(params types.ContextParams, request *metadata.S
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
 	if err != nil {
-		blog.Errorf("parse business id from request failed, params: %+v, err: %+v", params, err)
+		blog.Errorf("parse business id from request failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
 	}
 
@@ -693,17 +692,17 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
 	result, err := a.SearchObject(params, &metadata.SearchAssociationObjectRequest{Condition: cond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v", cond, err)
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !result.Result {
-		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+		blog.Errorf("create association instance, but search object association with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
 		return nil, params.Err.New(resp.Code, resp.ErrMsg)
 	}
 
 	if len(result.Data) == 0 {
-		blog.Errorf("create instance association, but can not find object association[%s]. ", request.ObjectAsstID)
+		blog.Errorf("create instance association, but can not find object association[%s]. rid: %s", request.ObjectAsstID, params.ReqID)
 		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
 
@@ -720,12 +719,12 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		cond.Field(common.BKInstIDField).Eq(request.InstID)
 		inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !inst.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 		if len(inst.Data) >= 1 {
@@ -738,12 +737,12 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 
 		inst, err = a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v, rid: %s", cond, err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !inst.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s, rid: %s", cond, resp.ErrMsg, params.ReqID)
 			return nil, params.Err.New(resp.Code, resp.ErrMsg)
 		}
 		if len(inst.Data) >= 1 {
@@ -764,13 +763,14 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 			AssociationKindID: objectAsst.AsstKindID,
 		},
 	}
-	rsp, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
+	createResult, err := a.clientSet.CoreService().Association().CreateInstAssociation(context.Background(), params.Header, &input)
 	if err != nil {
+		blog.Errorf("create instance association failed, do coreservice create failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
-	resp = &metadata.CreateAssociationInstResult{BaseResp: rsp.BaseResp}
-	instanceAssociationID := int64(rsp.Data.Created.ID)
+	resp = &metadata.CreateAssociationInstResult{BaseResp: createResult.BaseResp}
+	instanceAssociationID := int64(createResult.Data.Created.ID)
 	resp.Data.ID = instanceAssociationID
 
 	// record audit log
@@ -788,7 +788,8 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	}
 	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
 	if err != nil {
-		return nil, fmt.Errorf("save audit log failed, err: %v", err)
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
 	}
 
 	return resp, err
@@ -799,7 +800,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 	if params.MetaData != nil {
 		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
 		if err != nil {
-			blog.Errorf("parse business id from request failed, params: %+v, err: %+v", params, err)
+			blog.Errorf("parse business id from request failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
 			return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
 		}
 	}
@@ -810,15 +811,15 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 	}
 	data, err := a.clientSet.CoreService().Association().ReadInstAssociation(context.Background(), params.Header, &searchCondition)
 	if err != nil {
-		blog.Errorf("DeleteInst failed, get instance association failed, params: %+v, err: %+v", params, err)
+		blog.Errorf("DeleteInst failed, get instance association failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
 		return nil, err
 	}
 	if len(data.Data.Info) == 0 {
-		blog.Errorf("DeleteInst failed, instance association not found, searchCondition: %+v, err: %+v", searchCondition, err)
+		blog.Errorf("DeleteInst failed, instance association not found, searchCondition: %+v, err: %+v, rid: %s", searchCondition, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	if len(data.Data.Info) > 1 {
-		blog.Errorf("DeleteInst failed, get instance association with id:%d get multiple, err: %+v", assoID, err)
+		blog.Errorf("DeleteInst failed, get instance association with id:%d get multiple, err: %+v, rid: %s", assoID, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	instanceAssociation := data.Data.Info[0]
@@ -845,7 +846,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 	}
 	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
 	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v", rsp, err)
+		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", rsp, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
 	}
 	return resp, err
