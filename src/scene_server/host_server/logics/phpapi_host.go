@@ -54,7 +54,7 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 
 	configData, err := phpapi.logic.GetConfigByCond(ctx, meta.HostModuleRelationRequest{
 		ApplicationID: appID,
-		HostID:        []int64{hostIDArr[0]},
+		HostIDArr:     []int64{hostIDArr[0]},
 	})
 	if nil != err {
 		return "", fmt.Errorf("GetConfigByCond error:%v, rid:%s", err, phpapi.rid)

@@ -224,9 +224,9 @@ type TransferHostsCrossBusinessRequest struct {
 // HostModuleRelationRequest gethost module relation request parameter
 type HostModuleRelationRequest struct {
 	ApplicationID int64   `json:"bk_biz_id"`
-	SetID         []int64 `json:"bk_set_ids"`
-	HostID        []int64 `json:"bk_host_ids"`
-	ModuleID      []int64 `json:"bk_module_ids"`
+	SetIDArr      []int64 `json:"bk_set_ids"`
+	HostIDArr     []int64 `json:"bk_host_ids"`
+	ModuleIDArr   []int64 `json:"bk_module_ids"`
 }
 
 // Empty empty struct
@@ -234,14 +234,14 @@ func (h *HostModuleRelationRequest) Empty() bool {
 	if h.ApplicationID != 0 {
 		return false
 	}
-	if len(h.SetID) != 0 {
+	if len(h.SetIDArr) != 0 {
 		return false
 	}
-	if len(h.ModuleID) != 0 {
+	if len(h.ModuleIDArr) != 0 {
 		return false
 	}
 
-	if len(h.HostID) != 0 {
+	if len(h.HostIDArr) != 0 {
 		return false
 	}
 	return true

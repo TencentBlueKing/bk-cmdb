@@ -327,7 +327,7 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		cond.ApplicationID = data.AppID
 	}
 	if len(data.HostID) > 0 {
-		cond.HostID = data.HostID
+		cond.HostIDArr = data.HostID
 	}
 
 	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)

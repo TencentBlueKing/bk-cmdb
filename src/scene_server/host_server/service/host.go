@@ -561,7 +561,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostID: hostIDs})
+	hostModuleConfig, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{HostIDArr: hostIDs})
 	if err != nil {
 		blog.Errorf("update host batch failed, ids[%v], err: %v,input:%+v,rid:%s", hostIDs, err, data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
@@ -737,10 +737,10 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 
 	if 0 != data.SetID {
-		condition.SetID = []int64{data.SetID}
+		condition.SetIDArr = []int64{data.SetID}
 	}
 	if 0 != data.ModuleID {
-		condition.ModuleID = []int64{data.ModuleID}
+		condition.ModuleIDArr = []int64{data.ModuleID}
 	}
 
 	condition.ApplicationID = data.ApplicationID
@@ -807,7 +807,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 	}
 	hmInput := &meta.HostModuleRelationRequest{
 		ApplicationID: data.ApplicationID,
-		HostID:        hostIDArr,
+		HostIDArr:     hostIDArr,
 	}
 	configResult, err := srvData.lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(srvData.ctx, srvData.header, hmInput)
 	if nil != err {

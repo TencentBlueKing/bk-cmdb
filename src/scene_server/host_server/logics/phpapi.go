@@ -302,7 +302,7 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 
 	blog.V(5).Infof("hostIDArr:%v,rid:%s", hostIDArr, lgc.rid)
 	muduleHostConfigs, err := lgc.GetConfigByCond(ctx, meta.HostModuleRelationRequest{
-		HostID: hostIDArr,
+		HostIDArr: hostIDArr,
 	})
 	if nil != err {
 		return nil, err
@@ -436,7 +436,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 	}
 	configCond := meta.HostModuleRelationRequest{
-		HostID:        []int64{srcHostID},
+		HostIDArr:     []int64{srcHostID},
 		ApplicationID: appID,
 	}
 	// 判断源IP是否存在
@@ -465,7 +465,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 
 	dstConfigCond := meta.HostModuleRelationRequest{
 		ApplicationID: appID,
-		HostID:        dstHostIdArr,
+		HostIDArr:     dstHostIdArr,
 	}
 	dstHostIdArrV, err := lgc.GetHostIDByCond(ctx, dstConfigCond)
 	if err != nil {

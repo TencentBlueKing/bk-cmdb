@@ -34,7 +34,7 @@ func (h *host) TransferHostToInnerModule(ctx context.Context, header http.Header
 	return
 }
 
-// TransferHostModule  transfer host to inner module  eg:idle module and fault module
+// TransferHostModule  transfer host to  module
 func (h *host) TransferHostModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/module"
@@ -49,7 +49,7 @@ func (h *host) TransferHostModule(ctx context.Context, header http.Header, input
 	return
 }
 
-// TransferHostCrossBusiness  transfer host to inner module  eg:idle module and fault module
+// TransferHostCrossBusiness  transfer host to other bussiness module
 func (h *host) TransferHostCrossBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/cross/business"

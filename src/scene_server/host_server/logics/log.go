@@ -262,7 +262,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
 	conds := &metadata.HostModuleRelationRequest{
-		HostID: h.instIDArr,
+		HostIDArr: h.instIDArr,
 	}
 	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
