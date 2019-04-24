@@ -173,6 +173,10 @@ func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
 }
 
+func (s *Service) initSearch() {
+	s.addAction(http.MethodPost, "/search/full_text_search", s.FullTextSearch, nil)
+}
+
 func (s *Service) initService() {
 	s.initHealth()
 	s.initAssociation()
@@ -200,4 +204,5 @@ func (s *Service) initService() {
 	s.initBusinessGraphics()
 	s.initBusinessInst()
 
+	s.initSearch()
 }

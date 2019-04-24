@@ -166,6 +166,9 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	}
 
 	// biz  search privilege, return true
+	if strings.Contains(pathStr, types.BK_FULL_TEXT_SEARCH) {
+		return true
+	}
 	if strings.Contains(pathStr, types.BK_FIND) {
 		return true
 	}

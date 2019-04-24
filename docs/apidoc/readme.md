@@ -26,6 +26,7 @@
 * [用户行为记录](user_costum.md)
 * [权限管理](user_privilege.md)
 * [事件订阅](event_sub.md)
+* [搜索](search.md)
 
 #### 调用指引
 * api请求调用请使用cmdb_apiserver的地址
