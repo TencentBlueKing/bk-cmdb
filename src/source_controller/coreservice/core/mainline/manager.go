@@ -144,8 +144,8 @@ func (im *InstanceMainline) ConstructBizTopoInstance(withDetail bool) error {
 
 		err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &im.businessInstances)
 		if err != nil {
-			blog.Errorf("get business instances by business:%d failed", im.bkBizID, err)
-			return fmt.Errorf("get business instances by business:%d failed, %+v", im.bkBizID, err)
+			blog.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
+			return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
 		}
 		blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v", im.businessInstances)
 		if len(im.businessInstances) == 0 {

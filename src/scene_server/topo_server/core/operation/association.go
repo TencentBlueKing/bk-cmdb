@@ -35,27 +35,27 @@ var (
 	InstanceAssociationAuditHeaders = []metadata.Header{
 		{
 			PropertyName: "ObjectAsstID",
-			PropertyID: "ObjectAsstID",
+			PropertyID:   "ObjectAsstID",
 		},
 		{
 			PropertyName: "InstID",
-			PropertyID: "InstID",
+			PropertyID:   "InstID",
 		},
 		{
 			PropertyName: "AsstInstID",
-			PropertyID: "AsstInstID",
+			PropertyID:   "AsstInstID",
 		},
 		{
 			PropertyName: "ObjectID",
-			PropertyID: "ObjectID",
+			PropertyID:   "ObjectID",
 		},
 		{
 			PropertyName: "AsstObjectID",
-			PropertyID: "AsstObjectID",
+			PropertyID:   "AsstObjectID",
 		},
 		{
 			PropertyName: "AssociationKindID",
-			PropertyID: "AssociationKindID",
+			PropertyID:   "AssociationKindID",
 		},
 	}
 )
@@ -803,7 +803,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 			return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
 		}
 	}
-	
+
 	// record audit log
 	searchCondition := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
@@ -818,7 +818,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	if len(data.Data.Info) > 1 {
-		blog.Errorf("DeleteInst failed, get instance association with id:%s get multiple, err: %+v", assoID, err)
+		blog.Errorf("DeleteInst failed, get instance association with id:%d get multiple, err: %+v", assoID, err)
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	instanceAssociation := data.Data.Info[0]

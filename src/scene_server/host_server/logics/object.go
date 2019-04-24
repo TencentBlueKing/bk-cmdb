@@ -214,7 +214,7 @@ func (lgc *Logics) getObjectByParentID(ctx context.Context, valArr []int64) ([]i
 	for _, info := range result.Data.Info {
 		id, err := info.Int64(common.BKInstIDField)
 		if err != nil {
-			blog.Errorf("getObjectByParentID failed, get int64 `bk_inst_id` field failed, instance: %+v, input: %+v, err: %+v, rid:%s", common.BKInnerObjIDObject, common.BKInstIDField, info, query, err, lgc.rid)
+			blog.Errorf("getObjectByParentID failed, get int64 `bk_inst_id` field failed, instance: %+v, input: %+v, err: %+v, rid:%s", info, query, err, lgc.rid)
 			return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDObject, common.BKInstIDField, "int", err.Error())
 		}
 		instIDArr = append(instIDArr, id)
