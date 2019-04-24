@@ -219,7 +219,6 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDArr)
-	cond.Field(common.BKIsOnlyField).Eq(true)
 
 	rsp, err := ia.cli.clientSet.CoreService().Model().ReadModelAttrByCondition(context.Background(), ia.params.Header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if nil != err {
