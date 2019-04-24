@@ -24,12 +24,12 @@
         </div>
         <cmdb-table class="new-association-table"
             :loading="$loading()"
-            :height="500"
             :pagination.sync="table.pagination"
             :sort="table.sort"
             :header="table.header"
             :list="table.list"
             :col-border="true"
+            :wrapper-minus-height="308"
             @handlePageChange="setCurrentPage"
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
