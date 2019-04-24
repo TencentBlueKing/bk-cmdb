@@ -215,11 +215,12 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 }
 
 // notExistAppModuleHost get hostID in the module that does not exist
+// 获取不在moduleID中的hostID
 func (lgc *Logics) notExistAppModuleHost(ctx context.Context, appID, moduleID int64, hostIDArr []int64) ([]int64, error) {
 	hostModuleInput := &metadata.HostModuleRelationRequest{
 		ApplicationID: appID,
-		ModuleID:      []int64{moduleID},
-		HostID:        hostIDArr,
+		ModuleIDArr:   []int64{moduleID},
+		HostIDArr:     hostIDArr,
 	}
 
 	hmResult, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, hostModuleInput)

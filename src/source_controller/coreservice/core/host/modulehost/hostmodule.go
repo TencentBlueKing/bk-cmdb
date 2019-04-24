@@ -149,14 +149,14 @@ func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metad
 	if input.ApplicationID > 0 {
 		moduleHostCond.Field(common.BKAppIDField).Eq(input.ApplicationID)
 	}
-	if len(input.HostID) > 0 {
-		moduleHostCond.Field(common.BKHostIDField).In(input.HostID)
+	if len(input.HostIDArr) > 0 {
+		moduleHostCond.Field(common.BKHostIDField).In(input.HostIDArr)
 	}
-	if len(input.ModuleID) > 0 {
-		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleID)
+	if len(input.ModuleIDArr) > 0 {
+		moduleHostCond.Field(common.BKModuleIDField).In(input.ModuleIDArr)
 	}
-	if len(input.SetID) > 0 {
-		moduleHostCond.Field(common.BKSetIDField).In(input.SetID)
+	if len(input.SetIDArr) > 0 {
+		moduleHostCond.Field(common.BKSetIDField).In(input.SetIDArr)
 	}
 	cond := moduleHostCond.ToMapStr()
 	if len(cond) == 0 {

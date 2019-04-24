@@ -121,7 +121,7 @@ func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArr
 
 	conf := &metadata.HostModuleRelationRequest{
 		ApplicationID: appID,
-		HostID:        hostIDArray,
+		HostIDArr:     hostIDArray,
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, conf)

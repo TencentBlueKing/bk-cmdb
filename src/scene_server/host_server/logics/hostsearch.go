@@ -201,7 +201,7 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, errors.CCError) 
 		hostIDArr = append(hostIDArr, hostInfoItem.hostID)
 	}
 	queryCond := metadata.HostModuleRelationRequest{
-		HostID: hostIDArr,
+		HostIDArr: hostIDArr,
 	}
 	mhconfig, err := sh.lgc.GetConfigByCond(sh.ctx, queryCond)
 	if err != nil {
@@ -721,15 +721,15 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 	isAddHostID := false
 
 	if len(sh.conds.setCond.Condition) > 0 {
-		moduleHostConfig.SetID = sh.idArr.moduleHostConfig.setIDArr
+		moduleHostConfig.SetIDArr = sh.idArr.moduleHostConfig.setIDArr
 		isAddHostID = true
 	}
 	if len(sh.conds.moduleCond.Condition) > 0 {
-		moduleHostConfig.ModuleID = sh.idArr.moduleHostConfig.moduleIDArr
+		moduleHostConfig.ModuleIDArr = sh.idArr.moduleHostConfig.moduleIDArr
 		isAddHostID = true
 	}
 	if len(sh.conds.objectCondMap) > 0 {
-		moduleHostConfig.HostID = sh.idArr.moduleHostConfig.asstHostIDArr
+		moduleHostConfig.HostIDArr = sh.idArr.moduleHostConfig.asstHostIDArr
 		isAddHostID = true
 	}
 

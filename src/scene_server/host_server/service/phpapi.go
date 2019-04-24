@@ -161,7 +161,7 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 	}
 
 	configCond := meta.HostModuleRelationRequest{
-		HostID: hostIDArr,
+		HostIDArr: hostIDArr,
 	}
 	var configData []meta.ModuleHost
 	if 0 < len(input.AppID) {
@@ -224,7 +224,7 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 	}
 
 	configCond := meta.HostModuleRelationRequest{
-		HostID: hostIDArr,
+		HostIDArr: hostIDArr,
 	}
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCond)
 	if nil != err {
@@ -276,7 +276,7 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 	}
 
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{
-		ModuleID:      input.ModuleID,
+		ModuleIDArr:   input.ModuleID,
 		ApplicationID: *input.ApplicationID,
 	})
 	if nil != err {
@@ -331,7 +331,7 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 	conds.ApplicationID = *input.ApplicationID
 
 	if len(input.SetID) > 0 {
-		conds.SetID = input.SetID
+		conds.SetIDArr = input.SetID
 	}
 
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, conds)
@@ -479,7 +479,7 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 
 	condition := meta.HostModuleRelationRequest{
 		ApplicationID: appID,
-		SetID:         setIDArr,
+		SetIDArr:      setIDArr,
 	}
 
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition)
@@ -700,7 +700,7 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 
 	// 根据主机hostId获取app_id,module_id,set_id
 	configCon := meta.HostModuleRelationRequest{
-		HostID: hostIdArr,
+		HostIDArr: hostIdArr,
 	}
 	configArr, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
 	if nil != err {
@@ -762,7 +762,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 	}
 	configCon := meta.HostModuleRelationRequest{
 		ApplicationID: appID,
-		HostID:        []int64{hostID},
+		HostIDArr:     []int64{hostID},
 	}
 
 	configArr, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
@@ -910,8 +910,8 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	//configData := make([]map[string]int,0)
 	confMap := meta.HostModuleRelationRequest{
 		ApplicationID: appID,
-		SetID:         []int64{setID},
-		ModuleID:      []int64{moduleID},
+		SetIDArr:      []int64{setID},
+		ModuleIDArr:   []int64{moduleID},
 	}
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, confMap)
 	if nil != err {
