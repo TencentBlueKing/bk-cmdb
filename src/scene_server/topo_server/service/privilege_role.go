@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
@@ -36,13 +37,16 @@ func (s *Service) ParseCreateRolePrivilegeOriginData(data []byte) (mapstr.MapStr
 // CreatePrivilege search user goup
 func (s *Service) CreatePrivilege(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	datas := make([]string, 0)
 	val, exists := data.Get("origin")
 	if !exists {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, _ = val.([]string)
+	datas, ok := val.([]string)
+	if !ok {
+		blog.Infof("CreatePrivilege param invalide type : %#v", val)
+	}
+
 	err := s.Core.PermissionOperation().Role(params).CreatePermission(params.SupplierAccount, pathParams("bk_obj_id"), pathParams("bk_property_id"), datas)
 	return nil, err
 }

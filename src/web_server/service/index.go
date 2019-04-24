@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/blog"
 	"encoding/json"
 	"strconv"
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
@@ -81,7 +81,7 @@ func (s *Service) Index(c *gin.Context) {
 
 	// set cookie
 	appIDArr := make([]string, 0)
-	for key, _ := range userPriviApp {
+	for key := range userPriviApp {
 		appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
 	}
 	appIDStr := strings.Join(appIDArr, "-")
