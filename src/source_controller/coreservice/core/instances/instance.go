@@ -139,7 +139,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
 	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
 	if nil != err {
-		blog.Errorf("parse condition  error %v, [%v]", err)
+		blog.Errorf("SearchModelInstance failed, parse condition failed, inputParam: %+v, err: %+v", inputParam, err)
 		return &metadata.QueryResult{}, err
 	}
 	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
