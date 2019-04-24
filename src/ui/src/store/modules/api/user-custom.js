@@ -32,7 +32,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     saveUsercustom ({ commit, state, dispatch }, usercustom = {}) {
-        return $http.post(`usercustom`, usercustom, {cancelWhenRouteChange: false}).then(() => {
+        return $http.post(`usercustom`, usercustom, { cancelWhenRouteChange: false }).then(() => {
             $http.cancelCache('searchUserCustom')
             commit('setUsercustom', usercustom)
             return state.usercustom
@@ -46,7 +46,7 @@ const actions = {
      * @param {String} dispatch store dispatch action hander
      * @return {promises} promises 对象
      */
-    searchUsercustom ({ commit, state, dispatch }, {config}) {
+    searchUsercustom ({ commit, state, dispatch }, { config }) {
         const mergedConfig = Object.assign({
             requestId: 'searchUserCustom'
         }, config)

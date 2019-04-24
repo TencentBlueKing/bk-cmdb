@@ -11,7 +11,7 @@
                     name="asstId"
                     :disabled="isEdit"
                     v-model.trim="relationInfo['bk_asst_id']"
-                    v-validate="'required|singlechar'"
+                    v-validate="'required|associationId'"
                     :placeholder="$t('ModelManagement[\'请输入英文标识\']')">
                     <p class="form-error">{{errors.first('asstId')}}</p>
                 </div>
