@@ -167,7 +167,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 	}
 	bk_token, err := c.Cookie(bkTokenName)
-	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)
 	}
