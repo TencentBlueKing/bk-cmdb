@@ -51,16 +51,12 @@
                         @click="handleMultipleDelete">
                         {{$t('Common[\'删除\']')}}
                     </bk-button>
-                    <bk-button class="options-button" type="submit default"
+                    <bk-button class="options-button" type="default"
                         form="exportForm"
-                        :disabled="!table.checked.length">
+                        :disabled="!table.checked.length"
+                        @click="exportField">
                         {{$t('HostResourcePool[\'导出选中\']')}}
                     </bk-button>
-                    <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
-                        <input type="hidden" name="bk_host_id" :value="table.checked">
-                        <input type="hidden" name="export_custom_fields" :value="usercustom[columnsConfigKey]">
-                        <input type="hidden" name="bk_biz_id" value="-1">
-                    </form>
                     <cmdb-clipboard-selector class="options-clipboard"
                         :list="clipboardList"
                         :disabled="!table.checked.length"
@@ -193,6 +189,7 @@
             }
         },
         methods: {
+            ...mapActions('hostBatch', ['exportHost']),
             ...mapActions('hostSearch', ['searchHost']),
             ...mapActions('hostDelete', ['deleteHost']),
             ...mapActions('hostRelation', ['transferResourcehostToIdleModule']),
@@ -385,6 +382,33 @@
                 } else {
                     this.$warn(this.$t("HostResourcePool['未配置Agent安装APP地址']"))
                 }
+            },
+            exportExcel (response) {
+                const contentDisposition = response.headers['content-disposition']
+                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
+                const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+                const link = document.createElement('a')
+                link.style.display = 'none'
+                link.href = url
+                link.setAttribute('download', fileName)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+            },
+            async exportField () {
+                const formData = new FormData()
+                formData.append('bk_host_id', this.table.checked)
+                formData.append('export_custom_fields', this.customColumns)
+                formData.append('bk_biz_id', '-1')
+                const res = await this.exportHost({
+                    params: formData,
+                    config: {
+                        globalError: false,
+                        originalResponse: true,
+                        responseType: 'blob'
+                    }
+                })
+                this.exportExcel(res)
             }
         }
     }
