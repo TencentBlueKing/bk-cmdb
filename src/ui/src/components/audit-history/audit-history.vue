@@ -9,7 +9,7 @@
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
                 <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
             </div>
-            <bk-button class="fr" type="primary" @click="refresh">{{$t("Common['查询']")}}</bk-button>
+            <bk-button class="fr" type="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
         </div>
         <cmdb-table class="audit-table"
             :loading="$loading('getOperationLog')"
@@ -63,6 +63,7 @@
             return {
                 dateRange: [],
                 operator: '',
+                sendOperator: '',
                 header: [{
                     id: 'op_desc',
                     name: this.$t("HostResourcePool['变更内容']")
@@ -116,9 +117,13 @@
                     this.details.data = null
                 }
             },
-            refresh () {
+            refresh (isClickSearch) {
+                if (isClickSearch) {
+                    this.pagination.current = 1
+                    this.sendOperator = this.operator
+                }
                 this.getOperationLog({
-                    params: this.getParams(),
+                    params: this.getParams(isClickSearch),
                     config: {
                         cancelPrevious: true,
                         requestId: 'getOperationLog'
@@ -128,7 +133,7 @@
                     this.pagination.count = data.count
                 })
             },
-            getParams () {
+            getParams (isClickSearch) {
                 const condition = {
                     'op_target': this.target,
                     'op_time': this.filterRange
@@ -139,14 +144,14 @@
                 if (!isNaN(this.instId)) {
                     condition['inst_id'] = this.instId
                 }
-                if (this.operator) {
-                    condition.operator = this.operator
+                if (this.sendOperator) {
+                    condition.operator = this.sendOperator
                 }
                 return {
                     condition,
                     limit: this.pagination.size,
                     sort: this.sort,
-                    start: (this.pagination.current - 1) * this.pagination.size
+                    start: isClickSearch ? 0 : (this.pagination.current - 1) * this.pagination.size
                 }
             },
             handlePageChange (current) {

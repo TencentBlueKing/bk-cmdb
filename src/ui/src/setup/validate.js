@@ -17,6 +17,11 @@ const customRules = {
             /* eslint-enable */
         }
     },
+    associationId: {
+        validate: value => {
+            return /^[a-z_]+$/.test(value)
+        }
+    },
     classifyName: {
         validate: value => {
             return /^([a-zA-Z0-9_ ]|[\u4e00-\u9fa5]|[\uac00-\ud7ff]|[\u0800-\u4e00]){1,20}$/.test(value)
@@ -82,6 +87,7 @@ const dictionary = {
             regex: () => '请输入符合自定义正则的内容',
             longchar: () => '请输入正确的长字符内容',
             singlechar: () => '请输入正确的短字符内容',
+            associationId: () => '格式不正确，只能包含下划线，英文小写',
             classifyName: () => '请输入正确的内容',
             classifyId: () => '请输入正确的内容',
             required: () => '该字段是必填项',
@@ -106,6 +112,7 @@ const dictionary = {
             regex: () => 'Please enter the correct content that conform custom regex',
             longchar: () => 'Please enter the correct content',
             singlechar: () => 'Please enter the correct content',
+            associationId: () => 'The format is incorrect and can only contain underscores and lowercase English',
             classifyName: () => 'Please enter the correct content',
             classifyId: () => 'Please enter the correct content',
             required: () => 'This field is required',

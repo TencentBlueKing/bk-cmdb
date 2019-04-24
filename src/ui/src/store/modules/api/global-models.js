@@ -11,8 +11,7 @@
 import $http from '@/api'
 
 const state = {
-    graphicsData: [],
-    customModelConfig: null
+    graphicsData: []
 }
 
 const getters = {
@@ -21,7 +20,7 @@ const getters = {
         rootGetters['objectModelClassify/models'].forEach(model => {
             modelConfig[model.bk_obj_id] = true
         })
-        return Object.assign(modelConfig, state.customModelConfig)
+        return Object.assign(modelConfig, rootGetters['userCustom/usercustom'].topoModelConfig)
     },
     displayModelGroups: (state, getters, rootState, rootGetters) => {
         const modelGroups = []
@@ -80,9 +79,6 @@ const actions = {
 }
 
 const mutations = {
-    setCustomModelConfig (state, config) {
-        state.customModelConfig = config
-    },
     setGraphicsData (state, data) {
         state.graphicsData = data
     },
