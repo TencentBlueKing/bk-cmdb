@@ -29,7 +29,7 @@ import (
 //GetSystemFlag get the system define flag
 func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()

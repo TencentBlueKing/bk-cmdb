@@ -127,7 +127,7 @@ func ExportNetDevice(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("[Export Net Device] get device data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -137,7 +137,7 @@ func ExportNetDevice(c *gin.Context) {
 		blog.Errorf("[Export Net Device] create sheet error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -148,7 +148,7 @@ func ExportNetDevice(c *gin.Context) {
 		blog.Errorf("[Export Net Device] build net device excel data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -158,7 +158,7 @@ func ExportNetDevice(c *gin.Context) {
 			blog.Errorf("[Export Net Device] mkdir error:%s", err.Error())
 			msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 				defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-			c.String(http.StatusInternalServerError, msg, nil)
+			c.String(http.StatusInternalServerError, msg)
 			return
 		}
 	}
@@ -172,7 +172,7 @@ func ExportNetDevice(c *gin.Context) {
 		blog.Error("[Export Net Device] save file error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -198,7 +198,7 @@ func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 			blog.Errorf("[Build NetDevice Excel Template] mkdir error:%s", err.Error())
 			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
 				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(), nil)
-			c.String(http.StatusInternalServerError, msg, nil)
+			c.String(http.StatusInternalServerError, msg)
 			return
 		}
 	}

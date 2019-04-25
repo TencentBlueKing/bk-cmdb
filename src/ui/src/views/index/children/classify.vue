@@ -1,9 +1,9 @@
 <template>
     <div class="classify-layout clearfix">
-        <div class="classify-waterfall fl" 
-            v-for="col in classifyColumns.length" 
+        <div class="classify-waterfall fl"
+            v-for="col in classifyColumns.length"
             :key="col">
-            <v-classify-item 
+            <v-classify-item
                 v-for="classify in classifyColumns[col - 1]"
                 :key="classify['bk_classification_id']"
                 :classify="classify">
@@ -14,58 +14,50 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import throttle from 'lodash.throttle'
+    // import throttle from 'lodash.throttle'
     import vClassifyItem from './classify-item'
+    // eslint-disable-next-line
     export default {
         components: {
             vClassifyItem
         },
         computed: {
+            ...mapGetters('auth', ['isAuthorized']),
             ...mapGetters('objectModelClassify', [
-                'authorizedClassifications',
                 'activeClassifications'
             ]),
-            ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters(['admin']),
             hostManageClassification () {
                 const hostManageClassification = {
                     'bk_classification_icon': 'icon-cc-host',
-                    'bk_classification_id': 'bk_collection',
-                    'bk_classification_name': this.$t('Hosts["主机管理"]'),
+                    'bk_classification_id': 'bk_host_management',
+                    'bk_classification_name': this.$t('Nav["基础资源"]'),
                     'bk_classification_type': 'inner',
-                    'bk_objects': []
-                }
-                // 放开展示权限
-                // if (this.admin || (this.privilege['model_config'] || {}).hasOwnProperty('bk_organization')) {
-                hostManageClassification['bk_objects'].push({
-                    'bk_obj_name': this.$t('Common["业务"]'),
-                    'bk_obj_id': 'biz',
-                    'bk_obj_icon': 'icon-cc-business',
-                    'path': '/business',
-                    'bk_classification_id': 'bk_collection'
-                })
-                // }
-                if (this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')) {
-                    hostManageClassification['bk_objects'].push({
+                    'bk_objects': [{
+                        'bk_obj_name': this.$t('Common["业务"]'),
+                        'bk_obj_id': 'biz',
+                        'bk_obj_icon': 'icon-cc-business',
+                        'path': '/business',
+                        'bk_classification_id': 'bk_host_management'
+                    }, {
                         'bk_obj_name': this.$t('Nav["主机"]'),
                         'bk_obj_id': '$resource',
                         'bk_obj_icon': 'icon-cc-host-free-pool',
                         'path': '/resource',
-                        'bk_classification_id': 'bk_collection'
-                    })
+                        'bk_classification_id': 'bk_host_management'
+                    }]
                 }
                 return hostManageClassification
             },
             classifyColumns () {
                 const classifies = [
                     this.hostManageClassification,
-                    // ...this.authorizedClassifications // 放开展示权限
                     ...this.activeClassifications
                 ].filter(classification => {
                     return classification['bk_classification_id'] !== 'bk_organization' && classification['bk_objects'].length
                 })
-                let colHeight = [0, 0, 0, 0]
-                let classifyColumns = [[], [], [], []]
+                const colHeight = [0, 0, 0, 0]
+                const classifyColumns = [[], [], [], []]
                 classifies.forEach(classify => {
                     const minColHeight = Math.min(...colHeight)
                     const rowIndex = colHeight.indexOf(minColHeight)

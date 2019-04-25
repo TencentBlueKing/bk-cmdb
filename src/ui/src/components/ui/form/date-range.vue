@@ -4,14 +4,20 @@
             :placeholder="placeholder"
             :disabled="disabled"
             :position="position"
-            :rangeSeparator="rangeSeparator"
-            :quickSelect="quickSelect"
+            :range-separator="rangeSeparator"
+            :quick-select="quickSelect"
             :ranges="ranges"
             :timer="timer"
-            :startDate="startDate"
-            :endDate="endDate"
+            :start-date="startDate"
+            :end-date="endDate"
             @change="handleChange">
         </bk-date-range>
+        <div class="icon-box" :class="{ 'icon-toggle': hoverToggle }">
+            <i class="bk-icon icon-close-circle-shape"
+                @click="handleClearData"
+                v-if="showClose">
+            </i>
+        </div>
     </div>
 </template>
 
@@ -20,6 +26,7 @@
         name: 'cmdb-form-date-range',
         props: {
             value: {
+                type: Array,
                 default () {
                     return []
                 }
@@ -53,11 +60,16 @@
             timer: {
                 type: Boolean,
                 default: false
+            },
+            showClose: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
             return {
-                localSelected: []
+                localSelected: [],
+                hoverToggle: false
             }
         },
         computed: {
@@ -94,7 +106,15 @@
                 }
             },
             handleChange (oldValue, newValue) {
+                this.hoverToggle = true
                 this.localSelected = newValue.split(this.separator)
+            },
+            handleClearData () {
+                this.localSelected = []
+                const setTimer = setTimeout(() => {
+                    this.hoverToggle = false
+                    clearTimeout(setTimer)
+                })
             }
         }
     }
@@ -105,9 +125,24 @@
         position: relative;
         display: inline-block;
         vertical-align: middle;
+        &:hover .icon-toggle {
+            display: block;
+        }
     }
     .bk-date-range{
         width: 100%;
         white-space: normal;
+    }
+    .icon-box {
+        position: absolute;
+        background-color: #ffffff;
+        top: 1px;
+        right: 1px;
+        padding: 7px;
+        display: none;
+        .icon-close-circle-shape {
+            font-size: 20px;
+            cursor: pointer;
+        }
     }
 </style>

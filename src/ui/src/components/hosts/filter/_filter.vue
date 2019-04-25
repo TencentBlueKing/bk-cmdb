@@ -24,7 +24,7 @@
                 </i>
             </div>
             <div class="filter-group"
-                v-for="(property, index) in customFieldProperties"
+                v-for="property in customFieldProperties"
                 :key="property['bk_property_id']">
                 <label class="filter-label">{{getFilterLabel(property)}}</label>
                 <div class="filter-field clearfix">
@@ -54,15 +54,15 @@
                     </component>
                 </div>
             </div>
-            <div class="filter-button clearfix" :class="{sticky: layout.scroll}">
+            <div class="filter-button clearfix" :class="{ sticky: layout.scroll }">
                 <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
                 <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
-                    :class="{collecting: collection.show}"
-                    @click="collection.show = true">
+                    :class="{ collecting: collection.show }"
+                    @click.stop="handleCollectionBox">
                     <i class="icon-cc-collection"></i>
                 </bk-button>
-                <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
+                <div class="collection-form" ref="collectionTips" v-click-outside="handleCloseCollection" v-show="collection.show">
                     <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
                     <div class="form-group">
                         <input type="text" class="form-name cmdb-form-input"
@@ -154,6 +154,10 @@
                 },
                 layout: {
                     scroll: false
+                },
+                confirm: {
+                    instance: null,
+                    id: null
                 }
             }
         },
@@ -165,6 +169,8 @@
                 'applyingProperties',
                 'applyingConditions'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
+            ...mapGetters('objectBiz', ['bizId']),
             filterConfigProperties () {
                 const properties = {}
                 Object.keys(this.properties).forEach(objId => {
@@ -267,9 +273,9 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: this.$route.name !== 'resource'}),
+                    }, { inject: this.$route.name !== 'resource' }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -283,7 +289,7 @@
             },
             getFilterLabel (property) {
                 const objId = property['bk_obj_id']
-                const propertyModel = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const propertyModel = this.models.find(model => model['bk_obj_id'] === objId)
                 return `${propertyModel['bk_obj_name']} - ${property['bk_property_name']}`
             },
             getOperatorType (property) {
@@ -326,7 +332,7 @@
                         let value = propertyCondition.value
                         if (!['', null].includes(value)) {
                             if (propertyCondition.operator === '$in') {
-                                let splitValue = [...(new Set(value.split(',').map(val => val.trim())))]
+                                const splitValue = [...(new Set(value.split(',').map(val => val.trim())))]
                                 value = splitValue.length > 1 ? [...splitValue, value] : splitValue
                             }
                             objParams.condition.push({
@@ -395,8 +401,8 @@
                     'bk_host_outerip': true,
                     exact: 0
                 }
-                for (let objId in this.condition) {
-                    for (let propertyId in this.condition[objId]) {
+                for (const objId in this.condition) {
+                    for (const propertyId in this.condition[objId]) {
                         this.condition[objId][propertyId].value = ''
                     }
                 }
@@ -409,7 +415,7 @@
                 const content = []
                 const params = this.getParams()
                 if (this.collectionContent.hasOwnProperty('business')) {
-                    content.push(`bk_biz_id:${this.collectionContent.business}`)
+                    content.push(`bk_biz_id:${this.bizId}`)
                 }
                 if (params.ip.data.length) {
                     content.push(`ip:${params.ip.data.join(',')}`)
@@ -420,10 +426,10 @@
                     '$regex': '~',
                     '$in': '~'
                 }
-                params.condition.forEach(({condition, bk_obj_id: objId}) => {
+                params.condition.forEach(({ condition, bk_obj_id: objId }) => {
                     if (!['biz'].includes(objId) && condition.length) {
                         const objContent = []
-                        condition.forEach(({field, operator, value}) => {
+                        condition.forEach(({ field, operator, value }) => {
                             objContent.push(`${field}${operatorMap[operator]}${Array.isArray(value) ? value.join(',') : value}`)
                         })
                         content.push(`${objId}: ${objContent.join(' | ')}`)
@@ -449,15 +455,15 @@
             getCollectionParams () {
                 const params = this.getParams()
                 const info = {
-                    'bk_biz_id': this.collectionContent.business || -1,
+                    'bk_biz_id': this.bizId || -1,
                     'exact_search': this.ip.exact,
                     'bk_host_innerip': this.ip['bk_host_innerip'],
                     'bk_host_outerip': this.ip['bk_host_outerip'],
                     'ip_list': params.ip.data
                 }
                 const queryParams = []
-                params.condition.forEach(({condition, bk_obj_id: objId}) => {
-                    condition.forEach(({field, operator, value}) => {
+                params.condition.forEach(({ condition, bk_obj_id: objId }) => {
+                    condition.forEach(({ field, operator, value }) => {
                         queryParams.push({
                             'bk_obj_id': objId,
                             field,
@@ -474,9 +480,26 @@
                 }
             },
             handleCloseCollection () {
-                this.collection.show = false
+                this.confirm.instance && this.confirm.instance.destroy()
                 this.collection.name = ''
                 this.collection.content = ''
+                this.collection.show = false
+            },
+            handleCollectionBox (event) {
+                if (this.collection.show) {
+                    this.handleCloseCollection()
+                    return
+                }
+                this.collection.show = true
+                this.confirm.instance = this.$tooltips({
+                    duration: -1,
+                    theme: 'light',
+                    zIndex: 9999,
+                    width: 357,
+                    container: document.body,
+                    target: event.target
+                })
+                this.confirm.instance.$el.append(this.$refs.collectionTips)
             },
             handleApplyFilterConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
@@ -583,35 +606,12 @@
         }
     }
     .collection-form {
-        position: absolute;
-        bottom: 100%;
-        right: 0;
         width: 100%;
-        margin: 0 0 10px 0;
-        padding: 20px;
+        padding: 14px 12px;
         border-radius: 2px;
-        box-shadow: 0 2px 10px 4px rgba(12,34,59,.13);
         color: #3c96ff;
         z-index: 9999;
         background-color: #fff;
-        &:before,
-        &:after {
-            position: absolute;
-            right: 20px;
-            top: 100%;
-            width: 0;
-            height: 0;
-            content: "";
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-        }
-        &:before {
-            border-top: 10px solid #e7e9ef;
-            margin-top: 2px;
-        }
-        &:after {
-            border-top: 10px solid #fff;
-        }
         .form-group {
             margin: 15px 0 0 0;
             position: relative;
@@ -625,7 +625,7 @@
             font-size: 12px;
         }
         .form-name {
-            color: $cmdbTextColor;    
+            color: $cmdbTextColor;
         }
         .form-error {
             position: absolute;

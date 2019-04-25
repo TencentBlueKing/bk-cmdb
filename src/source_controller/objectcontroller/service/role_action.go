@@ -29,7 +29,7 @@ import (
 // GetRolePri get role privilege
 func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -79,7 +79,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 //CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -121,7 +121,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 //UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

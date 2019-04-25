@@ -14,7 +14,6 @@ package configcenter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sync"
@@ -24,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/json"
 	"configcenter/src/common/language"
 	"configcenter/src/common/types"
 )

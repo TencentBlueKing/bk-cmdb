@@ -17,95 +17,106 @@ import (
 )
 
 func (s *coreService) initHealth() {
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/healthz", HandlerFunc: s.Health})
+	s.addAction(http.MethodGet, "/healthz", s.Health, nil)
 }
 
 func (s *coreService) initModelClassification() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/classification", HandlerFunc: s.CreateOneModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/classification", HandlerFunc: s.CreateManyModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/model/classification", HandlerFunc: s.SetManyModelClassificaiton})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/classification", HandlerFunc: s.SetOneModelClassificaition})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/classification", HandlerFunc: s.UpdateModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classification", HandlerFunc: s.DeleteModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/classification/cascade", HandlerFunc: s.CascadeDeleteModelClassification})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/classification", HandlerFunc: s.SearchModelClassification})
+	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
+	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
+	s.addAction(http.MethodPost, "/setmany/model/classification", s.SetManyModelClassificaiton, nil)
+	s.addAction(http.MethodPost, "/set/model/classification", s.SetOneModelClassificaition, nil)
+	s.addAction(http.MethodPut, "/update/model/classification", s.UpdateModelClassification, nil)
+	s.addAction(http.MethodDelete, "/delete/model/classification", s.DeleteModelClassification, nil)
+	s.addAction(http.MethodDelete, "/delete/model/classification/cascade", s.CascadeDeleteModelClassification, nil)
+	s.addAction(http.MethodPost, "/read/model/classification", s.SearchModelClassification, nil)
 }
 
 func (s *coreService) initModel() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model", HandlerFunc: s.CreateModel})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model", HandlerFunc: s.SetModel})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model", HandlerFunc: s.UpdateModel})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model", HandlerFunc: s.DeleteModel})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/cascade", HandlerFunc: s.CascadeDeleteModel})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model", HandlerFunc: s.SearchModel})
+	s.addAction(http.MethodPost, "/create/model", s.CreateModel, nil)
+	s.addAction(http.MethodPost, "/set/model", s.SetModel, nil)
+	s.addAction(http.MethodPut, "/update/model", s.UpdateModel, nil)
+	s.addAction(http.MethodDelete, "/delete/model", s.DeleteModel, nil)
+	s.addAction(http.MethodDelete, "/delete/model/cascade", s.CascadeDeleteModel, nil)
+	s.addAction(http.MethodPost, "/read/model", s.SearchModel, nil)
 
 	// init model attribute groups methods
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/group", HandlerFunc: s.CreateModelAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/group", HandlerFunc: s.SetModelAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/group", HandlerFunc: s.UpdateModelAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/group", HandlerFunc: s.UpdateModelAttributeGroupByCondition})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/group", HandlerFunc: s.DeleteModelAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/group", HandlerFunc: s.DeleteModelAttributeGroupByCondition})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/group", HandlerFunc: s.SearchModelAttributeGroup})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/group", HandlerFunc: s.SearchModelAttributeGroupByCondition})
+	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/group", s.CreateModelAttributeGroup, nil)
+	s.addAction(http.MethodPost, "/set/model/{bk_obj_id}/group", s.SetModelAttributeGroup, nil)
+	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/group", s.UpdateModelAttributeGroup, nil)
+	s.addAction(http.MethodPut, "/update/model/group", s.UpdateModelAttributeGroupByCondition, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/group", s.DeleteModelAttributeGroup, nil)
+	s.addAction(http.MethodDelete, "/delete/model/group", s.DeleteModelAttributeGroupByCondition, nil)
+	s.addAction(http.MethodPost, "/read/model/{bk_obj_id}/group", s.SearchModelAttributeGroup, nil)
+	s.addAction(http.MethodPost, "/read/model/group", s.SearchModelAttributeGroupByCondition, nil)
 
 	// init attributes methods
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes", HandlerFunc: s.CreateModelAttributes})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/model/{bk_obj_id}/attributes", HandlerFunc: s.SetModelAttributes})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes", HandlerFunc: s.UpdateModelAttributes})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/attributes", HandlerFunc: s.UpdateModelAttributesByCondition})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes", HandlerFunc: s.DeleteModelAttribute})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/attributes", HandlerFunc: s.SearchModelAttributes})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/attributes", HandlerFunc: s.SearchModelAttributesByCondition})
+	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/attributes", s.CreateModelAttributes, nil)
+	s.addAction(http.MethodPost, "/set/model/{bk_obj_id}/attributes", s.SetModelAttributes, nil)
+	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/attributes", s.UpdateModelAttributes, nil)
+	s.addAction(http.MethodPut, "/update/model/attributes", s.UpdateModelAttributesByCondition, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/attributes", s.DeleteModelAttribute, nil)
+	s.addAction(http.MethodPost, "/read/model/{bk_obj_id}/attributes", s.SearchModelAttributes, nil)
+	s.addAction(http.MethodPost, "/read/model/attributes", s.SearchModelAttributesByCondition, nil)
 
 }
 
 func (s *coreService) initAttrUnique() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/attributes/unique", HandlerFunc: s.SearchModelAttrUnique})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/attributes/unique", HandlerFunc: s.CreateModelAttrUnique})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/attributes/unique/{id}", HandlerFunc: s.UpdateModelAttrUnique})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/attributes/unique/{id}", HandlerFunc: s.DeleteModelAttrUnique})
+	s.addAction(http.MethodPost, "/read/model/attributes/unique", s.SearchModelAttrUnique, nil)
+	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/attributes/unique", s.CreateModelAttrUnique, nil)
+	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/attributes/unique/{id}", s.UpdateModelAttrUnique, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/attributes/unique/{id}", s.DeleteModelAttrUnique, nil)
 }
 
 func (s *coreService) initModelInstances() {
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/model/{bk_obj_id}/instance", HandlerFunc: s.CreateOneModelInstance})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/model/{bk_obj_id}/instance", HandlerFunc: s.CreateManyModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/model/{bk_obj_id}/instance", HandlerFunc: s.UpdateModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/model/{bk_obj_id}/instances", HandlerFunc: s.SearchModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance", HandlerFunc: s.DeleteModelInstances})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/model/{bk_obj_id}/instance/cascade", HandlerFunc: s.CascadeDeleteModelInstances})
+	s.addAction(http.MethodPost, "/create/model/{bk_obj_id}/instance", s.CreateOneModelInstance, nil)
+	s.addAction(http.MethodPost, "/createmany/model/{bk_obj_id}/instance", s.CreateManyModelInstances, nil)
+	s.addAction(http.MethodPut, "/update/model/{bk_obj_id}/instance", s.UpdateModelInstances, nil)
+	s.addAction(http.MethodPost, "/read/model/{bk_obj_id}/instances", s.SearchModelInstances, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/instance", s.DeleteModelInstances, nil)
+	s.addAction(http.MethodDelete, "/delete/model/{bk_obj_id}/instance/cascade", s.CascadeDeleteModelInstances, nil)
 }
 
 func (s *coreService) initAssociationKind() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/associationkind", HandlerFunc: s.CreateOneAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/associationkind", HandlerFunc: s.CreateManyAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/associationkind", HandlerFunc: s.SetOneAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/setmany/associationkind", HandlerFunc: s.SetManyAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/associationkind", HandlerFunc: s.UpdateAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/associationkind", HandlerFunc: s.DeleteAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/associationkind/cascade", HandlerFunc: s.CascadeDeleteAssociationKind})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/associationkind", HandlerFunc: s.SearchAssociationKind})
+	s.addAction(http.MethodPost, "/create/associationkind", s.CreateOneAssociationKind, nil)
+	s.addAction(http.MethodPost, "/createmany/associationkind", s.CreateManyAssociationKind, nil)
+	s.addAction(http.MethodPost, "/set/associationkind", s.SetOneAssociationKind, nil)
+	s.addAction(http.MethodPost, "/setmany/associationkind", s.SetManyAssociationKind, nil)
+	s.addAction(http.MethodPut, "/update/associationkind", s.UpdateAssociationKind, nil)
+	s.addAction(http.MethodDelete, "/delete/associationkind", s.DeleteAssociationKind, nil)
+	s.addAction(http.MethodDelete, "/delete/associationkind/cascade", s.CascadeDeleteAssociationKind, nil)
+	s.addAction(http.MethodPost, "/read/associationkind", s.SearchAssociationKind, nil)
 
 }
 
 func (s *coreService) initModelAssociation() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/modelassociation", HandlerFunc: s.CreateModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/mainlinemodelassociation", HandlerFunc: s.CreateMainlineModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/set/modelassociation", HandlerFunc: s.SetModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPut, Path: "/update/modelassociation", HandlerFunc: s.UpdateModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/modelassociation", HandlerFunc: s.SearchModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/modelassociation", HandlerFunc: s.DeleteModelAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/modelassociation/cascade", HandlerFunc: s.DeleteModelAssociation})
+	s.addAction(http.MethodPost, "/create/modelassociation", s.CreateModelAssociation, nil)
+	s.addAction(http.MethodPost, "/create/mainlinemodelassociation", s.CreateMainlineModelAssociation, nil)
+	s.addAction(http.MethodPost, "/set/modelassociation", s.SetModelAssociation, nil)
+	s.addAction(http.MethodPut, "/update/modelassociation", s.UpdateModelAssociation, nil)
+	s.addAction(http.MethodPost, "/read/modelassociation", s.SearchModelAssociation, nil)
+	s.addAction(http.MethodDelete, "/delete/modelassociation", s.DeleteModelAssociation, nil)
+	s.addAction(http.MethodDelete, "/delete/modelassociation/cascade", s.DeleteModelAssociation, nil)
 }
 
 func (s *coreService) initInstanceAssociation() {
 
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/create/instanceassociation", HandlerFunc: s.CreateOneInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/createmany/instanceassociation", HandlerFunc: s.CreateManyInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodPost, Path: "/read/instanceassociation", HandlerFunc: s.SearchInstanceAssociation})
-	s.actions = append(s.actions, action{Method: http.MethodDelete, Path: "/delete/instanceassociation", HandlerFunc: s.DeleteInstanceAssociation})
+	s.addAction(http.MethodPost, "/create/instanceassociation", s.CreateOneInstanceAssociation, nil)
+	s.addAction(http.MethodPost, "/createmany/instanceassociation", s.CreateManyInstanceAssociation, nil)
+	s.addAction(http.MethodPost, "/read/instanceassociation", s.SearchInstanceAssociation, nil)
+	s.addAction(http.MethodDelete, "/delete/instanceassociation", s.DeleteInstanceAssociation, nil)
+}
+
+func (s *coreService) initMainline() {
+	// add handler for model topo and business topo
+	s.addAction(http.MethodPost, "/read/mainline/model", s.SearchMainlineModelTopo, nil)
+	s.addAction(http.MethodPost, "/read/mainline/instance/{bk_biz_id}", s.SearchMainlineInstanceTopo, nil)
+}
+
+func (s *coreService) host() {
+	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToDefaultModule, nil)
+
 }
 
 func (s *coreService) initService() {
@@ -118,4 +129,6 @@ func (s *coreService) initService() {
 	s.initModelInstances()
 	s.initInstanceAssociation()
 	s.initDataSynchronize()
+	s.initMainline()
+	s.host()
 }

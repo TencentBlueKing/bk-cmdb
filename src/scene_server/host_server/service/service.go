@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth/extensions"
 	"context"
 	"net/http"
 
@@ -36,8 +37,9 @@ import (
 type Service struct {
 	*options.Config
 	*backbone.Engine
-	disc    discovery.DiscoveryInterface
-	CacheDB *redis.Client
+	disc        discovery.DiscoveryInterface
+	CacheDB     *redis.Client
+	AuthManager *extensions.AuthManager
 }
 
 type srvComm struct {
@@ -64,7 +66,7 @@ func (s *Service) newSrvComm(header http.Header) *srvComm {
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB),
+		lgc:           logics.NewLogics(s.Engine, header, s.CacheDB, s.AuthManager),
 	}
 }
 
@@ -74,8 +76,8 @@ func (s *Service) WebService() *restful.WebService {
 		return s.CCErr
 	}
 	ws.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
-	//restful.DefaultRequestContentType(restful.MIME_JSON)
-	//restful.DefaultResponseContentType(restful.MIME_JSON)
+	// restful.DefaultRequestContentType(restful.MIME_JSON)
+	// restful.DefaultResponseContentType(restful.MIME_JSON)
 
 	ws.Route(ws.DELETE("/hosts/batch").To(s.DeleteHostBatch))
 	ws.Route(ws.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))

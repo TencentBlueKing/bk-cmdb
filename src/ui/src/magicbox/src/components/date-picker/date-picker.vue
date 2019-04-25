@@ -1,6 +1,6 @@
 <template>
     <div class="bk-date-picker" :class="disabled ? 'disabled' : ''" @click="openDater" v-clickoutside="close">
-        <input type="text" name="date-select" readonly :disabled="disabled" :placeholder="t('datePicker.selectDate')" v-model="selectedValue">
+        <input type="text" name="date-select" readonly :disabled="disabled" :placeholder="placeholder || t('datePicker.selectDate')" v-model="selectedValue">
         <transition :name="transitionName">
             <div :style="panelStyle" class="date-dropdown-panel" v-if="showDatePanel">
                 <!-- 日期操作栏 Start -->
@@ -191,6 +191,10 @@
                     return oneOf(value, ['top', 'bottom'])
                 },
                 default: 'bottom'
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

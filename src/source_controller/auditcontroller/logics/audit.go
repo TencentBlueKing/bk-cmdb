@@ -115,6 +115,7 @@ func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]m
 	limit := dat.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
+	blog.V(9).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
 	err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Sort(dat.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
@@ -148,7 +149,7 @@ func instNotChange(content interface{}) bool {
 	delete(curData, common.LastTimeField)
 	bl := cmp.Equal(preData, curData)
 	if bl {
-		blog.V(5).Info("inst data same, %#v", content)
+		blog.V(5).Infof("inst data same, %+v", content)
 	}
 	return bl
 }

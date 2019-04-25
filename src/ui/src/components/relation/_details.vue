@@ -1,12 +1,12 @@
 <template>
-    <div class="topology-details-layout" :class="{'full-screen': fullScreen}">
-        <div class="details-container" ref="detailsContainer" v-bkloading="{isLoading: $loading()}" v-click-outside="handleHideDetails">
+    <div class="topology-details-layout" :class="{ 'full-screen': fullScreen }">
+        <div class="details-container" ref="detailsContainer" v-bkloading="{ isLoading: $loading() }" v-click-outside="handleHideDetails">
             <div class="details-title" ref="detailsTitle">
                 {{title}}
                 <i class="bk-icon icon-close" @click="handleHideDetails"></i>
             </div>
             <cmdb-details ref="detailsPopup" class="details-popup"
-                :showOptions="false"
+                :show-options="false"
                 :inst="inst"
                 :properties="properties"
                 :property-groups="propertyGroups">
@@ -101,7 +101,7 @@
                 return promise
             },
             getHostDetails () {
-                return this.getHostBaseInfo({hostId: this.instId}).then(data => {
+                return this.getHostBaseInfo({ hostId: this.instId }).then(data => {
                     const inst = {}
                     data.forEach(field => {
                         inst[field['bk_property_id']] = field['bk_property_value']
@@ -112,11 +112,11 @@
             getBusinessDetails () {
                 return this.searchBusiness({
                     params: {
-                        condition: {'bk_biz_id': this.instId},
+                        condition: { 'bk_biz_id': this.instId },
                         fields: [],
-                        page: {start: 0, limit: 1}
+                        page: { start: 0, limit: 1 }
                     }
-                }).then(({info}) => info[0])
+                }).then(({ info }) => info[0])
             },
             getInstDetails () {
                 return this.searchInst({
@@ -130,9 +130,9 @@
                             }]
                         },
                         fields: {},
-                        page: {start: 0, limit: 1}
+                        page: { start: 0, limit: 1 }
                     })
-                }).then(({info}) => info[0])
+                }).then(({ info }) => info[0])
             },
             handleHideDetails () {
                 this.$emit('update:show', false)

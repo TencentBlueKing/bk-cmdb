@@ -2,7 +2,7 @@
     <div class="model-field-wrapper">
         <div>
             <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !authority.includes('update')"
+                :disabled="isReadOnly || !updateAuth"
                 @click="createField">
                 {{$t('ModelManagement["新建字段"]')}}
             </bk-button>
@@ -13,7 +13,7 @@
             :header="table.header"
             :has-footer="false"
             :list="table.list"
-            :wrapperMinusHeight="300"
+            :wrapper-minus-height="300"
             @handleSortChange="handleSortChange">
             <template slot="bk_property_id" slot-scope="{ item }">
                 <span
@@ -22,6 +22,9 @@
                     {{$t('ModelManagement["内置"]')}}
                 </span>
                 <span class="field-id">{{item['bk_property_id']}}</span>
+            </template>
+            <template slot="bk_property_type" slot-scope="{ item }">
+                <span>{{fieldTypeMap[item['bk_property_type']]}}</span>
             </template>
             <template slot="isrequired" slot-scope="{ item }">
                 <i class="field-required-icon bk-icon icon-check-1" v-if="item.isrequired"></i>
@@ -37,7 +40,7 @@
                     {{$t('Common["编辑"]')}}
                 </button>
                 <button class="text-primary"
-                    :disabled="item.ispre || !isFieldEditable(item)"
+                    :disabled="!isFieldEditable(item)"
                     @click.stop="deleteField(item)">
                     {{$t('Common["删除"]')}}
                 </button>
@@ -46,12 +49,12 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-field-detail
                 class="slider-content"
                 slot="content"
-                :isReadOnly="isReadOnly"
-                :isEditField="slider.isEditField"
+                :is-read-only="isReadOnly"
+                :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 @save="saveField"
                 @cancel="slider.isShow = false">
@@ -63,12 +66,14 @@
 <script>
     import theFieldDetail from './field-detail'
     import { mapActions, mapGetters } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theFieldDetail
         },
         data () {
             return {
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEditField: false,
@@ -89,18 +94,18 @@
                 },
                 table: {
                     header: [{
+                        id: 'isrequired',
+                        name: this.$t('ModelManagement["必填"]')
+                    }, {
                         id: 'bk_property_id',
                         name: this.$t('ModelManagement["唯一标识"]'),
                         minWidth: 110
                     }, {
-                        id: 'bk_property_type',
-                        name: this.$t('ModelManagement["字段类型"]')
-                    }, {
-                        id: 'isrequired',
-                        name: this.$t('ModelManagement["必填"]')
-                    }, {
                         id: 'bk_property_name',
                         name: this.$t('ModelManagement["名称"]')
+                    }, {
+                        id: 'bk_property_type',
+                        name: this.$t('ModelManagement["字段类型"]')
                     }, {
                         id: 'create_time',
                         name: this.$t('ModelManagement["创建时间"]')
@@ -132,15 +137,13 @@
                 }
                 return false
             },
-            authority () {
+            updateAuth () {
                 const cantEdit = ['process', 'plat']
-                if (cantEdit.includes(this.objId)) {
-                    return []
+                if (cantEdit.includes(this.$route.params.modelId)) {
+                    return false
                 }
-                if (this.isAdminView || (this.isBusinessSelected && this.isInjectable)) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
+                const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
+                return editable && this.$isAuthorized(OPERATION.U_MODEL)
             }
         },
         watch: {
@@ -150,7 +153,7 @@
         },
         created () {
             this.initFieldList()
-            if (!this.authority.includes('update')) {
+            if (!this.updateAuth) {
                 this.table.header.pop()
             }
         },
@@ -160,7 +163,7 @@
                 'deleteObjectAttribute'
             ]),
             isFieldEditable (item) {
-                if (this.isReadOnly) {
+                if (item.ispre || this.isReadOnly || !this.updateAuth) {
                     return false
                 }
                 if (!this.isAdminView) {
@@ -184,11 +187,14 @@
             },
             deleteField (field) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], {name: field['bk_property_name']}),
+                    title: this.$tc('ModelManagement["确定删除字段？"]', field['bk_property_name'], { name: field['bk_property_name'] }),
                     confirmFn: async () => {
                         await this.deleteObjectAttribute({
                             id: field.id,
                             config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: this.isInjectable
+                                }),
                                 requestId: 'deleteObjectAttribute'
                             }
                         }).then(() => {
@@ -200,8 +206,8 @@
             },
             async initFieldList () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: this.objId}, {inject: this.isInjectable}),
-                    config: {requestId: `post_searchObjectAttribute_${this.objId}`}
+                    params: this.$injectMetadata({ bk_obj_id: this.objId }, { inject: this.isInjectable }),
+                    config: { requestId: `post_searchObjectAttribute_${this.objId}` }
                 })
                 this.table.list = res
             },

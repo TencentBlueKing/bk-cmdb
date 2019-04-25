@@ -13,8 +13,8 @@
             <label class="filter-label fl">{{$t('Association["条件筛选"]')}}</label>
             <div class="filter-group filter-group-property fl">
                 <cmdb-property-filter
-                    :objId="currentAsstObj"
-                    :excludeType="['foreignkey']"
+                    :obj-id="currentAsstObj"
+                    :exclude-type="['foreignkey']"
                     @on-property-selected="handlePropertySelected"
                     @on-operator-selected="handleOperatorSelected"
                     @on-value-change="handleValueChange">
@@ -24,12 +24,12 @@
         </div>
         <cmdb-table class="new-association-table"
             :loading="$loading()"
-            :height="500"
             :pagination.sync="table.pagination"
             :sort="table.sort"
             :header="table.header"
             :list="table.list"
-            :colBorder="true"
+            :col-border="true"
+            :wrapper-minus-height="308"
             @handlePageChange="setCurrentPage"
             @handleSizeChange="search"
             @handleSortChange="setCurrentSort">
@@ -103,6 +103,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', ['models']),
             objId () {
                 return this.$parent.objId
             },
@@ -301,7 +302,7 @@
                 const options = this.associationObject.map(option => {
                     const isSource = option['bk_obj_id'] === this.objId
                     const type = this.associationType.find(type => type['bk_asst_id'] === option['bk_asst_id'])
-                    const model = this.$allModels.find(model => {
+                    const model = this.models.find(model => {
                         if (isSource) {
                             return model['bk_obj_id'] === option['bk_asst_obj_id']
                         } else {
@@ -454,7 +455,7 @@
                 })
             },
             getHostCondition () {
-                let condition = [{'bk_obj_id': 'host', 'condition': [], fields: []}]
+                const condition = [{ 'bk_obj_id': 'host', 'condition': [], fields: [] }]
                 const property = this.getProperty(this.filter.id)
                 if (this.filter.value !== '' && property) {
                     condition[0]['condition'].push({
@@ -468,7 +469,7 @@
             getBizInstance (config) {
                 const params = {
                     condition: {
-                        'bk_data_status': {'$ne': 'disabled'}
+                        'bk_data_status': { '$ne': 'disabled' }
                     },
                     fields: [],
                     page: this.page
@@ -506,7 +507,7 @@
                 return params
             },
             setTableList (data, asstObjId) {
-                const properties = this.properties
+                // const properties = this.properties
                 this.table.pagination.count = data.count
                 if (asstObjId === 'host') {
                     data.info = data.info.map(item => item['host'])
@@ -517,7 +518,7 @@
                 this.table.list = data.info.map(item => this.$tools.flatternItem(this.properties, item))
             },
             getProperty (propertyId) {
-                return this.properties.find(({bk_property_id: bkPropertyId}) => bkPropertyId === propertyId)
+                return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
             },
             handleCloseConfirm () {
                 this.confirm.id = null

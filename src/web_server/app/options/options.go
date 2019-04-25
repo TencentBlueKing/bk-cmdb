@@ -14,6 +14,7 @@ package options
 
 import (
 	"configcenter/src/common/core/cc/config"
+
 	"github.com/spf13/pflag"
 )
 
@@ -60,6 +61,7 @@ type Site struct {
 	BkHttpsLoginUrl string
 	AppCode         string
 	CheckUrl        string
+	AuthScheme      string // available value: internal, iam
 }
 
 type Config struct {
@@ -70,4 +72,13 @@ type Config struct {
 	LoginUrl     string
 	LoginVersion string
 	ConfigMap    map[string]string
+
+	// auth info
+	AuthCenter AppInfo
+}
+
+type AppInfo struct {
+	AppCode string `json:"appCode""`
+	URL     string `json:"url"`
+	Enable  bool
 }

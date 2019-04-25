@@ -23,9 +23,10 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (s *Service) Set(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+// SetSystemConfiguration used for set variable in cc_System table
+func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Response) {
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
 	blog.Errorf("modify data for  %s table ", "cc_System")

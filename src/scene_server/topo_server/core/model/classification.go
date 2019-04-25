@@ -199,7 +199,7 @@ func (cli *classification) search(cond condition.Condition) ([]metadata.Classifi
 	}
 
 	if !rsp.Result {
-		blog.Errorf("failed to search the classificaiont, error info is %s", rsp.ErrMsg)
+		blog.Errorf("failed to search the classification, error info is %s", rsp.ErrMsg)
 		return nil, cli.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 

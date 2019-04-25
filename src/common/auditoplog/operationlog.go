@@ -26,7 +26,7 @@ const (
 	AuditOpTypeHostModule AuditOpType = 100
 )
 
-//操作类型代码分两部分， 前2位表示大类入，后1位表示操作类型，1增加，2.修改，3，删除， 列入100
+// 操作类型代码分两部分， 前2位表示大类入，后1位表示操作类型，1增加，2.修改，3，删除， 列入100
 /*const (
 	//主机操作
 	AuditOpTypeHostAdd AuditOpType = iota * 101
@@ -64,12 +64,17 @@ type AuditLogHosts struct {
 }
 
 type AuditLogExt struct {
-	ID      int64 //操作实例id
+	ID      int64  // 操作实例id
 	Content interface{}
 	ExtKey  string
 }
 
 type AuditLogContext struct {
-	ID      int64 //操作实例id
+	ID      int64  // 操作实例id
+	Content interface{}
+}
+
+type AuditLogAssociation struct {
+	ID      int64
 	Content interface{}
 }

@@ -4,7 +4,7 @@
             <div class="recently-browse fl"
                 v-for="index in recentlyCount"
                 :key="index"
-                :class="{'recently-browse-model': !!recentlyModels[index - 1]}"
+                :class="{ 'recently-browse-model': !!recentlyModels[index - 1] }"
                 @click="gotoRecently(recentlyModels[index - 1])">
                 <template v-if="recentlyModels[index - 1]">
                     <i :class="['recently-icon', recentlyModels[index - 1]['bk_obj_icon']]"></i>
@@ -30,13 +30,13 @@
         },
         computed: {
             ...mapGetters('userCustom', ['usercustom', 'recentlyKey']),
-            ...mapGetters('objectModelClassify', ['authorizedNavigation', 'authorizedModels']),
+            ...mapGetters('objectModelClassify', ['models']),
             recently () {
                 return this.usercustom[this.recentlyKey] || []
             },
             // 最近浏览的所有通用模型
             recentlyModels () {
-                return this.authorizedModels.filter(model => this.recently.includes(model['bk_obj_id']))
+                return this.models.filter(model => this.recently.includes(model['bk_obj_id']))
             },
             // 最近浏览的所有通用模型路由
             recentlyModelsPath () {
@@ -110,7 +110,7 @@
                     'biz': this.loadBizInst,
                     'default': this.loadCommonInst
                 }
-                let loadFunc = funcMaps.hasOwnProperty(id) ? funcMaps[id] : funcMaps['default']
+                const loadFunc = funcMaps.hasOwnProperty(id) ? funcMaps[id] : funcMaps['default']
                 loadFunc(id).then(res => {
                     this.$set(this.modelInstCount, id, res.count)
                 })

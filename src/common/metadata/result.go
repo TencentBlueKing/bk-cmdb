@@ -136,13 +136,13 @@ type ReadModelAttrResult struct {
 	Data     QueryModelAttributeDataResult `json:"data"`
 }
 
-//ReadModelClassifitionResult  read model classifition api http response return result struct
+// ReadModelClassifitionResult  read model classifition api http response return result struct
 type ReadModelClassifitionResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelClassificationDataResult `json:"data"`
 }
 
-//ReadModelResult  read model classifition api http response return result struct
+// ReadModelResult  read model classifition api http response return result struct
 type ReadModelResult struct {
 	BaseResp `json:",inline"`
 	Data     QueryModelWithAttributeDataResult `json:"data"`
@@ -172,4 +172,10 @@ type ReadInstAssociationResult struct {
 		Count uint64     `json:"count"`
 		Info  []InstAsst `json:"info"`
 	}
+}
+
+// OperaterException  result
+type OperaterException struct {
+	BaseResp `json:",inline"`
+	Data     []ExceptionResult `json:"data"`
 }

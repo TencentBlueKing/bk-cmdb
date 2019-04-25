@@ -14,13 +14,13 @@
             </bk-date-range>
         </div>
         <cmdb-table class="history-table"
-            rowCursor="default"
+            row-cursor="default"
             :sortable="false"
             :loading="$loading()"
             :pagination.sync="pagination"
             :list="list"
             :header="header"
-            :wrapperMinusHeight="157"
+            :wrapper-minus-height="157"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
         </cmdb-table>

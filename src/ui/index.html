@@ -14,6 +14,7 @@
             version: <%= htmlWebpackPlugin.options.config.API_VERSION %>,
             login: <%= htmlWebpackPlugin.options.config.API_LOGIN %>,
             agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>, 
+            authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>'
         }
         window.User = {
@@ -23,6 +24,8 @@
         window.Supplier = {
             account: '0'
         }
+        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
+        window.API_PREFIX = API_HOST + 'api/' + Site.version
     </script>
   </body>
 </html>

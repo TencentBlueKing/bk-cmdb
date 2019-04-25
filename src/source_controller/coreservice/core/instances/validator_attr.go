@@ -216,6 +216,48 @@ func (valid *validator) validInt(val interface{}, key string) error {
 	return nil
 }
 
+// validFloat valid object attribute that is float type
+func (valid *validator) validFloat(val interface{}, key string) error {
+	if nil == val {
+		if valid.require[key] {
+			blog.Error("params can not be null")
+			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+
+		}
+		return nil
+	}
+
+	var value float64
+	value, err := util.GetFloat64ByInterface(val)
+	if nil != err {
+		blog.Errorf("params %s:%#v not float", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
+	}
+
+	property, ok := valid.propertys[key]
+	if !ok {
+		return nil
+	}
+	intObjOption := parseFloatOption(property.Option)
+	if 0 == len(intObjOption.Min) || 0 == len(intObjOption.Max) {
+		return nil
+	}
+
+	maxValue, err := strconv.ParseFloat(intObjOption.Max, 64)
+	if nil != err {
+		maxValue = float64(common.MaxInt64)
+	}
+	minValue, err := strconv.ParseFloat(intObjOption.Min, 64)
+	if nil != err {
+		minValue = float64(common.MinInt64)
+	}
+	if value > maxValue || value < minValue {
+		blog.Errorf("params %s:%#v not valid", key, val)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
+	return nil
+}
+
 // validInt valid object attribute that is long char type
 func (valid *validator) validLongChar(val interface{}, key string) error {
 	if nil == val || "" == val {

@@ -1,5 +1,5 @@
 <template>
-    <div :class="['form-bool', {disabled}]" @click="handleChange">
+    <div :class="['form-bool', { disabled }]" @click="handleChange">
         <input class="form-bool-input" type="checkbox"
             ref="input"
             :class="{
@@ -27,15 +27,19 @@
         },
         props: {
             checked: {
+                type: [Boolean, String, Number],
                 default: false
             },
             disabled: {
+                type: Boolean,
                 default: false
             },
             trueValue: {
+                type: [Boolean, String, Number],
                 default: true
             },
             falseValue: {
+                type: [Boolean, String, Number],
                 default: false
             },
             size: {
@@ -51,7 +55,7 @@
         },
         computed: {
             style () {
-                let size = this.size ? this.size : 18
+                const size = this.size ? this.size : 18
                 return {
                     transform: `scale(${size / 18})`
                 }
@@ -70,7 +74,7 @@
             this.localChecked = this.checked
         },
         mounted () {
-            for (let attr in this.$attrs) {
+            for (const attr in this.$attrs) {
                 this.$el.setAttribute(attr, '')
                 this.$refs.input.setAttribute(attr, this.$attrs[attr])
             }
