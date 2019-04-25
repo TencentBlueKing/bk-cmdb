@@ -129,6 +129,7 @@ func (s *Service) ImportInstanceAssociation(params types.ContextParams, pathPara
 	objID := pathParams("bk_obj_id")
 	request := new(metadata.RequestImportAssociation)
 	if err := data.MarshalJSONInto(request); err != nil {
+		blog.Errorf("ImportInstanceAssociation, json unmarshal error, objID:%S, err: %v, rid:%s", objID, err, params.ReqID)
 		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 

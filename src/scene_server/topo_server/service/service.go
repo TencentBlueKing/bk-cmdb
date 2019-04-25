@@ -34,6 +34,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
+
 	"github.com/emicklei/go-restful"
 )
 
@@ -125,7 +126,7 @@ func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg in
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		if _, err := io.WriteString(resp, rsp); nil != err {
-			blog.Errorf("faield to write string, error info is %s", err.Error())
+			blog.Errorf("failed to write string, error info is %s", err.Error())
 		}
 	} else {
 		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
@@ -145,6 +146,25 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 
 }
 
+func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
+}
+
+func (s *Service) addPublicAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, true)
+}
+
+func (s *Service) addActionEx(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc, publicOnly bool) {
+	actionObject := action{
+		Method:                     method,
+		Path:                       path,
+		HandlerFunc:                handlerFunc,
+		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+		PublicOnly:                 publicOnly,
+	}
+	s.actions = append(s.actions, actionObject)
+}
+
 // Actions return the all actions
 func (s *Service) Actions() []*httpserver.Action {
 
@@ -156,6 +176,7 @@ func (s *Service) Actions() []*httpserver.Action {
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				// get the language
 				language := util.GetLanguage(req.Request.Header)
@@ -172,6 +193,7 @@ func (s *Service) Actions() []*httpserver.Action {
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
 				}
+				blog.V(9).Infof("request path: %s, body: %s, rid: %s", act.Path, value, rid)
 
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
@@ -192,7 +214,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				}
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
-				metadata := metadata.NewMetaDataFromMap(mData)
+
 				handlerContext := types.ContextParams{
 					Context:         ctx,
 					Err:             defErr,
@@ -202,8 +224,22 @@ func (s *Service) Actions() []*httpserver.Action {
 					SupplierAccount: ownerID,
 					User:            user,
 					Engin:           s.Engine,
-					MetaData:        metadata,
+					ReqID:           rid,
 				}
+
+				// parse metadata for none public only handler
+				if act.PublicOnly == false {
+					md := new(MetaShell)
+					if len(value) != 0 {
+						if err := json.Unmarshal(value, md); err != nil {
+							blog.Errorf("parse metadata from request failed, err: %v", err)
+							s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed))
+							return
+						}
+					}
+					handlerContext.MetaData = md.Metadata
+				}
+
 				data, dataErr := act.HandlerFunc(handlerContext, req.PathParameter, req.QueryParameter, mData)
 
 				if dataErr == nil {
@@ -223,4 +259,8 @@ func (s *Service) Actions() []*httpserver.Action {
 
 	}
 	return httpactions
+}
+
+type MetaShell struct {
+	Metadata *metadata.Metadata `json:"metadata"`
 }

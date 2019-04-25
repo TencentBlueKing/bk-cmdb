@@ -28,9 +28,11 @@ import (
 /*
  * business related auth interface
  */
+ 
+ // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
-	condition := metadata.QueryCondition{}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &condition)
+	cond := metadata.QueryCondition{}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
 		blog.Errorf("list business failed, err: %v", err)
 		return nil, err
@@ -106,6 +108,10 @@ func (am *AuthManager) extractBusinessIDFromBusinesses(businesses ...BusinessSim
 }
 
 func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action, businesses ...BusinessSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	// extract business id
 	bizID, err := am.extractBusinessIDFromBusinesses(businesses...)
 	if err != nil {
@@ -119,6 +125,10 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("authorize businesses failed, get business by id failed, err: %+v", err)
@@ -128,6 +138,10 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(businesses) == 0 {
 		return nil
 	}
@@ -145,6 +159,10 @@ func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -157,6 +175,10 @@ func (am *AuthManager) UpdateRegisteredBusinessByID(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -169,6 +191,10 @@ func (am *AuthManager) UpdateRegisteredBusinessByRawID(ctx context.Context, head
 }
 
 func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(ids) == 0 {
 		return nil
 	}
@@ -181,6 +207,10 @@ func (am *AuthManager) DeregisterBusinessByRawID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(businesses) == 0 {
 		return nil
 	}
@@ -192,6 +222,10 @@ func (am *AuthManager) RegisterBusinesses(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(businessIDs) == 0 {
 		return nil
 	}
@@ -204,6 +238,10 @@ func (am *AuthManager) RegisterBusinessesByID(ctx context.Context, header http.H
 }
 
 func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(businesses) == 0 {
 		return nil
 	}
@@ -215,6 +253,10 @@ func (am *AuthManager) DeregisterBusinesses(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http.Header, businessIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(businessIDs) == 0 {
 		return nil
 	}
@@ -227,6 +269,10 @@ func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)

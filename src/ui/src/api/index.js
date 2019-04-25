@@ -6,9 +6,7 @@ import RequestQueue from './_request-queue'
 import { $error, $warn } from '@/magicbox'
 import { language } from '@/i18n'
 
-const Site = window.Site
-window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + '/')
-window.API_PREFIX = window.API_HOST + 'api/' + Site.version
+import middlewares from './middleware'
 // axios实例
 const axiosInstance = Axios.create({
     baseURL: window.API_PREFIX,
@@ -18,8 +16,27 @@ const axiosInstance = Axios.create({
 })
 
 // axios实例拦截器
+axiosInstance.interceptors.request.use(
+    config => {
+        middlewares.forEach(middleware => {
+            if (typeof middleware.request === 'function') {
+                config = middleware.request(config)
+            }
+        })
+        return config
+    },
+    error => {
+        return Promise.reject(error)
+    }
+)
+
 axiosInstance.interceptors.response.use(
     response => {
+        middlewares.forEach(middleware => {
+            if (typeof middleware.response === 'function') {
+                response = middleware.response(response)
+            }
+        })
         return response
     },
     error => {
@@ -44,7 +61,8 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    }
+    },
+    download: download
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -150,7 +168,7 @@ function handleReject (error, config) {
         const { status, data } = error.response
         const nextError = { message: error.message }
         if (status === 401) {
-            window.location.href = Site.login
+            window.location.href = window.Site.login
         } else if (data && data['bk_error_msg']) {
             nextError.message = data['bk_error_msg']
         } else if (status === 403) {
@@ -214,6 +232,44 @@ function getCancelToken () {
         cancelToken,
         cancelExcutor
     }
+}
+
+function download (options = {}) {
+    const { url, method = 'post', data } = options
+    const config = Object.assign({
+        globalError: false,
+        originalResponse: true
+    }, options.config)
+    if (!url) {
+        $error('Empty download url')
+        return false
+    }
+    let promise
+    if (methodsWithData.includes(method)) {
+        promise = $http[method](url, data, config)
+    } else {
+        promise = $http[method](url, config)
+    }
+    promise.then(response => {
+        const data = response.data
+        if (data.hasOwnProperty('result') && !data.result) {
+            $error(data.bk_error_msg)
+        } else {
+            const disposition = response.headers['content-disposition']
+            const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+            const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
+                type: response.headers['content-type']
+            }))
+            const link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = downloadUrl
+            link.setAttribute('download', fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
+        return response
+    })
 }
 
 export default $http

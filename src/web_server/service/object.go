@@ -64,9 +64,8 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -213,6 +212,14 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 	return row
 }
 
+type ExportObjectBody struct {
+	Metadata struct {
+		Label struct {
+			BkBizID string `json:"bk_biz_id"`
+		} `json:"label"`
+	} `json:"metadata"`
+}
+
 // ExportObject export object
 func (s *Service) ExportObject(c *gin.Context) {
 
@@ -225,13 +232,15 @@ func (s *Service) ExportObject(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+	requestBody := ExportObjectBody{}
+	err := c.BindJSON(&requestBody)
+	if err != nil {
+		blog.Error("export model failed, parse request body to json failed, err: %v", err)
+		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
+		c.String(http.StatusBadRequest, msg)
 		return
 	}
+	metaInfo := metadata.NewMetaDataFromBusinessID(requestBody.Metadata.Label.BkBizID)
 
 	// get the all attribute of the object
 	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)

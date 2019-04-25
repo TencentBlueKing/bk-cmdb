@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 import {
     C_EVENT,
@@ -19,18 +20,18 @@ export default {
     name: 'eventpush',
     path: path,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'eventpush',
             i18n: 'Nav["事件推送"]',
             path: path,
             order: 5,
             parent: NAV_MODEL_MANAGEMENT,
-            adminView: true
+            businessView: false
         },
         auth: {
             view: R_EVENT,
             operation: Object.values(OPERATION)
         }
-    }
+    })
 }

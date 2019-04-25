@@ -31,6 +31,7 @@ type Core interface {
 	GroupOperation() operation.GroupOperationInterface
 	InstOperation() operation.InstOperationInterface
 	ObjectOperation() operation.ObjectOperationInterface
+	PermissionOperation() operation.PermissionOperationInterface
 	CompatibleV2Operation() operation.CompatibleV2OperationInterface
 	GraphicsOperation() operation.GraphicsOperationInterface
 	IdentifierOperation() operation.IdentifierOperationInterface
@@ -49,6 +50,7 @@ type core struct {
 	group          operation.GroupOperationInterface
 	inst           operation.InstOperationInterface
 	object         operation.ObjectOperationInterface
+	permission     operation.PermissionOperationInterface
 	compatibleV2   operation.CompatibleV2OperationInterface
 	graphics       operation.GraphicsOperationInterface
 	audit          operation.AuditOperationInterface
@@ -73,6 +75,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 	setOperation := operation.NewSetOperation(client)
 	businessOperation := operation.NewBusinessOperation(client, authManager)
 	associationOperation := operation.NewAssociationOperation(client, authManager)
+	permissionOperation := operation.NewPermissionOperation(client)
 	compatibleV2Operation := operation.NewCompatibleV2Operation(client)
 	graphics := operation.NewGraphics(client, authManager)
 	identifier := operation.NewIdentifier(client)
@@ -106,6 +109,7 @@ func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthMan
 		classification: classificationOperation,
 		group:          groupOperation,
 		object:         objectOperation,
+		permission:     permissionOperation,
 		compatibleV2:   compatibleV2Operation,
 		graphics:       graphics,
 		audit:          audit,
@@ -145,7 +149,9 @@ func (c *core) InstOperation() operation.InstOperationInterface {
 func (c *core) ObjectOperation() operation.ObjectOperationInterface {
 	return c.object
 }
-
+func (c *core) PermissionOperation() operation.PermissionOperationInterface {
+	return c.permission
+}
 func (c *core) CompatibleV2Operation() operation.CompatibleV2OperationInterface {
 	return c.compatibleV2
 }

@@ -10,18 +10,12 @@
                     </bk-button>
                 </div>
                 <div class="fl" v-tooltip="$t('ModelManagement[\'导出\']')">
-                    <bk-button class="models-button" type="default submit" form="exportForm"
-                        :disabled="!table.checked.length">
+                    <bk-button class="models-button" type="default"
+                        :disabled="!table.checked.length"
+                        @click="handleExport">
                         <i class="icon-cc-derivation"></i>
                     </bk-button>
                 </div>
-                <form id="exportForm" :action="url.export" method="POST" hidden>
-                    <input type="hidden" name="bk_inst_id" :value="table.checked.join(',')">
-                    <input type="hidden" name="export_custom_fields" :value="usercustom[customConfigKey]">
-                    <input type="hidden" name="metadata"
-                        v-if="!isPublicModel"
-                        :value="JSON.stringify($injectMetadata().metadata)">
-                </form>
                 <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
                     <bk-button class="models-button"
                         :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_INST)"
@@ -125,6 +119,7 @@
                         ref="multipleForm"
                         :properties="properties"
                         :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
                         :save-disabled="!$isAuthorized(OPERATION.U_INST)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
@@ -188,6 +183,7 @@
         data () {
             return {
                 OPERATION,
+                objectUnique: [],
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -570,7 +566,13 @@
                     this.attribute.type = 'details'
                 }
             },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: this.objId,
+                    params: this.$injectMetadata({}, {
+                        inject: !this.isPublicModel
+                    })
+                })
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true
@@ -660,6 +662,19 @@
                     return true
                 }
                 return true
+            },
+            handleExport () {
+                const data = new FormData()
+                data.append('bk_inst_id', this.table.checked.join(','))
+                data.append('export_custom_fields', this.usercustom[this.customConfigKey])
+                if (!this.isPublicModel) {
+                    data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
+                }
+                this.$http.download({
+                    url: this.url.export,
+                    method: 'post',
+                    data
+                })
             }
         }
     }

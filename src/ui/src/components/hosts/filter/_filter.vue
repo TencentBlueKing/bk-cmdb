@@ -59,10 +59,10 @@
                 <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
                 <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
                     :class="{ collecting: collection.show }"
-                    @click="collection.show = true">
+                    @click.stop="handleCollectionBox">
                     <i class="icon-cc-collection"></i>
                 </bk-button>
-                <div class="collection-form" v-click-outside="handleCloseCollection" v-if="collection.show">
+                <div class="collection-form" ref="collectionTips" v-click-outside="handleCloseCollection" v-show="collection.show">
                     <div class="form-title">{{$t('Hosts[\'收藏此查询\']')}}</div>
                     <div class="form-group">
                         <input type="text" class="form-name cmdb-form-input"
@@ -154,6 +154,10 @@
                 },
                 layout: {
                     scroll: false
+                },
+                confirm: {
+                    instance: null,
+                    id: null
                 }
             }
         },
@@ -166,6 +170,7 @@
                 'applyingConditions'
             ]),
             ...mapGetters('objectModelClassify', ['models']),
+            ...mapGetters('objectBiz', ['bizId']),
             filterConfigProperties () {
                 const properties = {}
                 Object.keys(this.properties).forEach(objId => {
@@ -410,7 +415,7 @@
                 const content = []
                 const params = this.getParams()
                 if (this.collectionContent.hasOwnProperty('business')) {
-                    content.push(`bk_biz_id:${this.collectionContent.business}`)
+                    content.push(`bk_biz_id:${this.bizId}`)
                 }
                 if (params.ip.data.length) {
                     content.push(`ip:${params.ip.data.join(',')}`)
@@ -450,7 +455,7 @@
             getCollectionParams () {
                 const params = this.getParams()
                 const info = {
-                    'bk_biz_id': this.collectionContent.business || -1,
+                    'bk_biz_id': this.bizId || -1,
                     'exact_search': this.ip.exact,
                     'bk_host_innerip': this.ip['bk_host_innerip'],
                     'bk_host_outerip': this.ip['bk_host_outerip'],
@@ -475,9 +480,26 @@
                 }
             },
             handleCloseCollection () {
-                this.collection.show = false
+                this.confirm.instance && this.confirm.instance.destroy()
                 this.collection.name = ''
                 this.collection.content = ''
+                this.collection.show = false
+            },
+            handleCollectionBox (event) {
+                if (this.collection.show) {
+                    this.handleCloseCollection()
+                    return
+                }
+                this.collection.show = true
+                this.confirm.instance = this.$tooltips({
+                    duration: -1,
+                    theme: 'light',
+                    zIndex: 9999,
+                    width: 357,
+                    container: document.body,
+                    target: event.target
+                })
+                this.confirm.instance.$el.append(this.$refs.collectionTips)
             },
             handleApplyFilterConfig (properties) {
                 this.$store.dispatch('userCustom/saveUsercustom', {
@@ -584,35 +606,12 @@
         }
     }
     .collection-form {
-        position: absolute;
-        bottom: 100%;
-        right: 0;
         width: 100%;
-        margin: 0 0 10px 0;
-        padding: 20px;
+        padding: 14px 12px;
         border-radius: 2px;
-        box-shadow: 0 2px 10px 4px rgba(12,34,59,.13);
         color: #3c96ff;
         z-index: 9999;
         background-color: #fff;
-        &:before,
-        &:after {
-            position: absolute;
-            right: 20px;
-            top: 100%;
-            width: 0;
-            height: 0;
-            content: "";
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-        }
-        &:before {
-            border-top: 10px solid #e7e9ef;
-            margin-top: 2px;
-        }
-        &:after {
-            border-top: 10px solid #fff;
-        }
         .form-group {
             margin: 15px 0 0 0;
             position: relative;

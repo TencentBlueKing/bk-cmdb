@@ -155,7 +155,7 @@ func Pfalse() *bool {
 func RunForever(name string, f func() error) {
 	for {
 		if err := runNoPanic(f); err != nil {
-			blog.Errorf("[%s] return %v, retry 3s later", err)
+			blog.Errorf("[%s] return %v, retry 3s later", name, err)
 			time.Sleep(time.Second * 3)
 		}
 	}

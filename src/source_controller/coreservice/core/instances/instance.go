@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
@@ -97,8 +96,13 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	inputParam.Condition.Set(common.BKOwnerIDField, ctx.SupplierAccount)
 	origins, _, err := m.getInsts(ctx, objID, inputParam.Condition)
 	if nil != err {
-		blog.Errorf("update module instance get inst error :%v ", err)
+		blog.Errorf("update module instance get inst error :%v, rid:%s", err, ctx.ReqID)
 		return nil, err
+	}
+
+	if len(origins) == 0 {
+		blog.Errorf("UpdateModelInstance update %s model instance not found. condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)
+		return nil, ctx.Error.Error(common.CCErrCommNotFound)
 	}
 
 	var instMedataData metadata.Metadata
@@ -118,13 +122,13 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 		instID, _ := util.GetInt64ByInterface(instIDI)
 		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, instMedataData, uint64(instID))
 		if nil != err {
-			blog.Errorf("update module instance validate error :%v ", err)
+			blog.Errorf("update module instance validate error :%v ,rid:%s", err, ctx.ReqID)
 			return nil, err
 		}
 	}
 
 	if nil != err {
-		blog.Errorf("update module instance validate error :%v ", err)
+		blog.Errorf("update module instance validate error :%v ,rid:%s", err, ctx.ReqID)
 		return &metadata.UpdatedCount{}, err
 	}
 	cnt, err := m.update(ctx, objID, inputParam.Data, inputParam.Condition)
@@ -132,14 +136,6 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 }
 
 func (m *instanceManager) SearchModelInstance(ctx core.ContextParams, objID string, inputParam metadata.QueryCondition) (*metadata.QueryResult, error) {
-	condition, err := mongo.NewConditionFromMapStr(inputParam.Condition)
-	if nil != err {
-		blog.Errorf("parse condition  error %v, [%v]", err)
-		return &metadata.QueryResult{}, err
-	}
-	ownerIDArr := []string{ctx.SupplierAccount, common.BKDefaultOwnerID}
-	condition.Element(&mongo.In{Key: common.BKOwnerIDField, Val: ownerIDArr})
-	inputParam.Condition = condition.ToMapStr()
 
 	blog.V(9).Infof("search instance with parameter: %+v", inputParam)
 	instItems, err := m.searchInstance(ctx, objID, inputParam)

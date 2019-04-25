@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_BASIC_RESOURCE } from '@/dictionary/menu'
 import {
     C_BUSINESS,
@@ -20,28 +21,25 @@ export default [{
     name: 'business',
     path: businessPath,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'business',
             i18n: 'Nav["业务"]',
             path: businessPath,
-            order: 1,
-            parent: NAV_BASIC_RESOURCE,
-            adminView: true
+            parent: NAV_BASIC_RESOURCE
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         }
-    }
+    })
 }, {
     name: 'businessHistory',
     path: historyPath,
     component: () => import('./archived.vue'),
-    meta: {
+    meta: new Meta({
         auth: {
             view: BUSINESS_ARCHIVE,
             operation: [BUSINESS_ARCHIVE]
         }
-    }
+    })
 }]

@@ -324,8 +324,13 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
-		blog.Errorf("[api-inst] failed to find the supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
-		return nil, err
+		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
+		return nil, fmt.Errorf("get model by supplier account(%s) objects(%s) failed", params.SupplierAccount, objectID)
+	}
+	
+	if len(objs) != 1 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not exactly one, result: %+v", params.SupplierAccount, objectID, objs)
+		return nil, fmt.Errorf("get [%d] model by supplier account(%s) objects(%s), not exactly one", len(objs), params.SupplierAccount, objectID)
 	}
 
 	objects := make([]metadata.Object, 0)

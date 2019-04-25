@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -30,35 +29,37 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDModule)
 	if nil != err {
-		blog.Errorf("failed to search the set, %s", err.Error())
+		blog.Errorf("create module failed, failed to search the set, %s", err.Error())
 		return nil, err
 	}
 
 	bizID, err := strconv.ParseInt(pathParams("app_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the biz id, error info is %s", err.Error())
+		blog.Errorf("[api-module] create module failed, failed to parse the biz id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
 	setID, err := strconv.ParseInt(pathParams("set_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("[api-module]failed to parse the set id, error info is %s", err.Error())
+		blog.Errorf("[api-module] create module failed, failed to parse the set id, error info is %s", err.Error())
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "set id")
 	}
 
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 	if err != nil {
-		return nil, fmt.Errorf("create module failed, err: %+v", module)
+		return nil, err
 	}
 
 	moduleID, err := module.GetInstID()
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error, create module success, but get id failed, err: %+v", err)
+		blog.Errorf("create module failed, unexpected error, create module success, but get id failed, err: %+v", err)
+		return nil, err
 	}
 
 	// auth: register module to iam
 	if err := s.AuthManager.RegisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		return nil, fmt.Errorf("register module failed, err: %+v", err)
+		blog.Errorf("create module success, but register module failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return module, nil
@@ -91,15 +92,18 @@ func (s *Service) DeleteModule(params types.ContextParams, pathParams, queryPara
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
-	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
-	if err != nil {
-		return nil, fmt.Errorf("delete module failed, err: %+v", err)
-	}
-
 	// auth: deregister module to iam
 	if err := s.AuthManager.DeregisterModuleByID(params.Context, params.Header, moduleID); err != nil {
-		return nil, fmt.Errorf("deregister module failed, err: %+v", err)
+		blog.Errorf("delete module failed, deregister module failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
+
+	err = s.Core.ModuleOperation().DeleteModule(params, obj, bizID, []int64{setID}, []int64{moduleID})
+	if err != nil {
+		blog.Errorf("delete module failed, delete operation failed, err: %+v", err)
+		return nil, err
+	}
+
 	return nil, nil
 }
 
@@ -132,12 +136,14 @@ func (s *Service) UpdateModule(params types.ContextParams, pathParams, queryPara
 
 	err = s.Core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
 	if err != nil {
-		return nil, fmt.Errorf("update module failed, err: %+v", err)
+		blog.Errorf("update module failed, err: %+v", err)
+		return nil, err
 	}
 
 	// auth: update registered module to iam
 	if err := s.AuthManager.UpdateRegisteredModuleByID(params.Context, params.Header, moduleID); err != nil {
-		return nil, fmt.Errorf("update registered module failed, err: %+v", err)
+		blog.Errorf("update module success, but update registered module failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return nil, nil
