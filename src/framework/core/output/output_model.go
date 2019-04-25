@@ -37,12 +37,10 @@ func (cli *manager) GetModel(supplierAccount, classificationID, objID string) (m
 			return err
 		}
 
-		err = modelIter.ForEach(func(modelItem model.Model) error {
+		return modelIter.ForEach(func(modelItem model.Model) error {
 			targetModel = modelItem
 			return nil
 		})
-
-		return nil
 	})
 
 	if nil != err {

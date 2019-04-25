@@ -74,8 +74,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	condition := make(map[string]interface{})
-	condition = hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).MapStr()
+	condition := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).MapStr()
 	query := meta.QueryCondition{Condition: condition}
 	query.Limit.Limit = 1
 	query.Limit.Offset = 0
