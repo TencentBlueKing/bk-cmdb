@@ -145,7 +145,7 @@
                     value: '',
                     type: '',
                     options: [],
-                    available: false
+                    sendValue: ''
                 },
                 slider: {
                     show: false,
@@ -196,9 +196,6 @@
             'filter.id' (id) {
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
-            },
-            'filter.value' () {
-                this.filter.available = false
             },
             'slider.show' (show) {
                 if (!show) {
@@ -312,7 +309,7 @@
             },
             handleFilterData () {
                 this.table.pagination.current = 1
-                this.filter.available = true
+                this.filter.sendValue = this.filter.value
                 this.getTableData()
             },
             getTableData () {
@@ -334,13 +331,9 @@
                         sort: this.table.sort
                     }
                 }
-                if (
-                    this.filter.available
-                    && this.filter.id
-                    && String(this.filter.value).length
-                ) {
+                if (this.filter.id && String(this.filter.sendValue).length) {
                     const filterType = this.filter.type
-                    let filterValue = this.filter.value
+                    let filterValue = this.filter.sendValue
                     if (filterType === 'bool') {
                         const convertValue = [true, false].find(bool => bool.toString() === filterValue)
                         filterValue = convertValue === undefined ? filterValue : convertValue

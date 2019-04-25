@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/configcenter"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+
+	"github.com/spf13/pflag"
 )
 
 const bkbizCmdName = "bkbiz"
@@ -86,7 +86,7 @@ func Parse(args []string) error {
 	}
 
 	if exportFlag {
-		mode := ""
+		var mode string
 		if miniFlag {
 			mode = "mini"
 		} else {

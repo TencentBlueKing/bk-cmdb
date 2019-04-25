@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mohae/deepcopy"
@@ -35,8 +36,23 @@ func (cli MapStr) Clone() MapStr {
 // Merge merge second into self,if the key is the same then the new value replaces the old value.
 func (cli MapStr) Merge(second MapStr) {
 	for key, val := range second {
+		if strings.Contains(key, ".") {
+			root := key[:strings.Index(key, ".")]
+			if _, ok := cli[root]; ok && IsNil(cli[root]) {
+				delete(cli, root)
+			}
+		}
 		cli[key] = val
 	}
+}
+
+// IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}
+func IsNil(value interface{}) bool {
+	rflValue := reflect.ValueOf(value)
+	if rflValue.IsValid() {
+		return rflValue.IsNil()
+	}
+	return true
 }
 
 // ToMapInterface convert to map[string]interface{}
