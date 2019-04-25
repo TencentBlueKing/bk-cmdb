@@ -238,6 +238,12 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
 			return nil, err
 		}
+		
+		// modify special resource
+		if rsc.Type == meta.MainlineModel || rsc.Type == meta.ModelTopology {
+			blog.Warnf("force convert scope type to global for resource type: %s", rsc.Type)
+			rsc.BusinessID = 0
+		}
 
 		if rsc.BusinessID > 0 {
 			// this is a business resource.

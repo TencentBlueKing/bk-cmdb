@@ -71,7 +71,7 @@ func (a *attribute) CreateObjectAttribute(params types.ContextParams, data mapst
 	if params.MetaData != nil {
 		businessID, err = metadata.BizIDFromMetadata(*params.MetaData)
 		if err != nil {
-			blog.Errorf("[operation-attr] failed to parse biz id field, error info is %s", data, err.Error())
+			blog.Errorf("CreateObjectAttribute failed, parse biz id field, data: %+v, err: %+v", data, err)
 			return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 		}
 	}
