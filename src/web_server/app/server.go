@@ -135,6 +135,9 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
 	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
 	w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
+	if w.Config.Site.AuthScheme == "" {
+		w.Config.Site.AuthScheme = "internal"
+	}
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
