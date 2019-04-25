@@ -19,6 +19,7 @@ import (
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
@@ -55,6 +56,8 @@ type ProcServer struct {
 	EsbServ            esbserver.EsbClientInterface
 	Cache              *redis.Client
 	procHostInstConfig logics.ProcHostInstConfig
+	ConfigMap          map[string]string
+	AuthManager        *extensions.AuthManager
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -228,5 +231,5 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
 		}
 	}
-
+	ps.ConfigMap = current.ConfigMap
 }

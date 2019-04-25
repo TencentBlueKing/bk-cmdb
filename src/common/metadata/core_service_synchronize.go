@@ -135,5 +135,5 @@ func (s *SynchronizeClearDataParameter) Legality(key string) bool {
 
 // GenerateSign generate sign
 func (s *SynchronizeClearDataParameter) signContext(key string) string {
-	return fmt.Sprintf("key-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
+	return fmt.Sprintf("key-%s-%s-%d-%d", key, s.SynchronizeFlag, s.Tamestamp, s.Version)
 }

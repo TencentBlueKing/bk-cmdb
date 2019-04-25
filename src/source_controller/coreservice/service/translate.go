@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator" //TODO: need to be removed
+	"configcenter/src/scene_server/validator"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -44,8 +44,8 @@ func (s *coreService) TranslatePropertyName(defLang language.DefaultCCLanguageIf
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
 }
 
-func (s *coreService) TranslateDescription(defLang language.DefaultCCLanguageIf, att *metadata.Attribute) string {
-	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_description_"+att.PropertyID), att.Description)
+func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf, att *metadata.Attribute) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Placeholder)
 }
 
 func (s *coreService) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {

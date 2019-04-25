@@ -3,20 +3,20 @@
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
-                :disabled="!table.checked.length || !authority.includes('update')" 
+                :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)"
                 @click="handleMultipleEdit">
                 <i class="icon-cc-edit"></i>
                 <span>{{$t("BusinessTopology['修改']")}}</span>
             </bk-button>
             <bk-button class="process-btn" type="primary"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
                 @click="handleCreate">
                 {{$t("Common['新建']")}}
             </bk-button>
             <div class="filter-text fr">
-                <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')" 
+                <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
                     v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
-                    <i class="bk-icon icon-search" @click="handlePageChange(1)"></i>
+                <i class="bk-icon icon-search" @click="handlePageChange(1)"></i>
             </div>
         </div>
         <cmdb-table class="process-table" ref="table"
@@ -25,53 +25,54 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="300"
+            :default-sort="table.defaultSort"
+            :wrapper-minus-height="300"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.D_PROCESS)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_PROCESS' : 'C_PROCESS'])"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
                     <cmdb-form-multiple v-else-if="attribute.type === 'multiple'"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
+                        :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
                 </bk-tabpanel>
                 <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
-                        :authority="authority"
-                        :processId="attribute.inst.details['bk_process_id']"
-                        :bizId="bizId"
-                    ></v-module>
+                        :process-id="attribute.inst.details['bk_process_id']"
+                        :biz-id="bizId">
+                    </v-module>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="process"
-                        :instId="attribute.inst.details['bk_process_id']">
+                        :inst-id="attribute.inst.details['bk_process_id']">
                     </cmdb-audit-history>
                 </bk-tabpanel>
             </bk-tab>
@@ -83,6 +84,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
     import vModule from './module'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
@@ -90,6 +92,8 @@
         },
         data () {
             return {
+                OPERATION,
+                objectUnique: [],
                 properties: [],
                 slider: {
                     show: false,
@@ -120,8 +124,7 @@
                     checked: [],
                     defaultSort: '-bk_process_id',
                     sort: '-bk_process_id'
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {
@@ -158,7 +161,11 @@
                 'batchUpdateProcess',
                 'searchProcessById'
             ]),
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'process',
+                    params: {}
+                })
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true
@@ -212,14 +219,14 @@
                 })
             },
             setTableHeader () {
-                let header = []
-                let headerMap = ['bk_process_name', 'bk_func_id', 'bind_ip', 'port', 'protocol', 'bk_func_name']
+                const header = []
+                const headerMap = ['bk_process_name', 'bk_func_id', 'bind_ip', 'port', 'protocol', 'bk_func_name']
                 this.properties.map(property => {
-                    let {
+                    const {
                         'bk_property_id': propertyId,
                         'bk_property_name': propertyName
                     } = property
-                    let index = headerMap.indexOf(propertyId)
+                    const index = headerMap.indexOf(propertyId)
                     if (index !== -1) {
                         header[index] = {
                             id: propertyId,
@@ -235,7 +242,7 @@
                 this.table.header = header
             },
             async handleEdit (flatternItem) {
-                const list = await this.getProcessList({fromCache: true})
+                const list = await this.getProcessList({ fromCache: true })
                 const inst = list.info.find(item => item['bk_process_id'] === flatternItem['bk_process_id'])
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
@@ -248,7 +255,7 @@
             },
             handleDelete (process) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要删除']", {name: process['bk_process_name']}),
+                    title: this.$t("Common['确认要删除']", { name: process['bk_process_name'] }),
                     confirmFn: () => {
                         this.deleteProcess({
                             bizId: this.bizId,
@@ -296,11 +303,11 @@
                     this.attribute.type = 'details'
                 }
             },
-            getProcessList (config = {cancelPrevious: true}) {
+            getProcessList (config = { cancelPrevious: true }) {
                 return this.searchProcess({
                     bizId: this.bizId,
                     params: this.getSearchParams(),
-                    config: Object.assign({requestId: 'post_searchProcess_list'}, config)
+                    config: Object.assign({ requestId: 'post_searchProcess_list' }, config)
                 })
             },
             getAllProcessList () {
@@ -324,7 +331,7 @@
                 })
             },
             getSearchParams () {
-                let params = {
+                const params = {
                     condition: {
                         'bk_biz_id': this.bizId
                     },

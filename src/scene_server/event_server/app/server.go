@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -91,6 +92,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
 		}
 
+		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
+		if err != nil {
+			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
+		}
+		process.Service.SetAuth(authcli)
+		blog.Infof("enable authcenter: %v", process.Config.Auth.Enable)
+
 		go func() {
 			errCh <- distribution.SubscribeChannel(subcli)
 		}()
@@ -98,6 +106,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		go func() {
 			errCh <- distribution.Start(ctx, cache, db, rpccli)
 		}()
+
 		break
 	}
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
@@ -122,6 +131,7 @@ type EventServer struct {
 var configLock sync.Mutex
 
 func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
 	configLock.Lock()
 	defer configLock.Unlock()
 	if len(current.ConfigMap) > 0 {
@@ -137,6 +147,11 @@ func (h *EventServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Redis = redisConf
 
 		h.Config.RPC.Address = current.ConfigMap["rpc.address"]
+
+		h.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil {
+			blog.Warnf("parse authcenter config failed: %v", err)
+		}
 	}
 }
 

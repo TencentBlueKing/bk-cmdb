@@ -31,7 +31,7 @@ import (
 func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -76,7 +76,7 @@ func (cli *Service) CreateUserGroup(req *restful.Request, resp *restful.Response
 func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -122,14 +122,13 @@ func (cli *Service) UpdateUserGroup(req *restful.Request, resp *restful.Response
 func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	defer req.Request.Body.Close()
 	pathParams := req.PathParameters()
 	groupID := pathParams["group_id"]
 	cond := make(map[string]interface{})
@@ -148,7 +147,7 @@ func (cli *Service) DeleteUserGroup(req *restful.Request, resp *restful.Response
 func (cli *Service) SearchUserGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

@@ -199,11 +199,11 @@ func (lgc *Logics) getModuleBindProc(ctx context.Context, appID, moduleID int64,
 	dat := common.KvMap{common.BKModuleNameField: name, common.BKAppIDField: appID}
 	ret, err := lgc.CoreAPI.ProcController().GetProc2Module(ctx, header, dat)
 	if nil != err {
-		blog.Errorf("getModuleBindProc GetProc2Module http do error. moduleID %d supplierID %s  error:%s,input:%+v,,rid:%s", moduleID, supplierID, err.Error())
+		blog.Errorf("getModuleBindProc GetProc2Module http do error. moduleID %d supplierID %s  error:%s, input:%#v, rid:%s", moduleID, supplierID, err.Error(), dat, lgc.rid)
 		return 0, nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("getModuleBindProc GetProc2Module http reply error. moduleID %d supplierID %s, err code:%d, err msg:%s,input:%+v,rid:%d", moduleID, supplierID, ret.Code, ret.ErrMsg, dat, lgc.rid)
+		blog.Errorf("getModuleBindProc GetProc2Module http reply error. moduleID %d supplierID %s, err code:%d, err msg:%s,input:%+v,rid:%s", moduleID, supplierID, ret.Code, ret.ErrMsg, dat, lgc.rid)
 		return 0, nil, defErr.New(ret.Code, ret.ErrMsg)
 	}
 	for _, proc := range ret.Data {

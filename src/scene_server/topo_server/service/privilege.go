@@ -21,7 +21,7 @@ import (
 )
 
 // UpdateUserGroupPrivi search user goup
-func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	priviData := &metadata.PrivilegeUserGroup{}
 	_, err := priviData.Parse(data)
@@ -30,18 +30,18 @@ func (s *topoService) UpdateUserGroupPrivi(params types.ContextParams, pathParam
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
+	err = s.Core.PermissionOperation().Permission(params).SetUserGroupPermission(params.SupplierAccount, pathParams("group_id"), priviData)
 	return nil, err
 }
 
 // GetUserGroupPrivi search user goup
-func (s *topoService) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) GetUserGroupPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	return s.core.PermissionOperation().Permission(params).GetUserGroupPermission(params.SupplierAccount, pathParams("group_id"))
+	return s.Core.PermissionOperation().Permission(params).GetUserGroupPermission(params.SupplierAccount, pathParams("group_id"))
 }
 
 // GetUserPrivi search user goup
-func (s *topoService) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) GetUserPrivi(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	return s.core.PermissionOperation().Permission(params).GetUserPermission(params.SupplierAccount, pathParams("user_name"))
+	return s.Core.PermissionOperation().Permission(params).GetUserPermission(params.SupplierAccount, pathParams("user_name"))
 }

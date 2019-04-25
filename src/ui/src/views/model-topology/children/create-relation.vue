@@ -26,8 +26,8 @@
                 {{$t('ModelManagement["关联类型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <ul class="relation-label cmdb-form-item clearfix" :class="{'is-error': errors.has('asstId')}">
-                <li :class="{'active': relationInfo['bk_asst_id'] === relation.id}"
+            <ul class="relation-label cmdb-form-item clearfix" :class="{ 'is-error': errors.has('asstId') }">
+                <li :class="{ 'active': relationInfo['bk_asst_id'] === relation.id }"
                     v-for="(relation, relationIndex) in relationList"
                     :key="relationIndex"
                     @click="relationInfo['bk_asst_id'] = relation.id">
@@ -40,12 +40,12 @@
                 {{$t('ModelManagement["关联描述"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
                 <input type="text" class="cmdb-form-input"
-                name="asstName"
-                v-validate="'required|singlechar'"
-                v-model.trim="relationInfo['bk_obj_asst_name']"
-                :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
+                    name="asstName"
+                    v-validate="'required|singlechar'"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')">
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
         </label>
@@ -54,7 +54,7 @@
                 {{$t('ModelManagement["源-目标约束"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
                 <cmdb-selector
                     :list="mappingList"
                     v-validate="'required'"
@@ -77,7 +77,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         props: {
             toObjId: {
@@ -114,8 +114,9 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['models']),
             objAsstId () {
-                let {
+                const {
                     relationInfo
                 } = this
                 if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
@@ -135,14 +136,14 @@
                 'searchObjectAssociation'
             ]),
             getModelName (objId) {
-                let model = this.$allModels.find(model => model['bk_obj_id'] === objId)
+                const model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
                     return model['bk_obj_name']
                 }
                 return ''
             },
             exchangeObjAsst () {
-                let {
+                const {
                     relationInfo
                 } = this;
                 [relationInfo['bk_obj_id'], relationInfo['bk_asst_obj_id']] = [relationInfo['bk_asst_obj_id'], relationInfo['bk_obj_id']]
@@ -155,7 +156,7 @@
                         fromCache: true
                     }
                 })
-                this.relationList = data.info.map(({bk_asst_id: asstId, bk_asst_name: asstName}) => {
+                this.relationList = data.info.map(({ bk_asst_id: asstId, bk_asst_name: asstName }) => {
                     if (asstName.length) {
                         return {
                             id: asstId,
@@ -166,6 +167,8 @@
                         id: asstId,
                         name: asstId
                     }
+                }).filter(relation => {
+                    return relation.id !== 'bk_mainline'
                 })
                 this.relationInfo['bk_asst_id'] = this.relationList[0].id
             },
@@ -195,7 +198,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = {
+                const params = {
                     ...this.relationInfo,
                     ...{
                         bk_obj_asst_id: this.objAsstId

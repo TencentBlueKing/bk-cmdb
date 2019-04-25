@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"time"
 
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"

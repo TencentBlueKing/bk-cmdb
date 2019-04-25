@@ -12,7 +12,7 @@
                 <i :class="['model-icon','icon', model['bk_obj_icon']]"></i>
                 <span class="model-name">{{model['bk_obj_name']}}</span>
                 <i class="model-star bk-icon"
-                    v-if="!(['biz', 'resource'].includes(model['bk_obj_id']))"
+                    v-if="classify.bk_classification_id !== 'bk_host_management'"
                     :class="[isCollected(model) ? 'icon-star-shape' : 'icon-star']"
                     @click.prevent.stop="toggleCustomNavigation(model)">
                 </i>
@@ -36,18 +36,16 @@
             }
         },
         computed: {
-            ...mapGetters(['admin', 'isAdminView']),
+            ...mapGetters(['user', 'admin', 'isAdminView']),
             ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('userPrivilege', ['privilege']),
             ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
-            ...mapGetters('objectModelClassify', ['authorizedNavigation']),
+            ...mapGetters('objectModelClassify', ['getModelById']),
             customNavigation () {
                 return this.usercustom[this.classifyNavigationKey] || []
             },
             usefulNavigation () {
-                const hasResourcePrivilege = this.admin || (this.privilege['sys_config']['global_busi'] || []).includes('resource')
                 const usefulNavigation = this.customNavigation.filter(customId => {
-                    return this.authorizedNavigation.some(({children}) => children.some(navigation => navigation.id === customId))
+                    return !!this.getModelById(customId)
                 })
                 return usefulNavigation
             },
@@ -61,7 +59,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push({path})
+                this.$router.push({ path })
             },
             getModelLink (model) {
                 if (model.hasOwnProperty('path')) {
@@ -80,7 +78,7 @@
                     newCustom = this.customNavigation.filter(id => id !== model['bk_obj_id'])
                 } else { // 添加导航
                     if (this.collectedCount >= this.maxCustomNavigationCount) {
-                        this.$warn(this.$t('Index["限制添加导航提示"]', {max: this.maxCustomNavigationCount}))
+                        this.$warn(this.$t('Index["限制添加导航提示"]', { max: this.maxCustomNavigationCount }))
                         return
                     } else {
                         isAdd = true

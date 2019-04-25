@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
 
@@ -42,27 +42,6 @@ func GetLanguage(header http.Header) string {
 	return header.Get(common.BKHTTPLanguage)
 }
 
-// GetActionLanguage returns language form hender
-func GetActionLanguage(req *restful.Request) string {
-	language := req.HeaderParameter(common.BKHTTPLanguage)
-	if "" == language {
-		language = "zh-cn"
-	}
-	return language
-}
-
-// GetActionUser returns user form hender
-func GetActionUser(req *restful.Request) string {
-	user := req.HeaderParameter(common.BKHTTPHeaderUser)
-	return user
-}
-
-// GetActionOnwerID returns owner_uin form hender
-func GetActionOnwerID(req *restful.Request) string {
-	ownerID := req.HeaderParameter(common.BKHTTPOwnerID)
-	return ownerID
-}
-
 func GetUser(header http.Header) string {
 	return header.Get(common.BKHTTPHeaderUser)
 }
@@ -71,43 +50,15 @@ func GetOwnerID(header http.Header) string {
 	return header.Get(common.BKHTTPOwnerID)
 }
 
-func GetOwnerIDAndUser(header http.Header) (string, string) {
-	return header.Get(common.BKHTTPOwnerID), header.Get(common.BKHTTPHeaderUser)
-}
-
-// SetActionOwerIDAndAccount set supplier id and account in head
-func SetActionOwerIDAndAccount(req *restful.Request) {
+// set supplier id and account in head
+func SetOwnerIDAndAccount(req *restful.Request) {
 	owner := req.Request.Header.Get(common.BKHTTPOwner)
 	if "" != owner {
 		req.Request.Header.Set(common.BKHTTPOwnerID, owner)
 	}
-
 }
 
-// GetActionOnwerIDAndUser returns owner_uin and user form hender
-func GetActionOnwerIDAndUser(req *restful.Request) (string, string) {
-	user := GetActionUser(req)
-	ownerID := GetActionOnwerID(req)
-
-	return ownerID, user
-}
-
-// GetActionLanguageByHTTPHeader return language from http header
-func GetActionLanguageByHTTPHeader(header http.Header) string {
-	language := header.Get(common.BKHTTPLanguage)
-	if "" == language {
-		return "zh-cn"
-	}
-	return language
-}
-
-// GetActionOnwerIDByHTTPHeader return owner from http header
-func GetActionOnwerIDByHTTPHeader(header http.Header) string {
-	ownerID := header.Get(common.BKHTTPOwnerID)
-	return ownerID
-}
-
-// GetHTTPCCRequestID return configcenter request id from http header
+// GetHTTPCCRequestID return config center request id from http header
 func GetHTTPCCRequestID(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCRequestID)
 	return rid
@@ -126,7 +77,7 @@ func IsExistSupplierID(header http.Header) bool {
 	return true
 }
 
-// GetHTTPCCTransaction return configcenter request id from http header
+// GetHTTPCCTransaction return config center request id from http header
 func GetHTTPCCTransaction(header http.Header) string {
 	rid := header.Get(common.BKHTTPCCTransactionID)
 	return rid
@@ -202,7 +153,7 @@ func Pfalse() *bool {
 func RunForever(name string, f func() error) {
 	for {
 		if err := runNoPanic(f); err != nil {
-			blog.Errorf("[%s] return %v, retry 3s later", err)
+			blog.Errorf("[%s] return %v, retry 3s later", name, err)
 			time.Sleep(time.Second * 3)
 		}
 	}

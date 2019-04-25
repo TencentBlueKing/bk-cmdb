@@ -5,7 +5,7 @@
             :value="value"
             :maxlength="maxlength"
             :disabled="disabled"
-            @input="handleInput($event)"
+            @blur="handleInput($event)"
             @change="handleChange">
     </div>
 </template>
@@ -15,7 +15,10 @@
         name: 'cmdb-form-int',
         props: {
             value: {
-                default: null
+                default: null,
+                validator (val) {
+                    return typeof val === 'number' || val === '' || val === null
+                }
             },
             disabled: {
                 type: Boolean,

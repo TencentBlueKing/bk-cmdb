@@ -4,7 +4,10 @@ import Vuex from 'vuex'
 import global from './modules/global.js'
 import request from './modules/request.js'
 
+import auth from './modules/api/auth.js'
+import menu from './modules/menu.js'
 import eventSub from './modules/api/event-sub.js'
+import hostBatch from './modules/api/host-batch.js'
 import hostCustomApi from './modules/api/host-custom-api.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
@@ -41,8 +44,11 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     ...global,
     modules: {
+        auth,
+        menu,
         request,
         eventSub,
+        hostBatch,
         hostCustomApi,
         hostDelete,
         hostFavorites,

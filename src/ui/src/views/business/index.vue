@@ -2,12 +2,15 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!authority.includes('update') || !isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_BUSINESS) || !isAdminView"
                 @click="handleCreate">
                 {{$t("Common['新建']")}}
             </bk-button>
             <div class="options-button fr">
-                <bk-button class="button-history" v-tooltip.bottom="$t('Common[\'查看删除历史\']')" @click="routeToHistory">
+                <bk-button class="button-history"
+                    v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
+                    :disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
+                    @click="routeToHistory">
                     <i class="icon-cc-history2"></i>
                 </bk-button>
                 <bk-button class="button-setting" v-tooltip.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
@@ -25,21 +28,21 @@
                     :options="$tools.getEnumOptions(properties, filter.id)"
                     :allow-clear="true"
                     v-model="filter.value"
-                    @on-selected="getTableData">
+                    @on-selected="handleFilterData">
                 </cmdb-form-enum>
                 <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handleFilterData">
                 <input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @keydown.enter="handleFilterData">
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
-                    @click="getTableData"></i>
+                    @click="handleFilterData"></i>
             </div>
         </div>
         <cmdb-table class="business-table" ref="table"
@@ -47,34 +50,35 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="157"
+            :default-sort="table.defaultSort"
+            :wrapper-minus-height="157"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :deleteButtonText="$t('Inst[\'归档\']')"
+                        :delete-button-text="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
+                        :delete-disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
                     <cmdb-form v-else-if="['update', 'create'].includes(attribute.type)"
                         ref="form"
-                        :authority="authority"
                         :properties="properties"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -83,19 +87,19 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :authority="authority"
+                        :disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type !== 'create'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="biz"
-                        :instId="attribute.inst.details['bk_biz_id']">
+                        :inst-id="attribute.inst.details['bk_biz_id']">
                     </cmdb-audit-history>
                 </bk-tabpanel>
             </bk-tab>
         </cmdb-slider>
-        <cmdb-slider :isShow.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        <cmdb-slider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
                 :properties="properties"
                 :selected="columnsConfig.selected"
@@ -113,6 +117,7 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -121,6 +126,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -138,7 +144,8 @@
                     id: '',
                     value: '',
                     type: '',
-                    options: []
+                    options: [],
+                    sendValue: ''
                 },
                 slider: {
                     show: false,
@@ -165,14 +172,24 @@
             ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
             ...mapGetters('userCustom', ['usercustom']),
             ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['getModelById']),
             columnsConfigKey () {
                 return `${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
             },
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
-            authority () {
-                return this.$store.getters['userPrivilege/modelAuthority']('biz')
+            saveDisabled () {
+                const type = this.attribute.type
+                if (type === 'create') {
+                    return !this.$isAuthorized(this.OPERATION.C_BUSINESS)
+                } else if (type === 'update') {
+                    return !this.$isAuthorized(this.OPERATION.U_BUSINESS)
+                }
+                return true
+            },
+            model () {
+                return this.getModelById('biz') || {}
             }
         },
         watch: {
@@ -284,11 +301,16 @@
                 this.table.pagination.current = page
                 this.getTableData()
             },
-            getBusinessList (config = {cancelPrevious: true}) {
+            getBusinessList (config = { cancelPrevious: true }) {
                 return this.searchBusiness({
                     params: this.getSearchParams(),
-                    config: Object.assign({requestId: 'post_searchBusiness_list'}, config)
+                    config: Object.assign({ requestId: 'post_searchBusiness_list' }, config)
                 })
+            },
+            handleFilterData () {
+                this.table.pagination.current = 1
+                this.filter.sendValue = this.filter.value
+                this.getTableData()
             },
             getTableData () {
                 this.getBusinessList().then(data => {
@@ -300,7 +322,7 @@
             getSearchParams () {
                 const params = {
                     condition: {
-                        'bk_data_status': {'$ne': 'disabled'}
+                        'bk_data_status': { '$ne': 'disabled' }
                     },
                     fields: [],
                     page: {
@@ -309,9 +331,9 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.filter.id && String(this.filter.value).length) {
+                if (this.filter.id && String(this.filter.sendValue).length) {
                     const filterType = this.filter.type
-                    let filterValue = this.filter.value
+                    let filterValue = this.filter.sendValue
                     if (filterType === 'bool') {
                         const convertValue = [true, false].find(bool => bool.toString() === filterValue)
                         filterValue = convertValue === undefined ? filterValue : convertValue
@@ -323,7 +345,7 @@
                 return params
             },
             async handleEdit (flatternItem) {
-                const list = await this.getBusinessList({fromCache: true})
+                const list = await this.getBusinessList({ fromCache: true })
                 const inst = list.info.find(item => item['bk_biz_id'] === flatternItem['bk_biz_id'])
                 const bizNameProperty = this.$tools.getProperty(this.properties, 'bk_biz_name')
                 bizNameProperty.isreadonly = inst['bk_biz_name'] === '蓝鲸'
@@ -334,11 +356,11 @@
                 this.attribute.type = 'create'
                 this.attribute.inst.edit = {}
                 this.slider.show = true
-                this.slider.title = `${this.$t("Common['创建']")} ${this.$model['bk_obj_name']}`
+                this.slider.title = `${this.$t("Common['创建']")} ${this.model['bk_obj_name']}`
             },
             handleDelete (inst) {
                 this.$bkInfo({
-                    title: this.$t("Common['确认要归档']", {name: inst['bk_biz_name']}),
+                    title: this.$t("Common['确认要归档']", { name: inst['bk_biz_name'] }),
                     confirmFn: () => {
                         this.archiveBusiness(inst['bk_biz_id']).then(() => {
                             this.slider.show = false
@@ -356,7 +378,7 @@
                         params: values
                     }).then(() => {
                         this.getTableData()
-                        this.searchBusinessById({bizId: originalValues['bk_biz_id']}).then(item => {
+                        this.searchBusinessById({ bizId: originalValues['bk_biz_id'] }).then(item => {
                             this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
                         })
                         this.handleCancel()
@@ -393,7 +415,7 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({name: 'businessHistory'})
+                this.$router.push({ name: 'businessHistory' })
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

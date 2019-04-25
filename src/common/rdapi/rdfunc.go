@@ -25,16 +25,15 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
-	util.SetActionOwerIDAndAccount(req)
-	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	if "" == ownerId {
+	util.SetOwnerIDAndAccount(req)
+	if "" == util.GetOwnerID(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
-	if "" == user {
+	if "" == util.GetUser(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
 	}
 
@@ -53,7 +52,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 				return
 			}
 		}
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)

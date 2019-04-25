@@ -13,9 +13,13 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"net/http"
 	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 type DeleteHostBatchOpt struct {
@@ -119,6 +123,28 @@ type SearchCondition struct {
 type SearchHost struct {
 	Count int             `json:"count"`
 	Info  []mapstr.MapStr `json:"info"`
+}
+
+func (sh SearchHost) ExtractHostIDs() *[]int64 {
+	hostIDArray := make([]int64, 0)
+	for _, h := range sh.Info {
+		if _, exist := h["host"]; exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host field.", h)
+			continue
+		}
+		hostID, exist := h["host"].(mapstr.MapStr)[common.BKHostIDField]
+		if exist == false {
+			blog.ErrorJSON("unexpected error, host: %s don't have host.bk_host_id field.", h)
+			continue
+		}
+		id, err := util.GetInt64ByInterface(hostID)
+		if err != nil {
+			blog.ErrorJSON("unexpected error, host: %s host.bk_host_id field is not integer.", h)
+			continue
+		}
+		hostIDArray = append(hostIDArray, id)
+	}
+	return &hostIDArray
 }
 
 type SearchHostResult struct {
@@ -252,7 +278,7 @@ type TransferHostAcrossBusinessParameter struct {
 	DstModuleIDArr []int64 `json:"bk_module_ids"`
 }
 
-// HostModuleRelationParameter host and module  relation parameter
+// HostModuleRelationParameter get host and module  relation parameter
 type HostModuleRelationParameter struct {
 	AppID  int64   `json:"bk_biz_id"`
 	HostID []int64 `json:"bk_host_id"`
@@ -262,10 +288,4 @@ type HostModuleRelationParameter struct {
 type DeleteHostFromBizParameter struct {
 	AppID     int64   `json:"bk_biz_id"`
 	HostIDArr []int64 `json:"bk_host_ids"`
-}
-
-// OperaterException synchronize result
-type OperaterException struct {
-	BaseResp `json:",inline"`
-	Data     []ExceptionResult `json:"data"`
 }

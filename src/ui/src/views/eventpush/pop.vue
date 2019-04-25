@@ -25,14 +25,14 @@
                     </div>
                 </div>
             </div>
-            <div class="result-info" v-show="isResultShow" v-bkloading="{isLoading: $loading(['testPing', 'testTelnet'])}">
+            <div class="result-info" v-show="isResultShow" v-bkloading="{ isLoading: $loading(['testPing', 'testTelnet']) }">
                 <p class="text-success" v-if="resultInfo.result"><i class="bk-icon icon-check-circle-shape"></i>{{$t('EventPush["推送成功"]')}}</p>
                 <p class="text-danger" v-else><i class="bk-icon icon-close-circle-shape"></i>{{$t('EventPush["推送失败"]')}}</p>
                 <template v-if="resultInfo.result">
-                    <ul class="result-data" :class="{'close': !isResultOpen}" v-if="typeof(resultInfo.data)==='string'">
+                    <ul class="result-data" :class="{ 'close': !isResultOpen }" v-if="typeof (resultInfo.data) === 'string'">
                         <li>{{resultInfo.data}}</li>
                     </ul>
-                    <ul class="result-data" :class="{'close': !isResultOpen}" v-else>
+                    <ul class="result-data" :class="{ 'close': !isResultOpen }" v-else>
                         <li v-for="(value, key, index) in resultInfo.data" :key="index">{{key}}：{{value}}</li>
                     </ul>
                 </template>
@@ -41,10 +41,10 @@
                         <li>{{resultInfo['bk_error_msg']}}</li>
                     </ul>
                 </template>
-                <a href="javascript:void(0)" class="result-slide" 
-                    :class="{'close': !isResultOpen}"
-                    v-if="resultInfo.result" 
-                    @click="isResultOpen=!isResultOpen">
+                <a href="javascript:void(0)" class="result-slide"
+                    :class="{ 'close': !isResultOpen }"
+                    v-if="resultInfo.result"
+                    @click="isResultOpen = !isResultOpen">
                     {{isResultOpen ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
                 </a>
             </div>
@@ -58,6 +58,7 @@
     export default {
         props: {
             callbackURL: {
+                type: String,
                 required: true,
                 default: ''
             },
@@ -113,7 +114,7 @@
             async testTelnet () {
                 this.isResultShow = true
                 const res = await this.testingConnection({
-                    params: {callback_url: this.callbackURL},
+                    params: { callback_url: this.callbackURL },
                     config: {
                         requestId: 'testTelnet',
                         transformData: false

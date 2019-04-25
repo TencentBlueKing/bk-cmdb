@@ -117,7 +117,7 @@ func (o *operation) WithAttrComm() *operation {
 	attrMeta := metadata.Metadata{
 		Label: make(metadata.Label, 0),
 	}
-	attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
+	//attrMeta.Label.SetModelKind(metadata.PublicModelKindValue)
 	conds := mapstr.New()
 	for key, val := range attrMeta.Label {
 		conds.Set(key, val)

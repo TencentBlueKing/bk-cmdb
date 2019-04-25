@@ -150,7 +150,7 @@ func (valid *validator) validUpdateUnique(ctx core.ContextParams, instanceData m
 		cond := mongo.NewCondition()
 		anyEmpty := false
 		for key := range uniquekeys {
-			val, ok := instanceData[key]
+			val, ok := mapData[key]
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}

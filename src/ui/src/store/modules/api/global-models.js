@@ -45,8 +45,13 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchModelAction ({ commit, state, dispatch }, params) {
-        return $http.post(`find/objecttopo/scope_type/global/scope_id/0`, params)
+    searchModelAction ({ commit, state, dispatch, rootGetters }, params) {
+        return $http.post(`find/objecttopo/scope_type/global/scope_id/0`, params).then(data => {
+            return data.filter(node => {
+                const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
+                return model && !model.bk_ispaused
+            })
+        })
     },
 
     /**
@@ -79,7 +84,7 @@ const mutations = {
             Object.assign(topologyMap[modelId], data)
         })
     },
-    addAssociation (state, {id, association}) {
+    addAssociation (state, { id, association }) {
         const data = state.topologyMap[id]
         const associations = data.assts
         if (Array.isArray(associations)) {

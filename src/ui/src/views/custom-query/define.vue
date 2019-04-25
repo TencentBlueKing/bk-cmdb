@@ -5,8 +5,8 @@
             'post_searchObjectAttribute_set',
             'post_searchObjectAttribute_module',
             'getUserAPIDetail'
-            ])
-        }">
+        ])
+    }">
         <div class="define-box">
             <div class="userapi-group">
                 <label class="userapi-label">
@@ -21,11 +21,11 @@
                 <label class="userapi-label">
                     {{$t("CustomQuery['查询名称']")}}<span class="color-danger"> * </span>
                 </label>
-                <input type="text" class="cmdb-form-input" 
-                v-model.trim="name"
-                :name="$t('CustomQuery[\'查询名称\']')"
-                :disabled="!authority.includes('update')"
-                v-validate="'required|max:15'">
+                <input type="text" class="cmdb-form-input"
+                    v-model.trim="name"
+                    :name="$t('CustomQuery[\'查询名称\']')"
+                    :disabled="!editable"
+                    v-validate="'required|max:15'">
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
             <div class="userapi-group content">
@@ -36,7 +36,7 @@
                     <div class="text-content"
                         :class="{
                             open: attribute.isShow,
-                            disabled: !authority.includes('update')
+                            disabled: !editable
                         }"
                         @click="toggleContentSelector(true)">
                         <span class="default-name">{{attribute.defaultName}}</span><span v-if="selectedName.length">,{{selectedName}}</span>
@@ -53,8 +53,8 @@
                         setting-key="bk_property_id"
                         display-key="bk_property_name"
                         :selected.sync="attribute.selected"
-                        :multiSelect="true"
-                        :disabled="!authority.includes('update')">
+                        :multi-select="true"
+                        :disabled="!editable">
                     </bk-selector>
                 </div>
             </div>
@@ -63,38 +63,38 @@
                     <label class="filter-label">
                         {{property.objName}} - {{property.propertyName}}
                     </label>
-                    <div class="filter-content clearfix" :class="{disabled: !authority.includes('update')}">
+                    <div class="filter-content clearfix" :class="{ disabled: !editable }">
                         <filter-field-operator class="filter-field-operator fl"
                             v-if="!['date', 'time'].includes(property.propertyType)"
                             :type="getOperatorType(property)"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.operator">
                         </filter-field-operator>
                         <cmdb-form-enum class="filter-field-value filter-field-enum fl"
                             v-if="property.propertyType === 'enum'"
                             :allow-clear="true"
                             :options="getEnumOptions(property)"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.value">
                         </cmdb-form-enum>
                         <cmdb-form-bool-input class="filter-field-value filter-field-bool-input fl"
                             v-else-if="property.propertyType === 'bool'"
                             v-model="property.value"
-                            :disabled="!authority.includes('update')">
+                            :disabled="!editable">
                         </cmdb-form-bool-input>
                         <cmdb-form-associate-input class="filter-field-value filter-field-associate fl"
                             v-else-if="['singleasst', 'multiasst'].includes(property.propertyType)"
                             v-model="property.value"
-                            :disabled="!authority.includes('update')">
+                            :disabled="!editable">
                         </cmdb-form-associate-input>
                         <component class="filter-field-value fl" :class="`filter-field-${property.propertyType}`"
                             v-else
                             :is="`cmdb-form-${property.propertyType}`"
-                            :disabled="!authority.includes('update')"
+                            :disabled="!editable"
                             v-model="property.value">
                         </component>
                         <i class="userapi-delete fr bk-icon icon-close"
-                            v-if="authority.includes('update')"
+                            v-if="editable"
                             @click="deleteUserProperty(property, index)">
                         </i>
                     </div>
@@ -102,7 +102,7 @@
             </ul>
             <div class="userapi-new">
                 <button class="userapi-new-btn"
-                    :disabled="!authority.includes('update')"
+                    :disabled="!editable"
                     @click="toggleUserAPISelector(true)">
                     {{$t("CustomQuery['新增查询条件']")}}
                 </button>
@@ -128,7 +128,7 @@
                 <bk-button type="primary" class="userapi-btn"
                     v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
                     :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !authority.includes('update')"
+                    :disabled="errors.any() || !editable"
                     @click="saveUserAPI">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -138,19 +138,21 @@
                 <bk-button type="danger" class="userapi-btn button-delete"
                     v-if="type === 'update'"
                     :loading="$loading('deleteCustomQuery')"
-                    :disabled="!authority.includes('delete')"
+                    :disabled="!editable"
                     @click="deleteUserAPI">
                     {{$t("Common['删除']")}}
                 </bk-button>
             </div>
         </div>
-        <v-preview ref="preview" 
-            v-if="isPreviewShow" 
-            :apiParams="apiParams" 
+        <!-- eslint-disable vue/space-infix-ops -->
+        <v-preview ref="preview"
+            v-if="isPreviewShow"
+            :api-params="apiParams"
             :attribute="object"
-            :tableHeader="attribute.selected"
+            :table-header="attribute.selected"
             @close="isPreviewShow = false">
         </v-preview>
+        <!-- eslint-disable end -->
     </div>
 </template>
 
@@ -158,6 +160,7 @@
     import { mapActions, mapGetters } from 'vuex'
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             filterFieldOperator,
@@ -171,13 +174,8 @@
                 type: Number
             },
             id: {
+                type: [String, Number],
                 default: ''
-            },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
             }
         },
         data () {
@@ -252,10 +250,18 @@
             ...mapGetters([
                 'supplierAccount'
             ]),
+            editable () {
+                if (this.type === 'create') {
+                    return this.$isAuthorized(OPERATION.C_CUSTOM_QUERY)
+                } else if (this.type === 'update') {
+                    return this.$isAuthorized(OPERATION.U_CUSTOM_QUERY)
+                }
+                return true
+            },
             selectedName () {
-                let nameList = []
+                const nameList = []
                 this.attribute.selected.map(propertyId => {
-                    let attr = this.attribute.list.find(({bk_property_id: bkPropertyId}) => {
+                    const attr = this.attribute.list.find(({ bk_property_id: bkPropertyId }) => {
                         return bkPropertyId === propertyId
                     })
                     if (attr) {
@@ -276,9 +282,9 @@
             },
             /* 生成保存自定义API的参数 */
             apiParams () {
-                let paramsMap = [
-                    {'bk_obj_id': 'set', condition: [], fields: []},
-                    {'bk_obj_id': 'module', condition: [], fields: []},
+                const paramsMap = [
+                    { 'bk_obj_id': 'set', condition: [], fields: [] },
+                    { 'bk_obj_id': 'module', condition: [], fields: [] },
                     {
                         'bk_obj_id': 'biz',
                         condition: [{
@@ -301,7 +307,7 @@
                     'set': 'bk_set_name'
                 }
                 this.userProperties.forEach((property, index) => {
-                    let param = paramsMap.find(({bk_obj_id: objId}) => {
+                    const param = paramsMap.find(({ bk_obj_id: objId }) => {
                         return objId === property.objId
                     })
                     if (property.propertyType === 'singleasst' || property.propertyType === 'multiasst') {
@@ -315,7 +321,7 @@
                             }]
                         })
                     } else if (property.propertyType === 'time' || property.propertyType === 'date') {
-                        let value = property['value'].split(' - ')
+                        const value = property['value'].split(' - ')
                         param['condition'].push({
                             field: property.propertyId,
                             operator: value[0] === value[1] ? '$eq' : '$gte',
@@ -339,8 +345,8 @@
                         if (property.propertyId === 'bk_module_name' || property.propertyId === 'bk_set_name') {
                             operator = operator === '$regex' ? '$in' : operator
                             if (operator === '$in') {
-                                let arr = value.replace('，', ',').split(',')
-                                let isExist = arr.findIndex(val => {
+                                const arr = value.replace('，', ',').split(',')
+                                const isExist = arr.findIndex(val => {
                                     return val === value
                                 }) > -1
                                 value = isExist ? arr : [...arr, value]
@@ -353,7 +359,7 @@
                         })
                     }
                 })
-                let params = {
+                const params = {
                     'bk_biz_id': this.bizId,
                     'info': {
                         condition: paramsMap
@@ -369,7 +375,7 @@
         watch: {
             'object.host.properties' (properties) {
                 let selected = []
-                let tempList = []
+                const tempList = []
                 properties.map(property => {
                     let isDefaultPropery = false
                     selected = this.attribute.default.map(defaultProperty => {
@@ -410,9 +416,9 @@
                     return true
                 }
                 return this.userProperties.some((property, index) => {
-                    let propertyCopy = this.dataCopy.userProperties[index]
+                    const propertyCopy = this.dataCopy.userProperties[index]
                     let res = false
-                    for (let key in property) {
+                    for (const key in property) {
                         if (property[key] !== propertyCopy[key]) {
                             res = true
                             break
@@ -432,14 +438,14 @@
                 this.setUserProperties(res)
             },
             setUserProperties (detail) {
-                let properties = []
-                let info = JSON.parse(detail['info'])
+                const properties = []
+                const info = JSON.parse(detail['info'])
                 info.condition.forEach(condition => {
                     condition['condition'].forEach(property => {
-                        let originalProperty = this.getOriginalProperty(property.field, condition['bk_obj_id'])
+                        const originalProperty = this.getOriginalProperty(property.field, condition['bk_obj_id'])
                         if (originalProperty) {
-                            if (['time', 'date'].includes(originalProperty['bk_property_type']) && properties.some(({propertyId}) => propertyId === originalProperty['bk_property_id'])) {
-                                let repeatProperty = properties.find(({propertyId}) => propertyId === originalProperty['bk_property_id'])
+                            if (['time', 'date'].includes(originalProperty['bk_property_type']) && properties.some(({ propertyId }) => propertyId === originalProperty['bk_property_id'])) {
+                                const repeatProperty = properties.find(({ propertyId }) => propertyId === originalProperty['bk_property_id'])
                                 repeatProperty.value = [repeatProperty.value, property.value].join(' - ')
                             } else {
                                 properties.push({
@@ -470,8 +476,8 @@
             },
             getUserPropertyValue (property, originalProperty) {
                 if (
-                    property.operator === '$in' &&
-                    ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
+                    property.operator === '$in'
+                    && ['bk_module_name', 'bk_set_name'].includes(originalProperty['bk_property_id'])
                 ) {
                     return property.value[property.value.length - 1]
                 }
@@ -491,7 +497,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = Object.assign({}, this.apiParams, {'info': JSON.stringify(this.apiParams['info'])})
+                const params = Object.assign({}, this.apiParams, { 'info': JSON.stringify(this.apiParams['info']) })
                 // 将Info字段转为JSON字符串提交
                 if (this.type === 'create') {
                     const res = await this.createCustomQuery({
@@ -525,7 +531,7 @@
             },
             deleteUserAPI () {
                 this.$bkInfo({
-                    title: this.$t("CustomQuery['确认要删除']", {name: this.apiParams.name}),
+                    title: this.$t("CustomQuery['确认要删除']", { name: this.apiParams.name }),
                     confirmFn: async () => {
                         await this.deleteCustomQuery({
                             bizId: this.bizId,
@@ -544,7 +550,7 @@
                 this.userProperties.splice(index, 1)
             },
             getEnumOptions (userProperty) {
-                let property = this.getOriginalProperty(userProperty.propertyId, userProperty.objId)
+                const property = this.getOriginalProperty(userProperty.propertyId, userProperty.objId)
                 if (property) {
                     return property.option || []
                 }
@@ -642,9 +648,9 @@
             /* 通过选择的propertyId, 查找其对应的对象，以获得更多信息 */
             getOriginalProperty (bkPropertyId, bkObjId) {
                 let property = null
-                for (let objId in this.object) {
-                    for (var i = 0; i < this.object[objId]['properties'].length; i++) {
-                        let loopProperty = this.object[objId]['properties'][i]
+                for (const objId in this.object) {
+                    for (let i = 0; i < this.object[objId]['properties'].length; i++) {
+                        const loopProperty = this.object[objId]['properties'][i]
                         if (loopProperty['bk_property_id'] === bkPropertyId && loopProperty['bk_obj_id'] === bkObjId) {
                             property = loopProperty
                             break
@@ -657,7 +663,7 @@
                 return property
             },
             addUserProperties (key, property) {
-                let {
+                const {
                     'bk_property_id': propertyId,
                     'bk_property_name': propertyName,
                     'bk_property_type': propertyType,
@@ -676,7 +682,7 @@
                 })
             },
             toggleContentSelector (isShow) {
-                if (this.authority.includes('update')) {
+                if (this.editable) {
                     this.$refs.content.open = isShow
                     this.attribute.isShow = isShow
                 }
@@ -928,4 +934,3 @@
         }
     }
 </style>
-

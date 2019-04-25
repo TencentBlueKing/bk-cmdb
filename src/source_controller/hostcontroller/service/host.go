@@ -160,7 +160,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *Service) GetHostSnap(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(language)
 
 	hostID := req.PathParameter("bk_host_id")
@@ -456,7 +456,7 @@ func (s *Service) TransferHostToDefaultModuleConfig(req *restful.Request, resp *
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	rid := util.GetHTTPCCRequestID(header)
 
-	input := new(meta.TransferHostToDefaultModuleConfig)
+	input := new(meta.TransferHostToInnerModule)
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("move host to resourece pool failed, err: %v", err)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
