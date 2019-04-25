@@ -85,10 +85,13 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 }
 
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
-
-	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
-	if err != nil {
-		return nil, fmt.Errorf("parse business id from metadata failed, err: %+v", err)
+	var err error
+	var bizID int64
+	if params.MetaData != nil {
+		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			return nil, fmt.Errorf("parse business id from metadata failed, err: %+v", err)
+		}
 	}
 
 	var rowErr map[int64]error
