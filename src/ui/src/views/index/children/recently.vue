@@ -122,6 +122,10 @@
             @include ellipsis;
             &:hover {
                 background-color: #e1ecff;
+                color: #3a84ff;
+                .model-icon {
+                    color: #3a84ff;
+                }
             }
             &.more {
                 flex: 0 0 34px;
