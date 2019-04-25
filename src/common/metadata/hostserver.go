@@ -197,7 +197,7 @@ type ResourceConfirm struct {
 	CreateTime   string          `json:"bk_create_time"`
 	TaskID       string          `json:"bk_task_id"`
 	ResourceID   int64           `json:"bk_resource_id"`
-	ConfirmType  string          `json:"bk_confirm_type`
+	ConfirmType  string          `json:"bk_confirm_type"`
 	Incharge     string          `json:"bk_in_charge"`
 }
 
