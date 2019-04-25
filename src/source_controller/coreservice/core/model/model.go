@@ -102,8 +102,7 @@ func (m *modelManager) CreateModel(ctx core.ContextParams, inputParam metadata.C
 
 	_, err = m.modelAttribute.CreateModelAttributes(ctx, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), error info is %s", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID)
-
+		blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v", ctx.ReqID, inputParam.Attributes, inputParam.Spec.ObjectID, err)
 		return dataResult, err
 	}
 	dataResult.Created.ID = id
