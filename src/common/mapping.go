@@ -69,3 +69,14 @@ func GetObjByType(objType string) string {
 		return BKInnerObjIDObject
 	}
 }
+
+func GetObjectTypeByObjectID(objectID string) string {
+	switch objectID {
+	case BKInnerObjIDApp, BKInnerObjIDSet,
+		BKInnerObjIDModule, BKInnerObjIDProc,
+		BKInnerObjIDHost, BKInnerObjIDPlat:
+		return objectID
+	default:
+		return BKInnerObjIDObject
+	}
+}

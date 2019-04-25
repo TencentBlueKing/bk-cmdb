@@ -144,8 +144,8 @@ func (im *InstanceMainline) ConstructBizTopoInstance(withDetail bool) error {
 
 		err := im.dbProxy.Table(common.BKTableNameBaseApp).Find(mongoCondition.ToMapStr()).All(ctx, &im.businessInstances)
 		if err != nil {
-			blog.Errorf("get business instances by business:%d failed", im.bkBizID, err)
-			return fmt.Errorf("get business instances by business:%d failed, %+v", im.bkBizID, err)
+			blog.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
+			return fmt.Errorf("get business instances by business:%d failed, err: %+v", im.bkBizID, err)
 		}
 		blog.V(5).Infof("SearchMainlineInstanceTopo businessInstances: %+v", im.businessInstances)
 		if len(im.businessInstances) == 0 {
@@ -285,11 +285,26 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(withDetail bool) error 
 			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
 			return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstIDField], err)
 		}
-		parentInstanceID, err := util.GetInt64ByInterface(instance[common.BKInstParentStr])
-		if err != nil {
-			blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
-			return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+		
+		var parentInstanceID int64
+		parentValue, existed := instance[common.BKInstParentStr]
+		if existed == true {
+			parentInstanceID, err = util.GetInt64ByInterface(parentValue)
+			if err != nil {
+				blog.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+				return fmt.Errorf("parse instanceID:%+v to int64 failed, %+v", instance[common.BKInstParentStr], err)
+			}
+		} else {
+			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+			// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
+			if topoInstance.ObjectID == common.BKInnerObjIDSet {
+				continue
+			}
+			blog.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)
+			return fmt.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)
 		}
+		blog.V(7).Infof("model: %s, instance: %d, parent: %d", topoInstance.ObjectID, topoInstance.InstanceID, parentInstanceID)
+		
 		topoInstance := &metadata.TopoInstance{
 			ObjectID:         util.GetStrByInterface(instance[common.BKObjIDField]),
 			InstanceID:       instanceID,
@@ -316,7 +331,19 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(withDetail bool) error {
 		parentObjectID := im.objectParentMap[topoInstance.ObjectID]
 		parentKey := fmt.Sprintf("%s:%d", parentObjectID, topoInstance.ParentInstanceID)
 		if _, exist := topoInstanceNodeMap[parentKey]; exist == false {
-			parentInstance := im.instanceMap[parentKey]
+			parentInstance, exist := im.instanceMap[parentKey]
+			if exist == false {
+				// 空闲机池 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+				if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
+					parentObjectID = common.BKInnerObjIDApp
+					parentKey = fmt.Sprintf("%s:%d", parentObjectID, im.bkBizID)
+					parentInstance, exist = im.instanceMap[parentKey]
+				} 
+				if exist == false {
+					blog.Errorf("unexpected err, parent instance not found, instance: %+v", topoInstance)
+					continue
+				}
+			}
 			topoInstanceNode := &metadata.TopoInstanceNode{
 				ObjectID:   parentInstance.ObjectID,
 				InstanceID: parentInstance.InstanceID,
