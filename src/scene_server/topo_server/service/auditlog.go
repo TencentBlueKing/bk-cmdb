@@ -74,25 +74,25 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	// switch between tow different control mechanism
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
-			blog.Errorf("AuditQuery failed, authorize failed, err: %+v", err)
-			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v", err)
+			return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 		}
 	} else {
 		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
 		if err != nil {
-			blog.Errorf("make audit query condition from auth failed, %+v", err)
+			blog.Errorf("AuditQuery failed, make audit query condition from auth failed, %+v", err)
 			return nil, fmt.Errorf("make audit query condition from auth failed, %+v", err)
 		}
 		if hasAuthorization == false {
-			blog.Errorf("user %+v has no authorization on audit", params.User)
+			blog.Errorf("AuditQuery failed, user %+v has no authorization on audit", params.User)
 			return nil, nil
 		}
 
 		query.Condition.(map[string]interface{})["$or"] = authCondition
-		blog.V(5).Infof("auth condition is: %+v", authCondition)
+		blog.V(5).Infof("AuditQuery, auth condition is: %+v", authCondition)
 	}
 
-	blog.V(5).Infof("AuditOperation parameter: %+v", query)
+	blog.V(5).Infof("AuditQuery, AuditOperation parameter: %+v", query)
 	return s.Core.AuditOperation().Query(params, query)
 }
 
@@ -101,19 +101,19 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	query := &metadata.QueryInput{}
 	if err := data.MarshalJSONInto(query); nil != err {
-		blog.Errorf("[audit] failed to parse the input (%#v), error info is %s", data, err.Error())
+		blog.Errorf("InstanceAuditQuery failed, failed to parse the input (%#v), error info is %s", data, err.Error())
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
-	objectID := pathParams("obj_id")
+	objectID := pathParams("bk_obj_id")
 	if len(objectID) == 0 {
-		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
+		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
-		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
+		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
@@ -121,7 +121,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	times, ok := cond[common.BKOpTimeField].([]interface{})
 	if ok {
 		if 2 != len(times) {
-			blog.Errorf("search operation log input params times error, info: %v", times)
+			blog.Errorf("InstanceAuditQuery failed, search operation log input params times error, info: %v", times)
 			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 		}
 
@@ -144,20 +144,21 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	if exist == true {
 		id, err := util.GetInt64ByInterface(bizID)
 		if err != nil {
-			blog.Errorf("%s field in query condition but parse int failed, err: %+v", common.BKAppIDField, err)
+			blog.Errorf("InstanceAuditQuery failed, %s field in query condition but parse int failed, err: %+v", common.BKAppIDField, err)
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}
 		businessID = id
 	}
-	blog.V(5).Infof("business id: %d", businessID)
+	blog.V(5).Infof("InstanceAuditQuery, business id: %d", businessID)
 
 	instID, exist := queryCondition.(map[string]interface{})["inst_id"]
 	if exist == false {
-		blog.Errorf("[audit] instance audit query condition condition.ext_key not exist, query: %+v", query)
+		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.ext_key not exist, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 	instanceID, err := util.GetInt64ByInterface(instID)
 	if err != nil {
-		blog.Errorf("[audit] instance audit query condition instanceID in condition.ext_key.$in invalid, instanceID: %+v, query: %+v", instID, query)
+		blog.Errorf("InstanceAuditQuery failed, instance audit query condition instanceID in condition.ext_key.$in invalid, instanceID: %+v, query: %+v", instID, query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 
@@ -177,10 +178,10 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		err = s.AuthManager.AuthorizeByInstanceID(context.Background(), params.Header, action, objectID, instanceID)
 	}
 	if err != nil {
-		blog.Error("authorization on instance of model %s failed, err: %+v", objectID, err)
+		blog.Error("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
 		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
-	blog.InfoJSON("AuditOperation parameter: %s", query)
+	blog.V(4).Infof("InstanceAuditQuery failed, AuditOperation parameter: %+v", query)
 	return s.Core.AuditOperation().Query(params, query)
 }

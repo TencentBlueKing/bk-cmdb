@@ -98,8 +98,9 @@ func (m *instanceManager) searchInstance(ctx core.ContextParams, objID string, i
 	if tableName == common.BKTableNameBaseInst {
 		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
-	blog.V(9).Infof("searchInstance with table: %s and parameters: %s", tableName, condition.ToMapStr())
-	instHandler := m.dbProxy.Table(tableName).Find(condition.ToMapStr())
+	condsMap := util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
+	blog.V(9).Infof("searchInstance with table: %s and parameters: %#v, rid:%s", tableName, condition.ToMapStr(), ctx.ReqID)
+	instHandler := m.dbProxy.Table(tableName).Find(condsMap)
 	for _, sort := range inputParam.SortArr {
 		fileld := sort.Field
 		if sort.IsDsc {
@@ -123,7 +124,8 @@ func (m *instanceManager) countInstance(ctx core.ContextParams, objID string, co
 		condition.And(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
 
-	count, err = m.dbProxy.Table(tableName).Find(condition.ToMapStr()).Count(ctx)
+	condsMap := util.SetQueryOwner(condition.ToMapStr(), ctx.SupplierAccount)
+	count, err = m.dbProxy.Table(tableName).Find(condsMap).Count(ctx)
 
 	return count, err
 }

@@ -400,7 +400,7 @@ var stateEnum = []validator.EnumVal{
 	{ID: "FK", Name: "马尔维纳斯群岛（福克兰）", Type: "text"},
 	{ID: "FM", Name: "密克罗尼西亚联邦", Type: "text"},
 	{ID: "FO", Name: "法罗群岛", Type: "text"},
-	{ID: "FR", Name: "法国 法国", Type: "text"},
+	{ID: "FR", Name: "法国", Type: "text"},
 	{ID: "GA", Name: "加蓬", Type: "text"},
 	{ID: "GB", Name: "英国", Type: "text"},
 	{ID: "GD", Name: "格林纳达", Type: "text"},

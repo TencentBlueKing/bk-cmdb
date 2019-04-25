@@ -19,7 +19,7 @@ import (
 )
 
 func (s *Service) initHealth() {
-	s.actions = append(s.actions, action{Method: http.MethodGet, Path: "/healthz", HandlerFunc: s.Health})
+	s.addAction(http.MethodGet, "/healthz", s.Health, nil)
 }
 
 func (s *Service) initAssociation() {
@@ -164,10 +164,27 @@ func (s *Service) initObject() {
 	s.addAction(http.MethodDelete, "/object/{id}", s.DeleteObject, nil)
 
 }
+func (s *Service) initPrivilegeGroup() {
+	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}", s.CreateUserGroup, nil)
+	s.addAction(http.MethodDelete, "/topo/privilege/group/{bk_supplier_account}/{group_id}", s.DeleteUserGroup, nil)
+	s.addAction(http.MethodPut, "/topo/privilege/group/{bk_supplier_account}/{group_id}", s.UpdateUserGroup, nil)
+	s.addAction(http.MethodPost, "/topo/privilege/group/{bk_supplier_account}/search", s.SearchUserGroup, nil)
+}
+
+func (s *Service) initPrivilegeRole() {
+	s.addAction(http.MethodPost, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.CreatePrivilege, s.ParseCreateRolePrivilegeOriginData)
+	s.addAction(http.MethodGet, "/topo/privilege/{bk_supplier_account}/{bk_obj_id}/{bk_property_id}", s.GetPrivilege, nil)
+}
+
+func (s *Service) initPrivilege() {
+	s.addAction(http.MethodPost, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.UpdateUserGroupPrivi, nil)
+	s.addAction(http.MethodGet, "/topo/privilege/group/detail/{bk_supplier_account}/{group_id}", s.GetUserGroupPrivi, nil)
+	s.addAction(http.MethodGet, "/topo/privilege/user/detail/{bk_supplier_account}/{user_name}", s.GetUserPrivi, nil)
+}
 
 func (s *Service) initGraphics() {
 	s.addAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/search", s.SelectObjectTopoGraphics, nil)
-	s.addAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", s.UpdateObjectTopoGraphics, s.ParseOriginGraphicsUpdateInput)
+	s.addPublicAction(http.MethodPost, "/objects/topographics/scope_type/{scope_type}/scope_id/{scope_id}/action/update", s.UpdateObjectTopoGraphics, s.ParseOriginGraphicsUpdateInput)
 }
 func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
@@ -190,7 +207,9 @@ func (s *Service) initService() {
 	s.initObjectAttribute()
 	s.initObjectClassification()
 	s.initObjectGroup()
-
+	s.initPrivilegeGroup()
+	s.initPrivilegeRole()
+	s.initPrivilege()
 	s.initGraphics()
 	s.initIdentifier()
 	s.initObjectObjectUnique()

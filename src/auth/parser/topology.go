@@ -40,7 +40,8 @@ func (ps *parseStream) topology() *parseStream {
 		ObjectModule().
 		ObjectSet().
 		objectUnique().
-		audit()
+		audit().
+		privilege()
 
 	return ps
 }
@@ -1837,6 +1838,30 @@ func (ps *parseStream) audit() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.AuditLog,
 					Action: meta.FindMany,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+var (
+	findPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+	postPrivilege = regexp.MustCompile(`^/api/v3/topo/privilege/.*$`)
+)
+
+func (ps *parseStream) privilege() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findPrivilege, http.MethodGet) || ps.hitRegexp(findPrivilege, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Action: meta.SkipAction,
 				},
 			},
 		}

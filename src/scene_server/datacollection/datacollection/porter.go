@@ -292,7 +292,7 @@ func (p *chanPorter) healthCheck() {
 	var err error
 	var now time.Time
 	for now = range ticker.C {
-		channelstatus := 0
+		var channelstatus int
 		if err = p.snapCli.Ping().Err(); err != nil {
 			channelstatus = common.CCErrHostGetSnapshotChannelClose
 			blog.Errorf("[datacollect][%s][healthCheck] snap redis server connection error: %s", p.name, err.Error())

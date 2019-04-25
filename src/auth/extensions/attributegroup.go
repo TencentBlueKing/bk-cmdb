@@ -160,6 +160,10 @@ func (am *AuthManager) ExtractBusinessIDFromAttributeGroup(attributeGroups ...me
 }
 
 func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeGroups) == 0 {
 		return nil
 	}
@@ -177,6 +181,10 @@ func (am *AuthManager) RegisterModelAttributeGroup(ctx context.Context, header h
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeGroups) == 0 {
 		return nil
 	}
@@ -194,6 +202,10 @@ func (am *AuthManager) DeregisterModelAttributeGroup(ctx context.Context, header
 }
 
 func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, header http.Header, groupIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(groupIDs) == 0 {
 		return nil
 	}
@@ -210,6 +222,10 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 }
 
 func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
 	if err != nil {
 		return fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
@@ -232,6 +248,10 @@ func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeGroups) == 0 {
 		return nil
 	}
@@ -248,6 +268,10 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, 
 }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Context, header http.Header, attributeIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(attributeIDs) == 0 {
 		return nil
 	}
@@ -263,6 +287,10 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Conte
 }
 
 func (am *AuthManager) AuthorizeAttributeGroupByID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)
 	if err != nil {
 		return fmt.Errorf("get attributes by id failed, err: %+v", err)

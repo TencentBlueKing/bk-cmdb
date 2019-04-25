@@ -188,16 +188,23 @@ func (node *TopoInstanceNode) Name() string {
 }
 
 func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
-	if node.ObjectID == common.BKInnerObjIDModule && node.InstanceID == targetID {
+	// ex: module1 ==> reverse([bizID, mainline1, ..., mainline2, set1, module1])
+	return node.TraversalFindNode(common.BKInnerObjIDModule, targetID)
+}
+
+func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
+	if common.GetObjectTypeByObjectID(node.ObjectID) == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
+	
 	for _, child := range node.Children {
-		path := child.TraversalFindModule(targetID)
+		path := child.TraversalFindNode(objectType, targetID)
 		if len(path) > 0 {
 			path = append(path, node)
 			return path
 		}
 	}
+	
 	return []*TopoInstanceNode{}
 }
 

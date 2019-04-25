@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -63,9 +62,8 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 
 	// auth: register mainline object
 	if err := s.AuthManager.RegisterMainlineObject(params.Context, params.Header, ret.Object()); err != nil {
-		message := fmt.Sprintf("register mainline model to iam failed, err: %+v", err)
-		blog.V(2).Info(message)
-		return ret, params.Err.Errorf(common.CCErrCommRegistResourceToIAMFailed, message)
+		blog.Errorf("create mainline object success, but register mainline model to iam failed, err: %+v", err)
+		return ret, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return ret, nil
@@ -87,9 +85,8 @@ func (s *Service) DeleteMainLineObject(params types.ContextParams, pathParams, q
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
 	}
 	if err := s.AuthManager.DeregisterMainlineModelByObjectID(params.Context, params.Header, bizID, objID); err != nil {
-		message := fmt.Sprintf("deregister mainline model failed, err: %+v", err)
-		blog.V(2).Info(message)
-		return nil, params.Err.Errorf(common.CCErrCommUnRegistResourceToIAMFailed, message)
+		blog.Errorf("delete mainline association failed, deregister mainline model failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
 
 	err = s.Core.AssociationOperation().DeleteMainlineAssociaton(params, objID)

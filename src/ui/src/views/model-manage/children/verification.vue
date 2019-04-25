@@ -176,6 +176,9 @@
                         await this.deleteObjectUniqueConstraints({
                             objId: verification['bk_obj_id'],
                             id: verification.id,
+                            params: this.$injectMetadata({}, {
+                                inject: !!this.$tools.getMetadataBiz(verification)
+                            }),
                             config: {
                                 requestId: 'deleteObjectUniqueConstraints'
                             }

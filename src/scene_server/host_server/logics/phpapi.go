@@ -169,7 +169,8 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
-				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
+				blog.Errorf("UpdateHostByAppID failed, getHostByIPAndSource result not found, hostinfo: %+v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", 
+					hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
 				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 

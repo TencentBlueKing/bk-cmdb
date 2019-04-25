@@ -180,6 +180,12 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 	srvData := s.newSrvComm(req.Request.Header)
 
 	hostID := req.PathParameter("bk_host_id")
+	hostIDInt64, err := util.GetInt64ByInterface(hostID)
+	if err != nil {
+		blog.Errorf("convert hostID to int64, err: %v,host:%s,rid:%s", err, hostID, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKHostIDField)})
+		return
+	}
 
 	details, _, err := srvData.lgc.GetHostInstanceDetails(srvData.ctx, srvData.ownerID, hostID)
 	if err != nil {
@@ -188,7 +194,6 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 		return
 	}
 
-	hostIDInt64 := details[common.BKHostIDField].(int64)
 	// check authorization
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, hostIDInt64); err != nil {
@@ -564,7 +569,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 	if !result.Result {
-		blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%s,err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, data, opt, srvData.rid)
+		blog.Errorf("UpdateHostBatch UpdateObject http response error, err code:%d, err msg:%s, input:%+v, param:%+v, rid:%s", result.Code, data, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
 		return
 	}

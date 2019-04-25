@@ -174,7 +174,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 
 		curInstID, err := currentInst.GetInstID()
 		if err != nil {
-			blog.Errorf("[operation-asst] failed to get the instID(%#s), err: %s", currentInst.ToMapStr(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the instID(%#v), err: %s", currentInst.ToMapStr(), err.Error())
 			return err
 		}
 

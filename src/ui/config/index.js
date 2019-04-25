@@ -3,6 +3,7 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 
 const path = require('path')
+const fs = require('fs')
 
 const config = {
     'BUILD_VERSION': '',
@@ -15,64 +16,71 @@ process.argv.slice(2).forEach(str => {
     config[argv[0]] = argv.slice(1).join('=')
 })
 process.CMDB_CONFIG = config
+const dev = {
+    // custom config
+    config: Object.assign({}, config, {
+        'API_URL': '"http://{host}:{port}/proxy/"',
+        'API_VERSION': '"v3"',
+        'API_LOGIN': '""',
+        'AGENT_URL': 'null',
+        'AUTH_CENTER': '{}',
+        'BUILD_VERSION': 'dev',
+        'USER_ROLE': '"1"',
+        'USER_NAME': '"admin"'
+    }),
+
+    // Paths
+    assetsSubDirectory: '',
+    assetsPublicPath: '/static/',
+    proxyTable: {
+        '/proxy': {
+            logLevel: 'info',
+            changeOrigin: true,
+            target: 'http://{webserver地址}/',
+            pathRewrite: {
+                '^/proxy': ''
+            }
+        }
+    },
+    // Various Dev Server settings
+    host: 'localhost', // can be overwritten by process.env.HOST
+    port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
+    autoOpenBrowser: true,
+    errorOverlay: true,
+    notifyOnErrors: true,
+    poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
+
+    // Use Eslint Loader?
+    // If true, your code will be linted during bundling and
+    // linting errors and warnings will be shown in the console.
+    useEslint: true,
+    // If true, eslint errors and warnings will also be shown in the error overlay
+    // in the browser.
+    showEslintErrorsInOverlay: true,
+
+    /**
+     * Source Maps
+     */
+
+    // https://webpack.js.org/configuration/devtool/#development
+    devtool: 'cheap-module-eval-source-map',
+
+    // If you have problems debugging vue-files in devtools,
+    // set this to false - it *may* help
+    // https://vue-loader.vuejs.org/en/options.html#cachebusting
+    cacheBusting: true,
+
+    cssSourceMap: true
+}
+
+const isCustomDevConfigExist = fs.existsSync(path.resolve(__dirname, 'index.dev.js'))
+if (isCustomDevConfigExist) {
+    const customDevConfig = require('./index.dev.js')
+    Object.assign(dev, customDevConfig)
+}
 
 module.exports = {
-    dev: {
-        // custom config
-        config: Object.assign({}, config, {
-            'API_URL': '"http://{host}:{port}/proxy/"',
-            'API_VERSION': '"v3"',
-            'API_LOGIN': '""',
-            'AGENT_URL': 'null',
-            'AUTH_CENTER': '{}',
-            'BUILD_VERSION': 'dev',
-            'USER_ROLE': '"1"',
-            'USER_NAME': '"admin"'
-        }),
-
-        // Paths
-        assetsSubDirectory: '',
-        assetsPublicPath: '/static/',
-        proxyTable: {
-            '/proxy': {
-                logLevel: 'info',
-                changeOrigin: true,
-                target: 'http://{webserver地址}/',
-                pathRewrite: {
-                    '^/proxy': ''
-                }
-            }
-        },
-        // Various Dev Server settings
-        host: 'localhost', // can be overwritten by process.env.HOST
-        port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
-        autoOpenBrowser: true,
-        errorOverlay: true,
-        notifyOnErrors: true,
-        poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
-
-        // Use Eslint Loader?
-        // If true, your code will be linted during bundling and
-        // linting errors and warnings will be shown in the console.
-        useEslint: true,
-        // If true, eslint errors and warnings will also be shown in the error overlay
-        // in the browser.
-        showEslintErrorsInOverlay: true,
-
-        /**
-         * Source Maps
-         */
-
-        // https://webpack.js.org/configuration/devtool/#development
-        devtool: 'cheap-module-eval-source-map',
-
-        // If you have problems debugging vue-files in devtools,
-        // set this to false - it *may* help
-        // https://vue-loader.vuejs.org/en/options.html#cachebusting
-        cacheBusting: true,
-
-        cssSourceMap: true
-    },
+    dev: dev,
 
     build: {
         // custom config

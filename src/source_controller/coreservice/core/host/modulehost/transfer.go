@@ -61,7 +61,9 @@ func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64,
 func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(ctx)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	err := t.validParameterInst(ctx)
@@ -185,11 +187,6 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 		return ctx.Error.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)
 	}
 	bizID := t.bizID
-	// transfer the host across businees,
-	// check host belongs to the original business ID
-	if t.crossBizTransfer {
-		bizID = t.srcBizID
-	}
 
 	moduleInfoArr, err := t.mh.getModuleInfoByModuleID(ctx, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
 	if err != nil {
@@ -202,41 +199,28 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	}
 
 	t.moduleIDSetIDmap = make(map[int64]int64, 0)
-	// 只有一个模块，不许做其他的判断
-	if len(t.moduleIDArr) == 1 {
-		moduleID, err := moduleInfoArr[0].Int64(common.BKModuleIDField)
-		if err != nil {
-			blog.ErrorJSON("validParameter module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
-		}
-		setID, err := moduleInfoArr[0].Int64(common.BKSetIDField)
-		if err != nil {
-			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())
-		}
-		t.moduleIDSetIDmap[moduleID] = setID
-		return nil
-	}
 
 	// When multiple modules are used, determine whether the default module .
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
-		// 为了保证数据的证据性
-		defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
-		if err != nil {
-			blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
+		if len(t.moduleIDArr) != 1 {
+			// 转移目标模块为多模块时，不允许包含内置模块(空闲机/故障机等)
+			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
+			if err != nil {
+				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
+				return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
+			}
+			if defaultVal != 0 {
+				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s", moduleInfoArr, ctx.ReqID)
+				return ctx.Error.CCErrorf(common.CCErrCoreServiceModuleContainDefaultModuleErr)
+			}
 		}
-		if defaultVal != 0 {
-			blog.ErrorJSON("validParameter module info field  has default module. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
-			return ctx.Error.CCErrorf(common.CCErrCoreServiceModuleContainDefaultModuleErr)
-		}
-		moduleID, err := moduleInfoArr[0].Int64(common.BKModuleIDField)
+		moduleID, err := moduleInfo.Int64(common.BKModuleIDField)
 		if err != nil {
 			blog.ErrorJSON("validParameter module info field module id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKModuleIDField, "int", err.Error())
 		}
-		setID, err := moduleInfoArr[0].Int64(common.BKSetIDField)
+		setID, err := moduleInfo.Int64(common.BKSetIDField)
 		if err != nil {
 			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())

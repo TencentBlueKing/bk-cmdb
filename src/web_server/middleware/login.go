@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/web_server/middleware/auth"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-gonic/gin"
@@ -51,7 +52,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 		if isAuthed(c, config) {
 			// valid resource access privilege
-			/*
+			if !config.AuthCenter.Enable {
 				auth := auth.NewAuth()
 				ok := auth.ValidResAccess(pathArr, c)
 				if false == ok {
@@ -61,7 +62,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 					c.Abort()
 					return
 				}
-			*/
+			}
 
 			// http request header add user
 			session := sessions.Default(c)
@@ -166,7 +167,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 	}
 	bk_token, err := c.Cookie(bkTokenName)
-	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)
 	}

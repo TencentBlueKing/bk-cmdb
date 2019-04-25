@@ -7,6 +7,7 @@ import request from './modules/request.js'
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
 import eventSub from './modules/api/event-sub.js'
+import hostBatch from './modules/api/host-batch.js'
 import hostCustomApi from './modules/api/host-custom-api.js'
 import hostDelete from './modules/api/host-delete.js'
 import hostFavorites from './modules/api/host-favorites.js'
@@ -30,6 +31,7 @@ import objectUnique from './modules/api/object-unique.js'
 import operationAudit from './modules/api/operation-audit.js'
 import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
+import userPrivilege from './modules/api/user-privilege.js'
 import globalModels from './modules/api/global-models.js'
 import cloudDiscover from './modules/api/cloud-discover'
 import netCollectDevice from './modules/api/net-collect-device.js'
@@ -46,6 +48,7 @@ export default new Vuex.Store({
         menu,
         request,
         eventSub,
+        hostBatch,
         hostCustomApi,
         hostDelete,
         hostFavorites,
@@ -69,6 +72,7 @@ export default new Vuex.Store({
         operationAudit,
         procConfig,
         userCustom,
+        userPrivilege,
         globalModels,
         cloudDiscover,
         netCollectDevice,

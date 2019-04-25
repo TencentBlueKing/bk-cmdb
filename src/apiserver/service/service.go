@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apiserver/core"
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
 	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -33,7 +34,7 @@ import (
 
 // Service service methods
 type Service interface {
-	WebServices() []*restful.WebService
+	WebServices(auth authcenter.AuthConfig) []*restful.WebService
 	SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize)
 }
 
@@ -54,7 +55,6 @@ type service struct {
 }
 
 func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
-	s.enableAuth = false
 	s.enableAuth = enableAuth
 	s.engine = engine
 	s.client = httpClient
@@ -63,13 +63,16 @@ func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient
 	s.authorizer = authorize
 }
 
-func (s *service) WebServices() []*restful.WebService {
+func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON).Filter(s.authFilter(getErrFun))
+	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	if s.authorizer.Enabled() == true {
+		ws.Filter(s.authFilter(getErrFun))
+	}
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
 	ws.Route(ws.GET("/auth/business-list").To(s.GetAuthorizedAppList))
 	ws.Route(ws.GET("{.*}").Filter(s.URLFilterChan).To(s.Get))
@@ -85,18 +88,28 @@ func (s *service) WebServices() []*restful.WebService {
 
 func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		if req.Request.URL.Path == "/api/v3/auth/verify" {
+		rid := util.GetHTTPCCRequestID(req.Request.Header)
+		path := req.Request.URL.Path
+
+		blog.V(7).Infof("authFilter on url: %s, rid: %s", path, rid)
+		if s.authorizer.Enabled() == false {
+			blog.V(7).Infof("auth disabled, skip auth filter, rid: %s", rid)
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
-		if req.Request.URL.Path == "/api/v3/auth/business-list" {
+		if path == "/api/v3/auth/verify" {
+			fchain.ProcessFilter(req, resp)
+			return
+		}
+
+		if path == "/api/v3/auth/business-list" {
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
 		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
-			blog.Errorf("request id: %s, can not use super supplier account", util.GetHTTPCCRequestID(req.Request.Header))
+			blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
 				ErrMsg: "invalid supplier account.",
@@ -106,15 +119,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if !s.enableAuth {
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req, s.engine)
 		if err != nil {
-			blog.Errorf("request id: %s, parse auth attribute for %s %s failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.Method, req.Request.URL.Path, err)
+			blog.Errorf("authFilter failed, parse auth attribute for %s %s failed, err: %v, rid: %s", req.Request.Method, req.Request.URL.Path, err, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommParseAuthAttributeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
@@ -127,7 +135,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		// check if authorize is nil or not, which means to check if the authorize instance has
 		// already been initialized or not. if not, api server should not be used.
 		if nil == s.authorizer {
-			blog.Error("authorize instance has not been initialized")
+			blog.Error("authorize instance has not been initialized, rid: %s", rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -136,10 +144,10 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
 		}
 
-		blog.InfoJSON("attr: %s", attribute)
+		blog.V(7).Infof("auth filter parse attribute result: %s, rid: %s", attribute, rid)
 		decision, err := s.authorizer.Authorize(req.Request.Context(), attribute)
 		if err != nil {
-			blog.Errorf("request id: %s, url: %s, authorized failed, because authorize this request failed, err: %v", util.GetHTTPCCRequestID(req.Request.Header), req.Request.URL.Path, err)
+			blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
@@ -150,7 +158,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		}
 
 		if !decision.Authorized {
-			blog.Errorf("request id: %s, url: %s, auth failed. reason: %s ", util.GetHTTPCCRequestID(req.Request.Header), req.Request.URL.Path, decision.Reason)
+			blog.Errorf("authFilter failed, url: %s, reason: %s, rid: %s", path, decision.Reason, rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommAuthNotHavePermission,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
@@ -160,6 +168,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
+		blog.V(7).Infof("authFilter authorize on url:%s success, rid: %s", path, rid)
 		fchain.ProcessFilter(req, resp)
 		return
 	}
