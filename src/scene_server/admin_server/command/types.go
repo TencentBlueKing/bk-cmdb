@@ -134,7 +134,7 @@ func (n *Node) getNodeKey(parentKey string, keys []string) (nodeKey string) {
 		item := fmt.Sprintf("%s:%s", key, n.Data[key])
 		kv = append(kv, item)
 	}
-	nodeKey = strings.Join(kv, ",") + "]"
+	nodeKey += strings.Join(kv, ",") + "]"
 	return nodeKey
 }
 
