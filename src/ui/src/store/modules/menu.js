@@ -1,5 +1,5 @@
 import { GET_MODEL_PATH } from '@/views/general-model/router.config'
-import MENU, { NAV_COLLECT } from '@/dictionary/menu'
+import MENU, { NAV_COLLECT, NAV_PERMISSION } from '@/dictionary/menu'
 import { clone } from '@/utils/tools'
 import { viewRouters } from '@/router'
 const state = {
@@ -28,7 +28,10 @@ const getters = {
         return collectMenus
     },
     menus: (state, getters, rootState, rootGetters) => {
-        const menus = clone(MENU)
+        let menus = clone(MENU)
+        if (rootGetters.site.authschema !== 'internal') {
+            menus = menus.filter(menu => menu.id !== NAV_PERMISSION)
+        }
         viewRouters.forEach(route => {
             const meta = route.meta || {}
             const auth = meta.auth || {}
