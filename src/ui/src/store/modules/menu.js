@@ -13,15 +13,14 @@ const getters = {
     collectMenus: (state, getters, rootState, rootGetters) => {
         const collectMenus = []
         const usercustom = rootGetters['userCustom/usercustom']
-        const customKey = rootGetters['userCustom/classifyNavigationKey']
-        const collectedModelIds = usercustom[customKey] || []
-        collectedModelIds.forEach((modelId, index) => {
-            const model = rootGetters['objectModelClassify/getModelById'](modelId)
+        const collectedModelIds = usercustom.collected_models || []
+        collectedModelIds.forEach((id, index) => {
+            const model = rootGetters['objectModelClassify/models'].find(model => model.id === id)
             if (model) {
                 collectMenus.push({
                     id: model.bk_obj_id,
                     name: model.bk_obj_name,
-                    path: GET_MODEL_PATH(modelId),
+                    path: GET_MODEL_PATH(model.bk_obj_id),
                     order: index
                 })
             }
