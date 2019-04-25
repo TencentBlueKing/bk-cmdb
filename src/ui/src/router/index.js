@@ -168,18 +168,11 @@ const isShouldShow = to => {
         : true
 }
 
-const setupStatus = {
-    preload: true,
-    afterload: true
-}
-
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
             await cancelRequest()
-            if (setupStatus.preload) {
-                await preload(router.app)
-            }
+            await preload(router.app)
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
@@ -212,21 +205,16 @@ router.beforeEach((to, from, next) => {
                 next({ name: 'error' })
             }
             setLoading(false)
-        } finally {
-            setupStatus.preload = false
         }
     })
 })
 
 router.afterEach((to, from) => {
     try {
-        if (setupStatus.afterload) {
-            afterload(router.app, to, from)
-        }
+        afterload(router.app, to, from)
     } catch (e) {
         // ignore
     } finally {
-        setupStatus.afterload = false
         setLoading(false)
     }
 })
