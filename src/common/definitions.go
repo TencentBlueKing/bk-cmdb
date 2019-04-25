@@ -226,6 +226,9 @@ const (
 	// BKHostIDField the host id field
 	BKHostIDField = "bk_host_id"
 
+	// BKSnField the host sn field
+	BKSnField = "bk_sn"
+
 	// BKHostNameField the host name field
 	BKHostNameField = "bk_host_name"
 

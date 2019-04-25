@@ -14,6 +14,8 @@
                 <cmdb-form-bool class="filter-field-bool" v-model="ip.exact" :true-value="1" :false-value="0">
                     <span class="filter-field-bool-label">{{$t('HostResourcePool[\'精确\']')}}</span>
                 </cmdb-form-bool>
+                <label for="filterSn" class="filter-label">SN</label>
+                <textarea id="filterSn" class="filter-field filter-field-ip" v-model.trim="sn"></textarea>
             </div>
             <slot name="scope"></slot>
             <div class="filter-group">
@@ -137,6 +139,7 @@
                     'bk_host_outerip': true,
                     exact: 0
                 },
+                sn: '',
                 condition: {},
                 associateFieldMap: {
                     'biz': 'bk_biz_name',
@@ -197,6 +200,15 @@
                     }
                 })
                 return ipArray
+            },
+            snArray () {
+                const snArray = []
+                this.sn.split(/\n|;|；|,|，/).forEach(text => {
+                    if (text.trim().length) {
+                        snArray.push(text.trim())
+                    }
+                })
+                return snArray
             }
         },
         watch: {
@@ -309,6 +321,7 @@
                         exact: this.ip.exact,
                         data: this.ipArray
                     },
+                    sn: this.snArray,
                     condition: []
                 }
                 // 填充必要模型查询参数
@@ -626,7 +639,7 @@
             font-size: 12px;
         }
         .form-name {
-            color: $cmdbTextColor;    
+            color: $cmdbTextColor;
         }
         .form-error {
             position: absolute;

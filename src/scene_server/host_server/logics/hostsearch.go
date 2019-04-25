@@ -683,6 +683,7 @@ func (sh *searchHost) searchByHostConds() error {
 	condition := make(map[string]interface{})
 	hostParse.ParseHostParams(sh.conds.hostCond.Condition, condition)
 	hostParse.ParseHostIPParams(sh.hostSearchParam.Ip, condition)
+	hostParse.ParseSnParam(sh.hostSearchParam.Sn, condition)
 
 	query := &metadata.QueryInput{
 		Condition: condition,
@@ -691,7 +692,10 @@ func (sh *searchHost) searchByHostConds() error {
 		Sort:      sh.hostSearchParam.Page.Sort,
 	}
 
+	blog.Infof("searchByHostConds query:%v", query)
+
 	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), sh.pheader, query)
+
 	if err != nil {
 		blog.Errorf("get hosts failed, err: %v, rid:%s", err, sh.ccRid)
 		return err

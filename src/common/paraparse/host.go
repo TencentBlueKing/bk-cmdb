@@ -145,3 +145,20 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 	}
 	return nil
 }
+
+//SN 批量查询
+func ParseSnParam(sn []string, output map[string]interface{}) error {
+	if len(sn) < 1 {
+		return nil
+	}
+	c := make(map[string]interface{})
+	c[common.BKDBIN] = sn
+
+	snCon := make(map[string]map[string]interface{})
+	snCon[common.BKSnField] = c
+
+	orCond := make([]map[string]map[string]interface{}, 0)
+	output[common.BKDBAND] = append(orCond, snCon)
+
+	return nil
+}

@@ -88,6 +88,7 @@ type HostToAppModule struct {
 type HostCommonSearch struct {
 	AppID     int64             `json:"bk_biz_id,omitempty"`
 	Ip        IPInfo            `json:"ip"`
+	Sn        []string          `json:"sn"`
 	Condition []SearchCondition `json:"condition"`
 	Page      BasePage          `json:"page"`
 	Pattern   string            `json:"pattern,omitempty"`
