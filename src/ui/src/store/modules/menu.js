@@ -18,7 +18,7 @@ const getters = {
             const model = rootGetters['objectModelClassify/models'].find(model => model.id === id)
             if (model) {
                 collectMenus.push({
-                    id: model.bk_obj_id,
+                    id: model.id,
                     name: model.bk_obj_name,
                     path: GET_MODEL_PATH(model.bk_obj_id),
                     order: index
