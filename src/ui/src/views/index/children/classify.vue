@@ -115,7 +115,7 @@
 
 <style lang="scss" scoped>
     .classify-layout {
-        width: 60%;
+        width: 65%;
         margin: 0 auto;
     }
     .classify {
@@ -138,13 +138,14 @@
             .model-info {
                 display: flex;
                 height: 32px;
-                margin: 0 18px 0 14px;
+                margin: 0 24px 0 14px;
                 border-radius: 2px;
                 line-height: 32px;
                 cursor: pointer;
                 &:hover {
                     background-color: #e1ecff;
                     box-shadow:0px 2px 4px 0px rgba(51, 60, 72, 0.06);
+                    color: #3a84ff;
                     .model-collect {
                         font-size: 16px;
                     }
@@ -168,6 +169,7 @@
                 padding: 0 7px;
                 font-size: 0px;
                 line-height: inherit;
+                color: #979ba5;
                 &.icon-star-shape {
                     font-size: 16px;
                     color: #ffb400;
