@@ -114,6 +114,7 @@
             }
         },
         computed: {
+            ...mapGetters('objectModelClassify', ['models']),
             objAsstId () {
                 const {
                     relationInfo
@@ -134,7 +135,6 @@
                 'searchAssociationType',
                 'searchObjectAssociation'
             ]),
-            ...mapGetters('objectModelClassify', ['models']),
             getModelName (objId) {
                 const model = this.models.find(model => model['bk_obj_id'] === objId)
                 if (model) {
@@ -167,6 +167,8 @@
                         id: asstId,
                         name: asstId
                     }
+                }).filter(relation => {
+                    return relation.id !== 'bk_mainline'
                 })
                 this.relationInfo['bk_asst_id'] = this.relationList[0].id
             },

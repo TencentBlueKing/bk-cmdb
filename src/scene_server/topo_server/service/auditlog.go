@@ -105,7 +105,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
 
-	objectID := pathParams("obj_id")
+	objectID := pathParams("bk_obj_id")
 	if len(objectID) == 0 {
 		blog.Errorf("[audit] host audit query condition can't be empty, query: %+v", query)
 		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
@@ -177,10 +177,10 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		err = s.AuthManager.AuthorizeByInstanceID(context.Background(), params.Header, action, objectID, instanceID)
 	}
 	if err != nil {
-		blog.Error("authorization on instance of model %s failed, err: %+v", objectID, err)
+		blog.Error("query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
 		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
-	blog.InfoJSON("AuditOperation parameter: %s", query)
+	blog.V(4).Infof("AuditOperation parameter: %+v", query)
 	return s.Core.AuditOperation().Query(params, query)
 }

@@ -155,7 +155,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	}
 
 	if oldunique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %s", err, oldunique)
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v", oldunique, err)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
@@ -181,7 +181,7 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	}
 
 	if unique.Ispre {
-		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %s", err, unique)
+		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v", unique, err)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 

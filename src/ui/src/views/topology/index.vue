@@ -440,7 +440,7 @@
                 this.$refs.topoTable.search(this.bizId, this.table.params, true)
             },
             setSearchParams () {
-                const necessaryObj = Object.keys(this.properties)
+                const necessaryObj = ['host', 'module', 'set', 'biz']
                 const condition = necessaryObj.map(objId => {
                     return {
                         'bk_obj_id': objId,
@@ -733,7 +733,7 @@
         .topo-tree{
             padding: 0 0 0 20px;
             margin: 10px 0 0 0;
-            height: calc(100% - 100px);
+            height: calc(100% - 20px);
             @include scrollbar-y;
             .tree-node {
                 font-size: 0;

@@ -189,9 +189,6 @@
                 if (['singlechar', 'longchar'].includes(propertyType)) {
                     rules[propertyType] = true
                 }
-                if (propertyType === 'int') {
-                    rules['numeric'] = true
-                }
                 if (propertyType === 'float') {
                     rules['float'] = true
                 }

@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
 import {
     R_PROCESS,
@@ -23,7 +24,7 @@ export default {
     name: 'process',
     path: path,
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         menu: {
             id: 'process',
             i18n: 'Nav["进程管理"]',
@@ -33,9 +34,8 @@ export default {
             adminView: false
         },
         auth: {
-            view: '',
             operation: Object.values(OPERATION)
         },
         requireBusiness: true
-    }
+    })
 }

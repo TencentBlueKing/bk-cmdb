@@ -22,7 +22,17 @@
                     v-tooltip="$t('ModelManagement[\'拓扑显示设置\']')"
                     @click="showSlider('theDisplay')">
                 </i>
-                <div class="topo-example">
+                <div class="topo-example" v-if="!isAdminView">
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["业务私有模型"]')}}</span>
+                    </p>
+                    <p class="example-item">
+                        <i></i>
+                        <span>{{$t('ModelManagement["公有模型"]')}}</span>
+                    </p>
+                </div>
+                <div class="topo-example" v-else>
                     <p class="example-item">
                         <i></i>
                         <span>{{$t('ModelManagement["自定义模型"]')}}</span>
@@ -266,7 +276,8 @@
         computed: {
             ...mapGetters(['isAdminView', 'isBusinessSelected']),
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'getModelById'
             ]),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
@@ -277,7 +288,9 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
+                        return !this.isModelInTopo(model)
+                            && !this.specialModel.includes(model['bk_obj_id'])
+                            && !model.bk_ispaused
                     })
                     return classify
                 })
@@ -335,6 +348,7 @@
                 this.displayConfig.isShowModelAsst = displayConfig.isShowModelAsst
                 this.localTopoModelList = displayConfig.topoModelList
                 this.updateNetwork()
+                this.networkInstance.setOptions({ nodes: { fixed: !this.topoEdit.isEdit } })
             },
             handleRelationSave (params) {
                 const fromNode = this.localTopoModelList.find(model => model['bk_obj_id'] === params['bk_obj_id'])
@@ -876,12 +890,13 @@
                 this.network.nodes.forEach(node => {
                     const image = new Image()
                     image.onload = () => {
+                        const model = this.getModelById(node.data.bk_obj_id)
                         this.networkDataSet.nodes.update({
                             id: node.id,
                             image: {
                                 unselected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {
                                     name: node.data['node_name'],
-                                    iconColor: this.$tools.getMetadataBiz(node.data) ? '#3c96ff' : '#868b97',
+                                    iconColor: this.$tools.getMetadataBiz(model) ? '#3c96ff' : '#868b97',
                                     backgroundColor: '#fff'
                                 }))}`,
                                 selected: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(GET_OBJ_ICON(image, {

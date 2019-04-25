@@ -33,4 +33,5 @@ type ContextParams struct {
 	Err             errors.DefaultCCErrorIf
 	Lang            language.DefaultCCLanguageIf
 	MetaData        *metadata.Metadata
+	ReqID           string
 }

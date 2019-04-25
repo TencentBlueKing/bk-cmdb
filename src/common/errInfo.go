@@ -159,6 +159,7 @@ const (
 	CCErrCommAuthorizeFailed             = 1199048
 	CCErrCommRegistResourceToIAMFailed   = 1199049
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
+	CCErrCommInappropriateVisitToIAM     = 1199051
 
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001

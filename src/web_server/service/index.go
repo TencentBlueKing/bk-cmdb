@@ -13,7 +13,13 @@
 package service
 
 import (
+	"encoding/json"
+	"strconv"
+	"strings"
+
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
 )
@@ -23,58 +29,68 @@ func (s *Service) Index(c *gin.Context) {
 	session := sessions.Default(c)
 	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	// language, _ := session.Get(common.WEBSessionLanguageKey).(string)
+	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 
-	// userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
-	//
-	// var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
-	// if nil == userPriviApp {
-	// 	strUserPriveApp = ""
-	// } else {
-	// 	cstrUserPriveApp, _ := json.Marshal(userPriviApp)
-	// 	strUserPriveApp = string(cstrUserPriveApp)
-	// }
-	//
-	// if nil == rolePrivilege {
-	// 	strRolePrivilege = ""
-	// } else {
-	// 	cstrRolePrivilege, _ := json.Marshal(rolePrivilege)
-	// 	strRolePrivilege = string(cstrRolePrivilege)
-	// }
-	// if nil == modelPrivi {
-	// 	strModelPrivi = ""
-	// } else {
-	// 	cstrModelPrivi, _ := json.Marshal(modelPrivi)
-	// 	strModelPrivi = string(cstrModelPrivi)
-	// }
-	// if nil == sysPrivi {
-	// 	strSysPrivi = ""
-	// } else {
-	// 	cstrSysPrivi, _ := json.Marshal(sysPrivi)
-	// 	strSysPrivi = string(cstrSysPrivi)
-	// }
-	//
-	// mainLineObjIDB, _ := json.Marshal(mainLineObjIDArr)
-	// mainLineObjIDStr = string(mainLineObjIDB)
-	//
-	// session.Set("userPriviApp", string(strUserPriveApp))
-	// session.Set("rolePrivilege", string(strRolePrivilege))
-	// session.Set("modelPrivi", string(strModelPrivi))
-	// session.Set("sysPrivi", string(strSysPrivi))
-	// session.Set("mainLineObjID", string(mainLineObjIDStr))
-	// session.Save()
+	userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
 
-	//set cookie
-	// appIDArr := make([]string, 0)
-	// for key, _ := range userPriviApp {
-	// 	appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
-	// }
-	// appIDStr := strings.Join(appIDArr, "-")
-	// c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
+	var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
+	if nil == userPriviApp {
+		strUserPriveApp = ""
+	} else {
+		cstrUserPriveApp, _ := json.Marshal(userPriviApp)
+		strUserPriveApp = string(cstrUserPriveApp)
+	}
+
+	if nil == rolePrivilege {
+		strRolePrivilege = ""
+	} else {
+		cstrRolePrivilege, _ := json.Marshal(rolePrivilege)
+		strRolePrivilege = string(cstrRolePrivilege)
+	}
+	if nil == modelPrivi {
+		strModelPrivi = ""
+	} else {
+		cstrModelPrivi, err := json.Marshal(modelPrivi)
+		if err != nil {
+			blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v", modelPrivi, err)
+		}
+		strModelPrivi = string(cstrModelPrivi)
+	}
+	if nil == sysPrivi {
+		strSysPrivi = ""
+	} else {
+		cstrSysPrivi, err := json.Marshal(sysPrivi)
+		if err != nil {
+			blog.Errorf("marshal system privilege failed, info: %+v, err: %v", sysPrivi, err)
+		}
+		strSysPrivi = string(cstrSysPrivi)
+	}
+
+	mainLineObjIDB, err := json.Marshal(mainLineObjIDArr)
+	if err != nil {
+		blog.Errorf("marshal mainline failed, info: %+v, err: %v", mainLineObjIDArr, err)
+	}
+	mainLineObjIDStr = string(mainLineObjIDB)
+
+	session.Set("userPriviApp", string(strUserPriveApp))
+	session.Set("rolePrivilege", string(strRolePrivilege))
+	session.Set("modelPrivi", string(strModelPrivi))
+	session.Set("sysPrivi", string(strSysPrivi))
+	session.Set("mainLineObjID", string(mainLineObjIDStr))
+	session.Save()
+
+	// set cookie
+	appIDArr := make([]string, 0)
+	for key := range userPriviApp {
+		appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+	}
+	appIDStr := strings.Join(appIDArr, "-")
+	c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
 
 	c.HTML(200, "index.html", gin.H{
 		"site":        s.Config.Site.DomainUrl,
 		"version":     s.Config.Version,
+		"authscheme":  s.Config.Site.AuthScheme,
 		"role":        role,
 		"curl":        s.Config.LoginUrl,
 		"userName":    userName,

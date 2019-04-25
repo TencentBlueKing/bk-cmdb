@@ -22,6 +22,7 @@ import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
+import permission from '@/views/permission/router.config'
 
 Vue.use(Router)
 
@@ -40,7 +41,8 @@ export const viewRouters = [
     topology,
     ...generalModel,
     ...business,
-    ...model
+    ...model,
+    ...permission
 ]
 
 const statusRouters = [
@@ -159,10 +161,11 @@ const checkBusiness = to => {
 const isShouldShow = to => {
     const isAdminView = router.app.$store.getters.isAdminView
     const menu = to.meta.menu
-    if (isAdminView && menu) {
-        return menu.adminView
-    }
-    return true
+    return menu
+        ? isAdminView
+            ? menu.adminView
+            : menu.businessView
+        : true
 }
 
 const setupStatus = {
@@ -173,17 +176,15 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            await cancelRequest()
+            if (setupStatus.preload) {
+                await preload(router.app)
+            }
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
                 setLoading(true)
                 setMenuState(to)
-
-                await cancelRequest()
-                if (setupStatus.preload) {
-                    await preload(router.app)
-                }
-
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

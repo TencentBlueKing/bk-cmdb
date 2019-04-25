@@ -159,6 +159,10 @@ func (am *AuthManager) makeResourceByUnique(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniques) == 0 {
 		return nil
 	}
@@ -175,6 +179,10 @@ func (am *AuthManager) RegisterModelUnique(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniques) == 0 {
 		return nil
 	}
@@ -191,6 +199,10 @@ func (am *AuthManager) DeregisterModelUnique(ctx context.Context, header http.He
 }
 
 func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
@@ -206,6 +218,10 @@ func (am *AuthManager) DeregisterModelUniqueByID(ctx context.Context, header htt
 }
 
 func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...ModelUniqueSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	resources, err := am.makeResourceByUnique(ctx, header, action, uniques...)
 	if err != nil {
 		return fmt.Errorf("authorize model unique failed, err: %+v", err)
@@ -215,6 +231,10 @@ func (am *AuthManager) AuthorizeModelUnique(ctx context.Context, header http.Hea
 }
 
 func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header http.Header, uniques ...ModelUniqueSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniques) == 0 {
 		return nil
 	}
@@ -231,6 +251,10 @@ func (am *AuthManager) UpdateRegisteredModelUnique(ctx context.Context, header h
 }
 
 func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
@@ -246,6 +270,10 @@ func (am *AuthManager) UpdateRegisteredModelUniqueByID(ctx context.Context, head
 }
 
 func (am *AuthManager) AuthorizeByUniqueID(ctx context.Context, header http.Header, action meta.Action, uniqueIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	uniques, err := am.collectUniqueByUniqueIDs(ctx, header, uniqueIDs...)
 	if err != nil {
 		return fmt.Errorf("get uniques by id failed, err: %+v", err)
@@ -265,6 +293,10 @@ func (am *AuthManager) AuthorizeByUniqueID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header, action meta.Action, uniques ...ModelUniqueSimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	bizID, err := am.ExtractBusinessIDFromUniques(uniques...)
 	if err != nil {
 		return fmt.Errorf("extract business id from model uniques failed, err: %+v", err)
@@ -292,6 +324,10 @@ func (am *AuthManager) AuthorizeByUnique(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, header http.Header, businessID int64, objectID string) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectID)
 	if err != nil {
 		blog.Errorf("AuthorizeModelUniqueResourceCreate failed, get model by id: %s failed, err: %+v", objectID, err)
@@ -334,6 +370,10 @@ func (am *AuthManager) AuthorizeModelUniqueResourceCreate(ctx context.Context, h
 }
 
 func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http.Header, uniqueIDs ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(uniqueIDs) == 0 {
 		return nil
 	}
@@ -349,6 +389,10 @@ func (am *AuthManager) RegisterModuleUniqueByID(ctx context.Context, header http
 }
 
 func (am *AuthManager) AuthorizeModelUniqueByID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	modelUniques, err := am.collectUniqueByUniqueIDs(ctx, header, ids...)
 	if err != nil {
 		blog.Errorf("get model unique by id failed, err: %+v", err)

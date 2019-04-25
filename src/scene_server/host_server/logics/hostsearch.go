@@ -380,7 +380,7 @@ func (sh *searchHost) fillHostAppInfo(appInfoLevelInst map[int64]*appLevelInfo, 
 			appInfoArr = append(appInfoArr, appInfo)
 		}
 		appLevelInfo.appID = appID
-		appLevelInfo.appName, err = appInfo.String(common.BKAppName)
+		appLevelInfo.appName, err = appInfo.String(common.BKAppNameField)
 		if err != nil {
 			blog.Warnf("hostSearch not found app name, appInfo:%d, rid:%s", appInfo, sh.ccRid)
 			continue
@@ -455,9 +455,9 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.MapStr, errors.CCError) {
 
 	if nil != sh.conds.appCond.Fields {
-		exist := util.InArray(common.BKAppIDField, sh.conds.appCond.Fields)
-		if 0 != len(sh.conds.appCond.Fields) && !exist {
+		if len(sh.conds.appCond.Fields) != 0 {
 			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppIDField)
+			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppNameField)
 		}
 		cond := mapstr.New()
 		celld := mapstr.New()
@@ -761,6 +761,7 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		}
 		hostIDArr = append(hostIDArr, hostIDArrItem...)
 	}
+
 
 	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
 		Field:    common.BKHostIDField,

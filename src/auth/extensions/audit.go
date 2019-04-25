@@ -104,6 +104,10 @@ func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, heade
 }
 
 func (am *AuthManager) RegisterAuditCategories(ctx context.Context, header http.Header, categories ...AuditCategorySimplify) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	if len(categories) == 0 {
 		return nil
 	}
@@ -204,6 +208,10 @@ func (am *AuthManager) MakeAuthorizedAuditListCondition(ctx context.Context, hea
 }
 
 func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Header, businessID int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
 			Action:     meta.Find,

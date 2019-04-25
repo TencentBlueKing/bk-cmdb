@@ -1,3 +1,4 @@
+import Meta from '@/router/meta'
 import { getMetadataBiz } from '@/utils/tools'
 import {
     C_INST,
@@ -44,9 +45,8 @@ export default [{
     name: 'generalModel',
     path: GET_MODEL_PATH(`:${param}`),
     component: () => import('./index.vue'),
-    meta: {
+    meta: new Meta({
         auth: {
-            view: '',
             operation: Object.values(OPERATION),
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params[param]
@@ -55,7 +55,8 @@ export default [{
                     app.$store.commit('auth/setParentMeta', {
                         parent_layers: [{
                             resource_type: 'model',
-                            resource_id: model.id
+                            resource_id: model.id,
+                            resource_model: modelId
                         }]
                     })
                     const bizId = getMetadataBiz(model)
@@ -72,5 +73,5 @@ export default [{
             const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
             return model && !model.bk_ispaused
         }
-    }
+    })
 }]

@@ -30,7 +30,7 @@ import (
 )
 
 // GetImportInsts get insts from excel file
-func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header, headerRow int, isInst bool, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
 	fields, err := lgc.GetObjFieldIDs(objID, nil, nil, header, meta)
 	if nil != err {
@@ -42,7 +42,7 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 	}
 	sheet := f.Sheets[0]
 	if nil == sheet {
-		blog.Error("the excel fiel sheet is nil")
+		blog.Errorf("import object %s instance, but the excel file sheet is empty", objID)
 		return nil, nil, errors.New(defLang.Language("web_excel_sheet_not_found"))
 	}
 	if isInst {
@@ -52,7 +52,7 @@ func (lgc *Logics) GetImportInsts(f *xlsx.File, objID string, header http.Header
 	}
 }
 
-func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta metadata.Metadata) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Header, kvMap mapstr.MapStr, meta *metadata.Metadata) ([]mapstr.MapStr, error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	instIDArr := strings.Split(instIDStr, ",")
 	searchCond := mapstr.MapStr{}
@@ -112,7 +112,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
+func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	resultData = mapstr.New()
 	insts, errMsg, err := lgc.GetImportInsts(f, objID, header, 0, true, defLang, meta)
@@ -129,8 +129,10 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 	}
 
 	params := mapstr.MapStr{}
+	params[metadata.BKMetadata] = meta
 	params["input_type"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
+	params[common.MetadataField] = meta
 	result, resultErr := lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
 	if nil != err {
 		blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
