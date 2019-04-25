@@ -204,7 +204,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
 		if len(t.moduleIDArr) != 1 {
-			// 为了保证数据的证据性
+			// 转移目标模块为多模块时，不允许包含内置模块(空闲机/故障机等)
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
 				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
