@@ -203,9 +203,8 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	// When multiple modules are used, determine whether the default module .
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
-		// 为了保证数据的证据性
-		// 只有一个模块，不许做其他的判断
-		if len(t.moduleIDArr) == 1 {
+		if len(t.moduleIDArr) != 1 {
+			// 为了保证数据的证据性
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
 				blog.ErrorJSON("validParameter module info field default  not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfo, ctx.ReqID)
