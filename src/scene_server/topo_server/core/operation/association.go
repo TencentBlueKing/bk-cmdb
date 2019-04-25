@@ -682,10 +682,13 @@ func (a *association) SearchInst(params types.ContextParams, request *metadata.S
 }
 
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
-	bizID, err := metadata.BizIDFromMetadata(*params.MetaData)
-	if err != nil {
-		blog.Errorf("parse business id from request failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
-		return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
+	var bizID int64
+	if params.MetaData != nil {
+		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			blog.Errorf("parse business id from request failed, params: %+v, err: %+v, rid: %s", params, err, params.ReqID)
+			return nil, params.Err.Error(common.CCErrCommHTTPInputInvalid)
+		}
 	}
 
 	cond := condition.CreateCondition()
