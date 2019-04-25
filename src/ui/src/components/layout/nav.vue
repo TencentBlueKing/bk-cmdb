@@ -138,9 +138,9 @@
                 })
             },
             handleDeleteCollection (model) {
-                const customNavigation = this.usercustom[this.classifyNavigationKey] || []
+                const collectedModels = this.usercustom.collected_models
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
+                    collected_models: collectedModels.filter(id => id !== model.id)
                 })
             }
         }
