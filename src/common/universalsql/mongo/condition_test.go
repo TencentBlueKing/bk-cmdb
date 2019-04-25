@@ -146,7 +146,7 @@ func TestIssue1738(t *testing.T) {
 	t.Logf("sql_1738:%s", result)
 }
 
-func TestNewConditionFromMapStrErr(t *testing.T) {
+func TestNewConditionFromMapStrFromCommonCondition(t *testing.T) {
 	type tmpStruct struct {
 		A int
 	}
