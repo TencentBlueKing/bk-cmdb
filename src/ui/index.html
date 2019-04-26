@@ -14,7 +14,7 @@
             version: <%= htmlWebpackPlugin.options.config.API_VERSION %>,
             login: <%= htmlWebpackPlugin.options.config.API_LOGIN %>,
             agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>,
-            authschema: <%= htmlWebpackPlugin.options.config.AUTH_SCHEMA %>,
+            authschema: 'internal' || <%= htmlWebpackPlugin.options.config.AUTH_SCHEMA %>,
             authCenter: <%= htmlWebpackPlugin.options.config.AUTH_CENTER %>,
             buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>'
         }
