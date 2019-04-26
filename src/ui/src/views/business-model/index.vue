@@ -61,7 +61,7 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务层级"]'))
             this.getMainLineModel()
         },
         methods: {
