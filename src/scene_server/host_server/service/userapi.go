@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
 )
 
@@ -98,7 +98,7 @@ func (s *Service) UpdateUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	id := req.PathParameter("id")
 	if err := s.AuthManager.UpdateRegisteredDynamicGroupByID(srvData.ctx, srvData.header, id); err != nil {
-		blog.Errorf("GetUserCustom update register user api failed, err: %+v,rid:%s", err, id, srvData.rid)
+		blog.Errorf("GetUserCustom update register user api failed, dynamicgroupid:%d, err:%+v, rid:%s", id, err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 	}
 
