@@ -355,7 +355,7 @@ func (lgc *Logics) checkNetProperty(
 	if "" != netPropertyInfo.Period && common.Infinite != netPropertyInfo.Period {
 		netPropertyInfo.Period, err = util.FormatPeriod(netPropertyInfo.Period)
 		if nil != err {
-			blog.Errorf("[NetProperty] check net collect property, format period [%s] fail, error: %v", err)
+			blog.Errorf("[NetProperty] check net collect property, format period [%s] fail, error: %v", netPropertyInfo.Period, err)
 			return false, defErr.Error(common.CCErrCollectPeriodFormatFail)
 		}
 	}

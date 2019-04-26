@@ -36,9 +36,14 @@ func (m *mainline) SearchMainlineModelTopo(ctx context.Context, h http.Header, w
 		WithHeaders(h).
 		Do().
 		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.New(ret.ErrMsg)
 	}
+
 	return &ret.Data, nil
 }
 
@@ -56,8 +61,12 @@ func (m *mainline) SearchMainlineInstanceTopo(ctx context.Context, h http.Header
 		Do().
 		Into(ret)
 
+	if err != nil {
+		return nil, err
+	}
 	if ret.Result == false || ret.Code != 0 {
 		return nil, errors.New(ret.ErrMsg)
 	}
+
 	return &ret.Data, nil
 }

@@ -52,6 +52,8 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.POST("/app/{owner_id}/{biz_id}/{user}").To(s.AddAppLog))
 	ws.Route(ws.POST("set/{owner_id}/{biz_id}/{user}").To(s.AddSetLog))
 	ws.Route(ws.POST("/sets/{owner_id}/{biz_id}/{user}").To(s.AddSetLogs))
+	ws.Route(ws.POST("/association/{owner_id}/{biz_id}/{user}").To(s.AddAssociationLog))
+	ws.Route(ws.POST("/associations/{owner_id}/{biz_id}/{user}").To(s.AddAssociationLogs))
 	ws.Route(ws.POST("/search").To(s.Get))
 	ws.Route(ws.GET("/healthz").To(s.Healthz))
 

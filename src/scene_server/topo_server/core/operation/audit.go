@@ -43,7 +43,7 @@ func (a *audit) TranslateOpLanguage(params types.ContextParams, input interface{
 
 	data, err := mapstr.NewFromInterface(input)
 	if nil != err {
-		blog.Errorf("failed to transate, error info is %s", err.Error())
+		blog.Errorf("translate failed, err: %+v", err)
 		return data
 	}
 
