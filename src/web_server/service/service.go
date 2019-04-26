@@ -43,10 +43,9 @@ type Service struct {
 }
 
 func (s *Service) WebService() *gin.Engine {
-	gin.DefaultErrorWriter = blog.GlogWriter{}
-	gin.DefaultWriter = blog.GlogWriter{}
+	// gin.DefaultErrorWriter = blog.GlogWriter{}
+	// gin.DefaultWriter = blog.GlogWriter{}
 	ws := gin.Default()
-
 	var store sessions.RedisStore
 	var redisErr error
 	if 0 == len(s.Config.Session.Address) {
@@ -62,7 +61,6 @@ func (s *Service) WebService() *gin.Engine {
 			blog.Fatal("failed to create new redis store, error info is %v", redisErr)
 		}
 	}
-	ws.Use(gin.RecoveryWithWriter(blog.GlogWriter{}))
 	ws.Use(sessions.Sessions(s.Config.Session.Name, store))
 	middleware.Engine = s.Engine
 	ws.Use(middleware.ValidLogin(s.Config, s.Disc))
