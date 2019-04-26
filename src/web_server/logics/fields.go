@@ -177,9 +177,6 @@ func (lgc *Logics) getObjFieldIDsBySort(objID, sort string, header http.Header, 
 			break
 		}
 	}
-	if len(keyIDs) <= 0 {
-		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).Error(common.CCErrTopoObjectUniqueSearchFailed)
-	}
 
 	ret := []Property{}
 	for _, mapField := range result.Data {
