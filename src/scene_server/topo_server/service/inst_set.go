@@ -13,12 +13,12 @@
 package service
 
 import (
-	"configcenter/src/common/condition"
 	"strconv"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -122,15 +122,15 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 	}
 	count, sets, err := s.core.SetOperation().FindSet(params, obj, hostCond)
 	if err != nil {
-		blog.Errorf("[api-set]failed, get set by id failed, err: %+v", err)
+		blog.Errorf("[api-set]update failed, get set by id failed, err: %+v", err)
 		return nil, err
 	}
 	if count == 0 {
-		blog.Errorf("[api-set]failed, get set by id failed, got empty, setID:%d", setID)
+		blog.Errorf("[api-set]update failed, get set by id failed, got empty, setID:%d", setID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
 	}
 	if len(sets) > 1 {
-		blog.Errorf("[api-set]failed, get set by id failed, got %d, setID:%d", count, setID)
+		blog.Errorf("[api-set]update failed, get set by id failed, got %d, setID:%d", count, setID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
 	}
 	set := sets[0]
@@ -140,7 +140,7 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 		searchCondition := condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID)
 		parentID, err := set.GetParentID()
 		if err != nil {
-			blog.Errorf("[api-set]failed, get set by id failed, got %d, setID:%d", count, setID)
+			blog.Errorf("[api-set]update failed, get set by id failed, got %d, setID:%d", count, setID)
 			return nil, params.Err.Errorf(common.CCErrCommInstFieldConvFail, "set", common.BKInstParentStr, "int", err.Error())
 		}
 		searchCondition.Field(common.BKInstParentStr).Eq(parentID)
@@ -151,7 +151,7 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 		}
 		count, _, err := s.core.SetOperation().FindSet(params, obj, cond)
 		if err != nil {
-			blog.Errorf("[api-set]failed, filter sets by condition failed, err: %+v", err)
+			blog.Errorf("[api-set]update failed, filter sets by condition failed, err: %+v", err)
 			return nil, err
 		}
 		if count > 0 {
