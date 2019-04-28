@@ -545,6 +545,20 @@ func (a *association) DeleteObject(params types.ContextParams, asstID int) (resp
 func (a *association) SearchInst(params types.ContextParams, request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error) {
 	return a.clientSet.ObjectController().Association().SearchInst(context.TODO(), params.Header, request)
 }
+func (a *association) checkObjectIsPause(params types.ContextParams, cond condition.Condition) (err error) {
+	model, err := a.obj.FindObject(params, cond)
+	if err != nil {
+		return err
+	}
+	if len(model) == 0 {
+		return params.Err.Error(common.CCErrCommNotFound)
+	}
+	if model[0].GetIsPaused() {
+		return params.Err.Error(common.CCErrorTopoModleStopped)
+	}
+	return nil
+}
+
 func (a *association) CreateInst(params types.ContextParams, request *metadata.CreateAssociationInstRequest) (resp *metadata.CreateAssociationInstResult, err error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
@@ -564,9 +578,19 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		blog.Errorf("create instance association, but can not find object association[%s]. ", request.ObjectAsstId)
 		return nil, params.Err.Error(common.CCErrorTopoObjectAssociationNotExist)
 	}
+	modelAsst := result.Data[0]
+	if err := a.checkObjectIsPause(params, condition.CreateCondition().Field(common.BKObjIDField).Eq(modelAsst.ObjectID)); err != nil {
+		blog.Errorf("create instance association, but model check for %s Failed: %v", modelAsst.ObjectID, err)
+		return nil, err
+	}
+
+	if err := a.checkObjectIsPause(params, condition.CreateCondition().Field(common.BKObjIDField).Eq(modelAsst.AsstObjID)); err != nil {
+		blog.Errorf("create instance association, but model check for %s Failed: %v", modelAsst.AsstObjID, err)
+		return nil, err
+	}
 
 	// search instances belongs to this association.
-	switch result.Data[0].Mapping {
+	switch modelAsst.Mapping {
 	case metatype.OneToOneMapping:
 		cond := condition.CreateCondition()
 		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
