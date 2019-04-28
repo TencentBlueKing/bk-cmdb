@@ -39,11 +39,11 @@ func (s *topoService) CreateMainLineObject(params types.ContextParams, pathParam
 func (s *topoService) DeleteMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	objID := pathParams("obj_id")
-	err := s.core.AssociationOperation().DeleteMainlineAssociaton(params, objID)
+	err := s.core.AssociationOperation().DeleteMainlineAssociation(params, objID)
 	return nil, err
 }
 
-// SearchMainLineOBjectTopo search the main line topo
+// SearchMainLineObjectTopo search the main line topo
 func (s *topoService) SearchMainLineObjectTopo(params types.ContextParams, pathParams, queryParams ParamsGetter, data frtypes.MapStr) (interface{}, error) {
 
 	bizObj, err := s.core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
