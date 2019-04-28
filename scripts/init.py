@@ -521,7 +521,7 @@ def main(argv):
       --auth_scheme        <auth_scheme>          auth scheme, ex: internal, iam
       --auth_enabled       <auth_enabled>         iam auth enabled, true or false
       --auth_address       <auth_address>         iam address
-      --auth_app_code      <auth_app_code>        app code for iam, default bk-cmdb
+      --auth_app_code      <auth_app_code>        app code for iam, default bk_cmdb
       --auth_app_secret    <auth_app_secret>      app code for iam
     '''
     try:
