@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -115,49 +114,6 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
-	}
-
-	hostCond := &metadata.QueryInput{
-		Condition: condition.CreateCondition().Field(common.BKSetIDField).Eq(setID).ToMapStr(),
-	}
-	count, sets, err := s.core.SetOperation().FindSet(params, obj, hostCond)
-	if err != nil {
-		blog.Errorf("[api-set]update failed, get set by id failed, err: %+v", err)
-		return nil, err
-	}
-	if count == 0 {
-		blog.Errorf("[api-set]update failed, get set by id failed, got empty, setID:%d", setID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
-	}
-	if len(sets) > 1 {
-		blog.Errorf("[api-set]update failed, get set by id failed, got %d, setID:%d", count, setID)
-		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
-	}
-	set := sets[0]
-	
-	// check name unique constraint
-	if _, exist := data[common.BKSetNameField]; exist == true {
-		searchCondition := condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID)
-		parentID, err := set.GetParentID()
-		if err != nil {
-			blog.Errorf("[api-set]update failed, get set by id failed, got %d, setID:%d", count, setID)
-			return nil, params.Err.Errorf(common.CCErrCommInstFieldConvFail, "set", common.BKInstParentStr, "int", err.Error())
-		}
-		searchCondition.Field(common.BKInstParentStr).Eq(parentID)
-		searchCondition.Field(common.BKSetNameField).Eq(data[common.BKSetNameField])
-		searchCondition.Field(common.BKSetIDField).NotEq(setID)
-		cond := &metadata.QueryInput{
-			Condition: searchCondition.ToMapStr(),
-		}
-		count, _, err := s.core.SetOperation().FindSet(params, obj, cond)
-		if err != nil {
-			blog.Errorf("[api-set]update failed, filter sets by condition failed, err: %+v", err)
-			return nil, err
-		}
-		if count > 0 {
-			blog.Errorf("[api-set]failed, rename set failed, set name repeated, set: %+v", set)
-			return nil, params.Err.Errorf(common.CCErrTopoSetNameRepeated)
-		}
 	}
 
 	return nil, s.core.SetOperation().UpdateSet(params, data, obj, bizID, setID)
