@@ -29,7 +29,7 @@ const getters = {
     },
     menus: (state, getters, rootState, rootGetters) => {
         let menus = clone(MENU)
-        if (rootGetters.site.authschema !== 'internal') {
+        if (rootGetters.site.authscheme !== 'internal') {
             menus = menus.filter(menu => menu.id !== NAV_PERMISSION)
         }
         viewRouters.forEach(route => {
