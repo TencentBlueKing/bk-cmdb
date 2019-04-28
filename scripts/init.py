@@ -475,7 +475,7 @@ def main(argv):
         # iam options
         "auth_address": "",
         "auth_enabled": "false",
-        "auth_app_code": "bk-cmdb",
+        "auth_app_code": "bk_cmdb",
         "auth_app_secret": "",
     }
 
