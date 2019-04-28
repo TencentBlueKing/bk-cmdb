@@ -129,20 +129,34 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 		blog.Errorf("[api-set]failed, get set by id failed, got empty, setID:%d", setID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
 	}
-	if count == 1 {
+	if len(sets) > 1 {
 		blog.Errorf("[api-set]failed, get set by id failed, got %d, setID:%d", count, setID)
 		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
 	}
+	set := sets[0]
 	
 	// check name unique constraint
 	if _, exist := data[common.BKSetNameField]; exist == true {
 		searchCondition := condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID)
+		parentID, err := set.GetParentID()
+		if err != nil {
+			blog.Errorf("[api-set]failed, get set by id failed, got %d, setID:%d", count, setID)
+			return nil, params.Err.Errorf(common.CCErrCommInstFieldConvFail, "set", common.BKInstParentStr, "int", err.Error())
+		}
+		searchCondition.Field(common.BKInstParentStr).Eq(parentID)
 		searchCondition.Field(common.BKSetNameField).Eq(data[common.BKSetNameField])
-		cond := metadata.QueryInput{
+		searchCondition.Field(common.BKSetIDField).NotEq(setID)
+		cond := &metadata.QueryInput{
 			Condition: searchCondition.ToMapStr(),
 		}
-		count, sets, err := s.core.SetOperation().FindSet(params, obj, cond)
+		count, _, err := s.core.SetOperation().FindSet(params, obj, cond)
 		if err != nil {
+			blog.Errorf("[api-set]failed, filter sets by condition failed, err: %+v", err)
+			return nil, err
+		}
+		if count > 0 {
+			blog.Errorf("[api-set]failed, rename set failed, set name repeated, set: %+v", set)
+			return nil, params.Err.Errorf(common.CCErrTopoSetNameRepeated)
 		}
 	}
 
