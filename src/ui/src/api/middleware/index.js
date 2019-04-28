@@ -4,5 +4,5 @@ const middlewares = [
     business,
     auth
 ]
-const exportMiddlewares = window.Site.authschema === 'internal' ? middlewares : []
+const exportMiddlewares = window.Site.authscheme === 'internal' ? middlewares : []
 export default exportMiddlewares

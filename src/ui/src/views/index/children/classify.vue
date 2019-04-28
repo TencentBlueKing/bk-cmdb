@@ -129,7 +129,7 @@
     }
     .model-list {
         display: flex;
-        padding: 6px 0 15px;
+        padding: 6px 0 25px;
         flex-wrap: wrap;
         .model-item {
             flex: 0 0 25%;
@@ -138,7 +138,7 @@
             .model-info {
                 display: flex;
                 height: 32px;
-                margin: 0 24px 0 14px;
+                margin: 0 24px;
                 border-radius: 2px;
                 line-height: 32px;
                 cursor: pointer;
@@ -149,6 +149,9 @@
                     .model-collect {
                         font-size: 16px;
                     }
+                }
+                &:nth-child(5n+1) {
+                    margin: 0 24px 0 14px;
                 }
             }
             .model-icon {
@@ -162,11 +165,12 @@
             }
             .model-name {
                 flex: 1;
+                font-size: 14px;
                 @include ellipsis;
             }
             .model-collect {
-                flex: 0 0 30px;
-                padding: 0 7px;
+                flex: 0 0 40px;
+                padding: 0 17px 0 7px;
                 font-size: 0px;
                 line-height: inherit;
                 color: #979ba5;
