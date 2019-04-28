@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	frtypes "configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
@@ -107,6 +108,26 @@ func (s *topoService) UpdateModule(params types.ContextParams, pathParams, query
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "module id")
 	}
 
+	// check name unique constraint
+	if _, exist := data[common.BKModuleNameField]; exist == true {
+		searchCondition := condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID)
+		searchCondition.Field(common.BKSetIDField).Eq(setID)
+		searchCondition.Field(common.BKModuleNameField).Eq(data[common.BKModuleNameField])
+		searchCondition.Field(common.BKModuleIDField).NotEq(moduleID)
+		cond := &metadata.QueryInput{
+			Condition: searchCondition.ToMapStr(),
+		}
+		count, _, err := s.core.ModuleOperation().FindModule(params, obj, cond)
+		if err != nil {
+			blog.Errorf("[api-module]update failed, filter modules by condition failed, err: %+v", err)
+			return nil, err
+		}
+		if count > 0 {
+			blog.Errorf("[api-module]update failed, rename module failed, module name repeated, moduleID: %d, data: %+v", moduleID, data)
+			return nil, params.Err.Errorf(common.CCErrTopoModuleNameRepeated)
+		}
+	}
+	
 	return nil, s.core.ModuleOperation().UpdateModule(params, data, obj, bizID, setID, moduleID)
 }
 
