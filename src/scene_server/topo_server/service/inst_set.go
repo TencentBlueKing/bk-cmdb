@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common/condition"
 	"strconv"
 	"strings"
 
@@ -114,6 +115,35 @@ func (s *topoService) UpdateSet(params types.ContextParams, pathParams, queryPar
 	if nil != err {
 		blog.Errorf("failed to search the set, %s", err.Error())
 		return nil, err
+	}
+
+	hostCond := &metadata.QueryInput{
+		Condition: condition.CreateCondition().Field(common.BKSetIDField).Eq(setID).ToMapStr(),
+	}
+	count, sets, err := s.core.SetOperation().FindSet(params, obj, hostCond)
+	if err != nil {
+		blog.Errorf("[api-set]failed, get set by id failed, err: %+v", err)
+		return nil, err
+	}
+	if count == 0 {
+		blog.Errorf("[api-set]failed, get set by id failed, got empty, setID:%d", setID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
+	}
+	if count == 1 {
+		blog.Errorf("[api-set]failed, get set by id failed, got %d, setID:%d", count, setID)
+		return nil, params.Err.Errorf(common.CCErrCommParamsIsInvalid, "set id")
+	}
+	
+	// check name unique constraint
+	if _, exist := data[common.BKSetNameField]; exist == true {
+		searchCondition := condition.CreateCondition().Field(common.BKAppIDField).Eq(bizID)
+		searchCondition.Field(common.BKSetNameField).Eq(data[common.BKSetNameField])
+		cond := metadata.QueryInput{
+			Condition: searchCondition.ToMapStr(),
+		}
+		count, sets, err := s.core.SetOperation().FindSet(params, obj, cond)
+		if err != nil {
+		}
 	}
 
 	return nil, s.core.SetOperation().UpdateSet(params, data, obj, bizID, setID)
