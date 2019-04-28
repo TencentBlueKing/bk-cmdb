@@ -140,7 +140,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 	}
 
 	for _, unique := range uniqueresp.Data {
-		// retrive unique value
+		// retrieve unique value
 		uniquekeys := map[string]bool{}
 		for _, key := range unique.Keys {
 			switch key.Kind {
@@ -160,7 +160,7 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 		cond := condition.CreateCondition()
 		anyEmpty := false
 		for key := range uniquekeys {
-			val, ok := valData[key]
+			val, ok := mapData[key]
 			if !ok || isEmpty(val) {
 				anyEmpty = true
 			}

@@ -26,7 +26,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID string) error {
+func (a *association) DeleteMainlineAssociation(params types.ContextParams, objID string) error {
 
 	targetObj, err := a.obj.FindSingleObject(params, objID)
 	if nil != err {
