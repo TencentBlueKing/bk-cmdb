@@ -347,6 +347,9 @@ const (
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
 	// objectcontroller 1102XXX
+	
+	CCErrTopoSetNameRepeated = 1101085
+	CCErrTopoModuleNameRepeated = 1101086
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
 	CCErrObjectPropertyGroupInsertFailed = 1102000
