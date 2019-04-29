@@ -159,7 +159,7 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error
 	return nil
 }
 
-func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
+func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
 	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
 		return nil, err
 	}
@@ -175,19 +175,23 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 }
 
 type Engine struct {
-	client *zk.ZkClient
-	sync.Mutex
-	ServerInfo             types.ServerInfo
 	CoreAPI                apimachinery.ClientSetInterface
-	SvcDisc                ServiceDiscoverInterface
+	apiMachineryConfig      *util.APIMachineryConfig
+	
+	client *zk.ZkClient
+	ServiceManageInterface discovery.ServiceManageInterface
+	SvcDisc                ServiceRegisterInterface
+	discovery              discovery.DiscoveryInterface
+	
+	sync.Mutex
+	
+	ServerInfo             types.ServerInfo
+	server                 Server
+	srvInfo                *types.ServerInfo
+	
 	Language               language.CCLanguageIf
 	CCErr                  errors.CCErrorIf
 	CCCtx                  CCContextInterface
-	ServiceManageInterface discovery.ServiceManageInterface
-	apiMachineryConfig      *util.APIMachineryConfig
-	discovery              discovery.DiscoveryInterface
-	server                 Server
-	srvInfo                *types.ServerInfo
 }
 
 func (e *Engine) Discovery() discovery.DiscoveryInterface {

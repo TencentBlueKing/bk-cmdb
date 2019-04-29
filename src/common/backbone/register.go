@@ -21,14 +21,14 @@ import (
 	"configcenter/src/framework/core/errors"
 )
 
-type ServiceDiscoverInterface interface {
+type ServiceRegisterInterface interface {
 	// Ping to ping server
 	Ping() error
 	// register local server info, it can only be called for once.
 	Register(path string, c types.ServerInfo) error
 }
 
-func NewServiceDiscovery(client *zk.ZkClient) (ServiceDiscoverInterface, error) {
+func NewServiceDiscovery(client *zk.ZkClient) (ServiceRegisterInterface, error) {
 	s := new(serviceDiscovery)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
 	return s, nil
