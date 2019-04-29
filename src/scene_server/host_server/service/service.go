@@ -90,7 +90,6 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Route(ws.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	ws.Route(ws.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	ws.Route(ws.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	ws.Route(ws.POST("/hosts/modules/biz/mutiple").To(s.AddHostMultiAppModuleRelation))
 	ws.Route(ws.POST("/hosts/modules").To(s.HostModuleRelation))
 	ws.Route(ws.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
 	ws.Route(ws.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))
