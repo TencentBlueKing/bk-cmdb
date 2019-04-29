@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/zkclient"
 )
 
-//ZkRegDiscv do register and discover by zookeeper
+// ZkRegDiscv do register and discover by zookeeper
 type ZkRegDiscv struct {
 	zkcli          *zkclient.ZkClient
 	cancel         context.CancelFunc
@@ -32,7 +32,7 @@ type ZkRegDiscv struct {
 	sessionTimeOut time.Duration
 }
 
-//NewZkRegDiscv create a object of ZkRegDiscv
+// NewZkRegDiscv create a object of ZkRegDiscv
 func NewZkRegDiscv(client *zk.ZkClient) *ZkRegDiscv {
 	ctx, ctxCancel := client.WithCancel()
 	return &ZkRegDiscv{
@@ -43,7 +43,7 @@ func NewZkRegDiscv(client *zk.ZkClient) *ZkRegDiscv {
 	}
 }
 
-//RegisterAndWatch create ephemeral node for the service and watch it. if it exit, register again
+// RegisterAndWatch create ephemeral node for the service and watch it. if it exit, register again
 func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 	blog.Infof("register server and watch it. path(%s), data(%s)", path, string(data))
 	go func() {
@@ -89,7 +89,7 @@ func (zkRD *ZkRegDiscv) Ping() error {
 	return zkRD.zkcli.Ping()
 }
 
-//Discover watch the children
+// Discover watch the children
 func (zkRD *ZkRegDiscv) Discover(path string) (<-chan *DiscoverEvent, error) {
 	fmt.Printf("begin to discover by watch children of path(%s)\n", path)
 	discvCtx := zkRD.rootCxt
@@ -117,7 +117,7 @@ func (zkRD *ZkRegDiscv) loopDiscover(discvCtx context.Context, path string, env 
 			continue
 		}
 
-		//write into discoverEvent channel
+		// write into discoverEvent channel
 		env <- zkRD.getServerInfoByPath(path)
 
 		select {
@@ -154,11 +154,11 @@ func (zkRD *ZkRegDiscv) getServerInfoByPath(path string) *DiscoverEvent {
 			continue
 		}
 		discvEnv.Nodes = append(discvEnv.Nodes, servNodes...)
-		//sort server node
+		// sort server node
 		servNodes = zkRD.sortNode(servNodes)
 
 		isGetNodeInfoErr := false
-		//get server info
+		// get server info
 		for _, node := range servNodes {
 			servPath := path + "/" + node
 			servInfo, err := zkRD.zkcli.Get(servPath)
@@ -198,7 +198,7 @@ func (zkRD *ZkRegDiscv) sortNode(nodes []string) []string {
 			continue
 		}
 
-		p, err := strconv.Atoi(chNode[len(chNode)-10 : len(chNode)])
+		p, err := strconv.Atoi(chNode[len(chNode)-10:])
 		if err != nil {
 			fmt.Printf("fail to conv string to seq number for node(%s), err:%s\n", chNode, err.Error())
 			continue

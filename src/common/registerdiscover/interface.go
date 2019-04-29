@@ -16,10 +16,11 @@ package registerdiscover
 type RegDiscvServer interface {
 	// Ping to ping server
 	Ping() error
-	// RegisterAndWatch register server info into registe-discover service platform, and watch the info, if not exist, then register again
+	// RegisterAndWatch register server info into register-discover service platform, 
+	// and watch the info, if not exist, then register again
 	RegisterAndWatch(key string, data []byte) error
 	// GetServNodes get server nodes
 	GetServNodes(key string) ([]string, error)
-	// discover server from the registe-discover service platform
+	// discover server from the register-discover service platform
 	Discover(key string) (<-chan *DiscoverEvent, error)
 }
