@@ -136,7 +136,7 @@ func (s *service) getContentByCustomerGroupID(req *restful.Request, resp *restfu
 		intPage, _ := util.GetIntByInterface(page)
 		intPageSize, _ := util.GetIntByInterface(pageSize)
 		if intPage > 0 {
-			intPage -= 1
+			intPage--
 		} else {
 			page = "1"
 		}
