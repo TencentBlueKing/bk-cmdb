@@ -373,7 +373,7 @@
                 const agent = window.Site.agent
                 if (agent) {
                     const topWindow = window.top
-                    const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                    const isPaasConsole = topWindow !== window
                     if (isPaasConsole) {
                         topWindow.postMessage(JSON.stringify({
                             action: 'open_other_app',
