@@ -74,7 +74,7 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 	return bonC, nil
 }
 
-func parameterValid(input *BackboneParameter) error {
+func validateParameter(input *BackboneParameter) error {
 	if input.Regdiscv == "" {
 		return fmt.Errorf("regdiscv can not be emtpy")
 	}
@@ -93,9 +93,10 @@ func parameterValid(input *BackboneParameter) error {
 }
 
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
-	if err := parameterValid(input); err != nil {
+	if err := validateParameter(input); err != nil {
 		return nil, err
 	}
+
 	common.SetServerInfo(input.SrvInfo)
 	client, err := newManageSrvClient(ctx, input.Regdiscv)
 	if err != nil {
@@ -105,7 +106,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	disc, err := NewServcieDiscovery(client)
+	disc, err := NewServiceDiscovery(client)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
 	}
@@ -124,7 +125,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
 	engine.client = client
-	engine.apiMachinerConfig = apiMachineryConfig
+	engine.apiMachineryConfig = apiMachineryConfig
 	engine.discovery = discoveryInterface
 	engine.ServiceManageInterface = discoveryInterface
 	engine.srvInfo = input.SrvInfo
@@ -151,7 +152,7 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error
 		TLS:        TLSConfig{},
 	}
 
-	if err := ListenServer(e.server); err != nil {
+	if err := ListenAndServe(e.server); err != nil {
 		return err
 	}
 	return nil
@@ -182,7 +183,7 @@ type Engine struct {
 	CCErr                  errors.CCErrorIf
 	CCCtx                  CCContextInterface
 	ServiceManageInterface discovery.ServiceManageInterface
-	apiMachinerConfig      *util.APIMachineryConfig
+	apiMachineryConfig      *util.APIMachineryConfig
 	discovery              discovery.DiscoveryInterface
 	server                 Server
 	srvInfo                *types.ServerInfo
@@ -193,7 +194,7 @@ func (e *Engine) Discovery() discovery.DiscoveryInterface {
 }
 
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
-	return e.apiMachinerConfig
+	return e.apiMachineryConfig
 }
 
 func (e *Engine) ServiceManageClient() *zk.ZkClient {

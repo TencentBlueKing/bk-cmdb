@@ -28,7 +28,7 @@ type ServiceDiscoverInterface interface {
 	Register(path string, c types.ServerInfo) error
 }
 
-func NewServcieDiscovery(client *zk.ZkClient) (ServiceDiscoverInterface, error) {
+func NewServiceDiscovery(client *zk.ZkClient) (ServiceDiscoverInterface, error) {
 	s := new(serviceDiscovery)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
 	return s, nil
