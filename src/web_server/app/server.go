@@ -158,6 +158,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
+	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
+	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.ConfigMap = current.ConfigMap
 
