@@ -103,7 +103,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	discoveryInterface, err := discovery.NewDiscoveryInterface(client)
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
@@ -117,7 +117,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		Burst:     2000,
 		TLSConfig: nil,
 	}
-	c, err := newConfig(ctx, input.SrvInfo, discoveryInterface, apiMachineryConfig)
+	c, err := newConfig(ctx, input.SrvInfo, serviceDiscovery, apiMachineryConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +127,8 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 	engine.client = client
 	engine.apiMachineryConfig = apiMachineryConfig
-	engine.discovery = discoveryInterface
-	engine.ServiceManageInterface = discoveryInterface
+	engine.discovery = serviceDiscovery
+	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
 
 	handler := &cc.CCHandler{

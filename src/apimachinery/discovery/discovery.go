@@ -48,7 +48,8 @@ type Interface interface {
 	GetServers() ([]string, error)
 }
 
-func NewDiscoveryInterface(client *zk.ZkClient) (DiscoveryInterface, error) {
+// NewServiceDiscovery new a simple discovery module which can be used to get alive server address
+func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 	disc := registerdiscover.NewRegDiscoverEx(client)
 
 	d := &discover{
