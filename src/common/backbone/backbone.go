@@ -45,21 +45,22 @@ type BackboneParameter struct {
 	SrvInfo *types.ServerInfo
 }
 
-func newManageSrvClient(ctx context.Context, manageSrvAddr string) (*zk.ZkClient, error) {
-	client := zk.NewZkClient(manageSrvAddr, 5*time.Second)
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+	client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
 	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
+	
 	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
 
 	return client, nil
 }
 
-func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachinerConfig *util.APIMachineryConfig) (*Config, error) {
+func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
 
-	machinery, err := apimachinery.NewApiMachinery(apiMachinerConfig, discovery)
+	machinery, err := apimachinery.NewApiMachinery(apiMachineryConfig, discovery)
 	if err != nil {
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -98,7 +99,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 
 	common.SetServerInfo(input.SrvInfo)
-	client, err := newManageSrvClient(ctx, input.Regdiscv)
+	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
