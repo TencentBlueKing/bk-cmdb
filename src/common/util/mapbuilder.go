@@ -13,7 +13,6 @@
 package util
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -49,12 +48,6 @@ func (m *MapBuiler) Append(k string, vs ...interface{}) {
 
 func (m *MapBuiler) Delete(k string) {
 	delete(m.value, k)
-}
-
-func NewMapFromJSON(data string) map[string]interface{} {
-	value := map[string]interface{}{}
-	_ = json.Unmarshal([]byte(data), &value)
-	return value
 }
 
 func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[string]interface{} {

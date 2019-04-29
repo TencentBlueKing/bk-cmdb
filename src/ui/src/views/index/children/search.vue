@@ -185,6 +185,10 @@
     }
 </script>
 <style lang="scss" scoped>
+    .search-layout {
+        width: 50%;
+        margin: 0 auto;
+    }
     .search-box{
         position: relative;
         height: 42px;

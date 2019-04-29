@@ -297,6 +297,7 @@
             ]),
             async reload () {
                 try {
+                    this.setRencentlyData()
                     this.resetData()
                     this.properties = await this.searchObjectAttribute({
                         params: this.$injectMetadata({
@@ -674,6 +675,18 @@
                     url: this.url.export,
                     method: 'post',
                     data
+                })
+            },
+            setRencentlyData () {
+                const usercustomData = this.usercustom.recently_models || []
+                const isExist = usercustomData.some(id => id === this.model.id)
+                let newUsercustomData = [...usercustomData]
+                if (isExist) {
+                    newUsercustomData = newUsercustomData.filter(id => id !== this.model.id)
+                }
+                newUsercustomData.unshift(this.model.id)
+                this.$store.dispatch('userCustom/saveUsercustom', {
+                    recently_models: newUsercustomData
                 })
             }
         }

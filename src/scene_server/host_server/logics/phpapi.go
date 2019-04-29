@@ -169,7 +169,8 @@ func (lgc *Logics) FindHostIDsByAppID(ctx context.Context, input *meta.UpdateHos
 		} else {
 			hostID, err = hostData[0].Int64(common.BKHostIDField)
 			if nil != err {
-				blog.Errorf("UpdateHostByAppID getHostByIPAndSource not found hostid, hostinfo:%v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
+				blog.Errorf("UpdateHostByAppID failed, getHostByIPAndSource result not found, hostinfo: %+v, input:%v, innerip:%v, platID:%v error:%s, rid:%s", 
+					hostData[0], input, innerIP, input.CloudID, err.Error(), lgc.rid)
 				return nil, http.StatusInternalServerError, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 			}
 
@@ -301,8 +302,8 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 	}
 
 	blog.V(5).Infof("hostIDArr:%v,rid:%s", hostIDArr, lgc.rid)
-	muduleHostConfigs, err := lgc.GetConfigByCond(ctx, map[string][]int64{
-		common.BKHostIDField: hostIDArr,
+	muduleHostConfigs, err := lgc.GetConfigByCond(ctx, meta.HostModuleRelationRequest{
+		HostIDArr: hostIDArr,
 	})
 	if nil != err {
 		return nil, err
@@ -319,9 +320,9 @@ func (lgc *Logics) GetIPAndProxyByCompany(ctx context.Context, ipArr []string, c
 	invalidIpMap := make(map[string]map[string]interface{})
 
 	for _, config := range muduleHostConfigs {
-		appIDTemp := fmt.Sprintf("%v", config[common.BKAppIDField])
-		appIDIntTemp := config[common.BKAppIDField]
-		hostID := config[common.BKHostIDField]
+		appIDTemp := fmt.Sprintf("%v", config.AppID)
+		appIDIntTemp := config.AppID
+		hostID := config.HostID
 		ip, err := hostMap[fmt.Sprintf("%v", hostID)].String(common.BKHostInnerIPField)
 		if nil != err {
 			blog.Warnf("getHostByIPArrAndSource get host error, error:%s, appinfo:%v, ip:%v, cloudID:%d, appID:%d,rid:%s", err.Error(), appMap[appIDIntTemp], ipArr, cloudID, appID, lgc.rid)
@@ -435,9 +436,9 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		blog.Errorf("CloneHostProperty clone source host host id  not found hostmap:%+v input:%+v,rid:%s", hostMapData, input, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
 	}
-	configCond := map[string][]int64{
-		common.BKHostIDField: []int64{srcHostID},
-		common.BKAppIDField:  []int64{appID},
+	configCond := meta.HostModuleRelationRequest{
+		HostIDArr:     []int64{srcHostID},
+		ApplicationID: appID,
 	}
 	// 判断源IP是否存在
 	configDataArr, err := lgc.GetConfigByCond(ctx, configCond)
@@ -463,9 +464,9 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 	dstHostMap, dstHostIdArr, err := phpapi.GetHostMapByCond(ctx, dstCondition)
 	blog.V(5).Infof("dstHostMap:%+v, input:%+v,rid:%s", dstHostMap, input, lgc.rid)
 
-	dstConfigCond := map[string][]int64{
-		common.BKAppIDField:  []int64{appID},
-		common.BKHostIDField: dstHostIdArr,
+	dstConfigCond := meta.HostModuleRelationRequest{
+		ApplicationID: appID,
+		HostIDArr:     dstHostIdArr,
 	}
 	dstHostIdArrV, err := lgc.GetHostIDByCond(ctx, dstConfigCond)
 	if err != nil {
@@ -515,12 +516,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 	moduleIDs := make([]int64, 0)
 	for _, configData := range configDataArr {
 
-		moduleID, err := util.GetInt64ByInterface(configData[common.BKModuleIDField])
-		if nil != err {
-			blog.Errorf("CloneHostProperty not host module relation error, not found module id: raw config:%+v, input:%+v,rid:%s", configData, input, lgc.rid)
-			return nil, lgc.ccErr.Error(common.CCErrGetOriginHostModuelRelationship)
-		}
-		moduleIDs = append(moduleIDs, moduleID)
+		moduleIDs = append(moduleIDs, configData.ModuleID)
 	}
 
 	// 克隆主机, 已存在的修改，不存在的新增；dstIpArr: 全部要克隆的主机，existIpArr：已存在的要克隆的主机
@@ -546,20 +542,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			if nil != err {
 				return nil, err
 			}
-			blog.V(5).Infof("CloneHostPropertyclone host updateHostMain res:%v", res)
-			params := new(meta.ModuleHostConfigParams)
-			params.HostID = hostID
-			params.ApplicationID = appID
-
-			resDelRelation, err := lgc.CoreAPI.HostController().Module().DelModuleHostConfig(ctx, lgc.header, params)
-			if err != nil {
-				blog.Errorf("CloneHostPropertyclone DelModuleHostConfig http do error, err:%s,params:%+v, input:%+v,rid:%s", err.Error(), params, input, lgc.rid)
-				return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-			}
-			if !resDelRelation.Result {
-				blog.Errorf("CloneHostPropertyclone DelModuleHostConfig http reponse error, err code:%d, err msg:%s,params:%s,input:%+v,rid:%s", resDelRelation.Code, resDelRelation.ErrMsg, params, input, lgc.rid)
-				return nil, lgc.ccErr.New(resDelRelation.Code, resDelRelation.ErrMsg)
-			}
+			blog.V(5).Infof("CloneHostPropertyclone host updateHostMain res:%v, rid:%s", res, lgc.rid)
 		} else {
 			hostMapData[common.BKHostInnerIPField] = dstIPV
 			addHostMapData := hostMapData

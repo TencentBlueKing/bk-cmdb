@@ -18,6 +18,8 @@ import (
 	"net/http"
 	"reflect"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -177,4 +179,13 @@ func GenerateRID() string {
 	unused := "0000"
 	id := xid.New()
 	return fmt.Sprintf("cc%s%s", unused, id.String())
+}
+
+// Int64Join []int64 to string
+func Int64Join(data []int64, separator string) string {
+	var ret string
+	for _, item := range data {
+		ret += strconv.FormatInt(item, 10) + separator
+	}
+	return strings.Trim(ret, separator)
 }

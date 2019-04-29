@@ -8,6 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -40,6 +41,7 @@ var (
 func (ps *parseStream) parseBusinessID() (int64, error) {
 	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
 	if bizID == 0 {
+		blog.Error("parseBusinessID failed, parse biz id from request body result 0")
 		return 0, errors.New("can not parse business id")
 	}
 	return bizID, nil

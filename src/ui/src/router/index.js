@@ -226,7 +226,6 @@ router.afterEach((to, from) => {
     } catch (e) {
         // ignore
     } finally {
-        setupStatus.afterload = false
         setLoading(false)
     }
 })

@@ -72,7 +72,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	}
 
 	// auth: check authorization
-	class := cls.Classify()
+	// class := cls.Classify()
 	// var businessID int64
 	// if _, exist := class.Metadata.Label[metadata.LabelBusinessID]; exist {
 	// 	var err error
@@ -94,7 +94,7 @@ func (c *classification) CreateClassification(params types.ContextParams, data m
 	}
 
 	// auth: register new created classify
-	class = cls.Classify()
+	class := cls.Classify()
 	if err := c.authManager.RegisterClassification(params.Context, params.Header, class); err != nil {
 		return nil, params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}

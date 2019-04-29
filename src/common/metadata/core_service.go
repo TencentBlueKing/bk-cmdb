@@ -188,16 +188,23 @@ func (node *TopoInstanceNode) Name() string {
 }
 
 func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
-	if node.ObjectID == common.BKInnerObjIDModule && node.InstanceID == targetID {
+	// ex: module1 ==> reverse([bizID, mainline1, ..., mainline2, set1, module1])
+	return node.TraversalFindNode(common.BKInnerObjIDModule, targetID)
+}
+
+func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
+	if common.GetObjectTypeByObjectID(node.ObjectID) == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
+	
 	for _, child := range node.Children {
-		path := child.TraversalFindModule(targetID)
+		path := child.TraversalFindNode(objectType, targetID)
 		if len(path) > 0 {
 			path = append(path, node)
 			return path
 		}
 	}
+	
 	return []*TopoInstanceNode{}
 }
 
@@ -219,4 +226,36 @@ type TransferHostsCrossBusinessRequest struct {
 	DstApplicationID int64   `json:"dst_bk_biz_id"`
 	HostIDArr        []int64 `json:"bk_host_id"`
 	DstModuleIDArr   []int64 `json:"bk_module_ids"`
+}
+
+// HostModuleRelationRequest gethost module relation request parameter
+type HostModuleRelationRequest struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	SetIDArr      []int64 `json:"bk_set_ids"`
+	HostIDArr     []int64 `json:"bk_host_ids"`
+	ModuleIDArr   []int64 `json:"bk_module_ids"`
+}
+
+// Empty empty struct
+func (h *HostModuleRelationRequest) Empty() bool {
+	if h.ApplicationID != 0 {
+		return false
+	}
+	if len(h.SetIDArr) != 0 {
+		return false
+	}
+	if len(h.ModuleIDArr) != 0 {
+		return false
+	}
+
+	if len(h.HostIDArr) != 0 {
+		return false
+	}
+	return true
+}
+
+// DeleteHostRequest delete host from application
+type DeleteHostRequest struct {
+	ApplicationID int64   `json:"bk_biz_id"`
+	HostIDArr     []int64 `json:"bk_host_ids"`
 }

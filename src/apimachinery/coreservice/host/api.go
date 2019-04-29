@@ -33,3 +33,63 @@ func (h *host) TransferHostToInnerModule(ctx context.Context, header http.Header
 		Into(resp)
 	return
 }
+
+// TransferHostModule  transfer host to  module
+func (h *host) TransferHostModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/set/module/host/relation/module"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// TransferHostCrossBusiness  transfer host to other bussiness module
+func (h *host) TransferHostCrossBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/set/module/host/relation/cross/business"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// GetHostModuleRelation get host module relation
+func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
+	resp = new(metadata.HostConfig)
+	subPath := "/read/module/host/relation"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// DeleteHost delete host
+func (h *host) DeleteHost(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/delete/host"
+
+	err = h.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
