@@ -38,7 +38,7 @@ func (m *modelAttribute) isExists(ctx core.ContextParams, propertyID string, met
 	oneAttribute = &metadata.Attribute{}
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).One(ctx, oneAttribute)
 	if nil != err && !m.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("request(%s): database findone operation is failed, error info is %s", err.Error())
+		blog.Errorf("request(%s): database findone operation is failed, error info is %s", ctx.ReqID, err.Error())
 		return oneAttribute, false, err
 	}
 	return oneAttribute, !m.dbProxy.IsNotFoundError(err), nil

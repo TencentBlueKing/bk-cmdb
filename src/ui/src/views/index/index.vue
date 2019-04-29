@@ -1,8 +1,13 @@
 <template>
-    <div class="index-wrapper">
-        <v-search class="index-search"></v-search>
-        <v-recently ref="recently"></v-recently>
-        <v-classify></v-classify>
+    <div class="index-layout" :class="{
+        'is-sticky': sticky
+    }">
+        <div class="sticky-layout" ref="stickyLayout">
+            <the-search></the-search>
+            <the-recently></the-recently>
+        </div>
+        <div ref="stickyProxy" v-show="sticky"></div>
+        <the-classify></the-classify>
         <cmdb-main-inject class="copyright" ref="copyright">
             Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
         </cmdb-main-inject>
@@ -10,60 +15,92 @@
 </template>
 
 <script>
+    import theSearch from './children/search'
+    import theRecently from './children/recently'
+    import theClassify from './children/classify'
     import cmdbMainInject from '@/components/layout/main-inject'
-    import vSearch from './children/search'
-    import vRecently from './children/recently'
-    import vClassify from './children/classify'
-    import { addMainResizeListener, removeMainResizeListener } from '@/utils/main-scroller'
+    import {
+        addMainResizeListener,
+        removeMainResizeListener,
+        addMainScrollListener,
+        removeMainScrollListener
+    } from '@/utils/main-scroller'
     export default {
+        name: 'cmdb-index',
         components: {
-            vSearch,
-            vRecently,
-            vClassify,
+            theSearch,
+            theRecently,
+            theClassify,
             cmdbMainInject
         },
         data () {
-            const year = (new Date()).getFullYear()
             return {
-                year,
-                resizeHandler: null
+                year: (new Date()).getFullYear(),
+                sticky: false,
+                resizeHandler: null,
+                scrollHandler: null
             }
-        },
-        beforeRouteLeave (to, from, next) {
-            this.$refs.recently.updateRecently(to)
-            next()
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Index["首页"]'))
         },
         mounted () {
-            const $copyright = this.$refs.copyright.$el
-            this.resizeHandler = event => {
-                const target = event.target
-                if (target.offsetWidth < 1100) {
-                    $copyright.style.bottom = '8px'
-                } else {
-                    $copyright.style.bottom = 0
-                }
-            }
-            addMainResizeListener(this.resizeHandler)
-            this.resizeHandler({ target: document.querySelector('.main-scroller') })
+            this.initResizeListener()
+            this.initScrollListener()
         },
         beforeDestroy () {
             removeMainResizeListener(this.resizeHandler)
+            removeMainScrollListener(this.scrollHandler)
+        },
+        methods: {
+            initResizeListener () {
+                const $copyright = this.$refs.copyright.$el
+                this.resizeHandler = event => {
+                    const target = event.target
+                    if (target.offsetWidth < 1100) {
+                        $copyright.style.bottom = '8px'
+                    } else {
+                        $copyright.style.bottom = 0
+                    }
+                }
+                addMainResizeListener(this.resizeHandler)
+                this.resizeHandler({ target: document.querySelector('.main-scroller') })
+            },
+            initScrollListener () {
+                this.scrollHandler = event => {
+                    const target = event.target
+                    this.sticky = target.scrollTop > 170
+                    if (this.sticky) {
+                        this.$refs.stickyLayout.style.top = target.scrollTop + 'px'
+                    }
+                }
+                this.$refs.stickyProxy.style.height = this.$refs.stickyLayout.offsetHeight + 'px'
+                addMainScrollListener(this.scrollHandler)
+            }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .index-wrapper{
-        position: relative;
+    .index-layout {
+        overflow: auto;
+        padding: 0 0 50px;
         background-color: #f5f6fa;
+        position: relative;
+        &.is-sticky {
+            .sticky-layout {
+                position: absolute;
+                top: 50px;
+                left: 0;
+                width: 100%;
+                padding-top: 50px;
+                box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+            }
+        }
     }
-    .index-search{
-        width: 50%;
-        margin: 0 auto;
-        padding: 40px 0 50px;
+    .sticky-layout {
+        padding: 220px 0 27px;
+        background-color: #f5f6fa;
     }
     .copyright{
         position: absolute;

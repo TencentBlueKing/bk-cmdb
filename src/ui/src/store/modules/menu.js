@@ -1,5 +1,5 @@
 import { GET_MODEL_PATH } from '@/views/general-model/router.config'
-import MENU, { NAV_COLLECT } from '@/dictionary/menu'
+import MENU, { NAV_COLLECT, NAV_PERMISSION } from '@/dictionary/menu'
 import { clone } from '@/utils/tools'
 import { viewRouters } from '@/router'
 const state = {
@@ -13,15 +13,14 @@ const getters = {
     collectMenus: (state, getters, rootState, rootGetters) => {
         const collectMenus = []
         const usercustom = rootGetters['userCustom/usercustom']
-        const customKey = rootGetters['userCustom/classifyNavigationKey']
-        const collectedModelIds = usercustom[customKey] || []
-        collectedModelIds.forEach((modelId, index) => {
-            const model = rootGetters['objectModelClassify/getModelById'](modelId)
+        const collectedModelIds = usercustom.collected_models || []
+        collectedModelIds.forEach((id, index) => {
+            const model = rootGetters['objectModelClassify/models'].find(model => model.id === id)
             if (model) {
                 collectMenus.push({
-                    id: model.bk_obj_id,
+                    id: model.id,
                     name: model.bk_obj_name,
-                    path: GET_MODEL_PATH(modelId),
+                    path: GET_MODEL_PATH(model.bk_obj_id),
                     order: index
                 })
             }
@@ -29,7 +28,10 @@ const getters = {
         return collectMenus
     },
     menus: (state, getters, rootState, rootGetters) => {
-        const menus = clone(MENU)
+        let menus = clone(MENU)
+        if (rootGetters.site.authscheme !== 'internal') {
+            menus = menus.filter(menu => menu.id !== NAV_PERMISSION)
+        }
         viewRouters.forEach(route => {
             const meta = route.meta || {}
             const auth = meta.auth || {}

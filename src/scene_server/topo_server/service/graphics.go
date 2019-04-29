@@ -40,13 +40,15 @@ func (s *Service) SelectObjectTopoGraphics(params types.ContextParams, pathParam
 
 func (s *Service) UpdateObjectTopoGraphics(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	datas := make([]metadata.TopoGraphics, 0)
 	val, exists := data.Get("origin")
 	if !exists {
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "not set anything")
 	}
 
-	datas, _ = val.([]metadata.TopoGraphics)
+	datas, ok := val.([]metadata.TopoGraphics)
+	if !ok {
+		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, "invalid body")
+	}
 
 	err := s.Core.GraphicsOperation().UpdateObjectTopoGraphics(params, pathParams("scope_type"), pathParams("scope_id"), datas)
 	return nil, err

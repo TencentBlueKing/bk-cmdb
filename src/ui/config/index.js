@@ -23,6 +23,7 @@ const dev = {
         'API_VERSION': '"v3"',
         'API_LOGIN': '""',
         'AGENT_URL': 'null',
+        'AUTH_SCHEME': '"internal"',
         'AUTH_CENTER': '{}',
         'BUILD_VERSION': 'dev',
         'USER_ROLE': '"1"',
@@ -89,6 +90,7 @@ module.exports = {
             'API_VERSION': '{{.version}}',
             'API_LOGIN': '{{.curl}}',
             'AGENT_URL': '{{.agentAppUrl}}',
+            'AUTH_SCHEME': '{{.authscheme}}',
             'AUTH_CENTER': '{{.authCenter}}',
             'USER_ROLE': '{{.role}}',
             'USER_NAME': '{{.userName}}'

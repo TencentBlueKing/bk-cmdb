@@ -58,7 +58,7 @@ func (ih *IAMHandler) HandleInstanceSync(task *meta.WorkRequest) error {
 	// step2. collect instances by model, and convert to iam interface format
 	instances, err := ih.authManager.CollectInstancesByModelID(context.Background(), header, object.ObjectID)
 	if err != nil {
-		blog.Errorf("", err)
+		blog.Errorf("CollectInstancesByModelID failed, err: %+v", err)
 		return err
 	}
 	resources, err := ih.authManager.MakeResourcesByInstances(context.Background(), header, authmeta.EmptyAction, instances...)

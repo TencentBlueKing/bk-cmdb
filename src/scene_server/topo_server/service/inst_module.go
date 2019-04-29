@@ -47,6 +47,7 @@ func (s *Service) CreateModule(params types.ContextParams, pathParams, queryPara
 
 	module, err := s.Core.ModuleOperation().CreateModule(params, obj, bizID, setID, data)
 	if err != nil {
+		blog.Errorf("[api-module] create module failed, error info is %s", err.Error())
 		return nil, err
 	}
 
