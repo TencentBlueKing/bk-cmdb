@@ -1024,15 +1024,38 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
 		return err
 	}
-	for _, inst := range insts {
+	if len(insts) == 0 {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), not found", cond.ToMapStr())
+		return fmt.Errorf("get instance by id:%d not found", instID)
+	}
+	if len(insts) > 1 {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), not found", cond.ToMapStr())
+		return fmt.Errorf("get instance by id:%d not found", instID)
+	}
 
-		data.ForEach(func(key string, val interface{}) {
-			inst.SetValue(key, val)
-		})
+	inst := insts[0]
+	data.ForEach(func(key string, val interface{}) {
+		inst.SetValue(key, val)
+	})
 
-		if err := c.setInstAsst(params, obj, inst); nil != err {
-			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
-			return err
+	if err := c.setInstAsst(params, obj, inst); nil != err {
+		blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+		return err
+	}
+
+	// fix association attributes here, as it has been update independent upper
+	attrs, err := obj.GetAttributesExceptInnerFields()
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to get instance attributes, error info is %s", err.Error())
+		return err
+	}
+	for _, attr := range attrs {
+
+		if attr.IsAssociationType() {
+			associationAttribute := attr.GetName()
+			if _, exist := data[associationAttribute]; exist == true {
+				data[associationAttribute] = insts[0].GetValues()[associationAttribute]
+			}
 		}
 	}
 
