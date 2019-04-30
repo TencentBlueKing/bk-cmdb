@@ -221,7 +221,6 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDArr)
-	cond.Field(common.BKIsOnlyField).Eq(true)
 
 	rsp, err := ia.cli.clientSet.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), ia.params.Header, cond.ToMapStr())
 	if nil != err {
@@ -318,6 +317,7 @@ func (ia *importAssociation) getInstDataByConds() error {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		conds := condition.CreateCondition()
+		conds.Field(common.BKObjIDField).Eq(objID)
 		conds.NewOR().MapStrArr(valArr)
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
@@ -341,6 +341,7 @@ func (ia *importAssociation) getInstDataByObjIDConds(objID, instIDKey string, co
 
 	fields = append(fields, instIDKey)
 	queryInput := &metadata.QueryInput{}
+
 	queryInput.Condition = conds.ToMapStr()
 	queryInput.Fields = strings.Join(fields, ",")
 
@@ -410,7 +411,7 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 		return
 	}
 
-	if result.Result {
+	if !result.Result {
 		ia.parseImportDataErr[idx] = result.ErrMsg
 		return
 	}

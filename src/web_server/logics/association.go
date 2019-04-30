@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -75,9 +74,7 @@ func (lgc *Logics) fetchAssocationData(ctx context.Context, header http.Header, 
 func (lgc *Logics) fetchInstAssocationData(ctx context.Context, header http.Header, objID string, instIDArr []int64) (map[int64][]PropertyPrimaryVal, error) {
 
 	ccErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
-	conds := mapstr.New()
-	conds.Set(common.BKIsOnlyField, true)
-	propertyArr, err := lgc.getAsstObjectPrimaryFieldByObjID(objID, header, conds)
+	propertyArr, err := lgc.getObjectPrimaryFieldByObjID(objID, header)
 	if err != nil {
 		return nil, err
 	}

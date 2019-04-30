@@ -55,6 +55,13 @@ export function getPropertyText (property, item) {
     const propertyId = property['bk_property_id']
     const propertyType = property['bk_property_type']
     let propertyValue = item[propertyId]
+    if (
+        propertyValue === null ||
+        propertyValue === undefined ||
+        propertyValue === ''
+    ) {
+        return '--'
+    }
     if (propertyType === 'enum') {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
@@ -69,11 +76,9 @@ export function getPropertyText (property, item) {
     } else if (propertyType === 'foreignkey') {
         if (Array.isArray(propertyValue)) {
             propertyValue = propertyValue.map(inst => inst['bk_inst_name']).join(',')
-        } else {
-            return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return String(propertyValue).length ? propertyValue : '--'
+    return propertyValue
 }
 
 /**
@@ -127,7 +132,7 @@ export function getInstFormValues (properties, inst = {}) {
         } else if (['date', 'time'].includes(propertyType)) {
             const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
             values[propertyId] = formatedTime || null
-        } else if (['int'].includes(propertyType)) {
+        } else if (['int', 'float'].includes(propertyType)) {
             values[propertyId] = ['', undefined].includes(inst[propertyId]) ? null : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
             values[propertyId] = !!inst[propertyId]

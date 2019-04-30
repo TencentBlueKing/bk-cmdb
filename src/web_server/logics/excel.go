@@ -65,6 +65,7 @@ func (lgc *Logics) BuildExcelFromData(ctx context.Context, objID string, fields 
 		}
 
 		primaryKeyArr := setExcelRowDataByIndex(rowMap, sheet, rowIndex, fields)
+
 		instPrimaryKeyValMap[instID] = primaryKeyArr
 		rowIndex++
 

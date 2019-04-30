@@ -59,6 +59,7 @@
                         :authority="authority"
                         :properties="properties"
                         :propertyGroups="propertyGroups"
+                        :object-unique="objectUnique"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -92,6 +93,7 @@
         },
         data () {
             return {
+                objectUnique: [],
                 properties: [],
                 slider: {
                     show: false,
@@ -161,7 +163,10 @@
                 'batchUpdateProcess',
                 'searchProcessById'
             ]),
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'process'
+                })
                 this.attribute.type = 'multiple'
                 this.slider.title = this.$t('Inst[\'批量更新\']')
                 this.slider.show = true

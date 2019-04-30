@@ -11,11 +11,40 @@
 import $http from '@/api'
 
 const state = {
-
+    graphicsData: []
 }
 
 const getters = {
-
+    modelConfig: (state, getters, rootState, rootGetters) => {
+        const modelConfig = {}
+        rootGetters['objectModelClassify/models'].forEach(model => {
+            modelConfig[model.bk_obj_id] = true
+        })
+        return Object.assign(modelConfig, rootGetters['userCustom/usercustom'].topoModelConfig)
+    },
+    displayModelGroups: (state, getters, rootState, rootGetters) => {
+        const modelGroups = []
+        const graphicsData = state.graphicsData
+        rootGetters['objectModelClassify/classifications'].forEach(group => {
+            const models = group.bk_objects || []
+            if (models.length) {
+                const availableModels = models.filter(model => {
+                    const isSpecialModel = ['process', 'plat'].includes(model.bk_obj_id)
+                    const asstData = graphicsData.find(data => data.bk_obj_id === model.bk_obj_id) || {}
+                    const position = asstData.position || {}
+                    const hasPosition = position.x !== null && position.y !== null
+                    return !isSpecialModel && hasPosition
+                })
+                if (availableModels.length) {
+                    modelGroups.push({
+                        ...group,
+                        bk_objects: availableModels
+                    })
+                }
+            }
+        })
+        return modelGroups
+    }
 }
 
 const actions = {
@@ -27,8 +56,15 @@ const actions = {
      * @param {Object} params 参数
      * @return {Promise} promise 对象
      */
-    searchModelAction ({ commit, state, dispatch }) {
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/search`)
+    searchModelAction ({ commit, state, dispatch, rootGetters }) {
+        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/search`).then(data => {
+            data = data.filter(node => {
+                const model = rootGetters['objectModelClassify/getModelById'](node.bk_obj_id)
+                return model && !model.bk_ispaused
+            })
+            commit('setGraphicsData', data)
+            return data
+        })
     },
 
     /**
@@ -40,12 +76,24 @@ const actions = {
      * @return {Promise} promise 对象
      */
     updateModelAction ({ commit, state, dispatch }, { params }) {
-        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/update`, params)
+        return $http.post(`objects/topographics/scope_type/global/scope_id/0/action/update`, params).then(() => {
+            commit('updateGraphicsData', params)
+        })
     }
 }
 
 const mutations = {
-
+    setGraphicsData (state, data) {
+        state.graphicsData = data
+    },
+    updateGraphicsData (state, data) {
+        data.forEach(node => {
+            const exist = state.graphicsData.find(exist => exist.bk_obj_id === node.bk_obj_id)
+            if (exist) {
+                Object.assign(exist, node)
+            }
+        })
+    }
 }
 
 export default {

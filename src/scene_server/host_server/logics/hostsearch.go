@@ -212,7 +212,7 @@ func (sh *searchHost) FillTopologyData() ([]mapstr.MapStr, int, error) {
 	type idArrStruct []int64
 	hostAppSetModuleConfig := make(map[int64]map[int64]*appLevelInfo, 0)
 
-	blog.V(5).Infof("get modulehostconfig map:%v", mhconfig)
+	blog.V(5).Infof("get modulehostconfig map:%v, rid:%s", mhconfig, sh.ccRid)
 	for _, mh := range mhconfig {
 		hostID := mh[common.BKHostIDField]
 		hostAppInfoLevelInst, ok := hostAppSetModuleConfig[hostID]
@@ -373,13 +373,12 @@ func (sh *searchHost) fillHostAppInfo(appInfoLevelInst map[int64]*appLevelInfo, 
 	var err error
 	//appdata
 	for appID, appLevelInfo := range appInfoLevelInst {
-
 		appInfo, mapOk := sh.cacheInfoMap.appInfoMap[appID]
 		if mapOk {
 			appInfoArr = append(appInfoArr, appInfo)
 		}
 		appLevelInfo.appID = appID
-		appLevelInfo.appName, err = appInfo.String(common.BKAppName)
+		appLevelInfo.appName, err = appInfo.String(common.BKAppNameField)
 		if err != nil {
 			blog.Warnf("hostSearch not found app name, appInfo:%d, rid:%s", appInfo, sh.ccRid)
 			continue
@@ -454,10 +453,12 @@ func (sh *searchHost) fillHostModuleInfo(appInfoLevelInst map[int64]*appLevelInf
 func (sh *searchHost) fetchTopoAppCacheInfo(appIDArr []int64) (map[int64]mapstr.MapStr, error) {
 
 	if nil != sh.conds.appCond.Fields {
-		exist := util.InArray(common.BKAppIDField, sh.conds.appCond.Fields)
-		if 0 != len(sh.conds.appCond.Fields) && !exist {
+		// bk_biz_id and bk_biz_name must be return
+		if len(sh.conds.appCond.Fields) != 0 {
 			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppIDField)
+			sh.conds.appCond.Fields = append(sh.conds.appCond.Fields, common.BKAppNameField)
 		}
+
 		cond := make(map[string]interface{})
 		celld := make(map[string]interface{})
 		celld[common.BKDBIN] = appIDArr
@@ -692,7 +693,7 @@ func (sh *searchHost) searchByHostConds() error {
 
 	gResult, err := sh.lgc.CoreAPI.HostController().Host().GetHosts(context.Background(), sh.pheader, query)
 	if err != nil {
-		blog.Errorf("get hosts failed, err: %v", err)
+		blog.Errorf("get hosts failed, err: %v, rid:%s", err, sh.ccRid)
 		return err
 	}
 	if !gResult.Result {
@@ -742,7 +743,7 @@ func (sh *searchHost) appendHostTopoConds() error {
 	}
 	hostIDArr, err := sh.lgc.GetHostIDByCond(sh.pheader, moduleHostConfig)
 	if err != nil {
-		blog.Errorf("GetHostIDByCond get hosts failed, err: %v", err)
+		blog.Errorf("GetHostIDByCond get hosts failed, err: %v, rid:%s", err, sh.ccRid)
 		return err
 	}
 	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{

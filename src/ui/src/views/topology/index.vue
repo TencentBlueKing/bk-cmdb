@@ -462,7 +462,7 @@
                 this.$refs.topoTable.search(this.business, this.table.params, true)
             },
             setSearchParams () {
-                const necessaryObj = Object.keys(this.properties)
+                const necessaryObj = ['host', 'biz', 'set', 'module']
                 const condition = necessaryObj.map(objId => {
                     return {
                         'bk_obj_id': objId,
