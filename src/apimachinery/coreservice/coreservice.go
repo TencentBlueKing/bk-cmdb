@@ -68,3 +68,7 @@ func (c *coreService) Synchronize() synchronize.SynchronizeClientInterface {
 func (c *coreService) Host() host.HostClientInterface {
 	return host.NewHostClientInterface(c.restCli)
 }
+
+func (c *coreService) Audit() audit.AuditClientInterface {
+	return audit.NewAuditClientInterface(c.restCli)
+}
