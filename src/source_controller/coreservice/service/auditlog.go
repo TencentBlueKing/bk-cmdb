@@ -18,7 +18,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (metadata.Response, error) {
 	inputData := struct {
 		Data []metadata.CreateAuditLogParams `json:"data"`
 	}{}
@@ -28,7 +28,7 @@ func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, quer
 	return s.core.AuditOperation().CreateAuditLog(params, inputData.Data...)
 }
 
-func (s *coreService) SearchAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) SearchAuditLog(ctx ContextParams, param metadata.QueryInput) (metadata.Response, error) {
 	inputData := metadata.CreateManyModelInstance{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
