@@ -13,6 +13,7 @@
 package auditlog
 
 import (
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -20,6 +21,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
+
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -62,6 +64,29 @@ func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.C
 		return nil
 	}
 	return m.dbProxy.Table(common.BKTableNameOperationLog).Insert(ctx, logRows)
+}
+
+func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error) {
+	fields := param.Fields
+	condition := param.Condition
+	param.ConvTime()
+	skip := param.Start
+	limit := param.Limit
+	fieldArr := strings.Split(fields, ",")
+	rows := make([]metadata.OperationLog, 0)
+	blog.V(9).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
+	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
+	if nil != err {
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
+		return nil, 0, err
+	}
+	cnt, err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Count(ctx)
+	if nil != err {
+		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
+		return nil, 0, err
+	}
+
+	return rows, cnt, nil
 }
 
 // instNotChange Determine whether the data is consistent before and after the change

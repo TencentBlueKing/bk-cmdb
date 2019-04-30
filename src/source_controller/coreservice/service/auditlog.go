@@ -18,20 +18,27 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (metadata.Response, error) {
+func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := struct {
 		Data []metadata.CreateAuditLogParams `json:"data"`
 	}{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.AuditOperation().CreateAuditLog(params, inputData.Data...)
+	return nil, s.core.AuditOperation().CreateAuditLog(params, inputData.Data...)
 }
 
-func (s *coreService) SearchAuditLog(ctx ContextParams, param metadata.QueryInput) (metadata.Response, error) {
-	inputData := metadata.CreateManyModelInstance{}
+func (s *coreService) SearchAuditLog(ctx core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := metadata.QueryInput{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.InstanceOperation().CreateManyModelInstance(params, pathParams("bk_obj_id"), inputData)
+	auditlogs, count, err := s.core.AuditOperation().SearchAuditLog(ctx, inputData)
+	return struct {
+		Count uint64                  `json:"count"`
+		Info  []metadata.OperationLog `json:"info"`
+	}{
+		Count: count,
+		Info:  auditlogs,
+	}, err
 }
