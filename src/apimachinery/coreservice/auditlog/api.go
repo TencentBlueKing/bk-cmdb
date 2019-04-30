@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (inst *auditlog) CreateAuditLog(ctx context.Context, h http.Header, logs ...metadata.CreateAuditLogParams) (resp *metadata.Response, err error) {
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.CreateAuditLogParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 
 	subPath := fmt.Sprintf("/create/auditlog")

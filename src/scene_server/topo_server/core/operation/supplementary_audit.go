@@ -124,69 +124,32 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			})
 		}
 
-		data := common.KvMap{
-			common.BKContentField: Content{
+		bizID, err := targetItem.GetValues().Int64(common.BKAppIDField)
+		if nil != err {
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
+		}
+
+		auditlog := metadata.CreateAuditLogParams{
+			ID:    id,
+			Model: a.obj.GetObjectType(),
+			Content: Content{
 				CurData: currDataTmp,
 				PreData: preDataTmp,
 				Headers: headers,
 			},
-			common.BKOpDescField:   desc,
-			common.BKOpTypeField:   action,
-			common.BKOpTargetField: a.obj.Object().ObjectID,
-			"inst_id":              id,
+			OpDesc: desc,
+			OpType: action,
+			BizID:  bizID,
 		}
 
-		bizID, err := targetItem.GetValues().String(common.BKAppIDField)
-		if nil != err {
-			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
+		auditresp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditlog)
+		if err != nil {
+			blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, a.params.ReqID)
+			return
 		}
-		if 0 == len(bizID) {
-			bizID = "0"
-		}
-		//fmt.Println("the data pre:", preDataTmp)
-		//fmt.Println("the data curr:", currDataTmp)
-		switch a.obj.GetObjectType() {
-		default:
-
-			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDApp, common.BKInnerObjIDObject:
-			rsp, err := a.client.AuditController().AddObjectLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDModule:
-			rsp, err := a.client.AuditController().AddModuleLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
-		case common.BKInnerObjIDSet:
-			rsp, err := a.client.AuditController().AddSetLog(context.Background(), a.params.SupplierAccount, bizID, a.params.User, a.params.Header, data)
-			if nil != err {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", err.Error())
-				return
-			}
-			if !rsp.Result {
-				blog.Errorf("[audit] failed to add audit log, error info is %s", rsp.ErrMsg)
-				return
-			}
+		if !auditresp.Result {
+			blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, a.params.ReqID)
+			return
 		}
 	}
 }
