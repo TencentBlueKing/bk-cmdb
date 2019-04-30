@@ -209,11 +209,37 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 		}
 		return lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
+
+	audit := lgc.NewHostLog(ctx, ownerID)
+	if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
+		return err
+	}
+	content := audit.GetContent(hostID)
+
+	auditlog := metadata.CreateAuditLogParams{
+		ID:      hostID,
+		Model:   common.BKInnerObjIDHost,
+		Content: content,
+		OpDesc:  "enter ip host",
+		OpType:  auditoplog.AuditOpTypeAdd,
+		ExtKey:  audit.ip,
+		BizID:   appID,
+	}
+
+	auditresp, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, auditlog)
+	if err != nil {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrAuditSaveLogFaile)
+	}
+	if !auditresp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, lgc.rid)
+		return lgc.ccErr.New(auditresp.Code, auditresp.ErrMsg)
+	}
 	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
 	if err := hmAudit.WithPrevious(ctx); err != nil {
 		return err
 	}
-	if err := hmAudit.SaveAudit(ctx, strconv.FormatInt(appID, 10), util.GetUser(lgc.header), "host module change"); err != nil {
+	if err := hmAudit.SaveAudit(ctx, appID, util.GetUser(lgc.header), "host module change"); err != nil {
 		return err
 	}
 	return nil
@@ -331,7 +357,7 @@ func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dst
 		return lgc.ccErr.New(delRet.Code, delRet.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, strconv.FormatInt(srcBizID, 10), lgc.user, "host to other bussiness module"); err != nil {
+	if err := audit.SaveAudit(ctx, srcBizID, lgc.user, "host to other bussiness module"); err != nil {
 		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
 		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 
@@ -378,7 +404,7 @@ func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, host
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, strconv.FormatInt(bizID, 10), lgc.user, "delete host from business"); err != nil {
+	if err := audit.SaveAudit(ctx, bizID, lgc.user, "delete host from business"); err != nil {
 		blog.Errorf("DeleteHostFromBusiness, get prev module host config failed, err: %v,appID:%d, hostID:%#v,rid:%s", err, bizID, hostIDArr, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}

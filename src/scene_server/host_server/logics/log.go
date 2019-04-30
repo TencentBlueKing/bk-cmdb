@@ -72,8 +72,8 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID string) errors.CCError
 	return nil
 }
 
-func (h *HostLog) AuditLog(ctx context.Context, hostID int64) *auditoplog.AuditLogExt {
-	return &auditoplog.AuditLogExt{
+func (h *HostLog) AuditLog(ctx context.Context, hostID int64) metadata.CreateAuditLogParams {
+	return metadata.CreateAuditLogParams{
 		ID:      hostID,
 		Content: h.Content,
 		ExtKey:  h.ip,
@@ -128,7 +128,7 @@ func (h *HostModuleLog) WithCurrent(ctx context.Context) errors.CCError {
 	return nil
 }
 
-func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string) errors.CCError {
+func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc string) errors.CCError {
 	if err := h.WithCurrent(ctx); err != nil {
 		return err
 	}
@@ -208,15 +208,18 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 		{PropertyID: common.BKAppIDField, PropertyName: "business ID"},
 	}
 
-	logs := make([]auditoplog.AuditLogExt, 0)
+	if len(desc) != 0 {
+		h.desc = desc
+	} else {
+		h.desc = "host module change"
+	}
 
+	logs := make([]metadata.CreateAuditLogParams, 0)
 	for _, host := range h.hostInfos {
 		instID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
 			return err
 		}
-		log := auditoplog.AuditLogExt{ID: instID}
-		log.ExtKey = host[common.BKHostInnerIPField].(string)
 
 		preModule := make([]interface{}, 0)
 		var preApp interface{}
@@ -233,30 +236,31 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 			curApp = moduleMap[moduleID].appID
 		}
 
-		log.Content = metadata.Content{
-			PreData: common.KvMap{moduleReName: preModule, common.BKAppIDField: preApp},
-			CurData: common.KvMap{moduleReName: curModule, common.BKAppIDField: curApp},
-			Headers: headers,
-		}
-		logs = append(logs, log)
-
+		logs = append(logs, metadata.CreateAuditLogParams{
+			ID:    instID,
+			Model: common.BKInnerObjIDHost,
+			Content: metadata.Content{
+				PreData: common.KvMap{moduleReName: preModule, common.BKAppIDField: preApp},
+				CurData: common.KvMap{moduleReName: curModule, common.BKAppIDField: curApp},
+				Headers: headers,
+			},
+			OpDesc: h.desc,
+			OpType: auditoplog.AuditOpTypeHostModule,
+			ExtKey: host[common.BKHostInnerIPField].(string),
+			BizID:  appID,
+		})
 	}
 
-	if len(desc) != 0 {
-		h.desc = desc
-	} else {
-		h.desc = "host module change"
-	}
-	data := common.KvMap{common.BKContentField: logs, common.BKOpDescField: h.desc, common.BKOpTypeField: auditoplog.AuditOpTypeHostModule}
-	result, err := h.logic.CoreAPI.AuditController().AddHostLogs(ctx, h.logic.ownerID, appID, user, h.header, data)
+	auditresp, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
 	if err != nil {
-		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), data, h.logic.rid)
-		return h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, h.logic.rid)
+		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFaile)
 	}
-	if !result.Result {
-		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, data, h.logic.rid)
-		return h.logic.ccErr.New(result.Code, result.ErrMsg)
+	if !auditresp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, h.logic.rid)
+		return h.logic.ccErr.New(auditresp.Code, auditresp.ErrMsg)
 	}
+
 	return nil
 }
 
