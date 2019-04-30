@@ -13,6 +13,7 @@
 package registerdiscover
 
 import (
+	"configcenter/src/common/blog"
 	"context"
 	"fmt"
 	"sort"
@@ -20,8 +21,9 @@ import (
 	"time"
 
 	"configcenter/src/common/backbone/service_mange/zk"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/zkclient"
+
+	gozk "github.com/samuel/go-zookeeper/zk"
 )
 
 // ZkRegDiscv do register and discover by zookeeper
@@ -47,35 +49,47 @@ func NewZkRegDiscv(client *zk.ZkClient) *ZkRegDiscv {
 func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 	blog.Infof("register server and watch it. path(%s), data(%s)", path, string(data))
 	go func() {
-		newPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
-		if err != nil {
-			fmt.Printf("fail to register server node(%s). err:%s", path, err.Error())
-			time.Sleep(5 * time.Second)
-			zkRD.RegisterAndWatch(path, data)
-			return
-		}
+		var registerPath string
+		var watchEvn <-chan gozk.Event
+		var err error
+		
+		timer1 := time.NewTicker(5 * time.Second)
 		watchCtx := zkRD.rootCxt
+		for {
+			select {
+			case <-timer1.C:
+				if len(registerPath) == 0 {
+					newPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
+					if err != nil {
+						blog.Errorf("fail to register server node(%s). err:%s", path, err.Error())
+						continue
+					}
+					registerPath = newPath
+				}
 
-		_, _, watchEvn, err := zkRD.zkcli.ExistW(newPath)
-		if err != nil {
-			fmt.Printf("fail to watch register node(%s), err:%s\n", newPath, err.Error())
-			time.Sleep(5 * time.Second)
-			zkRD.zkcli.Del(newPath, -1)
-			zkRD.RegisterAndWatch(path, data)
-			return
-		}
+				_, _, watchEvn, err = zkRD.zkcli.ExistW(registerPath)
+				if err != nil {
+					blog.Errorf("fail to watch register node(%s), err:%s\n", registerPath, err.Error())
 
-		select {
-		case <-watchCtx.Done():
-			fmt.Printf("watch register node(%s) done\n", path)
-			return
-		case <-watchEvn:
-			fmt.Printf("watch register node(%s) exist changed, event(%v)\n", path, watchEvn)
-			zkRD.RegisterAndWatch(path, data)
+					// clear register path, so that it can register to a new path
+					zkRD.zkcli.Del(registerPath, -1)
+					registerPath = ""
+					continue
+				}
+			case <-watchCtx.Done():
+				blog.Infof("watch register node(%s) done, now exist service register.\n", path)
+				zkRD.zkcli.Del(registerPath, -1)
+				return
+			case <-watchEvn:
+				blog.Infof("watch register node(%s) exist changed, event(%v)\n", path, watchEvn)
+				zkRD.zkcli.Del(registerPath, -1)
+				registerPath = ""
+				continue
+			}
 		}
 	}()
 
-	fmt.Printf("finish register server node(%s) and watch it\n", path)
+	blog.Infof("finish register server node(%s) and watch it\n", path)
 	return nil
 }
 

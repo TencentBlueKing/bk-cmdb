@@ -28,17 +28,17 @@ type ServiceRegisterInterface interface {
 	Register(path string, c types.ServerInfo) error
 }
 
-func NewServiceDiscovery(client *zk.ZkClient) (ServiceRegisterInterface, error) {
-	s := new(serviceDiscovery)
+func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
+	s := new(serviceRegister)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
 	return s, nil
 }
 
-type serviceDiscovery struct {
+type serviceRegister struct {
 	client *registerdiscover.RegDiscover
 }
 
-func (s *serviceDiscovery) Register(path string, c types.ServerInfo) error {
+func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 	if c.IP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")
 	}
@@ -52,6 +52,6 @@ func (s *serviceDiscovery) Register(path string, c types.ServerInfo) error {
 }
 
 // Ping to ping server
-func (s *serviceDiscovery) Ping() error {
+func (s *serviceRegister) Ping() error {
 	return s.client.Ping()
 }
