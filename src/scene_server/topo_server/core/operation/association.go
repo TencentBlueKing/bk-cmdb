@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
@@ -777,22 +776,25 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	resp.Data.ID = instanceAssociationID
 
 	// record audit log
-	auditLog := auditoplog.AuditLogAssociation{
-		ID: instanceAssociationID,
+	auditlog := metadata.CreateAuditLogParams{
+		ID:    instanceAssociationID,
+		Model: "instance_association",
 		Content: metadata.Content{
 			CurData: input,
 			Headers: InstanceAssociationAuditHeaders,
 		},
+		OpDesc: "create instance association",
+		OpType: auditoplog.AuditOpTypeAdd,
+		BizID:  bizID,
 	}
-	log := map[string]interface{}{
-		common.BKContentField: auditLog,
-		common.BKOpDescField:  "create instance association",
-		common.BKOpTypeField:  auditoplog.AuditOpTypeAdd,
-	}
-	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
+	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
+	}
+	if !auditresp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
 	}
 
 	return resp, err
@@ -826,13 +828,6 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	instanceAssociation := data.Data.Info[0]
-	auditLog := auditoplog.AuditLogAssociation{
-		ID: assoID,
-		Content: metadata.Content{
-			PreData: instanceAssociation,
-			Headers: InstanceAssociationAuditHeaders,
-		},
-	}
 
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
@@ -842,15 +837,26 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		BaseResp: rsp.BaseResp,
 	}
 
-	log := map[string]interface{}{
-		common.BKContentField: auditLog,
-		common.BKOpDescField:  "delete instance association",
-		common.BKOpTypeField:  auditoplog.AuditOpTypeAdd,
+	auditlog := metadata.CreateAuditLogParams{
+		ID:    assoID,
+		Model: "instance_association",
+		Content: metadata.Content{
+			PreData: instanceAssociation,
+			Headers: InstanceAssociationAuditHeaders,
+		},
+		OpDesc: "delete instance association",
+		OpType: auditoplog.AuditOpTypeDel,
+		BizID:  bizID,
 	}
-	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
+	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", rsp, err, params.ReqID)
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
 	}
+	if !auditresp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	}
+
 	return resp, err
 }

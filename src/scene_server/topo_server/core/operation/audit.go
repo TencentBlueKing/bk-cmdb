@@ -23,7 +23,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-
 type AuditOperationInterface interface {
 	Query(params types.ContextParams, query *metadata.QueryInput) (interface{}, error)
 }

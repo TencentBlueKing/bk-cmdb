@@ -20,12 +20,12 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-type InstanceClientInterface interface {
-	CreateAuditLog(ctx context.Context, h http.Header, logs ...metadata.CreateAuditLogParams) (*metadata.Response, error)
+type AuditClientInterface interface {
+	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.CreateAuditLogParams) (*metadata.Response, error)
 	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryInput) (*metadata.AuditQueryResult, error)
 }
 
-func NewInstanceClientInterface(client rest.ClientInterface) InstanceClientInterface {
+func NewAuditClientInterface(client rest.ClientInterface) AuditClientInterface {
 	return &auditlog{client: client}
 }
 

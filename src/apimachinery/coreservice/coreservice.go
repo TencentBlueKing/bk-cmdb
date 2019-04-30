@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/coreservice/association"
+	"configcenter/src/apimachinery/coreservice/auditlog"
 	"configcenter/src/apimachinery/coreservice/host"
 	"configcenter/src/apimachinery/coreservice/instance"
 	"configcenter/src/apimachinery/coreservice/mainline"
@@ -32,6 +33,7 @@ type CoreServiceClientInterface interface {
 	Synchronize() synchronize.SynchronizeClientInterface
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
+	Audit() auditlog.AuditClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -69,6 +71,6 @@ func (c *coreService) Host() host.HostClientInterface {
 	return host.NewHostClientInterface(c.restCli)
 }
 
-func (c *coreService) Audit() audit.AuditClientInterface {
-	return audit.NewAuditClientInterface(c.restCli)
+func (c *coreService) Audit() auditlog.AuditClientInterface {
+	return auditlog.NewAuditClientInterface(c.restCli)
 }
