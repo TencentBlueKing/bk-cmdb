@@ -7,8 +7,8 @@
                 {{$t('Common["新建"]')}}
             </bk-button>
             <label class="search-input">
-                <i class="bk-icon icon-search" @click="searchRelation"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation">
+                <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
+                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
             </label>
         </p>
         <cmdb-table
@@ -104,7 +104,8 @@
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
-                }
+                },
+                sendSearchText: ''
             }
         },
         computed: {
@@ -125,11 +126,11 @@
                         sort: this.table.sort
                     }
                 }
-                if (this.searchText.length) {
+                if (this.sendSearchText.length) {
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
-                                '$regex': this.searchText
+                                '$regex': this.sendSearchText
                             }
                         }
                     })
@@ -153,7 +154,11 @@
                 'deleteAssociationType',
                 'searchAssociationListWithAssociationKindList'
             ]),
-            searchRelation () {
+            searchRelation (fromClick) {
+                if (fromClick) {
+                    this.table.pagination.current = 1
+                    this.sendSearchText = this.searchText
+                }
                 this.searchAssociationType({
                     params: this.searchParams,
                     config: {

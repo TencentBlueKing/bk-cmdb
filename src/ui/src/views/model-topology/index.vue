@@ -155,10 +155,6 @@
                     properties: {},
                     title: this.$t('ModelManagement["拓扑显示设置"]')
                 },
-                displayConfig: {
-                    isShowModelName: true,
-                    isShowModelAsst: true
-                },
                 topoTooltip: {
                     hoverNode: null,
                     hoverNodeTimer: null,
@@ -256,6 +252,7 @@
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
+            ...mapGetters('globalModels', ['modelConfig']),
             noPositionNodes () {
                 return this.network.nodes.filter(node => {
                     const position = node.data.position
@@ -265,13 +262,21 @@
             localClassifications () {
                 return this.$tools.clone(this.classifications).map(classify => {
                     classify['bk_objects'] = classify['bk_objects'].filter(model => {
-                        return !this.isModelInTopo(model) && !this.specialModel.includes(model['bk_obj_id'])
+                        return !this.isModelInTopo(model) &&
+                            !this.specialModel.includes(model['bk_obj_id']) &&
+                            !model.bk_ispaused
                     })
                     return classify
                 })
             },
             authority () {
                 return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
+            },
+            displayConfig () {
+                return {
+                    isShowModelName: this.modelConfig.isShowModelName === undefined ? true : this.modelConfig.isShowModelName,
+                    isShowModelAsst: this.modelConfig.isShowModelAsst === undefined ? true : this.modelConfig.isShowModelAsst
+                }
             }
         },
         watch: {
@@ -719,7 +724,8 @@
                                 name: nodeData['node_name'],
                                 backgroundColor: '#fff'
                             }))}`,
-                            data: nodeData
+                            data: nodeData,
+                            hidden: !this.modelConfig[nodeData.bk_obj_id]
                         }
                         if (this.displayConfig.isShowModelName) {
                             node.label = nodeData['node_name']

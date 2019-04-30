@@ -4,7 +4,7 @@
             :placeholder="$t('Form[\'请输入浮点数\']')"
             :value="value"
             :disabled="disabled"
-            @input="handleInput"
+            @blur="handleInput"
             @change="handleChange">
     </div>
 </template>
@@ -14,7 +14,10 @@
         name: 'cmdb-form-float',
         props: {
             value: {
-                default: null
+                default: null,
+                validator (val) {
+                    return typeof val === 'number' || val === '' || val === null
+                }
             },
             disabled: {
                 type: Boolean,

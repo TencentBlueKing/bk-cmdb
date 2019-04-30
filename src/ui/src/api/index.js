@@ -20,7 +20,7 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.response.use(
     response => {
-        return response.data
+        return response
     },
     error => {
         return Promise.reject(error)
@@ -44,7 +44,8 @@ const $http = {
     },
     deleteHeader: key => {
         delete axiosInstance.defaults.headers[key]
-    }
+    },
+    download: download
 }
 
 const methodsWithoutData = ['delete', 'get', 'head', 'options']
@@ -128,10 +129,11 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @return
  */
 function handleResponse ({config, response, resolve, reject}) {
-    if (!response.result && config.globalError) {
-        reject({message: response['bk_error_msg']})
+    const transformedResponse = response.data
+    if (!transformedResponse.result && config.globalError) {
+        reject({ message: transformedResponse['bk_error_msg'] })
     } else {
-        resolve(config.originalResponse ? response : response.data, config)
+        resolve(config.originalResponse ? response : config.transformData ? transformedResponse.data : transformedResponse)
     }
 }
 
@@ -188,6 +190,8 @@ function initConfig (method, url, userConfig) {
         clearCache: false,
         // 响应结果是否返回原始数据
         originalResponse: false,
+        // 转换返回数据，仅返回data对象
+        transformData: true,
         // 当路由变更时取消请求
         cancelWhenRouteChange: true,
         // 取消上次请求
@@ -211,6 +215,48 @@ function getCancelToken () {
         cancelToken,
         cancelExcutor
     }
+}
+
+function download (options = {}) {
+    const { url, method = 'post', data } = options
+    const config = Object.assign({
+        globalError: false,
+        originalResponse: true
+    }, options.config)
+    if (!url) {
+        $error('Empty download url')
+        return false
+    }
+    let promise
+    if (methodsWithData.includes(method)) {
+        promise = $http[method](url, data, config)
+    } else {
+        promise = $http[method](url, config)
+    }
+    promise.then(response => {
+        const data = response.data
+        if (
+            typeof data === 'object' &&
+            data.hasOwnProperty('result') &&
+            !data.result
+        ) {
+            $error(data.bk_error_msg)
+        } else {
+            const disposition = response.headers['content-disposition']
+            const fileName = disposition.substring(disposition.indexOf('filename') + 9)
+            const downloadUrl = window.URL.createObjectURL(new Blob([data], {
+                type: response.headers['content-type']
+            }))
+            const link = document.createElement('a')
+            link.style.display = 'none'
+            link.href = downloadUrl
+            link.setAttribute('download', fileName)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }
+        return response
+    })
 }
 
 Vue.prototype.$http = $http
