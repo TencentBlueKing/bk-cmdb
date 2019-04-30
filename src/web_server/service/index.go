@@ -31,61 +31,63 @@ func (s *Service) Index(c *gin.Context) {
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	language, _ := session.Get(common.WEBSessionLanguageKey).(string)
 
-	userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
+	if s.Config.Site.AuthScheme == "internal" {
+		userPriviApp, rolePrivilege, modelPrivi, sysPrivi, mainLineObjIDArr := s.Logics.GetUserAppPri(userName, common.BKDefaultOwnerID, language)
 
-	var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
-	if nil == userPriviApp {
-		strUserPriveApp = ""
-	} else {
-		cstrUserPriveApp, _ := json.Marshal(userPriviApp)
-		strUserPriveApp = string(cstrUserPriveApp)
-	}
-
-	if nil == rolePrivilege {
-		strRolePrivilege = ""
-	} else {
-		cstrRolePrivilege, _ := json.Marshal(rolePrivilege)
-		strRolePrivilege = string(cstrRolePrivilege)
-	}
-	if nil == modelPrivi {
-		strModelPrivi = ""
-	} else {
-		cstrModelPrivi, err := json.Marshal(modelPrivi)
-		if err != nil {
-			blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v", modelPrivi, err)
+		var strUserPriveApp, strRolePrivilege, strModelPrivi, strSysPrivi, mainLineObjIDStr string
+		if nil == userPriviApp {
+			strUserPriveApp = ""
+		} else {
+			cstrUserPriveApp, _ := json.Marshal(userPriviApp)
+			strUserPriveApp = string(cstrUserPriveApp)
 		}
-		strModelPrivi = string(cstrModelPrivi)
-	}
-	if nil == sysPrivi {
-		strSysPrivi = ""
-	} else {
-		cstrSysPrivi, err := json.Marshal(sysPrivi)
-		if err != nil {
-			blog.Errorf("marshal system privilege failed, info: %+v, err: %v", sysPrivi, err)
+
+		if nil == rolePrivilege {
+			strRolePrivilege = ""
+		} else {
+			cstrRolePrivilege, _ := json.Marshal(rolePrivilege)
+			strRolePrivilege = string(cstrRolePrivilege)
 		}
-		strSysPrivi = string(cstrSysPrivi)
-	}
+		if nil == modelPrivi {
+			strModelPrivi = ""
+		} else {
+			cstrModelPrivi, err := json.Marshal(modelPrivi)
+			if err != nil {
+				blog.Errorf("marshal model privilege failed, model privilege: %+v, err: %v", modelPrivi, err)
+			}
+			strModelPrivi = string(cstrModelPrivi)
+		}
+		if nil == sysPrivi {
+			strSysPrivi = ""
+		} else {
+			cstrSysPrivi, err := json.Marshal(sysPrivi)
+			if err != nil {
+				blog.Errorf("marshal system privilege failed, info: %+v, err: %v", sysPrivi, err)
+			}
+			strSysPrivi = string(cstrSysPrivi)
+		}
 
-	mainLineObjIDB, err := json.Marshal(mainLineObjIDArr)
-	if err != nil {
-		blog.Errorf("marshal mainline failed, info: %+v, err: %v", mainLineObjIDArr, err)
-	}
-	mainLineObjIDStr = string(mainLineObjIDB)
+		mainLineObjIDB, err := json.Marshal(mainLineObjIDArr)
+		if err != nil {
+			blog.Errorf("marshal mainline failed, info: %+v, err: %v", mainLineObjIDArr, err)
+		}
+		mainLineObjIDStr = string(mainLineObjIDB)
 
-	session.Set("userPriviApp", string(strUserPriveApp))
-	session.Set("rolePrivilege", string(strRolePrivilege))
-	session.Set("modelPrivi", string(strModelPrivi))
-	session.Set("sysPrivi", string(strSysPrivi))
-	session.Set("mainLineObjID", string(mainLineObjIDStr))
-	session.Save()
+		session.Set("userPriviApp", string(strUserPriveApp))
+		session.Set("rolePrivilege", string(strRolePrivilege))
+		session.Set("modelPrivi", string(strModelPrivi))
+		session.Set("sysPrivi", string(strSysPrivi))
+		session.Set("mainLineObjID", string(mainLineObjIDStr))
+		session.Save()
 
-	// set cookie
-	appIDArr := make([]string, 0)
-	for key := range userPriviApp {
-		appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+		// set cookie
+		appIDArr := make([]string, 0)
+		for key := range userPriviApp {
+			appIDArr = append(appIDArr, strconv.FormatInt(key, 10))
+		}
+		appIDStr := strings.Join(appIDArr, "-")
+		c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
 	}
-	appIDStr := strings.Join(appIDArr, "-")
-	c.SetCookie("bk_privi_biz_id", appIDStr, 24*60*60, "", "", false, false)
 
 	c.HTML(200, "index.html", gin.H{
 		"site":        s.Config.Site.DomainUrl,
