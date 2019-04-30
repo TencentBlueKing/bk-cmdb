@@ -124,8 +124,8 @@ func (s *coreService) host() {
 }
 
 func (s *coreService) audit() {
-	s.addAction(http.MethodPost, "/create/auditlog", CreateAuditLog, nil)
-	s.addAction(http.MethodPost, "/read/auditlog", SearchAuditLog, nil)
+	s.addAction(http.MethodPost, "/create/auditlog", s.CreateAuditLog, nil)
+	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
 }
 
 func (s *coreService) initService() {

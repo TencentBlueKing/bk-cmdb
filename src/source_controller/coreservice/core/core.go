@@ -150,7 +150,7 @@ type AssociationOperation interface {
 
 type AuditOperation interface {
 	CreateAuditLog(ctx ContextParams, logs ...metadata.CreateAuditLogParams) error
-	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) (metadata.Response, error)
+	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
 }
 
 // Core core itnerfaces methods
