@@ -13,6 +13,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -22,7 +23,6 @@ import (
 	"configcenter/src/apiserver/core/compatiblev2/common/utils"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
