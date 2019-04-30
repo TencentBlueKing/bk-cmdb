@@ -123,6 +123,11 @@ func (s *coreService) host() {
 
 }
 
+func (s *coreService) audit() {
+	s.addAction(http.MethodPost, "/create/auditlog", CreateAuditLog, nil)
+	s.addAction(http.MethodPost, "/read/auditlog", SearchAuditLog, nil)
+}
+
 func (s *coreService) initService() {
 	s.initHealth()
 	s.initModelClassification()

@@ -16,6 +16,15 @@ import (
 	"configcenter/src/common/auditoplog"
 )
 
+type CreateAuditLogParams struct {
+	ID      int64                  `json:"inst_id"`
+	Content interface{}            `json:"content"`
+	ExtKey  string                 `json:"ext"`
+	OpDesc  string                 `json:"op_desc"`
+	OpType  auditoplog.AuditOpType `json:"op_type"`
+	BizID   int64                  `json:"biz_id"`
+}
+
 // AuditHostLogParams add single host log parammeter
 type AuditHostLogParams struct {
 	Content interface{}            `json:"content"`
@@ -112,10 +121,10 @@ type AuditQueryResult struct {
 
 // AuditAssociationLogParams represent add single association log parameter
 type AuditAssociationLogParams struct {
-	Content interface{}            `json:"content"`
-	OpDesc  string                 `json:"op_desc"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	AssociationID  int64           `json:"inst_id"`
+	Content       interface{}            `json:"content"`
+	OpDesc        string                 `json:"op_desc"`
+	OpType        auditoplog.AuditOpType `json:"op_type"`
+	AssociationID int64                  `json:"inst_id"`
 }
 
 // AuditAssociationsLogParams represent add multiple association log parameter
