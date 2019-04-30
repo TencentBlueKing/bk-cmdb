@@ -45,21 +45,22 @@ type BackboneParameter struct {
 	SrvInfo *types.ServerInfo
 }
 
-func newManageSrvClient(ctx context.Context, manageSrvAddr string) (*zk.ZkClient, error) {
-	client := zk.NewZkClient(manageSrvAddr, 5*time.Second)
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+	client := zk.NewZkClient(svcManagerAddr, 5*time.Second)
 	if err := client.Start(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
+
 	if err := client.Ping(); err != nil {
-		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", manageSrvAddr, err)
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
 
 	return client, nil
 }
 
-func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachinerConfig *util.APIMachineryConfig) (*Config, error) {
+func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discovery.DiscoveryInterface, apiMachineryConfig *util.APIMachineryConfig) (*Config, error) {
 
-	machinery, err := apimachinery.NewApiMachinery(apiMachinerConfig, discovery)
+	machinery, err := apimachinery.NewApiMachinery(apiMachineryConfig, discovery)
 	if err != nil {
 		return nil, fmt.Errorf("new api machinery failed, err: %v", err)
 	}
@@ -74,7 +75,7 @@ func newConfig(ctx context.Context, srvInfo *types.ServerInfo, discovery discove
 	return bonC, nil
 }
 
-func parameterValid(input *BackboneParameter) error {
+func validateParameter(input *BackboneParameter) error {
 	if input.Regdiscv == "" {
 		return fmt.Errorf("regdiscv can not be emtpy")
 	}
@@ -93,19 +94,20 @@ func parameterValid(input *BackboneParameter) error {
 }
 
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
-	if err := parameterValid(input); err != nil {
+	if err := validateParameter(input); err != nil {
 		return nil, err
 	}
+
 	common.SetServerInfo(input.SrvInfo)
-	client, err := newManageSrvClient(ctx, input.Regdiscv)
+	client, err := newSvcManagerClient(ctx, input.Regdiscv)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	discoveryInterface, err := discovery.NewDiscoveryInterface(client)
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	disc, err := NewServcieDiscovery(client)
+	disc, err := NewServiceRegister(client)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
 	}
@@ -115,7 +117,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		Burst:     2000,
 		TLSConfig: nil,
 	}
-	c, err := newConfig(ctx, input.SrvInfo, discoveryInterface, apiMachineryConfig)
+	c, err := newConfig(ctx, input.SrvInfo, serviceDiscovery, apiMachineryConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -124,9 +126,9 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("new engine failed, err: %v", err)
 	}
 	engine.client = client
-	engine.apiMachinerConfig = apiMachineryConfig
-	engine.discovery = discoveryInterface
-	engine.ServiceManageInterface = discoveryInterface
+	engine.apiMachineryConfig = apiMachineryConfig
+	engine.discovery = serviceDiscovery
+	engine.ServiceManageInterface = serviceDiscovery
 	engine.srvInfo = input.SrvInfo
 
 	handler := &cc.CCHandler{
@@ -151,13 +153,13 @@ func StartServer(ctx context.Context, e *Engine, HTTPHandler http.Handler) error
 		TLS:        TLSConfig{},
 	}
 
-	if err := ListenServer(e.server); err != nil {
+	if err := ListenAndServe(e.server); err != nil {
 		return err
 	}
 	return nil
 }
 
-func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
+func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
 	if err := disc.Register(c.RegisterPath, c.RegisterInfo); err != nil {
 		return nil, err
 	}
@@ -173,19 +175,23 @@ func New(c *Config, disc ServiceDiscoverInterface) (*Engine, error) {
 }
 
 type Engine struct {
-	client *zk.ZkClient
-	sync.Mutex
-	ServerInfo             types.ServerInfo
-	CoreAPI                apimachinery.ClientSetInterface
-	SvcDisc                ServiceDiscoverInterface
-	Language               language.CCLanguageIf
-	CCErr                  errors.CCErrorIf
-	CCCtx                  CCContextInterface
+	CoreAPI            apimachinery.ClientSetInterface
+	apiMachineryConfig *util.APIMachineryConfig
+
+	client                 *zk.ZkClient
 	ServiceManageInterface discovery.ServiceManageInterface
-	apiMachinerConfig      *util.APIMachineryConfig
+	SvcDisc                ServiceRegisterInterface
 	discovery              discovery.DiscoveryInterface
-	server                 Server
-	srvInfo                *types.ServerInfo
+
+	sync.Mutex
+
+	ServerInfo types.ServerInfo
+	server     Server
+	srvInfo    *types.ServerInfo
+
+	Language language.CCLanguageIf
+	CCErr    errors.CCErrorIf
+	CCCtx    CCContextInterface
 }
 
 func (e *Engine) Discovery() discovery.DiscoveryInterface {
@@ -193,7 +199,7 @@ func (e *Engine) Discovery() discovery.DiscoveryInterface {
 }
 
 func (e *Engine) ApiMachineryConfig() *util.APIMachineryConfig {
-	return e.apiMachinerConfig
+	return e.apiMachineryConfig
 }
 
 func (e *Engine) ServiceManageClient() *zk.ZkClient {
