@@ -38,6 +38,7 @@ import (
 func Run(ctx context.Context, op *options.ServerOption) error {
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
+		blog.Errorf("wrap server info failed, err: %v", err)
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
@@ -53,6 +54,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
+		blog.Errorf("new backbone failed, err: %v", err)
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 	configReady := false
@@ -71,6 +73,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	cacheDB, err := redis.NewFromConfig(hostSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
+		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
 	blog.Info("host server auth config is: %+v", hostSrv.Config.Auth)
@@ -88,6 +91,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSrv.Service = service
 
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
 
