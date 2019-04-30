@@ -52,21 +52,22 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 		var registerPath string
 		var watchEvn <-chan gozk.Event
 		var err error
-		
+
 		timer1 := time.NewTicker(5 * time.Second)
 		watchCtx := zkRD.rootCxt
 		for {
 			select {
 			case <-timer1.C:
-				if len(registerPath) == 0 {
-					newPath, err := zkRD.zkcli.CreateEphAndSeqEx(path, data)
-					if err != nil {
-						blog.Errorf("fail to register server node(%s). err:%s", path, err.Error())
-						continue
-					}
-					registerPath = newPath
+				if len(registerPath) > 0 {
+					// watchEvn will let us known any change on registerPath
+					continue
 				}
 
+				registerPath, err = zkRD.zkcli.CreateEphAndSeqEx(path, data)
+				if err != nil {
+					blog.Errorf("fail to register server node(%s). err:%s", path, err.Error())
+					continue
+				}
 				_, _, watchEvn, err = zkRD.zkcli.ExistW(registerPath)
 				if err != nil {
 					blog.Errorf("fail to watch register node(%s), err:%s\n", registerPath, err.Error())
