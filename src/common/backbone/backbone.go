@@ -50,7 +50,7 @@ func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClie
 	if err := client.Start(); err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
-	
+
 	if err := client.Ping(); err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 	}
@@ -107,7 +107,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 	}
-	disc, err := NewServiceDiscovery(client)
+	disc, err := NewServiceRegister(client)
 	if err != nil {
 		return nil, fmt.Errorf("new service discover failed, err:%v", err)
 	}
@@ -175,23 +175,23 @@ func New(c *Config, disc ServiceRegisterInterface) (*Engine, error) {
 }
 
 type Engine struct {
-	CoreAPI                apimachinery.ClientSetInterface
-	apiMachineryConfig      *util.APIMachineryConfig
-	
-	client *zk.ZkClient
+	CoreAPI            apimachinery.ClientSetInterface
+	apiMachineryConfig *util.APIMachineryConfig
+
+	client                 *zk.ZkClient
 	ServiceManageInterface discovery.ServiceManageInterface
 	SvcDisc                ServiceRegisterInterface
 	discovery              discovery.DiscoveryInterface
-	
+
 	sync.Mutex
-	
-	ServerInfo             types.ServerInfo
-	server                 Server
-	srvInfo                *types.ServerInfo
-	
-	Language               language.CCLanguageIf
-	CCErr                  errors.CCErrorIf
-	CCCtx                  CCContextInterface
+
+	ServerInfo types.ServerInfo
+	server     Server
+	srvInfo    *types.ServerInfo
+
+	Language language.CCLanguageIf
+	CCErr    errors.CCErrorIf
+	CCCtx    CCContextInterface
 }
 
 func (e *Engine) Discovery() discovery.DiscoveryInterface {
