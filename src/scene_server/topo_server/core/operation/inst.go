@@ -26,6 +26,7 @@ import (
 	frtypes "configcenter/src/common/mapstr"
 	metatype "configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -240,6 +241,13 @@ func (c *commonInst) setInstAsst(params types.ContextParams, obj model.Object, i
 		asstInstIDS := []int64{}
 		switch targetAssts := asstVal.(type) {
 		default:
+		case int64, float64, float32:
+			val, err := util.GetInt64ByInterface(asstVal)
+			if err != nil {
+				blog.Errorf("unexpected error, convert value to int64 failed, err: %+v", err)
+				return fmt.Errorf("unexpected error, convert value to int64 failed, err: %+v", err)
+			}
+			asstInstIDS = append(asstInstIDS, val)
 		case string:
 			tmpIDS := strings.Split(targetAssts, common.InstAsstIDSplit)
 			for _, asstID := range tmpIDS {
@@ -1016,15 +1024,38 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data frtypes.MapStr,
 		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), error info is %s", cond.ToMapStr(), err.Error())
 		return err
 	}
-	for _, inst := range insts {
+	if len(insts) == 0 {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), not found", cond.ToMapStr())
+		return fmt.Errorf("get instance by id:%d not found", instID)
+	}
+	if len(insts) > 1 {
+		blog.Errorf("[operation-inst] failed to search insts by the condition(%#v), not found", cond.ToMapStr())
+		return fmt.Errorf("get instance by id:%d not found", instID)
+	}
 
-		data.ForEach(func(key string, val interface{}) {
-			inst.SetValue(key, val)
-		})
+	inst := insts[0]
+	data.ForEach(func(key string, val interface{}) {
+		inst.SetValue(key, val)
+	})
 
-		if err := c.setInstAsst(params, obj, inst); nil != err {
-			blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
-			return err
+	if err := c.setInstAsst(params, obj, inst); nil != err {
+		blog.Errorf("[operation-inst] failed to set the inst asst, error info is %s", err.Error())
+		return err
+	}
+
+	// fix association attributes here, as it has been update independent upper
+	attrs, err := obj.GetAttributesExceptInnerFields()
+	if nil != err {
+		blog.Errorf("[operation-inst] failed to get instance attributes, error info is %s", err.Error())
+		return err
+	}
+	for _, attr := range attrs {
+
+		if attr.IsAssociationType() {
+			associationAttribute := attr.GetName()
+			if _, exist := data[associationAttribute]; exist == true {
+				data[associationAttribute] = insts[0].GetValues()[associationAttribute]
+			}
 		}
 	}
 
