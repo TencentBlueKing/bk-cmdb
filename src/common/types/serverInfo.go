@@ -61,7 +61,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:      true,
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
-	// CC_MODULE_SYNCHRONZESERVER: true,
+	CC_MODULE_SYNCHRONZESERVER: true,
 }
 
 // cc functionality define
