@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package metric
 
 import (
@@ -21,35 +33,35 @@ func newGoMetricCollector() *Collector {
 			},
 		},
 		goCPUMetric: goMetric{
-			Name: "go_cpu_used",
-			Help: " the number of logical CPUs usable by the current process.",
-			GetFunc: func() float64 { return float64(runtime.NumCPU() )},
+			Name:    "go_cpu_used",
+			Help:    " the number of logical CPUs usable by the current process.",
+			GetFunc: func() float64 { return float64(runtime.NumCPU()) },
 		},
 		goMemStateMetrics: []goMetric{
 			{
-				Name:    memstatNamespace("alloc_bytes"),
-				Help:    "Number of bytes allocated and still in use.",
-				MemGetFunc: func(ms *runtime.MemStats) float64 {return float64(ms.Alloc)},
+				Name:       memstatNamespace("alloc_bytes"),
+				Help:       "Number of bytes allocated and still in use.",
+				MemGetFunc: func(ms *runtime.MemStats) float64 { return float64(ms.Alloc) },
 			},
 			{
-				Name:    memstatNamespace("alloc_bytes_total"),
-				Help:    "Total number of bytes allocated, even if freed.",
-				MemGetFunc: func(ms *runtime.MemStats) float64 {return float64(ms.TotalAlloc)},
+				Name:       memstatNamespace("alloc_bytes_total"),
+				Help:       "Total number of bytes allocated, even if freed.",
+				MemGetFunc: func(ms *runtime.MemStats) float64 { return float64(ms.TotalAlloc) },
 			},
 			{
-				Name:    memstatNamespace("sys_bytes"),
-				Help:    "Number of bytes obtained from system.",
-				MemGetFunc: func(ms *runtime.MemStats) float64 {return float64(ms.Sys)},
+				Name:       memstatNamespace("sys_bytes"),
+				Help:       "Number of bytes obtained from system.",
+				MemGetFunc: func(ms *runtime.MemStats) float64 { return float64(ms.Sys) },
 			},
 			{
-				Name:    memstatNamespace("mallocs_total"),
-				Help:    "Total number of mallocs.",
-				MemGetFunc: func(ms *runtime.MemStats) float64 {return float64(ms.Mallocs) },
+				Name:       memstatNamespace("mallocs_total"),
+				Help:       "Total number of mallocs.",
+				MemGetFunc: func(ms *runtime.MemStats) float64 { return float64(ms.Mallocs) },
 			},
 			{
-				Name:    memstatNamespace("frees_total"),
-				Help:    "Total number of frees.",
-				MemGetFunc: func(ms *runtime.MemStats) float64 {return float64(ms.Frees)},
+				Name:       memstatNamespace("frees_total"),
+				Help:       "Total number of frees.",
+				MemGetFunc: func(ms *runtime.MemStats) float64 { return float64(ms.Frees) },
 			},
 			//{
 			//	Name:    memstatNamespace("lookups_total"),
@@ -163,10 +175,10 @@ type golang struct {
 	goMemStateMetrics []goMetric
 }
 
-func (g golang) Collect()[]MetricInterf {
+func (g golang) Collect() []MetricInterf {
 	m := make([]MetricInterf, 0)
-	m = append(m, &g.goRoutineMetric)
-	m = append(m, &g.goProcessMetric)
+	m = append(m, g.goRoutineMetric)
+	m = append(m, g.goProcessMetric)
 
 	ms := &runtime.MemStats{}
 	runtime.ReadMemStats(ms)
@@ -185,8 +197,8 @@ type goMetric struct {
 	GetFunc    func() float64
 }
 
-func (m goMetric)GetMeta() MetricMeta {
-	return MetricMeta{
+func (m goMetric) GetMeta() *MetricMeta {
+	return &MetricMeta{
 		Name: m.Name,
 		Help: m.Help,
 	}

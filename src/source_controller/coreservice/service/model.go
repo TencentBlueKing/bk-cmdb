@@ -73,7 +73,7 @@ func (s *coreService) DeleteModelClassification(params core.ContextParams, pathP
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err
 	}
-	return s.core.ModelOperation().DeleteModelClassificaiton(params, inputData)
+	return s.core.ModelOperation().DeleteModelClassification(params, inputData)
 }
 
 func (s *coreService) CascadeDeleteModelClassification(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -168,7 +168,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 
 		for attributeIdx := range dataResult.Info[modelIdx].Attributes {
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
-			dataResult.Info[modelIdx].Attributes[attributeIdx].Description = s.TranslateDescription(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
+			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
 				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx])
 			}
@@ -319,7 +319,7 @@ func (s *coreService) SearchModelAttributesByCondition(params core.ContextParams
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
@@ -343,7 +343,7 @@ func (s *coreService) SearchModelAttributes(params core.ContextParams, pathParam
 	// translate
 	for index := range dataResult.Info {
 		dataResult.Info[index].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[index])
-		dataResult.Info[index].Description = s.TranslateDescription(params.Lang, &dataResult.Info[index])
+		dataResult.Info[index].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[index])
 		if dataResult.Info[index].PropertyType == common.FieldTypeEnum {
 			dataResult.Info[index].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[index], dataResult.Info[index].Option)
 		}
@@ -383,8 +383,7 @@ func (s *coreService) UpdateModelAttrUnique(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	inputDatas := metadata.CreateManyModelClassifiaction{}
+	inputDatas := metadata.DeleteModelAttrUnique{}
 	if err := data.MarshalJSONInto(&inputDatas); nil != err {
 		return nil, err
 	}
@@ -394,5 +393,5 @@ func (s *coreService) DeleteModelAttrUnique(params core.ContextParams, pathParam
 		return nil, params.Error.Errorf(common.CCErrCommParamsNeedInt, "id")
 	}
 
-	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id)
+	return s.core.ModelOperation().DeleteModelAttrUnique(params, pathParams("bk_obj_id"), id, metadata.DeleteModelAttrUnique{Metadata: inputDatas.Metadata})
 }

@@ -119,7 +119,7 @@ func (s *Service) AddProcLog(req *restful.Request, resp *restful.Response) {
 
 	err = s.Logics.AddLogWithStr(ctx, appID, params.ProcID, params.OpType, common.BKInnerObjIDProc, params.Content, "", params.OpDesc, ownerID, user)
 	if nil != err {
-		blog.Errorf("AddProcLog json unmarshal failed,input:%v error:%s", err.Error())
+		blog.Errorf("AddProcLog json unmarshal failed. error:%s", err.Error())
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommDBInsertFailed)})
 		return
 	}

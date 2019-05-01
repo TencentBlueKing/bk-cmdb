@@ -1,11 +1,11 @@
 <template>
     <nav class="nav-layout"
-        :class="{'sticked': navStick, 'admin-view': isAdminView}"
+        :class="{ 'sticked': navStick, 'admin-view': isAdminView }"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave">
         <div class="nav-wrapper"
-            :class="{unfold: unfold, flexible: !navStick}">
-            <div class="logo" @click="$router.push({name: 'index'})">
+            :class="{ unfold: unfold, flexible: !navStick }">
+            <div class="logo" @click="$router.push({ name: 'index' })">
                 <span class="logo-text">
                     {{$t('Nav["蓝鲸配置平台"]')}}
                 </span>
@@ -13,40 +13,41 @@
                     {{$t('Nav["后台管理"]')}}
                 </span>
             </div>
-            <ul class="classify-list">
-                <li class="classify-item"
-                    v-for="(classify, index) in navigations"
+            <ul class="menu-list">
+                <li class="menu-item"
+                    v-for="(menu, index) in menus"
+                    :key="index"
                     :class="{
-                        active: isClassifyActive(classify),
-                        'is-open': openedClassify === classify.id,
-                        'is-link': classify.hasOwnProperty('path')
+                        active: active === menu.id,
+                        'is-open': open === menu.id,
+                        'is-link': menu.path
                     }">
-                    <h3 class="classify-info clearfix"
-                        :class="{'classify-link': classify.hasOwnProperty('path')}"
-                        @click="handleClassifyClick(classify)">
-                        <i :class="['classify-icon', classify.icon]"></i>
-                        <span class="classify-name">{{classify.i18n ? $t(classify.i18n) : classify.name}}</span>
+                    <h3 class="menu-info clearfix"
+                        :class="{ 'menu-link': menu.path }"
+                        @click="handleMenuClick(menu)">
+                        <i :class="['menu-icon', menu.icon]"></i>
+                        <span class="menu-name">{{menu.i18n ? $t(menu.i18n) : menu.name}}</span>
                         <i class="toggle-icon bk-icon icon-angle-right"
-                            v-if="classify.children && classify.children.length"
-                            :class="{open: classify.id === openedClassify}">
+                            v-if="menu.submenu && menu.submenu.length"
+                            :class="{ open: menu.id === open }">
                         </i>
                     </h3>
-                    <div class="classify-models" 
-                        v-if="classify.children && classify.children.length"
-                        :style="getClassifyModelsStyle(classify)">
-                        <router-link class="model-link" exact
-                            v-for="(model, modelIndex) in classify.children"
+                    <div class="menu-submenu"
+                        v-if="menu.submenu && menu.submenu.length"
+                        :style="getMenuModelsStyle(menu)">
+                        <router-link class="submenu-link" exact
+                            v-for="(submenu, submenuIndex) in menu.submenu"
                             :class="{
-                                active: isRouterActive(model),
-                                collection: classify.id === 'bk_collection'
+                                active: active === submenu.id,
+                                collection: menu.id === NAV_COLLECT
                             }"
-                            :key="modelIndex"
-                            :to="model.path"
-                            :title="model.i18n ? $t(model.i18n) : model.name">
-                            {{model.i18n ? $t(model.i18n) : model.name}}
+                            :key="submenuIndex"
+                            :to="submenu.path"
+                            :title="submenu.i18n ? $t(submenu.i18n) : submenu.name">
+                            {{submenu.i18n ? $t(submenu.i18n) : submenu.name}}
                             <i class="bk-icon icon-close"
-                                v-if="classify.id === 'bk_collection'"
-                                @click.stop.prevent="handleDeleteCollection(model)">
+                                v-if="menu.id === NAV_COLLECT"
+                                @click.stop.prevent="handleDeleteCollection(submenu)">
                             </i>
                         </router-link>
                     </div>
@@ -65,130 +66,85 @@
     </nav>
 </template>
 <script>
-import { mapGetters } from 'vuex'
-export default {
-    data () {
-        return {
-            routerLinkHeight: 42,
-            openedClassify: null,
-            timer: null
-        }
-    },
-    computed: {
-        ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
-        ...mapGetters('objectModelClassify', ['classifications', 'authorizedNavigation', 'staticClassifyId']),
-        ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
-        fixedClassifyId () {
-            return [...this.staticClassifyId, 'bk_organization']
-        },
-        unfold () {
-            return this.navStick || !this.navFold
-        },
-        // 当前导航对应的分类ID
-        activeClassifyId () {
-            return this.$classify.classificationId
-        },
-        navigations () {
-            const navigations = this.$tools.clone(this.authorizedNavigation)
-            if (this.admin) {
-                if (this.isAdminView) {
-                    return navigations.filter(classify => classify.classificationId !== 'bk_business_resource')
-                }
-                return navigations
-            }
-            navigations.forEach(classify => {
-                classify.children = classify.children.filter(child => child.authorized)
-            })
-            return navigations.filter(classify => {
-                return (classify.hasOwnProperty('path') && classify.authorized) || classify.children.length
-            })
-        },
-        // 展开的分类子菜单高度
-        openedClassifyHeight () {
-            const openedClassify = this.navigations.find(classify => classify.id === this.openedClassify)
-            if (openedClassify) {
-                const modelsCount = openedClassify.children.length
-                return modelsCount * this.routerLinkHeight
-            }
-            return 0
-        }
-    },
-    watch: {
-        activeClassifyId (id) {
-            this.openedClassify = id
-        }
-    },
-    methods: {
-        isClassifyActive (classify) {
-            const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
-            return classify.path === path || this.activeClassifyId === classify.id
-        },
-        isActiveClosed (classify) {
-            return this.activeClassifyId === classify.id &&
-                (this.openedClassify === null || !this.unfold)
-        },
-        isAvailableClassify (classify) {
-            if (classify.hasOwnProperty('path')) {
-                return true
-            }
-            return classify.children.some(sub => sub.authorized)
-        },
-        handleMouseEnter () {
-            if (this.timer) {
-                clearTimeout(this.timer)
-            }
-            this.$store.commit('setNavStatus', { fold: false })
-        },
-        handleMouseLeave () {
-            this.timer = setTimeout(() => {
-                this.$store.commit('setNavStatus', { fold: true })
-            }, 300)
-        },
-        // 分类点击事件
-        handleClassifyClick (classify) {
-            this.checkPath(classify)
-            this.toggleClassify(classify)
-        },
-        isRouterActive (model) {
-            const path = this.$route.meta.relative || this.$route.query.relative || this.$route.path
-            return model.path === path
-        },
-        getClassifyModelsStyle (classify) {
+    import { mapGetters } from 'vuex'
+    // eslint-disable-next-line
+    import MENU, { NAV_COLLECT } from '@/dictionary/menu'
+    // eslint-disable-next-line
+    import MODEL_ROUTER_CONFIG, { GET_MODEL_PATH } from '@/views/general-model/router.config'
+    export default {
+        data () {
             return {
-                height: (this.unfold && classify.id === this.openedClassify) ? this.openedClassifyHeight + 'px' : 0
+                NAV_COLLECT,
+                routerLinkHeight: 42,
+                timer: null
             }
         },
-        // 被点击的有对应的路由，则跳转
-        checkPath (classify) {
-            if (classify.hasOwnProperty('path')) {
-                this.$router.push({path: classify.path})
+        computed: {
+            ...mapGetters(['navStick', 'navFold', 'admin', 'isAdminView']),
+            ...mapGetters('menu', ['active', 'open', 'menus']),
+            ...mapGetters('userCustom', ['usercustom', 'classifyNavigationKey']),
+            unfold () {
+                return this.navStick || !this.navFold
+            },
+            // 展开的分类子菜单高度
+            /* eslint-disable */
+            openedMenuHeight () {
+                const openedMenu = this.menus.find(menu => menu.id === this.open)
+                if (openedMenu) {
+                    const submenuCount = (openedMenu.submenu || []).length
+                    return submenuCount * this.routerLinkHeight
+                }
             }
+            /* eslint-disable end */
         },
-        // 切换展开的分类
-        toggleClassify (classify) {
-            this.openedClassify = classify.id === this.openedClassify ? null : classify.id
-        },
-        // 切换导航展开固定
-        toggleNavStick () {
-            this.$store.commit('setNavStatus', {
-                fold: !this.navFold,
-                stick: !this.navStick
-            })
-        },
-        handleDeleteCollection (model) {
-            if (['biz', 'resource'].includes(model.id)) {
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    [`is_${model.id}_collected`]: false
+        methods: {
+            handleMouseEnter () {
+                if (this.timer) {
+                    clearTimeout(this.timer)
+                }
+                this.$store.commit('setNavStatus', { fold: false })
+            },
+            handleMouseLeave () {
+                this.timer = setTimeout(() => {
+                    this.$store.commit('setNavStatus', { fold: true })
+                }, 300)
+            },
+            // 分类点击事件
+            handleMenuClick (menu) {
+                this.checkPath(menu)
+                this.toggleMenu(menu)
+            },
+            getMenuModelsStyle (menu) {
+                return {
+                    height: (this.unfold && menu.id === this.open) ? this.openedMenuHeight + 'px' : 0
+                }
+            },
+            // 被点击的有对应的路由，则跳转
+            checkPath (menu) {
+                if (menu.path) {
+                    this.$router.push({ path: menu.path })
+                }
+            },
+            // 切换展开的分类
+            toggleMenu (menu) {
+                const openMenu = menu.id === this.open ? null : menu.id
+                this.$store.commit('menu/setOpenMenu', openMenu)
+            },
+            // 切换导航展开固定
+            toggleNavStick () {
+                this.$store.commit('setNavStatus', {
+                    fold: !this.navFold,
+                    stick: !this.navStick
                 })
-            } else {
-                const customNavigation = this.usercustom[this.classifyNavigationKey] || []
+            },
+            handleDeleteCollection (model) {
+                const collectedModels = this.usercustom.collected_models
                 this.$store.dispatch('userCustom/saveUsercustom', {
-                    [this.classifyNavigationKey]: customNavigation.filter(id => id !== model.id)
+                    collected_models: collectedModels.filter(id => id !== model.id)
                 })
             }
         }
     }
-}
 </script>
 <style lang="scss" scoped>
 $cubicBezier: cubic-bezier(0.4, 0, 0.2, 1);
@@ -233,7 +189,7 @@ $color: #979ba5;
     border-bottom: 1px solid rgba(255, 255, 255, .05);
     background-color: #182132;
     line-height: 59px;
-    color: #a3acb9;
+    color: #fff;
     font-size: 0;
     font-weight: bold;
     white-space: nowrap;
@@ -252,17 +208,17 @@ $color: #979ba5;
         margin: 0 0 0 4px;
         vertical-align: middle;
         border-radius: 2px;
-        color: #fff;
+        color: #282b41;
         font-size: 20px;
         font-weight: normal;
         line-height: 32px;
-        background: #e3a547;
+        background: #18b48a;
         transform: scale(0.5);
         transform-origin: left center;
     }
 }
 
-.classify-list {
+.menu-list {
     height: calc(100% - 120px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -279,7 +235,7 @@ $color: #979ba5;
         }
     }
 
-    .classify-item {
+    .menu-item {
         position: relative;
         transition: background-color $duration $cubicBezier;
 
@@ -288,12 +244,12 @@ $color: #979ba5;
         }
         &.active.is-link {
             background-color: #3a84ff;
-            .classify-icon,
-            .classify-name {
+            .menu-icon,
+            .menu-name {
                 color: #fff;
             }
         }
-        .classify-info {
+        .menu-info {
             margin: 0;
             padding: 0;
             height: 42px;
@@ -305,7 +261,7 @@ $color: #979ba5;
             cursor: pointer;
         }
 
-        .classify-icon {
+        .menu-icon {
             display: inline-block;
             vertical-align: top;
             margin: 13px 26px 13px 22px;
@@ -313,7 +269,7 @@ $color: #979ba5;
             color: rgba(255, 255, 255, .8);
         }
 
-        .classify-name {
+        .menu-name {
             display: inline-block;
             width: calc(100% - 120px);
             vertical-align: top;
@@ -335,13 +291,13 @@ $color: #979ba5;
     }
 }
 
-.classify-models {
+.menu-submenu {
     height: 0;
     line-height: 42px;
     font-size: 14px;
     overflow: hidden;
     transition: height $duration $cubicBezier;
-    .model-link {
+    .submenu-link {
         position: relative;
         display: block;
         padding: 0 0 0 64px;

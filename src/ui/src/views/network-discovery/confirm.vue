@@ -1,6 +1,6 @@
 <template>
     <div class="network-confirm-wrapper">
-        <div class="filter-wrapper" :class="{'open': filter.isShow}">
+        <div class="filter-wrapper" :class="{ 'open': filter.isShow }">
             <bk-button type="default" @click="toggleFilter">
                 {{$t('NetworkDiscovery["批量操作"]')}}
                 <i class="bk-icon icon-angle-down"></i>
@@ -43,15 +43,15 @@
             :loading="$loading('searchNetcollectList')"
             :header="table.header"
             :list="tableList"
-            :wrapperMinusHeight="210"
-            :defaultSort="table.defaultSort"
+            :wrapper-minus-height="210"
+            :default-sort="table.defaultSort"
             :checked.sync="table.checked"
             @handleSortChange="handleSortChange"
             @handleCheckAll="handleCheckAll">
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
                     :key="index"
-                    v-if="header.id === 'id'" 
+                    v-if="header.id === 'id'"
                     @click.stop>
                     <input type="checkbox"
                         :value="item['bk_inst_key']"
@@ -64,28 +64,28 @@
                     </div>
                 </template>
                 <template v-else-if="header.id === 'action'">
-                    <span :key="index" :class="{'ignore': item.ignore, 'color-warning': item.action === 'update', 'color-danger' : item.action === 'delete'}">{{actionMap[item.action]}}</span>
+                    <span :key="index" :class="{ 'ignore': item.ignore, 'color-warning': item.action === 'update', 'color-danger': item.action === 'delete' }">{{actionMap[item.action]}}</span>
                 </template>
                 <template v-else-if="header.id === 'last_time'">
-                    <span :key="index" :class="{'ignore': item.ignore}">{{$tools.formatTime(item['last_time'])}}</span>
+                    <span :key="index" :class="{ 'ignore': item.ignore }">{{$tools.formatTime(item['last_time'])}}</span>
                 </template>
                 <template v-else>
-                    <span :key="index" :class="{'ignore': item.ignore}">{{item[header.id]}}</span>
+                    <span :key="index" :class="{ 'ignore': item.ignore }">{{item[header.id]}}</span>
                 </template>
             </template>
         </cmdb-table>
         <cmdb-slider
             :width="740"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <v-confirm-details
-            slot="content"
-            :ignore="activeItem.ignore"
-            :attributes.sync="activeItem.attributes"
-            :associations.sync="activeItem.associations"
-            :detailPage="detailPage"
-            @toggleSwitcher="toggleSwitcher"
-            @updateView="updateView"
+                slot="content"
+                :ignore="activeItem.ignore"
+                :attributes.sync="activeItem.attributes"
+                :associations.sync="activeItem.associations"
+                :detail-page="detailPage"
+                @toggleSwitcher="toggleSwitcher"
+                @updateView="updateView"
             ></v-confirm-details>
         </cmdb-slider>
         <div class="footer">
@@ -95,7 +95,7 @@
         </div>
         <bk-dialog
             class="result-dialog"
-            :is-show.sync="resultDialog.isShow" 
+            :is-show.sync="resultDialog.isShow"
             :has-header="false"
             :has-footer="false"
             :quick-close="false"
@@ -145,7 +145,7 @@
         </bk-dialog>
         <bk-dialog
             class="confirm-dialog"
-            :is-show.sync="confirmDialog.isShow" 
+            :is-show.sync="confirmDialog.isShow"
             :title="$t('NetworkDiscovery[\'退出确认\']')"
             :has-footer="false"
             :quick-close="false"
@@ -290,7 +290,7 @@
                 })
             },
             detailPage () {
-                let index = this.tableList.findIndex(({bk_inst_key: instKey}) => instKey === this.activeItem['bk_inst_key'])
+                const index = this.tableList.findIndex(({ bk_inst_key: instKey }) => instKey === this.activeItem['bk_inst_key'])
                 return {
                     prev: index === 0,
                     next: index === this.tableList.length - 1
@@ -300,7 +300,7 @@
         beforeRouteEnter (to, from, next) {
             next(vm => {
                 if (vm.cloudName === null) {
-                    vm.$router.push({name: 'networkDiscovery'})
+                    vm.$router.push({ name: 'networkDiscovery' })
                 }
             })
         },
@@ -331,7 +331,7 @@
                 'confirmNetcollectChange'
             ]),
             updateView (type) {
-                let index = this.tableList.findIndex(({bk_inst_key: instKey}) => instKey === this.activeItem['bk_inst_key'])
+                const index = this.tableList.findIndex(({ bk_inst_key: instKey }) => instKey === this.activeItem['bk_inst_key'])
                 if (type === 'prev') {
                     this.activeItem = this.tableList[index - 1]
                 } else {
@@ -345,7 +345,7 @@
             },
             toggleIgnore (ignore) {
                 this.table.checked.map(instKey => {
-                    let item = this.table.list.find(({bk_inst_key: bkInstKey}) => bkInstKey === instKey)
+                    const item = this.table.list.find(({ bk_inst_key: bkInstKey }) => bkInstKey === instKey)
                     if (item) {
                         item.ignore = ignore
                     }
@@ -376,12 +376,12 @@
                 this.slider.isShow = true
             },
             async showResultDialog () {
-                let params = {
+                const params = {
                     reports: []
                 }
                 this.table.list.forEach(item => {
                     if (!item.ignore) {
-                        let detail = {
+                        const detail = {
                             bk_cloud_id: item['bk_cloud_id'],
                             bk_obj_id: item['bk_obj_id'],
                             bk_inst_key: item['bk_inst_key'],
@@ -418,7 +418,7 @@
                     }
                 })
                 try {
-                    const res = await this.confirmNetcollectChange({params, config: {globalError: false, requestId: 'confirmNetcollectChange', transformData: false}})
+                    const res = await this.confirmNetcollectChange({ params, config: { globalError: false, requestId: 'confirmNetcollectChange', transformData: false } })
                     this.resultDialog.data = res.data
                 } catch (e) {
                     this.$error(e.data['bk_error_msg'])
@@ -430,11 +430,11 @@
                 this.resultDialog.isDetailsShow = !this.resultDialog.isDetailsShow
             },
             async getTableData () {
-                const res = await this.searchNetcollectList({params: {bk_cloud_id: Number(this.$route.params.cloudId)}, config: {requestId: 'searchNetcollectList'}})
+                const res = await this.searchNetcollectList({ params: { bk_cloud_id: Number(this.$route.params.cloudId) }, config: { requestId: 'searchNetcollectList' } })
                 res.info.map(item => {
-                    Object.assign(item, {ignore: false})
-                    item.attributes.map(attr => Object.assign(attr, {method: 'accept'}))
-                    item.associations.map(relation => Object.assign(relation, {method: 'accept'}))
+                    Object.assign(item, { ignore: false })
+                    item.attributes.map(attr => Object.assign(attr, { method: 'accept' }))
+                    item.associations.map(relation => Object.assign(relation, { method: 'accept' }))
                 })
                 this.table.list = res.info
                 this.table.listCopy = this.$tools.clone(res.info)

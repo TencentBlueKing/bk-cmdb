@@ -6,10 +6,10 @@
             </bk-button>
             <div class="filter-content fr">
                 <div class="input-box fl">
-                    <input type="text" class="cmdb-form-input" 
-                    :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')"
-                    v-model.trim="filter.text"
-                    @keyup.enter="getTableData">
+                    <input type="text" class="cmdb-form-input"
+                        :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')"
+                        v-model.trim="filter.text"
+                        @keyup.enter="getTableData">
                     <i class="filter-search bk-icon icon-search" @click="getTableData"></i>
                 </div>
                 <bk-button type="default" class="fl" v-tooltip="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
@@ -22,7 +22,7 @@
             :loading="$loading('searchNetcollect')"
             :header="table.header"
             :list="tableList"
-            :defaultSort="table.defaultSort"
+            :default-sort="table.defaultSort"
             @handleSortChange="handleSortChange">
             <template slot="info" slot-scope="{ item }">
                 <div>
@@ -76,7 +76,7 @@
         },
         computed: {
             tableList () {
-                return this.table.list.filter(({bk_cloud_name: cloudName}) => cloudName.includes(this.filter.text))
+                return this.table.list.filter(({ bk_cloud_name: cloudName }) => cloudName.includes(this.filter.text))
             }
         },
         created () {
@@ -89,7 +89,7 @@
             ]),
             getConfigInfo (item) {
                 if (item.statistics) {
-                    let str = []
+                    const str = []
                     Object.keys(item.statistics).map(key => {
                         if (key !== 'associations') {
                             str.push(`${key}(${item.statistics[key]})`)
@@ -102,7 +102,7 @@
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push({name: 'networkDiscoveryConfig'})
+                this.$router.push({ name: 'networkDiscoveryConfig' })
             },
             routeToConfirm (item) {
                 this.$store.commit('setHeaderStatus', {
@@ -125,7 +125,7 @@
                 })
             },
             async getTableData () {
-                const res = await this.searchNetcollect({params: {}, config: {requestId: 'searchNetcollect'}})
+                const res = await this.searchNetcollect({ params: {}, config: { requestId: 'searchNetcollect' } })
                 this.table.list = res
             },
             handleSortChange (sort) {
@@ -149,7 +149,6 @@
         }
     }
 </script>
-
 
 <style lang="scss" scoped>
     .network-wrapper {

@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -28,6 +30,9 @@ func (lgc *Logics) AddLogMulti(ctx context.Context, appID int64, opType auditopl
 	var logRows []interface{}
 
 	for _, content := range contents {
+		if instNotChange(content.Content) {
+			continue
+		}
 		row := &metadata.OperationLog{
 			OwnerID:       ownerID,
 			ApplicationID: appID,
@@ -55,6 +60,9 @@ func (lgc *Logics) AddLogMultiWithExtKey(ctx context.Context, appID int64, opTyp
 	var logRows []interface{}
 
 	for _, content := range contents {
+		if instNotChange(content.Content) {
+			continue
+		}
 		row := &metadata.OperationLog{
 			OwnerID:       ownerID,
 			ApplicationID: appID,
@@ -91,6 +99,9 @@ func (lgc *Logics) AddLogWithStr(ctx context.Context, appID, instID int64, opTyp
 		CreateTime:    time.Now(),
 		InstID:        instID,
 	}
+	if instNotChange(content) {
+		return nil
+	}
 	err := lgc.Instance.Table(common.BKTableNameOperationLog).Insert(ctx, logRow)
 	return err
 }
@@ -104,6 +115,7 @@ func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]m
 	limit := dat.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
+	blog.V(9).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
 	err := lgc.Instance.Table(common.BKTableNameOperationLog).Find(condition).Sort(dat.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
@@ -117,4 +129,27 @@ func (lgc *Logics) Search(ctx context.Context, dat *metadata.ObjQueryInput) ([]m
 
 	return rows, int(cnt), nil
 
+}
+
+// instNotChange Determine whether the data is consistent before and after the change
+func instNotChange(content interface{}) bool {
+	contentMap, ok := content.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	preData, ok := contentMap["pre_data"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	curData, ok := contentMap["cur_data"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	delete(preData, common.LastTimeField)
+	delete(curData, common.LastTimeField)
+	bl := cmp.Equal(preData, curData)
+	if bl {
+		blog.V(5).Infof("inst data same, %+v", content)
+	}
+	return bl
 }

@@ -15,6 +15,7 @@
         name: 'cmdb-form-longchar',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -28,7 +29,7 @@
         },
         methods: {
             handleInput (event) {
-                let value = event.target.value.trim()
+                const value = event.target.value.trim()
                 this.$emit('input', value)
             },
             handleChange () {

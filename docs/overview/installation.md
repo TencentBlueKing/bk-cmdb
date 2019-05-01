@@ -36,7 +36,7 @@
 
 请参看官方资料 [ZooKeeper](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html#ch_deployment)
 
-推荐版本下载： [ZooKeeper 3.4.11](https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz)
+推荐版本下载： [ZooKeeper 3.4.12](https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-3.4.12/zookeeper-3.4.12.tar.gz)
 
 ### 2. 部署Redis
 
@@ -52,10 +52,9 @@
 推荐版本下载：[MongoDB 2.8.0](http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel70-2.8.0-rc5.tgz?_ga=2.109966917.1194957577.1522583108-162706957.1522583108)
 
 
-### 4. 源码下载 && 编译
+### 4. Release包下载
 
-* [源码下载 & 编译](source_compile.md)
-* [可执行文件（linux）](http://bkopen-1252002024.file.myqcloud.com/cmdb/cmdb.tar.gz)，md5[22dca56edcbbea1538e9c3be0845f882]
+官方发布的 **Linux Release** 包下载地址见[这里](https://github.com/Tencent/bk-cmdb/releases)。如果你想自已编译，具体的编译方法见[这里](source_compile.md)。
 
 ### 5. 配置数据库
 

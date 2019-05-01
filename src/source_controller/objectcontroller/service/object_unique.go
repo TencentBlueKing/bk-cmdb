@@ -31,7 +31,7 @@ import (
 
 // CreateObjectUnique create object's unique
 func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -108,7 +108,7 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 
 // UpdateObjectUnique update object's unique
 func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -179,7 +179,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 	}
 
 	if oldunique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %s", err, oldunique)
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v, %v", oldunique, err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)})
 		return
 	}
@@ -196,7 +196,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 
 // DeleteObjectUnique delte object's unique
 func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -224,7 +224,7 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 	}
 
 	if unique.Ispre {
-		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %s", err, unique)
+		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain:%+v, %s", unique, err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)})
 		return
 	}
@@ -241,7 +241,7 @@ func (cli *Service) DeleteObjectUnique(req *restful.Request, resp *restful.Respo
 
 // SearchObjectUnique delte object's unique
 func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Response) {
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -255,7 +255,7 @@ func (cli *Service) SearchObjectUnique(req *restful.Request, resp *restful.Respo
 
 	uniques, err := cli.searchObjectUnique(ctx, db, ownerID, objID)
 	if nil != err {
-		blog.Errorf("[SearchObjectUnique] Search error: %s, raw: %#v", err)
+		blog.Errorf("[SearchObjectUnique] Search error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrObjectDBOpErrno)})
 		return
 	}
@@ -306,9 +306,7 @@ func recheckUniqueForExistsInsts(ctx context.Context, db dal.RDB, ownerID, objID
 
 	pipeline := []interface{}{}
 
-	instcond := mapstr.MapStr{
-		common.BKObjIDField: objID,
-	}
+	instcond := mapstr.MapStr{}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instcond.Set(common.BKObjIDField, objID)
 	}

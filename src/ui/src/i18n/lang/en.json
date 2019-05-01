@@ -55,6 +55,7 @@
         "全选": "Select All",
         "编辑": "Modify",
         "新增": "Add",
+        "新建": "Create",
         "修改": "Modify",
         "删除": "Delete",
         "删除成功": "Delete Success",
@@ -118,7 +119,12 @@
         "搜索": "Search",
         "确定删除选中的实例": "Confirm to delete selected instance(s)?",
         "管理员后台": "Administrator Backstage",
-        "返回业务管理": "Return to Business Management"
+        "返回业务管理": "Return to Business Management",
+        "无业务权限": "Sorry, you have no business rights",
+        "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
+        "申请业务权限": "Apply for business permission",
+        "申请创建业务": "Apply to create business",
+        "请选择时间": "Please select time"
     },
     "Nav": {
         "首页": "Index",
@@ -143,8 +149,10 @@
         "模型": "Model",
         "关联类型": "Association Type",
         "蓝鲸配置平台": "BK CMDB",
+        "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
-        "后台管理标题": "Back-stage Management"
+        "后台管理标题": "Back-stage Management",
+        "基础资源": "Basic Resource"
     },
     "Index": {
         "首页": "Index",
@@ -195,7 +203,6 @@
         "配置": "Configuration",
         "失败": "Fail",
         "总量": "Total",
-        "新增推送": "Add Push",
         "请输入推送名称": "Please enter a push name",
         "请输入系统名称": "Please enter the system name",
         "请输入URL": "Please enter http(s)://",
@@ -229,7 +236,7 @@
         "收起": "Collapse",
         "展开": "Expand",
         "主机身份": "Host Identifier",
-        "当前并无推送，可点击下方按钮新增": "There is currently no push. Click the button below to add"
+        "事件推送功能提示": "The event push function can realize real-time notification to the associated system when the configuration information changes, and currently supports the push mode of http."
     },
     "Permission": {
         "权限管理": "Permission Manage",
@@ -238,7 +245,7 @@
         "角色名称": "Role name",
         "成员": "Member",
         "操作": "Operate",
-        "新增角色": "Add Role",
+        "新建角色": "Create Role",
         "编辑角色": "Modify Role",
         "角色名": "Name",
         "没有创建角色": "Do not create roles",
@@ -300,7 +307,7 @@
         "字段分组": "Field Group",
         "保留模型和相应实例，隐藏关联关系": "Keep the model and all its instance",
         "删除模型和其下所有实例，此动作不可逆，请谨慎操作": "Delete a model and all its instances, this action is not reversible, please be careful",
-        "新增模型": "Add Model",
+        "新建模型": "Create Model",
         "请输入字段名称": "Please enter field name",
         "请输入ID": "Enter ID",
         "请输入关键词": "Enter key word",
@@ -315,7 +322,7 @@
         "点击切换": "Modify",
         "选择图标": "Choose Icon",
         "所属分组": "Direction",
-        "新增关联类型": "New association type",
+        "新建关联类型": "Create association type",
         "编辑关联类型": "Modify association type",
         "源->目标描述": "Source to target description",
         "目标->源描述": "Target to source description",
@@ -354,6 +361,8 @@
         "编辑拓扑": "Modify topo",
         "拓扑显示设置": "View settings",
         "图例": "Legend",
+        "业务私有模型": "Business Private models",
+        "公有模型": "Public models",
         "自定义模型": "Custom models",
         "内置模型": "System models",
         "显示模型名称": "Show model name",
@@ -395,7 +404,8 @@
         "公共": "Public",
         "自定义": "Custom",
         "新增模型提示": "Can only add in custom group",
-        "无自定义分组": "There are no custom groups"
+        "无自定义分组": "There are no custom groups",
+        "停用模型提示": "No model disabled"
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -441,7 +451,7 @@
     },
     "CustomQuery": {
         "自定义查询": "Dynamic Group",
-        "新增查询": "Add Group",
+        "新建查询": "Create Group",
         "编辑查询": "Update Group",
         "预览查询": "Preview Group",
         "名称": "Name",
@@ -459,12 +469,11 @@
         "查询定义": "Group Definition",
         "确认要删除": "Confirm to delete {name}?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
-        "当前业务并无自定义查询，可点击下方按钮新增": "The current business does not have a Dynamic Group, click the button below to add"
+        "动态分组空数据提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
     "ProcessManagement": {
         "进程": "Process",
         "进程管理": "Process Manage",
-        "新增进程": "New Process",
         "编辑进程": "Modify Process",
         "进程名称搜索": "Process Name Search",
         "更多属性": "More Properties",
@@ -503,7 +512,8 @@
         "未查询到该IP地址对应的主机": "Do not find host with this IP address",
         "请输入完整IP地址进行查询": "Please input full IP address to search",
         "精简显示": "Simplify Display",
-        "完整显示": "Complete Display"
+        "完整显示": "Complete Display",
+        "新建节点": "Create Node"
     },
     "Hosts": {
         "主机管理": "Hosts Manage",
@@ -543,7 +553,6 @@
         "请勿选择已分配主机": "Please do not select assigned host"
     },
     "Inst": {
-        "立即创建": "Add",
         "快速查询": "Quick Search",
         "导入提示": "Drag a file here or {clickUpload}{breakRow}You can only upload {allowType} files up to {maxSize}kb",
         "点击上传": "click upload",

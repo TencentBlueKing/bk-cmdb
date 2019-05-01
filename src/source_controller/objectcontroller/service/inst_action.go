@@ -29,14 +29,14 @@ import (
 	meta "configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
-	simplejson "github.com/bitly/go-simplejson"
+	"github.com/bitly/go-simplejson"
 	"github.com/emicklei/go-restful"
 )
 
 // DeleteInstObject DeleteInstObject
 func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -109,7 +109,7 @@ func (cli *Service) DeleteInstObject(req *restful.Request, resp *restful.Respons
 // UpdateInstObject UpdateInstObject
 func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -160,7 +160,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	err = cli.UpdateObjByCondition(ctx, db, objType, data, condition)
 	if err != nil {
 		blog.Errorf("update object type:%s,data:%v,condition:%v,error:%v", objType, data, condition, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, getErr.Error())})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
 
@@ -180,7 +180,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 				var ok bool
 				realObjType, ok = originData[common.BKObjIDField].(string)
 				if !ok {
-					blog.Errorf("create event error: there is no bk_obj_type exist,originData: %#v", err, originData)
+					blog.Errorf("create event error: there is no bk_obj_type exist, err: %v, originData: %#v", err, originData)
 					resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrEventPushEventFailed)})
 					return
 				}
@@ -217,7 +217,7 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 // SearchInstObjects SearchInstObjects
 func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -269,7 +269,7 @@ func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Respon
 // CreateInstObject CreateInstObject
 func (cli *Service) CreateInstObject(req *restful.Request, resp *restful.Response) {
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

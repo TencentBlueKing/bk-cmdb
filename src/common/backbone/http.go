@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/ssl"
 )
 
-func ListenServer(c Server) error {
+func ListenAndServe(c Server) error {
 	server := &http.Server{
 		Addr:    net.JoinHostPort(c.ListenAddr, strconv.FormatUint(uint64(c.ListenPort), 10)),
 		Handler: c.Handler,

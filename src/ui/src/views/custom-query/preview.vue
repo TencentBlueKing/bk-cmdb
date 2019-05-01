@@ -8,11 +8,11 @@
                 :header="table.header"
                 :list="table.list"
                 :pagination.sync="table.pagination"
-                :wrapperMinusHeight="220"
+                :wrapper-minus-height="220"
                 @handlePageChange="handlePageChange"
                 @handleSizeChange="handleSizeChange"
                 @handleSortChange="handleSortChange">
-                <template v-for="({id,name, property}, index) in table.header" :slot="id" slot-scope="{ item }">
+                <template v-for="({ id,name, property }, index) in table.header" :slot="id" slot-scope="{ item }">
                     <template>{{getHostCellText(property, item)}}</template>
                 </template>
             </cmdb-table>
@@ -53,18 +53,18 @@
         computed: {
             allProperties () {
                 let allProperties = []
-                for (let key in this.attribute) {
+                for (const key in this.attribute) {
                     allProperties = [...allProperties, ...this.attribute[key].properties]
                 }
                 return allProperties
             },
             previewParams () {
-                let condition = this.$tools.clone(this.apiParams['info']['condition'])
-                let hostCondition = condition.find(({bk_obj_id: objId}) => {
+                const condition = this.$tools.clone(this.apiParams['info']['condition'])
+                const hostCondition = condition.find(({ bk_obj_id: objId }) => {
                     return objId === 'host'
                 })
                 hostCondition['fields'] = this.previewFields
-                let previewParams = {
+                const previewParams = {
                     'bk_biz_id': this.apiParams['bk_biz_id'],
                     condition: condition,
                     page: {
@@ -87,7 +87,7 @@
             getHostCellText (property, item) {
                 const objId = property['bk_obj_id']
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
-                let text = []
+                const text = []
                 originalValues.forEach(value => {
                     const flatternedText = this.$tools.getPropertyText(property, value)
                     flatternedText ? text.push(flatternedText) : void (0)
@@ -100,20 +100,22 @@
                 })
             },
             setTableHeader () {
-                let headerList = []
+                const headerList = []
                 this.tableHeader.map(propertyId => {
                     let header = null
                     if (propertyId === 'bk_set_name') {
                         header = {
                             objId: 'set',
                             id: 'bk_set_name',
-                            name: this.$t("Hosts['集群']")
+                            name: this.$t("Hosts['集群']"),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_module_name') {
                         header = {
                             objId: 'module',
                             id: 'bk_module_name',
-                            name: this.$t("Hosts['模块']")
+                            name: this.$t("Hosts['模块']"),
+                            sortable: false
                         }
                     } else if (propertyId === 'bk_biz_name') {
                         header = {
@@ -122,7 +124,7 @@
                             name: this.$t("Common['业务']")
                         }
                     } else {
-                        let property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
+                        const property = this.attribute.host.properties.find(property => propertyId === property['bk_property_id'])
                         if (property) {
                             header = {
                                 objId: 'host',

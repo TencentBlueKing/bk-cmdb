@@ -1,6 +1,6 @@
 <template>
     <div class="bk-date-picker" :class="disabled ? 'disabled' : ''" @click="openDater" v-clickoutside="close">
-        <input type="text" name="date-select" readonly :disabled="disabled" :placeholder="t('datePicker.selectDate')" v-model="selectedValue">
+        <input type="text" name="date-select" readonly :disabled="disabled" :placeholder="placeholder || t('datePicker.selectDate')" v-model="selectedValue">
         <transition :name="transitionName">
             <div :style="panelStyle" class="date-dropdown-panel" v-if="showDatePanel">
                 <!-- 日期操作栏 Start -->
@@ -191,6 +191,10 @@
                     return oneOf(value, ['top', 'bottom'])
                 },
                 default: 'bottom'
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
@@ -278,9 +282,9 @@
                     this.firstTime = false
                 } else {
                     time = [
-                        this.formatTime(this.BkDate.currentTime.hour),
-                        this.formatTime(this.BkDate.currentTime.minute),
-                        this.formatTime(this.BkDate.currentTime.second)
+                        this.formatValue(this.BkDate.currentTime.hour),
+                        this.formatValue(this.BkDate.currentTime.minute),
+                        this.formatValue(this.BkDate.currentTime.second)
                     ]
                 }
                 return time
@@ -354,11 +358,11 @@
                 if (this.timer) {
                     // selectedTime = ` ${this.formatValue(this.BkDate.currentTime.hour)}:${this.formatValue(this.BkDate.currentTime.minute)}:${this.formatValue(this.BkDate.currentTime.second)}`
                     selectedTime = ' '
-                        + this.formatTime(this.BkDate.currentTime.hour)
+                        + this.formatValue(this.BkDate.currentTime.hour)
                         + ':'
-                        + this.formatTime(this.BkDate.currentTime.minute)
+                        + this.formatValue(this.BkDate.currentTime.minute)
                         + ':'
-                        + this.formatTime(this.BkDate.currentTime.second)
+                        + this.formatValue(this.BkDate.currentTime.second)
                 } else {
                     selectedTime = ''
                 }
@@ -366,10 +370,7 @@
             },
 
             formatValue (value) {
-                return parseInt(value) < 10 ? '0' + value : value
-            },
-            formatTime (value) {
-                return value
+                return parseInt(value) < 10 ? '0' + parseInt(value) : value
             },
 
             // 高亮显示已选日期

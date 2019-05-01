@@ -5,7 +5,8 @@
                 v-for="col in columns"
                 :key="col">
                 <li class="search-item"
-                    v-for="row in itemPerCol"
+                    v-for="(row, index) in itemPerCol"
+                    :key="index"
                     v-if="getCellIndex(col, row) < list.length">
                     <v-search-item-host v-if="model === 'host'" :host="list[getCellIndex(col, row)]"></v-search-item-host>
                 </li>
@@ -16,7 +17,7 @@
 
 <script>
     import vSearchItemHost from './search-item-host'
-    export default{
+    export default {
         components: {
             vSearchItemHost
         },

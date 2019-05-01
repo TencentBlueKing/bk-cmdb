@@ -109,12 +109,12 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	return nil
 }
 
-func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+type Association struct {
+	metadata.Association `bson:",inline"`
+	ObjectAttID          string `bson:"bk_object_att_id"`
+}
 
-	type Association struct {
-		metadata.Association `bson:",inline"`
-		ObjectAttID          string `bson:"bk_object_att_id"`
-	}
+func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 
 	assts := []Association{}
 	err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts)
@@ -130,16 +130,10 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
-	properyMap := map[string]metadata.ObjAttDes{}
-	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s") }
-	for _, property := range propertys {
-		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
-	}
-
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
-			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
+			asst.AssociationName = buildObjAsstID(asst)
 			asst.Mapping = metadata.OneToOneMapping
 			asst.OnDelete = metadata.NoAction
 			if (asst.ObjectID == common.BKInnerObjIDModule && asst.AsstObjID == common.BKInnerObjIDSet) ||
@@ -150,20 +144,12 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			}
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
-			asst.AssociationName = buildObjAsstID(asst.AsstObjID, asst.ObjectAttID)
-			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
-			switch property.PropertyType {
-			case common.FieldTypeSingleAsst:
-				asst.Mapping = metadata.OneToOneMapping
-			case common.FieldTypeMultiAsst:
-				asst.Mapping = metadata.OneToManyMapping
-			default:
-				asst.Mapping = metadata.OneToOneMapping
-			}
+			asst.AssociationName = buildObjAsstID(asst)
+			asst.Mapping = metadata.OneToManyMapping
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
 		}
-		_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
+		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
@@ -197,6 +183,9 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	deleteHostCloudAssociation.Field("bk_obj_id").Eq(common.BKInnerObjIDHost)
 	deleteHostCloudAssociation.Field("bk_asst_obj_id").Eq(common.BKInnerObjIDPlat)
 	err = db.Table(common.BKTableNameObjAsst).Delete(ctx, deleteHostCloudAssociation.ToMapStr())
+	if err != nil {
+		return err
+	}
 
 	// drop outdate propertys
 	err = db.Table(common.BKTableNameObjAttDes).Delete(ctx, propertyCond.ToMapStr())
@@ -214,8 +203,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	return nil
 }
 
-func buildObjAsstID(srcObj string, propertyID string) string {
-	return fmt.Sprintf("%s_%s", srcObj, propertyID)
+func buildObjAsstID(asst Association) string {
+	return fmt.Sprintf("%s_%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID, asst.ObjectAttID)
 }
 
 func ptrue() *bool {

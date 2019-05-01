@@ -14,9 +14,11 @@ package apiserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
+	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -83,7 +85,7 @@ func (a *apiServer) GetAppRole(ctx context.Context, h http.Header, params mapstr
 func (a *apiServer) GetUserPrivilegeApp(ctx context.Context, h http.Header, ownerID, userName string, params mapstr.MapStr) (resp *metadata.AppQueryResult, err error) {
 
 	resp = new(metadata.AppQueryResult)
-	subPath := fmt.Sprintf("biz/search/%s")
+	subPath := fmt.Sprintf("biz/search/%s", ownerID)
 
 	err = a.client.Post().
 		WithContext(ctx).
@@ -287,4 +289,26 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 		Into(resp)
 
 	return
+}
+func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
+	h.Add(common.BKHTTPHeaderUser, user)
+	subPath := "/auth/business-list"
+	resp := new(metadata.ResponseInstData)
+
+	err := a.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result {
+		return nil, errors.New(resp.ErrMsg)
+	}
+
+	return &resp.Data, nil
 }

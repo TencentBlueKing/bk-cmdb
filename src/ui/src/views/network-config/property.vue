@@ -5,9 +5,9 @@
                 {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
             <bk-button type="default"
-            :loading="$loading('deleteNetcollectProperty')"
-            :disabled="!table.checked.length"
-            @click="deleteProperty">
+                :loading="$loading('deleteNetcollectProperty')"
+                :disabled="!table.checked.length"
+                @click="deleteProperty">
                 {{$t('Common["删除"]')}}
             </bk-button>
             <bk-button type="default" @click="importSlider.isShow = true">
@@ -27,7 +27,7 @@
                 ></bk-selector>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
                 <i class="bk-icon icon-search"
-                @click="getTableData"></i>
+                    @click="getTableData"></i>
             </div>
         </div>
         <cmdb-table
@@ -37,19 +37,19 @@
             :list="table.list"
             :checked.sync="table.checked"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
+            :default-sort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange"
             @handleRowClick="handleRowClick">
         </cmdb-table>
         <bk-dialog
-        class="create-dialog"
-        :is-show.sync="propertyDialog.isShow" 
-        :title="propertyDialog.title"
-        :has-footer="false"
-        :close-icon="false"
-        :width="424">
+            class="create-dialog"
+            :is-show.sync="propertyDialog.isShow"
+            :title="propertyDialog.title"
+            :has-footer="false"
+            :close-icon="false"
+            :width="424">
             <div slot="content">
                 <div>
                     <label class="label first">
@@ -113,9 +113,9 @@
         <cmdb-slider
             :is-show.sync="importSlider.isShow"
             :title="$t('HostResourcePool[\'批量导入\']')">
-            <cmdb-import v-if="importSlider.isShow" slot="content" 
-                :templateUrl="url.template" 
-                :importUrl="url.import" 
+            <cmdb-import v-if="importSlider.isShow" slot="content"
+                :template-url="url.template"
+                :import-url="url.import"
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
@@ -218,7 +218,7 @@
         watch: {
             'propertyDialog.data.device_id' (deviceId) {
                 if (deviceId) {
-                    let device = this.propertyDialog.deviceList.find(device => device.device_id === deviceId)
+                    const device = this.propertyDialog.deviceList.find(device => device.device_id === deviceId)
                     if (device) {
                         this.getObjAttr(device)
                     }
@@ -226,7 +226,7 @@
             }
         },
         async created () {
-            const res = await this.searchDevice({params: {}, config: {requestId: 'searchDevice', fromCache: true}})
+            const res = await this.searchDevice({ params: {}, config: { requestId: 'searchDevice', fromCache: true } })
             this.propertyDialog.deviceList = res.info
             this.getTableData()
         },
@@ -243,10 +243,10 @@
                 this.$bkInfo({
                     title: this.$t('NetworkDiscovery["确认删除属性"]'),
                     confirmFn: async () => {
-                        let params = {
+                        const params = {
                             netcollect_property_id: this.table.checked
                         }
-                        await this.deleteNetcollectProperty({config: {data: params, requestId: 'deleteNetcollectProperty'}})
+                        await this.deleteNetcollectProperty({ config: { data: params, requestId: 'deleteNetcollectProperty' } })
                         this.table.checked = []
                         this.handlePageChange(1)
                     }
@@ -271,7 +271,7 @@
             },
             async getObjAttr (device) {
                 this.propertyDialog.attrList = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: device['bk_obj_id']}),
+                    params: this.$injectMetadata({ bk_obj_id: device['bk_obj_id'] }),
                     config: {
                         requestId: `post_searchObjectAttribute_${device['bk_obj_id']}`,
                         fromCache: true
@@ -282,7 +282,7 @@
                 if (!await this.$validator.validateAll()) {
                     return
                 }
-                let params = {
+                const params = {
                     device_id: this.propertyDialog.data['device_id'],
                     bk_property_id: this.propertyDialog.data['bk_property_id'],
                     oid: this.propertyDialog.data.oid,
@@ -292,17 +292,17 @@
                     await this.updateNetcollectProperty({
                         propertyId: this.propertyDialog.data['netcollect_property_id'],
                         params,
-                        config: {requestId: 'updateNetcollectProperty'}
+                        config: { requestId: 'updateNetcollectProperty' }
                     })
                 } else {
-                    await this.createNetcollectProperty({params, config: {requestId: 'createNetcollectProperty'}})
+                    await this.createNetcollectProperty({ params, config: { requestId: 'createNetcollectProperty' } })
                 }
                 this.hidePropertyDialog()
                 this.handlePageChange(1)
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {
+                const pagination = this.table.pagination
+                const params = {
                     page: {
                         start: (pagination.current - 1) * pagination.size,
                         limit: pagination.size,
@@ -310,9 +310,9 @@
                     }
                 }
                 if (this.filter.text.length) {
-                    Object.assign(params, {condition: [{field: this.filter.type, operator: '$regex', value: this.filter.text}]})
+                    Object.assign(params, { condition: [{ field: this.filter.type, operator: '$regex', value: this.filter.text }] })
                 }
-                const res = await this.searchNetcollectProperty({params, config: {requestId: 'searchNetcollectProperty'}})
+                const res = await this.searchNetcollectProperty({ params, config: { requestId: 'searchNetcollectProperty' } })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
             },

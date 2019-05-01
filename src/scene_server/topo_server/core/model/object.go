@@ -179,7 +179,7 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 		return nil, o.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	models := []meta.Object{}
+	models := make([]meta.Object, 0)
 	for _, info := range rsp.Data.Info {
 		models = append(models, info.Spec)
 	}
@@ -187,6 +187,8 @@ func (o *object) search(cond condition.Condition) ([]meta.Object, error) {
 	return models, nil
 }
 
+// GetMainlineParentObject get mainline relationship model
+// the parent not exactly mean parent in a tree case
 func (o *object) GetMainlineParentObject() (Object, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(o.obj.ObjectID)
@@ -289,14 +291,6 @@ func (o *object) searchAssoObjects(isNeedChild bool, cond condition.Condition) (
 	return pair, nil
 }
 
-// func (o *object) GetChildObjectByFieldID(fieldID string) ([]Object, error) {
-// 	cond := condition.CreateCondition()
-// 	cond.Field(meta.AssociationFieldSupplierAccount).Eq(o.params.SupplierAccount)
-// 	cond.Field(meta.AssociationFieldObjectID).Eq(o.obj.ObjectID)
-// 	// cond.Field(meta.AssociationFieldAssociationName).Eq(fieldID)
-//
-// 	return o.searchObjects(true, cond)
-// }
 func (o *object) GetParentObject() ([]ObjectAssoPair, error) {
 
 	cond := condition.CreateCondition()
@@ -321,13 +315,13 @@ func (o *object) SetMainlineParentObject(relateToObjID string) error {
 
 	resp, err := o.clientSet.CoreService().Association().DeleteModelAssociation(context.Background(), o.params.Header, &metadata.DeleteOption{Condition: cond.ToMapStr()})
 	if err != nil {
-		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
+		blog.Errorf("update mainline object[%s] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, err)
 		return o.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !resp.Result {
-		blog.Errorf("update mainline object[%S] association to %s, search object association failed, err: %v",
+		blog.Errorf("update mainline object[%s] association to %s, search object association failed, err: %v",
 			o.obj.ObjectID, relateToObjID, resp.ErrMsg)
 		return o.params.Err.Errorf(resp.Code, resp.ErrMsg)
 	}
@@ -528,11 +522,19 @@ func (o *object) Update(data mapstr.MapStr) error {
 }
 
 func (o *object) Parse(data mapstr.MapStr) error {
-
-	err := mapstr.SetValueToStructByTags(&o.obj, data)
-	if nil != err {
+	tmp, err := data.ToJSON()
+	if err != nil {
 		return err
 	}
+
+	if err = json.Unmarshal(tmp, &o.obj); err != nil {
+		return err
+	}
+
+	// err = mapstr.SetValueToStructByTags(&o.obj, data)
+	// if nil != err {
+	// 	return err
+	// }
 
 	return nil
 }

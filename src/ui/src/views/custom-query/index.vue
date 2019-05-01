@@ -2,48 +2,46 @@
     <div class="api-wrapper">
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
-                :disabled="!authority.includes('update')"
+                :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
                 @click="showUserAPISlider('create')">
-                {{$t("CustomQuery['新增查询']")}}
+                {{$t("Common['新建']")}}
             </bk-button>
             <div class="api-input fr">
                 <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
             </div>
         </div>
         <cmdb-table
-        class="api-table"
-        :loading="$loading('searchCustomQuery')"
-        :header="table.header"
-        :list="table.list"
-        :pagination.sync="table.pagination"
-        :wrapperMinusHeight="220"
-        @handlePageChange="handlePageChange"
-        @handleSizeChange="handleSizeChange"
-        @handleSortChange="handleSortChange"
-        @handleRowClick="showUserAPIDetails">
-            <template slot="create_time" slot-scope="{item}">
+            class="api-table"
+            :loading="$loading('searchCustomQuery')"
+            :header="table.header"
+            :list="table.list"
+            :pagination.sync="table.pagination"
+            :wrapper-minus-height="220"
+            @handlePageChange="handlePageChange"
+            @handleSizeChange="handleSizeChange"
+            @handleSortChange="handleSortChange"
+            @handleRowClick="showUserAPIDetails">
+            <template slot="create_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['create_time'])}}
             </template>
-            <template slot="last_time" slot-scope="{item}">
+            <template slot="last_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['last_time'])}}
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("CustomQuery['当前业务并无自定义查询，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="showUserAPISlider('create')">{{$t("CustomQuery['新增查询']")}}</bk-button>
+                <p>{{$t("CustomQuery['动态分组空数据提示']")}}</p>
             </div>
         </cmdb-table>
         <cmdb-slider
-            :isShow.sync="slider.isShow"
-            :hasQuickClose="true"
+            :is-show.sync="slider.isShow"
+            :has-quick-close="true"
             :width="430"
             :title="slider.title"
-            :beforeClose="handleSliderBeforeClose">
+            :before-close="handleSliderBeforeClose">
             <v-define slot="content"
                 ref="define"
-                :authority="authority"
                 :id="slider.id"
-                :bizId="bizId"
+                :biz-id="bizId"
                 :type="slider.type"
                 @delete="getUserAPIList"
                 @create="handleCreate"
@@ -57,12 +55,14 @@
 <script>
     import { mapActions, mapGetters } from 'vuex'
     import vDefine from './define'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             vDefine
         },
         data () {
             return {
+                OPERATION,
                 filter: {
                     name: ''
                 },
@@ -101,19 +101,18 @@
                     type: 'create',
                     id: null,
                     title: this.$t("CustomQuery['新增查询']")
-                },
-                authority: ['search', 'update', 'delete']
+                }
             }
         },
         computed: {
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
-                let params = {
+                const params = {
                     start: (this.table.pagination.current - 1) * this.table.pagination.size,
                     limit: this.table.pagination.size,
                     sort: this.table.sort
                 }
-                this.filter.name ? params['condition'] = {'name': this.filter.name} : void (0)
+                this.filter.name ? params['condition'] = { 'name': this.filter.name } : void (0)
                 return params
             }
         },
@@ -169,7 +168,7 @@
             showUserAPISlider (type) {
                 this.slider.isShow = true
                 this.slider.type = type
-                this.slider.title = this.$t('CustomQuery["新增查询"]')
+                this.slider.title = this.$t('CustomQuery["新建查询"]')
             },
             /* 显示自定义API详情 */
             showUserAPIDetails (userAPI) {
@@ -215,4 +214,3 @@
         }
     }
 </style>
-

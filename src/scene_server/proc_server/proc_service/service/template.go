@@ -83,7 +83,6 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 	}
 
-	var logContents []auditoplog.AuditLogExt
 	logContent := auditoplog.AuditLogExt{
 		ID: templateID,
 		Content: meta.Content{
@@ -92,7 +91,6 @@ func (ps *ProcServer) CreateTemplate(req *restful.Request, resp *restful.Respons
 			Headers: tempFields,
 		},
 	}
-	logContents = append(logContents, logContent)
 
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "create template", common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, common.BKDefaultOwnerID, appIDStr, user, srvData.header, logs)
@@ -136,7 +134,7 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 	}
 	logger := srvData.lgc.NewTemplate()
 	if err := logger.WithPrevious(srvData.ctx, templateID, tempFields); err != nil {
-		blog.Errorf("delete template, but get temp[%s] pre data for audit failed, err: %v,rid:%s", templateID, err, srvData.rid)
+		blog.Errorf("delete template, but get temp[%d] pre data for audit failed, err: %v,rid:%s", templateID, err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteInstanceModel)})
 		return
 	}
@@ -163,7 +161,7 @@ func (ps *ProcServer) DeleteTemplate(req *restful.Request, resp *restful.Respons
 	logs := types.MapStr{common.BKContentField: logContent, common.BKOpDescField: "delete template", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, user, srvData.header, logs)
 	if err != nil || !result.Result {
-		blog.Errorf("delete config template failed, but [%s] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, err, result.ErrMsg, input, srvData.rid)
+		blog.Errorf("delete config template failed, but [%d] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, err, result.ErrMsg, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}
@@ -251,8 +249,13 @@ func (ps *ProcServer) UpdateTemplate(req *restful.Request, resp *restful.Respons
 	logContent = *logger.AuditLog(templateID)
 	logs := common.KvMap{common.BKContentField: logContent, common.BKOpDescField: "update template", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
 	result, err := ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, user, srvData.header, logs)
-	if nil != err || !result.Result {
-		blog.Errorf("delete config template failed, but add template[%s] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, err, result.ErrMsg, data, srvData.rid)
+	if nil != err {
+		blog.Errorf("delete config template failed, but add template[%d] audit failed, err:%s, input:%+v,rid:%s", templateID, err.Error(), data, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("delete config template failed, but add template[%d] audit failed, err: %v, %v,input:%+v,rid:%s", templateID, result.Code, result.ErrMsg, data, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcDeleteTemplateFail)})
 		return
 	}

@@ -1,13 +1,13 @@
 <template>
     <table class="cc-table-head">
         <colgroup>
-            <col v-for="width in layout.colgroup" :width="width">
+            <col v-for="(width, index) in layout.colgroup" :width="width" :key="index">
             <col v-if="layout.scrollY" :width="table.gutterWidth">
         </colgroup>
-        <tr :class="{'has-gutter': layout.scrollY}">
+        <tr :class="{ 'has-gutter': layout.scrollY }">
             <template v-for="(column, index) in columns">
-                <th v-if="column.type === 'checkbox'" class="header-checkbox">
-                    <label :for="getCheckboxId(column)" class="table-checkbox bk-form-checkbox bk-checkbox-small" v-if="table.multipleCheck && table.list.length" >
+                <th v-if="column.type === 'checkbox'" class="header-checkbox" :key="index">
+                    <label :for="getCheckboxId(column)" class="table-checkbox bk-form-checkbox bk-checkbox-small" v-if="table.multipleCheck && table.list.length">
                         <input type="checkbox"
                             :id="getCheckboxId(column)"
                             :disabled="!table.list.length"
@@ -17,17 +17,18 @@
                 </th>
                 <th v-else
                     v-bind="column.attr"
-                    :class="{'sortable': column.sortable}"
+                    :key="index"
+                    :class="{ 'sortable': column.sortable }"
                     @mousemove="handleMouseMove($event, column)"
                     @mousedown.left="handleMouseDown($event, column)"
                     @mouseout="handleMouseOut($event, column)"
                     @click="handleSort(column)">
-                    <div :class="['head-label', 'fl', {'has-sort': column.sortable}]" :title="column.name">{{column.name}}</div>
+                    <div :class="['head-label', 'fl', { 'has-sort': column.sortable }]" :title="column.name">{{column.name}}</div>
                     <div class="head-sort fl" v-if="column.sortable">
-                        <i :class="['head-sort-angle', 'ascing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'asc'}]"
+                        <i :class="['head-sort-angle', 'ascing', { 'active': column.sortKey === sortStore.sort && sortStore.order === 'asc' }]"
                             @click.stop="handleSort(column, 'asc')">
                         </i>
-                        <i :class="['head-sort-angle', 'descing', {'active': column.sortKey === sortStore.sort && sortStore.order === 'desc'}]"
+                        <i :class="['head-sort-angle', 'descing', { 'active': column.sortKey === sortStore.sort && sortStore.order === 'desc' }]"
                             @click.stop="handleSort(column, 'desc')">
                         </i>
                     </div>
@@ -114,11 +115,11 @@
                 }
             },
             handleMouseMove (event, column) {
-                let $column = event.currentTarget
-                let $next = $column.nextElementSibling
+                const $column = event.currentTarget
+                const $next = $column.nextElementSibling
                 // 鼠标划过单元格，如果不是最后一个则判断是否显示resize的鼠标图案
                 if (column.flex && !this.dragStore.dragging && $next && !$next.classList.contains('header-gutter')) {
-                    let rect = $column.getBoundingClientRect()
+                    const rect = $column.getBoundingClientRect()
                     const bodyStyle = document.body.style
                     if (rect.width >= 70 && rect.right - event.pageX < 8) {
                         bodyStyle.cursor = 'col-resize'
@@ -155,8 +156,12 @@
                     }
                     this.resizeProxy.style.left = this.dragStore.state.startLeft + 'px'
                     this.resizeProxy.style.visibility = 'visible'
-                    document.onselectstart = () => { return false }
-                    document.ondragstart = () => { return false }
+                    document.onselectstart = () => {
+                        return false
+                    }
+                    document.ondragstart = () => {
+                        return false
+                    }
                     // 动态设置拖拽线的位置
                     const handleMouseMove = (event) => {
                         const deltaLeft = event.clientX - this.dragStore.state.startMouseLeft
@@ -167,7 +172,8 @@
                     // 鼠标释放时，更新布局，重置拖拽状态
                     const handleMouseUp = (event) => {
                         if (this.dragStore.dragging) {
-                            const { startColumnLeft, startLeft } = this.dragStore.state
+                            // const { startColumnLeft, startLeft } = this.dragStore.state
+                            const { startColumnLeft } = this.dragStore.state
                             const finalLeft = parseInt(this.resizeProxy.style.left, 10)
                             const columnWidth = finalLeft - startColumnLeft
                             this.layout.updateColumnWidth(column, columnWidth)

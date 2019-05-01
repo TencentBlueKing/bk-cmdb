@@ -34,7 +34,7 @@ import (
 func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -102,7 +102,7 @@ func (cli *Service) CreateObjectAtt(req *restful.Request, resp *restful.Response
 func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -140,7 +140,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 	propertys := []meta.Attribute{}
 	cntErr := db.Table(common.BKTableNameObjAttDes).Find(condition).All(ctx, &propertys)
 	if nil != cntErr {
-		blog.Errorf("failed to select object by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 
@@ -190,7 +190,7 @@ func (cli *Service) DeleteObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -241,7 +241,7 @@ func (cli *Service) UpdateObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -269,7 +269,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 	// translate language
 	for index := range result {
 		result[index].PropertyName = cli.TranslatePropertyName(defLang, &result[index])
-		result[index].Description = cli.TranslatePlaceholder(defLang, &result[index])
+		result[index].Placeholder = cli.TranslatePlaceholder(defLang, &result[index])
 		if result[index].PropertyType == common.FieldTypeEnum {
 			result[index].Option = cli.TranslateEnumName(defLang, &result[index], result[index].Option)
 		}
@@ -283,7 +283,7 @@ func (cli *Service) SelectObjectAttByID(req *restful.Request, resp *restful.Resp
 func (cli *Service) SelectObjectAttWithParams(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

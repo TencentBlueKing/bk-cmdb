@@ -1,12 +1,12 @@
 <template>
     <div class="model-detail-wrapper">
-        <div class="model-info" v-bkloading="{isLoading: $loading('searchObjects')}">
+        <div class="model-info" v-bkloading="{ isLoading: $loading('searchObjects') }">
             <template v-if="activeModel !== null">
                 <div class="choose-icon-wrapper">
                     <span class="model-type">{{getModelType()}}</span>
                     <template v-if="isEditable">
                         <div class="icon-box" @click="isIconListShow = true">
-                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: isPublicModel}]"></i>
+                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', { ispre: isPublicModel }]"></i>
                             <p class="hover-text">{{$t('ModelManagement["点击切换"]')}}</p>
                         </div>
                         <div class="choose-icon-box" v-if="isIconListShow" v-click-outside="hideChooseBox">
@@ -19,7 +19,7 @@
                     </template>
                     <template v-else>
                         <div class="icon-box" style="cursor: default;">
-                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', {ispre: isPublicModel}]"></i>
+                            <i class="icon" :class="[activeModel ? activeModel['bk_obj_icon'] : 'icon-cc-default', { ispre: isPublicModel }]"></i>
                         </div>
                     </template>
                 </div>
@@ -38,11 +38,11 @@
                         </i>
                     </template>
                     <template v-else>
-                        <div class="cmdb-form-item" :class="{'is-error': errors.has('modelName')}">
+                        <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
                             <input type="text" class="cmdb-form-input"
-                            name="modelName"
-                            v-validate="'required|singlechar'"
-                            v-model.trim="modelInfo.objName">
+                                name="modelName"
+                                v-validate="'required|singlechar'"
+                                v-model.trim="modelInfo.objName">
                         </div>
                         <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
                         <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
@@ -51,8 +51,8 @@
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
-                            v-if="tab.active==='field' && authority.includes('update')"
-                            :class="{'disabled': isReadOnly}">
+                            v-if="tab.active === 'field' && $isAuthorized(OPERATION.U_MODEL)"
+                            :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('ModelManagement["导入"]')}}</span>
                             <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
@@ -64,8 +64,8 @@
                     </template>
                     <template v-if="isShowOperationButton">
                         <label class="label-btn"
-                        v-if="!isMainLine"
-                        v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
+                            v-if="!isMainLine && $isAuthorized(OPERATION.U_MODEL)"
+                            v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
                                 {{$t('ModelManagement["启用"]')}}
@@ -75,6 +75,7 @@
                             </span>
                         </label>
                         <label class="label-btn"
+                            v-if="$isAuthorized(OPERATION.D_MODEL)"
                             v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
@@ -102,12 +103,13 @@
 </template>
 
 <script>
-    import thePropertyGroup from './property-group.vue'
+    import thePropertyGroup from './group.vue'
     import theField from './field'
     import theRelation from './relation'
     import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
+    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             thePropertyGroup,
@@ -118,6 +120,7 @@
         },
         data () {
             return {
+                OPERATION,
                 tab: {
                     active: 'field'
                 },
@@ -143,8 +146,10 @@
                 'isPublicModel',
                 'isMainLine'
             ]),
+            ...mapGetters('objectModelClassify', ['models']),
             isShowOperationButton () {
-                return (this.isAdminView || !this.isPublicModel) && !this.activeModel['ispre'] && this.authority.includes('update')
+                return (this.isAdminView || !this.isPublicModel)
+                    && !this.activeModel['ispre']
             },
             isReadOnly () {
                 if (this.activeModel) {
@@ -153,45 +158,39 @@
                 return false
             },
             isEditable () {
-                if (!this.authority.includes('update')) {
-                    return false
-                } else if (this.isReadOnly) {
-                    return false
-                } else if (this.isAdminView) {
-                    return true
-                } else if (this.isPublicModel) {
+                const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
+                if (!updateAuth) {
                     return false
                 }
-                return true
+                if (this.isAdminView) {
+                    return !this.activeModel.ispre
+                }
+                return !this.isReadOnly && !this.isPublicModel
             },
             modelParams () {
-                let {
+                const {
                     objIcon,
                     objName
                 } = this.modelInfo
-                let params = {
+                const params = {
                     modifier: this.userName
                 }
                 if (objIcon) {
-                    Object.assign(params, {bk_obj_icon: objIcon})
+                    Object.assign(params, { bk_obj_icon: objIcon })
                 }
                 if (objName.length && objName !== this.activeModel['bk_obj_name']) {
-                    Object.assign(params, {bk_obj_name: objName})
+                    Object.assign(params, { bk_obj_name: objName })
                 }
                 return params
             },
             exportUrl () {
                 return `${window.API_HOST}object/owner/${this.supplierAccount}/object/${this.activeModel['bk_obj_id']}/export`
             },
-            authority () {
-                if (this.isAdminView || this.isBusinessSelected) {
-                    return ['search', 'update', 'delete']
-                }
-                return []
-            },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
-                return this.authority.includes('update') && !this.isMainLine && !cantImport.includes(this.$route.params.modelId)
+                return this.$isAuthorized(OPERATION.U_MODEL)
+                    && !this.isMainLine
+                    && !cantImport.includes(this.$route.params.modelId)
             }
         },
         watch: {
@@ -229,8 +228,8 @@
                 }
             },
             async handleFile (e) {
-                let files = e.target.files
-                let formData = new FormData()
+                const files = e.target.files
+                const formData = new FormData()
                 formData.append('file', files[0])
                 if (!this.isPublicModel) {
                     formData.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
@@ -249,7 +248,7 @@
                         return res
                     })
                     if (res.result) {
-                        let data = res.data[this.activeModel['bk_obj_id']]
+                        const data = res.data[this.activeModel['bk_obj_id']]
                         if (data.hasOwnProperty('insert_failed')) {
                             this.$error(data['insert_failed'][0])
                         } else if (data.hasOwnProperty('update_failed')) {
@@ -268,7 +267,7 @@
                 }
             },
             checkModel () {
-                return this.$allModels.find(model => model['bk_obj_id'] === this.$route.params.modelId)
+                return this.models.find(model => model['bk_obj_id'] === this.$route.params.modelId)
             },
             hideChooseBox () {
                 this.isIconListShow = false
@@ -287,11 +286,11 @@
                 }
                 await this.updateObject({
                     id: this.activeModel['id'],
-                    params: this.$injectMetadata(this.modelParams, {clone: true})
+                    params: this.$injectMetadata(this.modelParams, { clone: true })
                 }).then(() => {
                     this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.setActiveModel({...this.activeModel, ...this.modelParams})
+                this.setActiveModel({ ...this.activeModel, ...this.modelParams })
                 this.isEditName = false
             },
             async initObject () {
@@ -301,7 +300,7 @@
                     this.$store.commit('setHeaderTitle', model['bk_obj_name'])
                     this.initModelInfo()
                 } else {
-                    this.$router.replace({name: 'status404'})
+                    this.$router.replace({ name: 'status404' })
                 }
             },
             initModelInfo () {
@@ -313,7 +312,7 @@
             exportExcel (response) {
                 const contentDisposition = response.headers['content-disposition']
                 const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-                const url = window.URL.createObjectURL(new Blob([response.data], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}))
+                const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
                 const link = document.createElement('a')
                 link.style.display = 'none'
                 link.href = url
@@ -325,7 +324,7 @@
             async exportField () {
                 const res = await this.exportObjectAttribute({
                     objId: this.activeModel['bk_obj_id'],
-                    params: this.$injectMetadata({}, {inject: !this.isPublicModel}),
+                    params: this.$injectMetadata({}, { inject: !this.isPublicModel }),
                     config: {
                         globalError: false,
                         originalResponse: true,
@@ -372,10 +371,12 @@
                     config: {
                         requestId: 'updateModel'
                     }
-                }).then(() => {
-                    this.$http.cancel('post_searchClassificationsObjects')
                 })
-                this.setActiveModel({...this.activeModel, ...{bk_ispaused: ispaused}})
+                this.$store.commit('objectModelClassify/updateModel', {
+                    bk_ispaused: ispaused,
+                    bk_obj_id: this.activeModel.bk_obj_id
+                })
+                this.setActiveModel({ ...this.activeModel, ...{ bk_ispaused: ispaused } })
             },
             async deleteModel () {
                 if (this.isMainLine) {
@@ -395,7 +396,7 @@
                     })
                 }
                 this.$http.cancel('post_searchClassificationsObjects')
-                this.$router.replace({name: 'model'})
+                this.$router.replace({ name: 'model' })
             }
         }
     }

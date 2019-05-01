@@ -13,7 +13,7 @@
 package metadata
 
 type SearchInstResult struct {
-	BaseResp `json",inline"`
+	BaseResp `json:",inline"`
 	Data     InstResult `json:"data"`
 }
 

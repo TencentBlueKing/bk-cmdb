@@ -109,3 +109,18 @@ type AuditQueryResult struct {
 		Info  []OperationLog `json:"info"`
 	} `json:"data"`
 }
+
+// AuditAssociationLogParams represent add single association log parameter
+type AuditAssociationLogParams struct {
+	Content interface{}            `json:"content"`
+	OpDesc  string                 `json:"op_desc"`
+	OpType  auditoplog.AuditOpType `json:"op_type"`
+	AssociationID  int64           `json:"inst_id"`
+}
+
+// AuditAssociationsLogParams represent add multiple association log parameter
+type AuditAssociationsLogParams struct {
+	Content []auditoplog.AuditLogExt `json:"content"`
+	OpDesc  string                   `json:"op_desc"`
+	OpType  auditoplog.AuditOpType   `json:"op_type"`
+}

@@ -149,7 +149,7 @@ func (t *instanceClient) SelectTopo(ctx context.Context, ownerID string, objID s
 
 func (t *instanceClient) SelectAssociationTopo(ctx context.Context, ownerID string, objID string, instID string, h http.Header, p *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
-	subPath := fmt.Sprintf("/inst/association/topo/search/owner/%sobject/%s/inst/%s", ownerID, objID, instID)
+	subPath := fmt.Sprintf("/inst/association/topo/search/owner/%s/object/%s/inst/%s", ownerID, objID, instID)
 
 	err = t.client.Post().
 		WithContext(ctx).

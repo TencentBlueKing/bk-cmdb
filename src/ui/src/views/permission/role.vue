@@ -3,7 +3,7 @@
         <div class="role-options clearfix">
             <div class="role-options-create fl">
                 <bk-button type="primary" @click="createRole">
-                    {{$t('Permission["新增角色"]')}}
+                    {{$t('Common["新建"]')}}
                 </bk-button>
             </div>
             <div class="role-options-search fr clearfix">
@@ -14,17 +14,18 @@
                 ></bk-selector>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
                 <i class="filter-search bk-icon icon-search"
-                @click="getRoleList"></i>
+                    @click="getRoleList">
+                </i>
             </div>
         </div>
         <cmdb-table
             class="role-table"
-            rowCursor="default"
+            row-cursor="default"
             :sortable="false"
             :loading="$loading('searchUserGroup')"
             :header="table.header"
             :list="table.list"
-            :wrapperMinusHeight="240">
+            :wrapper-minus-height="240">
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary" @click="showDetails(item)">{{$t('Permission["权限详情"]')}}</span>
                 <span class="text-primary" @click.stop="editRole(item)">{{$t('Common["编辑"]')}}</span>
@@ -33,27 +34,27 @@
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
                 <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新增角色']")}}</bk-button>
+                <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
             </div>
         </cmdb-table>
-        <v-role-form 
+        <v-role-form
             ref="roleForm"
             v-if="form.isShow"
-            :data="form.data" 
+            :data="form.data"
             :type="form.type"
             @on-success="handleCreateSuccess"
             @closeRoleForm="form.isShow = false">
         </v-role-form>
         <cmdb-slider
-        :width="600"
-        :title="slider.title"
-        :isShow.sync="slider.isShow">
+            :width="600"
+            :title="slider.title"
+            :is-show.sync="slider.isShow">
             <vAuthority
                 slot="content"
                 v-if="slider.isShow"
-                :groupId="slider.groupId"
-                @cancel="slider.isShow = false"
-            ></vAuthority>
+                :group-id="slider.groupId"
+                @cancel="slider.isShow = false">
+            </vAuthority>
         </cmdb-slider>
     </div>
 </template>
@@ -140,19 +141,19 @@
             },
             confirmDeleteRole (role) {
                 this.$bkInfo({
-                    title: this.$tc('Permission["确认删除角色"]', role['group_name'], {name: role['group_name']}),
+                    title: this.$tc('Permission["确认删除角色"]', role['group_name'], { name: role['group_name'] }),
                     confirmFn: () => {
                         this.deleteRole(role)
                     }
                 })
             },
             async deleteRole (role) {
-                await this.deleteUserGroup({bkGroupId: role['group_id']})
+                await this.deleteUserGroup({ bkGroupId: role['group_id'] })
                 this.$success(this.$t('Permission["删除成功"]'))
                 this.getRoleList()
             },
             editRole (role) {
-                this.form.data = Object.assign({}, role, {'user_list': role['user_list'].split(';').join(',')})
+                this.form.data = Object.assign({}, role, { 'user_list': role['user_list'].split(';').join(',') })
                 this.form.type = 'edit'
                 this.form.isShow = true
             },
@@ -167,11 +168,16 @@
                 this.form.isShow = true
             },
             async getRoleList () {
-                let params = {}
+                const params = {}
                 if (this.filter.type) {
                     params[this.filter.type] = this.filter.text
                 }
-                const res = await this.searchUserGroup({params, config: {requestId: 'searchUserGroup'}})
+                const res = await this.searchUserGroup({
+                    params,
+                    config: {
+                        requestId: 'searchUserGroup'
+                    }
+                })
                 this.table.list = res && res.length ? res : []
                 this.setRoles(this.table.list)
             }

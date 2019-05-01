@@ -69,7 +69,7 @@ func (s *set) hasHost(params types.ContextParams, bizID int64, setIDS []int64) (
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", err.Error())
+		blog.Errorf("[operation-set]  failed to search the host set configures, error info is %s", rsp.ErrMsg)
 		return false, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -84,7 +84,7 @@ func (s *set) CreateSet(params types.ContextParams, obj model.Object, bizID int6
 		data.Set(common.BKDefaultField, 0)
 	}
 
-	//data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
+	// data.Set(common.CreateTimeField, util.GetCurrentTimeStr())
 	return s.inst.CreateInst(params, obj, data)
 }
 

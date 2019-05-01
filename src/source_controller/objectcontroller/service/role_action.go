@@ -29,7 +29,7 @@ import (
 // GetRolePri get role privilege
 func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -53,7 +53,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	}
 	if 0 == cnt { // TODO:
 		blog.V(3).Infof("failed to find the cnt")
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
 	}
@@ -68,7 +68,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	privilege, ok := result["privilege"]
 	if !ok {
 		blog.Errorf("not privilege, the origin data is %#v", result)
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
 
@@ -79,7 +79,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 //CreateRolePri create role privilege
 func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -121,7 +121,7 @@ func (cli *Service) CreateRolePri(req *restful.Request, resp *restful.Response) 
 //UpdateRolePri update role privilege
 func (cli *Service) UpdateRolePri(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
