@@ -1,3 +1,4 @@
+/* eslint-disable-next-line */
 import Vue from 'vue'
 import businessSelector from './selector/business.vue'
 import clipboardSelector from './selector/clipboard.vue'
@@ -24,6 +25,7 @@ import associateInput from './form/associate-input.vue'
 import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
+import collapse from './collapse/collapse'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -50,7 +52,8 @@ const install = (Vue, opts = {}) => {
         associateInput,
         tree,
         resize,
-        collapseTransition
+        collapseTransition,
+        collapse
     ]
     components.forEach(component => {
         Vue.component(component.name, component)

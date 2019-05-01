@@ -16,6 +16,7 @@ import (
 	"context"
 	"strconv"
 
+	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
@@ -71,44 +72,35 @@ func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID s
 	}
 
 	hostInfo := result.Data
+	if len(hostInfo) == 0 {
+		return nil, "", nil
+	}
 	ip, ok := hostInfo[common.BKHostInnerIPField].(string)
 	if !ok {
 		blog.Errorf("GetHostInstanceDetails http response format error,convert bk_biz_id to int error, inst:%#v  input:%#v, rid:%s", hostInfo, hostID, lgc.rid)
-		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", err.Error())
+		return nil, "", lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostInnerIPField, "string", "not string")
 
 	}
 	return hostInfo, ip, nil
 }
 
-func (lgc *Logics) GetConfigByCond(ctx context.Context, cond map[string][]int64) ([]map[string]int64, errors.CCError) {
-	configArr := make([]map[string]int64, 0)
+// GetConfigByCond get hosts owened set, module info, where hosts must match condition specify by cond.
+func (lgc *Logics) GetConfigByCond(ctx context.Context, input metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
 
-	if 0 == len(cond) {
-		return configArr, nil
-	}
-
-	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, cond)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &input)
 	if err != nil {
-		blog.Errorf("GetConfigByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, lgc.rid)
+		blog.Errorf("GetConfigByCond http do error, err:%s, input:%+v, rid:%s", err.Error(), input, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !result.Result {
-		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, cond, lgc.rid)
+		blog.Errorf("GetConfigByCond http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, input, lgc.rid)
 		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	for _, info := range result.Data {
-		data := make(map[string]int64)
-		data[common.BKAppIDField] = info.AppID
-		data[common.BKSetIDField] = info.SetID
-		data[common.BKModuleIDField] = info.ModuleID
-		data[common.BKHostIDField] = info.HostID
-		configArr = append(configArr, data)
-	}
-	return configArr, nil
+	return result.Data, nil
 }
 
-// EnterIP 将机器导入到制定模块或者空闲机器， 已经存在机器，不操作
+// EnterIP 将机器导入到指定模块或者空闲模块， 已经存在机器，不操作
 func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID int64, ip string, cloudID int64, host map[string]interface{}, isIncrement bool) errors.CCError {
 
 	isExist, err := lgc.IsPlatExist(ctx, mapstr.MapStr{common.BKCloudIDField: cloudID})
@@ -149,7 +141,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 			}
 		}
 
-		result, err := lgc.CoreAPI.HostController().Host().AddHost(ctx, lgc.header, host)
+		result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(ctx, lgc.header, common.BKInnerObjIDHost, &metadata.CreateModelInstance{Data: host}) //HostController().Host().AddHost(ctx, lgc.header, host)
 		if err != nil {
 			blog.Errorf("EnterIP http do error, err:%s, input:%+v, rid:%s", err.Error(), host, lgc.rid)
 			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -158,13 +150,24 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 			blog.Errorf("EnterIP http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, host, lgc.rid)
 			return lgc.ccErr.New(result.Code, result.ErrMsg)
 		}
-
-		retHost := result.Data.(map[string]interface{})
-		hostID, err = util.GetInt64ByInterface(retHost[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("EnterIP  get hostID error, err:%s, reply:%+v,input:%+v, rid:%s", err.Error(), retHost, host, lgc.rid)
-			return lgc.ccErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "int", err.Error())
+		// add create host log
+		audit := lgc.NewHostLog(ctx, ownerID)
+		if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
+			return err
 		}
+		content := audit.GetContent(hostID)
+		log := common.KvMap{common.BKContentField: content, common.BKOpDescField: "enter ip host", common.BKHostInnerIPField: audit.ip, common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": hostID}
+		aResult, err := lgc.CoreAPI.AuditController().AddHostLog(ctx, ownerID, strconv.FormatInt(appID, 10), util.GetUser(lgc.header), lgc.header, log)
+		if err != nil {
+			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
+			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+		if !aResult.Result {
+			blog.Errorf("EnterIP AddHostLog http response error, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, lgc.rid)
+			return lgc.ccErr.New(aResult.Code, aResult.ErrMsg)
+		}
+
+		hostID = int64(result.Data.Created.ID)
 	} else if false == isIncrement {
 		//Not an additional relationship model
 		return nil
@@ -182,58 +185,30 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 
 		}
 		if false == bl {
-			blog.Errorf("Host does not belong to the current application; error, params:{appid:%d, hostid:%s}, rid:%s", appID, hostID, lgc.rid)
+			blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", appID, hostID, lgc.rid)
 			return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
 		}
 
 	}
 
-	//del host relation from default  module
-	conf := &metadata.ModuleHostConfigParams{
+	params := &metadata.HostsModuleRelation{
 		ApplicationID: appID,
-		HostID:        hostID,
-	}
-	result, err := lgc.CoreAPI.HostController().Module().DelDefaultModuleHostConfig(ctx, lgc.header, conf)
-	if err != nil {
-		blog.Errorf("EnterIP DelDefaultModuleHostConfig http do error, err:%s, input:%+v, rid:%s", err.Error(), conf, lgc.rid)
-		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !result.Result {
-		blog.Errorf("EnterIP DelDefaultModuleHostConfig http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, conf, lgc.rid)
-		return lgc.ccErr.New(result.Code, result.ErrMsg)
-	}
-
-	cfg := &metadata.ModuleHostConfigParams{
-		ApplicationID: appID,
+		HostID:        []int64{hostID},
 		ModuleID:      []int64{moduleID},
-		HostID:        hostID,
+		IsIncrement:   false,
 	}
-	result, err = lgc.CoreAPI.HostController().Module().AddModuleHostConfig(ctx, lgc.header, cfg)
-	if err != nil {
-		blog.Errorf("EnterIP AddModuleHostConfig http do error, err:%s, input:%+v, rid:%s", err.Error(), cfg, lgc.rid)
+	hmResult, ccErr := lgc.CoreAPI.CoreService().Host().TransferHostModule(ctx, lgc.header, params)
+	if ccErr != nil {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, err:%s, rid:%s", appID, hostID, err.Error(), lgc.rid)
 		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !result.Result {
-		blog.Errorf("EnterIP AddModuleHostConfig http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, cfg, lgc.rid)
-		return lgc.ccErr.New(result.Code, result.ErrMsg)
+	if !hmResult.Result {
+		blog.Errorf("Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, result:%#v, rid:%s", appID, hostID, hmResult, lgc.rid)
+		if len(hmResult.Data) > 0 {
+			return lgc.ccErr.New(int(hmResult.Data[0].Code), hmResult.Data[0].Message)
+		}
+		return lgc.ccErr.New(hmResult.Code, hmResult.ErrMsg)
 	}
-
-	audit := lgc.NewHostLog(ctx, ownerID)
-	if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
-		return err
-	}
-	content := audit.GetContent(hostID)
-	log := common.KvMap{common.BKContentField: content, common.BKOpDescField: "enter ip host", common.BKHostInnerIPField: audit.ip, common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": hostID}
-	aResult, err := lgc.CoreAPI.AuditController().AddHostLog(ctx, ownerID, strconv.FormatInt(appID, 10), util.GetUser(lgc.header), lgc.header, log)
-	if err != nil {
-		blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
-		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !aResult.Result {
-		blog.Errorf("EnterIP AddHostLog http response error, err code:%d, err msg:%s, rid:%s", result.Code, result.ErrMsg, lgc.rid)
-		return lgc.ccErr.New(aResult.Code, aResult.ErrMsg)
-	}
-
 	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
 	if err := hmAudit.WithPrevious(ctx); err != nil {
 		return err
@@ -265,15 +240,18 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 	return result.Data.Info, nil
 }
 
-// HostSearch search host by mutiple condition
+// HostSearch search host by multiple condition
 const (
 	SplitFlag      = "##"
 	TopoSetName    = "TopSetName"
 	TopoModuleName = "TopModuleName"
 )
 
-func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond map[string][]int64) ([]int64, errors.CCError) {
-	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, cond)
+// GetHostIDByCond query hostIDs by condition base on cc_ModuleHostConfig
+// available condition fields are bk_supplier_account, bk_biz_id, bk_host_id, bk_module_id, bk_set_id
+func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]int64, errors.CCError) {
+
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
 	if err != nil {
 		blog.Errorf("GetHostIDByCond GetModulesHostConfig http do error, err:%s, input:%+v,rid:%s", err.Error(), cond, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -295,4 +273,120 @@ func (lgc *Logics) GetHostIDByCond(ctx context.Context, cond map[string][]int64)
 func (lgc *Logics) DeleteHostBusinessAttributes(ctx context.Context, hostIDArr []int64, businessMedatadata *metadata.Metadata) error {
 
 	return nil
+}
+
+// GetHostModuleRelation  query host and module relation,
+// condition key use appID, moduleID,setID,HostID
+func (lgc *Logics) GetHostModuleRelation(ctx context.Context, cond metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, errors.CCError) {
+
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, &cond)
+	if err != nil {
+		blog.Errorf("GetHostModuleRelation http do error, err:%s, input:%+v, rid:%s", err.Error(), cond, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("GetHostModuleRelation http response error, err code:%d, err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, cond, lgc.rid)
+		return nil, lgc.ccErr.New(result.Code, result.ErrMsg)
+	}
+
+	return result.Data, nil
+}
+
+// TransferHostAcrossBusiness  Transfer host across business,
+// delete old business  host and module relation
+func (lgc *Logics) TransferHostAcrossBusiness(ctx context.Context, srcBizID, dstAppID, hostID int64, moduleID []int64) errors.CCError {
+
+	bl, err := lgc.IsHostExistInApp(ctx, srcBizID, hostID)
+	if err != nil {
+		blog.Errorf("TransferHostAcrossBusiness IsHostExistInApp err:%s,input:{appID:%d,hostID:%d},rid:%s", err.Error(), srcBizID, hostID, lgc.rid)
+		return err
+	}
+	if !bl {
+		blog.Errorf("TransferHostAcrossBusiness Host does not belong to the current application; error, params:{appID:%d, hostID:%d}, rid:%s", srcBizID, hostID, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrHostNotINAPPFail, hostID)
+	}
+	audit := lgc.NewHostModuleLog([]int64{hostID})
+	if err := audit.WithPrevious(ctx); err != nil {
+		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+	}
+	// auth: check host authorization
+	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostToAnotherBizModule, hostID); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostID, err)
+		return lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
+	}
+	// auth: deregister
+	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostID); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", hostID, err)
+		return lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+	conf := &metadata.TransferHostsCrossBusinessRequest{SrcApplicationID: srcBizID, HostIDArr: []int64{hostID}, DstApplicationID: dstAppID, DstModuleIDArr: moduleID}
+	delRet, err := lgc.CoreAPI.CoreService().Host().TransferHostCrossBusiness(ctx, lgc.header, conf)
+	if err != nil {
+		blog.Errorf("TransferHostAcrossBusiness http do error, err:%s, input:%+v, rid:%s", err.Error(), conf, lgc.rid)
+		return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !delRet.Result {
+		blog.Errorf("TransferHostAcrossBusiness http response error, err code:%d, err msg:%s, input:%#v, rid:%s", delRet.Code, delRet.ErrMsg, conf, lgc.rid)
+		return lgc.ccErr.New(delRet.Code, delRet.ErrMsg)
+	}
+
+	if err := audit.SaveAudit(ctx, strconv.FormatInt(srcBizID, 10), lgc.user, "host to other bussiness module"); err != nil {
+		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%d,oldbizID:%d,appID:%d, moduleID:%#v,rid:%s", err, hostID, srcBizID, dstAppID, moduleID, lgc.rid)
+		return lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+
+	}
+
+	// auth: register host
+	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostID); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostID, err)
+		return lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
+	}
+	return nil
+}
+
+// DeleteHostFromBusiness  delete host from business,
+func (lgc *Logics) DeleteHostFromBusiness(ctx context.Context, bizID int64, hostIDArr []int64) ([]metadata.ExceptionResult, errors.CCError) {
+
+	// auth: check host authorization
+	if err := lgc.AuthManager.AuthorizeByHostsIDs(ctx, lgc.header, meta.MoveHostFromModuleToResPool, hostIDArr...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommAuthorizeFailed)
+	}
+	// auth: deregister
+	if err := lgc.AuthManager.DeregisterHostsByID(ctx, lgc.header, hostIDArr...); err != nil {
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", hostIDArr, err)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+	audit := lgc.NewHostModuleLog(hostIDArr)
+	if err := audit.WithPrevious(ctx); err != nil {
+		blog.Errorf("TransferHostAcrossBusiness, get prev module host config failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+	}
+
+	input := &metadata.DeleteHostRequest{
+		ApplicationID: bizID,
+		HostIDArr:     hostIDArr,
+	}
+	result, err := lgc.CoreAPI.CoreService().Host().DeleteHost(ctx, lgc.header, input)
+	if err != nil {
+		blog.Errorf("TransferHostAcrossBusiness DeleteHost error, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+	if !result.Result {
+		blog.Errorf("TransferHostAcrossBusiness DeleteHost failed, err: %v,hostID:%#v,appID:%d,rid:%s", err, hostIDArr, bizID, lgc.rid)
+		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
+	}
+
+	if err := audit.SaveAudit(ctx, strconv.FormatInt(bizID, 10), lgc.user, "delete host from business"); err != nil {
+		blog.Errorf("DeleteHostFromBusiness, get prev module host config failed, err: %v,appID:%d, hostID:%#v,rid:%s", err, bizID, hostIDArr, lgc.rid)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
+	}
+
+	// auth: register host
+	if err := lgc.AuthManager.RegisterHostsByID(ctx, lgc.header, hostIDArr...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDArr, err)
+		return nil, lgc.ccErr.Errorf(common.CCErrCommRegistResourceToIAMFailed)
+	}
+	return nil, nil
 }

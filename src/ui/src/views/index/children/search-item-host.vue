@@ -15,7 +15,7 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['authorizedBusiness'])
         },
         methods: {
             handleHostClick () {
@@ -33,7 +33,7 @@
                 })
             },
             checkoutBizAuth (bizId) {
-                return this.privilegeBusiness.some(biz => biz['bk_biz_id'] === bizId)
+                return this.authorizedBusiness.some(biz => biz['bk_biz_id'] === bizId)
             },
             getHostTitle (host) {
                 return `${host['host']['bk_host_innerip']}—${host['biz'][0]['bk_biz_name']}`

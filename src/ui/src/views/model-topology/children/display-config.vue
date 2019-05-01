@@ -15,7 +15,7 @@
                 <li class="group-item" v-for="(group, groupIndex) in topoList" :key="groupIndex">
                     <p class="group-name">{{group['bk_classification_name']}}</p>
                     <ul class="clearfix">
-                        <li class="model-item" :class="{'active': model['bk_obj_id'] === activePop}" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
+                        <li class="model-item" :class="{ 'active': model['bk_obj_id'] === activePop }" v-for="(model, modelIndex) in group['bk_objects']" :key="modelIndex">
                             <label class="cmdb-form-checkbox checkbox cmdb-checkbox-small">
                                 <input type="checkbox" :checked="isChecked(model)" @click="checkAll(model)">
                             </label>
@@ -90,7 +90,8 @@
         },
         computed: {
             ...mapGetters('objectModelClassify', [
-                'classifications'
+                'classifications',
+                'models'
             ])
         },
         created () {
@@ -111,27 +112,27 @@
                 return this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length).assts
             },
             isChecked (model) {
-                let modelAsst = this.findCurrentModelAsst(model)
+                const modelAsst = this.findCurrentModelAsst(model)
                 return !modelAsst.some(asst => !asst.checked)
             },
             checkAll (model) {
-                let modelAsst = this.findCurrentModelAsst(model)
+                const modelAsst = this.findCurrentModelAsst(model)
                 modelAsst.forEach(asst => {
                     asst.checked = event.target.checked
                 })
                 this.$forceUpdate()
             },
             initTopoList () {
-                let topoList = []
+                const topoList = []
                 this.classifications.forEach(group => {
-                    let objects = []
-                    let asstObjects = {}
+                    const objects = []
+                    // const asstObjects = {}
                     group['bk_objects'].forEach(model => {
-                        let asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
+                        const asstInfo = this.localTopoModelList.find(obj => obj['bk_obj_id'] === model['bk_obj_id'] && obj.hasOwnProperty('assts') && obj.assts.length)
                         if (asstInfo) {
                             objects.push({
                                 ...model,
-                                ...{asstInfo}
+                                ...{ asstInfo }
                             })
                         }
                     })
@@ -147,11 +148,11 @@
                 this.topoList = topoList
             },
             asstLabel (model, asst) {
-                let asstModel = this.$allModels.find(model => {
+                const asstModel = this.models.find(model => {
                     return model['bk_obj_id'] === asst['bk_obj_id']
                 })
                 if (asstModel) {
-                    let association = this.associationList.find(({id}) => id === asst['bk_asst_inst_id'])
+                    const association = this.associationList.find(({ id }) => id === asst['bk_asst_inst_id'])
                     if (association) {
                         if (association['bk_asst_name'].length) {
                             return `${association['bk_asst_name']}->${asstModel['bk_obj_name']}`
@@ -190,8 +191,6 @@
         height: 100%;
         .display-box {
             padding: 0 30px;
-            max-height: calc(100% - 56px);
-            @include scrollbar;
         }
     }
     .display-setting {

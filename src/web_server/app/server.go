@@ -14,13 +14,12 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"plugin"
 	"strings"
 	"time"
-
-	"github.com/holmeswang/contrib/sessions"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -31,6 +30,8 @@ import (
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/logics"
 	websvc "configcenter/src/web_server/service"
+
+	"github.com/holmeswang/contrib/sessions"
 )
 
 type WebServer struct {
@@ -69,7 +70,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return errors.New("configuration item not found")
 	}
 
 	redisAddress := webSvr.Config.Session.Host
@@ -81,12 +82,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	var redisErr error
 	if 0 == len(webSvr.Config.Session.Address) {
+		// address 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数不
 		address := webSvr.Config.Session.Host + ":" + webSvr.Config.Session.Port
 		service.Session, redisErr = sessions.NewRedisStore(10, "tcp", address, webSvr.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
 			return fmt.Errorf("failed to create new redis store, error info is %v", redisErr)
 		}
 	} else {
+		// address 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
 		address := strings.Split(webSvr.Config.Session.Address, ";")
 		service.Session, redisErr = sessions.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Session.MasterName, "tcp", webSvr.Config.Session.Secret, []byte("secret"))
 		if redisErr != nil {
@@ -122,8 +125,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	select {}
-	return nil
-
 }
 
 func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
@@ -133,6 +134,10 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.BkLoginUrl = current.ConfigMap["site.bk_login_url"]
 	w.Config.Site.AppCode = current.ConfigMap["site.app_code"]
 	w.Config.Site.CheckUrl = current.ConfigMap["site.check_url"]
+	w.Config.Site.AuthScheme = current.ConfigMap["site.authscheme"]
+	if w.Config.Site.AuthScheme == "" {
+		w.Config.Site.AuthScheme = "internal"
+	}
 	w.Config.Site.AccountUrl = current.ConfigMap["site.bk_account_url"]
 	w.Config.Site.BkHttpsLoginUrl = current.ConfigMap["site.bk_https_login_url"]
 	w.Config.Site.HttpsDomainUrl = current.ConfigMap["site.https_domain_url"]
@@ -153,6 +158,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 
 	w.Config.Version = current.ConfigMap["api.version"]
 	w.Config.AgentAppUrl = current.ConfigMap["app.agent_app_url"]
+	w.Config.AuthCenter.AppCode = current.ConfigMap["app.auth_app_code"]
+	w.Config.AuthCenter.URL = current.ConfigMap["app.auth_url"]
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.ConfigMap = current.ConfigMap
 

@@ -200,7 +200,8 @@ const (
 
 const (
 	// BKFieldID the id definition
-	BKFieldID = "id"
+	BKFieldID   = "id"
+	BKFieldName = "name"
 
 	// BKDefaultField the default field
 	BKDefaultField = "default"
@@ -332,6 +333,9 @@ const (
 
 	// BKInstNameField the inst name field
 	BKInstNameField = "bk_inst_name"
+
+	// ExportCustomFields the use custom display columns
+	ExportCustomFields = "export_custom_fields"
 
 	// BKProcIDField the proc id field
 	BKProcIDField = "bk_process_id"
@@ -625,6 +629,8 @@ const DefaultAppName string = "资源池"
 
 const DefaultCloudName string = "default area"
 
+const DefaultInstName string = "实例名"
+
 // BKAppName the default app name
 const BKAppName string = "蓝鲸"
 
@@ -846,11 +852,7 @@ const (
 const (
 	HostOSTypeEnumLinux   = "1"
 	HostOSTypeEnumWindows = "2"
-)
-
-const (
-	// InstAsstIDSplit instance associated fields, separators between mulitple ids of associated objects
-	InstAsstIDSplit = ","
+	HostOSTypeEnumAIX     = "3"
 )
 
 // integer const
@@ -867,13 +869,9 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-//flag
+// flag
 const HostCrossBizField = "hostcrossbiz"
 const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
-const (
-	BKHTTPMIMEJSON = "application/json"
-)
 
 const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
@@ -882,7 +880,7 @@ const (
 
 const (
 	// URLFilterWhiteList url filter white list not execute any filter
-	// multiple url separeted by commas
+	// multiple url separated by commas
 	URLFilterWhiteListSuffix = "/healthz"
 
 	URLFilterWhiteListSepareteChar = ","

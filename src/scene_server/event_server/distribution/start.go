@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 
+	redis "gopkg.in/redis.v5"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -26,8 +28,6 @@ import (
 	"configcenter/src/scene_server/event_server/identifier"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/rpc"
-
-	redis "gopkg.in/redis.v5"
 )
 
 func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) error {
@@ -54,15 +54,17 @@ func Start(ctx context.Context, cache *redis.Client, db dal.RDB, rc rpc.Client) 
 
 	go cleanOutdateEvents(cache)
 
-	th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, commited: make(chan string, 100), shouldClose: util.NewBool(false)}
-	go func() {
-		for {
-			if err := th.Run(); err != nil {
-				blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+	if rc != nil {
+		th := &TxnHandler{cache: cache, db: db, ctx: ctx, rc: rc, committed: make(chan string, 100), shouldClose: util.NewBool(false)}
+		go func() {
+			for {
+				if err := th.Run(); err != nil {
+					blog.Errorf("TxnHandler stoped with error: %v, we will try 1s later", err)
+				}
+				time.Sleep(time.Second)
 			}
-			time.Sleep(time.Second)
-		}
-	}()
+		}()
+	}
 
 	return <-chErr
 }
@@ -109,7 +111,7 @@ type TxnHandler struct {
 	cache       *redis.Client
 	db          dal.RDB
 	ctx         context.Context
-	commited    chan string
+	committed   chan string
 	shouldClose *util.AtomicBool
 	wg          sync.WaitGroup
 }

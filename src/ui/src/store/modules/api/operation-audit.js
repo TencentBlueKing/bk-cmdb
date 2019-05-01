@@ -28,7 +28,12 @@ const actions = {
      * @return {promises} promises 对象
      */
     getOperationLog ({ commit, state, dispatch }, { params, config }) {
-        return $http.post(`audit/search`, params, config)
+        return $http.post(`audit/search`, params, config).then(data => {
+            return data || {
+                count: 0,
+                info: []
+            }
+        })
     }
 }
 

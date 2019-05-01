@@ -40,6 +40,9 @@ type AuditCtrlInterface interface {
 
 	AddSetLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
 	AddSetLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
+
+	AddAssociationLog(ctx context.Context, ownerID string, businessID string, user string, h http.Header, log interface{}) (resp *metadata.Response, err error)
+	AddAssociationLogs(ctx context.Context, ownerID string, businessID string, user string, h http.Header, logs interface{}) (resp *metadata.Response, err error)
 }
 
 func NewAuditCtrlInterface(c *util.Capability, version string) AuditCtrlInterface {

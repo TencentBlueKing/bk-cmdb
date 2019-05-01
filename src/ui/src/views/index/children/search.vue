@@ -6,12 +6,12 @@
                 @focus="focus = true">
             <label class="bk-icon icon-search" for="indexSearch"></label>
             <div class="search-result" v-show="focus && keyword.length > 2">
-                <div class="search-loading" v-bkloading="{isLoading: loading}" v-if="loading"></div>
-                <div :class="['result-layout', {'result-layout-empty': !resultTabpanels.length}]" v-show="!loading">
+                <div class="search-loading" v-bkloading="{ isLoading: loading }" v-if="loading"></div>
+                <div :class="['result-layout', { 'result-layout-empty': !resultTabpanels.length }]" v-show="!loading">
                     <bk-tab class="result-tab" v-if="resultTabpanels.length"
                         :active-name.sync="resultTab.active"
                         :size="'small'"
-                        :headStyle="resultTab.headStyle">
+                        :head-style="resultTab.headStyle">
                         <bk-tabpanel v-for="(panel, index) in resultTabpanels"
                             :key="index"
                             :name="panel"
@@ -83,7 +83,7 @@
         computed: {
             ...mapGetters('objectModelClassify', ['classifications']),
             allModels () {
-                let allModels = []
+                const allModels = []
                 this.classifications.forEach(classify => {
                     classify['bk_objects'].forEach(model => {
                         allModels.push(model)
@@ -143,10 +143,10 @@
                 return panelModel ? `${panelModel['bk_obj_name']}(${this.resultTab.count[panel]})` : null
             },
             initSearchList (data) {
-                let list = []
+                const list = []
                 data.forEach(item => {
                     item.biz.forEach(biz => {
-                        let uniqueItem = {...item}
+                        const uniqueItem = { ...item }
                         uniqueItem['biz'] = [biz]
                         list.push(uniqueItem)
                     })
@@ -185,6 +185,10 @@
     }
 </script>
 <style lang="scss" scoped>
+    .search-layout {
+        width: 50%;
+        margin: 0 auto;
+    }
     .search-box{
         position: relative;
         height: 42px;

@@ -1,11 +1,11 @@
 import $http from '@/api'
 
 const state = {
-
+    associationList: []
 }
 
 const getters = {
-
+    associationList: state => state.associationList
 }
 
 const actions = {
@@ -148,7 +148,9 @@ const actions = {
 }
 
 const mutations = {
-
+    setAssociationList (state, list) {
+        state.associationList = list
+    }
 }
 
 export default {

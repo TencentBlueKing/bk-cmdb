@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal"
@@ -70,7 +71,7 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 	}
 
 	if tar.BizTopo != nil {
-		//topo check
+		// topo check
 		if !compareSlice(tar.Mainline, cur.Mainline) {
 			return fmt.Errorf("different topo mainline found, your expecting import topo is [%s], but the existing topo is [%s]",
 				strings.Join(tar.Mainline, "->"), strings.Join(cur.Mainline, "->"))
@@ -78,10 +79,12 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 
 		// walk blueking biz and get difference
 		ipt := newImporter(ctx, db, opt)
-		ipt.walk(true, tar.BizTopo)
+		if err := ipt.walk(true, tar.BizTopo); err != nil {
+			blog.Errorf("walk biz topo failed, err: %+v", err)
+		}
 
 		// walk to create new node
-		tar.BizTopo.walk(func(node *Node) error {
+		err := tar.BizTopo.walk(func(node *Node) error {
 			if node.mark == actionCreate {
 				fmt.Printf("--- \033[34m%s %s %+v\033[0m\n", node.mark, node.ObjID, node.Data)
 				if !opt.dryrun {
@@ -111,6 +114,10 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 			return nil
 		})
 
+		if err != nil {
+			blog.Errorf("tar biz topo walk failed, err: %+v", err)
+		}
+
 		// walk to delete unuse node
 		for objID, sdeletes := range ipt.sdelete {
 			for _, sdelete := range sdeletes {
@@ -134,10 +141,10 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 							}
 							if child.ObjID == common.BKInnerObjIDModule {
 								// if should delete module then check whether it has host
-								modulehostcondition := map[string]interface{}{
+								moduleHostCondition := map[string]interface{}{
 									common.BKModuleIDField: childID,
 								}
-								count, err := db.Table(common.BKTableNameModuleHostConfig).Find(modulehostcondition).Count(ctx)
+								count, err := db.Table(common.BKTableNameModuleHostConfig).Find(moduleHostCondition).Count(ctx)
 								if nil != err {
 									return fmt.Errorf("get host count error: %s", err.Error())
 								}
@@ -146,20 +153,20 @@ func importBKBiz(ctx context.Context, db dal.RDB, opt *option) error {
 								}
 							}
 
-							deleteconition := map[string]interface{}{
+							deleteCondition := map[string]interface{}{
 								common.GetInstIDField(child.ObjID): childID,
 							}
 							switch child.ObjID {
 							case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 							default:
-								deleteconition[common.BKObjIDField] = child.ObjID
+								deleteCondition[common.BKObjIDField] = child.ObjID
 							}
-							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteconition)
+							fmt.Printf("--- \033[31mdelete %s %+v by %+v\033[0m\n", child.ObjID, child.Data, deleteCondition)
 							if !opt.dryrun {
 
-								err = db.Table(common.GetInstTableName(child.ObjID)).Delete(ctx, deleteconition)
+								err = db.Table(common.GetInstTableName(child.ObjID)).Delete(ctx, deleteCondition)
 								if nil != err {
-									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteconition, err.Error())
+									return fmt.Errorf("delete %s by %+v, error: %s", child.ObjID, deleteCondition, err.Error())
 								}
 							}
 							return nil
@@ -192,11 +199,11 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 	}
 
 	curProcs := map[string]*Process{}
-	for _, topo := range cur.Procs {
+	for _, topo := range cur.Processes {
 		curProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 	}
 	tarProcs := map[string]*Process{}
-	for _, topo := range tar.Procs {
+	for _, topo := range tar.Processes {
 		tarProcs[topo.Data[common.BKProcessNameField].(string)] = topo
 
 		topo.Data[common.BKAppIDField] = bizID
@@ -209,47 +216,47 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 			}
 
 			topo.Data[common.BKProcessIDField] = procID
-			condition := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
+			cond := getModifyCondition(topo.Data, []string{common.BKProcessIDField})
 			// fmt.Printf("--- \033[36mupdate process by %+v, data: %+v\033[0m\n", condition, topo.Data)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameBaseProcess).Update(ctx, condition, topo.Data)
+				err = db.Table(common.BKTableNameBaseProcess).Update(ctx, cond, topo.Data)
 				if nil != err {
 					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
 				}
 			}
 
 			// add missing module
-			for _, modulename := range topo.Modules {
-				if inSlice(modulename, curTopo.Modules) {
+			for _, moduleName := range topo.Modules {
+				if inSlice(moduleName, curTopo.Modules) {
 					continue
 				}
-				procmod := ProModule{}
-				procmod.ModuleName = modulename
-				procmod.BizID = bizID
-				procmod.ProcessID = procID
-				procmod.OwnerID = opt.OwnerID
-				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procmod)
+				procMod := ProModule{}
+				procMod.ModuleName = moduleName
+				procMod.BizID = bizID
+				procMod.ProcessID = procID
+				procMod.OwnerID = opt.OwnerID
+				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", procMod)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procMod)
 					if nil != err {
 						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
 					}
 				}
 			}
-			// delete unused moduel map
-			for _, curmodule := range curTopo.Modules {
-				if inSlice(curmodule, topo.Modules) {
+			// delete unused module map
+			for _, curModule := range curTopo.Modules {
+				if inSlice(curModule, topo.Modules) {
 					continue
 				}
-				delcondition := map[string]interface{}{
-					common.BKModuleNameField: curmodule,
+				delCondition := map[string]interface{}{
+					common.BKModuleNameField: curModule,
 					common.BKProcessIDField:  procID,
 				}
-				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+				fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delCondition)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+					err = db.Table(common.BKTableNameProcModule).Delete(ctx, delCondition)
 					if nil != err {
-						return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+						return fmt.Errorf("delete process module by %+v, error: %v", delCondition, err)
 					}
 				}
 			}
@@ -267,15 +274,15 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 					return fmt.Errorf("insert process data: %+v, error: %s", topo.Data, err.Error())
 				}
 			}
-			for _, modulename := range topo.Modules {
-				procmod := ProModule{}
-				procmod.ModuleName = modulename
-				procmod.BizID = bizID
-				procmod.ProcessID = nid
-				procmod.OwnerID = opt.OwnerID
+			for _, moduleName := range topo.Modules {
+				procMod := ProModule{}
+				procMod.ModuleName = moduleName
+				procMod.BizID = bizID
+				procMod.ProcessID = nid
+				procMod.OwnerID = opt.OwnerID
 				fmt.Printf("--- \033[34minsert process module data: %+v\033[0m\n", topo.Data)
 				if !opt.dryrun {
-					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procmod)
+					err = db.Table(common.BKTableNameProcModule).Insert(ctx, &procMod)
 					if nil != err {
 						return fmt.Errorf("insert process module data: %+v, error: %s", topo.Data, err.Error())
 					}
@@ -287,21 +294,21 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 	// remove unused process
 	for key, proc := range curProcs {
 		if tarProcs[key] == nil {
-			delcondition := map[string]interface{}{
+			delCondition := map[string]interface{}{
 				common.BKProcessIDField: proc.Data[common.BKProcessIDField],
 			}
-			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process by %+v\033[0m\n", delCondition)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameBaseProcess).Delete(ctx, delcondition)
+				err = db.Table(common.BKTableNameBaseProcess).Delete(ctx, delCondition)
 				if nil != err {
-					return fmt.Errorf("delete process by %+v, error: %s", delcondition, err.Error())
+					return fmt.Errorf("delete process by %+v, error: %s", delCondition, err.Error())
 				}
 			}
-			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delcondition)
+			fmt.Printf("--- \033[31mdelete process module by %+v\033[0m\n", delCondition)
 			if !opt.dryrun {
-				err = db.Table(common.BKTableNameProcModule).Delete(ctx, delcondition)
+				err = db.Table(common.BKTableNameProcModule).Delete(ctx, delCondition)
 				if nil != err {
-					return fmt.Errorf("delete process module by %+v, error: %s", delcondition, err.Error())
+					return fmt.Errorf("delete process module by %+v, error: %s", delCondition, err.Error())
 				}
 			}
 		}
@@ -311,11 +318,11 @@ func importProcess(ctx context.Context, db dal.RDB, opt *option, cur, tar *Proce
 }
 
 func getModifyCondition(data map[string]interface{}, keys []string) map[string]interface{} {
-	condition := map[string]interface{}{}
+	cond := map[string]interface{}{}
 	for _, key := range keys {
-		condition[key] = data[key]
+		cond[key] = data[key]
 	}
-	return condition
+	return cond
 }
 
 var ignoreKeys = map[string]bool{
@@ -327,17 +334,6 @@ var ignoreKeys = map[string]bool{
 	common.BKSetIDField:     true,
 	common.BKProcessIDField: true,
 	common.BKInstIDField:    true,
-}
-
-func getUpdateData(n *Node) map[string]interface{} {
-	data := map[string]interface{}{}
-	for key, value := range n.Data {
-		if ignoreKeys[key] {
-			continue
-		}
-		data[key] = value
-	}
-	return data
 }
 
 // compareSlice returns whether slice a,b exactly equal
@@ -390,11 +386,11 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 	if includeRoot {
 		switch node.ObjID {
 		case common.BKInnerObjIDApp:
-			condition := getModifyCondition(node.Data, []string{common.BKAppNameField})
+			cond := getModifyCondition(node.Data, []string{common.BKAppNameField})
 			app := map[string]interface{}{}
-			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &app)
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &app)
 			if nil != err {
-				return fmt.Errorf("get blueking business by %+v error: %s", condition, err.Error())
+				return fmt.Errorf("get blueking business by %+v error: %s", cond, err.Error())
 			}
 			bizID, err := getInt64(app[common.BKAppIDField])
 			if nil != err {
@@ -402,7 +398,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 			ownerID, ok := app[common.BKOwnerIDField].(string)
 			if !ok {
-				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %s", app, err.Error())
+				return fmt.Errorf("get blueking nk_suppplier_account faile, data: %+v, error: %v", app, err)
 			}
 			node.Data[common.BKAppIDField] = bizID
 			node.Data[common.BKOwnerIDField] = ownerID
@@ -417,11 +413,11 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKAppIDField] = ipt.bizID
 			node.Data[common.BKInstParentStr] = ipt.parentID
 			node.Data[common.BKDefaultField] = 0
-			condition := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
+			cond := getModifyCondition(node.Data, []string{common.BKSetNameField, common.BKInstParentStr})
 			set := map[string]interface{}{}
-			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &set)
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &set)
 			if nil != err && !ipt.db.IsNotFoundError(err) {
-				return fmt.Errorf("get set by %+v error: %s", condition, err.Error())
+				return fmt.Errorf("get set by %+v error: %s", cond, err.Error())
 			}
 			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
@@ -450,11 +446,11 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			node.Data[common.BKSetIDField] = ipt.setID
 			node.Data[common.BKInstParentStr] = ipt.parentID
 			node.Data[common.BKDefaultField] = 0
-			condition := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
+			cond := getModifyCondition(node.Data, []string{common.BKModuleNameField, common.BKInstParentStr})
 			module := map[string]interface{}{}
-			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &module)
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &module)
 			if nil != err && !ipt.db.IsNotFoundError(err) {
-				return fmt.Errorf("get module by %+v error: %s", condition, err.Error())
+				return fmt.Errorf("get module by %+v error: %s", cond, err.Error())
 			}
 			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
@@ -476,12 +472,12 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 		default:
 			node.Data[common.BKOwnerIDField] = ipt.ownerID
 			node.Data[common.BKInstParentStr] = ipt.parentID
-			condition := getModifyCondition(node.Data, []string{node.getInstNameField(), common.BKInstParentStr})
-			condition[common.BKObjIDField] = node.ObjID
+			cond := getModifyCondition(node.Data, []string{node.getInstNameField(), common.BKInstParentStr})
+			cond[common.BKObjIDField] = node.ObjID
 			inst := map[string]interface{}{}
-			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(condition).One(ipt.ctx, &inst)
+			err := ipt.db.Table(common.GetInstTableName(node.ObjID)).Find(cond).One(ipt.ctx, &inst)
 			if nil != err && !ipt.db.IsNotFoundError(err) {
-				return fmt.Errorf("get inst by %+v error: %s", condition, err.Error())
+				return fmt.Errorf("get inst by %+v error: %s", cond, err.Error())
 			}
 			if ipt.db.IsNotFoundError(err) {
 				node.mark = actionCreate
@@ -504,9 +500,9 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 			}
 		}
 
-		// fetch datas that should delete
+		// fetch data that should delete
 		if node.ObjID != common.BKInnerObjIDModule {
-			childtablename := common.GetInstTableName(node.getChildObjID())
+			childTableName := common.GetInstTableName(node.getChildObjID())
 			instID, err := node.getInstID()
 			if nil != err {
 				return fmt.Errorf("get instID faile, data: %+v, error: %v", node, err)
@@ -514,15 +510,15 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 
 			childCondition := condition.CreateCondition()
 			childCondition.Field(common.BKInstParentStr).Eq(instID)
-			childCondition.Field(node.getChilDInstNameField()).NotIn(node.getChilDInstNames())
+			childCondition.Field(node.getChildInstNameField()).NotIn(node.getChildInstNames())
 			switch node.getChildObjID() {
 			case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule:
 				childCondition.Field(common.BKDefaultField).NotGt(0)
 			default:
 				childCondition.Field(common.BKObjIDField).Eq(node.getChildObjID())
 			}
-			shouldDelete := []map[string]interface{}{}
-			err = ipt.db.Table(childtablename).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
+			shouldDelete := make([]map[string]interface{}, 0)
+			err = ipt.db.Table(childTableName).Find(childCondition.ToMapStr()).All(ipt.ctx, &shouldDelete)
 			if nil != err {
 				return fmt.Errorf("get child of %+v error: %s", childCondition.ToMapStr(), err.Error())
 			}
@@ -553,7 +549,7 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 	parentID := ipt.parentID
 	bizID := ipt.bizID
 	setID := ipt.setID
-	for _, child := range node.Childs {
+	for _, child := range node.Children {
 		if err := ipt.walk(true, child); nil != err {
 			return err
 		}
@@ -567,14 +563,14 @@ func (ipt *importer) walk(includeRoot bool, node *Node) error {
 
 // getModelAttributes returns the model attributes
 func getModelAttributes(ctx context.Context, db dal.RDB, opt *option, objIDs []string) (modelAttributes map[string][]metadata.Attribute, modelKeys map[string][]string, err error) {
-	condition := map[string]interface{}{
+	cond := map[string]interface{}{
 		common.BKObjIDField: map[string]interface{}{
 			"$in": objIDs,
 		},
 	}
 
-	attributes := []metadata.Attribute{}
-	err = db.Table("cc_ObjAttDes").Find(condition).All(ctx, &attributes)
+	attributes := make([]metadata.Attribute, 0)
+	err = db.Table("cc_ObjAttDes").Find(cond).All(ctx, &attributes)
 	if nil != err {
 		return nil, nil, fmt.Errorf("faile to getModelAttributes for %v, error: %s", objIDs, err.Error())
 	}

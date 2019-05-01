@@ -119,14 +119,14 @@ func (ps *ProcServer) BindProc2Template(req *restful.Request, resp *restful.Resp
 
 	procID, err := strconv.ParseInt(pathParams[common.BKProcessIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v,input:%+v:%s,rid:%s", err, pathParams, srvData.rid)
+		blog.Errorf("params error. err:%v, input:%#v, rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
 	tempID, err := strconv.ParseInt(pathParams[common.BKTemlateIDField], 10, 64)
 	if nil != err {
-		blog.Errorf("params error :%v,input:%+v,rid:%s", err, pathParams, srvData.rid)
+		blog.Errorf("params error. err:%v, input:%+v, rid:%s", err, pathParams, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -186,9 +186,14 @@ func (ps *ProcServer) DeleteProc2Template(req *restful.Request, resp *restful.Re
 	condition[common.BKTemlateIDField] = tempID
 
 	ret, err := ps.CoreAPI.ProcController().DeleteProc2Template(srvData.ctx, srvData.header, condition)
-	if err != nil || (err == nil && !ret.Result) {
-		blog.Errorf("fail to delete process template bind. err: %v, errcode:%s, errmsg: %s,input:%+v,condition:%+v,rid", err, ret.Code, ret.ErrMsg, pathParams, condition, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcUnBindToTemplateFailed)})
+	if err != nil {
+		blog.Errorf("fail to delete process template bind. err: %v,  input:%#v, condition:%#v, rid:%s", err, pathParams, condition, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !ret.Result {
+		blog.Errorf("fail to delete process template bind.  errcode:%s, errmsg: %s, input:%#v, condition:%#v, rid:%s", ret.Code, ret.ErrMsg, pathParams, condition, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
 

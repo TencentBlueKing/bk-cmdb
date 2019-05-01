@@ -39,7 +39,7 @@ type DiscoveryInterface interface {
 	HostCtrl() Interface
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
-	GseProcServ() Interface
+	GseProcServer() Interface
 	CoreService() Interface
 	ServiceManageInterface
 }
@@ -48,18 +48,19 @@ type Interface interface {
 	GetServers() ([]string, error)
 }
 
-func NewDiscoveryInterface(client *zk.ZkClient) (DiscoveryInterface, error) {
+// NewServiceDiscovery new a simple discovery module which can be used to get alive server address
+func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 	disc := registerdiscover.NewRegDiscoverEx(client)
 
 	d := &discover{
 		servers: make(map[string]*server),
 	}
-	for component, _ := range types.AllModule {
+	for component := range types.AllModule {
 		if component == types.CC_MODULE_WEBSERVER {
 			continue
 		}
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path)
+		svr, err := newServerDiscover(disc, path, component)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
 		}
@@ -118,7 +119,7 @@ func (d *discover) ProcCtrl() Interface {
 	return d.servers[types.CC_MODULE_PROCCONTROLLER]
 }
 
-func (d *discover) GseProcServ() Interface {
+func (d *discover) GseProcServer() Interface {
 	return d.servers[types.GSE_MODULE_PROCSERVER]
 }
 
@@ -130,7 +131,7 @@ func (d *discover) TMServer() Interface {
 	return d.servers[types.CC_MODULE_TXC]
 }
 
-// IsMster curret is master
+// IsMster current is master
 func (d *discover) IsMaster() bool {
 
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())

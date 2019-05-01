@@ -38,11 +38,11 @@ type ModelClientInterface interface {
 	CreateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.CreateModelAttributes) (resp *metadata.CreatedManyOptionResult, err error)
 	SetModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.SetModelAttributes) (resp *metadata.SetOptionResult, err error)
 	UpdateModelAttrs(ctx context.Context, h http.Header, objID string, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
-	// desperated only for old api
+	// deprecated,  only for old api
 	UpdateModelAttrsByCondition(ctx context.Context, h http.Header, input *metadata.UpdateOption) (resp *metadata.UpdatedOptionResult, err error)
 	DeleteModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.DeleteOption) (resp *metadata.DeletedOptionResult, err error)
 	ReadModelAttr(ctx context.Context, h http.Header, objID string, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error)
-	// desperated only for old api
+	// deprecated, only for old api
 	ReadModelAttrByCondition(ctx context.Context, h http.Header, input *metadata.QueryCondition) (resp *metadata.ReadModelAttrResult, err error)
 
 	ReadAttributeGroup(ctx context.Context, h http.Header, objID string, input metadata.QueryCondition) (resp metadata.ReadModelAttributeGroupResult, err error)
@@ -56,7 +56,7 @@ type ModelClientInterface interface {
 
 	CreateModelAttrUnique(ctx context.Context, h http.Header, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreatedOneOptionResult, error)
 	UpdateModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedOptionResult, error)
-	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64) (*metadata.DeletedOptionResult, error)
+	DeleteModelAttrUnique(ctx context.Context, h http.Header, objID string, id uint64, data metadata.DeleteModelAttrUnique) (*metadata.DeletedOptionResult, error)
 	ReadModelAttrUnique(ctx context.Context, h http.Header, inputParam metadata.QueryCondition) (*metadata.ReadModelUniqueResult, error)
 }
 

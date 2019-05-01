@@ -26,7 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -43,7 +43,7 @@ func (s *Service) WebService() *gin.Engine {
 	ws := gin.Default()
 
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
-	ws.Use(middleware.ValidLogin(*s.Config))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
 	middleware.Engine = s.Engine
 
 	ws.Static("/static", s.Config.Site.HtmlRoot)

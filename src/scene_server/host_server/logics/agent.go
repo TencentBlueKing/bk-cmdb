@@ -36,17 +36,17 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	}
 	ret := make(map[string]interface{})
 
-	//cpu
+	// cpu
 	cpuUsageArr, _ := js.Get("cpu").Get("per_usage").Array()
 	cpuNum := len(cpuUsageArr)
 	cpuUsageFload, _ := js.Get("cpu").Get("total_usage").Float64()
 	cpuUsage := int((cpuUsageFload)*100 + 0.5)
 
-	//disk
-	diskInfos, _ := js.Get("disk").Get("usage").Array() //!empty($data['disk']['usage']) ? $data['disk']['usage'] : array();
-	var diskTotal int64 = 0
-	var diskUsage int64 = 0
-	var diskUsed int64 = 0
+	// disk
+	diskInfos, _ := js.Get("disk").Get("usage").Array()
+	var diskTotal int64
+	var diskUsage int64
+	var diskUsed int64
 
 	for _, diskInfoI := range diskInfos {
 		disk, ok := diskInfoI.(map[string]interface{})
@@ -63,18 +63,19 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 	diskTotal = diskTotal / unitGB
 	diskUsed = diskUsed / unitGB
 	if 0 != diskTotal {
-		diskUsage = (10000 * diskUsed / diskTotal) //获取使用百分比 保留两位小数
+		// 获取使用百分比 保留两位小数
+		diskUsage = (10000 * diskUsed / diskTotal)
 	} else {
 		diskUsage = 0
 	}
 
-	//iptable info
+	// iptables info
 	iptables, _ := js.Get("env").Get("iptables").String()
 
-	//hosts info
+	// hosts info
 	hosts, _ := js.Get("env").Get("host").String()
 
-	//crontab info
+	// crontab info
 	cronInfos, err := js.Get("env").Get("crontab").Array()
 
 	var crontabs common.KvMap = make(common.KvMap)
@@ -93,10 +94,10 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 		}
 	}
 
-	//route info
+	// route info
 	route, _ := js.Get("env").Get("route").String()
 
-	//mem info
+	// mem info
 	memInfo := js.Get("mem").Get("meminfo")
 	var memTotal, memUsed, memUsage int64
 	if nil != memInfo {
@@ -108,7 +109,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 		memUsed = (memUsed + unitMB - 1) / unitMB
 
 	}
-	//系统负载信息
+	// 系统负载信息
 	load := js.Get("load").Get("load_avg")
 	strLoadavg := ""
 	if nil != load {
@@ -137,7 +138,7 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 		ret["crontab"] = crontabs
 
 	}
-	//not empty
+	// not empty
 	if "" != route {
 		ret["route"] = strings.Split(route, "\n")
 	}
@@ -146,20 +147,22 @@ func ParseHostSnap(data string) (map[string]interface{}, error) {
 		ret["loadavg"] = strLoadavg
 	}
 
-	//os info
+	// os info
 	ret["HostName"], _ = js.Get("system").Get("info").Get("hostname").String()
 	ret["OsName"], _ = js.Get("system").Get("info").Get("os").String()
 	ret["bootTime"], _ = util.GetIntByInterface(js.Get("system").Get("info").Get("bootTime").Interface())
 	ret["upTime"], _ = js.Get("datetime").String()
 	ret["timezone_number"], _ = util.GetIntByInterface(js.Get("timezone").Interface())
 
-	//time zone info
+	// time zone info
 	city, _ := js.Get("city").String()
 	country, _ := js.Get("country").String()
 
 	ret["timezone"] = country + "/" + city
 	ret["rcvRate"], ret["sendRate"], err = getSnapNetInfo(js.Get("net").Get("dev"), unitMB)
-	// $dataNetDev = !empty($data['net']['dev']) ? $data['net']['dev'] : array();*/
+	if err != nil {
+		return nil, err
+	}
 	return ret, nil
 
 }

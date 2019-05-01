@@ -11,14 +11,14 @@
                 <span class="sort-item"
                     v-for="(option, index) in sortOptions"
                     :key="index"
-                    @click="setFilterSort(option, filter.order === 'asc' ? 'desc': 'asc')">
+                    @click="setFilterSort(option, filter.order === 'asc' ? 'desc' : 'asc')">
                     <span>{{option.name}}</span>
                     <i class="sort-angle ascing"
-                        :class="{'cur-sort' : filter.sort === option.id && filter.order === 'asc'}"
+                        :class="{ 'cur-sort': filter.sort === option.id && filter.order === 'asc' }"
                         @click.stop="setFilterSort(option, 'asc')">
                     </i>
                     <i class="sort-angle descing"
-                        :class="{'cur-sort' : filter.sort === option.id && filter.order === 'desc'}"
+                        :class="{ 'cur-sort': filter.sort === option.id && filter.order === 'desc' }"
                         @click.stop="setFilterSort(option, 'desc')">
                     </i>
                 </span>
@@ -28,7 +28,7 @@
             <li class="collection-item clearfix"
                 v-for="(collection, index) in filteredList"
                 :key="index"
-                :class="{'delete-confirm': collection.deleteConfirm}"
+                :class="{ 'delete-confirm': collection.deleteConfirm }"
                 @click="handleApplyCollection(collection)">
                 <span class="collection-name fl" v-show="!collection.edit">{{collection.name}}</span>
                 <input class="collection-input cmdb-form-input fl" type="text" :ref="collection.id"
@@ -79,7 +79,7 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['privilegeBusiness'])
+            ...mapGetters('objectBiz', ['authorizedBusiness'])
         },
         watch: {
             filter: {
@@ -112,7 +112,7 @@
                 }).then(data => {
                     this.list = data.info.filter(collection => {
                         const info = JSON.parse(collection.info)
-                        return this.privilegeBusiness.some(business => business['bk_biz_id'] === info['bk_biz_id'])
+                        return this.authorizedBusiness.some(business => business['bk_biz_id'] === info['bk_biz_id'])
                     })
                     this.setFilteredList()
                 })
@@ -132,8 +132,8 @@
                             : (collectionA.count - collectionB.count)
                     } else {
                         compareResult = filter.order === 'desc'
-                            ? collectionB.name.localeCompare(collectionA.name, 'zh-Hans-CN', {sensitivity: 'accent'})
-                            : collectionA.name.localeCompare(collectionB.name, 'zh-Hans-CN', {sensitivity: 'accent'})
+                            ? collectionB.name.localeCompare(collectionA.name, 'zh-Hans-CN', { sensitivity: 'accent' })
+                            : collectionA.name.localeCompare(collectionB.name, 'zh-Hans-CN', { sensitivity: 'accent' })
                     }
                     return compareResult
                 })

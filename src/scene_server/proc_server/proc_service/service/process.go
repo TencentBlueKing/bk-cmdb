@@ -21,44 +21,43 @@ import (
 	"github.com/emicklei/go-restful"
 	"github.com/gin-gonic/gin/json"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator"
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
 
-	ownerID := req.PathParameter(common.BKOwnerIDField)
+	ownerID := srvData.ownerID
 	appIDStr := req.PathParameter(common.BKAppIDField)
 	appID, err := strconv.Atoi(appIDStr)
 	if err != nil {
-		blog.Errorf("convert appid from string to int failed!, err: %s, input:%s,rid:%s", err.Error(), appID, srvData.rid)
+		blog.Errorf("convert appid from string to int failed!, err: %s, appID:%d,rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
 
-	input := make(map[string]interface{})
+	input := mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&input); err != nil {
 		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-
-	input[common.BKAppIDField] = appID
-	valid := validator.NewValidMap(srvData.ownerID, common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
-	if err := valid.ValidMap(input, common.ValidCreate, 0); err != nil {
-		blog.Errorf("fail to valid input parameters. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
+	procName, err := input.String(common.BKProcNameField)
+	if err != nil {
+		blog.Errorf("create process failed! get process name error, err: %v,input:%#v,rid:%s", err, input, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
 		return
 	}
 
+	input[common.BKAppIDField] = appID
 	input[common.BKOwnerIDField] = ownerID
 	ret, err := ps.CoreAPI.CoreService().Instance().CreateInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, &meta.CreateModelInstance{Data: input})
 	if err != nil {
@@ -72,13 +71,25 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	//save change log
+	// save change log
 	instID := ret.Data.Created.ID
 	curDetail, err := ps.getProcDetail(req, ownerID, appID, int(instID))
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 	} else {
 		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
+	}
+
+	// auth: register process to iam
+	processSimplify := extensions.ProcessSimplify{
+		ProcessID:    int64(appID),
+		ProcessName:  procName,
+		BKAppIDField: int64(instID),
+	}
+	if err := ps.AuthManager.RegisterProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+		blog.Warnf("create process sucess, but register to iam failed, err: %+v, process: %+v, rid: %s", err, processSimplify, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		return
 	}
 
 	// return success
@@ -107,7 +118,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	procData := make(map[string]interface{})
+	procData := mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&procData); err != nil {
 		blog.Errorf("create process failed! decode request body err: %v,appID:%+v,procID:%+v,rid:%s", err, appID, procID, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -115,17 +126,21 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	procData[common.BKAppIDField] = appID
-	valid := validator.NewValidMap(srvData.ownerID, common.BKInnerObjIDProc, srvData.header, ps.Engine)
-	if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
-		blog.Errorf("fail to valid input parameters. err:%s,input:%+v,rid:%s", err.Error(), procData, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommFieldNotValid)})
-		return
-	}
 
 	// take snapshot before operation
 	preProcDetail, err := ps.getProcDetail(req, ownerID, appID, procID)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
+	}
+	// change proc name set value
+	procName := ""
+	if procData.Exists(common.BKProcNameField) {
+		procName, err = procData.String(common.BKProcNameField)
+		if err != nil {
+			blog.Errorf("create process failed! get process name error, err: %v,input:%#v, url para:%#v,rid:%s", err, procData, req.PathParameters(), srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
+			return
+		}
 	}
 
 	input := new(meta.UpdateOption)
@@ -148,18 +163,31 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// save operation log
-	/// take snapshot before operation
+	// take snapshot before operation
 	curDetail, err := ps.getProcDetail(req, ownerID, appID, procID)
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s,rid:%s", err.Error(), srvData.rid)
 	}
 	ps.addProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, srvData.header)
+	if procData.Exists(common.BKProcNameField) {
+		// auth: register process to iam
+		processSimplify := extensions.ProcessSimplify{
+			ProcessID:    int64(appID),
+			ProcessName:  procName,
+			BKAppIDField: int64(procID),
+		}
+		if err := ps.AuthManager.UpdateRegisteredProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+			blog.Warnf("update process success, but update register to iam failed, err: %+v, process: %+v, rid: %s", err, processSimplify, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+			return
+		}
+	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
 func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Response) {
-	//user := util.GetUser(req.Request.Header)
+	// user := util.GetUser(req.Request.Header)
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
 
@@ -172,7 +200,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	procData := make(map[string]interface{})
+	procData := mapstr.New()
 	if err := json.NewDecoder(req.Request.Body).Decode(&procData); err != nil {
 		blog.Errorf("create process failed! decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
@@ -196,6 +224,18 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 	var iProcIDArr []int
 	auditContentArr := make([]meta.Content, len(procIDArr))
 
+	// change process name set value
+	procName := ""
+	if procData.Exists(common.BKProcNameField) {
+		procName, err = procData.String(common.BKProcNameField)
+		if err != nil {
+			blog.Errorf("create process failed! get process name error, err: %v,input:%#v, url para:%#v,rid:%s", err, procData, req.PathParameters(), srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedString, common.BKAppNameField)})
+			return
+		}
+	}
+
+	updatedProcesses := make([]extensions.ProcessSimplify, 0)
 	for index, procIDStr := range procIDArr {
 		procID, err := strconv.Atoi(procIDStr)
 		if err != nil {
@@ -220,13 +260,6 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 				})
 		}
 
-		valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDProc, req.Request.Header, ps.Engine)
-		if err := valid.ValidMap(procData, common.ValidUpdate, int64(procID)); err != nil {
-			blog.Errorf("fail to valid proc parameters. err:%s,procID:%v,input:%+v,rid:%s", err.Error(), procID, procData, srvData.rid)
-			appName, _ := curData[common.BKProcNameField]
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommUtilHandleFail, srvData.ccLang.Languagef("proc_valid_check_fail", appName), err.Error())})
-			return
-		}
 		curData[common.BKProcIDField] = procID
 
 		// save proc info before modify
@@ -256,6 +289,22 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 			return
 		}
+		if procData.Exists(common.BKProcNameField) {
+			processSimplify := extensions.ProcessSimplify{
+				ProcessID:    int64(procID),
+				ProcessName:  procName,
+				BKAppIDField: int64(appID),
+			}
+			updatedProcesses = append(updatedProcesses, processSimplify)
+		}
+	} // end for procIDArr
+
+	if len(updatedProcesses) > 0 {
+		if err := ps.AuthManager.UpdateRegisteredProcesses(srvData.ctx, srvData.header, updatedProcesses...); err != nil {
+			blog.Errorf("batch update processes success, but update register to iam failed, err: %+v, processes:%+v, rid:%s", err, updatedProcesses, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+			return
+		}
 	}
 
 	logscontent := make([]auditoplog.AuditLogContext, 0)
@@ -265,7 +314,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		// take snapshot before operation
 		details, err := ps.getProcDetail(req, ownerID, appID, int(procID))
 		if err != nil {
-			blog.Errorf("get inst detail error: %v, procID:%s,rid:%s", err, procID, srvData.rid)
+			blog.Errorf("get inst detail error: %v, procID:%d, rid:%s", err, procID, srvData.rid)
 			continue
 		}
 
@@ -352,6 +401,17 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	// save operation log
 	ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, preProcDetail, nil, auditoplog.AuditOpTypeDel, procID, srvData.header)
 
+	// auth: dereigster process from iam
+	processSimplify := extensions.ProcessSimplify{
+		ProcessID:    int64(procID),
+		BKAppIDField: int64(appID),
+	}
+	if err := ps.AuthManager.DeregisterProcesses(srvData.ctx, srvData.header, processSimplify); err != nil {
+		blog.Errorf("delete processes success, but deregister from iam failed, err: %+v, processes:%+v, rid:%s", err, processSimplify, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		return
+	}
+
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
@@ -382,7 +442,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	if processName, ok := condition[common.BKProcessNameField]; ok {
 		processNameStr, ok := processName.(string)
 		if ok {
-			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpeceialCharChange(processNameStr)}
+			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: params.SpecialCharChange(processNameStr)}
 
 		} else {
 			condition[common.BKProcessNameField] = map[string]interface{}{common.BKDBLIKE: processName}

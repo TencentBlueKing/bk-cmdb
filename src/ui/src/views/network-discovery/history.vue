@@ -28,12 +28,12 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
+            :default-sort="table.defaultSort"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
             <template slot="action" slot-scope="{ item }">
-                <span :class="{'color-danger': item.action === 'delete', 'color-warning': item.action === 'update'}">{{actionMap[item.action]}}</span>
+                <span :class="{ 'color-danger': item.action === 'delete', 'color-warning': item.action === 'update' }">{{actionMap[item.action]}}</span>
             </template>
             <template slot="last_time" slot-scope="{ item }">
                 {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
@@ -118,7 +118,7 @@
         },
         computed: {
             params () {
-                let params = {
+                const params = {
                     bk_cloud_name: this.filter['bk_cloud_name'],
                     bk_host_innerip: this.filter['bk_host_innerip'],
                     bk_obj_id: this.filter['bk_obj_id'],
@@ -137,7 +137,7 @@
                 'searchNetcollectHistory'
             ]),
             async getTableData () {
-                const res = await this.searchNetcollectHistory({params: this.params, config: {requestId: 'searchNetcollect'}})
+                const res = await this.searchNetcollectHistory({ params: this.params, config: { requestId: 'searchNetcollect' } })
                 this.table.pagination.count = res.count
                 this.table.list = res.info
             },

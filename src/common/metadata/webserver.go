@@ -68,7 +68,7 @@ type LoginSystemUserInfo struct {
 }
 
 type LonginSystemUserListResult struct {
-	BaseResp `json",inline"`
+	BaseResp `json:",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
 }
 
@@ -82,19 +82,19 @@ type LoginUserInfoDetail struct {
 }
 
 type LoginUserInfoResult struct {
-	BaseResp `json",inline"`
+	BaseResp `json:",inline"`
 	Data     LoginUserInfoDetail `json:"data"`
 }
 
 type LoginChangeSupplierResult struct {
-	BaseResp `json",inline"`
+	BaseResp `json:",inline"`
 	Data     struct {
 		ID string `json:"bk_supplier_account"`
 	} `json:"data"`
 }
 
 type LogoutResult struct {
-	BaseResp `json",inline"`
+	BaseResp `json:",inline"`
 	Data     struct {
 		LogoutURL string `json:"url"`
 	} `json:"data"`

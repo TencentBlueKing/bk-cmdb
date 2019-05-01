@@ -14,7 +14,6 @@ package logics
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -22,7 +21,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/http/httpclient"
 	lang "configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -35,11 +33,17 @@ import (
 func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) ([]mapstr.MapStr, error) {
 	hostInfo := make([]mapstr.MapStr, 0)
 	sHostCond := make(map[string]interface{})
-	appID, _ := strconv.Atoi(appIDStr)
+	appID, err := strconv.ParseInt(appIDStr, 10, 64)
+	if err != nil {
+		return nil, err
+	}
 	hostIDArr := strings.Split(hostIDStr, ",")
-	iHostIDArr := make([]int, 0)
+	iHostIDArr := make([]int64, 0)
 	for _, j := range hostIDArr {
-		hostID, _ := strconv.Atoi(j)
+		hostID, err := strconv.ParseInt(j, 10, 64)
+		if err != nil {
+			return nil, err
+		}
 		iHostIDArr = append(iHostIDArr, hostID)
 	}
 	if -1 != appID {
@@ -52,7 +56,7 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		sHostCond["ip"] = make(map[string]interface{})
 		condArr := make([]interface{}, 0)
 
-		//host condition
+		// host condition
 		condition := make(map[string]interface{})
 		hostCondArr := make([]interface{}, 0)
 		hostCond := make(map[string]interface{})
@@ -65,21 +69,21 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 		condition["condition"] = hostCondArr
 		condArr = append(condArr, condition)
 
-		//biz conditon
+		// biz condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDApp
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//set conditon
+		// set condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDSet
 		condition["fields"] = make([]interface{}, 0)
 		condition["condition"] = make([]interface{}, 0)
 		condArr = append(condArr, condition)
 
-		//module condition
+		// module condition
 		condition = make(map[string]interface{})
 		condition[common.BKObjIDField] = common.BKInnerObjIDModule
 		condition["fields"] = make([]interface{}, 0)
@@ -91,8 +95,14 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 
 	}
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetHostData(context.Background(), header, sHostCond)
-	if nil != err || false == result.Result {
-		return hostInfo, errors.New("no host")
+	if nil != err {
+		blog.Errorf("GetHostData failed, search condition: %+v, err: %+v", sHostCond, err)
+		return hostInfo, err
+	}
+
+	if !result.Result {
+		blog.Errorf("GetHostData failed, search condition: %+v, result: %+v", sHostCond, result)
+		return nil, lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header)).New(result.Code, result.ErrMsg)
 	}
 
 	return result.Data.Info, nil
@@ -100,12 +110,12 @@ func (lgc *Logics) GetHostData(appIDStr, hostIDStr string, header http.Header) (
 
 // GetImportHosts get import hosts
 // return inst array data, errmsg collection, error
-func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
+func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (map[int]map[string]interface{}, []string, error) {
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
 	}
-	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, header, meta)
+	fields, err := lgc.GetObjFieldIDs(common.BKInnerObjIDHost, nil, nil, header, meta)
 	if nil != err {
 		return nil, nil, errors.New(defLang.Languagef("web_get_object_field_failure", err.Error()))
 	}
@@ -122,7 +132,7 @@ func (lgc *Logics) GetImportHosts(f *xlsx.File, header http.Header, defLang lang
 }
 
 // ImportHosts import host info
-func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
+func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.Header, defLang lang.DefaultCCLanguageIf, meta *metadata.Metadata) (resultData mapstr.MapStr, errCode int, err error) {
 	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	hosts, errMsg, err := lgc.GetImportHosts(f, header, defLang, meta)
 	resultData = mapstr.New()
@@ -178,30 +188,4 @@ func (lgc *Logics) ImportHosts(ctx context.Context, f *xlsx.File, header http.He
 
 	return
 
-}
-
-//httpRequest do http request
-func httpRequest(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.POST(url, header, params)
-
-	return string(reply), err
-}
-
-//httpRequestGet do http get request
-func httpRequestGet(url string, body interface{}, header http.Header) (string, error) {
-	params, _ := json.Marshal(body)
-	blog.V(5).Infof("input:%s", string(params))
-	httpClient := httpclient.NewHttpClient()
-	httpClient.SetHeader("Content-Type", "application/json")
-	httpClient.SetHeader("Accept", "application/json")
-
-	reply, err := httpClient.GET(url, header, params)
-
-	return string(reply), err
 }

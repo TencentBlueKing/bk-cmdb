@@ -127,7 +127,7 @@ func ExportNetProperty(c *gin.Context) {
 	if nil != err {
 		blog.Errorf("[Export Net Property] get property data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
-		c.String(http.StatusBadGateway, msg, nil)
+		c.String(http.StatusBadGateway, msg)
 		return
 	}
 
@@ -137,7 +137,7 @@ func ExportNetProperty(c *gin.Context) {
 		blog.Errorf("[Export Net Property] create sheet error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -148,7 +148,7 @@ func ExportNetProperty(c *gin.Context) {
 		blog.Errorf("[Export Net Property] build net property excel data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -158,7 +158,7 @@ func ExportNetProperty(c *gin.Context) {
 			blog.Errorf("[Export Net Property] mkdir error:%s", err.Error())
 			msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 				defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-			c.String(http.StatusInternalServerError, msg, nil)
+			c.String(http.StatusInternalServerError, msg)
 			return
 		}
 	}
@@ -172,7 +172,7 @@ func ExportNetProperty(c *gin.Context) {
 		blog.Errorf("[Export Net Property] save file error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 
@@ -198,7 +198,7 @@ func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 			blog.Errorf("[Build Net Property Excel Template] mkdir error:%s", err.Error())
 			msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
 				defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(), nil)
-			c.String(http.StatusInternalServerError, msg, nil)
+			c.String(http.StatusInternalServerError, msg)
 			return
 		}
 	}
@@ -211,7 +211,7 @@ func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 		msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(),
 			nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusInternalServerError, msg)
 		return
 	}
 

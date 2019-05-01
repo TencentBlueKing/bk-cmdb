@@ -249,7 +249,7 @@ func (m *modelClassification) UpdateModelClassification(ctx core.ContextParams, 
 	return &metadata.UpdatedCount{Count: cnt}, nil
 }
 
-func (m *modelClassification) DeleteModelClassificaiton(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *modelClassification) DeleteModelClassification(ctx core.ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	deleteCond, err := mongo.NewConditionFromMapStr(util.SetModOwner(inputParam.Condition.ToMapInterface(), ctx.SupplierAccount))
 	if nil != err {

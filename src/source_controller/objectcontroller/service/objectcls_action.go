@@ -30,7 +30,7 @@ import (
 // CreateClassification create object's classification
 func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -71,13 +71,12 @@ func (cli *Service) CreateClassification(req *restful.Request, resp *restful.Res
 // DeleteClassification delete object's classification
 func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
 	db := cli.Instance.Clone()
 
-	defer req.Request.Body.Close()
 	pathParameters := req.PathParameters()
 	id, err := strconv.ParseInt(pathParameters["id"], 10, 64)
 	if nil != err {
@@ -106,7 +105,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 	condition = util.SetModOwner(condition, ownerID)
 	cnt, cntErr := db.Table(common.BKTableNameObjClassifiction).Find(condition).Count(ctx)
 	if nil != cntErr {
-		blog.Errorf("failed to select object classification by condition(%+v), error is %d", cntErr)
+		blog.Errorf("failed to select object classification by condition(%+v), error is %d", condition, cntErr)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectDBOpErrno, err.Error())})
 		return
 	}
@@ -127,7 +126,7 @@ func (cli *Service) DeleteClassification(req *restful.Request, resp *restful.Res
 // UpdateClassification update object's classification information
 func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -164,7 +163,7 @@ func (cli *Service) UpdateClassification(req *restful.Request, resp *restful.Res
 // SelectClassifications select object's classification informations
 func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -203,7 +202,7 @@ func (cli *Service) SelectClassifications(req *restful.Request, resp *restful.Re
 // SelectClassificationWithObject select objects by classification information
 func (cli *Service) SelectClassificationWithObject(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)

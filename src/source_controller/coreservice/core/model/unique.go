@@ -12,11 +12,8 @@
 
 package model
 
-import ( //	"configcenter/src/common/blog"
-	//	"configcenter/src/common/errors"
-	//	"configcenter/src/common/mapstr"
+import (
 	"configcenter/src/common/metadata"
-	//	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -41,8 +38,8 @@ func (m *modelAttrUnique) UpdateModelAttrUnique(ctx core.ContextParams, objID st
 	return &metadata.UpdatedCount{Count: 1}, nil
 }
 
-func (m *modelAttrUnique) DeleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64) (*metadata.DeletedCount, error) {
-	err := m.deleteModelAttrUnique(ctx, objID, id)
+func (m *modelAttrUnique) DeleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error) {
+	err := m.deleteModelAttrUnique(ctx, objID, id, meta)
 	if err != nil {
 		return nil, err
 	}

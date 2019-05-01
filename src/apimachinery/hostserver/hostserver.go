@@ -51,7 +51,6 @@ type HostServerClientInterface interface {
 	SaveUserCustom(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetUserCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	GetDefaultCustom(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
-	GetAgentStatus(ctx context.Context, appID string, h http.Header) (resp *metadata.Response, err error)
 	UpdateHost(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostByAppID(ctx context.Context, appID string, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetHostListByAppidAndField(ctx context.Context, appID string, field string, h http.Header) (resp *metadata.Response, err error)
