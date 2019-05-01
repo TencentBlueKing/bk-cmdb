@@ -112,6 +112,7 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		supplerAccount := current.ConfigMap[name+".SupplerAccount"]
 		witeList := current.ConfigMap[name+".WiteList"]
 		objectIDs := current.ConfigMap[name+".ObjectID"]
+		ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
 
 		configItem.AppNames = SplitFilter(appNames, ",")
 		if syncResource == "1" {
@@ -120,6 +121,12 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		if witeList == "1" {
 			configItem.WiteList = true
 		}
+		// 使用忽略模型属性变的模式。 用户在目标中新加对应的模型，模型的属性。
+        // 满足同步的实例将会同步到目的cmdb。 在目标系统中新建相同的唯一标识模型或者模型的字段。内容会自动展示出来
+		if ignoreModelAttr == "1" {
+			configItem.IgnoreModelAttr = true
+		}
+
 		configItem.ObjectIDArr = SplitFilter(objectIDs, ",")
 		configItem.Name = name
 		configItem.TargetHost = targetHost
