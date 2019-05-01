@@ -348,7 +348,12 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 		}
 		synchronizeParameter.InfoArray = append(synchronizeParameter.InfoArray, &metadata.SynchronizeItem{ID: id, Info: item})
 	}
-
+	// 当配置不需要同步模型的时候。不去保存数据，
+	// 但是需要使用上面的功能获取需要同步模型id。 s.ojjIDMap
+	if s.config.IgnoreModelAttr {
+		blog.V(4).Infof("sycnhronizePartModel skip. rid:%s, version:%s", s.lgc.rid, s.version)
+		return errorInfoArr, nil
+	}
 	result, err := s.lgc.CoreAPI.CoreService().Synchronize().SynchronizeModel(ctx, s.lgc.header, synchronizeParameter)
 	if err != nil {
 		blog.Errorf("sycnhronizePartModel http do error, error: %s,DataSign: %s,DataTeyp: %s,rid:%s", err.Error(), input.DataClassify, input.OperateDataType, s.lgc.rid)
