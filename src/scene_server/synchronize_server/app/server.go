@@ -91,7 +91,7 @@ type SynchronizeServer struct {
 func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc.ProcessConfig) {
 	configInfo := &options.Config{}
 	names := current.ConfigMap["synchronize.name"]
-	configInfo.Names = strings.Split(names, ",")
+	configInfo.Names = SplitFilter(names, ",")
 
 	configInfo.Trigger.TriggerType = current.ConfigMap["trigger.type"]
 	// role  unit minute.
@@ -113,19 +113,19 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		witeList := current.ConfigMap[name+".WiteList"]
 		objectIDs := current.ConfigMap[name+".ObjectID"]
 
-		configItem.AppNames = strings.Split(appNames, ",")
+		configItem.AppNames = SplitFilter(appNames, ",")
 		if syncResource == "1" {
 			configItem.SyncResource = true
 		}
 		if witeList == "1" {
 			configItem.WiteList = true
 		}
-		configItem.ObjectIDArr = strings.Split(objectIDs, ",")
+		configItem.ObjectIDArr = SplitFilter(objectIDs, ",")
 		configItem.Name = name
 		configItem.TargetHost = targetHost
 		configItem.FieldSign = fieldSign
 		configItem.SynchronizeFlag = dataSign
-		configItem.SupplerAccount = strings.Split(supplerAccount, ",")
+		configItem.SupplerAccount = SplitFilter(supplerAccount, ",")
 		configInfo.ConifgItemArray = append(configInfo.ConifgItemArray, configItem)
 		if targetHost != "" {
 			s.synchronizeClientConfig <- synchronizeUtil.SychronizeConfig{
@@ -136,6 +136,18 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 	}
 	s.Config = configInfo
 
+}
+
+func SplitFilter(s, sep string) []string {
+	itemArr := strings.Split(s, sep)
+	var strArr []string
+	for _, item := range itemArr {
+		if strings.TrimSpace(item) == "" {
+			continue
+		}
+		strArr = append(strArr, item)
+	}
+	return strArr
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
