@@ -26,7 +26,8 @@ func (s *coreService) SynchronizeInstance(params core.ContextParams, pathParams,
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeInstance
-	return s.core.DataSynchronizeOperation().SynchronizeInstanceAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeInstanceAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeModel(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -37,7 +38,8 @@ func (s *coreService) SynchronizeModel(params core.ContextParams, pathParams, qu
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeModel
-	return s.core.DataSynchronizeOperation().SynchronizeModelAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeModelAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeAssociation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -48,7 +50,8 @@ func (s *coreService) SynchronizeAssociation(params core.ContextParams, pathPara
 		return nil, err
 	}
 	inputData.OperateDataType = metadata.SynchronizeOperateDataTypeAssociation
-	return s.core.DataSynchronizeOperation().SynchronizeAssociationAdapter(params, inputData)
+	exceptionArr, err := s.core.DataSynchronizeOperation().SynchronizeAssociationAdapter(params, inputData)
+	return metadata.SynchronizeDataResult{Exceptions: exceptionArr}, err
 }
 
 func (s *coreService) SynchronizeFind(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
