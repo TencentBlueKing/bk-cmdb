@@ -270,7 +270,6 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 		common.SynchronizeModelTypeClassification,
 		common.SynchronizeModelTypeAttribute,
 		common.SynchronizeModelTypeAttributeGroup,
-		common.SynchronizeModelTypeModelClassificationRelation,
 	}
 	for _, dataClassify := range classifyArr {
 		partErrorInfoArr, err := s.synchronizeModel(ctx, model, dataClassify)
