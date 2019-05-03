@@ -1016,10 +1016,8 @@ const (
 	SynchronizeModelTypeAttribute = "model_attribute"
 	// SynchronizeModelTypeAttributeGroup synchroneize model attribute group
 	SynchronizeModelTypeAttributeGroup = "model_atrribute_group"
-	// SynchronizeModelTypeBase synchroneize model attribute group
+	// SynchronizeModelTypeBase synchroneize model attribute
 	SynchronizeModelTypeBase = "model"
-	// SynchronizeModelTypeModelClassificationRelation synchroneize model classification relation
-	SynchronizeModelTypeModelClassificationRelation = "model_classification_relation"
 
 	/* synchronize instance assoication sign*/
 
