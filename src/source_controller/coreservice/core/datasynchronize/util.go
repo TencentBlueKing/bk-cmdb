@@ -33,6 +33,7 @@ type synchronizeAdapterError struct {
 type synchronizeAdapterDBParameter struct {
 	tableName   string
 	InstIDField string
+	isStr       bool
 }
 
 type synchronizeAdapter struct {
@@ -131,33 +132,38 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 		if ok {
 			continue
 		}
-		conds := mapstr.MapStr{dbParam.InstIDField: item.ID}
-		exist, err := s.existSynchronizeID(ctx, dbParam.tableName, conds)
+
+		var conds mapstr.MapStr
+		// can be combined
+		mergeInstID, exist, err := s.getSameInfo(ctx, dbParam.InstIDField, dbParam.tableName, item)
 		if err != nil {
-			blog.Errorf("replaceSynchronize existSynchronizeID error.DataClassify:%s,info:%#v,rid:%s", s.syncData.DataClassify, item, ctx.ReqID)
+			blog.Errorf("replaceSynchronize getSameInfo error. err:%s, DataClassify:%s, info:%#v, rid:%s", err.Error(), s.syncData.DataClassify, item, ctx.ReqID)
 			s.errorArray[item.ID] = synchronizeAdapterError{
 				instInfo: item,
 				err:      err,
 			}
 			continue
 		}
-		if !exist {
-			// Data that does not exist. Judging whether it can be combined
-			mergeInstID, exist, err := s.getSameInfo(ctx, dbParam.InstIDField, dbParam.tableName, item)
+		if exist {
+			// The same data already exists, merging the existing data.
+			conds = mapstr.MapStr{dbParam.InstIDField: mergeInstID}
+		} else {
+			exist, err = s.existSynchronizeID(ctx, dbParam.tableName, mapstr.MapStr{dbParam.InstIDField: item.ID})
 			if err != nil {
-				blog.Errorf("replaceSynchronize getSameInfo error.DataClassify:%s,info:%#v,rid:%s", s.syncData.DataClassify, item, ctx.ReqID)
+				blog.Errorf("replaceSynchronize existSynchronizeID error. err:%s, DataClassify:%s, info:%#v, exist:%v, rid:%s", err.Error(), s.syncData.DataClassify, item, exist, ctx.ReqID)
 				s.errorArray[item.ID] = synchronizeAdapterError{
 					instInfo: item,
 					err:      err,
 				}
 				continue
 			}
-			// The same data already exists, merging the existing data.
 			if exist {
-				conds = mapstr.MapStr{dbParam.InstIDField: mergeInstID}
-			}
+				conds = mapstr.MapStr{dbParam.InstIDField: item.ID}
 
+			}
 		}
+
+		blog.V(6).Infof("replaceSynchronize DataClassify:%s, info:%#v, table:%s, version:%v, exist:%v, rid:%s", s.syncData.DataClassify, item, dbParam.tableName, s.syncData.Version, exist, ctx.ReqID)
 		if exist {
 			// Existing data, does not update the ID field
 			delete(item.Info, dbParam.InstIDField)
@@ -171,7 +177,6 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 				continue
 			}
 		} else {
-
 			err := s.dbProxy.Table(dbParam.tableName).Insert(ctx, item.Info)
 			if err != nil {
 				blog.Errorf("replaceSynchronize insert info error,err:%s.DataClassify:%s,info:%#v,rid:%s", err.Error(), s.syncData.DataClassify, item, ctx.ReqID)
@@ -244,15 +249,19 @@ func (s *synchronizeAdapter) getSameInfo(ctx core.ContextParams, instIDField, ta
 		if err != nil {
 			return 0, false, err
 		}
+	default:
+		// merged data is not supported
+		return 0, false, err
 	}
 
 	inst := mapstr.New()
 	err = s.dbProxy.Table(tableName).Find(bsi.Condition()).One(ctx, &inst)
-	if err != nil && s.dbProxy.IsNotFoundError(err) {
-		blog.Errorf("existSameInfo query db error. DataClassify:%s,info:%#v,condition:%#v, rid:%s", bsi.syncData.DataClassify, info.Info, bsi.Condition(), ctx.ReqID)
+	if err != nil && !s.dbProxy.IsNotFoundError(err) {
+		blog.Errorf("existSameInfo query db error. err:%s, DataClassify:%s,info:%#v,condition:%#v, rid:%s", err.Error(), bsi.syncData.DataClassify, info.Info, bsi.Condition(), ctx.ReqID)
 		return 0, false, ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 
+	blog.V(6).Infof("getSameInfo DataClassify:%s, info:%#v, condition:%#v, inst:%#v, rid:%s", bsi.syncData.DataClassify, info.Info, bsi.Condition(), inst, ctx.ReqID)
 	// not found data
 	if len(inst) == 0 {
 		return 0, false, nil
@@ -260,7 +269,7 @@ func (s *synchronizeAdapter) getSameInfo(ctx core.ContextParams, instIDField, ta
 
 	instID, err := inst.Int64(instIDField)
 	if err != nil {
-		blog.Errorf("buildSameInfoBaseCond get ownerID error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
+		blog.Errorf("buildSameInfoBaseCond get inst error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
 		return 0, false, ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery data", instIDField, "int", err.Error())
 	}
 	return instID, true, nil
@@ -319,14 +328,8 @@ func (bsi *buildSameInfo) BuildSameInfoObjDescCond(ctx core.ContextParams) error
 		blog.Errorf("buildSameInfoObjDescCond get bk_obj_id error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKObjIDField, "string", err.Error())
 	}
-	objName, err := info.Info.String(common.BKObjNameField)
-	if err != nil {
-		blog.Errorf("buildSameInfoObjDescCond get bk_obj_name error. DataClassify:%s,info:%#v,rid:%s", bsi.syncData.DataClassify, info.Info, ctx.ReqID)
-		return ctx.Error.Errorf(common.CCErrCommInstFieldConvFail, "propery", common.BKObjNameField, "string", err.Error())
-	}
 
 	bsi.cond.Set(common.BKObjIDField, objID)
-	bsi.cond.Set(common.BKObjNameField, objName)
 	return nil
 }
 
