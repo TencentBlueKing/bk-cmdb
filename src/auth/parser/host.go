@@ -9,6 +9,7 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -277,7 +278,7 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
 			return ps
