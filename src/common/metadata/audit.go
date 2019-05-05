@@ -27,90 +27,90 @@ type SaveAuditLogParams struct {
 }
 
 // AuditHostLogParams add single host log parammeter
-type AuditHostLogParams struct {
-	Content interface{}            `json:"content"`
-	OpDesc  string                 `json:"op_desc"`
-	InnerIP string                 `json:"bk_host_innerip"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	HostID  int64                  `json:"inst_id"`
-}
+// type AuditHostLogParams struct {
+// 	Content interface{}            `json:"content"`
+// 	OpDesc  string                 `json:"op_desc"`
+// 	InnerIP string                 `json:"bk_host_innerip"`
+// 	OpType  auditoplog.AuditOpType `json:"op_type"`
+// 	HostID  int64                  `json:"inst_id"`
+// }
 
 // AuditHostsLogParams add multiple host log parameter
-type AuditHostsLogParams struct {
-	Content []auditoplog.AuditLogExt `json:"content"`
-	OpDesc  string                   `json:"op_desc"`
-	OpType  auditoplog.AuditOpType   `json:"op_type"`
-}
+// type AuditHostsLogParams struct {
+// 	Content []auditoplog.AuditLogExt `json:"content"`
+// 	OpDesc  string                   `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType   `json:"op_type"`
+// }
 
 // AuditObjParams add object single log parameter
-type AuditObjParams struct {
-	Content  interface{}            `json:"content"`
-	OpDesc   string                 `json:"op_desc"`
-	OpType   auditoplog.AuditOpType `json:"op_type"`
-	OpTarget string                 `json:"op_target"`
-	InstID   int64                  `json:"inst_id"`
-}
+// type AuditObjParams struct {
+// 	Content  interface{}            `json:"content"`
+// 	OpDesc   string                 `json:"op_desc"`
+// 	OpType   auditoplog.AuditOpType `json:"op_type"`
+// 	OpTarget string                 `json:"op_target"`
+// 	InstID   int64                  `json:"inst_id"`
+// }
 
 // AuditObjsParams add object multiple log parameter
-type AuditObjsParams struct {
-	Content  []auditoplog.AuditLogContext `json:"content"`
-	OpDesc   string                       `json:"op_desc"`
-	OpType   auditoplog.AuditOpType       `json:"op_type"`
-	OpTarget string                       `json:"op_target"`
-}
+// type AuditObjsParams struct {
+// 	Content  []auditoplog.AuditLogContext `json:"content"`
+// 	OpDesc   string                       `json:"op_desc"`
+// 	OpType   auditoplog.AuditOpType       `json:"op_type"`
+// 	OpTarget string                       `json:"op_target"`
+// }
 
 // AuditProcParams add process single log parameter
-type AuditProcParams struct {
-	Content interface{}            `json:"content"`
-	OpDesc  string                 `json:"op_desc"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	ProcID  int64                  `json:"inst_id"`
-}
+// type AuditProcParams struct {
+// 	Content interface{}            `json:"content"`
+// 	OpDesc  string                 `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType `json:"op_type"`
+// 	ProcID  int64                  `json:"inst_id"`
+// }
 
 // AuditProcsParams add process multiple log parameter
-type AuditProcsParams struct {
-	Content []auditoplog.AuditLogContext `json:"bk_content"`
-	OpDesc  string                       `json:"bk_op_desc"`
-	OpType  auditoplog.AuditOpType       `json:"bk_op_type"`
-}
+// type AuditProcsParams struct {
+// 	Content []auditoplog.AuditLogContext `json:"bk_content"`
+// 	OpDesc  string                       `json:"bk_op_desc"`
+// 	OpType  auditoplog.AuditOpType       `json:"bk_op_type"`
+// }
 
 // AuditModuleParams add module  single log parammete
-type AuditModuleParams struct {
-	Content  interface{}            `json:"content"`
-	OpDesc   string                 `json:"op_desc"`
-	OpType   auditoplog.AuditOpType `json:"op_type"`
-	ModuleID int64                  `json:"inst_id"`
-}
+// type AuditModuleParams struct {
+// 	Content  interface{}            `json:"content"`
+// 	OpDesc   string                 `json:"op_desc"`
+// 	OpType   auditoplog.AuditOpType `json:"op_type"`
+// 	ModuleID int64                  `json:"inst_id"`
+// }
 
 // AuditModuleParams add module multiple log parammete
-type AuditModulesParams struct {
-	Content []auditoplog.AuditLogContext `json:"content"`
-	OpDesc  string                       `json:"op_desc"`
-	OpType  auditoplog.AuditOpType       `json:"op_type"`
-}
+// type AuditModulesParams struct {
+// 	Content []auditoplog.AuditLogContext `json:"content"`
+// 	OpDesc  string                       `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType       `json:"op_type"`
+// }
 
 // AuditAppParams add application log parameter
-type AuditAppParams struct {
-	Content string                 `json:"content"`
-	OpDesc  string                 `json:"op_desc"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	AppID   int64                  `json:"inst_id"`
-}
+// type AuditAppParams struct {
+// 	Content string                 `json:"content"`
+// 	OpDesc  string                 `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType `json:"op_type"`
+// 	AppID   int64                  `json:"inst_id"`
+// }
 
 // AuditSetParams add set single log parameter
-type AuditSetParams struct {
-	Content interface{}            `json:"content"`
-	OpDesc  string                 `json:"op_desc"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	SetID   int64                  `json:"inst_id"`
-}
+// type AuditSetParams struct {
+// 	Content interface{}            `json:"content"`
+// 	OpDesc  string                 `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType `json:"op_type"`
+// 	SetID   int64                  `json:"inst_id"`
+// }
 
 // AuditSetParams add set multiple log parameter
-type AuditSetsParams struct {
-	Content []auditoplog.AuditLogContext `json:"content"`
-	OpDesc  string                       `json:"op_desc"`
-	OpType  auditoplog.AuditOpType       `json:"op_type"`
-}
+// type AuditSetsParams struct {
+// 	Content []auditoplog.AuditLogContext `json:"content"`
+// 	OpDesc  string                       `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType       `json:"op_type"`
+// }
 
 type AuditQueryResult struct {
 	BaseResp `json:",inline"`
@@ -121,16 +121,16 @@ type AuditQueryResult struct {
 }
 
 // AuditAssociationLogParams represent add single association log parameter
-type AuditAssociationLogParams struct {
-	Content       interface{}            `json:"content"`
-	OpDesc        string                 `json:"op_desc"`
-	OpType        auditoplog.AuditOpType `json:"op_type"`
-	AssociationID int64                  `json:"inst_id"`
-}
+// type AuditAssociationLogParams struct {
+// 	Content       interface{}            `json:"content"`
+// 	OpDesc        string                 `json:"op_desc"`
+// 	OpType        auditoplog.AuditOpType `json:"op_type"`
+// 	AssociationID int64                  `json:"inst_id"`
+// }
 
 // AuditAssociationsLogParams represent add multiple association log parameter
-type AuditAssociationsLogParams struct {
-	Content []auditoplog.AuditLogExt `json:"content"`
-	OpDesc  string                   `json:"op_desc"`
-	OpType  auditoplog.AuditOpType   `json:"op_type"`
-}
+// type AuditAssociationsLogParams struct {
+// 	Content []auditoplog.AuditLogExt `json:"content"`
+// 	OpDesc  string                   `json:"op_desc"`
+// 	OpType  auditoplog.AuditOpType   `json:"op_type"`
+// }
