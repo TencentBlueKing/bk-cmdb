@@ -30,7 +30,8 @@
     "data": [
         {
             "type": "cc_ObjectBase",
-            "url": "http://cmdb.bk.test/#/general-model/test_search",
+            "score": 3.566052,
+            "url_suffix": "/#/general-model/test_search",
             "source": {
                   "jw_test_4": 1,
                   "bk_inst_id": 5,
@@ -49,7 +50,8 @@
         },
         {
             "type": "cc_HostBase",
-            "url": "http://cmdb.bk.test/#/resource?business=1&ip=10.0.0.6&outer=false&inner=true&exact=1&assigned=true",
+            "score": 2.2986379,
+            "url_suffix": "/#/resource?business=1&ip=10.0.0.6&outer=false&inner=true&exact=1&assigned=true",
             "source": {
                 "bk_bak_operator" : null,
                 "bk_supplier_account" : "0",
@@ -99,5 +101,6 @@ data说明：
 | 名称  | 类型  | 说明 |Description|
 |---|---|---|---|
 | type | string | 类型 | 查询结果所属table类型 |
-| url | string | 跳转链接 | 搜索结果的跳转href |
+| url_suffix | string | 跳转链接后缀 | 搜索结果的跳转href后缀 |
+| score | float | 最佳匹配得分 | 搜索结果匹配程度 |
 | source | object | 属性值 | 搜索结果的具体内容 |
