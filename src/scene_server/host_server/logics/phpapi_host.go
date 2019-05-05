@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -91,12 +92,20 @@ func (phpapi *PHPAPI) UpdateHostMain(ctx context.Context, hostCondition, data ma
 	if nil == err && true == res.Result {
 		//操作成功，新加操作日志日志resJs, err := simplejson.NewJson([]byte(res))
 		if res.Result {
-			user := util.GetUser(phpapi.header)
-			ownerID := util.GetOwnerID(phpapi.header)
 			logContent.WithCurrent(ctx, strHostID)
 			content := logContent.GetContent(hostID)
 			//(id interface{}, Content interface{}, OpDesc string, InnerIP, ownerID, appID, user string, OpType auditoplog.AuditOpType)
-			phpapi.logic.CoreAPI.AuditController().AddHostLog(ctx, ownerID, strconv.FormatInt(appID, 10), user, phpapi.header, content)
+
+			log := meta.SaveAuditLogParams{
+				ID:      hostID,
+				Model:   common.BKInnerObjIDHost,
+				Content: content,
+				OpDesc:  "enter ip host",
+				OpType:  auditoplog.AuditOpTypeModify,
+				BizID:   appID,
+			}
+
+			phpapi.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), phpapi.header, log)
 		}
 	}
 

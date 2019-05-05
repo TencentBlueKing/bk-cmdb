@@ -156,8 +156,17 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 			return err
 		}
 		content := audit.GetContent(hostID)
-		log := common.KvMap{common.BKContentField: content, common.BKOpDescField: "enter ip host", common.BKHostInnerIPField: audit.ip, common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": hostID}
-		aResult, err := lgc.CoreAPI.AuditController().AddHostLog(ctx, ownerID, strconv.FormatInt(appID, 10), util.GetUser(lgc.header), lgc.header, log)
+		log := metadata.SaveAuditLogParams{
+			ID:      hostID,
+			Model:   common.BKInnerObjIDHost,
+			Content: content,
+			OpDesc:  "enter ip host",
+			OpType:  auditoplog.AuditOpTypeAdd,
+			ExtKey:  audit.ip,
+			BizID:   appID,
+		}
+
+		aResult, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, log)
 		if err != nil {
 			blog.Errorf("EnterIP AddHostLog http do error, err:%s, rid:%s", err.Error(), lgc.rid)
 			return lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
