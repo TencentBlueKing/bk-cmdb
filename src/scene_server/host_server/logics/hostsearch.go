@@ -762,7 +762,6 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		hostIDArr = append(hostIDArr, hostIDArrItem...)
 	}
 
-
 	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
 		Field:    common.BKHostIDField,
 		Operator: common.BKDBIN,

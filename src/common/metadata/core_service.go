@@ -196,7 +196,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 	if common.GetObjectTypeByObjectID(node.ObjectID) == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
-	
+
 	for _, child := range node.Children {
 		path := child.TraversalFindNode(objectType, targetID)
 		if len(path) > 0 {
@@ -204,7 +204,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 			return path
 		}
 	}
-	
+
 	return []*TopoInstanceNode{}
 }
 
