@@ -31,7 +31,7 @@ def generate_config_file(
         redis_port=redis_port_v,
         cc_url=cc_url_v,
         paas_url=paas_url_v,
-	es_url=es_url_v,
+        es_url=es_url_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
@@ -597,9 +597,9 @@ def main(argv):
         elif opt in ("--auth_app_secret",):
             auth["auth_app_secret"] = arg
             print("auth_app_secret:", auth["auth_app_secret"])
-	elif opt in("-es","--es_url"):
-	    es_url = arg
-	    print('es_url:',es_url)
+        elif opt in("-es","--es_url"):
+            es_url = arg
+            print('es_url:',es_url)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
