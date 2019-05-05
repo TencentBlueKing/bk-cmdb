@@ -776,7 +776,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	resp.Data.ID = instanceAssociationID
 
 	// record audit log
-	auditlog := metadata.CreateAuditLogParams{
+	auditlog := metadata.SaveAuditLogParams{
 		ID:    instanceAssociationID,
 		Model: "instance_association",
 		Content: metadata.Content{
@@ -837,7 +837,7 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		BaseResp: rsp.BaseResp,
 	}
 
-	auditlog := metadata.CreateAuditLogParams{
+	auditlog := metadata.SaveAuditLogParams{
 		ID:    assoID,
 		Model: "instance_association",
 		Content: metadata.Content{

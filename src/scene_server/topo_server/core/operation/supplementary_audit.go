@@ -129,7 +129,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
 		}
 
-		auditlog := metadata.CreateAuditLogParams{
+		auditlog := metadata.SaveAuditLogParams{
 			ID:    id,
 			Model: a.obj.GetObjectType(),
 			Content: Content{

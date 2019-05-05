@@ -117,7 +117,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	logConentsMap := make(map[int64]meta.CreateAuditLogParams, 0)
+	logConentsMap := make(map[int64]meta.SaveAuditLogParams, 0)
 	for _, hostID := range iHostIDArr {
 		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
 		if err := logger.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
@@ -144,7 +144,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	for _, ex := range delResult.Data {
 		delete(logConentsMap, ex.OriginIndex)
 	}
-	var logConents []meta.CreateAuditLogParams
+	var logConents []meta.SaveAuditLogParams
 	for _, item := range logConentsMap {
 		item.Model = common.BKInnerObjIDHost
 		item.OpDesc = "delete host"
@@ -510,7 +510,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	logPreConents := make(map[int64]meta.CreateAuditLogParams, 0)
+	logPreConents := make(map[int64]meta.SaveAuditLogParams, 0)
 	hostIDs := make([]int64, 0)
 	for _, id := range strings.Split(hostIDStr, ",") {
 		hostID, err := strconv.ParseInt(id, 10, 64)
@@ -576,7 +576,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 
 	appID := hostModuleConfig[0].AppID
 
-	logLastConents := make([]meta.CreateAuditLogParams, 0)
+	logLastConents := make([]meta.SaveAuditLogParams, 0)
 	for _, hostID := range hostIDs {
 
 		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
@@ -596,7 +596,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		}
 
 		logLastConents = append(logLastConents,
-			meta.CreateAuditLogParams{
+			meta.SaveAuditLogParams{
 				ID:      hostID,
 				Model:   common.BKInnerObjIDHost,
 				Content: logContent,

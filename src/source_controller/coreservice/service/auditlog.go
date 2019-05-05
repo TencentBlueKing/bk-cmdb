@@ -20,7 +20,7 @@ import (
 
 func (s *coreService) CreateAuditLog(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := struct {
-		Data []metadata.CreateAuditLogParams `json:"data"`
+		Data []metadata.SaveAuditLogParams `json:"data"`
 	}{}
 	if err := data.MarshalJSONInto(&inputData); nil != err {
 		return nil, err

@@ -72,8 +72,8 @@ func (h *HostLog) WithCurrent(ctx context.Context, hostID string) errors.CCError
 	return nil
 }
 
-func (h *HostLog) AuditLog(ctx context.Context, hostID int64) metadata.CreateAuditLogParams {
-	return metadata.CreateAuditLogParams{
+func (h *HostLog) AuditLog(ctx context.Context, hostID int64) metadata.SaveAuditLogParams {
+	return metadata.SaveAuditLogParams{
 		ID:      hostID,
 		Content: h.Content,
 		ExtKey:  h.ip,
@@ -214,7 +214,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		h.desc = "host module change"
 	}
 
-	logs := make([]metadata.CreateAuditLogParams, 0)
+	logs := make([]metadata.SaveAuditLogParams, 0)
 	for _, host := range h.hostInfos {
 		instID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
@@ -236,7 +236,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 			curApp = moduleMap[moduleID].appID
 		}
 
-		logs = append(logs, metadata.CreateAuditLogParams{
+		logs = append(logs, metadata.SaveAuditLogParams{
 			ID:    instID,
 			Model: common.BKInnerObjIDHost,
 			Content: metadata.Content{

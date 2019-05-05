@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.CreateAuditLogParams) (resp *metadata.Response, err error) {
+func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.SaveAuditLogParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 
 	subPath := fmt.Sprintf("/create/auditlog")
@@ -28,7 +28,7 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 	err = inst.client.Post().
 		WithContext(ctx).
 		Body(struct {
-			Data []metadata.CreateAuditLogParams `json:"data"`
+			Data []metadata.SaveAuditLogParams `json:"data"`
 		}{Data: logs}).
 		SubResource(subPath).
 		WithHeaders(h).
