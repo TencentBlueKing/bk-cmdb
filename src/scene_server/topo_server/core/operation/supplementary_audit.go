@@ -144,11 +144,11 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 
 		auditresp, err := a.client.CoreService().Audit().SaveAuditLog(context.Background(), a.params.Header, auditlog)
 		if err != nil {
-			blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), error info is %s", targetItem.GetValues(), err.Error())
 			return
 		}
 		if !auditresp.Result {
-			blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, a.params.ReqID)
+			blog.V(3).Infof("[audit] failed to get the bizid from the data(%#v), resp info is %v", targetItem.GetValues(), auditresp)
 			return
 		}
 	}

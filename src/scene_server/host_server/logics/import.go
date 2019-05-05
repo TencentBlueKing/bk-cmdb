@@ -48,7 +48,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 	}
 
 	var errMsg, updateErrMsg, succMsg []string
-	logConents := make([]auditoplog.AuditLogExt, 0)
+	logConents := make([]metadata.SaveAuditLogParams, 0)
 	auditHeaders, err := lgc.GetHostAttributes(ctx, ownerID, nil)
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -126,7 +126,7 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 		}
 
 		// add audit log
-		logConents = append(logConents, auditoplog.AuditLogExt{
+		logConents = append(logConents, metadata.SaveAuditLogParams{
 			ID: intHostID,
 			Content: metadata.Content{
 				PreData: preData,
@@ -134,20 +134,16 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 				Headers: auditHeaders,
 			},
 			ExtKey: innerIP,
+			OpType: auditoplog.AuditOpTypeAdd,
+			BizID:  appID,
+			OpDesc: "import host",
+			Model:  common.BKInnerObjIDHost,
 		})
 		hostIDs = append(hostIDs, intHostID)
 	}
 
 	if len(logConents) > 0 {
-		log := metadata.SaveAuditLogParams{
-			Model:   common.BKInnerObjIDHost,
-			Content: logConents,
-			OpDesc:  "import host",
-			OpType:  auditoplog.AuditOpTypeAdd,
-			BizID:   appID,
-		}
-
-		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, log)
+		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, logConents...)
 		if err != nil {
 			return hostIDs, succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
