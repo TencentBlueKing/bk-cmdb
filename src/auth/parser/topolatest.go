@@ -955,7 +955,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
-					Action: meta.Find,
+					// Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -970,7 +971,8 @@ func (ps *parseStream) objectLatest() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.ModelTopology,
-					Action: meta.Update,
+					// Action: meta.Update,
+					Action: meta.SkipAction,
 				},
 			},
 		}
