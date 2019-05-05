@@ -159,7 +159,6 @@ func (s *synchronizeAdapter) replaceSynchronize(ctx core.ContextParams, dbParam 
 			}
 			if exist {
 				conds = mapstr.MapStr{dbParam.InstIDField: item.ID}
-
 			}
 		}
 

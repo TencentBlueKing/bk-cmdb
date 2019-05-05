@@ -90,7 +90,7 @@ func (m *model) saveSynchronizeModelAttribute(ctx core.ContextParams) errors.CCE
 
 func (m *model) saveSynchronizeModelAttributeGroup(ctx core.ContextParams) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
-	//cc_PropertyGroup
+	// cc_PropertyGroup
 	dbParam.tableName = common.BKTableNamePropertyGroup
 	dbParam.InstIDField = common.BKFieldID
 	m.base.saveSynchronize(ctx, dbParam)
@@ -99,7 +99,7 @@ func (m *model) saveSynchronizeModelAttributeGroup(ctx core.ContextParams) error
 
 func (m *model) saveSynchronizeModelBase(ctx core.ContextParams) errors.CCError {
 	var dbParam synchronizeAdapterDBParameter
-	//cc_ObjDes
+	// cc_ObjDes
 	dbParam.tableName = common.BKTableNameObjDes
 	dbParam.InstIDField = common.BKFieldID
 	m.base.saveSynchronize(ctx, dbParam)
