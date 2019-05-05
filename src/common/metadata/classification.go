@@ -13,8 +13,6 @@
 package metadata
 
 import (
-
-	//"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 )
 

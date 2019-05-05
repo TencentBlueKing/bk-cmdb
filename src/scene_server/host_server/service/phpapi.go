@@ -160,19 +160,31 @@ func (s *Service) HostSearchByIP(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	configCond := map[string][]int64{
-		common.BKHostIDField: hostIDArr,
+	configCond := meta.HostModuleRelationRequest{
+		HostIDArr: hostIDArr,
 	}
+	var configData []meta.ModuleHost
 	if 0 < len(input.AppID) {
-		configCond[common.BKAppIDField] = input.AppID
+		for _, appID := range input.AppID {
+			configCond.ApplicationID = appID
+			configDataItem, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCond)
+			if nil != err {
+				blog.Errorf("HostSearchByIP error : %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+				return
+			}
+			configData = append(configData, configDataItem...)
+		}
+
+	} else {
+		configData, err = srvData.lgc.GetConfigByCond(srvData.ctx, configCond)
+		if nil != err {
+			blog.Errorf("HostSearchByIP error : %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
+			return
+		}
 	}
 
-	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCond)
-	if nil != err {
-		blog.Errorf("HostSearchByIP error : %s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleConfigFaild, err.Error())})
-		return
-	}
 	hostData, err := phpapi.SetHostData(srvData.ctx, configData, hostMap)
 	if nil != err {
 		blog.Errorf("HostSearchByIP error : %v", err)
@@ -211,8 +223,8 @@ func (s *Service) HostSearchByConds(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	configCond := map[string][]int64{
-		common.BKHostIDField: hostIDArr,
+	configCond := meta.HostModuleRelationRequest{
+		HostIDArr: hostIDArr,
 	}
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCond)
 	if nil != err {
@@ -263,9 +275,9 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, map[string][]int64{
-		common.BKModuleIDField: input.ModuleID,
-		common.BKAppIDField:    []int64{*input.ApplicationID},
+	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{
+		ModuleIDArr:   input.ModuleID,
+		ApplicationID: *input.ApplicationID,
 	})
 	if nil != err {
 		blog.Errorf("HostSearchByModuleID get host module config error:%s, input:%+v", err.Error(), input)
@@ -315,11 +327,11 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	conds := make(map[string][]int64)
-	conds[common.BKAppIDField] = []int64{*input.ApplicationID}
+	var conds meta.HostModuleRelationRequest
+	conds.ApplicationID = *input.ApplicationID
 
 	if len(input.SetID) > 0 {
-		conds[common.BKSetIDField] = input.SetID
+		conds.SetIDArr = input.SetID
 	}
 
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, conds)
@@ -372,8 +384,8 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, map[string][]int64{
-		common.BKAppIDField: []int64{*input.ApplicationID},
+	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{
+		ApplicationID: *input.ApplicationID,
 	})
 
 	if nil != err {
@@ -465,11 +477,11 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 	}
 	blog.V(5).Infof("HostSearchByProperty ApplicationID: %v, SetID: %v, input:%+v, rid:%s", appID, setIDArr, input, srvData.rid)
 
-	condition := map[string][]int64{
-		common.BKAppIDField: []int64{appID},
+	condition := meta.HostModuleRelationRequest{
+		ApplicationID: appID,
+		SetIDArr:      setIDArr,
 	}
 
-	condition[common.BKSetIDField] = setIDArr
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, condition)
 	if nil != err {
 		blog.Errorf("HostSearchByProperty get host module config error:%s, input:%+v,param:%+v,rid:%s", err.Error(), input, condition, srvData.rid)
@@ -687,8 +699,8 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	}
 
 	// 根据主机hostId获取app_id,module_id,set_id
-	configCon := map[string][]int64{
-		common.BKHostIDField: hostIdArr,
+	configCon := meta.HostModuleRelationRequest{
+		HostIDArr: hostIdArr,
 	}
 	configArr, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
 	if nil != err {
@@ -708,9 +720,9 @@ func (s *Service) GetHostAppByCompanyId(req *restful.Request, resp *restful.Resp
 	setIdArr := make([]int64, 0)
 	moduleIdArr := make([]int64, 0)
 	for _, item := range configArr {
-		appIdArr = append(appIdArr, item[common.BKAppIDField])
-		setIdArr = append(setIdArr, item[common.BKSetIDField])
-		moduleIdArr = append(moduleIdArr, item[common.BKModuleIDField])
+		appIdArr = append(appIdArr, item.AppID)
+		setIdArr = append(setIdArr, item.SetID)
+		moduleIdArr = append(moduleIdArr, item.ModuleID)
 	}
 	// SetHostData is not a good name
 	hostMapArr, err := phpapi.SetHostData(srvData.ctx, configArr, hostArr) //phpapilogic.SetHostData(req, configArr, hostArr)
@@ -748,9 +760,9 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsInvalid, "HostID")})
 		return
 	}
-	configCon := map[string][]int64{
-		common.BKAppIDField:  []int64{appID},
-		common.BKHostIDField: []int64{hostID},
+	configCon := meta.HostModuleRelationRequest{
+		ApplicationID: appID,
+		HostIDArr:     []int64{hostID},
 	}
 
 	configArr, err := srvData.lgc.GetConfigByCond(srvData.ctx, configCon)
@@ -766,7 +778,7 @@ func (s *Service) DelHostInApp(req *restful.Request, resp *restful.Response) {
 	}
 	moduleIdArr := make([]int64, 0)
 	for _, item := range configArr {
-		moduleIdArr = append(moduleIdArr, item[common.BKModuleIDField])
+		moduleIdArr = append(moduleIdArr, item.ModuleID)
 	}
 	moduleCon := mapstr.MapStr{
 		common.BKModuleIDField: map[string]interface{}{
@@ -896,10 +908,10 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 	}
 	// 根据 appId,setId,moduleId 获取主机信息
 	//configData := make([]map[string]int,0)
-	confMap := map[string][]int64{
-		common.BKAppIDField:    []int64{appID},
-		common.BKSetIDField:    []int64{setID},
-		common.BKModuleIDField: []int64{moduleID},
+	confMap := meta.HostModuleRelationRequest{
+		ApplicationID: appID,
+		SetIDArr:      []int64{setID},
+		ModuleIDArr:   []int64{moduleID},
 	}
 	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, confMap)
 	if nil != err {
@@ -919,7 +931,7 @@ func (s *Service) GetGitServerIp(req *restful.Request, resp *restful.Response) {
 
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
-		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+		hostIDArr = append(hostIDArr, config.HostID)
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, hostIDArr...); err != nil {
@@ -1103,8 +1115,8 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 
 	field := req.PathParameter("field")
 
-	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, map[string][]int64{
-		common.BKAppIDField: []int64{appID},
+	configData, err := srvData.lgc.GetConfigByCond(srvData.ctx, meta.HostModuleRelationRequest{
+		ApplicationID: appID,
 	})
 
 	if nil != err {
@@ -1115,7 +1127,7 @@ func (s *Service) getHostListByAppidAndField(req *restful.Request, resp *restful
 
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
-		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+		hostIDArr = append(hostIDArr, config.HostID)
 	}
 
 	// auth: check authorization

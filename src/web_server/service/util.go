@@ -1,7 +1,8 @@
 package service
 
 import (
-	"configcenter/src/common/json"
+	"encoding/json"
+
 	"configcenter/src/common/metadata"
 )
 

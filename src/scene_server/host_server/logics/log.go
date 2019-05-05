@@ -210,7 +210,6 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 
 	logs := make([]auditoplog.AuditLogExt, 0)
 
-	var ownerID string
 	for _, host := range h.hostInfos {
 		instID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if err != nil {
@@ -224,7 +223,6 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 		for moduleID := range preMap[instID] {
 			preModule = append(preModule, moduleMap[moduleID])
 			preApp = moduleMap[moduleID].appID
-			ownerID = moduleMap[moduleID].ownerID
 		}
 
 		curModule := make([]interface{}, 0)
@@ -233,7 +231,6 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 		for moduleID := range curMap[instID] {
 			curModule = append(curModule, moduleMap[moduleID])
 			curApp = moduleMap[moduleID].appID
-			ownerID = moduleMap[moduleID].ownerID
 		}
 
 		log.Content = metadata.Content{
@@ -251,7 +248,7 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 		h.desc = "host module change"
 	}
 	data := common.KvMap{common.BKContentField: logs, common.BKOpDescField: h.desc, common.BKOpTypeField: auditoplog.AuditOpTypeHostModule}
-	result, err := h.logic.CoreAPI.AuditController().AddHostLogs(ctx, ownerID, appID, user, h.header, data)
+	result, err := h.logic.CoreAPI.AuditController().AddHostLogs(ctx, h.logic.ownerID, appID, user, h.header, data)
 	if err != nil {
 		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), data, h.logic.rid)
 		return h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -264,8 +261,10 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID, user, desc string)
 }
 
 func (h *HostModuleLog) getHostModuleConfig(ctx context.Context) ([]metadata.ModuleHost, errors.CCError) {
-	conds := map[string][]int64{common.BKHostIDField: h.instIDArr}
-	result, err := h.logic.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, h.header, conds)
+	conds := &metadata.HostModuleRelationRequest{
+		HostIDArr: h.instIDArr,
+	}
+	result, err := h.logic.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, h.header, conds)
 	if err != nil {
 		blog.Errorf("getHostModuleConfig http do error, err:%s,input:%+v,rid:%s", err.Error(), conds, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
