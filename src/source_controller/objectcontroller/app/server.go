@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -32,6 +30,8 @@ import (
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	restful "github.com/emicklei/go-restful"
 )
 
 //Run ccapi server

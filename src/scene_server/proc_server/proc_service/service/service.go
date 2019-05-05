@@ -16,9 +16,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -35,6 +32,9 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -145,14 +145,6 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		objCtr.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, objCtr)
-
-	// audit controller
-	auditCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_AUDITCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_AUDITCONTROLLER); err != nil {
-		auditCtrl.IsHealthy = false
-		auditCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, auditCtrl)
 
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}

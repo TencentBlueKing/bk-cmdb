@@ -131,7 +131,7 @@ func (a *auditLog) commitSnapshot(preData, currData *WrapperResult, action audit
 
 		auditlog := metadata.SaveAuditLogParams{
 			ID:    id,
-			Model: a.obj.GetObjectType(),
+			Model: a.obj.GetObjectID(),
 			Content: Content{
 				CurData: currDataTmp,
 				PreData: preDataTmp,

@@ -140,4 +140,5 @@ func (s *coreService) initService() {
 	s.initDataSynchronize()
 	s.initMainline()
 	s.host()
+	s.audit()
 }
