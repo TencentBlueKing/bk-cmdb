@@ -850,11 +850,11 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 	}
 	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditresp, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
 	}
 	if !auditresp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
 	}
 

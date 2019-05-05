@@ -251,14 +251,14 @@ func (h *HostModuleLog) SaveAudit(ctx context.Context, appID int64, user, desc s
 		})
 	}
 
-	auditresp, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
+	result, err := h.logic.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), h.header, logs...)
 	if err != nil {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, h.logic.rid)
+		blog.Errorf("AddHostLogs http do error, err:%s,input:%+v,rid:%s", err.Error(), logs, h.logic.rid)
 		return h.logic.ccErr.Error(common.CCErrAuditSaveLogFaile)
 	}
-	if !auditresp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, h.logic.rid)
-		return h.logic.ccErr.New(auditresp.Code, auditresp.ErrMsg)
+	if !result.Result {
+		blog.Errorf("AddHostLogs  http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, logs, h.logic.rid)
+		return h.logic.ccErr.New(result.Code, result.ErrMsg)
 	}
 
 	return nil

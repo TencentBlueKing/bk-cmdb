@@ -223,27 +223,6 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 	if err := audit.WithPrevious(ctx, strconv.FormatInt(hostID, 10), nil); err != nil {
 		return err
 	}
-	content := audit.GetContent(hostID)
-
-	auditlog := metadata.SaveAuditLogParams{
-		ID:      hostID,
-		Model:   common.BKInnerObjIDHost,
-		Content: content,
-		OpDesc:  "enter ip host",
-		OpType:  auditoplog.AuditOpTypeAdd,
-		ExtKey:  audit.ip,
-		BizID:   appID,
-	}
-
-	auditresp, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, auditlog)
-	if err != nil {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, lgc.rid)
-		return lgc.ccErr.Error(common.CCErrAuditSaveLogFaile)
-	}
-	if !auditresp.Result {
-		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, lgc.rid)
-		return lgc.ccErr.New(auditresp.Code, auditresp.ErrMsg)
-	}
 	hmAudit := lgc.NewHostModuleLog([]int64{hostID})
 	if err := hmAudit.WithPrevious(ctx); err != nil {
 		return err
