@@ -111,7 +111,7 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	}
 
 	// delete object unique operation.
-	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodDelete) {
+	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodPost) {
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
