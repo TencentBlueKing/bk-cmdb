@@ -18,13 +18,12 @@ import (
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
 type AuditOperationInterface interface {
-	Query(params types.ContextParams, query *metadata.QueryInput) (interface{}, error)
+	Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error)
 }
 
 // NewAuditOperation create a new inst operation instance
@@ -38,36 +37,8 @@ type audit struct {
 	clientSet apimachinery.ClientSetInterface
 }
 
-func (a *audit) TranslateOpLanguage(params types.ContextParams, input interface{}) mapstr.MapStr {
-
-	data, err := mapstr.NewFromInterface(input)
-	if nil != err {
-		blog.Errorf("translate failed, err: %+v", err)
-		return data
-	}
-
-	info, err := data.MapStrArray("info")
-	if nil != err {
-		return data
-	}
-
-	for _, row := range info {
-
-		opDesc, err := row.String(common.BKOpDescField)
-		if nil != err {
-			continue
-		}
-		newDesc := params.Lang.Language("auditlog_" + opDesc)
-		if "" == newDesc {
-			continue
-		}
-		row.Set(common.BKOpDescField, newDesc)
-	}
-	return data
-}
-
-func (a *audit) Query(params types.ContextParams, query *metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, *query)
+func (a *audit) Query(params types.ContextParams, query metadata.QueryInput) (interface{}, error) {
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, query)
 	if nil != err {
 		blog.Errorf("[audit] failed request audit controller, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
@@ -78,5 +49,11 @@ func (a *audit) Query(params types.ContextParams, query *metadata.QueryInput) (i
 		return nil, params.Err.New(common.CCErrAuditTakeSnapshotFaile, rsp.ErrMsg)
 	}
 
-	return a.TranslateOpLanguage(params, rsp.Data), nil
+	for index := range rsp.Data.Info {
+		if desc := params.Lang.Language("auditlog_" + rsp.Data.Info[index].OpDesc); len(desc) > 0 {
+			rsp.Data.Info[index].OpDesc = desc
+		}
+	}
+
+	return rsp.Data, nil
 }

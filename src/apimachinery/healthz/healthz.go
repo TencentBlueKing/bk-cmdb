@@ -43,10 +43,6 @@ type health struct {
 func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	var name string
 	switch moduleName {
-	case types.CC_MODULE_AUDITCONTROLLER:
-		h.capability.Discover = h.disc.AuditCtrl()
-		name = "audit"
-
 	case types.CC_MODULE_HOSTCONTROLLER:
 		h.capability.Discover = h.disc.HostCtrl()
 		name = "host"

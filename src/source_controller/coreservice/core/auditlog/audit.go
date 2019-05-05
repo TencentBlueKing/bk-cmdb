@@ -74,7 +74,7 @@ func (m *auditManager) SearchAuditLog(ctx core.ContextParams, param metadata.Que
 	limit := param.Limit
 	fieldArr := strings.Split(fields, ",")
 	rows := make([]metadata.OperationLog, 0)
-	blog.V(9).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
+	blog.V(5).Infof("Search table common.BKTableNameOperationLog with parameters: %+v", condition)
 	err := m.dbProxy.Table(common.BKTableNameOperationLog).Find(condition).Sort(param.Sort).Fields(fieldArr...).Start(uint64(skip)).Limit(uint64(limit)).All(ctx, &rows)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v", err.Error(), condition)
