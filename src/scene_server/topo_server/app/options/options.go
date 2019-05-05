@@ -29,6 +29,7 @@ type Config struct {
 	Mongo                mongo.Config
 	ConfigMap            map[string]string
 	Auth                 authcenter.AuthConfig
+	EsUrl                string `json:"es.url"`
 }
 
 func NewServerOption() *ServerOption {

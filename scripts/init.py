@@ -8,7 +8,7 @@ from string import Template
 class FileTemplate(Template):
     delimiter='$'
 
-def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_user_v,redis_pass_v,mongo_ip_v,mongo_port_v,mongo_user_v,mongo_pass_v,cc_url_v,paas_url_v):
+def generate_config_file(rd_server_v,db_name_v,redis_ip_v,redis_port_v,redis_user_v,redis_pass_v,mongo_ip_v,mongo_port_v,mongo_user_v,mongo_pass_v,cc_url_v,paas_url_v,es_url_v):
     
     output = os.getcwd()+"/cmdb_adminserver/configures/"
  
@@ -322,10 +322,13 @@ mechanism=SCRAM-SHA-1
 
 [level]
 businessTopoMax=7
+
+[es]
+url=http://127.0.0.1:9200
 '''
 
     template = FileTemplate(topo_file_template_str)
-    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v))
+    result = template.substitute(dict(db=db_name_v,mongo_user=mongo_user_v,mongo_host=mongo_ip_v,mongo_pass=mongo_pass_v,mongo_port=mongo_port_v,es_url=es_url_v))
     with open( output + "topo.conf",'w') as tmp_file:
         tmp_file.write(result)
 
@@ -398,6 +401,7 @@ def main(argv):
     mongo_pass=''
     cc_url=''
     paas_url='http://127.0.0.1'
+    es_url='http://127.0.0.1:9200'
 
     server_ports={"cmdb_adminserver":60004,"cmdb_apiserver":8080,\
     "cmdb_auditcontroller":50005,"cmdb_datacollection":60005,\
@@ -406,10 +410,10 @@ def main(argv):
     "cmdb_proccontroller":50003,"cmdb_procserver":60003,"cmdb_tmserver":60008,\
     "cmdb_toposerver":60002,"cmdb_webserver":8083,"cmdb_synchronizeserver":60010}
     try:
-        opts, _ = getopt.getopt(argv,"hd:D:r:p:x:s:m:P:X:S:u:U:a:l:"\
+        opts, _ = getopt.getopt(argv,"hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es"\
         ,["help","discovery=","database=","redis_ip=","redis_port="\
         ,"redis_user=","redis_pass=","mongo_ip=","mongo_port="\
-        ,"mongo_user=","mongo_pass=","blueking_cmdb_url=","blueking_paas_url=","listen_port="])
+        ,"mongo_user=","mongo_pass=","blueking_cmdb_url=","blueking_paas_url=","listen_port=","es_url="])
 
     except getopt.GetoptError as e:
         print("\n \t",e.msg)
@@ -427,6 +431,7 @@ def main(argv):
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
+      --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
     ''')
 
         sys.exit(2)
@@ -445,6 +450,7 @@ def main(argv):
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
+      --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
     ''')
         sys.exit(2)
 
@@ -488,6 +494,9 @@ def main(argv):
         elif opt in("-l","--listen_port"):
             server_ports["cmdb_webserver"]=arg
             print("listen_port:",server_ports["cmdb_webserver"])
+        elif opt in("-es","--es_url"):
+            es_url = arg
+            print('es_url:',es_url)
     
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
@@ -525,8 +534,11 @@ def main(argv):
     if not cc_url.startswith("http://"):
         print('blueking cmdb url not start with http://')
         sys.exit()
+    if not es_url.startswith("http://"):
+        print('es url not start with http://')
+        sys.exit()
 
-    generate_config_file(rd_server,db_name,redis_ip,redis_port,redis_user,redis_pass,mongo_ip,mongo_port,mongo_user,mongo_pass,cc_url,paas_url)
+    generate_config_file(rd_server,db_name,redis_ip,redis_port,redis_user,redis_pass,mongo_ip,mongo_port,mongo_user,mongo_pass,cc_url,paas_url,es_url)
     update_start_script(rd_server, server_ports)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 if __name__=="__main__":

@@ -1,22 +1,36 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"encoding/json"
+	"fmt"
+	"github.com/olivere/elastic"
 )
 
 type SearchResult struct {
-	Source map[string]interface{} `json:"source"` // data from mongo, key/value
-	Type   string                 `json:"type"`
-	Url    string                 `json:"url"`
+	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
+	Type      string                 `json:"type"`
+	Score     float64                `json:"score"`
+	UrlSuffix string                 `json:"url_suffix"`
 }
+
+type Query struct {
+	QueryString string `json:"query_string"`
+}
+
+const (
+	CMDBINDEX = "cmdb"
+)
 
 var (
 	testData = []SearchResult{
 		{
-			Type: "cc_ObjectBase",
-			Url:  "http://cmdb-test.yovole.tech:8083/#/general-model/test_search",
+			Type:      "cc_ObjectBase",
+			Score:     3.566052,
+			UrlSuffix: "/#/general-model/test_search",
 			Source: map[string]interface{}{
 				"jw_test_4":           1,
 				"bk_inst_id":          5,
@@ -34,8 +48,9 @@ var (
 			},
 		},
 		{
-			Type: "cc_HostBase",
-			Url:  "http://cmdb-test.yovole.tech:8083/#/resource?business=1&ip=10.0.0.6&outer=false&inner=true&exact=1&assigned=true",
+			Type:      "cc_HostBase",
+			Score:     2.2986379,
+			UrlSuffix: "/#/resource?business=1&ip=10.0.0.6&outer=false&inner=true&exact=1&assigned=true",
 			Source: map[string]interface{}{
 				"bk_bak_operator":     nil,
 				"bk_supplier_account": "0",
@@ -72,7 +87,83 @@ var (
 )
 
 func (s *Service) FullTextSearch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	blog.Infof("[japlee] data(%#v)", data)
-	ret := testData
-	return ret, nil
+	if data.Exists("query_string") {
+		query := new(Query)
+		if err := data.MarshalJSONInto(query); err != nil {
+			blog.Errorf("full_text_search failed, import query_string, but got invalid query_string:[%v], err: %+v", query, err)
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
+
+		result, err := s.Es.Search(query.QueryString, CMDBINDEX)
+		if err != nil {
+			blog.Errorf("full_text_search failed, search failed, err: %+v", err)
+			return nil, params.Err.Error(common.CCErrorTopoFullTextSearchErr)
+		}
+
+		// result is list
+		searchResults := make([]SearchResult, 0)
+		for _, hit := range result {
+			if hit.Index == CMDBINDEX {
+				sr := SearchResult{}
+				sr.setHitAndUrl(hit)
+				searchResults = append(searchResults, sr)
+			}
+		}
+		return searchResults, nil
+	}
+
+	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+}
+
+func (sr *SearchResult) setHitAndUrl(searchHit *elastic.SearchHit) {
+	sr.Score = *searchHit.Score
+	sr.Type = searchHit.Type
+	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
+	if err != nil {
+		sr.Source = nil
+	}
+
+	switch searchHit.Type {
+	case common.BKTableNameBaseInst:
+		sr.setInstUrl(searchHit)
+	case common.BKTableNameBaseHost:
+		sr.setHostUrl(searchHit)
+	case common.BKTableNameBaseProcess:
+		sr.setProcessUrl(searchHit)
+	case common.BKTableNameBaseApp:
+		sr.setAppUrl(searchHit)
+	case common.BKTableNameObjDes:
+		sr.setObjDesUrl(searchHit)
+	default:
+		// log, warning, not support
+		blog.Warnf("full_text_search not support cmdb table: %s", searchHit.Type)
+	}
+}
+
+func (sr *SearchResult) setInstUrl(searchHit *elastic.SearchHit) {
+	//http://cmdb-domain/#/general-model/test_search
+	// suffix: /#/general-model/test_search
+	//bkObjId, err := s.Source["bk_obj_id"]
+	sr.UrlSuffix = "/#/general-model/" + fmt.Sprintf("%v", sr.Source["bk_obj_id"])
+}
+
+func (sr *SearchResult) setHostUrl(searchHit *elastic.SearchHit) {
+	//http://cmdb-domain/#/resource?business=1&ip=10.0.0.5&outer=false&inner=true&exact=1&assigned=true
+	// suffix: /#/resource?business=1&ip=10.0.0.5&outer=false&inner=true&exact=1&assigned=true
+}
+
+func (sr *SearchResult) setProcessUrl(searchHit *elastic.SearchHit) {
+	//http://cmdb-domain/#/process
+	// suffix: /#/process
+}
+
+func (sr *SearchResult) setAppUrl(searchHit *elastic.SearchHit) {
+	//http://cmdb-domain/#/business
+	// suffix: /#/business
+}
+
+func (sr *SearchResult) setObjDesUrl(searchHit *elastic.SearchHit) {
+	//http://cmdb-domain/#/model/details/ljp_test
+	// suffix: /#/model/details/ljp_test
+	sr.UrlSuffix = "/#/model/details/" + fmt.Sprintf("%v", sr.Source["bk_obj_id"])
 }

@@ -34,6 +34,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
+	"configcenter/src/thirdpartyclient/elasticsearch"
 
 	"github.com/emicklei/go-restful"
 )
@@ -44,6 +45,7 @@ type Service struct {
 	Core        core.Core
 	Config      options.Config
 	AuthManager *extensions.AuthManager
+	Es          *elasticsearch.EsSrv
 	Error       errors.CCErrorIf
 	Language    language.CCLanguageIf
 	actions     []action
