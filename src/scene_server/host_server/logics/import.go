@@ -139,12 +139,15 @@ func (lgc *Logics) AddHost(ctx context.Context, appID int64, moduleID []int64, o
 	}
 
 	if len(logConents) > 0 {
-		log := map[string]interface{}{
-			common.BKContentField: logConents,
-			common.BKOpDescField:  "import host",
-			common.BKOpTypeField:  auditoplog.AuditOpTypeAdd,
+		log := metadata.SaveAuditLogParams{
+			Model:   common.BKInnerObjIDHost,
+			Content: logConents,
+			OpDesc:  "import host",
+			OpType:  auditoplog.AuditOpTypeAdd,
+			BizID:   appID,
 		}
-		_, err := lgc.CoreAPI.AuditController().AddHostLogs(ctx, ownerID, strconv.FormatInt(appID, 10), lgc.user, lgc.header, log)
+
+		_, err := lgc.CoreAPI.CoreService().Audit().SaveAuditLog(context.Background(), lgc.header, log)
 		if err != nil {
 			return hostIDs, succMsg, updateErrMsg, errMsg, fmt.Errorf("generate audit log, but get host instance defail failed, err: %v", err)
 		}
