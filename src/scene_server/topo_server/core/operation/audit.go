@@ -67,7 +67,7 @@ func (a *audit) TranslateOpLanguage(params types.ContextParams, input interface{
 }
 
 func (a *audit) Query(params types.ContextParams, query *metadata.QueryInput) (interface{}, error) {
-	rsp, err := a.clientSet.AuditController().GetAuditLog(context.Background(), params.Header, query)
+	rsp, err := a.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), params.Header, *query)
 	if nil != err {
 		blog.Errorf("[audit] failed request audit controller, error info is %s", err.Error())
 		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
