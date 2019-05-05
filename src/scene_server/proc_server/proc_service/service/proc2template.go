@@ -147,8 +147,15 @@ func (ps *ProcServer) BindProc2Template(req *restful.Request, resp *restful.Resp
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("bind template [%d] to process [%d]", tempID, procID), common.BKOpTypeField: auditoplog.AuditOpTypeAdd}
-	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, srvData.header, log)
+	log := meta.SaveAuditLogParams{
+		ID:      int64(procID),
+		Model:   common.BKInnerObjIDProc,
+		Content: meta.Content{},
+		OpDesc:  fmt.Sprintf("bind template [%d] to process [%d]", tempID, procID),
+		OpType:  auditoplog.AuditOpTypeAdd,
+		BizID:   int64(appID),
+	}
+	ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -198,8 +205,15 @@ func (ps *ProcServer) DeleteProc2Template(req *restful.Request, resp *restful.Re
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind template [%d] to process [%d]", tempID, procID), common.BKOpTypeField: auditoplog.AuditOpTypeDel}
-	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, req.Request.Header, log)
+	log := meta.SaveAuditLogParams{
+		ID:      int64(procID),
+		Model:   common.BKInnerObjIDProc,
+		Content: meta.Content{},
+		OpDesc:  fmt.Sprintf("unbind template [%d] to process [%d]", tempID, procID),
+		OpType:  auditoplog.AuditOpTypeDel,
+		BizID:   int64(appID),
+	}
+	ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
