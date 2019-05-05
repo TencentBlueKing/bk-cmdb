@@ -120,6 +120,7 @@ func (sr *SearchResult) setHitAndUrl(searchHit *elastic.SearchHit) {
 	sr.Type = searchHit.Type
 	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
 	if err != nil {
+		blog.Warnf("full_text_search unmarshal search result source err: %+v", err)
 		sr.Source = nil
 	}
 
