@@ -216,7 +216,7 @@ func (lgc *Logics) EnterIP(ctx context.Context, ownerID string, appID, moduleID 
 	}
 	content := audit.GetContent(hostID)
 
-	auditlog := metadata.CreateAuditLogParams{
+	auditlog := metadata.SaveAuditLogParams{
 		ID:      hostID,
 		Model:   common.BKInnerObjIDHost,
 		Content: content,

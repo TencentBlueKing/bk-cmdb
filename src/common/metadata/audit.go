@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/auditoplog"
 )
 
-type CreateAuditLogParams struct {
+type SaveAuditLogParams struct {
 	ID      int64                  `json:"inst_id"`
 	Model   string                 `json:"op_target"`
 	Content interface{}            `json:"content"`

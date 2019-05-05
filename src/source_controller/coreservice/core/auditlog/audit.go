@@ -38,7 +38,7 @@ func New(dbProxy dal.RDB) core.AuditOperation {
 	}
 }
 
-func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.CreateAuditLogParams) error {
+func (m *auditManager) CreateAuditLog(ctx core.ContextParams, logs ...metadata.SaveAuditLogParams) error {
 
 	var logRows []interface{}
 	for _, content := range logs {
