@@ -18,9 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful"
-	"github.com/gin-gonic/gin/json"
-
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/auditoplog"
@@ -29,6 +26,9 @@ import (
 	meta "configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin/json"
 )
 
 func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response) {
@@ -77,7 +77,7 @@ func (ps *ProcServer) CreateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s,input:%+v,rid:%s", err.Error(), input, srvData.rid)
 	} else {
-		ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int(instID), srvData.header)
+		ps.addProcLog(srvData.ctx, int64(appID), srvData.user, nil, curDetail, auditoplog.AuditOpTypeAdd, int64(instID), srvData.header)
 	}
 
 	// auth: register process to iam
@@ -168,7 +168,7 @@ func (ps *ProcServer) UpdateProcess(req *restful.Request, resp *restful.Response
 	if err != nil {
 		blog.Errorf("get process instance detail failed. err:%s,rid:%s", err.Error(), srvData.rid)
 	}
-	ps.addProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, procID, srvData.header)
+	ps.addProcLog(srvData.ctx, int64(appID), srvData.user, preProcDetail, curDetail, auditoplog.AuditOpTypeModify, int64(procID), srvData.header)
 	if procData.Exists(common.BKProcNameField) {
 		// auth: register process to iam
 		processSimplify := extensions.ProcessSimplify{
@@ -307,7 +307,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		}
 	}
 
-	logscontent := make([]auditoplog.AuditLogContext, 0)
+	logscontent := make([]meta.SaveAuditLogParams, 0)
 	// update audit log content after modify
 	for index, procID := range iProcIDArr {
 
@@ -328,16 +328,17 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 		// save proc info before modify
 		auditContentArr[index].CurData = curData
-		logscontent = append(logscontent, auditoplog.AuditLogContext{ID: int64(procID), Content: auditContentArr[index]})
-	}
-	if 0 < len(logscontent) {
-		logs := meta.AuditProcsParams{
-			Content: logscontent,
+		logscontent = append(logscontent, meta.SaveAuditLogParams{
+			ID:      int64(procID),
+			Model:   common.BKInnerObjIDProc,
+			Content: auditContentArr[index],
 			OpDesc:  "update process",
 			OpType:  auditoplog.AuditOpTypeModify,
-		}
-
-		ps.CoreAPI.AuditController().AddProcLogs(srvData.ctx, ownerID, appIDStr, srvData.user, srvData.header, logs)
+			BizID:   int64(appID),
+		})
+	}
+	if 0 < len(logscontent) {
+		ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logscontent...)
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
@@ -399,7 +400,7 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 	}
 
 	// save operation log
-	ps.addProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, preProcDetail, nil, auditoplog.AuditOpTypeDel, procID, srvData.header)
+	ps.addProcLog(srvData.ctx, int64(appID), srvData.user, preProcDetail, nil, auditoplog.AuditOpTypeDel, int64(procID), srvData.header)
 
 	// auth: dereigster process from iam
 	processSimplify := extensions.ProcessSimplify{
@@ -516,7 +517,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 	resp.WriteEntity(meta.NewSuccessResp(ret.Data))
 }
 
-func (ps *ProcServer) addProcLog(ctx context.Context, ownerID, appID, user string, preProcDetails, curProcDetails []map[string]interface{}, auditType auditoplog.AuditOpType, instanceID int, header http.Header) error {
+func (ps *ProcServer) addProcLog(ctx context.Context, appID int64, user string, preProcDetails, curProcDetails []map[string]interface{}, auditType auditoplog.AuditOpType, instanceID int64, header http.Header) error {
 
 	headers := []meta.Header{}
 	curData := map[string]interface{}{}
@@ -556,7 +557,15 @@ func (ps *ProcServer) addProcLog(ctx context.Context, ownerID, appID, user strin
 		desc = "update process"
 	}
 
-	log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: desc, common.BKOpTypeField: auditType, "inst_id": instanceID}
-	_, err := ps.CoreAPI.AuditController().AddProcLog(ctx, ownerID, appID, user, header, log)
+	// log := common.KvMap{common.BKContentField: auditContent, common.BKOpDescField: desc, common.BKOpTypeField: auditType, "inst_id": instanceID}
+	log := meta.SaveAuditLogParams{
+		ID:      int64(instanceID),
+		Model:   common.BKInnerObjIDProc,
+		Content: auditContent,
+		OpDesc:  desc,
+		OpType:  auditType,
+		BizID:   appID,
+	}
+	_, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(ctx, header, log)
 	return err
 }
