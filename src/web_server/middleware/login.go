@@ -52,7 +52,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 		if isAuthed(c, config) {
 			// valid resource access privilege
-			if !config.AuthCenter.Enable {
+			if config.Site.AuthScheme == "internal" {
 				auth := auth.NewAuth()
 				ok := auth.ValidResAccess(pathArr, c)
 				if false == ok {

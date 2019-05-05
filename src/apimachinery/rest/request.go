@@ -15,6 +15,7 @@ package rest
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -31,7 +32,6 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	commonUtil "configcenter/src/common/util"
 )
 

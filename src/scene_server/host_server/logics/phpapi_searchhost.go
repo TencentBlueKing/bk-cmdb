@@ -118,10 +118,10 @@ func (phpapi *PHPAPI) GetHostMapByCond(ctx context.Context, condition map[string
 }
 
 // GetHostDataByConfig  get host info
-func (phpapi *PHPAPI) GetHostDataByConfig(ctx context.Context, configData []map[string]int64) ([]mapstr.MapStr, errors.CCError) {
+func (phpapi *PHPAPI) GetHostDataByConfig(ctx context.Context, configData []meta.ModuleHost) ([]mapstr.MapStr, errors.CCError) {
 	hostIDArr := make([]int64, 0)
 	for _, config := range configData {
-		hostIDArr = append(hostIDArr, config[common.BKHostIDField])
+		hostIDArr = append(hostIDArr, config.HostID)
 	}
 
 	hostMapCondition := map[string]interface{}{

@@ -13,13 +13,12 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"configcenter/src/common/json"
 )
 
 func ConvLanguageToV3(language string) string {
