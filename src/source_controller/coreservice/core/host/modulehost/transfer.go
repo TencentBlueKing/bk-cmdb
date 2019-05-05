@@ -38,6 +38,9 @@ type transferHostModule struct {
 	//   cross-business transfer module, source business id
 	srcBizID int64
 
+	// delHost delete host model
+	delHost bool
+
 	// handle data
 
 	// inner module id array
@@ -85,17 +88,23 @@ func (t *transferHostModule) SetCrossBusiness(ctx core.ContextParams, bizID int6
 	t.srcBizID = bizID
 }
 
+// SetCrossBusiness Set host cross-service transfer parameters
+func (t *transferHostModule) SetDeleteHost(ctx core.ContextParams) {
+	t.delHost = true
+}
+
 func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	err := t.validHost(ctx, hostID)
-
 	if err != nil {
 		return err
 	}
 
-	// transfer before host module config
+	// hostInfo
+	var hostInfo mapstr.MapStr
+	// transfer  host module config
 	var originDatas, curDatas []mapstr.MapStr
 	// must be silce ptr address, Each assignment will change the address
-	defer t.generateEvent(ctx, &originDatas, &curDatas)
+	defer t.generateEvent(ctx, &originDatas, &curDatas, hostInfo)
 
 	originDatas, err = t.delHostModuleRelation(ctx, hostID)
 	if err != nil {
@@ -103,6 +112,15 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 		// it is clear that the data before the change is pushed.
 		//t.origindatas = nil
 		return err
+	}
+	// delete host.
+	if t.delHost {
+		hostInfo, err = t.deleteHost(ctx, hostID)
+		if err != nil {
+			return err
+		}
+		return nil
+
 	}
 	// transfer host module cofnig
 	curDatas, err = t.AddHostModuleRelation(ctx, hostID)
@@ -113,9 +131,43 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 	return nil
 }
 
+func (t *transferHostModule) deleteHost(ctx core.ContextParams, hostID int64) (mapstr.MapStr, errors.CCErrorCoder) {
+	hostCond := condition.CreateCondition()
+	hostCond.Field(common.BKHostIDField).Eq(hostID)
+	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), ctx.SupplierAccount)
+	hostInfoArr := make([]mapstr.MapStr, 0)
+	err := t.mh.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(ctx, &hostInfoArr)
+	if err != nil {
+		blog.ErrorJSON("deleteHost find data error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	if len(hostInfoArr) == 0 {
+		blog.ErrorJSON("deleteHost not found host error. cond:%s, rid:%s", hostCond.ToMapStr(), ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceHostNotExist, hostID)
+	}
+	delMoudleHost := condition.CreateCondition()
+	delMoudleHost.Field(common.BKHostIDField).Eq(hostID)
+	delMoudleHost.Field(common.BKAppIDField).Eq(t.bizID)
+	delMoudleHostMap := util.SetQueryOwner(delMoudleHost.ToMapStr(), ctx.SupplierAccount)
+	err = t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delMoudleHostMap)
+	if err != nil {
+		blog.ErrorJSON("deleteHost delete module hsot realtion error. err:%s, cond:%s, rid:%s", err.Error(), delMoudleHostMap, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
+	err = t.mh.dbProxy.Table(common.BKTableNameBaseHost).Delete(ctx, hostCondMap)
+	if err != nil {
+		blog.ErrorJSON("deleteHost delete host error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+
+	return hostInfoArr[0], nil
+}
+
 // generateEvent handle event trigger.
 // Data from before and after changes cannot be merged for historical reasons.
-func (t *transferHostModule) generateEvent(ctx core.ContextParams, originDatas, curDatas *[]mapstr.MapStr) errors.CCErrorCoder {
+func (t *transferHostModule) generateEvent(ctx core.ContextParams, originDatas, curDatas *[]mapstr.MapStr, hostInfo mapstr.MapStr) errors.CCErrorCoder {
 
 	var eventArr []*metadata.EventInst
 	for _, data := range *originDatas {
@@ -138,6 +190,20 @@ func (t *transferHostModule) generateEvent(ctx core.ContextParams, originDatas, 
 			{CurData: data},
 		}
 		eventArr = append(eventArr, event)
+	}
+	if len(hostInfo) > 0 {
+		if t.delHost {
+			event := eventclient.NewEventWithHeader(ctx.Header)
+			event.EventType = metadata.EventTypeInstData
+			event.ObjType = common.BKInnerObjIDHost
+			event.Action = metadata.EventActionDelete
+			event.Data = []metadata.EventData{
+				{
+					PreData: hostInfo,
+				},
+			}
+		}
+
 	}
 	err := t.mh.eventC.Push(ctx, eventArr...)
 	if err != nil {
@@ -183,6 +249,10 @@ func (t *transferHostModule) validParameterInst(ctx core.ContextParams) errors.C
 // module must be exist in business
 // multiple modules not default module, transfer default must be one module
 func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors.CCErrorCoder {
+	// delete host not validation destination module
+	if t.delHost {
+		return nil
+	}
 	if len(t.moduleIDArr) == 0 {
 		return ctx.Error.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField)
 	}
@@ -204,6 +274,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 	// has default module ,not handle transfer.
 	for _, moduleInfo := range moduleInfoArr {
 		if len(t.moduleIDArr) != 1 {
+
 			// 转移目标模块为多模块时，不允许包含内置模块(空闲机/故障机等)
 			defaultVal, err := moduleInfo.Int64(common.BKDefaultField)
 			if err != nil {
@@ -211,7 +282,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 				return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKDefaultField, "int", err.Error())
 			}
 			if defaultVal != 0 {
-				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s", moduleInfoArr, ctx.ReqID)
+				blog.ErrorJSON("validParameter module info field  has default module.  moduleInfo:%s,rid:%s", defaultVal, ctx.ReqID)
 				return ctx.Error.CCErrorf(common.CCErrCoreServiceModuleContainDefaultModuleErr)
 			}
 		}
@@ -243,7 +314,6 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 	if err != nil {
 		return err
 	}
-
 	if cnt == 0 {
 		blog.ErrorJSON("validParameter not found host error. cond:%s, rid:%s", hostCond.ToMapStr(), ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHostNotExist, hostID)
@@ -256,17 +326,18 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 		bizID = t.srcBizID
 	}
 	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
+	cond.Field(common.BKAppIDField).NotEq(bizID)
 	cond.Field(common.BKHostIDField).Eq(hostID)
-	condMap := util.SetQueryOwner(cond, ctx.SupplierAccount)
+	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	cnt, dbErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
+	cnt, dbErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).Count(ctx)
 	if dbErr != nil {
 		blog.ErrorJSON("validParameterHostBelongbiz find data error. err:%s,cond:%s, rid:%s", dbErr.Error(), condMap, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	if cnt == 0 {
-		blog.ErrorJSON("validParameterHostBelongbiz not found data.cond:%s, rid:%s", condMap, ctx.ReqID)
+
+	if cnt > 0 {
+		blog.ErrorJSON("validParameterHostBelongbiz has belong to other business.cond:%s, rid:%s", condMap, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, hostID, bizID)
 	}
 	return nil
@@ -373,6 +444,7 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 			// validation parameter ensure module must be exist  t.validParameterModule
 			common.BKSetIDField: t.moduleIDSetIDmap[moduleID],
 		}
+
 		insertData = util.SetModOwner(insertData, ctx.SupplierAccount)
 		insertDataArr = append(insertDataArr, insertData)
 	}

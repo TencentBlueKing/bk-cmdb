@@ -13,10 +13,10 @@
 package apimachinery
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
-	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 )
 

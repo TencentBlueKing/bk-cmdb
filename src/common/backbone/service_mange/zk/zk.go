@@ -21,34 +21,33 @@ import (
 	"configcenter/src/common/zkclient"
 )
 
-//ZkClient do register and discover by zookeeper
+// ZkClient do service register and discover by zookeeper
 type ZkClient struct {
-	zkcli          *zkclient.ZkClient
+	zkCli          *zkclient.ZkClient
 	cancel         context.CancelFunc
 	rootCxt        context.Context
 	sessionTimeOut time.Duration
 }
 
-//NewZkRegDiscv create a object of ZkClient
-func NewZkClient(serv string, timeOut time.Duration) *ZkClient {
-	zkservs := strings.Split(serv, ",")
+// NewZkClient create a object of ZkClient
+func NewZkClient(zkAddress string, timeOut time.Duration) *ZkClient {
+	zkAddresses := strings.Split(zkAddress, ",")
 	return &ZkClient{
-		zkcli:          zkclient.NewZkClient(zkservs),
+		zkCli:          zkclient.NewZkClient(zkAddresses),
 		sessionTimeOut: timeOut,
 	}
 }
 
 // Ping to ping server
 func (zk *ZkClient) Ping() error {
-	return zk.zkcli.Ping()
+	return zk.zkCli.Ping()
 }
 
-//Start used to run register and discover server
+// Start used to run register and discover server
 func (zk *ZkClient) Start() error {
-	//connect zookeeper
-	if err := zk.zkcli.ConnectEx(zk.sessionTimeOut); err != nil {
-
-		return fmt.Errorf("fail to connect zookeeper. err:%s", err.Error())
+	// connect zookeeper
+	if err := zk.zkCli.ConnectEx(zk.sessionTimeOut); err != nil {
+		return fmt.Errorf("fail to connect zookeeper, err: %+v", err)
 	}
 
 	// create root context
@@ -57,12 +56,11 @@ func (zk *ZkClient) Start() error {
 	return nil
 }
 
-//Stop used to stop register and discover server
+// Stop used to stop register and discover server
 func (zk *ZkClient) Stop() error {
-	//close the connection of zookeeper
-	zk.zkcli.Close()
+	// close the connection of zookeeper
+	zk.zkCli.Close()
 
-	//cancel
 	zk.cancel()
 
 	return nil
@@ -70,7 +68,7 @@ func (zk *ZkClient) Stop() error {
 
 // Client return zk client
 func (zk *ZkClient) Client() *zkclient.ZkClient {
-	return zk.zkcli
+	return zk.zkCli
 }
 
 // SessionTimeOut client session time out

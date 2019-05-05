@@ -53,7 +53,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	}
 	if 0 == cnt { // TODO:
 		blog.V(3).Infof("failed to find the cnt")
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
 	}
@@ -68,7 +68,7 @@ func (cli *Service) GetRolePri(req *restful.Request, resp *restful.Response) {
 	privilege, ok := result["privilege"]
 	if !ok {
 		blog.Errorf("not privilege, the origin data is %#v", result)
-		info := make(map[string]interface{})
+		info := make([]string, 0)
 		resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 		return
 

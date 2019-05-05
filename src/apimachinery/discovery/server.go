@@ -13,12 +13,12 @@
 package discovery
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )

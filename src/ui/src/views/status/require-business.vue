@@ -21,13 +21,12 @@
         methods: {
             handleApplyPermission () {
                 const topWindow = window.top
-                const isPaasConsole = topWindow !== window && topWindow.BLUEKING
+                const isPaasConsole = topWindow !== window
                 const authCenter = window.Site.authCenter || {}
                 if (isPaasConsole) {
                     topWindow.postMessage(JSON.stringify({
                         action: 'open_other_app',
-                        app_code: authCenter.appCode,
-                        app_url: 'perm-apply'
+                        app_code: authCenter.appCode
                     }), '*')
                 } else {
                     window.open(authCenter.url)

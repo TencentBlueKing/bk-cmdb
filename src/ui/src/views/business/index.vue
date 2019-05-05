@@ -2,7 +2,8 @@
     <div class="business-layout">
         <div class="business-options clearfix">
             <bk-button class="fl" type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_BUSINESS) || !isAdminView"
+                v-if="isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
                 @click="handleCreate">
                 {{$t("Common['新建']")}}
             </bk-button>

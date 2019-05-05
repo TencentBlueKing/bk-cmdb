@@ -26,212 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	hutil "configcenter/src/scene_server/host_server/util"
 )
-
-// AddHostMultiAppModuleRelation transfer host to module (cross business transfer)
-// it will remove host from origin business before move to new business
-func (s *Service) AddHostMultiAppModuleRelation(req *restful.Request, resp *restful.Response) {
-	srvData := s.newSrvComm(req.Request.Header)
-
-	result, err := s.CoreAPI.ObjectController().Privilege().GetSystemFlag(srvData.ctx, common.BKDefaultOwnerID, common.HostCrossBizField, srvData.header)
-	if err != nil {
-		blog.Errorf("AddHostMultiAppModuleRelation GetSystemFlag http do error,err:%s,rid:%s", err.Error(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("AddHostMultiAppModuleRelation GetSystemFlag http response error,err code:%d,err msg:%s,rid:%s", result.Code, result.ErrMsg, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-
-	params := new(metadata.CloudHostModuleParams)
-	if err := json.NewDecoder(req.Request.Body).Decode(&params); err != nil {
-		blog.Errorf("add host multiple app module relation failed with decode body err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	module, err := srvData.lgc.GetNormalModuleByModuleID(srvData.ctx, params.ApplicationID, params.ModuleID)
-	if err != nil {
-		blog.Errorf("add host multiple app module relation, but get module[%v] failed, err: %v,input:%+v,rid:%s", params.ModuleID, err, params, srvData.ctx)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoModuleSelectFailed)})
-		return
-	}
-
-	if len(module) == 0 {
-		blog.Errorf("add host multiple app module relation, but get invalid module.input:%+v,rid:%s", params, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoMulueIDNotfoundFailed)})
-		return
-	}
-
-	defaultAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
-	if err != nil {
-		blog.Errorf("add host multiple app module relation, but get default appid failed, err: %v,param:%+v,rid:%s", err, params, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
-		return
-	}
-
-	var errMsg, succ []string
-
-	hostIDArr := make([]int64, 0)
-
-	for _, hostInfo := range params.HostInfoArr {
-		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
-		hResult, err := s.CoreAPI.CoreService().Instance().ReadInstance(
-			srvData.ctx, srvData.header, common.BKInnerObjIDHost,
-			&metadata.QueryCondition{Condition: cond},
-		)
-		// hResult, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, query)
-		if err != nil || (err == nil && !hResult.Result) {
-			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v, %v,param:%+v,rid:%s", err, hResult.ErrMsg, params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-
-		hostList := hResult.Data.Info
-		if len(hostList) == 0 {
-			blog.Errorf("add host multiple app module relation, but get 0 hosts.params:%+v,rid:%s", params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-
-		//check if host in this module
-		hostID, err := util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
-		if nil != err {
-			blog.Errorf("add host multiple app module relation, but get invalid host id[%v], err:%v.params:%+v,rid:%s", hostList[0][common.BKHostIDField], err.Error(), params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-		hostIDArr = append(hostIDArr, hostID)
-	}
-	// auth: check business authorization
-	if err := s.AuthManager.AuthorizeCreateHost(srvData.ctx, srvData.header, params.ApplicationID); err != nil {
-		blog.Errorf("check business authorization failed, business: %d, err: %v", params.ApplicationID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
-	// auth: check host authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostToAnotherBizModule, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
-	// auth: deregister hosts
-	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
-		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
-		return
-	}
-
-	for index, hostInfo := range params.HostInfoArr {
-		cond := hutil.NewOperation().WithHostInnerIP(hostInfo.IP).WithCloudID(int64(hostInfo.CloudID)).Data()
-		query := &metadata.QueryInput{
-			Condition: cond,
-			Start:     0,
-			Limit:     common.BKNoLimit,
-			Sort:      common.BKHostIDField,
-		}
-		hResult, err := s.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, query)
-		if err != nil || (err == nil && !hResult.Result) {
-			blog.Errorf("add host multiple app module relation, but get hosts failed, err: %v, %v,param:%+v,rid:%s", err, hResult.ErrMsg, params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-
-		hostList := hResult.Data.Info
-		if len(hostList) == 0 {
-			blog.Errorf("add host multiple app module relation, but get 0 hosts.params:%+v,rid:%s", params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-
-		//check if host in this module
-		hostID, err := util.GetInt64ByInterface(hostList[0][common.BKHostIDField])
-		if nil != err {
-			blog.Errorf("add host multiple app module relation, but get invalid host id[%v], err:%v.params:%+v,rid:%s", hostList[0][common.BKHostIDField], err.Error(), params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-		moduleHostCond := map[string][]int64{common.BKHostIDField: []int64{hostID}}
-		confs, err := srvData.lgc.GetConfigByCond(srvData.ctx, moduleHostCond)
-		if err != nil {
-			blog.Errorf("add host multiple app module relation, but get host config failed, err:%v.param:%+v,rid:%s", err, params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-			continue
-		}
-
-		// check host not already in target module params.ModuleID
-		for _, conf := range confs {
-			if conf[common.BKModuleIDField] == params.ModuleID {
-				blog.Errorf("add host multiple app module relation, but host already exist in module.params:%+v,rid:%s", params, srvData.rid)
-				errMsg = append(errMsg, s.Language.Languagef("host_str_belong_module", hostInfo.IP))
-				continue
-			}
-		}
-
-		// remove host from origin business defaultAppID
-		// FIXME if hostID belongs to multiple module, remove host from business will be call multiple times.
-		for _, conf := range confs {
-			if conf[common.BKAppIDField] == defaultAppID {
-				p := metadata.ModuleHostConfigParams{
-					ApplicationID: defaultAppID,
-					HostID:        hostID,
-				}
-				hResult, err := s.CoreAPI.HostController().Module().DelDefaultModuleHostConfig(srvData.ctx, srvData.header, &p)
-				if err != nil || (err == nil && !hResult.Result) {
-					blog.Errorf("add host multiple app module relation, but delete default module host conf failed, err: %v, %v.params:%+v,rid:%s", err, hResult.ErrMsg, params, srvData.rid)
-					errMsg = append(errMsg, s.Language.Languagef("host_ip_not_exist", hostInfo.IP))
-					continue
-				}
-			}
-
-			if conf[common.BKModuleIDField] == params.ModuleID {
-				blog.Errorf("add host multiple app module relation, but host already exist in module.params:%+v,rid:%s", params, srvData.rid)
-				errMsg = append(errMsg, s.Language.Languagef("host_str_belong_module", hostInfo.IP))
-				continue
-			}
-		}
-
-		//add host to this module
-		opt := metadata.ModuleHostConfigParams{
-			ApplicationID: params.ApplicationID,
-			HostID:        hostID,
-			ModuleID:      []int64{params.ModuleID},
-		}
-		result, err := s.CoreAPI.HostController().Module().AddModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil || (err == nil && !result.Result) {
-			blog.Errorf("add host multiple app module relation, but add module host config failed, err: %v, %v.params:%+v,rid:%s", err, result.ErrMsg, params, srvData.rid)
-			errMsg = append(errMsg, s.Language.Languagef("host_str_add_module_relation_fail", hostInfo.IP))
-			continue
-		}
-
-		hostIDArr = append(hostIDArr, hostID)
-		succ = append(succ, strconv.Itoa(index))
-	}
-
-	if 0 != len(errMsg) {
-		detail := make(map[string]interface{})
-		detail["success"] = succ
-		detail["error"] = errMsg
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModule), Data: detail})
-	}
-
-	// auth: register hosts
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
-		return
-	}
-
-	// TODO: add audit log later.
-	hostModuleLog := srvData.lgc.NewHostModuleLog(hostIDArr)
-	hostModuleLog.WithCurrent(srvData.ctx)
-	hostModuleLog.SaveAudit(srvData.ctx, fmt.Sprintf("%d", params.ApplicationID), util.GetUser(req.Request.Header), "")
-	resp.WriteEntity(metadata.NewSuccessResp(nil))
-
-}
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
 func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
@@ -279,54 +74,16 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	for _, hostID := range config.HostID {
-		exist, err := srvData.lgc.IsHostExistInApp(srvData.ctx, config.ApplicationID, hostID)
-		if err != nil {
-			blog.Errorf("check host is exist in app error, params:{appid:%d, hostid:%s}, error:%s,input:%+v,rid:%s", config.ApplicationID, hostID, err.Error(), config, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotINAPPFail)})
-			return
-		}
-
-		if !exist {
-			blog.Errorf("Host does not belong to the current application, appid: %v, hostid: %v,input:%+v,rid:%s", config.ApplicationID, hostID, config, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostNotINAPP, hostID)})
-			return
-		}
-
-		opt := metadata.ModuleHostConfigParams{
-			ApplicationID: config.ApplicationID,
-			HostID:        hostID,
-		}
-
-		var result *metadata.BaseResp
-		if config.IsIncrement {
-			result, err = s.CoreAPI.HostController().Module().DelDefaultModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		} else {
-			result, err = s.CoreAPI.HostController().Module().DelModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		}
-		if err != nil {
-			blog.Errorf("update host module relation, but delete default config failed, err: %v, %v,input:%+v,param:%+v,rid:%s", err, result.ErrMsg, config, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("update host module relation, but delete default config failed, err: %v, %v.input:%+v,param:%+v,rid:%s", err, result.ErrMsg, config, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-			return
-		}
-
-		opt.ModuleID = config.ModuleID
-		result, err = s.CoreAPI.HostController().Module().AddModuleHostConfig(srvData.ctx, srvData.header, &opt)
-		if err != nil {
-			blog.Errorf("add host module relation, but add config failed, err: %v, %v,input:%+v,param:%+v,rid:%s", err, result.ErrMsg, config, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-			return
-		}
-		if !result.Result {
-			blog.Errorf("add host module relation, but add config failed, err: %v, %v.input:%+v,param:%+v,rid:%s", err, result.ErrMsg, config, opt, srvData.rid)
-			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-			return
-		}
+	result, err := s.CoreAPI.CoreService().Host().TransferHostModule(srvData.ctx, srvData.header, config)
+	if err != nil {
+		blog.Errorf("add host module relation, but add config failed, err: %v, %v,input:%+v,rid:%s", err, result.ErrMsg, config, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+	if !result.Result {
+		blog.Errorf("add host module relation, but add config failed, err: %v, %v.input:%+v,rid:%s", err, result.ErrMsg, config, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg), Data: result.Data})
+		return
 	}
 
 	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(config.ApplicationID, 10), srvData.user, ""); err != nil {
@@ -367,62 +124,6 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	cond := hutil.NewOperation().WithAppID(conf.ApplicationID).Data()
-	appInfo, err := srvData.lgc.GetAppDetails(srvData.ctx, common.BKOwnerIDField, cond)
-	if err != nil {
-		blog.Errorf("move host to resource pool, but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostMoveResourcePoolFail, fmt.Sprintf("%v", conf.HostID))})
-		return
-	}
-	if 0 == len(appInfo) {
-		blog.Errorf("assign host to app error, not found app appID: %d, input:%#v,rid:%s", conf.ApplicationID, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommNotFound)})
-		return
-	}
-
-	ownerID, err := appInfo.String(common.BKOwnerIDField)
-	if nil != err {
-		blog.Errorf("move host to resource pool , but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetResourceFail, "app info OwnerID not string")})
-		return
-	}
-
-	if "" == ownerID {
-		blog.Errorf("move host to resource pool, but get app detail failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetResourceFail, "app info OwnerID empty")})
-		return
-	}
-
-	ownerAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, srvData.ownerID)
-	if err != nil {
-		blog.Errorf("move host to resource pool, but get default appid failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-		return
-	}
-	if 0 == conf.ApplicationID {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotResourceFail)})
-		return
-	}
-	if ownerAppID == conf.ApplicationID {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostBelongResourceFail)})
-		return
-	}
-
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(ownerAppID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.MapStr())
-	if err != nil {
-		blog.Errorf("move host to resource pool, but get module id failed, err: %v, input:%+v,param:%+v,rid:%s", err, conf, conds.Data(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-		return
-	}
-
-	param := &metadata.ParamData{
-		ApplicationID:       conf.ApplicationID,
-		HostID:              conf.HostID,
-		OwnerModuleID:       moduleID,
-		OwnerAppplicationID: ownerAppID,
-	}
-
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
@@ -435,22 +136,10 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
-
-	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
-	if err := audit.WithPrevious(srvData.ctx); err != nil {
-		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-		return
-	}
-	result, err := s.CoreAPI.HostController().Module().MoveHost2ResourcePool(srvData.ctx, srvData.header, param)
+	exceptionArr, err := srvData.lgc.MoveHostToResourcePool(srvData.ctx, conf)
 	if err != nil {
-		blog.Errorf("move host to resource pool, but update host module http do error, err: %v, input:%+v,query:%+v,rid:%v", err, conf, param, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("move host to resource pool, but update host module http response error, err code:%d, err messge:%s, input:%+v,query:%+v,rid:%v", result.Code, result.ErrMsg, conf, param, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
+		blog.Errorf("move host to resource pool failed, err:%s, input:%#v, rid:%s", err.Error(), conf, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err, Data: exceptionArr})
 		return
 	}
 
@@ -461,21 +150,6 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), srvData.user, "move host to resource pool"); err != nil {
-		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-		return
-	}
-	businessMetadata := conf.Metadata
-	if businessMetadata.Label == nil {
-		businessMetadata.Label = make(metadata.Label)
-	}
-	businessMetadata.Label.SetBusinessID(conf.ApplicationID)
-	if err := srvData.lgc.DeleteHostBusinessAttributes(srvData.ctx, conf.HostID, &businessMetadata); err != nil {
-		blog.Errorf("move host to resource pool, delete host bussiness private, err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
-		return
-	}
 	resp.WriteEntity(metadata.NewSuccessResp(nil))
 }
 
@@ -489,77 +163,6 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	cond := hutil.NewOperation().WithAppID(conf.ApplicationID).Data()
-	fields := fmt.Sprintf("%s,%s", common.BKOwnerIDField, common.BKAppNameField)
-	appInfo, err := srvData.lgc.GetAppDetails(srvData.ctx, fields, cond)
-	if err != nil {
-		blog.Errorf("assign host to app failed, err: %v,input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-		return
-	}
-	if 0 == len(appInfo) {
-		blog.Errorf("assign host to app error, not foud app appID: %d,input:%+v,rid:%s", conf.ApplicationID, conf, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommNotFound)})
-		return
-	}
-
-	ownerID, err := appInfo.String(common.BKOwnerIDField)
-	if nil != err {
-		blog.Errorf("assign host to app, but get app detail failed, err: %v,input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "OwnerID")})
-		return
-	}
-
-	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, ownerID)
-	if err != nil {
-		blog.Errorf("assign host to app, but get default appid failed, err: %v,input:%+v,rid:%s", err, conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-		return
-	}
-	if 0 == conf.ApplicationID {
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostGetResourceFail, "not found")})
-		return
-	}
-	if appID == conf.ApplicationID {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
-	}
-
-	conds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(appID)
-	ownerModuleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds.MapStr())
-	if err != nil {
-		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
-		return
-	}
-	if 0 == ownerModuleID {
-		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,rid:%s", err, conds.MapStr(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)})
-		return
-	}
-
-	mConds := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithModuleName(common.DefaultResModuleName).WithAppID(conf.ApplicationID)
-	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, mConds.MapStr())
-	if err != nil {
-		blog.Errorf("assign host to app, but get module id failed, err: %v,input:%+v,params:%+v,rid:%s", err, conf, mConds.MapStr(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrTopoMulueIDNotfoundFailed)})
-		return
-	}
-	if moduleID == 0 {
-		blog.Errorf("assign host to app, but get module id failed, %s not found,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)})
-		return
-	}
-
-	params := make(map[string]interface{})
-	params[common.BKAppIDField] = conf.ApplicationID
-	params[common.BKHostIDField] = conf.HostID
-	params[common.BKModuleIDField] = moduleID
-	params["bk_owner_module_id"] = ownerModuleID
-	params["bk_owner_biz_id"] = appID
-
-	audit := srvData.lgc.NewHostModuleLog(conf.HostID)
-	audit.WithPrevious(srvData.ctx)
 
 	// auth: check target business update priority
 	if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, conf.ApplicationID); err != nil {
@@ -577,32 +180,21 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("AssignHostToApp failed, deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v, rid:%s", conf.HostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 
-	result, err := s.CoreAPI.HostController().Module().AssignHostToApp(srvData.ctx, srvData.header, params)
+	exceptionArr, err := srvData.lgc.AssignHostToApp(srvData.ctx, conf)
 	if err != nil {
-		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,param:%+v,rid:%s", err, conf, params, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrHostEditRelationPoolFail)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("assign host to app, but assign to app http response error. err code:%d, err msg:%s,input:%+v,param:%+v,rid:%s", result.Code, result.ErrMsg, conf, params, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-	// register host to new business
-	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
-		return
+		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,rid:%s", err, conf, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err, Data: exceptionArr})
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), srvData.user, "assign host to app"); err != nil {
-		blog.Errorf("assign host to app, but save audit failed, err: %v,rid:%s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
+	// register host to new business
+	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
+		blog.Errorf("register host to iam failed, hosts: %+v, err: %v, rid:%s", conf.HostID, err, srvData.rid)
+		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -614,7 +206,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	data := new(metadata.HostToAppModule)
 	if err := json.NewDecoder(req.Request.Body).Decode(data); err != nil {
-		blog.Errorf("assign host to app module failed with decode body err: %v,rid:%s", err, srvData.rid)
+		blog.Errorf("assign host to app module failed with decode body err: %v, rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -628,7 +220,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	if 0 == appID || 0 == moduleID {
 		// get default app
-		ownerAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx, data.OwnerID)
+		ownerAppID, err := srvData.lgc.GetDefaultAppID(srvData.ctx)
 		if err != nil {
 			blog.Errorf("assign host to app module, but get resource pool failed, err: %v,input:%+v,rid:%s", err, data, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err})
@@ -659,6 +251,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	}
 
+	// TODO hoffer host can not exist, not exist create
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, ip := range data.Ips {
@@ -670,6 +263,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
+
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
@@ -704,17 +298,18 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	if 0 == len(errmsg) {
 		// auth: register hosts
 		if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
-			blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", hostIDArr, err, srvData.rid)
+			blog.Errorf("register host to iam failed, hosts: %+v, err: %v, errmsg:%#v, rid:%s", hostIDArr, err, errmsg, srvData.rid)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 			return
 		}
 		resp.WriteEntity(metadata.NewSuccessResp(nil))
 		return
-	} else {
-		blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
-		return
 	}
+
+	blog.Errorf("assign host to app module failed, err: %v,rid:%s", errmsg, srvData.rid)
+	resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrAddHostToModuleFailStr)})
+	return
+
 }
 
 // GetHostModuleRelation  query host and module relation,
@@ -727,16 +322,12 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
-	cond := make(map[string][]int64, 0)
+	var cond metadata.HostModuleRelationRequest
 	if data.AppID != 0 {
-		cond[common.BKAppIDField] = []int64{data.AppID}
+		cond.ApplicationID = data.AppID
 	}
 	if len(data.HostID) > 0 {
-		cond[common.BKHostIDField] = data.HostID
-	}
-	if len(cond) == 0 {
-		resp.WriteEntity(metadata.NewSuccessResp(nil))
-		return
+		cond.HostIDArr = data.HostID
 	}
 
 	configArr, err := srvData.lgc.GetHostModuleRelation(srvData.ctx, cond)

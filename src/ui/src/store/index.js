@@ -4,6 +4,8 @@ import Vuex from 'vuex'
 import global from './modules/global.js'
 import request from './modules/request.js'
 
+import index from './modules/view/index.js'
+
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
 import eventSub from './modules/api/event-sub.js'
@@ -44,6 +46,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     ...global,
     modules: {
+        index,
         auth,
         menu,
         request,

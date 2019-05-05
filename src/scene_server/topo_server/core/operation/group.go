@@ -93,7 +93,7 @@ func (g *group) DeleteObjectGroup(params types.ContextParams, groupID int64) err
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-grp]failed to delte the group(%s), error info is %s", groupID, rsp.ErrMsg)
+		blog.Errorf("[operation-grp]failed to delete the group(%d), err: %s", groupID, rsp.ErrMsg)
 		return params.Err.Error(common.CCErrTopoObjectGroupDeleteFailed)
 	}
 

@@ -13,6 +13,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,7 +25,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/httpserver"
-	"configcenter/src/common/json"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"

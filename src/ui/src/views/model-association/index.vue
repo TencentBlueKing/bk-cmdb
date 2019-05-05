@@ -2,7 +2,9 @@
     <div class="relation-wrapper">
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!isAdminView || !$isAuthorized(OPERATION.C_RELATION)"
+                class="create-btn"
+                v-if="isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
                 @click="createRelation">
                 {{$t('Common["新建"]')}}
             </bk-button>
@@ -231,10 +233,12 @@
     .operation-box {
         margin: 0 0 20px 0;
         font-size: 0;
+        .create-btn {
+            margin: 0 10px 0 0;
+        }
         .search-input {
             position: relative;
             display: inline-block;
-            margin-left: 10px;
             width: 300px;
             .icon-search {
                 position: absolute;
