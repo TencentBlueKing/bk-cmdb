@@ -705,12 +705,12 @@ func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, 
 	return
 }
 
-func (a *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("hosts/search")
 
-	err = a.client.Post().
+	err = hs.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResource(subPath).
