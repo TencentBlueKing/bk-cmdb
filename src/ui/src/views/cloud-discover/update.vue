@@ -1,7 +1,7 @@
 <template>
     <div class="update-wrapper">
         <div class="update-box">
-            <ul class="update-event-form" v-model="curPush">
+            <ul class="update-event-form">
                 <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
@@ -158,29 +158,6 @@
                 }]
             }
         },
-        methods: {
-            ...mapActions('cloudDiscover', ['updateCloudTask']),
-            async update () {
-                const isValidate = await this.$validator.validateAll()
-                if (!isValidate) {
-                    return
-                }
-                const params = this.curPush
-                let res = null
-                res = await this.updateCloudTask({ params: params, config: { requestId: 'savePush' } })
-                this.$emit('saveSuccess')
-                this.$success(this.$t('EventPush["修改成功"]'))
-            },
-            cancel () {
-                this.$emit('cancel')
-            },
-            isCloseConfirmShow () {
-                if (this.tips) {
-                    return true
-                }
-                return false
-            }
-        },
         watch: {
             'curPush.bk_period_type' () {
                 if (this.curPush.bk_period_type === 'hour') {
@@ -194,6 +171,28 @@
                     this.tips = true
                 },
                 deep: true
+            }
+        },
+        methods: {
+            ...mapActions('cloudDiscover', ['updateCloudTask']),
+            async update () {
+                const isValidate = await this.$validator.validateAll()
+                if (!isValidate) {
+                    return
+                }
+                const params = this.curPush
+                await this.updateCloudTask({ params: params, config: { requestId: 'savePush' } })
+                this.$emit('saveSuccess')
+                this.$success(this.$t('EventPush["修改成功"]'))
+            },
+            cancel () {
+                this.$emit('cancel')
+            },
+            isCloseConfirmShow () {
+                if (this.tips) {
+                    return true
+                }
+                return false
             }
         }
     }

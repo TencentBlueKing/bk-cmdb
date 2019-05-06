@@ -1,7 +1,7 @@
 <template>
     <div class="task-detail-wrapper">
         <div class="task-detail-box">
-            <ul class="cloud-form clearfix" v-model="curPush">
+            <ul class="cloud-form clearfix">
                 <li class="detail-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}} ：
