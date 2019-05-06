@@ -505,7 +505,7 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_user=", "redis_pass=", "mongo_ip=", "mongo_port=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=",
-        "blueking_paas_url=", "listen_port=", "es_url", "auth_address=",
+        "blueking_paas_url=", "listen_port=", "es_url=", "auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme="
     ]
