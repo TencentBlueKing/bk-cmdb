@@ -37,7 +37,6 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 					blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v", tx.TxnInfo().TxnID, txnErr)
 					return
 				}
-
 			}
 
 			if txnErr := tx.Commit(context.Background()); txnErr != nil {

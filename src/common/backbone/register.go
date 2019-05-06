@@ -21,24 +21,24 @@ import (
 	"configcenter/src/framework/core/errors"
 )
 
-type ServiceDiscoverInterface interface {
+type ServiceRegisterInterface interface {
 	// Ping to ping server
 	Ping() error
 	// register local server info, it can only be called for once.
 	Register(path string, c types.ServerInfo) error
 }
 
-func NewServcieDiscovery(client *zk.ZkClient) (ServiceDiscoverInterface, error) {
-	s := new(serviceDiscovery)
+func NewServiceRegister(client *zk.ZkClient) (ServiceRegisterInterface, error) {
+	s := new(serviceRegister)
 	s.client = registerdiscover.NewRegDiscoverEx(client)
 	return s, nil
 }
 
-type serviceDiscovery struct {
+type serviceRegister struct {
 	client *registerdiscover.RegDiscover
 }
 
-func (s *serviceDiscovery) Register(path string, c types.ServerInfo) error {
+func (s *serviceRegister) Register(path string, c types.ServerInfo) error {
 	if c.IP == "0.0.0.0" {
 		return errors.New("register ip can not be 0.0.0.0")
 	}
@@ -52,6 +52,6 @@ func (s *serviceDiscovery) Register(path string, c types.ServerInfo) error {
 }
 
 // Ping to ping server
-func (s *serviceDiscovery) Ping() error {
+func (s *serviceRegister) Ping() error {
 	return s.client.Ping()
 }
