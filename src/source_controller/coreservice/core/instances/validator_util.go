@@ -20,8 +20,9 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 
+	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/tidwall/gjson"
-	"gopkg.in/mgo.v2/bson"
+	mgobson "gopkg.in/mgo.v2/bson"
 )
 
 // EnumOption enum option
@@ -100,7 +101,7 @@ func ParseEnumOption(val interface{}) EnumOption {
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
-			} else if option, ok := optionVal.(bson.M); ok {
+			} else if option, ok := optionVal.(mgobson.M); ok {
 				enumOption := EnumVal{}
 				enumOption.ID = getString(option["id"])
 				enumOption.Name = getString(option["name"])
@@ -109,6 +110,27 @@ func ParseEnumOption(val interface{}) EnumOption {
 				enumOptions = append(enumOptions, enumOption)
 			}
 		}
+	case bson.A:
+		for _, optionVal := range options {
+			if option, ok := optionVal.(map[string]interface{}); ok {
+				enumOption := EnumVal{}
+				enumOption.ID = getString(option["id"])
+				enumOption.Name = getString(option["name"])
+				enumOption.Type = getString(option["type"])
+				enumOption.IsDefault = getBool(option["is_default"])
+				enumOptions = append(enumOptions, enumOption)
+			} else if option, ok := optionVal.(bson.D); ok {
+				opt := option.Map()
+				enumOption := EnumVal{}
+				enumOption.ID = getString(opt["id"])
+				enumOption.Name = getString(opt["name"])
+				enumOption.Type = getString(opt["type"])
+				enumOption.IsDefault = getBool(opt["is_default"])
+				enumOptions = append(enumOptions, enumOption)
+			}
+		}
+	default:
+		blog.Warnf("unknow val type: %#v", val)
 	}
 	return enumOptions
 }
@@ -126,9 +148,18 @@ func parseIntOption(val interface{}) IntOption {
 	case map[string]interface{}:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
+	case mgobson.M:
+		intOption.Min = getString(option["min"])
+		intOption.Max = getString(option["max"])
 	case bson.M:
 		intOption.Min = getString(option["min"])
 		intOption.Max = getString(option["max"])
+	case bson.D:
+		opt := option.Map()
+		intOption.Min = getString(opt["min"])
+		intOption.Max = getString(opt["max"])
+	default:
+		blog.Warnf("unknow val type: %#v", val)
 	}
 	return intOption
 }
@@ -146,9 +177,18 @@ func parseFloatOption(val interface{}) FloatOption {
 	case map[string]interface{}:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
+	case mgobson.M:
+		floatOption.Min = getString(option["min"])
+		floatOption.Max = getString(option["max"])
 	case bson.M:
 		floatOption.Min = getString(option["min"])
 		floatOption.Max = getString(option["max"])
+	case bson.D:
+		opt := option.Map()
+		floatOption.Min = getString(opt["min"])
+		floatOption.Max = getString(opt["max"])
+	default:
+		blog.Warnf("unknow val type: %#v", val)
 	}
 	return floatOption
 }
