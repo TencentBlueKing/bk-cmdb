@@ -13,12 +13,12 @@
 package discovery
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
 )
@@ -51,6 +51,9 @@ type server struct {
 }
 
 func (s *server) GetServers() ([]string, error) {
+	if s == nil {
+		return []string{}, nil
+	}
 	s.RLock()
 	defer s.RUnlock()
 
@@ -70,6 +73,9 @@ func (s *server) GetServers() ([]string, error) {
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
 func (s *server) IsMaster(strAddrs string) bool {
+	if s == nil {
+		return false
+	}
 	s.RLock()
 	defer s.RUnlock()
 	if 0 < len(s.servers) {
