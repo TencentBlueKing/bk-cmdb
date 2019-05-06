@@ -631,7 +631,7 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	case metadata.OneToManyMapping:
 		cond = condition.CreateCondition()
 		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
-		cond.Field(common.BKInstIDField).Eq(request.InstId)
+		cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstId)
 
 		inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 		if err != nil {
