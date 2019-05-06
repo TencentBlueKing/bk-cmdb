@@ -945,7 +945,12 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 		return &metatype.InstResult{Count: rsp.Data.Count, Info: frtypes.NewArrayFromInterface(rsp.Data.Info)}, nil
 
 	default:
-
+		if _, ok := cond.Condition.(map[string]interface{}); ok == true {
+			cond.Condition.(map[string]interface{})[common.BKObjIDField] = obj.GetID()
+		} else {
+			// TODO find appropriate method to inject bk_obj_id condition for below data format
+			blog.Warnf("search instance condition unexpected format, skip inject bk_obj_id condition, condition: %+v", cond.Condition)
+		}
 		rsp, err := c.clientSet.ObjectController().Instance().SearchObjects(context.Background(), obj.GetObjectType(), params.Header, cond)
 
 		if nil != err {
