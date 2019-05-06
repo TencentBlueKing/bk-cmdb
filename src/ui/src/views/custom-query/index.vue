@@ -1,5 +1,10 @@
 <template>
     <div class="api-wrapper">
+        <div class="feature-tips">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{$t("CustomQuery['动态分组提示']")}}</span>
+            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%886%EF%BC%89%E5%8A%A8%E6%80%81%E5%88%86%E7%BB%84" target="_blank">{{$t("Common['更多详情']")}} >></a>
+        </div>
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
                 :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
@@ -29,7 +34,6 @@
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
-                <p>{{$t("CustomQuery['动态分组空数据提示']")}}</p>
             </div>
         </cmdb-table>
         <cmdb-slider
@@ -213,4 +217,8 @@
             margin-top: 20px;
         }
     }
+</style>
+
+<style lang="scss">
+    @import '@/assets/scss/feature-tips.scss';
 </style>

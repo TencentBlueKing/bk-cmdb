@@ -1,5 +1,10 @@
 <template>
     <div class="business-topo-wrapper">
+        <div class="feature-tips" style="text-align: left;">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{$t("ModelManagement['业务层级提示']")}}</span>
+            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%882%EF%BC%89%E6%96%B0%E5%A2%9E%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B1%82%E7%BA%A7" target="_blank">{{$t("Common['更多详情']")}} >></a>
+        </div>
         <div class="topo-level" v-bkloading="{ isLoading: $loading() }">
             <div class="topo-node"
                 v-for="(model, index) in topo"

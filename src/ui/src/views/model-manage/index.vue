@@ -3,6 +3,11 @@
         <cmdb-main-inject
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
+            <div class="feature-tips">
+                <i class="icon-cc-exclamation-tips"></i>
+                <span>{{$t("ModelManagement['模型顶部提示']")}}</span>
+                <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement" target="_blank">{{$t("Common['更多详情']")}} >></a>
+            </div>
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
@@ -356,7 +361,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 76px 20px 20px 0;
+        padding: 130px 20px 20px 0;
     }
     .btn-group {
         position: absolute;

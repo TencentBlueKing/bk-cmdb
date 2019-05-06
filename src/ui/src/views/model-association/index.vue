@@ -1,5 +1,10 @@
 <template>
     <div class="relation-wrapper">
+        <div class="feature-tips">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{$t("ModelManagement['关联关系提示']")}}</span>
+            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94" target="_blank">{{$t("common['更多详情']")}} >></a>
+        </div>
         <p class="operation-box">
             <bk-button type="primary"
                 class="create-btn"
@@ -256,5 +261,6 @@
 </style>
 
 <style lang="scss">
+    @import '@/assets/scss/feature-tips.scss';
     @import '@/assets/scss/model-manage.scss';
 </style>
