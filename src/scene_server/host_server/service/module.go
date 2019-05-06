@@ -397,12 +397,12 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	conds := make(map[string]interface{})
 	var moduleNameLogKey string
 	if common.DefaultResModuleName == moduleName {
-		//空闲机
+		// 空闲机
 		moduleNameLogKey = "idle"
 		conds[common.BKDefaultField] = common.DefaultResModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultResModuleName
 	} else {
-		//故障机器
+		// 故障机器
 		moduleNameLogKey = "fault"
 		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
