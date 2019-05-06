@@ -247,7 +247,6 @@ type TaskInfo struct {
 	Args        CloudTaskInfo
 	Method      string
 	NextTrigger int64
-	ManagerChn  chan bool
 }
 
 type CloudSyncRedisPendingStart struct {
