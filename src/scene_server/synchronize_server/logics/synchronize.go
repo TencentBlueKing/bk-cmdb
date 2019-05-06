@@ -31,6 +31,10 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 		blog.Errorf("TriggerSynchronize not config ")
 		return
 	}
+	if len(config.Names) == 0 {
+		blog.Errorf("TriggerSynchronize not config ")
+		return
+	}
 	lgc = lgc.NewFromHeader(copyHeader(lgc.header))
 	interval, err := util.GetInt64ByInterface(config.Trigger.Role)
 	if err != nil {
@@ -61,6 +65,7 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 		lgc.Synchronize(ctx, config)
 	}
 
+	blog.V(4).Infof("synchronize ready")
 	timeInterval := time.Duration(interval) * time.Minute
 	for {
 		ticker := time.NewTimer(timeInterval)
@@ -73,7 +78,6 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 			continue
 		}
 		lgc.Synchronize(ctx, config)
-
 	}
 
 }

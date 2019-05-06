@@ -61,7 +61,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:      true,
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
-	// CC_MODULE_SYNCHRONZESERVER: true,
+	CC_MODULE_SYNCHRONZESERVER: true,
 }
 
 // cc functionality define
@@ -148,5 +148,8 @@ type EventServInfo struct {
 
 // Address convert struct to host address
 func (s *ServerInfo) Address() string {
+	if s == nil {
+		return ""
+	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }
