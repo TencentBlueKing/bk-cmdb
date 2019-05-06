@@ -1,5 +1,10 @@
 <template>
     <div class="push-wrapper">
+        <div class="feature-tips">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{$t("EventPush['事件推送顶部提示']")}}</span>
+            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush" target="_blank">{{$t("Common['更多详情']")}} >></a>
+        </div>
         <div class="btn-wrapper clearfix">
             <bk-button type="primary"
                 :disabled="!$isAuthorized(OPERATION.C_EVENT)"
@@ -221,4 +226,8 @@
             background: $cmdbDangerColor;
         }
     }
+</style>
+
+<style lang="scss">
+    @import '@/assets/scss/feature-tips.scss';
 </style>
