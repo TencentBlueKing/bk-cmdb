@@ -254,6 +254,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// TODO hoffer host can not exist, not exist create
 	// check authorization
 	hostIDArr := make([]int64, 0)
+	existNewAddHost := false
 	for _, ip := range data.Ips {
 		hostID, err := s.ip2hostID(srvData, ip, data.PlatID)
 		if err != nil {
@@ -261,10 +262,25 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error())})
 			return
 		}
+
+		if hostID == 0 {
+			existNewAddHost = true
+			continue
+		}
+
 		hostIDArr = append(hostIDArr, hostID)
 	}
 
 	// auth: check authorization
+	if existNewAddHost == true {
+		// 检查注册到资源池的权限
+		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
+			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+	}
+
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
