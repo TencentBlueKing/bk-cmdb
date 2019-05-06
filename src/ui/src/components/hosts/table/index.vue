@@ -297,6 +297,9 @@
                     this.tab.active = 'attribute'
                 }
             },
+            columnsConfigProperties () {
+                this.setTableHeader()
+            },
             customColumns () {
                 this.setTableHeader()
             }
