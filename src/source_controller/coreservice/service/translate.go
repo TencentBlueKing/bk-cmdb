@@ -17,7 +17,7 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator"
+	"configcenter/src/source_controller/coreservice/core/instances"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -49,7 +49,7 @@ func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf,
 }
 
 func (s *coreService) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
-	options := validator.ParseEnumOption(val)
+	options := instances.ParseEnumOption(val)
 	for index := range options {
 		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
 	}
