@@ -15,6 +15,7 @@ package operation
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -155,6 +156,13 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		currentInst.SetValue(common.BKDefaultField, 0)
 		// set current instance's parent id to parent instance's id, so that they can be chained.
 		currentInst.SetValue(common.BKInstParentStr, id)
+		object := parent.GetObject()
+		if object.GetObjectID() == common.BKInnerObjIDApp {
+			metaInfo := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(id, 10))
+			currentInst.SetValue(metadata.BKMetadata, metaInfo)
+		} else {
+			currentInst.SetValue(metadata.BKMetadata, parent.GetValues()[metadata.BKMetadata])
+		}
 
 		// create the instance now.
 		if err = currentInst.Create(); nil != err {
