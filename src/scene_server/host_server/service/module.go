@@ -273,9 +273,18 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 
 	// auth: check authorization
 	if existNewAddHost == true {
+		/*
 		// 检查注册到资源池的权限
 		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
 			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		*/
+		// 检查转移主机到目标业务的权限
+		// auth: check target business update priority
+		if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, appID); err != nil {
+			blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", appID, err, srvData.rid)
 			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
