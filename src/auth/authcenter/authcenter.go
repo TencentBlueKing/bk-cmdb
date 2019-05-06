@@ -427,7 +427,7 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 
 	var appList []AuthorizedResource
 	var err error
-	if !ac.Config.Enable {
+	if ac.Config.Enable {
 		appList, err = ac.authClient.GetAuthorizedResources(ctx, info)
 		if err != nil {
 			return nil, err
