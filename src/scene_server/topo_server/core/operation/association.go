@@ -628,27 +628,10 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
 
-		cond = condition.CreateCondition()
-		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
-		cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstId)
-
-		inst, err = a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
-		if err != nil {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
-			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
-		}
-
-		if !inst.Result {
-			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
-			return nil, params.Err.New(resp.Code, resp.ErrMsg)
-		}
-		if len(inst.Data) >= 1 {
-			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
-		}
 	case metadata.OneToManyMapping:
 		cond = condition.CreateCondition()
 		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstId)
-		cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstId)
+		cond.Field(common.BKInstIDField).Eq(request.InstId)
 
 		inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
 		if err != nil {
