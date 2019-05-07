@@ -124,7 +124,7 @@
                     let formData = new FormData()
                     formData.append('file', files[0])
                     this.isLoading = true
-                    this.$http.post(this.importUrl, formData, {originalResponse: true, globalError: false}).then(res => {
+                    this.$http.post(this.importUrl, formData, {transformData: false, globalError: false}).then(res => {
                         const defaultResult = {
                             success: null,
                             error: null,
