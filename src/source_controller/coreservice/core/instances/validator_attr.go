@@ -93,7 +93,11 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 		return nil
 	}
 	// validate within enum
-	enumOption := ParseEnumOption(option.Option)
+	enumOption, err := ParseEnumOption(option.Option)
+	if err != nil {
+		blog.Warnf("ParseEnumOption failed: %v", err)
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+	}
 	match := false
 	for _, k := range enumOption {
 		if k.ID == valStr {
