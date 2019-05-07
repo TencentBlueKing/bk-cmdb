@@ -34,7 +34,10 @@ func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
-	enums := instances.ParseEnumOption(state.Option)
+	enums, err := instances.ParseEnumOption(state.Option)
+	if err != nil {
+		return err
+	}
 	for index := range enums {
 		if enums[index].ID == "FR" {
 			enums[index].Name = "法国"
