@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -49,7 +50,11 @@ func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf,
 }
 
 func (s *coreService) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
-	options := instances.ParseEnumOption(val)
+	options, err := instances.ParseEnumOption(val)
+	if err != nil {
+		blog.Warnf("TranslateEnumName failed: %v", err)
+		return val
+	}
 	for index := range options {
 		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
 	}

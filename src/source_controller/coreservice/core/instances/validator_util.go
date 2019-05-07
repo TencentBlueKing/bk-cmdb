@@ -14,6 +14,7 @@ package instances
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -79,18 +80,19 @@ type EnumVal struct {
 }
 
 // ParseEnumOption convert val to []EnumVal
-func ParseEnumOption(val interface{}) EnumOption {
+func ParseEnumOption(val interface{}) (EnumOption, error) {
 	enumOptions := []EnumVal{}
 	if nil == val || "" == val {
-		return enumOptions
+		return enumOptions, nil
 	}
 	switch options := val.(type) {
 	case []EnumVal:
-		return options
+		return options, nil
 	case string:
 		err := json.Unmarshal([]byte(options), &enumOptions)
 		if nil != err {
 			blog.Errorf("ParseEnumOption error : %s", err.Error())
+			return nil, err
 		}
 	case []interface{}:
 		for _, optionVal := range options {
@@ -108,6 +110,8 @@ func ParseEnumOption(val interface{}) EnumOption {
 				enumOption.Type = getString(option["type"])
 				enumOption.IsDefault = getBool(option["is_default"])
 				enumOptions = append(enumOptions, enumOption)
+			} else {
+				return nil, fmt.Errorf("unknow val type: %#v", val)
 			}
 		}
 	case bson.A:
@@ -127,12 +131,14 @@ func ParseEnumOption(val interface{}) EnumOption {
 				enumOption.Type = getString(opt["type"])
 				enumOption.IsDefault = getBool(opt["is_default"])
 				enumOptions = append(enumOptions, enumOption)
+			} else {
+				return nil, fmt.Errorf("unknow val type: %#v", val)
 			}
 		}
 	default:
-		blog.Warnf("unknow val type: %#v", val)
+		return nil, fmt.Errorf("unknow val type: %#v", val)
 	}
-	return enumOptions
+	return enumOptions, nil
 }
 
 // parseIntOption  parse int data in option
@@ -216,7 +222,12 @@ func FillLostedFieldValue(valData mapstr.MapStr, propertys []metadata.Attribute,
 			case common.FieldTypeInt:
 				valData[field.PropertyID] = nil
 			case common.FieldTypeEnum:
-				enumOptions := ParseEnumOption(field.Option)
+				enumOptions, err := ParseEnumOption(field.Option)
+				if err != nil {
+					blog.Warnf("ParseEnumOption failed: %v", err)
+					valData[field.PropertyID] = nil
+					continue
+				}
 				if len(enumOptions) > 0 {
 					var defaultOption *EnumVal
 					for _, k := range enumOptions {
