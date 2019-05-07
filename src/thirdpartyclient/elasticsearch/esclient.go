@@ -40,11 +40,14 @@ func (es *EsSrv) Search(query, index string) ([]*elastic.SearchHit, error) {
 
 	// Search with a term query
 	allQuery := elastic.NewQueryStringQuery(query)
+	highlight := elastic.NewHighlight()
+	highlight.Field("*")
+	highlight.RequireFieldMatch(false)
 	searchResult, err := es.Client.Search().
-		Index(index).    // search in index like "cmdb"
-		Query(allQuery). // specify the query
-		Pretty(true).    // pretty print request and response JSON
-		Do(ctx)          // execute
+		Index(index).                         // search in index like "cmdb"
+		Query(allQuery).Highlight(highlight). // specify the query
+		Pretty(true).                         // pretty print request and response JSON
+		Do(ctx)                               // execute
 	if err != nil {
 		// Handle error
 		blog.Errorf("es search [%s] error, err: %v", query, err)

@@ -6,15 +6,15 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"encoding/json"
-	"fmt"
 	"github.com/olivere/elastic"
 )
 
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
-	Type      string                 `json:"type"`
-	Score     float64                `json:"score"`
-	UrlSuffix string                 `json:"url_suffix"`
+	Highlight map[string][]string
+	Type      string  `json:"type"` // object, host, process
+	Score     float64 `json:"score"`
+	UrlSuffix string  `json:"url_suffix"`
 }
 
 type Query struct {
@@ -86,18 +86,18 @@ var (
 	}
 )
 
-func (s *Service) FullTextSearch(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	if data.Exists("query_string") {
 		query := new(Query)
 		if err := data.MarshalJSONInto(query); err != nil {
-			blog.Errorf("full_text_search failed, import query_string, but got invalid query_string:[%v], err: %+v", query, err)
+			blog.Errorf("full_text_find failed, import query_string, but got invalid query_string:[%v], err: %+v", query, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
 		result, err := s.Es.Search(query.QueryString, CMDBINDEX)
 		if err != nil {
-			blog.Errorf("full_text_search failed, search failed, err: %+v", err)
-			return nil, params.Err.Error(common.CCErrorTopoFullTextSearchErr)
+			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
+			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
 		}
 
 		// result is list
@@ -105,7 +105,7 @@ func (s *Service) FullTextSearch(params types.ContextParams, pathParams, queryPa
 		for _, hit := range result {
 			if hit.Index == CMDBINDEX {
 				sr := SearchResult{}
-				sr.setHitAndUrl(hit)
+				sr.setHit(hit)
 				searchResults = append(searchResults, sr)
 			}
 		}
@@ -115,56 +115,25 @@ func (s *Service) FullTextSearch(params types.ContextParams, pathParams, queryPa
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 }
 
-func (sr *SearchResult) setHitAndUrl(searchHit *elastic.SearchHit) {
+func (sr *SearchResult) setHit(searchHit *elastic.SearchHit) {
 	sr.Score = *searchHit.Score
-	sr.Type = searchHit.Type
-	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
-	if err != nil {
-		blog.Warnf("full_text_search unmarshal search result source err: %+v", err)
-		sr.Source = nil
-	}
-
 	switch searchHit.Type {
 	case common.BKTableNameBaseInst:
-		sr.setInstUrl(searchHit)
+		sr.Type = "object"
 	case common.BKTableNameBaseHost:
-		sr.setHostUrl(searchHit)
+		sr.Type = "host"
 	case common.BKTableNameBaseProcess:
-		sr.setProcessUrl(searchHit)
+		sr.Type = "process"
 	case common.BKTableNameBaseApp:
-		sr.setAppUrl(searchHit)
+		sr.Type = "application"
 	case common.BKTableNameObjDes:
-		sr.setObjDesUrl(searchHit)
-	default:
-		// log, warning, not support
-		blog.Warnf("full_text_search not support cmdb table: %s", searchHit.Type)
+		sr.Type = "model"
 	}
-}
 
-func (sr *SearchResult) setInstUrl(searchHit *elastic.SearchHit) {
-	//http://cmdb-domain/#/general-model/test_search
-	// suffix: /#/general-model/test_search
-	//bkObjId, err := s.Source["bk_obj_id"]
-	sr.UrlSuffix = "/#/general-model/" + fmt.Sprintf("%v", sr.Source["bk_obj_id"])
-}
-
-func (sr *SearchResult) setHostUrl(searchHit *elastic.SearchHit) {
-	//http://cmdb-domain/#/resource?business=1&ip=10.0.0.5&outer=false&inner=true&exact=1&assigned=true
-	// suffix: /#/resource?business=1&ip=10.0.0.5&outer=false&inner=true&exact=1&assigned=true
-}
-
-func (sr *SearchResult) setProcessUrl(searchHit *elastic.SearchHit) {
-	//http://cmdb-domain/#/process
-	// suffix: /#/process
-}
-
-func (sr *SearchResult) setAppUrl(searchHit *elastic.SearchHit) {
-	//http://cmdb-domain/#/business
-	// suffix: /#/business
-}
-
-func (sr *SearchResult) setObjDesUrl(searchHit *elastic.SearchHit) {
-	//http://cmdb-domain/#/model/details/ljp_test
-	// suffix: /#/model/details/ljp_test
-	sr.UrlSuffix = "/#/model/details/" + fmt.Sprintf("%v", sr.Source["bk_obj_id"])
+	sr.Highlight = searchHit.Highlight
+	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
+	if err != nil {
+		blog.Warnf("full_text_find unmarshal search result source err: %+v", err)
+		sr.Source = nil
+	}
 }

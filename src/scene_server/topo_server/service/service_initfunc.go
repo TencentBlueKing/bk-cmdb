@@ -190,8 +190,8 @@ func (s *Service) initIdentifier() {
 	s.addAction(http.MethodPost, "/identifier/{obj_type}/search", s.SearchIdentifier, s.ParseSearchIdentifierOriginData)
 }
 
-func (s *Service) initSearch() {
-	s.addAction(http.MethodPost, "/search/full_text_search", s.FullTextSearch, nil)
+func (s *Service) initFind() {
+	s.addAction(http.MethodPost, "/find/full_text", s.FullTextFind, nil)
 }
 
 func (s *Service) initService() {
@@ -223,5 +223,5 @@ func (s *Service) initService() {
 	s.initBusinessGraphics()
 	s.initBusinessInst()
 
-	s.initSearch()
+	s.initFind()
 }
