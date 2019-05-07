@@ -108,16 +108,16 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 			return
 		}
 
-		if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
-			blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrCommParseAuthAttributeFailed,
-				ErrMsg: "invalid supplier account.",
-				Result: false,
-			}
-			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
-			return
-		}
+		// if common.BKSuperOwnerID == util.GetOwnerID(req.Request.Header) {
+		// 	blog.Errorf("authFilter failed, can not use super supplier account, rid: %s", rid)
+		// 	rsp := metadata.BaseResp{
+		// 		Code:   common.CCErrCommParseAuthAttributeFailed,
+		// 		ErrMsg: "invalid supplier account.",
+		// 		Result: false,
+		// 	}
+		// 	resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
+		// 	return
+		// }
 
 		language := util.GetLanguage(req.Request.Header)
 		attribute, err := parser.ParseAttribute(req, s.engine)
