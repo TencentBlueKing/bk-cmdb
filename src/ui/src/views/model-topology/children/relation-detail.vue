@@ -158,7 +158,10 @@
                         await this.deleteObjectAssociation({
                             id: this.relationInfo.id,
                             config: {
-                                requestId: 'deleteObjectAssociation'
+                                requestId: 'deleteObjectAssociation',
+                                data: this.$injectMetadata({}, {
+                                    inject: !!this.$tools.getMetadataBiz(this.relationInfo)
+                                })
                             }
                         })
                         this.$emit('save', {
