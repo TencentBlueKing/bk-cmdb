@@ -11,9 +11,9 @@ import (
 
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
-	Highlight map[string][]string    `json:"highlight"`
-	Type      string                 `json:"type"` // object, host, process
-	Score     float64                `json:"score"`
+	Highlight map[string][]string	  `json:"highlight"`
+	Type      string  `json:"type"` // object, host, process
+	Score     float64 `json:"score"`
 }
 
 type Query struct {
