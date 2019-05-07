@@ -25,7 +25,7 @@ def generate_config_file(
         mongo_host=mongo_ip_v,
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
-        redis_host=redis_ip_v+":"+str(redis_port_v),
+        redis_host=redis_ip_v,
         redis_user=redis_user_v,
         redis_pass=redis_pass_v,
         redis_port=redis_port_v,
@@ -86,7 +86,7 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIdleConns = 1000
-mechanism=SCRAM-SHA-1
+mechanism = SCRAM-SHA-1
 
 [snap-redis]
 host = $redis_host
@@ -121,23 +121,23 @@ database = 0
     # eventserver.conf
     eventserver_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 '''
 
     template = FileTemplate(eventserver_file_template_str)
@@ -148,18 +148,18 @@ maxIDleConns=1000
     # host.conf
     host_file_template_str = '''
 [gse]
-addr=$rd_server
-user=bkzk
-pwd=L%blKas
+addr = $rd_server
+user = bkzk
+pwd = L%blKas
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [auth]
 address = $auth_address
@@ -175,23 +175,23 @@ enable = $auth_enabled
     # hostcontroller.conf
     hostcontroller_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 '''
 
     template = FileTemplate(hostcontroller_file_template_str)
@@ -202,13 +202,14 @@ maxIDleConns=1000
     # migrate.conf
     migrate_file_template_str = '''
 [config-server]
-addrs=$rd_server
-usr=
-pwd=
+addrs = $rd_server
+usr =
+pwd =
+
 [register-server]
-addrs=$rd_server
-usr=
-pwd=
+addrs = $rd_server
+usr =
+pwd =
 
 [mongodb]
 host =$mongo_host
@@ -218,16 +219,16 @@ database = $db
 port = $mongo_port
 maxOpenConns = 3000
 maxIDleConns = 1000
-mechanism=SCRAM-SHA-1
+mechanism = SCRAM-SHA-1
 
 [confs]
 dir = $configures_dir
 
 [errors]
-res=conf/errors
+res = conf/errors
 
 [language]
-res=conf/language
+res = conf/language
 
 [auth]
 address = $auth_address
@@ -244,23 +245,23 @@ enable = $auth_enabled
     # objectcontroller.conf
     objectcontroller_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 '''
 
     template = FileTemplate(objectcontroller_file_template_str)
@@ -271,23 +272,23 @@ maxIDleConns=1000
     # coreservice.conf
     coreservice_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 '''
 
     template = FileTemplate(coreservice_file_template_str)
@@ -298,10 +299,10 @@ maxIDleConns=1000
     # proc.conf
     proc_file_template_str = '''
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-port=$redis_port
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+port = $redis_port
 database = 0
 '''
     template = FileTemplate(proc_file_template_str)
@@ -312,23 +313,23 @@ database = 0
     # proccontroller.conf
     proccontroller_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 '''
 
     template = FileTemplate(proccontroller_file_template_str)
@@ -339,26 +340,26 @@ maxIDleConns=1000
     # txc.conf
     txcserver_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [redis]
-host=$redis_host
-usr=$redis_user
-pwd=$redis_pass
-database=0
-port=$redis_port
-maxOpenConns=3000
-maxIDleConns=1000
+host = $redis_host
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
 
 [transaction]
-enable=false
-transactionLifetimeSecond=60
+enable = false
+transactionLifetimeSecond = 60
 '''
 
     template = FileTemplate(txcserver_file_template_str)
@@ -369,17 +370,17 @@ transactionLifetimeSecond=60
     # topo.conf
     topo_file_template_str = '''
 [mongodb]
-host=$mongo_host
-usr=$mongo_user
-pwd=$mongo_pass
-database=$db
-port=$mongo_port
-maxOpenConns=3000
-maxIDleConns=1000
-mechanism=SCRAM-SHA-1
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
 
 [level]
-businessTopoMax=7
+businessTopoMax = 7
 
 [auth]
 address = $auth_address
@@ -396,28 +397,29 @@ enable = $auth_enabled
     # webserver.conf
     webserver_file_template_str = '''
 [api]
-version=v3
+version = v3
+
 [session]
-name=cc3
-skip=1
-defaultlanguage=zh-cn
-host=$redis_host
-port=$redis_port
-secret=$redis_pass
-multiple_owner=0
+name = cc3
+skip = 1
+defaultlanguage = zh-cn
+host = $redis_host
+port = $redis_port
+secret = $redis_pass
+multiple_owner = 0
 
 [site]
-domain_url=${cc_url}
-bk_login_url=${paas_url}/login/?app_id=%s&c_url=%s
-app_code=cc
-check_url=${paas_url}/login/accounts/get_user/?bk_token=
-bk_account_url=${paas_url}/login/accounts/get_all_user/?bk_token=%s
-resources_path=/tmp/
-html_root=$ui_root
+domain_url = ${cc_url}
+bk_login_url = ${paas_url}/login/?app_id=%s&c_url=%s
+app_code = cc
+check_url = ${paas_url}/login/accounts/get_user/?bk_token=
+bk_account_url = ${paas_url}/login/accounts/get_all_user/?bk_token=%s
+resources_path = /tmp/
+html_root = $ui_root
 authscheme = $auth_scheme
 
 [app]
-agent_app_url=${agent_url}/console/?app=bk_agent_setup
+agent_app_url = ${agent_url}/console/?app=bk_agent_setup
 '''
     template = FileTemplate(webserver_file_template_str)
     result = template.substitute(**context)
