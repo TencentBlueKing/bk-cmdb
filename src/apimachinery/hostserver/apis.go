@@ -551,8 +551,8 @@ func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *metadat
 	return
 }
 
-func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/plat"
 
 	err = hs.client.Post().
