@@ -148,5 +148,8 @@ type EventServInfo struct {
 
 // Address convert struct to host address
 func (s *ServerInfo) Address() string {
+	if s == nil {
+		return ""
+	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }
