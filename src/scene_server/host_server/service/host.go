@@ -316,8 +316,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 	retData["success"] = succ
 
-	// register hosts
-	// auth: check authorization
+	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDs, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
