@@ -184,6 +184,11 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
+	if len(details) == 0 {
+		blog.Errorf("host not found, hostID: %v,rid:%s", hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotFound)})
+		return
+	}
 
 	// check authorization
 	// auth: check authorization
