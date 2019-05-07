@@ -296,7 +296,12 @@ func (s *Service) HostSearchByModuleID(req *restful.Request, resp *restful.Respo
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, host := range hostData {
-		hostID := host[common.BKHostIDField].(int64)
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("HostSearchByModuleID failed, parse host id field failed, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
@@ -352,7 +357,12 @@ func (s *Service) HostSearchBySetID(req *restful.Request, resp *restful.Response
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, host := range hostData {
-		hostID := host[common.BKHostIDField].(int64)
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("HostSearchByModuleID failed, parse host id field failed, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
@@ -405,7 +415,12 @@ func (s *Service) HostSearchByAppID(req *restful.Request, resp *restful.Response
 	// check authorization
 	hostIDArr := make([]int64, 0)
 	for _, host := range hostData {
-		hostID := host[common.BKHostIDField].(int64)
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("HostSearchByModuleID failed, parse host id field failed, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
@@ -499,7 +514,12 @@ func (s *Service) HostSearchByProperty(req *restful.Request, resp *restful.Respo
 
 	hostIDArr := make([]int64, 0)
 	for _, host := range hostData {
-		hostID := host[common.BKHostIDField].(int64)
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("HostSearchByModuleID failed, parse host id field failed, input:%+v,rid:%s", err.Error(), input, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		hostIDArr = append(hostIDArr, hostID)
 	}
 	// auth: check authorization
@@ -962,7 +982,12 @@ func (s *Service) GetPlat(req *restful.Request, resp *restful.Response) {
 	}
 	platIDArr := make([]int64, 0)
 	for _, item := range res.Data.Info {
-		platID := item[common.BKCloudIDField].(int64)
+		platID, err := util.GetInt64ByInterface(item[common.BKCloudIDField])
+		if err != nil {
+			blog.Errorf("GetPlat failed, parse plat id field failed, input:%+v,rid:%s", err.Error(), res.Data, srvData.rid)
+			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
+			return
+		}
 		platIDArr = append(platIDArr, platID)
 	}
 	// auth: check authorization
