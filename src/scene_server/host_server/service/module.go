@@ -254,6 +254,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// TODO hoffer host can not exist, not exist create
 	// check authorization
 	hostIDArr := make([]int64, 0)
+	existNewAddHost := false
 	for _, ip := range data.Ips {
 		hostID, err := s.ip2hostID(srvData, ip, data.PlatID)
 		if err != nil {
@@ -261,10 +262,34 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrAddHostToModuleFailStr, err.Error())})
 			return
 		}
+
+		if hostID == 0 {
+			existNewAddHost = true
+			continue
+		}
+
 		hostIDArr = append(hostIDArr, hostID)
 	}
 
 	// auth: check authorization
+	if existNewAddHost == true {
+		/*
+		// 检查注册到资源池的权限
+		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
+			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		*/
+		// 检查转移主机到目标业务的权限
+		// auth: check target business update priority
+		if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, appID); err != nil {
+			blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", appID, err, srvData.rid)
+			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+	}
+
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
 		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
 		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
@@ -397,12 +422,12 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	conds := make(map[string]interface{})
 	var moduleNameLogKey string
 	if common.DefaultResModuleName == moduleName {
-		//空闲机
+		// 空闲机
 		moduleNameLogKey = "idle"
 		conds[common.BKDefaultField] = common.DefaultResModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultResModuleName
 	} else {
-		//故障机器
+		// 故障机器
 		moduleNameLogKey = "fault"
 		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
