@@ -3,7 +3,7 @@
         <img src="../../../assets/images/map.svg"
             ref="img"
             :style="imgStyles">
-        <transition-group name="fade">
+        <transition-group name="map-highlight-fade">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
                 viewBox="0 0 857 404"
                 v-for="(coordinate, index) in coordinates"
@@ -13,18 +13,18 @@
                 <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                     <g transform="translate(-255, -182)">
                         <g transform="translate(255, 182)">
-                            <circle :cx="coordinate.x" :cy="coordinate.y" r="1.5" stroke-width="2" fill="#61A7FF"></circle>
-                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#61A7FF" stroke-width="1" fill-opacity="0">
-                                <animate attributeName="r" id="ani1" begin="0" from="0" :to="getRandomRadius(coordinate)" dur="3s" repeatCount="indefinite"></animate>
-                                <animate attributeName="opacity" begin="0" from="1" to="0" dur="3s" repeatCount="indefinite"></animate>
+                            <circle :cx="coordinate.x" :cy="coordinate.y" r="1.5" stroke-width="1" fill="#D3D7DE"></circle>
+                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#D3D7DE" stroke-width="1.5" fill-opacity="0">
+                                <animate attributeName="r" id="ani1" begin="0" from="0" :to="getRandomRadius(coordinate)" dur="4.8s" repeatCount="indefinite"></animate>
+                                <animate attributeName="opacity" begin="0" from="0.8" to="0" dur="4.8s" repeatCount="indefinite"></animate>
                             </circle>
-                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#61A7FF" stroke-width="1" fill-opacity="0">
-                                <animate attributeName="r" begin="ani1.begin + 1s" from="0" :to="getRandomRadius(coordinate)" dur="3s" repeatCount="indefinite"></animate>
-                                <animate attributeName="opacity" begin="ani1.begin + 1s" from="1" to="0" dur="3s" repeatCount="indefinite"></animate>
+                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#D3D7DE" stroke-width="1.5" fill-opacity="0">
+                                <animate attributeName="r" begin="ani1.begin + 1.6s" from="0" :to="getRandomRadius(coordinate)" dur="4.8s" repeatCount="indefinite"></animate>
+                                <animate attributeName="opacity" begin="ani1.begin + 1.6s" from="0.8" to="0" dur="4.8s" repeatCount="indefinite"></animate>
                             </circle>
-                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#61A7FF" stroke-width="1" fill-opacity="0">
-                                <animate attributeName="r" begin="ani1.begin + 2s" from="0" :to="getRandomRadius(coordinate)" dur="3s" repeatCount="indefinite"></animate>
-                                <animate attributeName="opacity" begin="ani1.begin + 2s" from="1" to="0" dur="3s" repeatCount="indefinite"></animate>
+                            <circle :cx="coordinate.x" :cy="coordinate.y" r="0" stroke="#D3D7DE" stroke-width="1.5" fill-opacity="0">
+                                <animate attributeName="r" begin="ani1.begin + 3.2s" from="0" :to="getRandomRadius(coordinate)" dur="4.8s" repeatCount="indefinite"></animate>
+                                <animate attributeName="opacity" begin="ani1.begin + 3.2s" from="0.8" to="0" dur="4.8s" repeatCount="indefinite"></animate>
                             </circle>
                         </g>
                     </g>
@@ -160,8 +160,7 @@
                     const imgStyles = {
                         width: Math.floor(parentRect.width * 0.66) + 'px',
                         height: Math.floor(parentRect.width * 0.66 * this.ratio.height) + 'px',
-                        left: Math.floor(parentRect.width * 0.17 + parentRect.left) + 'px',
-                        top: Math.floor(document.body.getBoundingClientRect().height * this.ratio.top) + 'px'
+                        left: Math.floor(parentRect.width * 0.17 + parentRect.left) + 'px'
                     }
                     this.imgStyles = imgStyles
                 }
@@ -170,7 +169,7 @@
             randomHighlight () {
                 const index = Math.floor(Math.random() * this.coordinates.length)
                 this.randomIndex.unshift(index)
-                this.randomIndex.splice(3)
+                this.randomIndex.splice(5)
                 this.timer = setTimeout(() => {
                     this.randomHighlight()
                 }, 3000)
@@ -178,7 +177,7 @@
             getRandomRadius (coordinate) {
                 const radius = this.randomRadius[coordinate.id]
                 if (!radius) {
-                    this.randomRadius[coordinate.id] = Math.floor(Math.random() * 20) + 10
+                    this.randomRadius[coordinate.id] = Math.floor(Math.random() * 30) + 10
                 }
                 return this.randomRadius[coordinate.id]
             }
@@ -198,9 +197,19 @@
         overflow: visible;
         svg, img {
             position: absolute;
+            top: 181px;
         }
         img {
             opacity: 0.5745;
         }
+    }
+    .map-highlight-fade-enter-active,
+    .map-highlight-fade-leave-active {
+        transition: opacity linear 1s;
+    }
+
+    .map-highlight-fade-enter,
+    .map-highlight-fade-leave-active {
+        opacity: 0;
     }
 </style>
