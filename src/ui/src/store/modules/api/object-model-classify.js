@@ -70,8 +70,8 @@ const actions = {
      * @param {Number} id 分类数据记录id
      * @return {promises} promises 对象
      */
-    deleteClassification ({ commit, state, dispatch }, { id }) {
-        return $http.delete(`delete/objectclassification/${id}`)
+    deleteClassification ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`delete/objectclassification/${id}`, config)
     },
 
     /**
