@@ -413,7 +413,3 @@
         }
     }
 </style>
-
-<style lang="scss">
-    @import '@/assets/scss/feature-tips.scss';
-</style>
