@@ -143,7 +143,7 @@ func (u *URLPath) WithTopo(req *restful.Request) (isHit bool) {
 	case strings.Contains(string(*u), "/associationtype"):
 		from, to, isHit = rootPath, topoRoot, true
 
-	case strings.Contains(string(*u), "/search"):
+	case strings.Contains(string(*u), "/find"):
 		from, to, isHit = rootPath, topoRoot, true
 
 	default:

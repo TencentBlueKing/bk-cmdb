@@ -1,10 +1,10 @@
 
 ### 全文检索
-* API:  POST /api/{version}/search/full_text_search
-* API名称： full_text_search
+* API:  POST /api/{version}/find/full_text
+* API名称： full_text_find
 * 功能说明：
 	* 中文：全文检索
-	* English ：full text search
+	* English ：full text find
 * input body:
 ```
 {
@@ -31,7 +31,6 @@
         {
             "type": "cc_ObjectBase",
             "score": 3.566052,
-            "url_suffix": "/#/general-model/test_search",
             "source": {
                   "jw_test_4": 1,
                   "bk_inst_id": 5,
@@ -51,7 +50,6 @@
         {
             "type": "cc_HostBase",
             "score": 2.2986379,
-            "url_suffix": "/#/resource?business=1&ip=10.0.0.6&outer=false&inner=true&exact=1&assigned=true",
             "source": {
                 "bk_bak_operator" : null,
                 "bk_supplier_account" : "0",
@@ -101,6 +99,5 @@ data说明：
 | 名称  | 类型  | 说明 |Description|
 |---|---|---|---|
 | type | string | 类型 | 查询结果所属table类型 |
-| url_suffix | string | 跳转链接后缀 | 搜索结果的跳转href后缀 |
 | score | float | 最佳匹配得分 | 搜索结果匹配程度 |
 | source | object | 属性值 | 搜索结果的具体内容 |
