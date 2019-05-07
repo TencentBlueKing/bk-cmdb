@@ -484,14 +484,14 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+		// bizID, err := ps.parseBusinessID()
+		// if err != nil {
+		//	ps.err = err
+		//	return ps
+		// }
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
-				BusinessID: bizID,
+				// BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
