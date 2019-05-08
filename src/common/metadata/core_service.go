@@ -213,6 +213,7 @@ type TopoInstance struct {
 	InstanceID       int64
 	ParentInstanceID int64
 	Detail           map[string]interface{}
+	Default        int64
 }
 
 // Key generate a unique key for instance(as instances's of different object type maybe conflict)
