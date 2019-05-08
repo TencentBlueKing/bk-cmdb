@@ -73,6 +73,7 @@ func (im *InstanceMainline) LoadModelParentMap() {
 		}
 		im.objectParentMap[objectID] = im.modelIDs[idx-1]
 	}
+	blog.V(5).Infof("LoadModelParentMap mainline models: %+v, objectParentMap: %+v", im.modelIDs, im.objectParentMap)
 }
 
 func (im *InstanceMainline) LoadSetInstances() error {
@@ -272,8 +273,14 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(withDetail bool) error 
 		}
 		blog.V(5).Infof("get missed instances by id:%d results: %+v", topoInstance.ParentInstanceID, missedInstances)
 		if len(missedInstances) == 0 {
-			blog.Errorf("found unexpected count of missedInstances: %+v", missedInstances)
-			return fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+			if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID {
+				// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+				// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
+				continue
+			} else {
+				blog.Errorf("found unexpected count of missedInstances: %+v", missedInstances)
+				return fmt.Errorf("SearchMainlineInstanceTopo found %d missedInstances with instanceID=%d", len(missedInstances), topoInstance.ParentInstanceID)
+			}
 		}
 		if len(missedInstances) > 1 {
 			blog.Errorf("found too many(%d) missedInstances: %+v by id: %d", len(missedInstances), missedInstances, topoInstance.ParentInstanceID)
@@ -297,7 +304,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(withDetail bool) error 
 		} else {
 			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
 			// 这类特殊情况的结点是业务，不需要重复获取，ConstructInstanceTopoTree 会做进一步处理
-			if topoInstance.ObjectID == common.BKInnerObjIDSet {
+			if topoInstance.ObjectID == common.BKInnerObjIDSet && im.bkBizID == topoInstance.ParentInstanceID{
 				continue
 			}
 			blog.Errorf("construct biz topo tree, instance doesn't have field %s, instance: %+v, err: %+v", common.BKInstParentStr, instance, err)

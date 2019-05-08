@@ -13,89 +13,87 @@
 package mainline
 
 import (
-    "fmt"
+	"context"
+	"fmt"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/universalsql/mongo"
-    "configcenter/src/source_controller/coreservice/core"
-    "configcenter/src/storage/dal"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
+	"configcenter/src/storage/dal"
 )
 
 type ModelMainline struct {
-    root *metadata.TopoModelNode
-    dbProxy dal.RDB
-    associations []mapstr.MapStr
+	root         *metadata.TopoModelNode
+	dbProxy      dal.RDB
+	associations []metadata.Association
 }
 
 func NewModelMainline(proxy dal.RDB) (*ModelMainline, error) {
-    modelMainline := &ModelMainline{dbProxy: proxy}
-    modelMainline.associations = make([]mapstr.MapStr, 0)
-    return modelMainline, nil
+	modelMainline := &ModelMainline{dbProxy: proxy}
+	modelMainline.associations = make([]metadata.Association, 0)
+	return modelMainline, nil
 }
 
-func (mm *ModelMainline) loadMainlineAssociations() error  {
-    mongoCondition := mongo.NewCondition()
-    mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
+func (mm *ModelMainline) loadMainlineAssociations() error {
+	mongoCondition := mongo.NewCondition()
+	mongoCondition.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
 
-    ctx := core.ContextParams{}
-    err := mm.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(ctx, &mm.associations)
-    if err != nil {
-        blog.Errorf("query topo model mainline association from db failed, %+v", err)
-        return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
-    }
-    blog.V(5).Infof("get topo model mainline associations result: %+v", mm.associations)
-    return nil
+	err := mm.dbProxy.Table(common.BKTableNameObjAsst).Find(mongoCondition.ToMapStr()).All(context.TODO(), &mm.associations)
+	if err != nil {
+		blog.Errorf("query topo model mainline association from db failed, %+v", err)
+		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
+	}
+	blog.V(5).Infof("get topo model mainline associations result: %+v", mm.associations)
+	return nil
 }
 
-func (mm *ModelMainline) constructTopoTree() error  {
-    // step2: construct a tree fro associations
-    topoModelNodeMap := map[string]*metadata.TopoModelNode{}
-    for _, association := range mm.associations {
-        blog.V(5).Infof("association: %+v", association)
-        parentObjectID := association[common.AssociatedObjectIDField].(string)
-        if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
-            topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
-                ObjectID: parentObjectID,
-                Children: []*metadata.TopoModelNode{},
-            }
-        }
+func (mm *ModelMainline) constructTopoTree() error {
+	// step2: construct a tree fro associations
+	topoModelNodeMap := map[string]*metadata.TopoModelNode{}
+	for _, association := range mm.associations {
+		blog.V(5).Infof("association: %+v", association)
+		parentObjectID := association.AsstObjID
+		if _, exist := topoModelNodeMap[parentObjectID]; exist == false {
+			topoModelNodeMap[parentObjectID] = &metadata.TopoModelNode{
+				ObjectID: parentObjectID,
+				Children: []*metadata.TopoModelNode{},
+			}
+		}
 
-        parentTopoModelNode := topoModelNodeMap[parentObjectID]
+		parentTopoModelNode := topoModelNodeMap[parentObjectID]
 
-        // extract tree root node pointer
-        if parentObjectID == common.BKInnerObjIDApp {
-            mm.root = parentTopoModelNode
-        }
+		// extract tree root node pointer
+		if parentObjectID == common.BKInnerObjIDApp {
+			mm.root = parentTopoModelNode
+		}
 
-        childObjectID := association[common.BKObjIDField].(string)
-        if _, exist := topoModelNodeMap[childObjectID]; exist == false {
-            topoModelNodeMap[childObjectID] = &metadata.TopoModelNode{
-                ObjectID: childObjectID,
-                Children: []*metadata.TopoModelNode{},
-            }
-        }
-        parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
-    }
-    blog.V(2).Infof("bizTopoModelNode: %+v", mm.root)
-    return nil
+		childObjectID := association.ObjectID
+		if _, exist := topoModelNodeMap[childObjectID]; exist == false {
+			topoModelNodeMap[childObjectID] = &metadata.TopoModelNode{
+				ObjectID: childObjectID,
+				Children: []*metadata.TopoModelNode{},
+			}
+		}
+		parentTopoModelNode.Children = append(parentTopoModelNode.Children, topoModelNodeMap[childObjectID])
+	}
+	blog.V(2).Infof("bizTopoModelNode: %+v", mm.root)
+	return nil
 }
 
 func (mm *ModelMainline) GetRoot(withDetail bool) (*metadata.TopoModelNode, error) {
-   if err := mm.loadMainlineAssociations(); err != nil {
-       blog.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
-       return nil, fmt.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
-   }
-   
-   if err := mm.constructTopoTree(); err != nil {
-       blog.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
-       return nil, fmt.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
-   }
-   if withDetail == true {
-       // thinking what's detail actually
-       panic("detail option not implemented yet.")
-   }
-   return mm.root, nil
+	if err := mm.loadMainlineAssociations(); err != nil {
+		blog.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
+		return nil, fmt.Errorf("get topo model failed, load model mainline associations failed, err: %+v", err)
+	}
+
+	if err := mm.constructTopoTree(); err != nil {
+		blog.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
+		return nil, fmt.Errorf("get topo model failed, construct tree from model mainline associations failed, err: %+v", err)
+	}
+	if withDetail == true {
+		// thinking what's detail actually
+		panic("detail option not implemented yet.")
+	}
+	return mm.root, nil
 }
