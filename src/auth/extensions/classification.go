@@ -16,18 +16,53 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 )
 
 /*
  * model classification which used for manage models as group
  */
+
+func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]metadata.Classification, error) {
+	condCheckModel := mongo.NewCondition()
+	if businessID != 0 {
+		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
+		_, labelCond := metaCond.Embed(metadata.BKLabel)
+		labelCond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: strconv.FormatInt(businessID, 10)})
+	}
+	cond := condCheckModel.ToMapStr()
+	if businessID == 0 {
+		cond.Merge(metadata.BizLabelNotExist)
+	}
+	query := &metadata.QueryCondition{
+		Condition: cond,
+		Limit:     metadata.SearchLimit{Limit: common.BKNoLimit},
+	}
+	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, query)
+	if err != nil {
+		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v", businessID, err)
+		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
+	}
+
+	classifications := make([]metadata.Classification, 0)
+	for _, cls := range result.Data.Info {
+		classification := metadata.Classification{}
+		_, err = classification.Parse(cls)
+		if err != nil {
+			return nil, fmt.Errorf("get classication by object failed, err: %+v", err)
+		}
+		classifications = append(classifications, classification)
+	}
+	return classifications, nil
+}
 
 func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Context, header http.Header, classificationIDs ...string) ([]metadata.Classification, error) {
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -80,22 +115,25 @@ func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, heade
 
 func (am *AuthManager) extractBusinessIDFromClassifications(classifications ...metadata.Classification) (int64, error) {
 	var businessID int64
-	for idx, classification := range classifications {
-
-		bizID, err := extractBusinessID(classification.Metadata.Label)
+	var err error
+	businessIDs := make([]int64, 0)
+	for _, classification := range classifications {
+		businessID, err = extractBusinessID(classification.Metadata.Label)
 		// we should ignore metadata.LabelBusinessID field not found error
 		if err != nil {
 			return 0, fmt.Errorf("parse biz id from classification: %+v failed, err: %+v", classification, err)
 		}
-		if idx > 0 && bizID != businessID {
-			return 0, fmt.Errorf("authorization failed, get multiple business ID from objects")
-		}
-		businessID = bizID
+		businessIDs = append(businessIDs, businessID)
+	}
+	businessIDs = util.IntArrayUnique(businessIDs)
+	if len(businessIDs) > 1 {
+		blog.Errorf("extractBusinessIDFromClassifications failed, get multiple business from classifications, business: %+v", businessIDs)
+		return 0, fmt.Errorf("get multiple business from classifictions, business: %+v", businessIDs)
 	}
 	return businessID, nil
 }
 
-func (am *AuthManager) makeResourcesByClassifications(header http.Header, action meta.Action, businessID int64, classifications ...metadata.Classification) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByClassifications(header http.Header, action meta.Action, businessID int64, classifications ...metadata.Classification) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, classification := range classifications {
 		resource := meta.ResourceAttribute{
@@ -131,7 +169,7 @@ func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header htt
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, action, bizID, classifications...)
+	resources := am.MakeResourcesByClassifications(header, action, bizID, classifications...)
 
 	return am.authorize(ctx, header, bizID, resources...)
 }
@@ -152,7 +190,7 @@ func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, heade
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
+	resources := am.MakeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
 
 	for _, resource := range resources {
 		if err := am.Authorize.UpdateResource(ctx, &resource); err != nil {
@@ -179,6 +217,22 @@ func (am *AuthManager) UpdateRegisteredClassificationByID(ctx context.Context, h
 	return am.UpdateRegisteredClassification(ctx, header, classifications...)
 }
 
+func (am *AuthManager) UpdateRegisteredClassificationByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+	if am.Enabled() == false {
+		return nil
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	classifications, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	if err != nil {
+		return fmt.Errorf("update registered classifications failed, get classfication by raw id failed, err: %+v", err)
+	}
+	return am.UpdateRegisteredClassification(ctx, header, classifications...)
+}
+
 func (am *AuthManager) RegisterClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
 	if am.Enabled() == false {
 		return nil
@@ -195,7 +249,7 @@ func (am *AuthManager) RegisterClassification(ctx context.Context, header http.H
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
+	resources := am.MakeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
 
 	return am.Authorize.RegisterResource(ctx, resources...)
 }
@@ -216,7 +270,7 @@ func (am *AuthManager) DeregisterClassification(ctx context.Context, header http
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
+	resources := am.MakeResourcesByClassifications(header, meta.EmptyAction, bizID, classifications...)
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
