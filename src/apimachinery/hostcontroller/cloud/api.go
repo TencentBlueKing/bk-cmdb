@@ -48,8 +48,8 @@ func (c *cloud) ResourceConfirm(ctx context.Context, h http.Header, data interfa
 	return
 }
 
-func (c *cloud) TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (c *cloud) TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
+	resp = new(metadata.Uint64Response)
 	subPath := "/hosts/cloud/nameCheck"
 
 	err = c.client.Post().

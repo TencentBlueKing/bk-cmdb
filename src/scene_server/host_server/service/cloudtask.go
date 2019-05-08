@@ -98,9 +98,16 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	if response.Data != 0.0 {
+	blog.Debug("task count: %v", response.Count)
+	if response.Count > 1 {
 		blog.Errorf("update task failed, task name already exits. rid: %s", srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudTaskNameAlreadyExist)})
+		return
+	}
+
+	if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+		blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
 	}
 
@@ -113,26 +120,13 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 
 	if status {
 		// 开启同步状态下，update；先关闭同步，更新数据后，再开启同步
-		data["bk_status"] = false
 		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 			return
 		}
 
-		if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, data); err != nil {
-			blog.Errorf("stop cloud sync fail, err: %v, rid: %s", err, srvData.rid)
-			return
-		}
-
-		data["bk_status"] = true
-		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
-			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
-			return
-		}
-
-		if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, data); err != nil {
+		if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, data, true); err != nil {
 			blog.Errorf("stop cloud sync fail, err: %v, rid: %s", err, srvData.rid)
 			return
 		}
@@ -182,7 +176,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 
 	delete(opt, "bk_task_name")
 
-	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt); err != nil {
+	if err := srvData.lgc.FrontEndSyncSwitch(srvData.ctx, opt, false); err != nil {
 		blog.Errorf("start cloud sync fail, err: %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncStartFail)})
 	}
@@ -238,7 +232,6 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 	}
 
 	if len(AddHostList) > 0 {
-		blog.Info("new add confirmed")
 		err := srvData.lgc.AddCloudHosts(srvData.ctx, AddHostList)
 		if err != nil {
 			blog.Errorf("add cloud host failed, err: %v, rid: %s", err, srvData.rid)
