@@ -192,29 +192,24 @@
                     asst_error: null
                 }
             },
-            exportExcel (response) {
-                const contentDisposition = response.headers['content-disposition']
-                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-                const url = window.URL.createObjectURL(new Blob([response.data], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                }))
-                const link = document.createElement('a')
-                link.style.display = 'none'
-                link.href = url
-                link.setAttribute('download', fileName)
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-            },
             async handleDownloadTemplate () {
                 try {
-                    const response = await this.$http.get(this.templateUrl, {
-                        originalResponse: true,
-                        globalError: false,
-                        responseType: 'blob',
-                        data: this.downloadPayload
+                    let data = this.downloadPayload
+                    if (!(data instanceof FormData)) {
+                        data = new FormData()
+                        Object.keys(this.downloadPayload).forEach(key => {
+                            const value = this.downloadPayload[key]
+                            if (typeof value === 'object') {
+                                data.append(key, JSON.stringify(value))
+                            } else {
+                                data.append(key, value)
+                            }
+                        })
+                    }
+                    this.$http.download({
+                        url: this.templateUrl,
+                        data: data
                     })
-                    this.exportExcel(response)
                 } catch (e) {
                     console.log(e)
                 }
