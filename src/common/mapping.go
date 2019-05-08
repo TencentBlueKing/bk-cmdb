@@ -70,13 +70,6 @@ func GetObjByType(objType string) string {
 	}
 }
 
-func GetObjectTypeByObjectID(objectID string) string {
-	switch objectID {
-	case BKInnerObjIDApp, BKInnerObjIDSet,
-		BKInnerObjIDModule, BKInnerObjIDProc,
-		BKInnerObjIDHost, BKInnerObjIDPlat:
-		return objectID
-	default:
-		return BKInnerObjIDObject
-	}
+func IsInnerModel(objType string) bool {
+	return GetObjByType(objType) == BKInnerObjIDObject
 }
