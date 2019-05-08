@@ -124,7 +124,10 @@
         "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
-        "请选择时间": "Please select time"
+        "请选择时间": "Please select time",
+        "搜索结果": "Search results",
+        "共计N条": "A total of {N}",
+        "每页显示条数": "{num} data per page"
     },
     "Nav": {
         "首页": "Index",
