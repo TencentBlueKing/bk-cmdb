@@ -34,7 +34,7 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) Search(query, index string) ([]*elastic.SearchHit, error) {
+func (es *EsSrv) Search(query, index string, from, size int) ([]*elastic.SearchHit, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
@@ -43,11 +43,15 @@ func (es *EsSrv) Search(query, index string) ([]*elastic.SearchHit, error) {
 	highlight := elastic.NewHighlight()
 	highlight.Field("*")
 	highlight.RequireFieldMatch(false)
+
+	searchSource := elastic.NewSearchSource()
+	searchSource.From(from)
+	searchSource.Size(size)
 	searchResult, err := es.Client.Search().
-		Index(index).                         // search in index like "cmdb"
-		Query(allQuery).Highlight(highlight). // specify the query
-		Pretty(true).                         // pretty print request and response JSON
-		Do(ctx)                               // execute
+		Index(index).SearchSource(searchSource). // search in index like "cmdb" and paging
+		Query(allQuery).Highlight(highlight).    // specify the query and highlight
+		Pretty(true).                            // pretty print request and response JSON
+		Do(ctx)                                  // execute
 	if err != nil {
 		// Handle error
 		blog.Errorf("es search [%s] error, err: %v", query, err)

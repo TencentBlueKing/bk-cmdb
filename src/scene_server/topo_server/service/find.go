@@ -11,12 +11,18 @@ import (
 
 type SearchResult struct {
 	Source    map[string]interface{} `json:"source"` // data from mongo, key/value
-	Highlight map[string][]string	  `json:"highlight"`
-	Type      string  `json:"type"` // object, host, process
-	Score     float64 `json:"score"`
+	Highlight map[string][]string    `json:"highlight"`
+	Type      string                 `json:"type"` // object, host, process, model
+	Score     float64                `json:"score"`
+}
+
+type Page struct {
+	Start int `json:"start"`
+	Limit int `json:"limit"`
 }
 
 type Query struct {
+	Paging      Page   `json:"page"`
 	QueryString string `json:"query_string"`
 }
 
@@ -27,12 +33,15 @@ const (
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	if data.Exists("query_string") {
 		query := new(Query)
+		// set paging default
+		query.Paging.Start = -1
+		query.Paging.Limit = -1
 		if err := data.MarshalJSONInto(query); err != nil {
 			blog.Errorf("full_text_find failed, import query_string, but got invalid query_string:[%v], err: %+v", query, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		result, err := s.Es.Search(query.QueryString, CMDBINDEX)
+		result, err := s.Es.Search(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
 		if err != nil {
 			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)

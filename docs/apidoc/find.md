@@ -8,6 +8,10 @@
 * input body:
 ```
 {
+    "page": {
+        "start": 0,
+        "limit": 10
+    },
     "query_string": "test"
 }
 ```
@@ -17,6 +21,8 @@
 
 | 名称  | 类型 |必填| 默认值|说明 | Description|
 |---|---|---|---|---|---|
+| start| int|否|-1|分页开始| 分页开始|
+| limit| int|否|-1|分页大小| 分页大小|
 | query_string| string|否|无|检索内容 | query string content|
 
 
