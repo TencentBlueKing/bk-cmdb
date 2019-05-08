@@ -92,6 +92,7 @@ var tables = map[string][]dal.Index{
 		dal.Index{Name: "", Keys: map[string]interface{}{"bk_obj_id": 1}, Background: true},
 		dal.Index{Name: "", Keys: map[string]interface{}{"bk_supplier_account": 1}, Background: true},
 		dal.Index{Name: "", Keys: map[string]interface{}{"bk_inst_id": 1}, Background: true},
+		dal.Index{Name: "", Keys: map[string]interface{}{"bk_parent_id": 1}, Background: true},
 	},
 	"cc_OperationLog": []dal.Index{
 		dal.Index{Name: "", Keys: map[string]interface{}{"op_target": 1, "inst_id": 1}, Background: true},
