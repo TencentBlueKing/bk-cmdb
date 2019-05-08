@@ -60,7 +60,7 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = SysModel
 		}
 
-	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
+	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology, meta.MainlineInstanceTopology:
 		iamResourceType = BizTopoInstance
 
 	case meta.MainlineModel, meta.ModelTopology:
