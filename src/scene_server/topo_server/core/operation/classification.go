@@ -259,13 +259,6 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 
 	class := cls.Classify()
 	class.ID = id
-	if len(class.ClassificationName) != 0 {
-		// auth: update registered classifications
-		if err := c.authManager.UpdateRegisteredClassification(params.Context, params.Header, class); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
 
 	// auth: check authorization
 	// if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
@@ -277,6 +270,19 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err
+	}
+	
+	// auth: update registered classifications
+	if len(class.ClassificationID) > 0 {
+		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+	} else {
+		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
 	}
 
 	return nil
