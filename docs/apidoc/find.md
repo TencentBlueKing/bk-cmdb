@@ -35,7 +35,7 @@
     "bk_error_msg": "",
     "data": [
         {
-            "type": "cc_ObjectBase",
+            "type": "object",
             "score": 3.566052,
             "source": {
                   "jw_test_4": 1,
@@ -51,10 +51,18 @@
                   "jw_test_1": "1",
                   "jw_test_2": 12,
                   "jw_test_3": "2019-03-06"
+            },
+            "highlight": {
+                "bk_obj_id": [
+                    "<em>test</em>"
+                ],
+                "bk_obj_id.keyword": [
+                    "<em>test</em>"
+                 ]
             }
         },
         {
-            "type": "cc_HostBase",
+            "type": "host",
             "score": 2.2986379,
             "source": {
                 "bk_bak_operator" : null,
@@ -86,6 +94,11 @@
                 "bk_cpu" : null,
                 "create_time" : null,
                 "bk_host_id" : 2
+            },
+            "highlight": {
+                "bk_comment": [
+                    "this is <em>test</em> host"
+                ],
             }
         },
     ]
@@ -104,6 +117,7 @@ data说明：
 
 | 名称  | 类型  | 说明 |Description|
 |---|---|---|---|
-| type | string | 类型 | 查询结果所属table类型 |
+| type | string | 类型 | 查询结果所属数据类型 |
 | score | float | 最佳匹配得分 | 搜索结果匹配程度 |
 | source | object | 属性值 | 搜索结果的具体内容 |
+| highlight| object| 高亮字段| 匹配高亮显示的字段 |
