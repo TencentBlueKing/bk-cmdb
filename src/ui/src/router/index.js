@@ -27,7 +27,7 @@ import permission from '@/views/permission/router.config'
 Vue.use(Router)
 
 export const viewRouters = [
-    index,
+    ...index,
     audit,
     businessModel,
     customQuery,
