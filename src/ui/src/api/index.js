@@ -252,10 +252,7 @@ function download (options = {}) {
         promise = $http[method](url, config)
     }
     promise.then(response => {
-        const data = response.data
-        if (data.hasOwnProperty('result') && !data.result) {
-            $error(data.bk_error_msg)
-        } else {
+        try {
             const disposition = response.headers['content-disposition']
             const fileName = disposition.substring(disposition.indexOf('filename') + 9)
             const downloadUrl = window.URL.createObjectURL(new Blob([response.data], {
@@ -268,6 +265,8 @@ function download (options = {}) {
             document.body.appendChild(link)
             link.click()
             document.body.removeChild(link)
+        } catch (e) {
+            $error('Download failure')
         }
         return response
     })
