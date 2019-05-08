@@ -117,6 +117,7 @@
     .classify-layout {
         width: 65%;
         margin: 0 auto;
+        background:linear-gradient(180deg,rgba(245,246,250,0.48) 0%,rgba(245,246,250,0.93) 100%);
     }
     .classify {
         .classify-name {
