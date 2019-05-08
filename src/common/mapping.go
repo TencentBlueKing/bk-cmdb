@@ -71,5 +71,5 @@ func GetObjByType(objType string) string {
 }
 
 func IsInnerModel(objType string) bool {
-	return GetObjByType(objType) == BKInnerObjIDObject
+	return GetObjByType(objType) != BKInnerObjIDObject
 }
