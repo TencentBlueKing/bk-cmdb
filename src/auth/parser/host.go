@@ -43,7 +43,8 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
 	if bizID == 0 {
 		blog.Error("parseBusinessID failed, parse biz id from metadata in request body, but not exist.")
-		return 0, errors.New("can not parse business id")
+		// return 0, errors.New("can not parse business id")
+		return 0, metadata.LabelKeyNotExistError
 	}
 	return bizID, nil
 }
@@ -685,6 +686,28 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+var (
+	findIdentifierAPIRegexp = regexp.MustCompile(`^/identifier/[^\s/]+/search/?$`)
+)
+
+func (ps *parseStream) findObjectIdentifier() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findIdentifierAPIRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
 			},
