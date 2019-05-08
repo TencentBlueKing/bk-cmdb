@@ -39,8 +39,7 @@ import (
 )
 
 var (
-	taskInfoMap = make(map[int64]*meta.TaskInfo, 0)
-	taskChan    = make(map[int64]chan bool)
+	taskChan = make(map[int64]chan bool)
 )
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
@@ -97,7 +96,7 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
 			newHeader.Set(common.BKHTTPHeaderUser, taskInfo.User)
 
 			taskID := taskInfo.TaskID
-			if _, ok := taskInfoMap[taskID]; ok {
+			if _, ok := taskChan[taskID]; ok {
 				continue
 			}
 			nextTrigger := lgc.NextTrigger(ctx, taskInfo.PeriodType, taskInfo.Period)
@@ -137,7 +136,7 @@ func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interf
 		taskID := taskInfo.TaskID
 
 		if status {
-			if _, ok := taskInfoMap[taskID]; ok {
+			if _, ok := taskChan[taskID]; ok {
 				return nil
 			}
 
@@ -204,9 +203,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 
 		mutex.Lock()
 		taskChan[taskID] = taskChannel
-		taskInfoMap[taskID] = &taskInfoItem
 		mutex.Unlock()
-		blog.Debug("taskInfo: %v; taskChan: %v", taskInfoMap, taskChan)
 
 		info := meta.CloudSyncRedisAlreadyStarted{TaskID: taskID, TaskItemInfo: taskInfoItem, OwnerID: ownerID, LastSyncTime: time.Now(), NewHeader: pendingStartItem.NewHeader}
 		startedTaskInfo, err := json.Marshal(info)
@@ -244,14 +241,13 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 			continue
 		}
 
-		for key := range taskInfoMap {
+		for key := range taskChan {
 			if pengdigStopItem.TaskID == key {
 				if err := lgc.cache.LRem(common.RedisCloudSyncInstancePendingStop, 1, item).Err(); err != nil {
 					blog.Errorf("remove stop task item fail, taskInfo: %s, error: %v, rid: %s", item, err, lgc.rid)
 				}
 
 				mutex.Lock()
-				delete(taskInfoMap, key)
 				taskChan[key] <- true
 				mutex.Lock()
 			}
@@ -405,16 +401,10 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 					continue
 				}
 				shouldStartItems = append(shouldStartItems, item)
-				nextTrigger := lgc.NextTrigger(ctx, dbItem.PeriodType, dbItem.Period)
-				taskInfoItem := &meta.TaskInfo{
-					Method:      dbItem.PeriodType,
-					NextTrigger: nextTrigger,
-					Args:        dbItem,
-				}
+				itemChan := make(chan bool, 0)
 
 				mutex.Lock()
-				taskInfoMap[dbItem.TaskID] = taskInfoItem
-				taskChan[dbItem.TaskID] <- false
+				taskChan[dbItem.TaskID] = itemChan
 				mutex.Unlock()
 			}
 		} else {
@@ -474,7 +464,8 @@ func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskI
 					taskInfoItem.NextTrigger = 5
 				}
 			case <-taskChan[taskInfoItem.Args.TaskID]:
-				blog.Info("stop cloud sync")
+				delete(taskChan, taskInfoItem.Args.TaskID)
+				blog.V(5).Info("stop cloud sync")
 				return
 			}
 		}
