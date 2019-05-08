@@ -123,25 +123,23 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		}
 	}
 
-	/*
-		for _, business := range businessList {
-			header := utils.NewListBusinessAPIHeader()
-			objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
-			if err != nil {
-				blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
-				continue
-			}
-			for _, object := range objects {
-				jobs = append(jobs, meta.WorkRequest{
-					ResourceType: meta.InstanceResource,
-					Data:         object,
-					Header:       *header,
-				})
-			}
+	for _, business := range businessList {
+		header := utils.NewListBusinessAPIHeader()
+		objects, err := p.authManager.CollectObjectsByBusinessID(context.Background(), *header, business.BKAppIDField)
+		if err != nil {
+			blog.Errorf("get models by business id: %d failed, err: %+v", business.BKAppIDField, err)
+			continue
 		}
-	*/
+		for _, object := range objects {
+			jobs = append(jobs, meta.WorkRequest{
+				ResourceType: meta.InstanceResource,
+				Data:         object,
+				Header:       *header,
+			})
+		}
+	}
 
-	// some resoure type neeed sync global resource
+	// some resource type need sync global resource
 	globalBusiness := extensions.BusinessSimplify{
 		BKAppIDField:      0,
 		BKAppNameField:    "",
@@ -149,7 +147,10 @@ func (p *Producer) generateJobs() *[]meta.WorkRequest {
 		BKOwnerIDField:    "",
 		IsDefault:         0,
 	}
-	resourceTypes = []meta.ResourceType{meta.AuditCategory}
+	resourceTypes = []meta.ResourceType{
+		meta.AuditCategory,
+		meta.ClassificationResource,
+	}
 	for _, resourceType := range resourceTypes {
 		jobs = append(jobs, meta.WorkRequest{
 			ResourceType: resourceType,
