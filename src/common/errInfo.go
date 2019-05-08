@@ -305,6 +305,8 @@ const (
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 	// association kind has already been instantiated
 	CCErrorTopoAssociationKindHasBeenUsed = 1101060
+	// create new instance for a new association, but association map is 1:n
+	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
 
 	CCErrTopoAppDeleteFailed                       = 1001031
 	CCErrTopoAppUpdateFailed                       = 1001032
