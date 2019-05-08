@@ -592,7 +592,7 @@
                 top: 3px;
                 width: 4px;
                 height: 16px;
-                background-color: $modelHighlightColor;
+                background-color: $cmdbBorderColor;
             }
             .title-input {
                 width: 180px;
