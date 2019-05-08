@@ -24,39 +24,39 @@ import (
 )
 
 // HandleModuleSync do sync module of one business
-func (ih *IAMHandler) HandleModuleSync(task *meta.WorkRequest) error {
+func (ih *IAMHandler) HandleClassificationSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
 	// step1 get instances by business from core service
 	bizID := businessSimplify.BKAppIDField
-	modules, err := ih.authManager.CollectModuleByBusinessIDs(context.Background(), *header, bizID)
+	classifications, err := ih.authManager.CollectClassificationByBusinessIDs(context.Background(), *header, bizID)
 	if err != nil {
-		blog.Errorf("collect module by business id failed, err: %+v", err)
+		blog.Errorf("collect classifications by business id failed, err: %+v", err)
 		return err
 	}
-	if len(modules) == 0 {
-		blog.Infof("no modules found for business: %d", bizID)
+	if len(classifications) == 0 {
+		blog.Infof("no classifications found for business: %d", bizID)
 		return nil
 	}
-	resources := ih.authManager.MakeResourcesByModule(*header, authmeta.EmptyAction, bizID, modules...)
-	if len(resources) == 0 && len(modules) > 0 {
-		blog.Errorf("make iam resource for modules %+v return empty", modules)
+	resources := ih.authManager.MakeResourcesByClassifications(*header, authmeta.EmptyAction, bizID, classifications...)
+	if len(resources) == 0 && len(classifications) > 0 {
+		blog.Errorf("make iam resource for classifications %+v return empty", classifications)
 		return nil
 	}
 
-	// step2 get modules by business from iam
+	// step2 get classifications by business from iam
 	rs := &authmeta.ResourceAttribute{
 		Basic: authmeta.Basic{
-			Type: authmeta.ModelModule,
+			Type: authmeta.ModelClassification,
 		},
 		SupplierAccount: "",
 		BusinessID:      businessSimplify.BKAppIDField,
 		Layers:          make([]authmeta.Item, 0),
 	}
 
-	taskName := fmt.Sprintf("sync module for business: %d", businessSimplify.BKAppIDField)
-	iamIDPrefix := "module"
+	taskName := fmt.Sprintf("sync classifications for business: %d", businessSimplify.BKAppIDField)
+	iamIDPrefix := ""
 	skipDeregister := false
 	return ih.diffAndSync(taskName, rs, iamIDPrefix, resources, skipDeregister)
 }
