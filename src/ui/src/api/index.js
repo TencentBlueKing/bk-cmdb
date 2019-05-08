@@ -221,7 +221,8 @@ function download (options = {}) {
     const { url, method = 'post', data } = options
     const config = Object.assign({
         globalError: false,
-        originalResponse: true
+        originalResponse: true,
+        responseType: 'blob'
     }, options.config)
     if (!url) {
         $error('Empty download url')
