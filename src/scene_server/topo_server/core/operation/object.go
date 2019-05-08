@@ -404,7 +404,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 }
 
 func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
-
+	if common.IsInnerModel(targetObj.GetID()) {
+		return params.Err.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+	}
 	cond := condition.CreateCondition()
 	cond.Field(common.BKOwnerIDField).Eq(params.SupplierAccount)
 	if targetObj.IsCommon() {
