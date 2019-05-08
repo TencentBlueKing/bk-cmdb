@@ -242,6 +242,7 @@ address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
 enable = $auth_enabled
+enableSync = false
     '''
 
     template = FileTemplate(migrate_file_template_str)
