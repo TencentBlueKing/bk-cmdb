@@ -401,7 +401,9 @@
             async exportField () {
                 const formData = new FormData()
                 formData.append('bk_host_id', this.table.checked)
-                formData.append('export_custom_fields', this.customColumns)
+                if (this.customColumns) {
+                    formData.append('export_custom_fields', this.customColumns)
+                }
                 formData.append('bk_biz_id', '-1')
                 const res = await this.exportHost({
                     params: formData,
