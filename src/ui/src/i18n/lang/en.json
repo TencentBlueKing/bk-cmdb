@@ -126,6 +126,7 @@
         "申请创建业务": "Apply to create business",
         "请选择时间": "Please select time",
         "搜索结果": "Search results",
+        "请输入搜索内容": "Enter search content",
         "共计N条": "A total of {N}",
         "每页显示条数": "{num} data per page"
     },
