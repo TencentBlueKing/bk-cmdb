@@ -25,7 +25,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userCustom().
 		hostFavorite().
 		cloudResourceSync().
-		hostSnapshot()
+		hostSnapshot().
+		findObjectIdentifier()
 
 	return ps
 }
