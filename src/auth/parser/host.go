@@ -25,7 +25,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userCustom().
 		hostFavorite().
 		cloudResourceSync().
-		hostSnapshot()
+		hostSnapshot().
+		findObjectIdentifier()
 
 	return ps
 }
@@ -698,7 +699,7 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 }
 
 var (
-	findIdentifierAPIRegexp = regexp.MustCompile(`^/identifier/[^\s/]+/search/?$`)
+	findIdentifierAPIRegexp = regexp.MustCompile(`^/api/v3/identifier/[^\s/]+/search/?$`)
 )
 
 func (ps *parseStream) findObjectIdentifier() *parseStream {
