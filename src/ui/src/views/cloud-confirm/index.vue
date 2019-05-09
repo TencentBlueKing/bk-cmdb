@@ -53,8 +53,8 @@
                     {{$t('Cloud["新增"]')}}
                 </span>
             </template>
-            <template slot="bk_account_type">
-                <span>{{$t('Cloud["腾讯云"]')}}</span>
+            <template slot="bk_account_type" slot-scope="{ item }">
+                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
             </template>
             <template slot="bk_obj_id">
                 {{ $t('Hosts["主机"]')}}
