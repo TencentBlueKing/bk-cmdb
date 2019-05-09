@@ -3,9 +3,8 @@
         <div class="search-box" v-click-outside="handleClickOutside">
             <input id="indexSearch" class="search-keyword" type="text" maxlength="40" :placeholder="$t('Index[\'开始查询\']')"
                 v-model.trim="keyword"
-                @focus="focus = true"
-                @keypress.enter="handleSearch">
-            <label class="bk-icon icon-search" for="indexSearch" @click="handleSearch"></label>
+                @focus="focus = true">
+            <label class="bk-icon icon-search" for="indexSearch"></label>
             <div class="search-result" v-show="focus && keyword.length > 2">
                 <div class="search-loading" v-bkloading="{ isLoading: loading }" v-if="loading"></div>
                 <div :class="['result-layout', { 'result-layout-empty': !resultTabpanels.length }]" v-show="!loading">
@@ -99,39 +98,31 @@
                 return this.$loading(this.requestId)
             }
         },
-        // watch: {
-        //     keyword (keyword) {
-        //         if (keyword.length > 2) {
-        //             this.searchParams.ip.data = [keyword]
-        //             this.handleSearch(keyword)
-        //         } else {
-        //             this.searchParams.ip.data = []
-        //             this.resultTab.list = {}
-        //             this.resultTab.count = {}
-        //         }
-        //     }
-        // },
+        watch: {
+            keyword (keyword) {
+                if (keyword.length > 2) {
+                    this.searchParams.ip.data = [keyword]
+                    this.handleSearch(keyword)
+                } else {
+                    this.searchParams.ip.data = []
+                    this.resultTab.list = {}
+                    this.resultTab.count = {}
+                }
+            }
+        },
         methods: {
             // 函数节流，500ms发起一次主机查询
             handleSearch () {
-                if (this.$route.path.indexOf('search') === -1) {
-                    this.$store.commit('setHeaderStatus', {
-                        back: true
-                    })
-                    this.$router.push({ name: 'search' })
-                } else {
-                    return false
-                }
-                // this.$store.dispatch('hostSearch/searchHost', {
-                //     params: this.searchParams,
-                //     config: {
-                //         requestId: this.requestId,
-                //         cancelPrevious: true
-                //     }
-                // }).then(data => {
-                //     this.addResultList('host', this.initSearchList(data.info))
-                //     this.addResultCount('host', data.count)
-                // })
+                this.$store.dispatch('hostSearch/searchHost', {
+                    params: this.searchParams,
+                    config: {
+                        requestId: this.requestId,
+                        cancelPrevious: true
+                    }
+                }).then(data => {
+                    this.addResultList('host', this.initSearchList(data.info))
+                    this.addResultCount('host', data.count)
+                })
             },
             addResultList (model, list) {
                 if (list.length) {
