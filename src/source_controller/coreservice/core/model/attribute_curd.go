@@ -13,7 +13,9 @@
 package model
 
 import (
+	"regexp"
 	"time"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -50,6 +52,36 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Insert(ctx, attribute)
 	return id, err
+}
+
+func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
+	if attribute.PropertyID == "" {
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
+	} else {
+		match, err := regexp.MatchString(`^[a-z\d_]+$`, attribute.PropertyID)
+		if nil != err {
+			return err
+		}
+		if !match {
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
+		}
+	}
+
+	if attribute.PropertyName == "" {
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+	} else {
+		if 20 < utf8.RuneCountInString(attribute.PropertyName) {
+			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyName)
+		}
+	}
+
+	if attribute.Placeholder != "" {
+		if 300 < utf8.RuneCountInString(attribute.Placeholder) {
+			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Placeholder)
+		}
+	}
+
+	return nil
 }
 
 func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond universalsql.Condition) (cnt uint64, err error) {
