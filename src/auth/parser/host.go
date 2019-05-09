@@ -304,8 +304,9 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.DeleteMany,
+					Type: meta.HostInstance,
+					// Action: meta.DeleteMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -523,13 +524,14 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// update hosts batch.
+	// update hosts batch. but can not get the exactly host id.
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.UpdateMany,
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
