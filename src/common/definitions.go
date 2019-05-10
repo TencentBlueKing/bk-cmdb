@@ -1026,3 +1026,10 @@ const (
 	// SynchronizeAssociationTypeModelHost synchroneize model ggroup
 	SynchronizeAssociationTypeModelHost = "module_host"
 )
+
+const (
+	AttributePlaceHolderMaxLength = 300
+	AttributeOptionMaxLength      = 1000
+	AttributeIDMaxLength          = 20
+	AttributeNameMaxLength        = 20
+)
