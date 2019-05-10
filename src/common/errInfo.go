@@ -145,6 +145,9 @@ const (
 	// CCErrCommParamsNeedFloat the parameter must be float type
 	CCErrCommParamsNeedFloat = 1199042
 
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
