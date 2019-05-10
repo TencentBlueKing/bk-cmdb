@@ -50,6 +50,9 @@ func updateAttributeCreateTime(ctx context.Context, db dal.RDB, conf *upgrader.C
 				if createTime == nil {
 					createTime = &now
 				}
+				if attr.CreateTime != nil {
+					createTime = attr.CreateTime
+				}
 
 				cond := condition.CreateCondition()
 				cond.Field(common.BKFieldID).Eq(attr.ID)

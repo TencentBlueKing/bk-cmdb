@@ -50,10 +50,10 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		attribute.LastTime.Time = time.Now()
 	}
 
-	if err = m.checkMustNotEmpty(ctx, attribute); err != nil {
+	if err = m.checkAttributeMustNotEmpty(ctx, attribute); err != nil {
 		return 0, err
 	}
-	if err = m.checkValidity(ctx, attribute); err != nil {
+	if err = m.checkAttributeValidity(ctx, attribute); err != nil {
 		return 0, err
 	}
 
@@ -61,7 +61,7 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 	return id, err
 }
 
-func (m *modelAttribute) checkMustNotEmpty(ctx core.ContextParams, attribute metadata.Attribute) error {
+func (m *modelAttribute) checkAttributeMustNotEmpty(ctx core.ContextParams, attribute metadata.Attribute) error {
 	if attribute.PropertyID == "" {
 		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
 	}
@@ -71,25 +71,25 @@ func (m *modelAttribute) checkMustNotEmpty(ctx core.ContextParams, attribute met
 	return nil
 }
 
-func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
-	if 20 < utf8.RuneCountInString(attribute.PropertyID) {
+func (m *modelAttribute) checkAttributeValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
+	if common.AttributeIDMaxLength < utf8.RuneCountInString(attribute.PropertyID) {
 		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyID)
 	} else if attribute.PropertyID != "" {
 		match, err := regexp.MatchString(`^[a-z\d_]+$`, attribute.PropertyID)
 		if nil != err {
-			return err
+			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
 		if !match {
 			return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyID)
 		}
 	}
 
-	if 20 < utf8.RuneCountInString(attribute.PropertyName) {
+	if common.AttributeNameMaxLength < utf8.RuneCountInString(attribute.PropertyName) {
 		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyName)
 	}
 
 	if attribute.Placeholder != "" {
-		if 300 < utf8.RuneCountInString(attribute.Placeholder) {
+		if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(attribute.Placeholder) {
 			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Placeholder)
 		}
 	}
@@ -101,7 +101,7 @@ func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadat
 	}
 
 	if opt, ok := attribute.Option.(string); ok && opt != "" {
-		if 1000 < utf8.RuneCountInString(opt) {
+		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
 			return ctx.Error.Errorf(common.CCErrCommOverLimit, opt)
 		}
 	}
@@ -127,7 +127,7 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 		return 0, err
 	}
 
-	if err = m.checkValidity(ctx, attribute); err != nil {
+	if err = m.checkAttributeValidity(ctx, attribute); err != nil {
 		return 0, err
 	}
 
