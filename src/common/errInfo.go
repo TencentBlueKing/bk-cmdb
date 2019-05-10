@@ -508,6 +508,7 @@ const (
 	CCErrHostAPPNotFoundFail           = 1110048
 	CCErrHostGetModuleFail             = 1110049
 	CCErrHostAgentStatusFail           = 1110050
+	CCErrHostSearchNeedObjectInstIDErr = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001
