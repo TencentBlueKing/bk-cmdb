@@ -17,7 +17,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 	"strings"
+
+	restful "github.com/emicklei/go-restful"
+	"github.com/rs/xid"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -25,9 +29,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	restful "github.com/emicklei/go-restful"
-	"github.com/rs/xid"
 )
 
 var (
@@ -166,7 +167,17 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		defer func() {
+			if fetalErr := recover(); fetalErr != nil {
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
+				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
+				// 3.2.x version. identity is not enabled. tempporarily returned to null
+				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, "")
+				respErrInfo := &metadata.RespError{Msg: ccErrTip}
+				io.WriteString(resp, respErrInfo.Error())
+			}
 
+		}()
 		generateHttpHeaderRID(req, resp)
 
 		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)

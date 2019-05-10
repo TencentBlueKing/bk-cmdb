@@ -105,8 +105,11 @@ func (lgc *Logics) GetTopoIDByName(pheader http.Header, c *meta.HostToAppModule)
 func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, objectCond []meta.ConditionItem) ([]int64, error) {
 	objectIDArr := make([]int64, 0)
 	condition := make([]meta.ConditionItem, 0)
+	rid := util.GetHTTPCCRequestID(pheader)
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	instItem := meta.ConditionItem{}
+	var hasInstID bool
 	for _, i := range objectCond {
 		if i.Field != common.BKInstIDField {
 			continue
@@ -122,6 +125,10 @@ func (lgc *Logics) GetSetIDByObjectCond(pheader http.Header, appID int64, object
 		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, instItem)
+	if !hasInstID {
+		blog.Errorf("mainline miss bk_inst_id parameters. input:%#v, rid:%s", objectCond, rid)
+		return nil, defErr.Error(common.CCErrHostSearchNeedObjectInstIDErr)
+	}
 
 	nodefaultItem := meta.ConditionItem{}
 	nodefaultItem.Field = common.BKDefaultField

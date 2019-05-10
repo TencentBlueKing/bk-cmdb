@@ -145,6 +145,9 @@ const (
 	// CCErrCommParamsNeedFloat the parameter must be float type
 	CCErrCommParamsNeedFloat = 1199042
 
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
+
 	// apiserver 1100XXX
 
 	// toposerver 1101XXX
@@ -505,6 +508,7 @@ const (
 	CCErrHostAPPNotFoundFail           = 1110048
 	CCErrHostGetModuleFail             = 1110049
 	CCErrHostAgentStatusFail           = 1110050
+	CCErrHostSearchNeedObjectInstIDErr = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound      = 1111001
