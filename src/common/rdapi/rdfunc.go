@@ -170,7 +170,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 		defer func() {
 			if fetalErr := recover(); fetalErr != nil {
 				rid := util.GetHTTPCCRequestID(req.Request.Header)
-				blog.Errorf("server has panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
+				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
 				// 3.2.x version. identity is not enabled. tempporarily returned to null
 				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, "")
 				respErrInfo := &metadata.RespError{Msg: ccErrTip}
