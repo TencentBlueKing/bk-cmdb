@@ -1507,7 +1507,8 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.MainlineModelTopology,
-					Action: meta.Find,
+					// Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}

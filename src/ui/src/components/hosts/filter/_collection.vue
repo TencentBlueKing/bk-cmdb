@@ -104,7 +104,7 @@
             },
             getCollectionList () {
                 this.searchFavorites({
-                    params: {},
+                    params: this.$injectMetadata(),
                     config: {
                         requestId: 'searchFavorites',
                         cancelPrevious: true
@@ -152,10 +152,10 @@
                 if (originalCollection.name !== collection.name) {
                     this.updateFavorites({
                         id: collection.id,
-                        params: {
+                        params: this.$injectMetadata({
                             ...originalCollection,
                             name: collection.name
-                        },
+                        }),
                         config: {
                             requestId: `update_collection_${collection.id}`,
                             cancelPrevious: true
@@ -175,7 +175,8 @@
                     id: deleteCollection.id,
                     config: {
                         requestId: `delete_deleteFavorites_${deleteCollection.id}`,
-                        fromCache: true
+                        fromCache: true,
+                        data: this.$injectMetadata()
                     }
                 }).then(() => {
                     this.list = this.list.filter(collection => collection.id !== deleteCollection.id)
