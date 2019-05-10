@@ -189,6 +189,10 @@ func (a *attribute) Create() error {
 		return err
 	}
 
+	for _, exception := range rsp.Data.Exceptions {
+		return a.params.Err.New(int(exception.Code), exception.Message)
+	}
+
 	for _, id := range rsp.Data.Created {
 		a.attr.ID = int64(id.ID)
 	}
@@ -230,7 +234,6 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		blog.Errorf("failed to update the object attribute(%s), err: %s", a.attr.PropertyID, rsp.ErrMsg)
 		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
-
 	return nil
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {
