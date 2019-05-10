@@ -3,11 +3,13 @@
         <cmdb-main-inject
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
-            <div class="feature-tips">
-                <i class="icon-cc-exclamation-tips"></i>
-                <span>{{$t("ModelManagement['模型顶部提示']")}}</span>
-                <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement" target="_blank">{{$t("Common['更多详情']")}} >></a>
-            </div>
+            <feature-tips
+                :feature-name="'model'"
+                :show-tips="showFeatureTips"
+                :desc="$t('ModelManagement[\'模型顶部提示\']')"
+                :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
+                @close-tips="showFeatureTips = false">
+            </feature-tips>
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
@@ -155,6 +157,7 @@
 <script>
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
+    import featureTips from '@/components/feature-tips/index'
     // import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
@@ -163,10 +166,12 @@
         components: {
             // theModel,
             theCreateModel,
-            cmdbMainInject
+            cmdbMainInject,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 scrollHandler: null,
                 scrollTop: 0,
@@ -231,6 +236,7 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
+            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).model
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
