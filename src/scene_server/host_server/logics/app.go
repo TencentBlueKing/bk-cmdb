@@ -209,6 +209,9 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 
 func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
+	if cond == nil {
+		cond = mapstr.New()
+	}
 	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,

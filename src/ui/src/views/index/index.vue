@@ -9,6 +9,7 @@
         </div>
         <div ref="stickyProxy" v-show="sticky"></div>
         <the-classify></the-classify>
+        <the-map></the-map>
         <cmdb-main-inject class="copyright" ref="copyright">
             Copyright © 2012-{{year}} Tencent BlueKing. All Rights Reserved. 腾讯蓝鲸 版权所有
         </cmdb-main-inject>
@@ -20,6 +21,7 @@
     import searchInput from './children/search-input'
     import theRecently from './children/recently'
     import theClassify from './children/classify'
+    import theMap from './children/map'
     import cmdbMainInject from '@/components/layout/main-inject'
     import {
         addMainResizeListener,
@@ -34,6 +36,7 @@
             searchInput,
             theRecently,
             theClassify,
+            theMap,
             cmdbMainInject
         },
         data () {
@@ -90,6 +93,7 @@
         padding: 0 0 50px;
         background-color: #f5f6fa;
         position: relative;
+        z-index: 1;
         &.is-sticky {
             .sticky-layout {
                 position: absolute;
@@ -98,12 +102,12 @@
                 width: 100%;
                 padding-top: 50px;
                 box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.03);
+                background-color: #f5f6fa;
             }
         }
     }
     .sticky-layout {
         padding: 220px 0 27px;
-        background-color: #f5f6fa;
     }
     .copyright{
         position: absolute;

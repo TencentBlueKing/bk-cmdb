@@ -72,8 +72,23 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 	}
 
 	ret := make(map[string]Property)
-	indexCustom := 0
-	indexOthers := len(customFields)
+
+	// user specified export model field sort start index
+	var ustomFieldStartIndex int
+	//  sort the start of normal of the model
+	var normalFieldStartIndex int
+	// calculate the length of the user-psecified field
+	for _, field := range fields {
+		// filter fields cannot exported
+		if util.InStrArr(filterFields, field.ID) {
+			continue
+		}
+		// filter fields than do not exist
+		if !util.InStrArr(customFields, field.ID) {
+			continue
+		}
+		normalFieldStartIndex++
+	}
 
 	for _, group := range groups {
 		for _, field := range fields {
@@ -81,11 +96,11 @@ func (lgc *Logics) GetObjFieldIDs(objID string, filterFields []string, customFie
 				if util.InStrArr(filterFields, field.ID) {
 					field.NotExport = true
 				} else if util.InStrArr(customFields, field.ID) {
-					field.ExcelColIndex = indexCustom
-					indexCustom++
+					field.ExcelColIndex = ustomFieldStartIndex
+					ustomFieldStartIndex++
 				} else {
-					field.ExcelColIndex = indexOthers
-					indexOthers++
+					field.ExcelColIndex = normalFieldStartIndex
+					normalFieldStartIndex++
 				}
 				ret[field.ID] = field
 
