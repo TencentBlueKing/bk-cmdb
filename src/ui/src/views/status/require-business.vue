@@ -4,6 +4,7 @@
             <div class="title">
                 <i class="icon icon-cc-no-authority"></i>
                 <h2>{{$t("Common['无业务权限']")}}</h2>
+                <p>{{$t("Common['点击下方按钮申请']")}}</p>
             </div>
             <div class="btns">
                 <bk-button type="primary" @click="handleApplyPermission">
@@ -44,15 +45,19 @@
         font-size: 14px;
         .title {
             .icon {
-                font-size: 56px;
-                color: #979BA5;
+                margin-bottom: -10px;
+                font-size: 136px;
+                color: #979ba5;
             }
             h2 {
-                margin-top: 10px;
                 margin-bottom: 10px;
                 font-size: 22px;
                 color: #313238;
                 font-weight: normal;
+            }
+            p {
+                color: #63656e;
+                font-size: 14px;
             }
         }
         .btns {

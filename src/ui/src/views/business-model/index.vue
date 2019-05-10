@@ -1,5 +1,5 @@
 <template>
-    <div class="business-topo-wrapper">
+    <div class="business-topo-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             style="text-align: left;"
             :feature-name="'modelBusiness'"

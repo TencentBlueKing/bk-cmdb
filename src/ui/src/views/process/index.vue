@@ -1,5 +1,5 @@
 <template>
-    <div class="process-wrapper">
+    <div class="process-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             :feature-name="'process'"
             :show-tips="showFeatureTips"
