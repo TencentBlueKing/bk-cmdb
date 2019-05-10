@@ -20,10 +20,7 @@
 - 可以及时得到 bugfix
 - 掌握替换方法之后，方便基于开源版本进行二次开发
 
-### 1.3 替换的风险
-升级新版本，另外新的 release 版本也可能会伴随一些新bug的出现。
-
-### 1.4 升级建议
+### 1.3 升级建议
 - 做好备份
 - 系统化测试
 - 尽量在同一个大版本下进行升级，比如 `3.2.2` 升级到 `3.2.6`， 它们都是源于 `3.2.x` 分支的 release，相对来说没有大的功能变更，主要进行了一些优化及bugfix工作。
@@ -41,6 +38,8 @@
 如果磁盘空间足够的话，可以直接备份整个社区版。
 
 ### 2.2 下载编译 CMDB
+- 前置条件：可从外网下载node
+
 如果只是使用CMDB，建议从 github 下载最新的 release 代码。
 由于某些原因，较新版本的release里面，暂时没能提供二进制文件，需要自行编译。
 
@@ -186,8 +185,7 @@ supervisorctl -c ${BKCE}/etc/supervisor-cmdb-server.conf status
   role: "node"
   language: golang
   version: 3.2.8
-  version_type: ce
-```
+  version_type: oc
 
 ## 3. 常见问题解决
 ### 3.1 make 时 git 命令执行报错
