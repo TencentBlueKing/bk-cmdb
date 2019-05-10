@@ -163,6 +163,9 @@ const (
 	
 	CCErrCommGetMultipleObject = 1199052
 
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
+
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
 	CCErrAPIGetUserResourceAuthStatusFailed    = 1100002
