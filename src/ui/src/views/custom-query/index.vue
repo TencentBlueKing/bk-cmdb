@@ -1,5 +1,5 @@
 <template>
-    <div class="api-wrapper">
+    <div class="api-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             :feature-name="'customQuery'"
             :show-tips="showFeatureTips"

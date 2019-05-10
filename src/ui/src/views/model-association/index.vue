@@ -1,5 +1,5 @@
 <template>
-    <div class="relation-wrapper">
+    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             :feature-name="'association'"
             :show-tips="showFeatureTips"

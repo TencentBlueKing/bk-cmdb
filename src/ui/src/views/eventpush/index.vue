@@ -1,5 +1,5 @@
 <template>
-    <div class="push-wrapper">
+    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             :feature-name="'eventpush'"
             :show-tips="showFeatureTips"

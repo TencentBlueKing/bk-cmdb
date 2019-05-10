@@ -1,6 +1,7 @@
 <template>
     <div class="group-wrapper">
         <cmdb-main-inject
+            :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
             <feature-tips
