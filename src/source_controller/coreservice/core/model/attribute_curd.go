@@ -50,14 +50,31 @@ func (m *modelAttribute) save(ctx core.ContextParams, attribute metadata.Attribu
 		attribute.LastTime.Time = time.Now()
 	}
 
+	if err = m.checkMustNotEmpty(ctx, attribute); err != nil {
+		return 0, err
+	}
+	if err = m.checkValidity(ctx, attribute); err != nil {
+		return 0, err
+	}
+
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Insert(ctx, attribute)
 	return id, err
 }
 
-func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
+func (m *modelAttribute) checkMustNotEmpty(ctx core.ContextParams, attribute metadata.Attribute) error {
 	if attribute.PropertyID == "" {
 		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyID)
-	} else {
+	}
+	if attribute.PropertyName == "" {
+		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
+	}
+	return nil
+}
+
+func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadata.Attribute) error {
+	if 20 < utf8.RuneCountInString(attribute.PropertyID) {
+		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyID)
+	} else if attribute.PropertyID != "" {
 		match, err := regexp.MatchString(`^[a-z\d_]+$`, attribute.PropertyID)
 		if nil != err {
 			return err
@@ -67,17 +84,25 @@ func (m *modelAttribute) checkValidity(ctx core.ContextParams, attribute metadat
 		}
 	}
 
-	if attribute.PropertyName == "" {
-		return ctx.Error.Errorf(common.CCErrCommParamsNeedSet, metadata.AttributeFieldPropertyName)
-	} else {
-		if 20 < utf8.RuneCountInString(attribute.PropertyName) {
-			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyName)
-		}
+	if 20 < utf8.RuneCountInString(attribute.PropertyName) {
+		return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.PropertyName)
 	}
 
 	if attribute.Placeholder != "" {
 		if 300 < utf8.RuneCountInString(attribute.Placeholder) {
 			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Placeholder)
+		}
+	}
+
+	if attribute.Unit != "" {
+		if 20 < utf8.RuneCountInString(attribute.Unit) {
+			return ctx.Error.Errorf(common.CCErrCommOverLimit, attribute.Unit)
+		}
+	}
+
+	if opt, ok := attribute.Option.(string); ok && opt != "" {
+		if 1000 < utf8.RuneCountInString(opt) {
+			return ctx.Error.Errorf(common.CCErrCommOverLimit, opt)
 		}
 	}
 
@@ -95,6 +120,16 @@ func (m *modelAttribute) update(ctx core.ContextParams, data mapstr.MapStr, cond
 	data.Remove(metadata.AttributeFieldPropertyID)
 	data.Remove(metadata.AttributeFieldSupplierAccount)
 	data.Set(metadata.AttributeFieldLastTime, time.Now())
+
+	attribute := metadata.Attribute{}
+	if err = data.MarshalJSONInto(&attribute); err != nil {
+		blog.Errorf("request(%s): MarshalJSONInto(%#v), error is %v", ctx.ReqID, data, err)
+		return 0, err
+	}
+
+	if err = m.checkValidity(ctx, attribute); err != nil {
+		return 0, err
+	}
 
 	err = m.dbProxy.Table(common.BKTableNameObjAttDes).Update(ctx, cond.ToMapStr(), data)
 	if nil != err {
