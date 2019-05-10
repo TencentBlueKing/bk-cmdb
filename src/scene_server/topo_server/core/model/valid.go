@@ -64,7 +64,7 @@ func (f *FieldValid) ValidName(params types.ContextParams, value string) error {
 
 // ValidPlaceHoler check the PlaceHoler
 func (f *FieldValid) ValidPlaceHoler(params types.ContextParams, value string) error {
-	if 300 < utf8.RuneCountInString(value) {
+	if common.AttributePlaceHolderMaxLength < utf8.RuneCountInString(value) {
 		return params.Err.Errorf(common.CCErrCommOverLimit, value)
 	}
 	return nil

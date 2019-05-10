@@ -157,9 +157,9 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 		}
 	}
 
-	if !isUpdate || data.Exists(metadata.AttributeFieldPlaceHoler) {
-		if val, err := data.String(metadata.AttributeFieldPlaceHoler); err != nil {
-			if err := a.FieldValid.ValidPlaceHoler(a.params, val); nil != err {
+	if val, ok := data[metadata.AttributeFieldPlaceHoler]; ok && val != "" {
+		if placeholder, ok := val.(string); ok {
+			if err := a.FieldValid.ValidPlaceHoler(a.params, placeholder); nil != err {
 				return err
 			}
 		}

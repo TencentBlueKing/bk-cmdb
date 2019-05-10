@@ -265,7 +265,7 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 	instID, err := item.GetInstID()
 	if err != nil {
-		return nil, params.Err.Error(common.CCErrCommNotFound)
+		return nil, params.Err.Error(common.CCErrTopoInstCreateFailed)
 	}
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
