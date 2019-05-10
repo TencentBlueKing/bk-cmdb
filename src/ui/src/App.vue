@@ -34,7 +34,15 @@
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
             return {
                 showBrowserTips,
-                execMainScrollListener
+                execMainScrollListener,
+                featureTips: {
+                    process: true,
+                    customQuery: true,
+                    model: true,
+                    modelBusiness: true,
+                    association: true,
+                    eventpush: true
+                }
             }
         },
         computed: {
@@ -42,6 +50,9 @@
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
         },
         mounted () {
+            if (!localStorage.getItem('featureTips')) {
+                localStorage.setItem('featureTips', JSON.stringify(this.featureTips))
+            }
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
         },
         beforeDestroy () {
