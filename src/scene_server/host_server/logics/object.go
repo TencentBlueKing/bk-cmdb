@@ -111,8 +111,6 @@ func (lgc *Logics) GetTopoIDByName(ctx context.Context, c *meta.HostToAppModule)
 func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, objectCond []meta.ConditionItem) ([]int64, errors.CCError) {
 	objectIDArr := make([]int64, 0)
 	condition := make([]meta.ConditionItem, 0)
-	rid := util.GetHTTPCCRequestID(pheader)
-	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
 	instItem := meta.ConditionItem{}
 	var hasInstID bool
@@ -132,8 +130,8 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 	}
 	condition = append(condition, instItem)
 	if !hasInstID {
-		blog.Errorf("mainline miss bk_inst_id parameters. input:%#v, rid:%s", objectCond, rid)
-		return nil, defErr.Error(common.CCErrHostSearchNeedObjectInstIDErr)
+		blog.Errorf("mainline miss bk_inst_id parameters. input:%#v, rid:%s", objectCond, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrHostSearchNeedObjectInstIDErr)
 	}
 
 	nodefaultItem := meta.ConditionItem{}
@@ -153,7 +151,7 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 	if err != nil {
 		return nil, lgc.ccErr.Error(common.CCErrTopoMainlineSelectFailed)
 	}
-	
+
 	for {
 		sSetIDArr, err := lgc.GetSetIDByCond(ctx, condition)
 		if err != nil {
