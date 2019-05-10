@@ -1,10 +1,12 @@
 <template>
     <div class="push-wrapper">
-        <div class="feature-tips">
-            <i class="icon-cc-exclamation-tips"></i>
-            <span>{{$t("EventPush['事件推送顶部提示']")}}</span>
-            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush" target="_blank">{{$t("Common['更多详情']")}} >></a>
-        </div>
+        <feature-tips
+            :feature-name="'eventpush'"
+            :show-tips="showFeatureTips"
+            :desc="$t('EventPush[\'事件推送顶部提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="btn-wrapper clearfix">
             <bk-button type="primary"
                 :disabled="!$isAuthorized(OPERATION.C_EVENT)"
@@ -65,15 +67,18 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
+    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
     import { mapActions } from 'vuex'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
-            vPushDetail
+            vPushDetail,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 curPush: {},
                 table: {
@@ -118,6 +123,7 @@
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
+            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).eventpush
         },
         methods: {
             ...mapActions('eventSub', [

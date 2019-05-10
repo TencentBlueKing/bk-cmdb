@@ -1,10 +1,12 @@
 <template>
     <div class="api-wrapper">
-        <div class="feature-tips">
-            <i class="icon-cc-exclamation-tips"></i>
-            <span>{{$t("CustomQuery['动态分组提示']")}}</span>
-            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%886%EF%BC%89%E5%8A%A8%E6%80%81%E5%88%86%E7%BB%84" target="_blank">{{$t("Common['更多详情']")}} >></a>
-        </div>
+        <feature-tips
+            :feature-name="'customQuery'"
+            :show-tips="showFeatureTips"
+            :desc="$t('CustomQuery[\'动态分组提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%886%EF%BC%89%E5%8A%A8%E6%80%81%E5%88%86%E7%BB%84'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="filter-wrapper clearfix">
             <bk-button type="primary" class="api-btn"
                 :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
@@ -58,14 +60,17 @@
 
 <script>
     import { mapActions, mapGetters } from 'vuex'
+    import featureTips from '@/components/feature-tips/index'
     import vDefine from './define'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
-            vDefine
+            vDefine,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 filter: {
                     name: ''
@@ -122,6 +127,7 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
+            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).customQuery
             this.getUserAPIList()
         },
         methods: {

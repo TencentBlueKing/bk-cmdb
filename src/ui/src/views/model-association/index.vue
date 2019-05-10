@@ -1,10 +1,12 @@
 <template>
     <div class="relation-wrapper">
-        <div class="feature-tips">
-            <i class="icon-cc-exclamation-tips"></i>
-            <span>{{$t("ModelManagement['关联关系提示']")}}</span>
-            <a href="https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94" target="_blank">{{$t("common['更多详情']")}} >></a>
-        </div>
+        <feature-tips
+            :feature-name="'association'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ModelManagement[\'关联关系提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <p class="operation-box">
             <bk-button type="primary"
                 class="create-btn"
@@ -68,15 +70,18 @@
 </template>
 
 <script>
+    import featureTips from '@/components/feature-tips/index'
     import theRelation from './_detail'
     import { mapActions, mapGetters } from 'vuex'
     import { OPERATION } from './router.config'
     export default {
         components: {
-            theRelation
+            theRelation,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 slider: {
                     isShow: false,
@@ -149,6 +154,7 @@
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
+            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).association
         },
         methods: {
             ...mapActions('objectAssociation', [
