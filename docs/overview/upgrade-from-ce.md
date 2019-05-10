@@ -56,7 +56,7 @@ mkdir src
 mv bk-cmdb-release-${release} src/configcenter
 cd src/configcenter/src
 
-GITHASH=${release} GITTAG=release-${release} VERSION=${release} make
+GITHASH=${release} GITTAG=ocr-${release} VERSION=${release} make
 ```
 
 ### 2.3 生成配置
@@ -201,7 +201,7 @@ fatal: not a git repository (or any of the parent directories): .git
 
 原因：常规make时默认从git版本中提取
 
-解决办法：设置GITHASH,GITTAG,VERSION这三个编译环境变量，如 `GITHASH=xxx GITTAG=release-v3.2.8 VERSION=v3.2.8 make`
+解决办法：设置GITHASH,GITTAG,VERSION这三个编译环境变量，如 `GITHASH=xxx GITTAG=ocr-v3.2.8 VERSION=v3.2.8 make`
 
 
 ### 3.2 make 时提示 `generate.py` 语法问题
