@@ -47,7 +47,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 		defer func() {
 			if fetalErr := recover(); fetalErr != nil {
 				rid := util.GetHTTPCCRequestID(req.Request.Header)
-				blog.Errorf("server has panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
+				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
 				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, common.GetIdentification())
 				respErrInfo := &metadata.RespError{Msg: ccErrTip}
 				io.WriteString(resp, respErrInfo.Error())
