@@ -41,5 +41,7 @@
 	"1110048": "%v appliction not found",
 	"1110049": "Failed to get module information, error %s",
 	"1110050": "Get host agent status, error %s",
+
+	"1110058": "The object in the parameter is missing the bk_inst_id corresponding condition",
 	"": ""
 }
