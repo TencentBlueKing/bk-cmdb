@@ -2,7 +2,7 @@
     <div class="tips-wrapper">
         <div class="content-wrapper">
             <div class="title">
-                <i class="icon icon-cc-no-authority"></i>
+                <img src="../../assets/images/no-authority.png" alt="no-authority">
                 <h2>{{$t("Common['无业务权限']")}}</h2>
                 <p>{{$t("Common['点击下方按钮申请']")}}</p>
             </div>
@@ -44,10 +44,8 @@
         color: #63656E;
         font-size: 14px;
         .title {
-            .icon {
-                margin-bottom: -10px;
-                font-size: 136px;
-                color: #979ba5;
+            img {
+                width: 136px;
             }
             h2 {
                 margin-bottom: 10px;
