@@ -38,7 +38,6 @@ type ClientSetInterface interface {
 	EventServer() eventserver.EventServerClientInterface
 
 	ObjectController() objcontroller.ObjControllerClientInterface
-	// AuditController() auditcontroller.AuditCtrlInterface
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
 	CoreService() coreservice.CoreServiceClientInterface

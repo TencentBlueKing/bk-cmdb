@@ -324,7 +324,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	}
 
 	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "assign host to app"); err != nil {
-		blog.Errorf("assign host to app, but save audit failed, err: %v", err)
+		blog.Errorf("assign host to app, but save audit failed, err: %v, rid:%s", err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
 
