@@ -13,14 +13,11 @@
 package service
 
 import (
-	"configcenter/src/auth/extensions"
 	"context"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-	"gopkg.in/redis.v5"
-
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
@@ -32,6 +29,9 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
+
+	"github.com/emicklei/go-restful"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -177,14 +177,6 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 		objCtr.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, objCtr)
-
-	// audit controller
-	auditCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_AUDITCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_AUDITCONTROLLER); err != nil {
-		auditCtrl.IsHealthy = false
-		auditCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, auditCtrl)
 
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
