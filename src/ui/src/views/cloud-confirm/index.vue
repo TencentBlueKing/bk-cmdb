@@ -53,10 +53,10 @@
                     {{$t('Cloud["新增"]')}}
                 </span>
             </template>
-            <template slot="bk_account_type" slot-scope="{ item }">
+            <template slot="bk_account_type">
                 <span>{{$t('Cloud["腾讯云"]')}}</span>
             </template>
-            <template slot="bk_obj_id" slot-scope="{ item }">
+            <template slot="bk_obj_id">
                 {{ $t('Hosts["主机"]')}}
             </template>
             <template slot="operation" slot-scope="{ item }">
@@ -198,7 +198,7 @@
                 pagination.count = res.count
             },
             confirmHistory () {
-                this.$router.push({ name: 'resourceConfirmHistory' })
+                this.$router.push({ name: 'confirmHistory' })
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size
@@ -246,7 +246,7 @@
                 this.table.checked = this.table.list.map(inst => inst['bk_resource_id'])
             },
             handleAdd () {
-                this.$router.push({ name: 'cloud', params: { type: 'create' } })
+                this.$router.push({ name: 'cloudDiscover', params: { type: 'create' } })
             }
         }
     }

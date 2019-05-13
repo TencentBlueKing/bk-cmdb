@@ -75,6 +75,21 @@ export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
 export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
+// 云资源发现
+export const C_CLOUD_DISCOVER = 'cloudDiscover.create'
+export const U_CLOUD_DISCOVER = 'cloudDiscover.update'
+export const D_CLOUD_DISCOVER = 'cloudDiscover.delete'
+export const R_CLOUD_DISCOVER = 'cloudDiscover.findMany'
+
+// 云资源确认
+export const C_CLOUD_CONFIRM = 'cloudConfirm.create'
+export const U_CLOUD_CONFIRM = 'cloudConfirm.update'
+export const D_CLOUD_CONFIRM = 'cloudConfirm.delete'
+export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
+
+// 确认历史
+export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
+
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
