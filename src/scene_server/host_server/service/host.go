@@ -574,7 +574,10 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	appID := hostModuleConfig[0].AppID
+	var appID int64
+	if len(hostModuleConfig) > 0 {
+		appID = hostModuleConfig[0].AppID
+	}
 
 	logLastConents := make([]meta.SaveAuditLogParams, 0)
 	for _, hostID := range hostIDs {

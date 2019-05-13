@@ -72,7 +72,10 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 		OpType:  auditoplog.AuditOpTypeAdd,
 		BizID:   int64(appID),
 	}
-	ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
+	auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
+	if err != nil || (auditrsp != nil && !auditrsp.Result) {
+		blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -119,8 +122,10 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 		OpType:  auditoplog.AuditOpTypeDel,
 		BizID:   int64(appID),
 	}
-	ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
-
+	auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
+	if err != nil || (auditrsp != nil && !auditrsp.Result) {
+		blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+	}
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 

@@ -338,7 +338,10 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		})
 	}
 	if 0 < len(logscontent) {
-		ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logscontent...)
+		auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logscontent...)
+		if err != nil || (auditrsp != nil && !auditrsp.Result) {
+			blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+		}
 	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))

@@ -14,7 +14,6 @@ package auditlog
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -23,7 +22,7 @@ import (
 func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.SaveAuditLogParams) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 
-	subPath := fmt.Sprintf("/create/auditlog")
+	subPath := "/create/auditlog"
 
 	err = inst.client.Post().
 		WithContext(ctx).
@@ -39,7 +38,7 @@ func (inst *auditlog) SaveAuditLog(ctx context.Context, h http.Header, logs ...m
 
 func (inst *auditlog) SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryInput) (resp *metadata.AuditQueryResult, err error) {
 	resp = new(metadata.AuditQueryResult)
-	subPath := fmt.Sprintf("/read/auditlog")
+	subPath := "/read/auditlog"
 
 	err = inst.client.Post().
 		WithContext(ctx).
