@@ -9,6 +9,7 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -24,7 +25,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userCustom().
 		hostFavorite().
 		cloudResourceSync().
-		hostSnapshot()
+		hostSnapshot().
+		findObjectIdentifier()
 
 	return ps
 }
@@ -42,7 +44,8 @@ func (ps *parseStream) parseBusinessID() (int64, error) {
 	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
 	if bizID == 0 {
 		blog.Error("parseBusinessID failed, parse biz id from metadata in request body, but not exist.")
-		return 0, errors.New("can not parse business id")
+		// return 0, errors.New("can not parse business id")
+		return 0, metadata.LabelKeyNotExistError
 	}
 	return bizID, nil
 }
@@ -277,7 +280,7 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
 			return ps
@@ -301,8 +304,9 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.DeleteMany,
+					Type: meta.HostInstance,
+					// Action: meta.DeleteMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -483,14 +487,14 @@ func (ps *parseStream) host() *parseStream {
 
 	// find hosts with condition operation.
 	if ps.hitPattern(findHostsWithConditionPattern, http.MethodPost) {
-		bizID, err := ps.parseBusinessID()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
+		// bizID, err := ps.parseBusinessID()
+		// if err != nil {
+		//	ps.err = err
+		//	return ps
+		// }
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
-				BusinessID: bizID,
+				// BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.FindMany,
@@ -520,13 +524,14 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// update hosts batch.
+	// update hosts batch. but can not get the exactly host id.
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.UpdateMany,
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -684,6 +689,28 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+var (
+	findIdentifierAPIRegexp = regexp.MustCompile(`^/api/v3/identifier/[^\s/]+/search/?$`)
+)
+
+func (ps *parseStream) findObjectIdentifier() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findIdentifierAPIRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
 			},

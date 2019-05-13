@@ -184,6 +184,11 @@ func (s *Service) GetHostInstanceProperties(req *restful.Request, resp *restful.
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}
+	if len(details) == 0 {
+		blog.Errorf("host not found, hostID: %v,rid:%s", hostID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotFound)})
+		return
+	}
 
 	// check authorization
 	// auth: check authorization
@@ -316,8 +321,7 @@ func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	}
 	retData["success"] = succ
 
-	// register hosts
-	// auth: check authorization
+	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, hostIDs...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", hostIDs, err)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
@@ -964,7 +968,7 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Find, srcHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", srcHostID, err)
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", srcHostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
@@ -977,14 +981,14 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", dstHostID, err)
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
 		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		return
 	}
 
 	res, err := srvData.lgc.CloneHostProperty(srvData.ctx, input, input.AppID, input.CloudID)
 	if nil != err {
-		blog.Errorf("CloneHostProperty ,application not int , err: %v, input:%v", err, input)
+		blog.Errorf("CloneHostProperty ,application not int , err: %v, input:%#v, rid:%s", err, input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
 		return
 	}

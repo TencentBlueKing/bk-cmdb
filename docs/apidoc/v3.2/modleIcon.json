@@ -1,0 +1,302 @@
+[
+    {
+        "value": "icon-cc-business"
+    },
+    {
+        "value": "icon-cc-square"
+    },
+    {
+        "value": "icon-cc-ip"
+    },
+    {
+        "value": "icon-cc-security"
+    },
+    {
+        "value": "icon-cc-pie-chart"
+    },
+    {
+        "value": "icon-cc-icon-city"
+    },
+    {
+        "value": "icon-cc-storage"
+    },
+    {
+        "value": "icon-cc-switch"
+    },
+    {
+        "value": "icon-cc-senior"
+    },
+    {
+        "value": "icon-cc-compact"
+    },
+    {
+        "value": "icon-cc-backstage"
+    },
+    {
+        "value": "icon-cc-engine-room"
+    },
+    {
+        "value": "icon-cc-cabinet"
+    },
+    {
+        "value": "icon-cc-curve"
+    },
+    {
+        "value": "icon-cc-module"
+    },
+    {
+        "value": "icon-cc-model"
+    },
+    {
+        "value": "icon-cc-equipment"
+    },
+    {
+        "value": "icon-cc-lock"
+    },
+    {
+        "value": "icon-cc-networks"
+    },
+    {
+        "value": "icon-cc-net-port"
+    },
+    {
+        "value": "icon-cc-network-equipment"
+    },
+    {
+        "value": "icon-cc-information"
+    },
+    {
+        "value": "icon-cc-triangle"
+    },
+    {
+        "value": "icon-cc-columnar"
+    },
+    {
+        "value": "icon-cc-subnet"
+    },
+    {
+        "value": "icon-cc-host"
+    },
+    {
+        "value": "icon-cc-subnet"
+    },
+    {
+        "value": "icon-cc-process"
+    },
+    {
+        "value": "icon-cc-set"
+    },
+    {
+        "value": "icon-cc-activeMQ"
+    },
+    {
+        "value": "icon-cc-android"
+    },
+    {
+        "value": "icon-cc-apache"
+    },
+    {
+        "value": "icon-cc-apple"
+    },
+    {
+        "value": "icon-cc-balance"
+    },
+    {
+        "value": "icon-cc-biz"
+    },
+    {
+        "value": "icon-cc-branch-company"
+    },
+    {
+        "value": "icon-cc-branch-shop"
+    },
+    {
+        "value": "icon-cc-camera"
+    },
+    {
+        "value": "icon-cc-certificate"
+    },
+    {
+        "value": "icon-cc-classroom"
+    },
+    {
+        "value": "icon-cc-company"
+    },
+    {
+        "value": "icon-cc-cpu"
+    },
+    {
+        "value": "icon-cc-db2"
+    },
+    {
+        "value": "icon-cc-default"
+    },
+    {
+        "value": "icon-cc-department"
+    },
+    {
+        "value": "icon-cc-directory"
+    },
+    {
+        "value": "icon-cc-disk"
+    },
+    {
+        "value": "icon-cc-domain"
+    },
+    {
+        "value": "icon-cc-elastic-search"
+    },
+    {
+        "value": "icon-cc-factory"
+    },
+    {
+        "value": "icon-cc-firewall"
+    },
+    {
+        "value": "icon-cc-group"
+    },
+    {
+        "value": "icon-cc-headoffice"
+    },
+    {
+        "value": "icon-cc-idc"
+    },
+    {
+        "value": "icon-cc-iis"
+    },
+    {
+        "value": "icon-cc-influxdb"
+    },
+    {
+        "value": "icon-cc-International"
+    },
+    {
+        "value": "icon-cc-ip2"
+    },
+    {
+        "value": "icon-cc-kafka"
+    },
+    {
+        "value": "icon-cc-linux"
+    },
+    {
+        "value": "icon-cc-log"
+    },
+    {
+        "value": "icon-cc-machine"
+    },
+    {
+        "value": "icon-cc-mail-server"
+    },
+    {
+        "value": "icon-cc-mainboard"
+    },
+    {
+        "value": "icon-cc-map"
+    },
+    {
+        "value": "icon-cc-market"
+    },
+    {
+        "value": "icon-cc-memory"
+    },
+    {
+        "value": "icon-cc-minicomputer"
+    },
+    {
+        "value": "icon-cc-model2"
+    },
+    {
+        "value": "icon-cc-mongodb"
+    },
+    {
+        "value": "icon-cc-mysql"
+    },
+    {
+        "value": "icon-cc-network-card"
+    },
+    {
+        "value": "icon-cc-network-manage"
+    },
+    {
+        "value": "icon-cc-network-segment"
+    },
+    {
+        "value": "icon-cc-nginx"
+    },
+    {
+        "value": "icon-cc-operator"
+    },
+    {
+        "value": "icon-cc-oracle"
+    },
+    {
+        "value": "icon-cc-port"
+    },
+    {
+        "value": "icon-cc-postgresql"
+    },
+    {
+        "value": "icon-cc-printer"
+    },
+    {
+        "value": "icon-cc-process2"
+    },
+    {
+        "value": "icon-cc-program"
+    },
+    {
+        "value": "icon-cc-project"
+    },
+    {
+        "value": "icon-cc-redis"
+    },
+    {
+        "value": "icon-cc-repeater"
+    },
+    {
+        "value": "icon-cc-router"
+    },
+    {
+        "value": "icon-cc-server"
+    },
+    {
+        "value": "icon-cc-service"
+    },
+    {
+        "value": "icon-cc-set2"
+    },
+    {
+        "value": "icon-cc-sql-server"
+    },
+    {
+        "value": "icon-cc-sqlite"
+    },
+    {
+        "value": "icon-cc-storage2"
+    },
+    {
+        "value": "icon-cc-switch2"
+    },
+    {
+        "value": "icon-cc-tomcat"
+    },
+    {
+        "value": "icon-cc-unix"
+    },
+    {
+        "value": "icon-cc-ups"
+    },
+    {
+        "value": "icon-cc-vmware"
+    },
+    {
+        "value": "icon-cc-vsphere"
+    },
+    {
+        "value": "icon-cc-win"
+    },
+    {
+        "value": "icon-cc-weblogic"
+    }
+]

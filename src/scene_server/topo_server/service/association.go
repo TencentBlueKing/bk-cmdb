@@ -27,6 +27,7 @@ import (
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	tx, err := s.Txn.StartTransaction(context.Background())
 	if err != nil {
+		blog.Errorf("create mainline object failed, start transaction failed, err: %v", err)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
@@ -37,7 +38,6 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 					blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v", tx.TxnInfo().TxnID, txnErr)
 					return
 				}
-
 			}
 
 			if txnErr := tx.Commit(context.Background()); txnErr != nil {

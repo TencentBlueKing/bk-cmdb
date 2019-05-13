@@ -461,19 +461,23 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 		common.BKCloudIDField: cloudID,
 	}
 
-	dstHostMap, dstHostIdArr, err := phpapi.GetHostMapByCond(ctx, dstCondition)
+	dstHostMap, dstHostIDArr, err := phpapi.GetHostMapByCond(ctx, dstCondition)
 	blog.V(5).Infof("dstHostMap:%+v, input:%+v,rid:%s", dstHostMap, input, lgc.rid)
 
-	dstConfigCond := meta.HostModuleRelationRequest{
-		ApplicationID: appID,
-		HostIDArr:     dstHostIdArr,
+	var dstHostIDArrV []int64
+	if len(dstHostIDArr) > 0 {
+		dstConfigCond := meta.HostModuleRelationRequest{
+			ApplicationID: appID,
+			HostIDArr:     dstHostIDArr,
+		}
+		dstHostIDArrV, err = lgc.GetHostIDByCond(ctx, dstConfigCond)
+		if err != nil {
+			return nil, err
+		}
 	}
-	dstHostIdArrV, err := lgc.GetHostIDByCond(ctx, dstConfigCond)
-	if err != nil {
-		return nil, err
-	}
+
 	existIPMap := make(map[string]int64, 0)
-	for _, id := range dstHostIdArrV {
+	for _, id := range dstHostIDArrV {
 		if dstHostMapData, ok := dstHostMap[id]; ok {
 			ip, ok := dstHostMapData[common.BKHostInnerIPField].(string)
 			if false == ok {
@@ -538,6 +542,7 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			updateHostData[common.BKHostInnerIPField] = dstIPV
 			delete(updateHostData, common.BKHostIDField)
 			delete(updateHostData, common.BKAssetIDField)
+			delete(updateHostData, common.CreateTimeField)
 			res, err := phpapi.UpdateHostMain(ctx, hostCondition, updateHostData, appID)
 			if nil != err {
 				return nil, err
@@ -547,13 +552,14 @@ func (lgc *Logics) CloneHostProperty(ctx context.Context, input *meta.CloneHostP
 			hostMapData[common.BKHostInnerIPField] = dstIPV
 			addHostMapData := hostMapData
 			delete(addHostMapData, common.BKHostIDField)
+			delete(addHostMapData, common.CreateTimeField)
 			addHostMapData[common.BKAssetIDField] = xid.New().String()
-			cloneHostId, err := phpapi.AddHost(ctx, addHostMapData)
+			cloneHostID, err := phpapi.AddHost(ctx, addHostMapData)
 			if nil != err {
 				return nil, err
 			}
-			blog.V(5).Infof("CloneHostProperty dstIP:%s, cloneHostId:%+v, input:%+v,rid:%s", dstIPV, cloneHostId, input, lgc.rid)
-			hostID = cloneHostId
+			blog.V(5).Infof("CloneHostProperty dstIP:%s, cloneHostId:%+v, input:%+v,rid:%s", dstIPV, cloneHostID, input, lgc.rid)
+			hostID = cloneHostID
 
 		}
 		err := phpapi.AddModuleHostConfig(ctx, hostID, appID, moduleIDs)

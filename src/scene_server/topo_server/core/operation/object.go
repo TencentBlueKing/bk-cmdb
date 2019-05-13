@@ -325,12 +325,17 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
-		return nil, fmt.Errorf("get model by supplier account(%s) objects(%s) failed", params.SupplierAccount, objectID)
+		return nil, err
 	}
-	
-	if len(objs) != 1 {
-		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not exactly one, result: %+v", params.SupplierAccount, objectID, objs)
-		return nil, fmt.Errorf("get [%d] model by supplier account(%s) objects(%s), not exactly one", len(objs), params.SupplierAccount, objectID)
+
+	if len(objs) == 0 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v", params.SupplierAccount, objectID, objs)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
+	}
+
+	if len(objs) > 1 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result: %+v", params.SupplierAccount, objectID, objs)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommGetMultipleObject).Error())
 	}
 
 	objects := make([]metadata.Object, 0)
@@ -481,6 +486,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 }
 
 func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
+	if common.IsInnerModel(targetObj.GetObjectID()) {
+		return params.Err.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+	}
 
 	tObject := targetObj.Object()
 	cond := condition.CreateCondition()
@@ -761,13 +769,13 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	object := obj.Object()
 
 	/*
-	// auth: check authorization
-	if err := o.authManager.AuthorizeObjectByRawID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
-		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
-		return err
-	}
+		// auth: check authorization
+		if err := o.authManager.AuthorizeObjectByRawID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
+			blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
+			return err
+		}
 	*/
-	
+
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {

@@ -113,9 +113,6 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 		}
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
-	// todo support esb request id
-
-	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 }
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
@@ -131,6 +128,5 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 
 // getHTTPOtherRequestID return other system request id from http header
 func getHTTPOtherRequestID(header http.Header) string {
-	rid := header.Get(common.BKHTTPOtherRequestID)
-	return rid
+	return header.Get(common.BKHTTPOtherRequestID)
 }
