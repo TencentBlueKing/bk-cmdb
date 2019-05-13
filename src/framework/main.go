@@ -21,8 +21,6 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/spf13/pflag"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
@@ -36,7 +34,10 @@ import (
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
 	_ "configcenter/src/framework/plugins"
+
 	// load all plugins
+
+	"github.com/spf13/pflag"
 )
 
 // APPNAME the name of this application, will be use as identification mark for monitoring
