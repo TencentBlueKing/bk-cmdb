@@ -3,7 +3,7 @@
         <i class="icon-cc-exclamation-tips"></i>
         <span>{{desc}}</span>
         <a :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
-        <span class="bk-icon icon-cc-close fr" @click="HandleCloseTips"></span>
+        <span class="icon-cc-tips-close fr" @click="HandleCloseTips"></span>
     </div>
 </template>
 
@@ -62,12 +62,13 @@
                 text-decoration: underline;
             }
         }
-        .icon-cc-close {
+        .icon-cc-tips-close {
             font-size: 14px;
             margin-top: 1px;
             cursor: pointer;
+            color: #979ba5;
             &:hover {
-                color: #42464e;
+                color: #7d8088;
             }
         }
     }
