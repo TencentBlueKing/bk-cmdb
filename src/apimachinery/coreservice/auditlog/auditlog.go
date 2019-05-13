@@ -10,15 +10,25 @@
  * limitations under the License.
  */
 
-package logics
+package auditlog
 
 import (
-	"configcenter/src/common/backbone"
-	"configcenter/src/storage/dal"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
-// Logics framwork need
-type Logics struct {
-	*backbone.Engine
-	Instance dal.RDB
+type AuditClientInterface interface {
+	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.SaveAuditLogParams) (*metadata.Response, error)
+	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryInput) (*metadata.AuditQueryResult, error)
+}
+
+func NewAuditClientInterface(client rest.ClientInterface) AuditClientInterface {
+	return &auditlog{client: client}
+}
+
+type auditlog struct {
+	client rest.ClientInterface
 }
