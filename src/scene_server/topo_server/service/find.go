@@ -218,25 +218,25 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		//result, err := s.Es.Search(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
-		//if err != nil {
-		//	blog.Errorf("full_text_find failed, find failed, err: %+v", err)
-		//	return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
-		//}
-		//
-		//// result is list
-		//searchResults := make([]SearchResult, 0)
-		//for _, hit := range result {
-		//	// ignore not correct cmdb table data
-		//	if hit.Index == CMDBINDEX && hit.Id != INDICES {
-		//		sr := SearchResult{}
-		//		sr.setHit(hit)
-		//		searchResults = append(searchResults, sr)
-		//	}
-		//}
+		result, err := s.Es.Search(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
+		if err != nil {
+			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
+			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
+		}
+
+		// result is list
+		searchResults := make([]SearchResult, 0)
+		for _, hit := range result {
+			// ignore not correct cmdb table data
+			if hit.Index == CMDBINDEX && hit.Id != INDICES {
+				sr := SearchResult{}
+				sr.setHit(hit)
+				searchResults = append(searchResults, sr)
+			}
+		}
 
 		// test data
-		searchResults := testData
+		//searchResults := testData
 		return searchResults, nil
 	}
 
