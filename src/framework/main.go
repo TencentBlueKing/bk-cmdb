@@ -21,7 +21,10 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/spf13/pflag"
+
 	"configcenter/src/common"
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/framework/api"
@@ -33,8 +36,6 @@ import (
 	"configcenter/src/framework/core/option"
 	"configcenter/src/framework/core/output/module/client"
 	_ "configcenter/src/framework/plugins"
-
-	"github.com/spf13/pflag"
 	// load all plugins
 )
 
@@ -61,7 +62,8 @@ func main() {
 		Error: func(args ...interface{}) {
 			blog.Errorf("%v", args)
 		},
-		Errorf: blog.Errorf,
+		Errorf:   blog.Errorf,
+		Warningf: blog.Warnf,
 	})
 
 	if err := config.Init(opt); err != nil {
@@ -76,7 +78,16 @@ func main() {
 	}
 
 	if "" != opt.Regdiscv {
-		rd := discovery.NewRegDiscover(APPNAME, opt.Regdiscv, server.GetAddr(), server.GetPort(), false)
+		disClient := zk.NewZkClient(opt.Regdiscv, 5*time.Second)
+		if err := disClient.Start(); err != nil {
+			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			return
+		}
+		if err := disClient.Ping(); err != nil {
+			log.Errorf("connect regdiscv [%s] failed: %v", opt.Regdiscv, err)
+			return
+		}
+		rd := discovery.NewRegDiscover(APPNAME, disClient, server.GetAddr(), server.GetPort(), false)
 		go func() {
 			rd.Start()
 		}()
