@@ -193,12 +193,5 @@ func (s *service) createPlats(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	rspDataV3Map, ok := result.Data.(map[string]interface{})
-	if false == ok {
-		blog.Errorf("createPlats http reply error.data not ma[string]interface.reply:%#v,input:%#v,rid:%s", result.Data, formData, srvData.rid)
-		converter.RespFailV2(common.CCErrCommReplyDataFormatError, defErr.Error(common.CCErrCommReplyDataFormatError).Error(), resp)
-		return
-	}
-
-	converter.RespSuccessV2(rspDataV3Map[common.BKCloudIDField], resp)
+	converter.RespSuccessV2(result.Data.Created.ID, resp)
 }

@@ -667,7 +667,10 @@
             handleExport () {
                 const data = new FormData()
                 data.append('bk_inst_id', this.table.checked.join(','))
-                data.append('export_custom_fields', this.usercustom[this.customConfigKey])
+                const customFields = this.usercustom[this.customConfigKey]
+                if (customFields) {
+                    data.append('export_custom_fields', customFields)
+                }
                 if (!this.isPublicModel) {
                     data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
                 }

@@ -67,7 +67,7 @@ type HostServerClientInterface interface {
 	DelHostInApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetGitServerIp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	GetPlat(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
-	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error)
+	CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error)
 	DelPlat(ctx context.Context, cloudID string, h http.Header) (resp *metadata.Response, err error)
 	SearchHost(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *params.HostCommonSearch) (resp *metadata.SearchHostResult, err error)

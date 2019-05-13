@@ -160,8 +160,11 @@ const (
 	CCErrCommRegistResourceToIAMFailed   = 1199049
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
-	
+
 	CCErrCommGetMultipleObject = 1199052
+
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
 
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
@@ -565,6 +568,7 @@ const (
 	CCErrHostNotBelongIDLEModuleErr = 1110056
 	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
+	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
