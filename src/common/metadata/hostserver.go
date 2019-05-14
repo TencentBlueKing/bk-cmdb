@@ -265,10 +265,6 @@ type CloudSyncRedisAlreadyStarted struct {
 	OwnerID      string      `json:"bk_supplier_account"`
 }
 
-type CloudSyncRedisPendingStop struct {
-	TaskID int64 `json:"bk_task_id"`
-}
-
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter
 type TransferHostAcrossBusinessParameter struct {
 	SrcAppID       int64   `json:"src_bk_biz_id"`
