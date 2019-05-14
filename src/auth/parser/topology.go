@@ -599,7 +599,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 }
 
 const (
-	findObjectInstanceBatchRegexp = `/api/v3/object/search/batch`
+	findObjectBatchRegexp = `/api/v3/object/search/batch`
 )
 
 var (
@@ -904,7 +904,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+	if ps.hitPattern(findObjectBatchRegexp, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil && err != metadata.LabelKeyNotExistError {
 			ps.err = err
@@ -914,7 +914,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.Model,
 					Action: meta.FindMany,
 				},
 			},
