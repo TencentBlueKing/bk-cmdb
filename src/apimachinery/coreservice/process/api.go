@@ -23,7 +23,6 @@ import (
 
 func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
 	ret := new(metadata.OneServiceCategoryResult)
-	// resp = new(metadata.TopoModelNode)
 	subPath := "/create/process/service_category"
 
 	err = p.client.Post().
@@ -464,128 +463,6 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, bizID 
 		"bizID": bizID,
 		"serviceTemplateID": serviceTemplateID,
 		"hostID": hostID,
-	}
-
-	err = p.client.Delete().
-		WithContext(ctx).
-		Body(input).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return nil, err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
-}
-
-/*
-	process instance api
-*/
-
-/*
-func (p *process) CreateProcessInstance(ctx context.Context, h http.Header, instance metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
-	ret := new(metadata.OneServiceInstanceResult)
-	subPath := "/create/process/service_instance/"
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(instance).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return nil, err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
-}
-*/
-
-func (p *process) GetProcessInstance(ctx context.Context, h http.Header, instanceID int64) (resp *metadata.ProcessInstance, err error) {
-	ret := new(metadata.OneProcessInstanceResult)
-	subPath := fmt.Sprintf("/find/process/process_instance/%d/", instanceID)
-
-	err = p.client.Get().
-		WithContext(ctx).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return nil, err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
-}
-
-func (p *process) UpdateProcessInstance(ctx context.Context, h http.Header, instanceID int64, instance metadata.ProcessInstance) (resp *metadata.ProcessInstance, err error) {
-	ret := new(metadata.OneProcessInstanceResult)
-	subPath := fmt.Sprintf("/update/process/process_instance/%d/", instanceID)
-
-	err = p.client.Post().
-		WithContext(ctx).
-		Body(instance).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return nil, err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
-	}
-
-	return &ret.Data, nil
-}
-
-func (p *process) DeleteProcessInstance(ctx context.Context, h http.Header, instanceID int64) error {
-	ret := new(metadata.OneProcessInstanceResult)
-	subPath := fmt.Sprintf("/delete/process/process_instance/%d/", instanceID)
-
-	err := p.client.Delete().
-		WithContext(ctx).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
-	}
-
-	return nil
-}
-
-func (p *process) ListProcessInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, serviceInstanceID int64, hostID int64, processTemplateID int64) (resp *metadata.MultipleProcessInstance, err error) {
-	ret := new(metadata.MultipleProcessInstanceResult)
-	subPath := "/list/process/process_instance/"
-
-	input := map[string]interface{}{
-		"bizID": bizID,
-		"serviceTemplateID": serviceTemplateID,
-		"serviceInstanceID": serviceInstanceID,
-		"hostID": hostID,
-		"processTemplateID": processTemplateID,
 	}
 
 	err = p.client.Delete().

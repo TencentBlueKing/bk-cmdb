@@ -48,13 +48,6 @@ type ProcessInterface interface {
 	UpdateServiceInstance(ctx context.Context, h http.Header, templateID int64, template metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
 	ListServiceInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, hostID int64) (resp *metadata.MultipleServiceInstance, err error)
 	DeleteServiceInstance(ctx context.Context, h http.Header, processTemplateID int64) error
-	
-	// process instance
-	// CreateProcessInstance(ctx context.Context, h http.Header, instance metadata.ProcessInstance) (resp *metadata.ProcessInstance, err error)
-	GetProcessInstance(ctx context.Context, h http.Header, instanceID int64) (resp *metadata.ProcessInstance, err error)
-	UpdateProcessInstance(ctx context.Context, h http.Header, instanceID int64, instance metadata.ProcessInstance) (resp *metadata.ProcessInstance, err error)
-	ListProcessInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, serviceInstanceID int64, hostID int64, processTemplateID int64) (resp *metadata.MultipleProcessInstance, err error)
-	DeleteProcessInstance(ctx context.Context, h http.Header, processInstanceID int64) error
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {
