@@ -186,6 +186,7 @@ supervisorctl -c ${BKCE}/etc/supervisor-cmdb-server.conf status
   language: golang
   version: 3.2.8
   version_type: oc
+```
 
 ## 3. 常见问题解决
 ### 3.1 make 时 git 命令执行报错
@@ -228,15 +229,15 @@ make: *** [default] Error 1
 
 解决办法：
 
-1. 方法一: 切换到python2环境后重新编译: 通过 virtualenv
+- 方法一: 切换到python2环境后重新编译: 通过 virtualenv
 
 ```
 mkvirtualenv bk-cmdb -p /usr/local/bin/python2
 ```
 
-2. 方法二: 切换到python2环境后重新编译: 直接修改python路径，比如改成 `/usr/local/bin/python2`
+- 方法二: 切换到python2环境后重新编译: 直接修改python路径，比如改成 `/usr/local/bin/python2`
 
-3. 方法三: 如果不需要生成dockerfile文件，可以将上述三行代码删除了，再重新编译
+- 方法三: 如果不需要生成dockerfile文件，可以将上述三行代码删除了，再重新编译
 
 
 
