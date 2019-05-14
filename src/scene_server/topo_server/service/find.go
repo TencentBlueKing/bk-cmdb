@@ -37,193 +37,6 @@ type Query struct {
 	QueryString string `json:"query_string"`
 }
 
-const (
-	CMDBINDEX = "cmdb"
-	INDICES   = "indices"
-
-	TypeAggName  = "type_agg"
-	TypeAggField = "_type"
-
-	BkObjIdAggName  = "bk_obj_id_agg"
-	BkObjIdAggField = "bk_obj_id.keyword"
-)
-
-var (
-	testData = []SearchResult{
-		{
-			Source: map[string]interface{}{
-				"bk_classification_id": "test",
-				"bk_ispaused":          false,
-				"bk_obj_icon":          "icon-cc-default",
-				"bk_obj_id":            "test",
-				"bk_obj_name":          "test",
-				"bk_supplier_account":  "0",
-				"create_time":          "2019-03-06T09:42:55.540000",
-				"creator":              "",
-				"description":          "",
-				"id":                   16,
-				"ispre":                false,
-				"last_time":            "2019-03-06T09:42:55.540000",
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": "2",
-					},
-				},
-				"modifier": "",
-				"position": "",
-			},
-			Highlight: map[string][]string{
-				"bk_classification_id": {
-					"<em>test</em>",
-				},
-				"bk_classification_id.keyword": {
-					"<em>test</em>",
-				},
-				"bk_obj_id": {
-					"<em>test</em>",
-				},
-				"bk_obj_id.keyword": {
-					"<em>test</em>",
-				},
-				"bk_obj_name": {
-					"<em>test</em>",
-				},
-				"bk_obj_name.keyword": {
-					"<em>test</em>",
-				},
-			},
-			Type:  "model",
-			Score: 1.3420606,
-		},
-		{
-			Source: map[string]interface{}{
-				"bk_classification_id": "test",
-				"bk_ispaused":          false,
-				"bk_obj_icon":          "icon-cc-default",
-				"bk_obj_id":            "test2",
-				"bk_obj_name":          "test2",
-				"bk_supplier_account":  "0",
-				"create_time":          "2019-03-13T12:23:06.539000",
-				"creator":              "",
-				"description":          "",
-				"id":                   17,
-				"ispre":                false,
-				"last_time":            "2019-03-13T12:23:06.539000",
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": "2",
-					},
-				},
-				"modifier": "",
-				"position": "",
-			},
-			Highlight: map[string][]string{
-				"bk_classification_id": {
-					"<em>test</em>",
-				},
-				"bk_classification_id.keyword": {
-					"<em>test</em>",
-				},
-			},
-			Type:  "model",
-			Score: 1.3378919,
-		},
-		{
-			Source: map[string]interface{}{
-				"bk_inst_id":          5,
-				"bk_inst_name":        "1",
-				"bk_obj_id":           "test",
-				"bk_supplier_account": "0",
-				"jw_test_1":           "1",
-				"jw_test_2":           12,
-				"jw_test_3":           "2019-03-06",
-				"jw_test_4":           1,
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": "2",
-					},
-				},
-			},
-			Highlight: map[string][]string{
-				"bk_obj_id": {
-					"<em>test</em>",
-				},
-				"bk_obj_id.keyword": {
-					"<em>test</em>",
-				},
-			},
-			Type:  "object",
-			Score: 0.9642885,
-		},
-		{
-			Source: map[string]interface{}{
-				"bk_classification_id": "test",
-				"bk_ispaused":          false,
-				"bk_obj_icon":          "icon-cc-default",
-				"bk_obj_id":            "ljp_test",
-				"bk_obj_name":          "ljp测试",
-				"bk_supplier_account":  "0",
-				"create_time":          "2019-03-15T03:18:36.141000",
-				"creator":              "cc_system",
-				"description":          "",
-				"id":                   18,
-				"ispre":                false,
-				"last_time":            "2019-03-15T03:18:36.141000",
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": "2",
-					},
-				},
-				"modifier": "",
-				"position": "",
-			},
-			Highlight: map[string][]string{
-				"bk_classification_id": {
-					"<em>test</em>",
-				},
-				"bk_classification_id.keyword": {
-					"<em>test</em>",
-				},
-			},
-			Type:  "model",
-			Score: 0.8293917,
-		},
-		{
-			Source: map[string]interface{}{
-				"bk_classification_id": "test",
-				"bk_ispaused":          false,
-				"bk_obj_icon":          "icon-cc-mongodb",
-				"bk_obj_id":            "test_search",
-				"bk_obj_name":          "测试搜索a",
-				"bk_supplier_account":  "0",
-				"create_time":          "2019-03-05T03:32:43.407000",
-				"creator":              "",
-				"description":          "",
-				"id":                   14,
-				"ispre":                false,
-				"last_time":            "2019-04-25T08:41:10.645000",
-				"metadata": map[string]interface{}{
-					"label": map[string]interface{}{
-						"bk_biz_id": "2",
-					},
-				},
-				"modifier": "admin",
-				"position": "",
-			},
-			Highlight: map[string][]string{
-				"bk_classification_id": {
-					"<em>test</em>",
-				},
-				"bk_classification_id.keyword": {
-					"<em>test</em>",
-				},
-			},
-			Type:  "model",
-			Score: 0.77660173,
-		},
-	}
-)
-
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	if data.Exists("query_string") {
 		query := new(Query)
@@ -235,7 +48,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		result, err := s.Es.CmdbSearch(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
+		result, err := s.Es.CmdbSearch(query.QueryString, query.Paging.Start, query.Paging.Limit)
 		if err != nil {
 			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
@@ -248,7 +61,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		// set hits
 		for _, hit := range result.Hits.Hits {
 			// ignore not correct cmdb table data
-			if hit.Index == CMDBINDEX && hit.Id != INDICES {
+			if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
 				sr := SearchResult{}
 				sr.setHit(hit)
 				searchResults.Hits = append(searchResults.Hits, sr)
@@ -256,7 +69,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		}
 
 		// set aggregations
-		bkObjIdAggs, found := result.Aggregations.Terms(BkObjIdAggName)
+		bkObjIdAggs, found := result.Aggregations.Terms(common.BkObjIdAggName)
 		if found == true && bkObjIdAggs != nil {
 			for _, bucket := range bkObjIdAggs.Buckets {
 				agg := Aggregation{}
@@ -265,7 +78,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			}
 		}
 
-		typeAggs, found := result.Aggregations.Terms(TypeAggName)
+		typeAggs, found := result.Aggregations.Terms(common.TypeAggName)
 		if found == true && typeAggs != nil {
 			for _, bucket := range typeAggs.Buckets {
 				agg := Aggregation{}

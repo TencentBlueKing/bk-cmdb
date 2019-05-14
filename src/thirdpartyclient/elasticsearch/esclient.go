@@ -1,8 +1,8 @@
 package elasticsearch
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/topo_server/service"
 	"context"
 	"github.com/olivere/elastic"
 )
@@ -35,7 +35,7 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) CmdbSearch(query, index string, from, size int) (*elastic.SearchResult, error) {
+func (es *EsSrv) CmdbSearch(query string, from, size int) (*elastic.SearchResult, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
@@ -53,14 +53,14 @@ func (es *EsSrv) CmdbSearch(query, index string, from, size int) (*elastic.Searc
 	searchSource.Size(size)
 
 	// search for aggregations value count
-	bkObjIdAgg := elastic.NewTermsAggregation().Field(service.BkObjIdAggField)
-	typeAgg := elastic.NewTermsAggregation().Field(service.TypeAggField)
+	bkObjIdAgg := elastic.NewTermsAggregation().Field(common.BkObjIdAggField)
+	typeAgg := elastic.NewTermsAggregation().Field(common.TypeAggField)
 	searchResult, err := es.Client.Search().
-		Index(index).SearchSource(searchSource). // search in index like "cmdb" and paging
-		Query(allQuery).Highlight(highlight).    // specify the query and highlight
-		Pretty(true).                            // pretty print request and response JSON
+		Index(common.CMDBINDEX).SearchSource(searchSource). // search in index like "cmdb" and paging
+		Query(allQuery).Highlight(highlight).               // specify the query and highlight
+		Pretty(true).                                       // pretty print request and response JSON
 		// search result with aggregations
-		Aggregation(service.BkObjIdAggName, bkObjIdAgg).Aggregation(service.TypeAggName, typeAgg).
+		Aggregation(common.BkObjIdAggName, bkObjIdAgg).Aggregation(common.TypeAggName, typeAgg).
 		Do(ctx) // execute
 	if err != nil {
 		// Handle error
