@@ -14,31 +14,31 @@ package metadata
 import "time"
 
 type Process struct {
-	ProcNum           int64     `json:"proc_num"`
-	StopCmd           string    `json:"stop_cmd"`
-	RestartCmd        string    `json:"restart_cmd"`
-	FaceStopCmd       string    `json:"face_stop_cmd"`
-	BkProcessID       int       `json:"bk_process_id"`
-	BkFuncName        string    `json:"bk_func_name"`
-	BkSupplierAccount string    `json:"bk_supplier_account"`
-	WorkPath          string    `json:"work_path"`
-	BindIP            string    `json:"bind_ip"`
-	Priority          int64     `json:"priority"`
-	ReloadCmd         string    `json:"reload_cmd"`
-	LastTime          time.Time `json:"last_time"`
-	BkProcessName     string    `json:"bk_process_name"`
-	Port              string    `json:"port"`
-	PidFile           string    `json:"pid_file"`
-	AutoStart         bool      `json:"auto_start"`
-	AutoTimeGap       int64     `json:"auto_time_gap"`
-	CreateTime        time.Time `json:"create_time"`
-	BkBizID           int64     `json:"bk_biz_id"`
-	StartCmd          string    `json:"start_cmd"`
-	BkFuncID          string    `json:"bk_func_id"`
-	User              string    `json:"user"`
-	Timeout           int64     `json:"timeout"`
-	Protocol          string    `json:"protocol"`
-	Description       string    `json:"description"`
+	ProcNum         int64     `json:"proc_num"`
+	StopCmd         string    `json:"stop_cmd"`
+	RestartCmd      string    `json:"restart_cmd"`
+	FaceStopCmd     string    `json:"face_stop_cmd"`
+	ProcessID       int       `json:"bk_process_id"`
+	FuncName        string    `json:"bk_func_name"`
+	SupplierAccount string    `json:"bk_supplier_account"`
+	WorkPath        string    `json:"work_path"`
+	BindIP          string    `json:"bind_ip"`
+	Priority        int64     `json:"priority"`
+	ReloadCmd       string    `json:"reload_cmd"`
+	LastTime        time.Time `json:"last_time"`
+	ProcessName     string    `json:"bk_process_name"`
+	Port            string    `json:"port"`
+	PidFile         string    `json:"pid_file"`
+	AutoStart       bool      `json:"auto_start"`
+	AutoTimeGap     int64     `json:"auto_time_gap"`
+	CreateTime      time.Time `json:"create_time"`
+	BizID           int64     `json:"bk_biz_id"`
+	StartCmd        string    `json:"start_cmd"`
+	FuncID          string    `json:"bk_func_id"`
+	User            string    `json:"user"`
+	Timeout         int64     `json:"timeout"`
+	Protocol        string    `json:"protocol"`
+	Description     string    `json:"description"`
 }
 
 type ServiceCategory struct {
