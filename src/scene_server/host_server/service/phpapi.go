@@ -1014,8 +1014,7 @@ func (s *Service) CreatePlat(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	ownerId := util.GetOwnerID(req.Request.Header)
-	input[common.BKOwnerIDField] = ownerId
+	input[common.BKOwnerIDField] = srvData.ownerID
 
 	valid := validator.NewValidMap(util.GetOwnerID(req.Request.Header), common.BKInnerObjIDPlat, srvData.header, s.Engine)
 	validErr := valid.ValidMap(input, common.ValidCreate, 0)

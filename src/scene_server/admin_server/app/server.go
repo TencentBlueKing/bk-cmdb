@@ -87,7 +87,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return err
 		}
 
-		if process.Config.AuthCenter.Enable {
+		if process.Config.AuthCenter.EnableSync {
 			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
@@ -96,6 +96,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			}
 			authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
 			authSynchronizer.Run()
+		} else {
+			blog.Infof("auth sync disabled")
 		}
 		break
 	}

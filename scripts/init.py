@@ -90,24 +90,28 @@ mechanism = SCRAM-SHA-1
 
 [snap-redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [discover-redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [netcollect-redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -132,6 +136,7 @@ mechanism = SCRAM-SHA-1
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -154,6 +159,7 @@ pwd = L%blKas
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -186,6 +192,7 @@ mechanism = SCRAM-SHA-1
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -235,6 +242,7 @@ address = $auth_address
 appCode = $auth_app_code
 appSecret = $auth_app_secret
 enable = $auth_enabled
+enableSync = false
     '''
 
     template = FileTemplate(migrate_file_template_str)
@@ -256,6 +264,7 @@ mechanism = SCRAM-SHA-1
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -283,6 +292,7 @@ mechanism = SCRAM-SHA-1
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -300,6 +310,7 @@ maxIDleConns = 1000
     proc_file_template_str = '''
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 port = $redis_port
@@ -324,6 +335,7 @@ mechanism = SCRAM-SHA-1
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0
@@ -350,6 +362,7 @@ maxIDleConns = 1000
 
 [redis]
 host = $redis_host
+port = $redis_port
 usr = $redis_user
 pwd = $redis_pass
 database = 0

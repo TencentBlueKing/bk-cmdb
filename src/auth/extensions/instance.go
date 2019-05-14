@@ -108,8 +108,9 @@ func (am *AuthManager) extractBusinessIDFromInstances(instances ...InstanceSimpl
 		// we should ignore metadata.LabelBusinessID field not found error
 		businessIDs = append(businessIDs, instance.BizID)
 	}
+	businessIDs = util.IntArrayUnique(businessIDs)
 	if len(businessIDs) > 1 {
-		blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances")
+		blog.V(5).Infof("extractBusinessIDFromInstances failed, get multiple business ID from instances, businessIDs: %+v", businessIDs)
 		return 0, fmt.Errorf("get multiple business ID from objects")
 	}
 	return businessIDs[0], nil
@@ -319,16 +320,16 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 	return am.UpdateRegisteredInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header http.Header, ids ...int64) error {
+func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
 	if am.Enabled() == false {
 		return nil
 	}
 
-	instances, err := am.collectClassificationsByRawIDs(ctx, header, ids...)
+	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister instances failed, get instance by id failed, err: %+v", err)
 	}
-	return am.DeregisterClassification(ctx, header, instances...)
+	return am.DeregisterInstances(ctx, header, instances...)
 }
 
 func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {

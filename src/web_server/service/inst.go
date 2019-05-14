@@ -120,6 +120,13 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
+	if err != nil {
+		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v", objID, err)
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
 	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
