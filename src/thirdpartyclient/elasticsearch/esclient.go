@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/topo_server/service"
 	"context"
 	"github.com/olivere/elastic"
 )
@@ -34,24 +35,33 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) Search(query, index string, from, size int) ([]*elastic.SearchHit, error) {
+func (es *EsSrv) CmdbSearch(query, index string, from, size int) (*elastic.SearchResult, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
 	// Search with a term query
 	allQuery := elastic.NewQueryStringQuery(query)
+
+	// search highlight
 	highlight := elastic.NewHighlight()
 	highlight.Field("*")
 	highlight.RequireFieldMatch(false)
 
+	// search for paging
 	searchSource := elastic.NewSearchSource()
 	searchSource.From(from)
 	searchSource.Size(size)
+
+	// search for aggregations value count
+	bkObjIdAgg := elastic.NewTermsAggregation().Field(service.BkObjIdAggField)
+	typeAgg := elastic.NewTermsAggregation().Field(service.TypeAggField)
 	searchResult, err := es.Client.Search().
 		Index(index).SearchSource(searchSource). // search in index like "cmdb" and paging
 		Query(allQuery).Highlight(highlight).    // specify the query and highlight
 		Pretty(true).                            // pretty print request and response JSON
-		Do(ctx)                                  // execute
+		// search result with aggregations
+		Aggregation(service.BkObjIdAggName, bkObjIdAgg).Aggregation(service.TypeAggName, typeAgg).
+		Do(ctx) // execute
 	if err != nil {
 		// Handle error
 		blog.Errorf("es search [%s] error, err: %v", query, err)
@@ -60,7 +70,7 @@ func (es *EsSrv) Search(query, index string, from, size int) ([]*elastic.SearchH
 
 	// searchResult is of type SearchResult and returns hits, suggestions,
 	// and all kinds of other information from Elasticsearch.
-	blog.Debug("Query took %d milliseconds\n", searchResult.TookInMillis)
-	blog.Debug("Query hits %s\n", searchResult.Hits.Hits)
-	return searchResult.Hits.Hits, nil
+	blog.Debug("Query cmdb took %d milliseconds\n", searchResult.TookInMillis)
+	blog.Debug("Query cmdb hits %s\n", searchResult.Hits.Hits)
+	return searchResult, nil
 }

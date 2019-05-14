@@ -16,6 +16,17 @@ type SearchResult struct {
 	Score     float64                `json:"score"`
 }
 
+type Aggregation struct {
+	Key   interface{} `json:"key"`
+	Count int64       `json:"count"`
+}
+
+type SearchResults struct {
+	Total        int64          `json:"total"`
+	Aggregations []Aggregation  `json:"aggregations"`
+	Hits         []SearchResult `json:"hits,omitempty"`
+}
+
 type Page struct {
 	Start int `json:"start"`
 	Limit int `json:"limit"`
@@ -29,6 +40,12 @@ type Query struct {
 const (
 	CMDBINDEX = "cmdb"
 	INDICES   = "indices"
+
+	TypeAggName  = "type_agg"
+	TypeAggField = "_type"
+
+	BkObjIdAggName  = "bk_obj_id_agg"
+	BkObjIdAggField = "bk_obj_id.keyword"
 )
 
 var (
@@ -218,29 +235,60 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		result, err := s.Es.Search(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
+		result, err := s.Es.CmdbSearch(query.QueryString, CMDBINDEX, query.Paging.Start, query.Paging.Limit)
 		if err != nil {
 			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
 		}
 
-		// result is list
-		searchResults := make([]SearchResult, 0)
-		for _, hit := range result {
+		// result is hits and aggregations
+		searchResults := new(SearchResults)
+
+		searchResults.Total = result.Hits.TotalHits
+		// set hits
+		for _, hit := range result.Hits.Hits {
 			// ignore not correct cmdb table data
 			if hit.Index == CMDBINDEX && hit.Id != INDICES {
 				sr := SearchResult{}
 				sr.setHit(hit)
-				searchResults = append(searchResults, sr)
+				searchResults.Hits = append(searchResults.Hits, sr)
 			}
 		}
 
+		// set aggregations
+		bkObjIdAggs, found := result.Aggregations.Terms(BkObjIdAggName)
+		if found == true && bkObjIdAggs != nil {
+			for _, bucket := range bkObjIdAggs.Buckets {
+				agg := Aggregation{}
+				agg.setAgg(bucket)
+				searchResults.Aggregations = append(searchResults.Aggregations, agg)
+			}
+		}
+
+		typeAggs, found := result.Aggregations.Terms(TypeAggName)
+		if found == true && typeAggs != nil {
+			for _, bucket := range typeAggs.Buckets {
+				agg := Aggregation{}
+				agg.setAgg(bucket)
+				searchResults.Aggregations = append(searchResults.Aggregations, agg)
+			}
+		}
 		// test data
 		//searchResults := testData
 		return searchResults, nil
 	}
 
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+}
+
+func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
+	if bucket.Key == common.BKTableNameBaseHost {
+		agg.Key = "host"
+	} else {
+		agg.Key = bucket.Key
+	}
+
+	agg.Count = bucket.DocCount
 }
 
 func (sr *SearchResult) setHit(searchHit *elastic.SearchHit) {
