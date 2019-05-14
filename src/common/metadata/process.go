@@ -165,3 +165,6 @@ type ServiceInstanceRelations struct {
 	HostID          int64  `field:"host_id" json:"host_id" bson:"host_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
+
+type ProcessInstance struct {
+}
