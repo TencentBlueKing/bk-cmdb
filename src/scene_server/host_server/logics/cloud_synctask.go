@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/redis.v5"
 	"net/http"
@@ -25,7 +26,7 @@ import (
 	"time"
 
 	com "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
+	cErrors "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/regions"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -39,7 +40,8 @@ import (
 )
 
 var (
-	taskChan = make(map[int64]chan bool)
+	taskChan            = make(map[int64]chan bool)
+	checkDuration int64 = 5
 )
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
@@ -70,7 +72,7 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 		if err := lgc.SyncTaskDBManager(ctx); err != nil {
 			blog.Errorf("check cloud sync task from db fail, error: %v, rid: %s", err, lgc.rid)
 		}
-		timer := time.NewTicker(5 * time.Minute)
+		timer := time.NewTicker(time.Duration(checkDuration) * time.Minute)
 		for range timer.C {
 			lgc.CompareRedisWithDB(ctx)
 			lgc.CheckSyncAlive(ctx)
@@ -78,9 +80,14 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 		}
 	}()
 	go lgc.SyncTaskRedisStartManager(ctx)
+	go lgc.ListenRedisSubscribe(ctx)
 }
 
 func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
+	// master 才可以往redis写数据，避免写入重复数据
+	if ok := lgc.Engine.ServiceManageInterface.IsMaster(); !ok {
+		return errors.New("not master")
+	}
 	opt := make(map[string]interface{}, 0)
 	resp, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
 	if err != nil {
@@ -168,6 +175,34 @@ func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interf
 	return nil
 }
 
+// ListenRedisSubscribe subscribe redis channel to stop the started sync task
+func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
+	var mutex = &sync.Mutex{}
+
+	for {
+		pub, err := lgc.cache.PSubscribe("stop")
+		if err != nil {
+			blog.Errorf("redis subscribe fail, err: %v", err)
+			continue
+		}
+		receive, err := pub.Receive()
+		if err != nil {
+			blog.Errorf("redis subscribe get value fail, err: %v", err)
+			continue
+		}
+		taskID, ok := receive.(int64)
+		if !ok {
+			blog.Errorf("interface convert to int64 fail, err: %v", ok)
+			continue
+		}
+		if _, ok := taskChan[taskID]; ok {
+			mutex.Lock()
+			taskChan[taskID] <- true
+			mutex.Unlock()
+		}
+	}
+}
+
 func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 	var mutex = &sync.Mutex{}
 	blog.Info("redis start")
@@ -191,9 +226,13 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 		taskID := pendingStartItem.TaskID
 
 		if pendingStartItem.Update {
-			mutex.Lock()
-			taskChan[taskID] <- true
-			mutex.Unlock()
+			if _, ok := taskChan[taskID]; ok {
+				mutex.Lock()
+				taskChan[taskID] <- true
+				mutex.Unlock()
+			} else {
+				lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
+			}
 		}
 		blog.Info("stop to start")
 
@@ -222,6 +261,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 				if taskID == intStopItem {
 					if err := lgc.cache.LRem(common.RedisCloudSyncInstancePendingStop, 1, stopTaskID).Err(); err != nil {
 						blog.Errorf("remove stop task item fail, taskInfo: %s, error: %v, rid: %s", item, err, lgc.rid)
+						continue
 					}
 
 					lgc.deleteStartedTaskRedis(ctx, taskID)
@@ -334,13 +374,8 @@ func (lgc *Logics) CheckSyncAlive(ctx context.Context) {
 	blog.V(5).Info("needStartAgain: %v", needStartAgain)
 
 	for _, item := range needStartAgain {
-		info := meta.CloudSyncRedisPendingStop{TaskID: item.TaskID}
-		stopTaskInfo, err := json.Marshal(info)
-		if err != nil {
-			blog.Errorf("stop task add redis failed taskID: %v, rid: %s", item.TaskID, lgc.rid)
-		}
-		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, stopTaskInfo).Err(); err != nil {
-			blog.Errorf("add cloud task redis item fail, info: %v, err: %v, rid: %s", info, err, lgc.rid)
+		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, item.TaskID).Err(); err != nil {
+			blog.Errorf("add cloud task redis item fail, taskID: %v, err: %v, rid: %s", item.TaskID, err, lgc.rid)
 		}
 
 		startInfo := meta.CloudSyncRedisPendingStart{TaskID: item.TaskID, TaskItemInfo: item.TaskItemInfo, OwnerID: item.OwnerID, NewHeader: item.NewHeader}
@@ -349,7 +384,7 @@ func (lgc *Logics) CheckSyncAlive(ctx context.Context) {
 			blog.Errorf("add redis failed taskID: %v, rid: %s", item.TaskID, lgc.rid)
 		}
 		if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, pendingStartTaskInfo).Err(); err != nil {
-			blog.Errorf("add cloud task redis item fail, info: %v, err: %v, rid: %s", info, err, lgc.rid)
+			blog.Errorf("add cloud task redis item fail, taskID: %v, err: %v, rid: %s", item.TaskID, err, lgc.rid)
 		}
 
 		lgc.deleteStartedTaskRedis(ctx, item.TaskID)
@@ -357,6 +392,11 @@ func (lgc *Logics) CheckSyncAlive(ctx context.Context) {
 }
 
 func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
+	// master 才可以往redis写数据，避免写入重复数据
+	if ok := lgc.Engine.ServiceManageInterface.IsMaster(); !ok {
+		return
+	}
+
 	blog.Info("redisDB-1")
 	header := copyHeader(ctx, lgc.header)
 	if nil == header {
@@ -409,7 +449,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 	}
 
 	shouldStartItems := make([]meta.CloudSyncRedisPendingStart, 0)
-	shouldStopItems := make([]meta.CloudSyncRedisPendingStop, 0)
+	shouldStopItems := make([]int64, 0)
 	var mutex = &sync.Mutex{}
 
 	for _, dbItem := range response.Info {
@@ -435,9 +475,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 				if dbItem.TaskID == int64Item {
 					continue
 				}
-				add := meta.CloudSyncRedisPendingStop{}
-				add.TaskID = int64Item
-				shouldStopItems = append(shouldStopItems, add)
+				shouldStopItems = append(shouldStopItems, int64Item)
 			}
 		}
 	}
@@ -480,7 +518,6 @@ func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskI
 				case "hour":
 					taskInfoItem.NextTrigger = 60
 				case "minute":
-					blog.Info("minute")
 					taskInfoItem.NextTrigger = 5
 				}
 			case <-taskChan[taskInfoItem.Args.TaskID]:
@@ -1002,7 +1039,7 @@ func (lgc *Logics) ObtainCloudHosts(ctx context.Context, secretID string, secret
 		instRequest := cvm.NewDescribeInstancesRequest()
 		response, err := client.DescribeInstances(instRequest)
 
-		if _, ok := err.(*errors.TencentCloudSDKError); ok {
+		if _, ok := err.(*cErrors.TencentCloudSDKError); ok {
 			fmt.Printf("An API error has returned: %s", err)
 			return nil, err
 		}
