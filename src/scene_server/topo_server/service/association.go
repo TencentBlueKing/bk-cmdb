@@ -27,24 +27,10 @@ import (
 func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (output interface{}, retErr error) {
 	tx, err := s.Txn.StartTransaction(context.Background())
 	if err != nil {
+		blog.Errorf("create mainline object failed, start transaction failed, err: %v", err)
 		return nil, params.Err.Error(common.CCErrObjectDBOpErrno)
 	}
 	params.Header = tx.TxnInfo().IntoHeader(params.Header)
-	defer func() {
-		if retErr != nil {
-			if err != nil {
-				if txnErr := tx.Abort(context.Background()); txnErr != nil {
-					blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v", tx.TxnInfo().TxnID, txnErr)
-					return
-				}
-			}
-
-			if txnErr := tx.Commit(context.Background()); txnErr != nil {
-				blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v", tx.TxnInfo().TxnID, txnErr)
-				return
-			}
-		}
-	}()
 
 	mainLineAssociation := &metadata.Association{}
 	_, err = mainLineAssociation.Parse(data)
@@ -56,6 +42,13 @@ func (s *Service) CreateMainLineObject(params types.ContextParams, pathParams, q
 	ret, err := s.Core.AssociationOperation().CreateMainlineAssociation(params, mainLineAssociation)
 	if err != nil {
 		blog.Errorf("create mainline object: %s failed, err: %v", mainLineAssociation.ObjectID, err)
+		if txnErr := tx.Abort(context.Background()); txnErr != nil {
+			blog.Errorf("create mainline object, but abort transaction[id: %s] failed; %v", tx.TxnInfo().TxnID, txnErr)
+		}
+		return nil, err
+	}
+	if txnErr := tx.Commit(context.Background()); txnErr != nil {
+		blog.Errorf("create mainline object, but commit transaction[id: %s] failed, err: %v", tx.TxnInfo().TxnID, txnErr)
 		return nil, params.Err.Error(common.CCErrTopoMainlineCreatFailed)
 	}
 

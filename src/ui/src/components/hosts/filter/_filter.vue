@@ -441,7 +441,7 @@
                 this.$validator.validate('collectionName').then(result => {
                     if (result) {
                         this.createFavorites({
-                            params: this.getCollectionParams(),
+                            params: this.$injectMetadata(this.getCollectionParams()),
                             config: {
                                 requestId: 'create_collection'
                             }

@@ -263,6 +263,21 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
 
+	instID, err := item.GetInstID()
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrTopoInstCreateFailed)
+	}
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	_, insts, err := c.FindInst(params, obj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, inst := range insts {
+		return inst, nil
+	}
+
 	return item, nil
 }
 

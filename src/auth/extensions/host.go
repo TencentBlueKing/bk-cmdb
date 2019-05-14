@@ -551,3 +551,13 @@ func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, 
 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
+
+func (am *AuthManager) AuthorizeAddToResourcePool(ctx context.Context, header http.Header) error {
+	resource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Type:   meta.HostInstance,
+			Action: meta.AddHostToResourcePool,
+		},
+	}
+	return am.authorize(ctx, header, 0, resource)
+}

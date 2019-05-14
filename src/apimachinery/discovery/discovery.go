@@ -35,7 +35,6 @@ type DiscoveryInterface interface {
 	ProcServer() Interface
 	TopoServer() Interface
 	DataCollect() Interface
-	AuditCtrl() Interface
 	HostCtrl() Interface
 	ObjectCtrl() Interface
 	ProcCtrl() Interface
@@ -101,10 +100,6 @@ func (d *discover) TopoServer() Interface {
 
 func (d *discover) DataCollect() Interface {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
-}
-
-func (d *discover) AuditCtrl() Interface {
-	return d.servers[types.CC_MODULE_AUDITCONTROLLER]
 }
 
 func (d *discover) HostCtrl() Interface {

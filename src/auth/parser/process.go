@@ -45,6 +45,7 @@ var (
 	unboundModuleToProcessRegexp   = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/[^\s/]+/?$`)
 	findboundModuleToProcessRegexp = regexp.MustCompile(`^/api/v3/proc/module/[^\s/]+/[0-9]+/[0-9]+/?$`)
 	findProcessInstanceRegexp      = regexp.MustCompile(`^/api/v3/proc/inst/[^\s/]+/[0-9]+/?$`)
+	freshProcHostInstPattern       = "/api/v3/proc/process/refresh/hostinstnum"
 )
 
 func (ps *parseStream) process() *parseStream {
@@ -321,6 +322,19 @@ func (ps *parseStream) process() *parseStream {
 					Type:   meta.Process,
 					Action: meta.FindMany,
 					Name:   string(meta.Process),
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(freshProcHostInstPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.Process,
+					Action: meta.SkipAction,
 				},
 			},
 		}
