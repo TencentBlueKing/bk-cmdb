@@ -38,13 +38,13 @@ const (
 
 // ParseConfigFromKV returns a new config
 func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, error) {
+	var err error
 	var cfg AuthConfig
 	enable, exist := configmap[prefix+".enable"]
 	if !exist {
 		return AuthConfig{}, nil
 	}
 
-	var err error
 	cfg.Enable, err = strconv.ParseBool(enable)
 	if err != nil {
 		return AuthConfig{}, errors.New(`invalid auth "enable" value`)
@@ -52,6 +52,14 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 
 	if !cfg.Enable {
 		return AuthConfig{}, nil
+	}
+
+	enableSync, exist := configmap[prefix+".enableSync"]
+	if exist && len(enableSync) > 0 {
+		cfg.EnableSync, err = strconv.ParseBool(enableSync)
+		if err != nil {
+			return AuthConfig{}, errors.New(`invalid auth "enable" value`)
+		}
 	}
 
 	address, exist := configmap[prefix+".address"]
@@ -238,7 +246,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
 			return nil, err
 		}
-		
+
 		// modify special resource
 		if rsc.Type == meta.MainlineModel || rsc.Type == meta.ModelTopology {
 			blog.Warnf("force convert scope type to global for resource type: %s", rsc.Type)
@@ -481,7 +489,7 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 
 	var authorizedAudits []AuthorizedResource
 	var err error
-	if !ac.Config.Enable {
+	if ac.Config.Enable {
 		authorizedAudits, err = ac.authClient.GetAuthorizedResources(ctx, info)
 		if err != nil {
 			return nil, err

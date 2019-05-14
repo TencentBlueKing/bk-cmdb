@@ -49,6 +49,7 @@ const getters = {
         }
         if (DYNAMIC_BUSINESS_MODE.includes(auth)) {
             Object.assign(meta, state.parentMeta)
+            Object.assign(meta, state.businessMeta)
         }
         return meta
     }

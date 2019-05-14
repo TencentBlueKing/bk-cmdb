@@ -9,16 +9,25 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package logics
+package x19_04_16_03
 
 import (
-	"configcenter/src/common/backbone"
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
-// Logics framwork need
-type Logics struct {
-	*backbone.Engine
-	Instance dal.RDB
+func init() {
+	upgrader.RegistUpgrader("x19.04.16.03", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = updateAttributeCreateTime(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.04.16.03] fixAssociationTypeName error  %s", err.Error())
+		return err
+	}
+	return nil
 }

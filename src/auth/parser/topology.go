@@ -20,6 +20,8 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -903,8 +905,14 @@ func (ps *parseStream) objectInstance() *parseStream {
 	}
 
 	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil && err != metadata.LabelKeyNotExistError {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstance,
 					Action: meta.FindMany,
@@ -951,8 +959,13 @@ func (ps *parseStream) object() *parseStream {
 
 	// create common object batch operation.
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("import object, but parse biz id failed, err: %v", err)
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
 					Action: meta.CreateMany,
