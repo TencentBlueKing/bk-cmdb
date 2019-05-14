@@ -51,16 +51,16 @@
 1. 阅读 [wiki](https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) 或者寻求帮助
 2. 常见 [FAQ](https://github.com/Tencent/bk-cmdb/wiki/FAQ)
 3. 了解蓝鲸社区相关信息：[蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
-4. 联系我们，bk-cmdb技术交流QQ群(305496802), [扫码入群戳这里](docs/resource/img/qq.png)。
+4. 联系我们，bk-cmdb技术交流QQ群(305496802), 扫码入群戳[这里](docs/resource/img/qq.png)。
 
 
 ## Contributing
 关于 bk-cmdb 分支管理、issue 以及 pr 规范，请阅读 [bk-cmdb Contributing Guide](docs/CONTRIBUTING.md)。  
 [腾讯开源激励计划](https://opensource.tencent.com/contribution) 鼓励开发者的参与和贡献，期待你的加入。
 
-合作伙伴：
+**合作伙伴：**
 
-![](docs/resource/img/jiawei-logo.png)    ![](docs/resource/img/youole-logo.jpg)    ![](docs/resource/img/yuanding-logo.png)
+![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![yuanding](docs/resource/img/yuanding-logo.png)
 
 ## License
 bk-cmdb 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE) 。
