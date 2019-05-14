@@ -29,8 +29,8 @@ const CCTimeTypeParseFlag = "cc_time_type"
 
 // AuditQuery search audit logs
 func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	query := &metadata.QueryInput{}
-	if err := data.MarshalJSONInto(query); nil != err {
+	query := metadata.QueryInput{}
+	if err := data.MarshalJSONInto(&query); nil != err {
 		blog.Errorf("[audit] failed to parse the input (%#v), error info is %s", data, err.Error())
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}
@@ -99,8 +99,8 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 // InstanceAuditQuery search instance audit logs
 // current use case: get host and process related audit log in cmdb web
 func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	query := &metadata.QueryInput{}
-	if err := data.MarshalJSONInto(query); nil != err {
+	query := metadata.QueryInput{}
+	if err := data.MarshalJSONInto(&query); nil != err {
 		blog.Errorf("InstanceAuditQuery failed, failed to parse the input (%#v), error info is %s", data, err.Error())
 		return nil, params.Err.New(common.CCErrCommJSONUnmarshalFailed, err.Error())
 	}

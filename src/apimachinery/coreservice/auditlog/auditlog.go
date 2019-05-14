@@ -10,27 +10,25 @@
  * limitations under the License.
  */
 
-package metadata
+package auditlog
 
 import (
-	"configcenter/src/common/auditoplog"
+	"context"
+	"net/http"
+
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/metadata"
 )
 
-type SaveAuditLogParams struct {
-	ID      int64                  `json:"inst_id"`
-	Model   string                 `json:"op_target"`
-	Content interface{}            `json:"content"`
-	ExtKey  string                 `json:"ext"`
-	OpDesc  string                 `json:"op_desc"`
-	OpType  auditoplog.AuditOpType `json:"op_type"`
-	BizID   int64                  `json:"biz_id"`
+type AuditClientInterface interface {
+	SaveAuditLog(ctx context.Context, h http.Header, logs ...metadata.SaveAuditLogParams) (*metadata.Response, error)
+	SearchAuditLog(ctx context.Context, h http.Header, param metadata.QueryInput) (*metadata.AuditQueryResult, error)
 }
 
-// AuditQueryResult add single host log paramm
-type AuditQueryResult struct {
-	BaseResp `json:",inline"`
-	Data     struct {
-		Count int            `json:"count"`
-		Info  []OperationLog `json:"info"`
-	} `json:"data"`
+func NewAuditClientInterface(client rest.ClientInterface) AuditClientInterface {
+	return &auditlog{client: client}
+}
+
+type auditlog struct {
+	client rest.ClientInterface
 }

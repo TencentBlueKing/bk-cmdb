@@ -29,10 +29,10 @@ import (
 
 func (am *AuthManager) CollectAuditCategoryByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]AuditCategorySimplify, error) {
 
-	query := &metadata.QueryInput{
+	query := metadata.QueryInput{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
-	response, err := am.clientSet.AuditController().GetAuditLog(context.Background(), header, query)
+	response, err := am.clientSet.CoreService().Audit().SearchAuditLog(context.Background(), header, query)
 	if nil != err {
 		blog.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
 		return nil, fmt.Errorf("collect audit category by business %d failed, get audit log failed, err: %+v", businessID, err)
@@ -87,9 +87,9 @@ func (am *AuthManager) MakeResourcesByAuditCategories(ctx context.Context, heade
 		// instance
 		resource := meta.ResourceAttribute{
 			Basic: meta.Basic{
-				Action:     action,
-				Type:       meta.AuditLog,
-				Name:       category.BKOpTargetField,
+				Action:       action,
+				Type:         meta.AuditLog,
+				Name:         category.BKOpTargetField,
 				InstanceIDEx: category.BKOpTargetField,
 			},
 			SupplierAccount: util.GetOwnerID(header),
@@ -214,8 +214,8 @@ func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Heade
 
 	resource := meta.ResourceAttribute{
 		Basic: meta.Basic{
-			Action:     meta.Find,
-			Type:       meta.AuditLog,
+			Action: meta.Find,
+			Type:   meta.AuditLog,
 		},
 		SupplierAccount: util.GetOwnerID(header),
 		BusinessID:      businessID,
