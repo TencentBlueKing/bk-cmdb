@@ -47,7 +47,7 @@
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
 * [API使用说明](docs/apidoc/readme.md)
-* [如何用开源CMDB替换社区版](docs/overview/upgrade-from-ce.md)
+* [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
 
 ## Version plan
 * [版本迭代](docs/VERSION.md)
