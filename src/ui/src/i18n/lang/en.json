@@ -152,7 +152,9 @@
         "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
         "后台管理标题": "Back-stage Management",
-        "基础资源": "Basic Resource"
+        "基础资源": "Basic Resource",
+        "云资源发现": "Cloud resource discovery",
+        "资源确认": "Resource confirm"
     },
     "Index": {
         "首页": "Index",

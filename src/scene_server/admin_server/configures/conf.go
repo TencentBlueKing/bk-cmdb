@@ -136,7 +136,6 @@ func (cc *ConfCenter) writeConfs2Center(confRootPath string) error {
 	modules := make([]string, 0)
 
 	modules = append(modules, types.CC_MODULE_APISERVER)
-	modules = append(modules, types.CC_MODULE_AUDITCONTROLLER)
 	modules = append(modules, types.CC_MODULE_DATACOLLECTION)
 	modules = append(modules, types.CC_MODULE_HOST)
 	modules = append(modules, types.CC_MODULE_HOSTCONTROLLER)

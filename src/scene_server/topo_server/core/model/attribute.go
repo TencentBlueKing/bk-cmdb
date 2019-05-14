@@ -156,6 +156,15 @@ func (a *attribute) IsValid(isUpdate bool, data mapstr.MapStr) error {
 			}
 		}
 	}
+
+	if val, ok := data[metadata.AttributeFieldPlaceHoler]; ok && val != "" {
+		if placeholder, ok := val.(string); ok {
+			if err := a.FieldValid.ValidPlaceHoler(a.params, placeholder); nil != err {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -178,6 +187,10 @@ func (a *attribute) Create() error {
 
 	if !rsp.Result {
 		return err
+	}
+
+	for _, exception := range rsp.Data.Exceptions {
+		return a.params.Err.New(int(exception.Code), exception.Message)
 	}
 
 	for _, id := range rsp.Data.Created {
@@ -221,7 +234,6 @@ func (a *attribute) Update(data mapstr.MapStr) error {
 		blog.Errorf("failed to update the object attribute(%s), err: %s", a.attr.PropertyID, rsp.ErrMsg)
 		return a.params.Err.Error(common.CCErrTopoObjectAttributeUpdateFailed)
 	}
-
 	return nil
 }
 func (a *attribute) search(cond condition.Condition) ([]metadata.Attribute, error) {

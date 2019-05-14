@@ -52,14 +52,6 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	}
 	meta.Items = append(meta.Items, objCtr)
 
-	// audit controller
-	auditCtrl := metric.HealthItem{IsHealthy: true, Name: gtypes.CC_MODULE_AUDITCONTROLLER}
-	if _, err := params.Engin.CoreAPI.Healthz().HealthCheck(gtypes.CC_MODULE_AUDITCONTROLLER); err != nil {
-		auditCtrl.IsHealthy = false
-		auditCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, auditCtrl)
-
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false

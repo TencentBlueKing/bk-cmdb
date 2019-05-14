@@ -148,6 +148,11 @@ type AssociationOperation interface {
 	InstanceAssociation
 }
 
+type AuditOperation interface {
+	CreateAuditLog(ctx ContextParams, logs ...metadata.SaveAuditLogParams) error
+	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
+}
+
 // Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
@@ -156,6 +161,7 @@ type Core interface {
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
+	AuditOperation() AuditOperation
 }
 
 type core struct {
@@ -165,10 +171,11 @@ type core struct {
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
 	host            HostOperation
+	audit           AuditOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -176,6 +183,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
 		host:            host,
+		audit:           audit,
 	}
 }
 
@@ -201,4 +209,8 @@ func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
 
 func (m *core) HostOperation() HostOperation {
 	return m.host
+}
+
+func (m *core) AuditOperation() AuditOperation {
+	return m.audit
 }
