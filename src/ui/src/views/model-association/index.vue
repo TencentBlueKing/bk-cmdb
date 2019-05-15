@@ -125,7 +125,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
+            ...mapGetters(['isAdminView', 'featureTipsParams']),
             searchParams () {
                 const params = {
                     page: {
@@ -154,7 +154,7 @@
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).association
+            this.showFeatureTips = this.featureTipsParams['association']
         },
         methods: {
             ...mapActions('objectAssociation', [

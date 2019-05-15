@@ -138,7 +138,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'featureTipsParams']),
             ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
@@ -158,7 +158,8 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).process
+            this.showFeatureTips = this.featureTipsParams['process']
+            console.log(this.featureTipsParams['process'])
             this.reload()
         },
         methods: {

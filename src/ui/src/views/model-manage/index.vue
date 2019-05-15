@@ -193,7 +193,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -237,7 +237,7 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).model
+            this.showFeatureTips = this.featureTipsParams['model']
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)

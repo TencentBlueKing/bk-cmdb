@@ -114,6 +114,7 @@
             }
         },
         computed: {
+            ...mapGetters(['featureTipsParams']),
             ...mapGetters('objectBiz', ['bizId']),
             searchParams () {
                 const params = {
@@ -127,7 +128,7 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).customQuery
+            this.showFeatureTips = this.featureTipsParams['customQuery']
             this.getUserAPIList()
         },
         methods: {

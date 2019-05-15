@@ -27,15 +27,9 @@
                 default: 'javascript: (0)'
             }
         },
-        computed: {
-            getFeatureTips () {
-                return JSON.parse(localStorage.getItem('featureTips'))
-            }
-        },
         methods: {
             HandleCloseTips () {
-                this.getFeatureTips[this.featureName] = false
-                localStorage.setItem('featureTips', JSON.stringify(this.getFeatureTips))
+                this.$store.commit('setFeatureTipsParams', this.featureName)
                 this.$emit('close-tips')
             }
         }
