@@ -260,3 +260,77 @@ type DeleteHostRequest struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostIDArr     []int64 `json:"bk_host_ids"`
 }
+
+type OneServiceCategoryResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceCategory `json:"data"`
+}
+
+type MultipleServiceCategory struct {
+	Count int64 `json:"count"`
+	Info []ServiceCategory `json:"info"`
+}
+
+type MultipleServiceCategoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategory `json:"data"`
+}
+
+type OneServiceTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplate `json:"data"`
+}
+
+type MultipleServiceTemplate struct {
+	Count int64 `json:"count"`
+	Info []ServiceTemplate `json:"info"`
+}
+
+type MultipleServiceTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceTemplate `json:"data"`
+}
+
+type OneProcessTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     ProcessTemplate `json:"data"`
+}
+
+type MultipleProcessTemplate struct {
+	Count int64 `json:"count"`
+	Info []ProcessTemplate `json:"info"`
+}
+
+type MultipleProcessTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleProcessTemplate `json:"data"`
+}
+type OneServiceInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceInstance `json:"data"`
+}
+
+type MultipleServiceInstance struct {
+	Count int64 `json:"count"`
+	Info []ServiceInstance `json:"info"`
+}
+
+type MultipleServiceInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceInstance `json:"data"`
+}
+
+type OneProcessInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     ProcessInstance `json:"data"`
+}
+
+type MultipleProcessInstance struct {
+	Count int64 `json:"count"`
+	Info []ProcessInstance `json:"info"`
+}
+
+type MultipleProcessInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleProcessInstance `json:"data"`
+}

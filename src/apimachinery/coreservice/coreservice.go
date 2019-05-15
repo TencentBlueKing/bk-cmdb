@@ -21,6 +21,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/instance"
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
+	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/synchronize"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -34,6 +35,7 @@ type CoreServiceClientInterface interface {
 	Mainline() mainline.MainlineClientInterface
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
+	Process() process.ProcessInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -73,4 +75,8 @@ func (c *coreService) Host() host.HostClientInterface {
 
 func (c *coreService) Audit() auditlog.AuditClientInterface {
 	return auditlog.NewAuditClientInterface(c.restCli)
+}
+
+func (c *coreService) Process() process.ProcessInterface {
+	return process.NewProcessInterfaceClient(c.restCli)
 }
