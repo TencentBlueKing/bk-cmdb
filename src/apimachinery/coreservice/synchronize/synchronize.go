@@ -26,6 +26,7 @@ type SynchronizeClientInterface interface {
 	SynchronizeAssociation(ctx context.Context, h http.Header, input *metadata.SynchronizeParameter) (resp *metadata.SynchronizeResult, err error)
 	SynchronizeFind(ctx context.Context, h http.Header, input *metadata.SynchronizeFindInfoParameter) (resp *metadata.ResponseInstData, err error)
 	SynchronizeClearData(ctx context.Context, h http.Header, input *metadata.SynchronizeClearDataParameter) (resp *metadata.Response, err error)
+	SetIdentifierFlag(ctx context.Context, h http.Header, input *metadata.SetIdenifierFlag) (resp *metadata.SynchronizeResult, err error)
 }
 
 // NewSynchronizeClientInterface new public api
