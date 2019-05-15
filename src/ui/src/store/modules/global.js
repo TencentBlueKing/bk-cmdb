@@ -94,7 +94,7 @@ const mutations = {
     },
     setAdminView (state, isAdminView) {
         window.sessionStorage.setItem('isAdminView', isAdminView)
-        window.location.reload()
+        window.location = '/'
     },
     setFeatureTipsParams (state, tab) {
         if (tab) {
