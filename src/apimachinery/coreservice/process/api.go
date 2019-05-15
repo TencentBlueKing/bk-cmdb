@@ -108,7 +108,7 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 }
 
 func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error) {
-	ret := new(metadata.ServiceCategoryWithStatistics)
+	ret := new(metadata.ServiceCategoryWithStatisticsResult)
 	subPath := "/list/process/service_category"
 
 	input := map[string]interface{}{
