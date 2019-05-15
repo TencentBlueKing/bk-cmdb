@@ -80,6 +80,7 @@ func (s *Service) WebService() *restful.WebService {
 	ws.Path("/synchronize/{version}").Filter(rdapi.HTTPRequestIDFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	ws.Route(ws.POST("/search").To(s.Find))
+	ws.Route(ws.POST("/set/identifier/flag").To(s.SetIdentifierFlag))
 
 	return ws
 }
