@@ -81,6 +81,12 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return nil
 }
 
+// UpdateMultiModel 根据操作符更新数据。
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
+	// TODO
+	return errors.New("not support UpdateOp method")
+}
+
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	// build msg
