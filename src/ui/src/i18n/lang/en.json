@@ -125,7 +125,8 @@
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
         "请选择时间": "Please select time",
-        "更多详情": "More details"
+        "更多详情": "More details",
+        "更多": "Show All"
     },
     "Nav": {
         "首页": "Index",
@@ -776,5 +777,8 @@
         "最新": "Latest",
         "采集方式": "Action",
         "获取单个": "Single"
+    },
+    "HostDetails": {
+        "主机详情": "Host Details"
     }
 }
