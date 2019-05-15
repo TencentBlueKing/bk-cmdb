@@ -27,6 +27,9 @@ var (
 	ErrDocumentNotFound    = errors.New("document not found")
 	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
+
+	UpdateOpAddToSet = "addToSet"
+	UpdateOpPull     = "pull"
 )
 
 // RDB rename the RDB into DB
@@ -75,6 +78,8 @@ type Table interface {
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
+	// UpdateMultiModel  data based on operators.
+	UpdateMultiModel(ctx context.Context, filter Filter, updateModel ...ModeUpdate) error
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
 
@@ -120,3 +125,9 @@ type Find interface {
 
 // Index define the DB index struct
 type Index mongodb.Index
+
+// ModeUpdate  根据不同的操作符去更新数据
+type ModeUpdate struct {
+	Op  string
+	Doc interface{}
+}
