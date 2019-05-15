@@ -40,15 +40,15 @@ func (p SocketBindType) String() string {
 type ProtocolType string
 
 const (
-	ProtocolType_TCP ProtocolType = "1"
-	ProtocolType_UDP ProtocolType = "2"
+	ProtocolTypeTCP ProtocolType = "1"
+	ProtocolTypeUDP ProtocolType = "2"
 )
 
 func (p ProtocolType) String() string {
 	switch p {
-	case ProtocolType_TCP:
+	case ProtocolTypeTCP:
 		return "TCP"
-	case ProtocolType_UDP:
+	case ProtocolTypeUDP:
 		return "UDP"
 	default:
 		return ""
