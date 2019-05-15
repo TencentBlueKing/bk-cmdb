@@ -27,6 +27,8 @@ var (
 	ErrDocumentNotFound    = errors.New("document not found")
 	ErrNotImplemented      = errors.New("not implemented")
 	ErrDuplicated          = errors.New("duplicated")
+	UpdateOpAddToSet       = "addToSet"
+	UpdateOpPull           = "pull"
 )
 
 // RDB rename the RDB into DB
@@ -75,6 +77,8 @@ type Table interface {
 	Insert(ctx context.Context, docs interface{}) error
 	// Update 更新数据
 	Update(ctx context.Context, filter Filter, doc interface{}) error
+	// Update host data based on operators.
+	UpdateOp(ctx context.Context, op string, filter Filter, doc interface{}) error
 	// Delete 删除数据
 	Delete(ctx context.Context, filter Filter) error
 

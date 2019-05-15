@@ -15,6 +15,7 @@ package local
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"configcenter/src/storage/dal"
@@ -252,6 +253,12 @@ func (c *MockCollection) Update(ctx context.Context, filter dal.Filter, doc inte
 	c.Mock.retval = nil
 
 	return nil
+}
+
+// UpdateOp Update host data based on operators.
+func (c *MockCollection) UpdateOp(ctx context.Context, op string, filter dal.Filter, doc interface{}) error {
+
+	return errors.New("not support UpdateOp")
 }
 
 // Delete 删除数据
