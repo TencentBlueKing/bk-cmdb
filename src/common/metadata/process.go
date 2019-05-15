@@ -99,16 +99,16 @@ type ServiceCategory struct {
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-func (sc *ServiceCategory) Validate() error {
+func (sc *ServiceCategory) Validate() (field string, err error) {
 	MaxLen := 128
 	if len(sc.Name) == 0 {
-		return errors.New("name can't be empty")
+		return "name", errors.New("name can't be empty")
 	}
 	
 	if len(sc.Name) > MaxLen {
-		return fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), MaxLen)
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), MaxLen)
 	}
-	return nil
+	return "", nil
 }
 
 type ServiceCategoryWithStatistics struct {
