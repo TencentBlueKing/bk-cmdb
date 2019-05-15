@@ -81,6 +81,12 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return nil
 }
 
+// UpdateOp 根据操作符更新主机数据。
+func (c *Collection) UpdateOp(ctx context.Context, op string, filter dal.Filter, doc interface{}) error {
+	// TODO
+	return errors.New("not support UpdateOp method")
+}
+
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	// build msg

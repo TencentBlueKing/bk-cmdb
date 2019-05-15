@@ -195,6 +195,14 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return err
 }
 
+// UpdateOp 根据操作符更新主机数据。
+func (c *Collection) UpdateOp(ctx context.Context, op string, filter dal.Filter, doc interface{}) error {
+	c.dbc.Refresh()
+	data := bson.M{"$" + op: doc}
+	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
+	return err
+}
+
 // Delete 删除数据
 func (c *Collection) Delete(ctx context.Context, filter dal.Filter) error {
 	c.dbc.Refresh()
