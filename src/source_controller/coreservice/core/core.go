@@ -153,7 +153,7 @@ type AuditOperation interface {
 	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
 }
 
-// Core core itnerfaces methods
+// Core core interfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
@@ -162,6 +162,38 @@ type Core interface {
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
+	ProcessOperation() ProcessOperation
+}
+
+// ProcessOperation methods
+type ProcessOperation interface {
+	// service category
+	CreateServiceCategory(ctx ContextParams, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
+	GetServiceCategory(ctx ContextParams, categoryID int64) (*metadata.ServiceCategory, error)
+	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
+	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategory, error)
+	DeleteServiceCategory(ctx ContextParams, categoryID int64) error
+
+	// service template
+	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
+	GetServiceTemplate(ctx ContextParams, templateID int64) (*metadata.ServiceTemplate, error)
+	UpdateServiceTemplate(ctx ContextParams, templateID int64, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
+	ListServiceTemplates(ctx ContextParams, bizID int64, categoryID int64) (*metadata.MultipleServiceTemplate, error)
+	DeleteServiceTemplate(ctx ContextParams, serviceTemplateID int64) error
+
+	// process template
+	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
+	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, error)
+	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
+	ListProcessTemplates(ctx ContextParams, bizID int64, serviceTemplateID int64) (*metadata.MultipleProcessTemplate, error)
+	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) error
+
+	// service instance
+	CreateServiceInstance(ctx ContextParams, template metadata.ServiceInstance) (*metadata.ServiceInstance, error)
+	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, error)
+	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, error)
+	ListServiceInstance(ctx ContextParams, bizID int64, serviceTemplateID int64, hostID int64) (*metadata.MultipleServiceInstance, error)
+	DeleteServiceInstance(ctx ContextParams, processTemplateID int64) error
 }
 
 type core struct {
@@ -172,10 +204,11 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
+	process         ProcessOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -184,6 +217,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
+		process:         process,
 	}
 }
 
@@ -213,4 +247,8 @@ func (m *core) HostOperation() HostOperation {
 
 func (m *core) AuditOperation() AuditOperation {
 	return m.audit
+}
+
+func (m *core) ProcessOperation() ProcessOperation {
+	return m.process
 }
