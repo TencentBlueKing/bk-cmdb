@@ -104,7 +104,7 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 	if len(sc.Name) == 0 {
 		return "name", errors.New("name can't be empty")
 	}
-	
+
 	if len(sc.Name) > MaxLen {
 		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), MaxLen)
 	}
@@ -136,50 +136,76 @@ type ServiceTemplate struct {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	ID int64 `field:"id" json:"id" bson:"id"`
+	ID int64 `json:"id"`
 	// the service template's, which this process template belongs to.
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	ServiceTemplateID int64 `json:"serviceTemplateID"`
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Spec Process `field:"spec" json:"spec" bson:"spec"`
+	Template ProcessProperty `json:"template"`
+}
 
+type ProcessProperty struct {
+	ProcNum        PropertyDetail `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	StopCmd        PropertyDetail `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
+	RestartCmd     PropertyDetail `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
+	ForceStopCmd   PropertyDetail `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
+	ProcessID      PropertyDetail `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id,omitempty"`
+	FuncName       PropertyDetail `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
+	WorkPath       PropertyDetail `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
+	BindIP         PropertyDetail `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
+	Priority       PropertyDetail `field:"priority" json:"priority,omitempty" bson:"priority,omitempty"`
+	ReloadCmd      PropertyDetail `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
+	ProcessName    PropertyDetail `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty"`
+	Port           PropertyDetail `field:"port" json:"port,omitempty" bson:"port,omitempty"`
+	PidFile        PropertyDetail `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
+	AutoStart      PropertyDetail `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
+	AutoTimeGap    PropertyDetail `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
+	StartCmd       PropertyDetail `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
+	FuncID         PropertyDetail `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	User           PropertyDetail `field:"user" json:"user,omitempty" bson:"user,omitempty"`
+	TimeoutSeconds PropertyDetail `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Protocol       PropertyDetail `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
+	Description    PropertyDetail `field:"description" json:"description,omitempty" bson:"description,omitempty"`
+}
+
+type PropertyDetail struct {
+	Value interface{} `field:"value" json:"value" bson:"value"`
 	// it records the relations between process instance's property and
-	// whether it's used as a default value, the empty value can also be
-	// a default value.
-	// key is property's name,
-	// value is true if this property's value is used as a default value.
-	Status          map[string]bool `field:"status" json:"status" bson:"status"`
-	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	// whether it's used as a default value, the empty value can also be a default value.
+	// If the property's value is used as a default value, then this property
+	// can not be changed in all the process instance's created by this process
+	// template. or, it can only be changed to this default value.
+	AsDefaultValue bool `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
 }
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	ID       int64  `field:"id" json:"id" bson:"id"`
-	Name     string `field:"name" json:"name" bson:"name"`
+	Name     string `field:"name" json:"name,omitempty" bson:"name"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	HostID            int64 `field:"host_id" json:"host_id" bson:"host_id"`
+	ServiceTemplateID int64 `field:"serviceTemplateID" json:"serviceTemplateID,omitempty" bson:"serviceTemplateID"`
+	HostID            int64 `field:"hostID" json:"hostID,omitempty" bson:"hostID"`
 
 	// the module that this service belongs to.
-	ModuleID        int64  `field:"module_id" json:"module_id" bson:"module_id"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ModuleID        int64  `field:"moduleID" json:"moduleID,omitempty" bson:"moduleID"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
 type ServiceInstanceRelations struct {
 	// unique field, 1:1 mapping with ProcessInstance.
-	ProcessID         int64 `field:"process_id" json:"process_id" bson:"process_id"`
-	ServiceInstanceID int64 `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id"`
+	ProcessID         int64 `field:"processID" json:"processID" bson:"processID"`
+	ServiceInstanceID int64 `field:"serviceInstanceID" json:"serviceInstanceID" bson:"serviceInstanceID"`
 
 	// ProcessTemplateID indicate which template are current process instantiate from.
-	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
+	ProcessTemplateID int64 `field:"processTemplateID" json:"processTemplateID" bson:"processTemplateID"`
 
 	// redundant field for accelerating processes by HostID
-	HostID          int64  `field:"host_id" json:"host_id" bson:"host_id"`
+	HostID          int64  `field:"hostID" json:"hostID" bson:"hostID"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
