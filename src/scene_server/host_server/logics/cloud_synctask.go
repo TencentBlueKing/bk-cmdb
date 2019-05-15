@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gopkg.in/redis.v5"
 	"net/http"
 	"strconv"
 	"strings"
@@ -41,7 +40,7 @@ import (
 
 var (
 	taskChan            = make(map[int64]chan bool)
-	checkDuration int64 = 5
+	checkDuration int64 = 1
 )
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
@@ -84,8 +83,8 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 }
 
 func (lgc *Logics) SyncTaskDBManager(ctx context.Context) error {
-	// master 才可以往redis写数据，避免写入重复数据
-	if ok := lgc.Engine.ServiceManageInterface.IsMaster(); !ok {
+
+	if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
 		return errors.New("not master")
 	}
 	opt := make(map[string]interface{}, 0)
@@ -178,22 +177,21 @@ func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interf
 // ListenRedisSubscribe subscribe redis channel to stop the started sync task
 func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
 	var mutex = &sync.Mutex{}
+	newClient := *lgc.cache
 
+	pub, err := newClient.Subscribe("stop")
+	if err != nil {
+		blog.Errorf("redis subscribe fail, err: %v", err)
+	}
 	for {
-		pub, err := lgc.cache.PSubscribe("stop")
-		if err != nil {
-			blog.Errorf("redis subscribe fail, err: %v", err)
-			continue
-		}
-		receive, err := pub.Receive()
+		receive, err := pub.ReceiveMessage()
 		if err != nil {
 			blog.Errorf("redis subscribe get value fail, err: %v", err)
-			continue
 		}
-		taskID, ok := receive.(int64)
-		if !ok {
-			blog.Errorf("interface convert to int64 fail, err: %v", ok)
-			continue
+
+		taskID, err := strconv.ParseInt(receive.Payload, 10, 64)
+		if err != nil {
+			blog.Errorf("interface convert to int64 fail, err: %v", err)
 		}
 		if _, ok := taskChan[taskID]; ok {
 			mutex.Lock()
@@ -209,7 +207,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 
 	for {
 		val, err := lgc.cache.BLPop(0, common.RedisCloudSyncInstancePendingStart).Result()
-		if err == redis.Nil {
+		if err != nil {
 			blog.Warnf("get task pending start item from redis fail, taskInfo: %s, err:%v, rid: %s", val, err.Error(), lgc.rid)
 			continue
 		}
@@ -231,7 +229,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 				taskChan[taskID] <- true
 				mutex.Unlock()
 			} else {
-				lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
+				//lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
 			}
 		}
 		blog.Info("stop to start")
