@@ -69,7 +69,7 @@
     import { formatTime } from '@/utils/tools'
     import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
@@ -120,10 +120,13 @@
                 }
             }
         },
+        computed: {
+            ...mapGetters(['featureTipsParams'])
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).eventpush
+            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [

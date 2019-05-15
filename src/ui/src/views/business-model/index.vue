@@ -66,7 +66,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
                 return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
@@ -74,7 +74,7 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务层级"]'))
-            this.showFeatureTips = JSON.parse(localStorage.getItem('featureTips')).modelBusiness
+            this.showFeatureTips = this.featureTipsParams['modelBusiness']
             this.getMainLineModel()
         },
         methods: {
