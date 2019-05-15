@@ -144,6 +144,7 @@
             ...mapGetters('objectModel', [
                 'activeModel',
                 'isPublicModel',
+                'isInjectable',
                 'isMainLine'
             ]),
             ...mapGetters('objectModelClassify', ['models']),
@@ -390,7 +391,9 @@
                     await this.deleteObject({
                         id: this.activeModel['id'],
                         config: {
-                            data: this.$injectMetadata(),
+                            data: this.$injectMetadata({}, {
+                                inject: this.isInjectable
+                            }),
                             requestId: 'deleteModel'
                         }
                     })

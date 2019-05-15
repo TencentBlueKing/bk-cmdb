@@ -108,9 +108,21 @@
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
+            hostModules () {
+                const modules = []
+                this.selectedHosts.forEach(host => {
+                    host.module.forEach(module => {
+                        modules.push(module)
+                    })
+                })
+                return modules
+            },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule
+                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
+                    return node['bk_inst_id'] === 'source' || [1, 2].includes(node.default)
+                })
+                const isInSpecialModule = this.hostModules.some(module => [1, 2].includes(module.default))
+                return !!this.selectedModuleStates.length && !hasSpecialModule && !isInSpecialModule
             },
             loading () {
                 const requestIds = [

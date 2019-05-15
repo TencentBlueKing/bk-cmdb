@@ -16,12 +16,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 func (s *service) Get(req *restful.Request, resp *restful.Response) {
@@ -41,6 +42,7 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 }
 
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
+	start := time.Now()
 	url := fmt.Sprintf("%s://%s%s", req.Request.URL.Scheme, req.Request.URL.Host, req.Request.RequestURI)
 	proxyReq, err := http.NewRequest(req.Request.Method, url, req.Request.Body)
 	if err != nil {
@@ -63,18 +65,18 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := s.client.Do(proxyReq)
 	if err != nil {
-		blog.Errorf("*failed do request[url: %s] , err: %v", url, err)
+		blog.Errorf("*failed do request[%s url: %s] , err: %v", req.Request.Method, url, err)
 
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", url, err)
+			blog.Errorf("response request[%s url: %s] failed, err: %v", req.Request.Method, url, err)
 		}
 		return
 	}
-	blog.V(5).Infof("success [%s] do request[url: %s]  ", response.Status, url)
+	blog.V(5).Infof("success [%s] do request[%s url: %s]  ", response.Status, req.Request.Method, url)
 
 	defer response.Body.Close()
 
@@ -90,6 +92,9 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
 		return
 	}
-
+	blog.V(4).Infof("request id: %s, cost: %dms, action: %s , url: %s",
+		req.Request.Header.Get(common.BKHTTPCCRequestID),
+		time.Since(start).Nanoseconds()/int64(time.Millisecond),
+		req.Request.Method, url)
 	return
 }

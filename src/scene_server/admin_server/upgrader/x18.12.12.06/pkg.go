@@ -9,41 +9,25 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package main
+package x18_12_12_06
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"runtime"
 
-	"github.com/spf13/pflag"
-
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/util"
-	"configcenter/src/source_controller/auditcontroller/app"
-	"configcenter/src/source_controller/auditcontroller/app/options"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-func main() {
-	common.SetIdentification(types.CC_MODULE_AUDITCONTROLLER)
-	runtime.GOMAXPROCS(runtime.NumCPU())
+func init() {
+	upgrader.RegistUpgrader("x18.12.12.06", upgrade)
+}
 
-	blog.InitLogs()
-	defer blog.CloseLogs()
-
-	op := options.NewServerOption()
-	op.AddFlags(pflag.CommandLine)
-
-	util.InitFlags()
-
-	if err := app.Run(context.Background(), op); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		blog.Errorf("process stoped by %v", err)
-		blog.CloseLogs()
-		os.Exit(1)
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	err = reconcilUnique(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x18.12.12.06] fixBKObjAsstID error  %s", err.Error())
+		return err
 	}
+	return
 }

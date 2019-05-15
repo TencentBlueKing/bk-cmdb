@@ -12,16 +12,16 @@
 package service
 
 import (
-    "fmt"
-    "net/http"
-    "strconv"
+	"fmt"
+	"net/http"
+	"strconv"
 
-    "github.com/emicklei/go-restful"
+	"configcenter/src/common"
+	"configcenter/src/common/auditoplog"
+	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 
-    "configcenter/src/common"
-    "configcenter/src/common/auditoplog"
-    "configcenter/src/common/blog"
-    meta "configcenter/src/common/metadata"
+	"github.com/emicklei/go-restful"
 )
 
 func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Response) {
@@ -64,8 +64,18 @@ func (ps *ProcServer) BindModuleProcess(req *restful.Request, resp *restful.Resp
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("bind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
-	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, ownerID, appIDStr, srvData.user, srvData.header, log)
+	log := meta.SaveAuditLogParams{
+		ID:      int64(procID),
+		Model:   common.BKInnerObjIDProc,
+		Content: meta.Content{},
+		OpDesc:  fmt.Sprintf("bind module [%s]", moduleName),
+		OpType:  auditoplog.AuditOpTypeAdd,
+		BizID:   int64(appID),
+	}
+	auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
+	if err != nil || (auditrsp != nil && !auditrsp.Result) {
+		blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+	}
 
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
@@ -104,9 +114,18 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	}
 
 	// save operation log
-	log := common.KvMap{common.BKOpDescField: fmt.Sprintf("unbind module [%s]", moduleName), common.BKOpTypeField: auditoplog.AuditOpTypeAdd, "inst_id": procID, common.BKContentField: meta.Content{}}
-	ps.CoreAPI.AuditController().AddProcLog(srvData.ctx, srvData.ownerID, appIDStr, srvData.user, srvData.header, log)
-
+	log := meta.SaveAuditLogParams{
+		ID:      int64(procID),
+		Model:   common.BKInnerObjIDProc,
+		Content: meta.Content{},
+		OpDesc:  fmt.Sprintf("unbind module [%s]", moduleName),
+		OpType:  auditoplog.AuditOpTypeDel,
+		BizID:   int64(appID),
+	}
+	auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, log)
+	if err != nil || (auditrsp != nil && !auditrsp.Result) {
+		blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+	}
 	resp.WriteEntity(meta.NewSuccessResp(nil))
 }
 
@@ -174,7 +193,7 @@ func (ps *ProcServer) GetProcessBindModule(req *restful.Request, resp *restful.R
 		if moduleInfo.Exists(common.BKDefaultField) {
 			isDefault64, err := moduleInfo.Int64(common.BKDefaultField)
 			if nil != err {
-				blog.Warnf("get module default error: %s, rid: %s", err.Error(),srvData.rid)
+				blog.Warnf("get module default error: %s, rid: %s", err.Error(), srvData.rid)
 			} else {
 				if 0 != isDefault64 {
 					continue
