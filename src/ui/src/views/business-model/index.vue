@@ -161,7 +161,7 @@
             display: inline-block;
             vertical-align: middle;
             width: 0;
-            height: 100%;
+            height: calc(100% - 20px);
         }
     }
     .topo-level {
