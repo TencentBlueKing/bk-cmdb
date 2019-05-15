@@ -123,6 +123,11 @@ func (s *coreService) host() {
 
 }
 
+func (s *coreService) audit() {
+	s.addAction(http.MethodPost, "/create/auditlog", s.CreateAuditLog, nil)
+	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
+}
+
 func (s *coreService) initService() {
 	s.initHealth()
 	s.initModelClassification()
@@ -135,4 +140,5 @@ func (s *coreService) initService() {
 	s.initDataSynchronize()
 	s.initMainline()
 	s.host()
+	s.audit()
 }

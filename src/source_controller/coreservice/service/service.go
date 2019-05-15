@@ -21,8 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -36,6 +34,7 @@ import (
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -45,6 +44,8 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -104,7 +105,15 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	}
 
 	// connect the remote mongodb
-	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), datasynchronize.New(db, s), mainline.New(db), host.New(db, cache))
+	s.core = core.New(
+		model.New(db, s),
+		instances.New(db, s),
+		association.New(db, s),
+		datasynchronize.New(db, s),
+		mainline.New(db),
+		host.New(db, cache),
+		auditlog.New(db),
+	)
 	return nil
 }
 

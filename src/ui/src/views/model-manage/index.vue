@@ -325,7 +325,12 @@
                     title: this.$t('ModelManagement["确认要删除此分组"]'),
                     confirmFn: async () => {
                         await this.deleteClassification({
-                            id: group.id
+                            id: group.id,
+                            config: {
+                                data: this.$injectMetadata({}, {
+                                    inject: !!this.$tools.getMetadataBiz(group)
+                                })
+                            }
                         })
                         this.$store.commit('objectModelClassify/deleteClassify', group['bk_classification_id'])
                     }

@@ -20,7 +20,8 @@
                         'is-first': index === 0,
                         'is-last': index === (topo.length - 1),
                         'is-inner': innerModel.includes(model['bk_obj_id'])
-                    }">
+                    }"
+                    @click.native="handleLinkClick">
                     <i :class="['icon', model['bk_obj_icon']]"></i>
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
@@ -138,6 +139,11 @@
             handleCancelCreateLevel () {
                 this.addLevel.parent = null
                 this.addLevel.showDialog = false
+            },
+            handleLinkClick () {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
             }
         }
     }

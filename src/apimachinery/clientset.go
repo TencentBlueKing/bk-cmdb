@@ -15,7 +15,6 @@ package apimachinery
 import (
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/apiserver"
-	"configcenter/src/apimachinery/auditcontroller"
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/eventserver"
@@ -39,7 +38,6 @@ type ClientSetInterface interface {
 	EventServer() eventserver.EventServerClientInterface
 
 	ObjectController() objcontroller.ObjControllerClientInterface
-	AuditController() auditcontroller.AuditCtrlInterface
 	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
 	CoreService() coreservice.CoreServiceClientInterface
@@ -155,17 +153,6 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return eventserver.NewEventServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) AuditController() auditcontroller.AuditCtrlInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.AuditCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	cs.Mock.SetMockData = false
-	return auditcontroller.NewAuditCtrlInterface(c, cs.version)
 }
 
 func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {

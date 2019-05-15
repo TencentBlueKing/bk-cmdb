@@ -80,10 +80,13 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 		return NewPublicOrBizConditionByBizID(0)
 	}
 
-	businessID, err = util.GetInt64ByInterface(bizID)
-	if err != nil {
-		blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
-		businessID = 0
+	bizIDStr := util.GetStrByInterface(bizID)
+	if len(bizIDStr) > 0 {
+		businessID, err = util.GetInt64ByInterface(bizID)
+		if err != nil {
+			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
+			businessID = 0
+		}
 	}
 	return NewPublicOrBizConditionByBizID(businessID)
 }

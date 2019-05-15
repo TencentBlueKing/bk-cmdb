@@ -122,7 +122,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
 		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s", deleteCondition.Delete.InstID, err)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
@@ -150,7 +150,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
 		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s", instID, err)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}

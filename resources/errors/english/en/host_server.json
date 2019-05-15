@@ -56,7 +56,8 @@
 	"1110055": "The host failed to delete the business.",
 	"1110056": "hostID[%#v] not belong to business idle module",
 	"1110057": "Module does not exist or there are multiple built-in modules",
-	
+	"1110058": "The object in the parameter is missing the bk_inst_id field",
+
 	"1110080": "Fail to add host to resource pool",
 	"": ""
 }
