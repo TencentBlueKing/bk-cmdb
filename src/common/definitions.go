@@ -187,6 +187,12 @@ const (
 	// BKDBUNSET the db opeartor
 	BKDBUNSET = "$unset"
 
+	// BKDBAddToSet The $addToSet operator adds a value to an array unless the value is already present, in which case $addToSet does nothing to that array.
+	BKDBAddToSet = "$addToSet"
+
+	// BKDBPull The $pull operator removes from an existing array all instances of a value or values that match a specified condition.
+	BKDBPull = "$pull"
+
 	// BKDBSortFieldSep the db sort field split char
 	BKDBSortFieldSep = ","
 )
@@ -1002,8 +1008,12 @@ const (
 )
 
 const (
+	// MetaDataSynchronizeField Synchronous data aggregation field
+	MetaDataSynchronizeField        = "sync"
 	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
 	MetaDataSynchronizeVersionField = "metadata_sync_version"
+	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
+	MetaDataSynchronizeIdentifierField = "identifier"
 
 	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
 	SynchronizeSignPrefix = "sync_blueking"
