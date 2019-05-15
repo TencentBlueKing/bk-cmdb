@@ -267,8 +267,8 @@ type OneServiceCategoryResult struct {
 }
 
 type MultipleServiceCategory struct {
-	Count int64 `json:count`
-	Info []ServiceCategory `json:info`
+	Count int64 `json:"count"`
+	Info []ServiceCategory `json:"info"`
 }
 
 type MultipleServiceCategoryResult struct {
@@ -282,8 +282,8 @@ type OneServiceTemplateResult struct {
 }
 
 type MultipleServiceTemplate struct {
-	Count int64 `json:count`
-	Info []ServiceTemplate `json:info`
+	Count int64 `json:"count"`
+	Info []ServiceTemplate `json:"info"`
 }
 
 type MultipleServiceTemplateResult struct {
@@ -297,8 +297,8 @@ type OneProcessTemplateResult struct {
 }
 
 type MultipleProcessTemplate struct {
-	Count int64 `json:count`
-	Info []ProcessTemplate `json:info`
+	Count int64 `json:"count"`
+	Info []ProcessTemplate `json:"info"`
 }
 
 type MultipleProcessTemplateResult struct {
@@ -311,8 +311,8 @@ type OneServiceInstanceResult struct {
 }
 
 type MultipleServiceInstance struct {
-	Count int64 `json:count`
-	Info []ServiceInstance `json:info`
+	Count int64 `json:"count"`
+	Info []ServiceInstance `json:"info"`
 }
 
 type MultipleServiceInstanceResult struct {
@@ -326,8 +326,8 @@ type OneProcessInstanceResult struct {
 }
 
 type MultipleProcessInstance struct {
-	Count int64 `json:count`
-	Info []ProcessInstance `json:info`
+	Count int64 `json:"count"`
+	Info []ProcessInstance `json:"info"`
 }
 
 type MultipleProcessInstanceResult struct {
