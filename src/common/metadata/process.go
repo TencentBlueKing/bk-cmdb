@@ -11,7 +11,11 @@
  */
 package metadata
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 type SocketBindType string
 
@@ -23,6 +27,7 @@ const (
 )
 
 func (p SocketBindType) String() string {
+	// TODO: how to support internationalization?
 	switch p {
 	case BindLocalHost:
 		return "127.0.0.1"
@@ -92,6 +97,18 @@ type ServiceCategory struct {
 	RootID          int64  `field:"root_id" json:"root_id" bson:"root_id"`
 	ParentID        int64  `field:"parent_id" json:"parent_id" bson:"parent_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+func (sc *ServiceCategory) Validate() (field string, err error) {
+	MaxLen := 128
+	if len(sc.Name) == 0 {
+		return "name", errors.New("name can't be empty")
+	}
+	
+	if len(sc.Name) > MaxLen {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), MaxLen)
+	}
+	return "", nil
 }
 
 type ServiceCategoryWithStatistics struct {
