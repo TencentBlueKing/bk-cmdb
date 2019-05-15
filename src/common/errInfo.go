@@ -160,6 +160,8 @@ const (
 	CCErrCommRegistResourceToIAMFailed   = 1199049
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
+	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
+	CCErrCommParamsValueInvalidError = 1199052
 
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001

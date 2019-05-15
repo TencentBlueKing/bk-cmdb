@@ -124,6 +124,7 @@ type DataSynchronizeOperation interface {
 	SynchronizeAssociationAdapter(ctx ContextParams, syncData *metadata.SynchronizeParameter) ([]metadata.ExceptionResult, error)
 	Find(ctx ContextParams, find *metadata.SynchronizeFindInfoParameter) ([]mapstr.MapStr, uint64, error)
 	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
+	SetIdentifierFlag(ctx ContextParams, input *metadata.SetIdenifierFlag) ([]metadata.ExceptionResult, error)
 }
 
 // TopoOperation methods
