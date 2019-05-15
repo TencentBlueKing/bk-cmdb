@@ -35,7 +35,6 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-//Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)

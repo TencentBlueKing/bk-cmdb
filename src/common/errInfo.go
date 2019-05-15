@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy         = -1
+	CCSystemUnknownError = -2
+	CCSuccess            = 0
+	CCSuccessStr         = "success"
 
 	// common error code 1199XXX
 
@@ -162,6 +163,9 @@ const (
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
 	CCErrCommGetMultipleObject = 1199052
+
+	// unknown or unrecognized error
+	CCErrorUnknownOrUnrecognizedError = 1199998
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999
