@@ -71,6 +71,14 @@ func (c *clearData) clearData(ctx core.ContextParams) {
 	}
 }
 
+func getMetaSyncField() string {
+	return getSynchronize(common.MetadataField, common.MetaDataSynchronizeField)
+}
+
+func getMetaSyncFieldItem(field string) string {
+	return getSynchronize(common.MetadataField, common.MetaDataSynchronizeField, field)
+}
+
 func getSynchronize(key ...string) string {
 	return strings.Join(key, ".")
 }
