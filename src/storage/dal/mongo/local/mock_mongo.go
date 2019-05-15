@@ -255,8 +255,8 @@ func (c *MockCollection) Update(ctx context.Context, filter dal.Filter, doc inte
 	return nil
 }
 
-// UpdateOp Update host data based on operators.
-func (c *MockCollection) UpdateOp(ctx context.Context, op string, filter dal.Filter, doc interface{}) error {
+// UpdateMultiModel Update data based on operators.
+func (c *MockCollection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
 
 	return errors.New("not support UpdateOp")
 }

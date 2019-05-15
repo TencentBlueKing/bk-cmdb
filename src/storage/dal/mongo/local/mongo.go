@@ -14,6 +14,7 @@ package local
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -195,10 +196,17 @@ func (c *Collection) Update(ctx context.Context, filter dal.Filter, doc interfac
 	return err
 }
 
-// UpdateOp 根据操作符更新主机数据。
-func (c *Collection) UpdateOp(ctx context.Context, op string, filter dal.Filter, doc interface{}) error {
+// UpdateMultiModel 根据不同的操作符去更新数据
+func (c *Collection) UpdateMultiModel(ctx context.Context, filter dal.Filter, updateModel ...dal.ModeUpdate) error {
 	c.dbc.Refresh()
-	data := bson.M{"$" + op: doc}
+	data := bson.M{}
+	for _, item := range updateModel {
+		if _, ok := data[item.Op]; ok {
+			return errors.New(item.Op + " appear multiple times")
+		}
+		data["$"+item.Op] = item.Doc
+	}
+
 	_, err := c.dbc.DB(c.dbname).C(c.collName).UpdateAll(filter, data)
 	return err
 }
