@@ -12,6 +12,7 @@
 package service
 
 import (
+	"configcenter/src/common/http/rest"
 	"context"
 	"net/http"
 	"time"
@@ -83,7 +84,7 @@ func (ps *ProcServer) WebService() *restful.WebService {
 
 	// v3
 	ws := new(restful.WebService)
-	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	ws.Path("/process/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -125,6 +126,17 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
 	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
 	return ws
+}
+
+func (s *ProcServer) WebService2() *restful.WebService {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.Engine.CCErr,
+		Language: s.Engine.Language,
+	})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: s.GetServiceCategory})
+
+	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
 }
 
 func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
