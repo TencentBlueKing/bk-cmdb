@@ -14,6 +14,7 @@ package x19_05_16_01
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
@@ -23,6 +24,30 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	categoryID, err := addDefaultCategory(ctx, db, conf)
+	if err != nil {
+		return fmt.Errorf("addDefaultCategory failed: %v", err)
+	}
+
+	allmodules := []metadata.ModuleInst{}
+	if err = db.Table(common.BKTableNameBaseModule).Find(nil).All(ctx, &allmodules); err != nil {
+		return err
+	}
+
+	// bizID:modulename:modules
+	biz2Module := map[int64]map[string][]metadata.ModuleInst{}
+	for _, module := range allmodules {
+		_, ok := biz2Module[module.BizID]
+		if !ok {
+			biz2Module[module.BizID] = map[string][]metadata.ModuleInst{}
+		}
+		biz2Module[module.BizID][module.ModuleName] = append(biz2Module[module.BizID][module.ModuleName], module)
+	}
+
+	for bizID, modules := range biz2Module {
+		process := metadata.Process{}
+	}
+
 	return nil
 }
