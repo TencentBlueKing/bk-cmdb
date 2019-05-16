@@ -185,7 +185,7 @@ type ProcessOperation interface {
 	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
 	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, error)
 	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
-	ListProcessTemplates(ctx ContextParams, bizID int64, serviceTemplateID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessTemplate, error)
+	ListProcessTemplates(ctx ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.SearchLimit) (*metadata.MultipleProcessTemplate, error)
 	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) error
 
 	// service instance

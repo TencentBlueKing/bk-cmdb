@@ -287,7 +287,7 @@ type OneServiceTemplateResult struct {
 }
 
 type MultipleServiceTemplate struct {
-	Count uint64             `json:"count"`
+	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
 }
 
@@ -302,7 +302,7 @@ type OneProcessTemplateResult struct {
 }
 
 type MultipleProcessTemplate struct {
-	Count int64             `json:"count"`
+	Count uint64            `json:"count"`
 	Info  []ProcessTemplate `json:"info"`
 }
 
