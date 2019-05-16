@@ -94,9 +94,10 @@ type ServiceCategory struct {
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
 
-	RootID          int64  `field:"root_id" json:"root_id,omitempty" bson:"root_id"`
-	ParentID        int64  `field:"parent_id" json:"parent_id,omitempty" bson:"parent_id"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	RootID          int64  `field:"root_id" json:"root_id" bson:"root_id"`
+	ParentID        int64  `field:"parent_id" json:"parent_id" bson:"parent_id"`
+	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+	IsBuiltIn       bool
 }
 
 func (sc *ServiceCategory) Validate() (field string, err error) {
