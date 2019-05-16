@@ -10,7 +10,7 @@ def handle_client(client_socket):
     """
     处理客户端请求
     """
-    request_data = client_socket.recv(2014)
+    request_data = client_socket.recv(2048)
     body = request_data.split('\r\n\r\n')[-1]
     print request_data
     print "request data:", json.loads(body)
@@ -21,7 +21,6 @@ def handle_client(client_socket):
     response = response_start_line + response_headers + "\r\n" + response_body
 
     # 向客户端返回响应数据
-  #  client_socket.send(bytes(response, "utf-8"))
     client_socket.send(bytes(response))
 
     # 关闭客户端连接
