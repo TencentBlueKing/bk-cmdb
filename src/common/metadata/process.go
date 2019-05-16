@@ -537,8 +537,25 @@ type ServiceInstance struct {
 	HostID            int64 `field:"hostID" json:"hostID,omitempty" bson:"hostID"`
 
 	// the module that this service belongs to.
-	ModuleID        int64  `field:"moduleID" json:"moduleID,omitempty" bson:"moduleID"`
-	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	ModuleID int64 `field:"moduleID" json:"moduleID,omitempty" bson:"moduleID"`
+
+	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
+	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
+	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+}
+
+func (si *ServiceInstance) Validate() (field string, err error) {
+	MaxLen := 128
+	if len(si.Name) == 0 {
+		return "name", errors.New("name can't be empty")
+	}
+
+	if len(si.Name) > MaxLen {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), MaxLen)
+	}
+	return "", nil
 }
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
@@ -553,7 +570,4 @@ type ServiceInstanceRelations struct {
 	// redundant field for accelerating processes by HostID
 	HostID          int64  `field:"hostID" json:"hostID" bson:"hostID"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type ProcessInstance struct {
 }
