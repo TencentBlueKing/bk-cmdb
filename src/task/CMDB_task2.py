@@ -6,7 +6,7 @@ import redis
 class Publish(object):
     def __init__(self):
         self.connect = redis.StrictRedis(host='192.168.102.173', port='6379', db=0, password='xZS,JrgQls')
-        self.channel = "snapshot2"
+        self.channel = 'snapshot2'
 
     def publish_info(self, msg):
         self.connect.publish(self.channel, msg)
