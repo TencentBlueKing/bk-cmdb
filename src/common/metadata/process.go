@@ -97,6 +97,9 @@ type ServiceCategory struct {
 	RootID          int64  `field:"root_id" json:"root_id,omitempty" bson:"root_id"`
 	ParentID        int64  `field:"parent_id" json:"parent_id,omitempty" bson:"parent_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	
+	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
+	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
 }
 
 func (sc *ServiceCategory) Validate() (field string, err error) {
