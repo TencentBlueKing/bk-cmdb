@@ -278,6 +278,37 @@ export function getMetadataBiz (object = {}) {
     return biz
 }
 
+export function getValidateRules (property) {
+    const rules = {}
+    const {
+        bk_property_type: propertyType,
+        option,
+        isrequired
+    } = property
+    if (isrequired) {
+        rules.required = true
+    }
+    if (option) {
+        if (propertyType === 'int') {
+            if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
+                rules['min_value'] = option.min
+            }
+            if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
+                rules['max_value'] = option.max
+            }
+        } else if (['singlechar', 'longchar'].includes(propertyType)) {
+            rules['regex'] = option
+        }
+    }
+    if (['singlechar', 'longchar'].includes(propertyType)) {
+        rules[propertyType] = true
+    }
+    if (propertyType === 'float') {
+        rules['float'] = true
+    }
+    return rules
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -293,5 +324,6 @@ export default {
     formatTime,
     clone,
     getInstFormValues,
-    getMetadataBiz
+    getMetadataBiz,
+    getValidateRules
 }

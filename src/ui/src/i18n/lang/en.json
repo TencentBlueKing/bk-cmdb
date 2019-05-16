@@ -779,6 +779,9 @@
         "获取单个": "Single"
     },
     "HostDetails": {
-        "主机详情": "Host Details"
+        "主机详情": "Host Details",
+        "主机属性": "Host Properties",
+        "实时状态": "Real-Time Status",
+        "变更记录": "Change Log"
     }
 }
