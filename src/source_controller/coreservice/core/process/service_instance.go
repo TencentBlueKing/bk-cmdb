@@ -29,7 +29,7 @@ func (p *processOperation)UpdateServiceInstance(ctx core.ContextParams, template
 	return nil, nil
 }
 
-func (p *processOperation)ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64) (*metadata.MultipleServiceInstance, error) {
+func (p *processOperation)ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleServiceInstance, error) {
 	return nil, nil
 }
 

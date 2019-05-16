@@ -13,6 +13,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -22,7 +23,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (resp *metadata.ServiceInstance, err error) {
+func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	instance := metadata.ServiceInstance{}
 	if err := mapstr.SetValueToStructByTags(&instance, data); err != nil {
 		blog.Errorf("CreateServiceInstance failed, decode request body failed, body: %+v, err: %v", data, err)
@@ -37,7 +38,7 @@ func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParam
 	return result, nil
 }
 
-func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (*metadata.ServiceInstance, error) {
+func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceInstanceIDField := "service_instance_id"
 	serviceInstanceIDStr := pathParams(serviceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
@@ -59,12 +60,13 @@ func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, 
 	return result, nil
 }
 
-func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (*metadata.MultipleServiceInstance, error) {
+func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		BizID          int64 `json:"biz_id"`
+		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
 		ServiceTemplateID int64 `json:"service_template_id"`
 		HostID int64 `json:"host_id"`
+		Limit metadata.SearchLimit `json:"limit" field:"limit"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
@@ -72,7 +74,17 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 		return nil, fmt.Errorf("decode request body failed, err: %v", err)
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceInstance(params, fp.BizID, fp.ServiceTemplateID, fp.HostID)
+	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
+	if err != nil {
+		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
+		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
+	}
+	if bizID == 0 {
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
+		return nil, errors.New("business id can't be empty")
+	}
+	
+	result, err := s.core.ProcessOperation().ListServiceInstance(params, bizID, fp.ServiceTemplateID, fp.HostID, fp.Limit)
 	if err != nil {
 		blog.Errorf("ListServiceInstance failed, err: %+v", err)
 		return nil, err
@@ -109,24 +121,24 @@ func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParam
 	return result, nil
 }
 
-func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) error {
+func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceInstanceIDField := "service_instance_id"
 	serviceInstanceIDStr := pathParams(serviceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
 		blog.Errorf("DeleteServiceInstance failed, path parameter `%s` empty", serviceInstanceIDField)
-		return fmt.Errorf("path parameter `%s` empty", serviceInstanceIDField)
+		return nil, fmt.Errorf("path parameter `%s` empty", serviceInstanceIDField)
 	}
 
 	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
-		return fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
+		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceInstance(params, serviceInstanceID); err != nil {
 		blog.Errorf("DeleteServiceInstance failed, err: %+v", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
