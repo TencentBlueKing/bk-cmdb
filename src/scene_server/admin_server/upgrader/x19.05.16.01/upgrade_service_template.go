@@ -49,7 +49,10 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	for bizID, bizModules := range biz2Module {
+		ownerID := ""
 		for modulename, modules := range bizModules {
+			// modules would always more than 0, so would never panic here
+			ownerID = modules[0].SupplierAccount
 			// build service template
 			svcTemplateID, err := db.NextSequence(ctx, common.BKTableNameServiceTemplate)
 			if err != nil {
@@ -64,7 +67,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				Modifier:          conf.User,
 				CreateTime:        time.Now(),
 				LastTime:          time.Now(),
-				SupplierAccount:   "0", // TODO
+				SupplierAccount:   ownerID,
 			}
 			blog.InfoJSON("serviceTemplate: %s", serviceTemplate)
 			if err = db.Table(common.BKTableNameServiceTemplate).Insert(ctx, serviceTemplate); err != nil {
@@ -109,6 +112,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					Template:          procInstToProcTemplate(oldInst),
 				}
 				inst2ProcessInstTemplate[oldInst.ProcessID] = procTemplate
+				blog.InfoJSON("procTemplate: %s", procTemplate)
 				if err = db.Table(common.BKTableNameProcessTemplate).Insert(ctx, procTemplate); err != nil {
 					return err
 				}
@@ -135,7 +139,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						ServiceTemplateID: serviceTemplate.ID,
 						HostID:            moduleHost.HostID,
 						ModuleID:          module.ModuleID,
-						SupplierAccount:   "0",
+						SupplierAccount:   ownerID,
 					}
 					blog.InfoJSON("srvInst: %s", srvInst)
 					if err = db.Table(common.BKTableNameServiceInstance).Insert(ctx, srvInst); err != nil {
@@ -150,6 +154,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							return err
 						}
 						inst.ProcessID = int64(procInstID)
+						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
 						}
@@ -160,8 +165,9 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							ServiceInstanceID: srvInst.ID,
 							ProcessTemplateID: processTemplateID,
 							HostID:            moduleHost.HostID,
-							SupplierAccount:   "0",
+							SupplierAccount:   ownerID,
 						}
+						blog.InfoJSON("relateion: %s", relateion)
 						if err = db.Table(common.BKTableNameServiceInstanceRelations).Insert(ctx, relateion); err != nil {
 							return err
 						}
