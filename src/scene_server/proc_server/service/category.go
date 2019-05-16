@@ -27,7 +27,7 @@ func (p *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 
 	bizID, err := metadata.BizIDFromMetadata(*meta)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "get service category list, but get business id failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service category list, but get business id failed, err: %v", err)
 		return
 	}
 
@@ -49,7 +49,7 @@ func (p *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 
 	_, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommParamsInvalid, "create service category, but get business id failed, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service category, but get business id failed, err: %v", err)
 		return
 	}
 
