@@ -135,6 +135,18 @@ func (s *ProcServer) WebService2() *restful.WebService {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: s.GetServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: s.CreateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: s.DeleteServiceCategory})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: s.CreateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_template", Handler: s.ListServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: s.DeleteServiceTemplate})
+
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template/for_service_template", Handler: s.CreateProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template/for_service_template", Handler: s.UpdateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template/for_service_template", Handler: s.DeleteProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: s.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template/id", Handler: s.ListProcessTemplate})
 
 	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
 }

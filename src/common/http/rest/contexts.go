@@ -46,7 +46,7 @@ func (c *Contexts) DecodeInto(to interface{}) error {
 	}
 
 	if err := json.Unmarshal(body, to); err != nil {
-		blog.ErrorfDepth(1, "rid: %s, unmarshal request body failed, err: %v", c.Rid, err)
+		blog.ErrorfDepth(1, "rid: %s, unmarshal request body failed, err: %v, body: %s", c.Rid, err, string(body))
 		return c.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 	return nil
