@@ -21,66 +21,65 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) (int64, error) {
 	categoryName := "Default"
 
+	firstCategory := metadata.ServiceCategory{}
 	// insert first category
 	cond := metadata.BizLabelNotExist.Clone()
 	cond.Set("name", categoryName)
 	cond.Set("parent_id", 0)
-	count, err := db.Table(common.BKTableNameServiceCategory).Find(cond).Count(ctx)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	firstID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
-	if err != nil {
-		return err
-	}
+	err := db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &firstCategory)
+	if db.IsNotFoundError(err) {
+		firstID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
+		if err != nil {
+			return 0, err
+		}
 
-	firstCategory := metadata.ServiceCategory{
-		ID:              int64(firstID),
-		Name:            categoryName,
-		RootID:          int64(firstID),
-		ParentID:        0,
-		SupplierAccount: "0",
-		IsBuiltIn:       true,
-	}
-	err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, firstCategory)
-	if err != nil {
-		return err
+		firstCategory = metadata.ServiceCategory{
+			ID:              int64(firstID),
+			Name:            categoryName,
+			RootID:          int64(firstID),
+			ParentID:        0,
+			SupplierAccount: "0",
+			IsBuiltIn:       true,
+		}
+		err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, firstCategory)
+		if err != nil {
+			return 0, err
+		}
+	} else if err != nil {
+		return 0, err
 	}
 
 	// insert second category
+	secondCategory := metadata.ServiceCategory{}
 	cond = metadata.BizLabelNotExist.Clone()
 	cond.Set("name", categoryName)
-	cond.Set("parent_id", firstCategory)
-	count, err = db.Table(common.BKTableNameServiceCategory).Find(cond).Count(ctx)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	secondID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
-	if err != nil {
-		return err
+	cond.Set("parent_id", firstCategory.ID)
+	err = db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &secondCategory)
+	if db.IsNotFoundError(err) {
+		secondID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
+		if err != nil {
+			return 0, err
+		}
+
+		secondCategory = metadata.ServiceCategory{
+			ID:              int64(secondID),
+			Name:            categoryName,
+			RootID:          int64(firstCategory.ID),
+			ParentID:        int64(firstCategory.ID),
+			SupplierAccount: "0",
+			IsBuiltIn:       true,
+		}
+		err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, secondCategory)
+		if err != nil {
+			return 0, err
+		}
+
+	} else if err != nil {
+		return 0, err
 	}
 
-	secondCategory := metadata.ServiceCategory{
-		ID:              int64(secondID),
-		Name:            categoryName,
-		RootID:          int64(firstID),
-		ParentID:        int64(firstID),
-		SupplierAccount: "0",
-		IsBuiltIn:       true,
-	}
-	err = db.Table(common.BKTableNameServiceCategory).Insert(ctx, secondCategory)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return secondCategory.ID, err
 }
