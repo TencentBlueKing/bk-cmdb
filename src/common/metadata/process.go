@@ -153,7 +153,6 @@ type ProcessProperty struct {
 	StopCmd        PropertyDetail `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
 	RestartCmd     PropertyDetail `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
 	ForceStopCmd   PropertyDetail `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	ProcessID      PropertyDetail `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id,omitempty"`
 	FuncName       PropertyDetail `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
 	WorkPath       PropertyDetail `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
 	BindIP         PropertyDetail `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
