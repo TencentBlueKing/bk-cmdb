@@ -316,7 +316,7 @@ type OneServiceInstanceResult struct {
 }
 
 type MultipleServiceInstance struct {
-	Count int64             `json:"count"`
+	Count uint64            `json:"count"`
 	Info  []ServiceInstance `json:"info"`
 }
 
@@ -327,12 +327,12 @@ type MultipleServiceInstanceResult struct {
 
 type OneProcessInstanceResult struct {
 	BaseResp `json:",inline"`
-	Data     ProcessInstance `json:"data"`
+	Data     Process `json:"data"`
 }
 
 type MultipleProcessInstance struct {
-	Count int64             `json:"count"`
-	Info  []ProcessInstance `json:"info"`
+	Count int64     `json:"count"`
+	Info  []Process `json:"info"`
 }
 
 type MultipleProcessInstanceResult struct {
