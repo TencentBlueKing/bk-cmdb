@@ -35,7 +35,7 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	return client, nil
 }
 
-func (es *EsSrv) CmdbSearch(query string, from, size int) (*elastic.SearchResult, error) {
+func (es *EsSrv) CmdbSearch(query string, from, size int, types []string) (*elastic.SearchResult, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
@@ -56,9 +56,14 @@ func (es *EsSrv) CmdbSearch(query string, from, size int) (*elastic.SearchResult
 	bkObjIdAgg := elastic.NewTermsAggregation().Field(common.BkObjIdAggField)
 	typeAgg := elastic.NewTermsAggregation().Field(common.TypeAggField)
 	searchResult, err := es.Client.Search().
-		Index(common.CMDBINDEX).SearchSource(searchSource). // search in index like "cmdb" and paging
-		Query(allQuery).Highlight(highlight).               // specify the query and highlight
-		Pretty(true).                                       // pretty print request and response JSON
+		// search from es indexes
+		Index(common.CMDBINDEX).
+
+		// search from es types of index
+		Type(types...).
+		SearchSource(searchSource).           // search in index like "cmdb" and paging
+		Query(allQuery).Highlight(highlight). // specify the query and highlight
+		Pretty(true).                         // pretty print request and response JSON
 		// search result with aggregations
 		Aggregation(common.BkObjIdAggName, bkObjIdAgg).Aggregation(common.TypeAggName, typeAgg).
 		Do(ctx) // execute

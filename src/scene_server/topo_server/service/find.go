@@ -33,8 +33,9 @@ type Page struct {
 }
 
 type Query struct {
-	Paging      Page   `json:"page"`
-	QueryString string `json:"query_string"`
+	Paging      Page     `json:"page"`
+	QueryString string   `json:"query_string"`
+	TypeFilter  []string `json:"filter"`
 }
 
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -44,11 +45,12 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		query.Paging.Start = -1
 		query.Paging.Limit = -1
 		if err := data.MarshalJSONInto(query); err != nil {
-			blog.Errorf("full_text_find failed, import query_string, but got invalid query_string:[%v], err: %+v", query, err)
+			blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v", query, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		result, err := s.Es.CmdbSearch(query.QueryString, query.Paging.Start, query.Paging.Limit)
+		types := getEsIndexTypes(query.TypeFilter)
+		result, err := s.Es.CmdbSearch(query.QueryString, query.Paging.Start, query.Paging.Limit, types)
 		if err != nil {
 			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
@@ -81,9 +83,12 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		typeAggs, found := result.Aggregations.Terms(common.TypeAggName)
 		if found == true && typeAggs != nil {
 			for _, bucket := range typeAggs.Buckets {
-				agg := Aggregation{}
-				agg.setAgg(bucket)
-				searchResults.Aggregations = append(searchResults.Aggregations, agg)
+				// only cc_HostBase currently
+				if bucket.Key == common.BKTableNameBaseHost {
+					agg := Aggregation{}
+					agg.setAgg(bucket)
+					searchResults.Aggregations = append(searchResults.Aggregations, agg)
+				}
 			}
 		}
 		// test data
@@ -94,9 +99,45 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 }
 
+func getEsIndexTypes(typesFilter []string) []string {
+	typesMap := make([]string, 0)
+	for _, filter := range typesFilter {
+		switch filter {
+		case common.TypeHost:
+			typesMap = append(typesMap, common.BKTableNameBaseHost)
+		case common.TypeModel:
+			typesMap = append(typesMap, common.BKTableNameObjDes)
+		case common.TypeObject:
+			typesMap = append(typesMap, common.BKTableNameBaseInst)
+		case common.TypeApplication:
+			typesMap = append(typesMap, common.BKTableNameBaseApp)
+		case common.TypeProcess:
+			typesMap = append(typesMap, common.BKTableNameBaseProcess)
+		}
+	}
+
+	types := make([]string, 0)
+	for _, value := range common.CmdbFindTypes {
+		if !in_types(value, typesMap) {
+			types = append(types, value)
+		}
+	}
+
+	return types
+}
+
+func in_types(val string, types []string) bool {
+	for _, v := range types {
+		if v == val {
+			return true
+		}
+	}
+	return false
+}
+
 func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
 	if bucket.Key == common.BKTableNameBaseHost {
-		agg.Key = "host"
+		agg.Key = common.TypeHost
 	} else {
 		agg.Key = bucket.Key
 	}
@@ -108,15 +149,15 @@ func (sr *SearchResult) setHit(searchHit *elastic.SearchHit) {
 	sr.Score = *searchHit.Score
 	switch searchHit.Type {
 	case common.BKTableNameBaseInst:
-		sr.Type = "object"
+		sr.Type = common.TypeObject
 	case common.BKTableNameBaseHost:
-		sr.Type = "host"
+		sr.Type = common.TypeHost
 	case common.BKTableNameBaseProcess:
-		sr.Type = "process"
+		sr.Type = common.TypeProcess
 	case common.BKTableNameBaseApp:
-		sr.Type = "application"
+		sr.Type = common.TypeApplication
 	case common.BKTableNameObjDes:
-		sr.Type = "model"
+		sr.Type = common.TypeModel
 	}
 
 	sr.Highlight = searchHit.Highlight
