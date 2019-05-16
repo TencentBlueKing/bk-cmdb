@@ -21,7 +21,7 @@ import (
 	"configcenter/src/framework/core/errors"
 )
 
-func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
+func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := "/create/process/service_category"
 
@@ -107,12 +107,12 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error) {
-	ret := new(metadata.MultipleServiceCategoryResult)
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error) {
+	ret := new(metadata.ServiceCategoryWithStatisticsResult)
 	subPath := "/list/process/service_category"
-	
+
 	input := map[string]interface{}{
-		"bizID": bizID,
+		"bizID":          bizID,
 		"withStatistics": withStatistics,
 	}
 
@@ -228,7 +228,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/list/process/service_template"
 
 	input := map[string]interface{}{
-		"bizID": bizID,
+		"bizID":      bizID,
 		"categoryID": categoryID,
 	}
 
@@ -344,7 +344,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/list/process/process_template"
 
 	input := map[string]interface{}{
-		"bizID": bizID,
+		"bizID":             bizID,
 		"serviceTemplateID": serviceTemplateID,
 	}
 
@@ -460,9 +460,9 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, bizID 
 	subPath := "/list/process/service_instance"
 
 	input := map[string]interface{}{
-		"bizID": bizID,
+		"bizID":             bizID,
 		"serviceTemplateID": serviceTemplateID,
-		"hostID": hostID,
+		"hostID":            hostID,
 	}
 
 	err = p.client.Delete().

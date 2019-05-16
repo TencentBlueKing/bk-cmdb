@@ -43,12 +43,13 @@
     "1199045": "Parse authorize attributes failed.",
     "1199046": "Authorize request failed.",
     "1199047": "Do not have access permission.",
-    "1199048": "permission deny",
+    "1199048": "Permission Denied",
     "1199049": "register resource to IAM failed",
     "1199050": "unregister resource to IAM failed",
     "1199051": "inappropriate calling, auth is disabled",
     "1199052": "get multiple objects",
 
+    "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
     "":""
 }
