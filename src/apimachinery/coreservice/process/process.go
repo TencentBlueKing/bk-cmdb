@@ -24,28 +24,28 @@ type ProcessInterface interface {
 	// service category
 	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
 	GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (resp *metadata.ServiceCategory, err error)
-	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
+	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
 	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error)
 	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) error
 
 	// service template
-	CreateServiceTemplate(ctx context.Context, h http.Header, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
+	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error)
-	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
+	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error
 
 	// process template
-	CreateProcessTemplate(ctx context.Context, h http.Header, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
+	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
 	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ProcessTemplate, err error)
-	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
+	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
 	ListProcessTemplates(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64) (resp *metadata.MultipleProcessTemplate, err error)
 	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) error
 
 	// service instance
-	CreateServiceInstance(ctx context.Context, h http.Header, template metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
+	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
 	GetServiceInstance(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceInstance, err error)
-	UpdateServiceInstance(ctx context.Context, h http.Header, templateID int64, template metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
+	UpdateServiceInstance(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
 	ListServiceInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, hostID int64) (resp *metadata.MultipleServiceInstance, err error)
 	DeleteServiceInstance(ctx context.Context, h http.Header, processTemplateID int64) error
 }

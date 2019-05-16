@@ -450,6 +450,9 @@ const (
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
 
+	// the process object name
+	BKProcessObjectName = "process"
+
 	// BKProcessIDField the process id field
 	BKProcessIDField = "bk_process_id"
 

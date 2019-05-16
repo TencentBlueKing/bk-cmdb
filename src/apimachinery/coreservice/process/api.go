@@ -64,7 +64,7 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
+func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
 
@@ -137,7 +137,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 /*
 	service template api
 */
-func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := "/create/process/service_template"
 
@@ -180,7 +180,7 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/update/process/service_template/%d", templateID)
 
@@ -253,7 +253,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 /*
 	process template api
 */
-func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
 
@@ -296,7 +296,7 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
@@ -369,7 +369,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, bizID
 /*
 	service instance api
 */
-func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/create/process/service_instance"
 
@@ -412,7 +412,7 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := fmt.Sprintf("/update/process/service_instance/%d", instanceID)
 
