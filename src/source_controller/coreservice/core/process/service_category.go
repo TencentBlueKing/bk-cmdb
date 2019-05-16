@@ -17,7 +17,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -31,10 +30,15 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 		return nil, err
 	}
 	
-	if _, err := p.validateBizID(ctx, category.Metadata); err != nil {
+	var bizID int64
+	var err error
+	if bizID, err = p.validateBizID(ctx, category.Metadata); err != nil {
 		blog.Errorf("CreateServiceCategory failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
+
+	// keep metadata clean
+	category.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
 	category.RootID = 0
 	if category.ParentID > 0 {
@@ -73,10 +77,8 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 func (p *processOperation) GetServiceCategory(ctx core.ContextParams, categoryID int64) (*metadata.ServiceCategory, error) {
 	category := metadata.ServiceCategory{}
 	
-	filter := condition.CreateCondition()
-	filter.Field(common.BKFieldID).Eq(categoryID)
-	
-	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter.ToMapStr()).One(ctx.Context, &category); nil != err {
+	filter := map[string]int64{common.BKFieldID: categoryID}
+	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx.Context, &category); nil != err {
 		blog.Errorf("GetServiceCategory failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, err, ctx.ReqID)
 		if err.Error() == "document not found" {
 			return nil, ctx.Error.CCError(common.CCErrCommNotFound)
@@ -108,9 +110,8 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 	}
 	
 	// do update
-	filter := condition.CreateCondition()
-	filter.Field(common.BKFieldID).Eq(categoryID)
-	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Update(ctx, filter.ToMapStr(), category); nil != err {
+	filter := map[string]int64{common.BKFieldID: categoryID}
+	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Update(ctx, filter, category); nil != err {
 		blog.Errorf("UpdateServiceCategory failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, err, ctx.ReqID)
 		return  nil, err
 	}
@@ -158,7 +159,7 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 		return  err
 	}
 	if childrenCount > 0 {
-		blog.Errorf("DeleteServiceCategory failed, forbidden delete category has children node, childrenCoundt: %d, code: %d, rid: %s", childrenCount, common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
+		blog.Errorf("DeleteServiceCategory failed, forbidden delete category has children node, childrenCount: %d, code: %d, rid: %s", childrenCount, common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
 		err := ctx.Error.CCError(common.CCErrCommRemoveRecordHasChildrenForbidden)
 		return err
 	}

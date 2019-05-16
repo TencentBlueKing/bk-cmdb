@@ -137,8 +137,22 @@ type ServiceTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+func (st *ServiceTemplate) Validate() (field string, err error) {
+	MaxLen := 128
+	if len(st.Name) == 0 {
+		return "name", errors.New("name can't be empty")
+	}
+
+	if len(st.Name) > MaxLen {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(st.Name), MaxLen)
+	}
+	return "", nil
+}
+
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	
 	ID int64 `json:"id"`
 	// the service template's, which this process template belongs to.
 	ServiceTemplateID int64 `json:"serviceTemplateID"`

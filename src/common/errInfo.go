@@ -165,6 +165,7 @@ const (
 	CCErrCommGetMultipleObject = 1199052
 	CCErrCommOperateBuiltInItemForbidden = 1199053
 	CCErrCommRemoveRecordHasChildrenForbidden = 1199054
+	CCErrCommRemoveReferencedRecordForbidden = 1199055
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

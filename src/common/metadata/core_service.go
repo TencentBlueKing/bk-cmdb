@@ -287,7 +287,7 @@ type OneServiceTemplateResult struct {
 }
 
 type MultipleServiceTemplate struct {
-	Count int64             `json:"count"`
+	Count uint64             `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
 }
 

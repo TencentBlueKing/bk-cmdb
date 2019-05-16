@@ -18,6 +18,7 @@ import (
 )
 
 func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error) {
+	
 	return nil, nil
 }
 
@@ -29,7 +30,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	return nil, nil
 }
 
-func (p *processOperation)ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64) (*metadata.MultipleProcessTemplate, error) {
+func (p *processOperation)ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessTemplate, error) {
 	return nil, nil
 }
 	
