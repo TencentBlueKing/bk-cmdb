@@ -2,9 +2,7 @@
 
 import socket
 import threading
-from multiprocessing import Process
 import json
-import re
 
 def handle_client(client_socket):
     """
@@ -19,7 +17,6 @@ def handle_client(client_socket):
     response_headers = "Server: My server\r\n"
     response_body = "<h1>Python HTTP Test</h1>"
     response = response_start_line + response_headers + "\r\n" + response_body
-
     # 向客户端返回响应数据
     client_socket.send(bytes(response))
 
