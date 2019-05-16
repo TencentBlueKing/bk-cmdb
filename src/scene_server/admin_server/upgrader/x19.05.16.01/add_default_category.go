@@ -81,5 +81,5 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		return 0, err
 	}
 
-	return secondCategory.ID, err
+	return secondCategory.ID, nil
 }
