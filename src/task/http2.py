@@ -19,7 +19,6 @@ def handle_client(client_socket):
     response = response_start_line + response_headers + "\r\n" + response_body
     # 向客户端返回响应数据
     client_socket.send(bytes(response))
-
     # 关闭客户端连接
     client_socket.close()
 
