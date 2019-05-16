@@ -63,9 +63,10 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
-		ServiceTemplateID int64  `json:"service_template_id" field:"service_template_id"`
-		Limit metadata.SearchLimit `json:"limit" field:"limit"`
+		Metadata           metadata.Metadata    `json:"metadata" field:"metadata"`
+		ServiceTemplateID  int64                `json:"service_template_id" field:"service_template_id"`
+		ProcessTemplateIDs *[]int64             `json:"process_template_ids" field:"process_template_ids"`
+		Limit              metadata.SearchLimit `json:"limit" field:"limit"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
@@ -82,8 +83,8 @@ func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams
 		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
 		return nil, errors.New("business id can't be empty")
 	}
-	
-	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.Limit)
+
+	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Limit)
 	if err != nil {
 		blog.Errorf("ListProcessTemplates failed, err: %+v", err)
 		return nil, err
