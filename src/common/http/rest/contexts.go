@@ -41,6 +41,7 @@ type Contexts struct {
 func (c *Contexts) DecodeInto(to interface{}) error {
 	body, err := ioutil.ReadAll(c.Request.Request.Body)
 	if err != nil {
+		blog.ErrorfDepth(1, "rid: %s, read request body failed, err: %v", c.Rid, err)
 		return c.CCError.Error(common.CCErrCommHTTPReadBodyFailed)
 	}
 
