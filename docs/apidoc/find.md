@@ -12,7 +12,8 @@
         "start": 0,
         "limit": 10
     },
-    "query_string": "test"
+    "query_string": "test",
+    "filter": ["model"]
 }
 ```
 
@@ -24,6 +25,7 @@
 | start| int|否|-1|分页开始| 分页开始|
 | limit| int|否|-1|分页大小| 分页大小|
 | query_string| string|否|无|检索内容 | query string content|
+| filter| string list|否|空|过滤搜索表| 取值范围["model", "object", "host", "process", "application"]|
 
 
 * output:

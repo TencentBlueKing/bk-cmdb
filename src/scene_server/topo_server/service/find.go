@@ -24,7 +24,7 @@ type Aggregation struct {
 type SearchResults struct {
 	Total        int64          `json:"total"`
 	Aggregations []Aggregation  `json:"aggregations"`
-	Hits         []SearchResult `json:"hits,omitempty"`
+	Hits         []SearchResult `json:"hits"`
 }
 
 type Page struct {
@@ -36,6 +36,7 @@ type Query struct {
 	Paging      Page     `json:"page"`
 	QueryString string   `json:"query_string"`
 	TypeFilter  []string `json:"filter"`
+	BkObjId     string   `json:"bk_obj_id"`
 }
 
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -44,13 +45,16 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		// set paging default
 		query.Paging.Start = -1
 		query.Paging.Limit = -1
+		query.BkObjId = ""
 		if err := data.MarshalJSONInto(query); err != nil {
 			blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v", query, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
-		types := getEsIndexTypes(query.TypeFilter)
-		result, err := s.Es.CmdbSearch(query.QueryString, query.Paging.Start, query.Paging.Limit, types)
+		// get query and search types
+		queryEs, types := getEsQueryAndSearchTypes(query)
+
+		result, err := s.Es.CmdbSearch(queryEs, types, query.Paging.Start, query.Paging.Limit)
 		if err != nil {
 			blog.Errorf("full_text_find failed, find failed, err: %+v", err)
 			return nil, params.Err.Error(common.CCErrorTopoFullTextFindErr)
@@ -99,6 +103,26 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 }
 
+func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
+	qString := elastic.NewQueryStringQuery(query.QueryString)
+	if query.BkObjId == "" {
+		// get search types from filter
+		types := getEsIndexTypes(query.TypeFilter)
+		return qString, types
+	} else if query.BkObjId == common.TypeHost {
+		// if bk_obj_id is host, we search only from type cc_HostBase
+		types := []string{common.BKTableNameBaseHost}
+		return qString, types
+	} else {
+		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
+		qBool := elastic.NewBoolQuery()
+		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
+		qBool.Should(qString)
+		types := getEsIndexTypes(query.TypeFilter)
+		return qBool, types
+	}
+}
+
 func getEsIndexTypes(typesFilter []string) []string {
 	typesMap := make([]string, 0)
 	for _, filter := range typesFilter {
@@ -118,7 +142,7 @@ func getEsIndexTypes(typesFilter []string) []string {
 
 	types := make([]string, 0)
 	for _, value := range common.CmdbFindTypes {
-		if !in_types(value, typesMap) {
+		if !inTypes(value, typesMap) {
 			types = append(types, value)
 		}
 	}
@@ -126,7 +150,7 @@ func getEsIndexTypes(typesFilter []string) []string {
 	return types
 }
 
-func in_types(val string, types []string) bool {
+func inTypes(val string, types []string) bool {
 	for _, v := range types {
 		if v == val {
 			return true
