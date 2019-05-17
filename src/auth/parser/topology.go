@@ -43,6 +43,7 @@ func (ps *parseStream) topology() *parseStream {
 		ObjectSet().
 		objectUnique().
 		audit().
+		instanceAudit().
 		privilege()
 
 	return ps
@@ -599,7 +600,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 }
 
 const (
-	findObjectInstanceBatchRegexp = `/api/v3/object/search/batch`
+	findObjectBatchRegexp = `/api/v3/object/search/batch`
 )
 
 var (
@@ -904,7 +905,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		return ps
 	}
 
-	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+	if ps.hitPattern(findObjectBatchRegexp, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil && err != metadata.LabelKeyNotExistError {
 			ps.err = err
@@ -914,7 +915,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.Model,
 					Action: meta.FindMany,
 				},
 			},
@@ -1836,7 +1837,8 @@ func (ps *parseStream) objectUnique() *parseStream {
 }
 
 var (
-	searchAuditlog = `/api/v3/audit/search`
+	searchAuditlog         = `/api/v3/audit/search`
+	searchInstanceAuditlog = `/api/v3/object/[^\s/]+/audit/search`
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1849,8 +1851,31 @@ func (ps *parseStream) audit() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.AuditLog,
-					Action: meta.FindMany,
+					Type: meta.AuditLog,
+					// audit authorization in topo scene layer
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) instanceAudit() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// add object unique operation.
+	if ps.hitPattern(searchInstanceAuditlog, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type: meta.AuditLog,
+					// instance audit authorization by instance
+					Action: meta.SkipAction,
 				},
 			},
 		}
