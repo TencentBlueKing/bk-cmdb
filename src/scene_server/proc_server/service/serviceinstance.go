@@ -19,8 +19,8 @@ import (
 )
 
 // create service instance batch, which must belongs to a same module and service template.
-// if can also create process instance for a service instance at the same time.
-func (p *ProcServer) CreateServiceInstancesForTemplate(ctx *rest.Contexts) {
+// if needed, it also create process instance for a service instance at the same time.
+func (p *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -55,13 +55,104 @@ func (p *ProcServer) CreateServiceInstancesForTemplate(ctx *rest.Contexts) {
 		}
 
 		// if this service have process instance to create, then create it now.
-		// TODO:
-		if len(inst.Processes) != 0 {
-			// p.CoreAPI.CoreService().Instance().CreateInstance(ctx.Ctx, ctx.Header, common.BKProcessObjectName)
+		for _, detail := range inst.Processes {
+			id, err := p.Logic.CreateProcessInstance(ctx.Kit, &detail.ProcessInfo)
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"create service instance, for template: %d, moduleID: %d, but create process failed, err: %v",
+					input.TemplateID, input.ModuleID, err)
+				return
+			}
+
+			relation := &metadata.ProcessInstanceRelation{
+				Metadata:          input.Metadata,
+				ProcessID:         int64(id),
+				ProcessTemplateID: detail.ProcessTemplateID,
+				ServiceInstanceID: temp.ID,
+				HostID:            inst.HostID,
+			}
+
+			_, err = p.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"create service instance relations, for template: %d, moduleID: %d, err: %v",
+					input.TemplateID, input.ModuleID, err)
+				return
+			}
 		}
 
 		serviceInstanceIDs = append(serviceInstanceIDs, temp.ID)
 	}
 
 	ctx.RespEntity(metadata.NewSuccessResp(serviceInstanceIDs))
+}
+
+func (p *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts) {
+	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process instance in service instance failed, err: %v", err)
+		return
+	}
+
+	if err := p.Logic.DeleteProcessInstanceBatch(ctx.Kit, input.ProcessInstanceIDs); err != nil {
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance:%v failed, err: %v", input.ProcessInstanceIDs, err)
+		return
+	}
+
+	ctx.RespEntity(metadata.NewSuccessResp(nil))
+}
+
+func (p *ProcServer) GetServiceInstancesInModule(ctx *rest.Contexts) {
+	input := new(metadata.GetServiceInstanceInModuleInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service instances in module, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	option := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		ModuleID:   input.ModuleID,
+		Page:       input.Page,
+	}
+	instances, err := p.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get service instance in module: %d failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	ctx.RespEntity(metadata.NewSuccessResp(instances))
+}
+
+func (p *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
+	input := new(metadata.DeleteServiceInstanceOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service instances, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	err = p.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstancID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d failed, err: %v", input.ServiceInstancID, err)
+		return
+	}
+
+	ctx.RespEntity(metadata.NewSuccessResp(nil))
 }

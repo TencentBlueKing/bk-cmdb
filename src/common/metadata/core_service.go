@@ -13,12 +13,11 @@
 package metadata
 
 import (
-	"fmt"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"fmt"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
@@ -289,6 +288,14 @@ type OneServiceTemplateResult struct {
 type MultipleServiceTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
+}
+
+type ListServiceInstanceOption struct {
+	BusinessID        int64    `json:"business_id"`
+	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
+	HostID            int64    `json:"host_id,omitempty"`
+	ModuleID          int64    `json:"module_id,omitempty"`
+	Page              BasePage `json:"page,omitempty"`
 }
 
 type MultipleServiceTemplateResult struct {
