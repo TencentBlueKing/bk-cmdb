@@ -20,6 +20,62 @@ import (
 	"configcenter/src/common/util"
 )
 
+type DeleteCategoryInput struct {
+	Metadata Metadata `json:"metadata"`
+	ID       int64    `json:"id"`
+}
+
+type CreateProcessTemplateBatchInput struct {
+	Metadata          Metadata        `json:"metadata"`
+	ServiceTemplateID int64           `json:"serviceTemplateID"`
+	Processes         []ProcessDetail `json:"processes"`
+}
+
+type DeleteProcessTemplateBatchInput struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceTemplateID int64    `json:"serviceTemplateID"`
+	ProcessTemplates  []int64  `json:"processTemplates"`
+}
+
+type ProcessDetail struct {
+	Spec *ProcessProperty `json:"spec"`
+}
+
+type ListServiceTemplateInput struct {
+	Metadata Metadata `json:"metadata"`
+	// this field can be empty, it a optional condition.
+	ServiceCategoryID int64 `json:"serviceCategoryID,omitempty"`
+}
+
+type DeleteServiceTemplatesInput struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceTemplateID int64    `json:"serviceTemplateID"`
+}
+
+type CreateServiceInstanceForServiceTemplateInput struct {
+	Metadata   Metadata                `json:"metadata"`
+	Name       string                  `json:"name"`
+	TemplateID int64                   `json:"templateID"`
+	ModuleID   int64                   `json:"moduleID"`
+	Instances  []ServiceInstanceDetail `json:"instances"`
+}
+
+type ServiceInstanceDetail struct {
+	HostID    int64                   `json:"hostID"`
+	Processes []ProcessInstanceDetail `json:"processes"`
+}
+
+type ProcessInstanceDetail struct {
+	ProcessTemplateID int64   `json:"processTemplateID"`
+	ProcessInfo       Process `json:"processInfo"`
+}
+
+type ListProcessTemplateWithServiceTemplateInput struct {
+	Metadata           Metadata `json:"metadata"`
+	ProcessTemplatesID []int64  `json:"processTemplatesID"`
+	ServiceTemplateID  int64    `json:"serviceTemplateID"`
+}
+
 type SocketBindType string
 
 const (
@@ -108,7 +164,7 @@ type Process struct {
 }
 
 type ServiceCategory struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
@@ -139,7 +195,7 @@ type ServiceCategoryWithStatistics struct {
 }
 
 type ServiceTemplate struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
 	// name of this service, can not be empty
@@ -170,15 +226,14 @@ func (st *ServiceTemplate) Validate() (field string, err error) {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-
-	ID int64 `field:"id" json:"id" bson:"id"`
+	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	// the service template's, which this process template belongs to.
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
+	ServiceTemplateID int64 `field:"serviceTemplateID" json:"serviceTemplateID" bson:"serviceTemplateID"`
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property ProcessProperty `field:"property" json:"property" bson:"property"`
+	Property *ProcessProperty `field:"template" json:"template,omitempty" bson:"template"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -428,16 +483,15 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 	}
 }
 
-/*  TimeoutSeconds
-// AProtocol          sDefaultValue records the relations between process instance's property and
-// wDescription       hether it's used as a default value, the empty value can also be a default value.
-// If the property's value is used as a default value, then this property
-// can not be changed in all the process instance's created by this process
-// template. or, it can only be changed to this default value.
-*/
 type PropertyInt64 struct {
-	Value          *int64 `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool  `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
+	Value *int64 `field:"value" json:"value" bson:"value"`
+
+	// AsDefaultValue records the relations between process instance's property and
+	// whether it's used as a default value, the empty value can also be a default value.
+	// If the property's value is used as a default value, then this property
+	// can not be changed in all the process instance's created by this process
+	// template. or, it can only be changed to this default value.
+	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyInt64) Validate() error {
@@ -510,9 +564,9 @@ func (ti *PropertyProtocol) Validate() error {
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	ID       int64  `field:"id" json:"id" bson:"id"`
-	Name     string `field:"name" json:"name,omitempty" bson:"name"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
+	Name     string   `field:"name" json:"name,omitempty" bson:"name"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.

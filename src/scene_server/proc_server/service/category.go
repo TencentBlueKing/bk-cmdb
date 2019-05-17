@@ -19,19 +19,19 @@ import (
 )
 
 func (p *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
-	meta := new(metadata.Metadata)
+	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(*meta)
+	bizID, err := metadata.BizIDFromMetadata(meta.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get service category list, but get business id failed, err: %v", err)
 		return
 	}
 
-	list, err := p.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Ctx, ctx.Header, bizID, true)
+	list, err := p.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, bizID, true)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPReadBodyFailed, "get service category list failed, err: %v", err)
 		return
@@ -53,11 +53,33 @@ func (p *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	category, err := p.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Ctx, ctx.Header, input)
+	category, err := p.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service category failed, err: %v", err)
 		return
 	}
 
 	ctx.RespEntity(metadata.NewSuccessResp(category))
+}
+
+func (p *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
+	input := new(metadata.DeleteCategoryInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service category, but get business id failed, err: %v", err)
+		return
+	}
+
+	err = p.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service category failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(metadata.NewSuccessResp(nil))
 }

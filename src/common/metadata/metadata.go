@@ -179,6 +179,10 @@ func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
 	return bizID, nil
 }
 
+type MetadataWrapper struct {
+	Metadata Metadata `json:"metadata"`
+}
+
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
