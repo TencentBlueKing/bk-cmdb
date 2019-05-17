@@ -16,11 +16,7 @@
 
 在技术构建上，架构的核心聚焦于资源，我们把CMDB管理的原子资源分为主机、进程和通用对象三种类型，并构建了对这些资源的原子操作层。在这些原子操作之上，我们构建了更贴近用户操作的场景层，场景层通过对不同资源的组合操作来完成用户的请求。
 
-蓝鲸配置平台使用Golang作为开发语言，具有高性能、易于开发的特点；此外采用了微服务架构设计，具有较强的可扩展性，易于监控和支持平滑升级，系统的部署发布可以支持传统方式和容器方式。
-
-开源的版本会与蓝鲸社区版内置的蓝鲸配置平台版本保持一致并且同步更新。我们的目标是打造能够兼容不同行业、不同架构的统一配置管理平台，成为业界领先的通用性强、易用性好的免费开源CMDB，欢迎对此感兴趣的同仁能够参与其中。
-
-
+![front-page](docs/resource/img/frontpage.jpg)
 
 ## Overview
 * [架构设计](docs/overview/architecture.md)
@@ -47,26 +43,25 @@
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
 * [API使用说明](docs/apidoc/readme.md)
+* [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
 
 ## Version plan
 * [版本迭代](docs/VERSION.md)
 
 ## Support
-1. 参考bk-cmdb安装文档 [安装文档](docs/overview/installation.md)
-2. 阅读 [源码](https://github.com/Tencent/bk-cmdb/tree/master)
-3. 阅读 [wiki](https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) 或者寻求帮助
-4. 了解蓝鲸社区相关信息：[蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
-5. 联系我们，技术交流QQ群：
+1. 阅读 [wiki](https://github.com/Tencent/bk-cmdb/wiki/cmdb-3.0) 或者寻求帮助
+2. 常见 [FAQ](https://github.com/Tencent/bk-cmdb/wiki/FAQ)
+3. 了解蓝鲸社区相关信息：[蓝鲸社区版交流1群](https://jq.qq.com/?_wv=1027&k=5zk8F7G)
+4. 联系我们，bk-cmdb技术交流QQ群(305496802), 扫码入群戳[这里](docs/resource/img/qq.png)。
 
-![qq](docs/resource/img/qq.png)
 
 ## Contributing
 关于 bk-cmdb 分支管理、issue 以及 pr 规范，请阅读 [bk-cmdb Contributing Guide](docs/CONTRIBUTING.md)。  
 [腾讯开源激励计划](https://opensource.tencent.com/contribution) 鼓励开发者的参与和贡献，期待你的加入。
 
-## FAQ
+**合作伙伴：**
 
-https://github.com/Tencent/bk-cmdb/wiki/FAQ
+![jiawei](docs/resource/img/jiawei-logo.png)　　![youole](docs/resource/img/youole-logo.png)　　![yuanding](docs/resource/img/yuanding-logo.png)
 
 ## License
 bk-cmdb 是基于 MIT 协议， 详细请参考 [LICENSE](LICENSE) 。
