@@ -325,17 +325,17 @@ type MultipleServiceInstanceResult struct {
 	Data     MultipleServiceInstance `json:"data"`
 }
 
-type OneProcessInstanceResult struct {
+type OneProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
-	Data     Process `json:"data"`
+	Data     ProcessInstanceRelation `json:"data"`
 }
 
-type MultipleProcessInstance struct {
-	Count int64     `json:"count"`
-	Info  []Process `json:"info"`
+type MultipleProcessInstanceRelation struct {
+	Count int64                     `json:"count"`
+	Info  []ProcessInstanceRelation `json:"info"`
 }
 
-type MultipleProcessInstanceResult struct {
+type MultipleProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
-	Data     MultipleProcessInstance `json:"data"`
+	Data     MultipleProcessInstanceRelation `json:"data"`
 }
