@@ -14,7 +14,7 @@ package process
 
 import (
 	"fmt"
-	
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -40,7 +40,7 @@ func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Met
 		blog.Errorf("parse biz id from metadata failed, err: %+v", err)
 		return 0, err
 	}
-	
+
 	// avoid unnecessary db query
 	if bizID == 0 {
 		return 0, fmt.Errorf("bizID invalid, bizID: %d", bizID)
@@ -52,11 +52,53 @@ func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Met
 	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(cond.ToMapStr()).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameObjDes, err.Error(), ctx.ReqID)
-		return  0, err
+		return 0, err
 	}
 	if count < 1 {
 		return 0, fmt.Errorf("business not found, id:%d", bizID)
 	}
-	
+
 	return bizID, nil
+}
+
+func (p *processOperation) validateModuleID(ctx core.ContextParams, moduleID int64) error {
+	// avoid unnecessary db query
+	if moduleID == 0 {
+		return fmt.Errorf("moduleID invalid, moduleID: %d", moduleID)
+	}
+
+	// check bizID valid
+	cond := condition.CreateCondition()
+	cond.Field(common.BKModuleIDField).Eq(moduleID)
+	count, err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).Count(ctx.Context)
+	if nil != err {
+		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
+		return err
+	}
+	if count < 1 {
+		return fmt.Errorf("validateModuleID failed, module not found, id:%d", moduleID)
+	}
+
+	return nil
+}
+
+func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) error {
+	// avoid unnecessary db query
+	if hostID == 0 {
+		return fmt.Errorf("hostID invalid, bizID: %d", hostID)
+	}
+
+	// check bizID valid
+	cond := condition.CreateCondition()
+	cond.Field(common.BKHostIDField).Eq(hostID)
+	count, err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(cond.ToMapStr()).Count(ctx.Context)
+	if nil != err {
+		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), ctx.ReqID)
+		return err
+	}
+	if count < 1 {
+		return fmt.Errorf("validateHostID failed, host not found, id:%d", hostID)
+	}
+
+	return nil
 }
