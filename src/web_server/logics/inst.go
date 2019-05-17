@@ -75,8 +75,12 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	searchCond["page"] = nil
 	searchCond[metadata.BKMetadata] = meta
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetInstDetail(context.Background(), header, ownerID, objID, searchCond)
-	if nil != err || !result.Result {
+	if nil != err {
 		blog.Errorf("get inst detail error:%v , search condition:%#v", err, searchCond)
+		return nil, errors.New(err.Error())
+	}
+	if !result.Result {
+		blog.Errorf("get inst detail error, errcode : %d, errormsg : %s, search condition:%#v", result.Code, result.ErrMsg, searchCond)
 		return nil, errors.New(result.ErrMsg)
 	}
 
@@ -90,8 +94,12 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	attrCond[common.BKObjIDField] = objID
 	attrCond[common.BKOwnerIDField] = ownerID
 	attrResult, aErr := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, attrCond)
-	if nil != aErr || !attrResult.Result {
+	if nil != aErr {
 		blog.Errorf("get object attr error: %s", aErr.Error())
+		return nil, errors.New(aErr.Error())
+	}
+	if !attrResult.Result {
+		blog.Errorf("get object attr error, errorcode : %d, errormsg :%s", attrResult.ErrMsg)
 		return nil, errors.New(result.ErrMsg)
 	}
 	for _, cell := range attrResult.Data {
@@ -122,7 +130,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 	params["input_type"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
 	result, resultErr := lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
-	if nil != err {
+	if nil != resultErr {
 		blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
