@@ -1,8 +1,9 @@
 <template>
     <div class="full-text-search-layout">
-        <div class="full-text-sticky-layout" ref="stickyLayout">
+        <div class="full-text-sticky-layout" ref="topSticky">
             <div class="search-bar">
                 <input id="fullTextSearch"
+                    autocomplete="off"
                     class="search-keywords"
                     type="text"
                     maxlength="40"
@@ -11,63 +12,97 @@
                     @keypress.enter="handleSearch">
                 <label class="bk-icon icon-search" for="fullTextSearch"></label>
             </div>
-            <div class="classify">
+            <div class="classify" v-show="hasData">
+                <span class="classify-item"
+                    :class="['classify-item', { 'classify-active': -1 === currentClassify }]"
+                    @click="toggleClassify(-1)">
+                    {{$t("Index['全部结果']")}}（{{pagination['total']}}）
+                </span>
                 <span class="classify-item"
                     :class="['classify-item', { 'classify-active': index === currentClassify }]"
-                    v-for="(model, index) in classify"
+                    v-for="(model, index) in modelClassify"
                     :key="index"
-                    @click="toggleClassify(index)">
-                    {{model.title}}（{{model.num}}）
+                    @click="toggleClassify(index, model['bk_obj_id'])">
+                    {{model['bk_obj_name']}}（{{model['count']}}）
                 </span>
             </div>
         </div>
-        <div class="results-wrapper" ref="resultsWrapper">
-            <div class="results-list" ref="resultsList" v-bkloading="{ 'isLoading': true }">
-                <div class="results-item"
-                    v-for="(item, index) in result"
-                    :key="index">
-                    <div class="results-title" v-html="item.title"></div>
-                    <div class="results-desc">
-                        <span class="desc-item"
-                            v-for="(desc, childIndex) in item.desc"
-                            :key="childIndex" v-html="desc.field">
-                        </span>
+        <div class="results-wrapper" ref="resultsWrapper"
+            :class="{ 'searching': searching }"
+            v-bkloading="{ 'isLoading': searching }">
+            <div v-show="hasData">
+                <div class="results-list" ref="resultsList">
+                    <div class="results-item"
+                        v-for="(source, index) in searchData"
+                        :key="index"
+                        v-if="!['model'].includes(source['hitsType'])">
+                        <template v-if="source['hitsType'] === 'object'">
+                            <div class="results-title"
+                                v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
+                                @click="jumpPage(source)"></div>
+                            <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]">
+                                <span class="desc-item"
+                                    v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
+                                    :key="childIndex"
+                                    v-if="source[property['bk_property_id']]"
+                                    v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                                </span>
+                            </div>
+                        </template>
+                        <template v-if="source.hitsType === 'host'">
+                            <div class="results-title"
+                                v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
+                                @click="jumpPage(source)"></div>
+                            <div class="results-desc" v-if="propertyMap['host']">
+                                <span class="desc-item"
+                                    v-for="(property, childIndex) in propertyMap['host']"
+                                    :key="childIndex"
+                                    v-if="source[property['bk_property_id']]"
+                                    v-html="`${property['bk_property_name']}：${getShowPropertyText(property, source, property['bk_property_id'])}`">
+                                </span>
+                            </div>
+                        </template>
                     </div>
+                </div>
+                <div class="pagination clearfix">
+                    <div class="pagination-info fl">
+                        <span class="mr10">{{$tc("Common['共计N条']", pagination['total'], { N: pagination['total'] })}}</span>
+                        <i18n path="Common['每页显示条数']">
+                            <div ref="paginationSize" place="num"
+                                :class="['pagination-size', { 'active': isShowSizeSetting }]"
+                                :sizeDirection="'auto'"
+                                @click="isShowSizeSetting = !isShowSizeSetting"
+                                v-click-outside="closeSizeSetting">
+                                <span>{{pagination['limit']}}</span>
+                                <i class="bk-icon icon-angle-down"></i>
+                                <transition :name="transformOrigin === 'top' ? 'toggle-slide-top' : 'toggle-slide-bottom'">
+                                    <ul :class="['pagination-size-setting', transformOrigin === 'top' ? 'bottom' : 'top']"
+                                        v-show="sizeTransitionReady">
+                                        <li v-for="(limit, index) in limitList"
+                                            :key="index"
+                                            :class="['size-setting-item', { 'selected': pagination['limit'] === limit }]"
+                                            @click="handleLimitChange(limit)">
+                                            {{limit}}
+                                        </li>
+                                    </ul>
+                                </transition>
+                            </div>
+                        </i18n>
+                    </div>
+                    <bk-paging class="pagination-list fr"
+                        v-if="pagination['count'] > 1"
+                        :type="'compact'"
+                        :total-page="pagination['count']"
+                        :size="'small'"
+                        :cur-page="pagination['current']"
+                        @page-change="handlePageChange">
+                    </bk-paging>
                 </div>
             </div>
         </div>
-        <div class="pagination clearfix">
-            <div class="pagination-info fl">
-                <span class="mr10">{{$tc("Common['共计N条']", 100, { N: 100 })}}</span>
-                <i18n path="Common['每页显示条数']">
-                    <div ref="paginationSize" place="num"
-                        :class="['pagination-size', { 'active': isShowSizeSetting }]"
-                        :sizeDirection="'auto'"
-                        @click="isShowSizeSetting = !isShowSizeSetting"
-                        v-click-outside="closeSizeSetting">
-                        <span>{{pagination.limit}}</span>
-                        <i class="bk-icon icon-angle-down"></i>
-                        <transition :name="transformOrigin === 'top' ? 'toggle-slide-top' : 'toggle-slide-bottom'">
-                            <ul :class="['pagination-size-setting', transformOrigin === 'top' ? 'bottom' : 'top']"
-                                v-show="sizeTransitionReady">
-                                <li v-for="(limit, index) in [10, 20, 50, 100]"
-                                    :key="index"
-                                    :class="['size-setting-item', { 'selected': pagination.limit === limit }]"
-                                    @click="handleLimitChange(limit)">
-                                    {{limit}}
-                                </li>
-                            </ul>
-                        </transition>
-                    </div>
-                </i18n>
-            </div>
-            <bk-paging class="pagination-list fr"
-                :type="'compact'"
-                :total-page="pagination.count"
-                :size="'small'"
-                :cur-page="pagination.current"
-                @page-change="handlePageChange">
-            </bk-paging>
+        <div class="no-data" v-show="!hasData && showNoData && !searching">
+            <img src="../../../assets/images/full-text-search.png" alt="no-data">
+            <p>{{$t("Index['搜不到相关内容']")}}</p>
         </div>
     </div>
 </template>
@@ -77,165 +112,55 @@
         addMainScrollListener,
         removeMainScrollListener
     } from '@/utils/main-scroller'
+    import { mapGetters, mapActions } from 'vuex'
     export default {
         data () {
             return {
+                reg: /(?<=keywords=).*/,
                 scrollTop: null,
                 isShowSizeSetting: false,
                 sizeTransitionReady: false,
                 transformOrigin: 'top',
-                currentClassify: 0,
+                currentClassify: -1,
                 requestId: 'fullTextSearch',
                 queryString: '',
+                properties: [],
+                hasData: false,
+                showNoData: false,
+                searching: false,
+                limitList: [10, 20, 50, 100],
                 pagination: {
                     limit: 10,
                     start: 0,
-                    count: 80,
-                    current: 1
+                    count: 1,
+                    current: 1,
+                    total: 0
                 },
-                classify: [
-                    {
-                        title: '全部结果',
-                        num: 100
-                    },
-                    {
-                        title: '应用',
-                        num: 33
-                    },
-                    {
-                        title: '交换机',
-                        num: 10
-                    },
-                    {
-                        title: '负载均衡',
-                        num: 6
-                    },
-                    {
-                        title: 'Role',
-                        num: 24
-                    },
-                    {
-                        title: 'Tomcat',
-                        num: 6
-                    }
-                ],
-                result: [
-                    {
-                        title: '应用 - <em>oauth</em>111',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>2222',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    },
-                    {
-                        title: '应用 - <em>oauth</em>',
-                        desc: [
-                            {
-                                field: '业务组：快点击放大看',
-                                fieldDesc: ''
-                            },
-                            {
-                                field: '应用名称：<em>CMP</em>1',
-                                fieldDesc: ''
-                            }
-                        ]
-                    }
-                ]
+                allSearchData: [],
+                searchData: [],
+                modelClassify: [],
+                modelClassifyName: {},
+                propertyMap: {},
+                debounceTimer: null
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters('userCustom', ['usercustom']),
+            ...mapGetters('objectBiz', ['bizId']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
                 return {
                     page: {
                         start: this.pagination.start,
                         limit: this.pagination.limit
                     },
-                    query_string: this.queryString
+                    query_string: this.queryString,
+                    filter: ['model']
                 }
+            },
+            hash () {
+                return decodeURIComponent(window.location.hash)
             }
         },
         watch: {
@@ -247,46 +172,35 @@
                 }
             },
             queryString (queryString) {
-                if (queryString) this.handleSearch()
+                this.showNoData = false
+                this.hasData = false
+                window.location.hash = this.hash.replace(this.reg, this.queryString)
+                if (queryString) {
+                    this.handleSearch()
+                }
             }
         },
         created () {
+            this.$store.commit('setHeaderStatus', {
+                back: true
+            })
             this.$store.commit('setHeaderTitle', this.$t('Common["搜索结果"]'))
-            this.queryString = this.$route.params.queryString || ''
-            for (let i = 0; i < 10; i++) {
-                this.result.push({
-                    title: '应用 - <em>oauth</em>',
-                    desc: [
-                        {
-                            field: '业务组：快点击放大看',
-                            fieldDesc: ''
-                        },
-                        {
-                            field: '应用名称：<em>CMP</em>1',
-                            fieldDesc: ''
-                        }
-                    ]
-                })
-                this.classify.push({
-                    title: '自定义模型',
-                    num: 100
-                })
-            }
+            this.queryString = this.reg.exec(this.hash)[0]
         },
         mounted () {
-            this.initScrollListener()
-            // this.$refs.resultsList.minHeight = this.$refs.stickyLayout.offsetHeight + 'px'
+            this.initScrollListener(this.$refs.topSticky)
         },
         destroyed () {
             removeMainScrollListener(this.scrollTop)
         },
         methods: {
-            initScrollListener () {
+            ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            initScrollListener (domRefs) {
                 this.scrollTop = event => {
                     const target = event.target
-                    this.$refs.stickyLayout.style.top = target.scrollTop + 'px'
+                    domRefs.style.top = target.scrollTop + 'px'
                 }
-                this.$refs.resultsWrapper.style.paddingTop = this.$refs.stickyLayout.offsetHeight + 'px'
+                this.$refs.resultsWrapper.style.paddingTop = domRefs.offsetHeight + 'px'
                 addMainScrollListener(this.scrollTop)
             },
             closeSizeSetting () {
@@ -298,7 +212,7 @@
                     this.transformOrigin = this.pagination.sizeDirection
                 } else {
                     const sizeSettingItemHeight = 32
-                    const sizeSettingHeight = [10, 20, 50, 100].length * sizeSettingItemHeight
+                    const sizeSettingHeight = this.limitList.length * sizeSettingItemHeight
                     const paginationSizeRect = paginationSizeDom.getBoundingClientRect()
                     const bodyRect = document.body.getBoundingClientRect()
                     if (bodyRect.height - paginationSizeRect.y - paginationSizeRect.height > sizeSettingHeight) {
@@ -309,18 +223,128 @@
                 }
                 this.sizeTransitionReady = true
             },
-            toggleClassify (index) {
+            toggleClassify (index, model) {
                 this.currentClassify = index
+                const list = this.allSearchData
+                if (index === -1) {
+                    this.searchData = list
+                    // Object.keys(this.modelClassifyName).forEach(key => {
+                    //     this.modelClassifyName[key] = this.modelClassifyName[key].replace(/(\<\/?em\>)/g, '')
+                    // })
+                } else if (model === 'host') {
+                    this.searchData = list.filter(item => item['hitsType'] === model)
+                } else {
+                    this.searchData = list.filter(item => item['bk_obj_id'] === model)
+                }
+                // model && (this.modelClassifyName[model] = `<em>${this.modelClassifyName[model]}</em>`)
             },
-            handleSearch () {
-                if (!this.queryString) return
-                this.$store.dispatch('fullTextSearch/search', {
-                    params: this.params,
+            customConfig (objId) {
+                const customConfigKey = `${this.userName}_${objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
+                return {
+                    customConfigKey,
+                    customColumns: this.usercustom[customConfigKey]
+                }
+            },
+            async getProperties (objId) {
+                this.propertyMap = await this.batchSearchObjectAttribute({
+                    params: this.$injectMetadata({
+                        bk_obj_id: objId,
+                        bk_supplier_account: this.supplierAccount
+                    }, { inject: false }),
                     config: {
-                        requestId: this.requestId,
-                        cancelPrevious: true
+                        requestId: `post_batchSearchObjectAttribute_${objId['$in'].join('_')}`,
+                        requestGroup: objId['$in'].map(id => `post_searchObjectAttribute_${id}`)
                     }
                 })
+            },
+            handleSearch () {
+                const debounceTimer = this.debounceTimer
+                if (debounceTimer) {
+                    clearTimeout(debounceTimer)
+                    this.debounceTimer = null
+                }
+                this.debounceTimer = setTimeout(() => {
+                    if (!this.queryString) return
+                    this.searching = true
+                    this.$store.dispatch('fullTextSearch/search', {
+                        params: this.params,
+                        config: {
+                            requestId: this.requestId,
+                            cancelPrevious: true
+                        }
+                    }).then(data => {
+                        this.searching = false
+                        this.currentClassify = -1
+                        const hitsData = data.hits
+                        const modelData = data.aggregations
+                        this.setPagination(data.total)
+                        if (hitsData && modelData) {
+                            const objId = {
+                                '$in': modelData.map(aggregation => aggregation.key)
+                            }
+                            this.getProperties(objId)
+                            this.allSearchData = hitsData.map(hits => {
+                                return {
+                                    ...hits.source,
+                                    ...hits.highlight,
+                                    hitsType: hits.type
+                                }
+                            })
+                            this.searchData = this.allSearchData
+                            this.modelClassify = modelData.map(item => {
+                                return {
+                                    ...this.getModelById(item.key),
+                                    count: item.count
+                                }
+                            })
+                            this.modelClassify.forEach(model => {
+                                this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
+                            })
+                        }
+                        this.hasData = data.total
+                        this.$nextTick(() => {
+                            this.initScrollListener(this.$refs.topSticky)
+                        })
+                    }).finally(() => {
+                        this.showNoData = true
+                    })
+                }, 600)
+            },
+            jumpPage (source) {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
+                if (source['hitsType'] === 'host') {
+                    this.$router.push({
+                        name: 'resource',
+                        params: {
+                            host_innerip: source['bk_host_innerip']
+                        }
+                    })
+                } else if (source['hitsType'] === 'object') {
+                    this.$router.push({
+                        name: 'generalModel',
+                        params: {
+                            objId: source['bk_obj_id'],
+                            source: source
+                        }
+                    })
+                }
+            },
+            getShowPropertyText (property, source, thisProperty) {
+                const cloneSource = this.$tools.clone(source)
+                const reg = /^\<em\>.+\<\/em\>$/
+                const propertyValue = cloneSource[thisProperty].toString()
+                const isHeightLight = reg.test(propertyValue)
+                if (isHeightLight) {
+                    cloneSource[thisProperty] = propertyValue.replace(/(\<\/?em\>)/g, '')
+                }
+                const flatternedText = this.$tools.getPropertyText(property, cloneSource)
+                return isHeightLight ? `<em>${flatternedText}</em>` : flatternedText
+            },
+            setPagination (total) {
+                this.pagination.total = total
+                this.pagination.count = Math.ceil(total / this.pagination.limit)
             },
             handleLimitChange (limit) {
                 if (this.pagination.limit === limit) return
@@ -345,7 +369,6 @@
         .full-text-sticky-layout {
             width: 90%;
             margin: 0 auto;
-            border-bottom: 1px solid #dde4eb;
             position: absolute;
             top: 0;
             left: 50%;
@@ -377,6 +400,7 @@
         .classify {
             color: $cmdbTextColor;
             font-size: 14px;
+            border-bottom: 1px solid #dde4eb;
             .classify-item {
                 display: inline-block;
                 margin-right: 20px;
@@ -394,11 +418,15 @@
         .results-wrapper {
             width: 90%;
             margin: 0 auto;
+            &.searching {
+                min-height: 500px;
+            }
             .results-list {
                 padding-top: 14px;
                 color: $cmdbTextColor;
                 .results-item {
-                    padding-bottom: 20px;
+                    width: 60%;
+                    padding-bottom: 14px;
                     em {
                         color: #3a84ff !important;
                         font-style: normal !important;
@@ -409,21 +437,22 @@
                         margin-bottom: 4px;
                         cursor: pointer;
                         &:hover {
+                            color: #3a84ff;
                             text-decoration: underline;
                         }
                     }
                     .results-desc {
                         font-size: 12px;
                         .desc-item {
+                            display: inline-block;
                             padding-right: 16px;
+                            padding-bottom: 6px;
                         }
                     }
                 }
             }
         }
         .pagination {
-            width: 90%;
-            margin: 0 auto;
             border-top: 1px solid #dde4eb;
             padding-top: 10px;
             color: $cmdbTextColor;
@@ -499,6 +528,17 @@
         .toggle-slide-top-leave-active {
             transform: translateZ(0) scaleY(0);
             opacity: 0;
+        }
+        .no-data {
+            width: 90%;
+            margin: 0 auto;
+            padding-top: 240px;
+            text-align: center;
+            color: #63656E;
+            font-size: 16px;
+            img {
+                width: 104px;
+            }
         }
     }
 </style>
