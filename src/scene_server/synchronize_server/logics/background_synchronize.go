@@ -125,6 +125,11 @@ func (s *synchronizeItem) synchronizeItemException(ctx context.Context, exceptio
 func (s *synchronizeItem) synchronizeInstanceTask(ctx context.Context) (errorInfoArr []metadata.ExceptionResult, err errors.CCError) {
 
 	inst := s.lgc.NewFetchInst(s.config, s.baseCondition)
+	err = inst.Pretreatment()
+	if err != nil {
+		blog.Errorf("inst Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
+		return nil, err
+	}
 	var partErrorInfoArr []metadata.ExceptionResult
 
 	// must first business.  get synchronize app information,
@@ -265,6 +270,11 @@ func (s *synchronizeItem) synchronizeModelTask(ctx context.Context) ([]metadata.
 	conditionMapStr := baseCondition.ToMapStr()
 	conditionMapStr.Merge(s.baseCondition)
 	model := s.lgc.NewFetchModel(s.config, conditionMapStr)
+	err := model.Pretreatment()
+	if err != nil {
+		blog.Errorf("model Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
+		return nil, err
+	}
 	classifyArr := []string{
 		common.SynchronizeModelTypeBase,
 		common.SynchronizeModelTypeClassification,
@@ -350,7 +360,7 @@ func (s *synchronizeItem) sycnhronizePartModel(ctx context.Context, input *metad
 	// 当配置不需要同步模型的时候。不去保存数据，
 	// 但是需要使用上面的功能获取需要同步模型id。 s.ojjIDMap
 	if s.config.IgnoreModelAttr {
-		blog.V(4).Infof("sycnhronizePartModel skip. rid:%s, version:%s", s.lgc.rid, s.version)
+		blog.V(4).Infof("sycnhronizePartModel skip. rid:%s, version:%v", s.lgc.rid, s.version)
 		return errorInfoArr, nil
 	}
 	result, err := s.lgc.CoreAPI.CoreService().Synchronize().SynchronizeModel(ctx, s.lgc.header, synchronizeParameter)

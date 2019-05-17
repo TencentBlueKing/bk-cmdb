@@ -113,6 +113,7 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		witeList := current.ConfigMap[name+".WiteList"]
 		objectIDs := current.ConfigMap[name+".ObjectID"]
 		ignoreModelAttr := current.ConfigMap[name+".IgnoreModelAttribute"]
+		strEnableInstFilter := current.ConfigMap[name+".EnableInstFilter"]
 
 		configItem.AppNames = SplitFilter(appNames, ",")
 		if syncResource == "1" {
@@ -134,6 +135,10 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 		configItem.FieldSign = fieldSign
 		configItem.SynchronizeFlag = dataSign
 		configItem.SupplerAccount = SplitFilter(supplerAccount, ",")
+		if strEnableInstFilter == "1" {
+			configItem.EnableInstFilter = true
+		}
+
 		configInfo.ConifgItemArray = append(configInfo.ConifgItemArray, configItem)
 		if targetHost != "" {
 			s.synchronizeClientConfig <- synchronizeUtil.SychronizeConfig{
@@ -141,6 +146,7 @@ func (s *SynchronizeServer) onSynchronizeServerConfigUpdate(previous, current cc
 				Addrs: []string{targetHost},
 			}
 		}
+
 	}
 	s.Config = configInfo
 

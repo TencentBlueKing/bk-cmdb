@@ -86,14 +86,16 @@ func (s *synchronizeAdapter) PreSynchronizeFilter(ctx core.ContextParams) errors
 					}
 					continue
 				}
-				metadata.Set(common.MetaDataSynchronizeFlagField, s.syncData.SynchronizeFlag)
-				metadata.Set(common.MetaDataSynchronizeVersionField, s.syncData.Version)
+				metadata.Set(common.MetaDataSynchronizeField, mapstr.MapStr{
+					common.MetaDataSynchronizeFlagField:    s.syncData.SynchronizeFlag,
+					common.MetaDataSynchronizeVersionField: s.syncData.Version,
+				})
 			} else {
 				item.Info.Set(common.MetadataField,
-					mapstr.MapStr{
+					mapstr.MapStr{common.MetaDataSynchronizeField: mapstr.MapStr{
 						common.MetaDataSynchronizeFlagField:    s.syncData.SynchronizeFlag,
 						common.MetaDataSynchronizeVersionField: s.syncData.Version,
-					})
+					}})
 			}
 		}
 	}

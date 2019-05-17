@@ -67,6 +67,9 @@ func (lgc *Logics) TriggerSynchronize(ctx context.Context, config *options.Confi
 
 	blog.V(4).Infof("synchronize ready")
 	timeInterval := time.Duration(interval) * time.Minute
+
+	// TODO delete
+	timeInterval = time.Second * 10
 	for {
 		ticker := time.NewTimer(timeInterval)
 		<-ticker.C
