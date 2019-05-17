@@ -94,12 +94,13 @@ const (
 	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
 	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
 	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
-	
+
 	// process tables
-	BKTableNameServiceCategory              = "cc_ServiceCategory"
-	BKTableNameServiceTemplate              = "cc_ServiceTemplate"
-	BKTableNameServiceInstance              = "cc_ServiceInstance"
-	BKTableNameProcessTemplate              = "cc_ProcessTemplate"
+	BKTableNameServiceCategory         = "cc_ServiceCategory"
+	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
+	BKTableNameServiceInstance         = "cc_ServiceInstance"
+	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
+	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
 )
 
 // AllTables alltables
