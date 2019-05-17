@@ -100,7 +100,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	return relation, nil
 }
 
-func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessInstanceRelation, error) {
+func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessInstanceRelation, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
