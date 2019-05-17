@@ -340,7 +340,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) BatchDeleteProcessTemplate(ctx context.Context, h http.Header, templateIDs []int64) error {
+func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header, templateIDs []int64) error {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/delete/process/process_template"
 
