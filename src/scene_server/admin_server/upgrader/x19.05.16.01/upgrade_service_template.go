@@ -32,6 +32,9 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	if err != nil {
 		return fmt.Errorf("addDefaultCategory failed: %v", err)
 	}
+	if err = backupProcessBase(ctx, db, conf); err != nil {
+		return fmt.Errorf("backupProcessBase failed: %v", err)
+	}
 
 	allmodules := []metadata.ModuleInst{}
 	if err = db.Table(common.BKTableNameBaseModule).Find(nil).All(ctx, &allmodules); err != nil {
@@ -179,6 +182,26 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	return nil
+}
+
+func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	start := uint64(0)
+	limit := uint64(100)
+	for {
+		process := []mapstr.MapStr{}
+		if err := db.Table(common.BKTableNameBaseProcess).Find(nil).Start(start).Limit(limit).
+			All(ctx, &process); err != nil {
+			return err
+		}
+		if len(process) <= 0 {
+			break
+		}
+		if err := db.Table("cc_Process_backup").Insert(ctx, process); err != nil {
+			return err
+		}
+		start += limit
+	}
+	return db.Table(common.BKTableNameBaseProcess).Update(ctx, nil, mapstr.MapStr{"old_flag": true})
 }
 
 func procInstToProcTemplate(inst metadata.Process) metadata.ProcessProperty {
