@@ -8,7 +8,7 @@
                     type="text"
                     maxlength="40"
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
-                    v-model.trim="queryString"
+                    v-model.trim="query.queryString"
                     @keypress.enter="handleSearch">
                 <label class="bk-icon icon-search" for="fullTextSearch"></label>
             </div>
@@ -16,7 +16,7 @@
                 <span class="classify-item"
                     :class="['classify-item', { 'classify-active': -1 === currentClassify }]"
                     @click="toggleClassify(-1)">
-                    {{$t("Index['全部结果']")}}（{{pagination['total']}}）
+                    {{$t("Index['全部结果']")}}（{{allSearchCount}}）
                 </span>
                 <span class="classify-item"
                     :class="['classify-item', { 'classify-active': index === currentClassify }]"
@@ -49,7 +49,7 @@
                                 </span>
                             </div>
                         </template>
-                        <template v-if="source.hitsType === 'host'">
+                        <template v-else-if="source.hitsType === 'host'">
                             <div class="results-title"
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
@@ -123,7 +123,11 @@
                 transformOrigin: 'top',
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
-                queryString: '',
+                // queryString: '',
+                query: {
+                    queryString: '',
+                    objId: ''
+                },
                 properties: [],
                 hasData: false,
                 showNoData: false,
@@ -136,7 +140,7 @@
                     current: 1,
                     total: 0
                 },
-                allSearchData: [],
+                allSearchCount: null,
                 searchData: [],
                 modelClassify: [],
                 modelClassifyName: {},
@@ -145,17 +149,16 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
-            ...mapGetters('userCustom', ['usercustom']),
-            ...mapGetters('objectBiz', ['bizId']),
-            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
+            ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectModelClassify', ['getModelById']),
             params () {
                 return {
                     page: {
                         start: this.pagination.start,
                         limit: this.pagination.limit
                     },
-                    query_string: this.queryString,
+                    bk_obj_id: this.query.objId,
+                    query_string: this.query.queryString,
                     filter: ['model']
                 }
             },
@@ -171,12 +174,13 @@
                     this.sizeTransitionReady = false
                 }
             },
-            queryString (queryString) {
+            'query.queryString' (queryString) {
                 this.showNoData = false
                 this.hasData = false
-                window.location.hash = this.hash.replace(this.reg, this.queryString)
+                window.location.hash = this.hash.replace(this.reg, this.query.queryString)
+                this.query.objId = ''
                 if (queryString) {
-                    this.handleSearch()
+                    this.handleSearch(600)
                 }
             }
         },
@@ -185,7 +189,7 @@
                 back: true
             })
             this.$store.commit('setHeaderTitle', this.$t('Common["搜索结果"]'))
-            this.queryString = this.reg.exec(this.hash)[0]
+            this.query.queryString = this.reg.exec(this.hash)[0]
         },
         mounted () {
             this.initScrollListener(this.$refs.topSticky)
@@ -200,7 +204,7 @@
                     const target = event.target
                     domRefs.style.top = target.scrollTop + 'px'
                 }
-                this.$refs.resultsWrapper.style.paddingTop = domRefs.offsetHeight + 'px'
+                this.$refs.resultsWrapper.style.marginTop = domRefs.offsetHeight + 'px'
                 addMainScrollListener(this.scrollTop)
             },
             closeSizeSetting () {
@@ -225,25 +229,14 @@
             },
             toggleClassify (index, model) {
                 this.currentClassify = index
-                const list = this.allSearchData
-                if (index === -1) {
-                    this.searchData = list
-                    // Object.keys(this.modelClassifyName).forEach(key => {
-                    //     this.modelClassifyName[key] = this.modelClassifyName[key].replace(/(\<\/?em\>)/g, '')
-                    // })
-                } else if (model === 'host') {
-                    this.searchData = list.filter(item => item['hitsType'] === model)
-                } else {
-                    this.searchData = list.filter(item => item['bk_obj_id'] === model)
-                }
+                this.query.objId = model
+                this.pagination.start = 0
+                this.pagination.current = 1
+                this.handleSearch()
+                // Object.keys(this.modelClassifyName).forEach(key => {
+                //     this.modelClassifyName[key] = this.modelClassifyName[key].replace(/(\<\/?em\>)/g, '')
+                // })
                 // model && (this.modelClassifyName[model] = `<em>${this.modelClassifyName[model]}</em>`)
-            },
-            customConfig (objId) {
-                const customConfigKey = `${this.userName}_${objId}_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`
-                return {
-                    customConfigKey,
-                    customColumns: this.usercustom[customConfigKey]
-                }
             },
             async getProperties (objId) {
                 this.propertyMap = await this.batchSearchObjectAttribute({
@@ -257,14 +250,14 @@
                     }
                 })
             },
-            handleSearch () {
+            handleSearch (wait = 0) {
                 const debounceTimer = this.debounceTimer
                 if (debounceTimer) {
                     clearTimeout(debounceTimer)
                     this.debounceTimer = null
                 }
                 this.debounceTimer = setTimeout(() => {
-                    if (!this.queryString) return
+                    if (!this.query.queryString) return
                     this.searching = true
                     this.$store.dispatch('fullTextSearch/search', {
                         params: this.params,
@@ -274,41 +267,47 @@
                         }
                     }).then(data => {
                         this.searching = false
-                        this.currentClassify = -1
+                        this.setPagination(data.total)
                         const hitsData = data.hits
                         const modelData = data.aggregations
-                        this.setPagination(data.total)
                         if (hitsData && modelData) {
-                            const objId = {
-                                '$in': modelData.map(aggregation => aggregation.key)
+                            if (!this.query.objId) {
+                                this.currentClassify = -1
+                                this.modelClassify = modelData.map(item => {
+                                    return {
+                                        ...this.getModelById(item.key),
+                                        count: item.count
+                                    }
+                                })
+                                this.modelClassify.forEach(model => {
+                                    this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
+                                })
+                                const objId = {
+                                    '$in': modelData.map(aggregation => aggregation.key)
+                                }
+                                this.getProperties(objId)
+                                this.allSearchCount = data.total
+                                this.hasData = data.total
                             }
-                            this.getProperties(objId)
-                            this.allSearchData = hitsData.map(hits => {
-                                return {
+                            this.searchData = hitsData.map(hits => {
+                                const hit = {
                                     ...hits.source,
                                     ...hits.highlight,
                                     hitsType: hits.type
                                 }
-                            })
-                            this.searchData = this.allSearchData
-                            this.modelClassify = modelData.map(item => {
-                                return {
-                                    ...this.getModelById(item.key),
-                                    count: item.count
+                                if (hit.hasOwnProperty('bk_obj_id')) {
+                                    hit['bk_obj_id'] = hit['bk_obj_id'].toString().replace(/\<\/?em\>/g, '')
                                 }
-                            })
-                            this.modelClassify.forEach(model => {
-                                this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
+                                return hit
                             })
                         }
-                        this.hasData = data.total
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
                         })
                     }).finally(() => {
                         this.showNoData = true
                     })
-                }, 600)
+                }, wait)
             },
             jumpPage (source) {
                 this.$store.commit('setHeaderStatus', {
@@ -317,8 +316,12 @@
                 if (source['hitsType'] === 'host') {
                     this.$router.push({
                         name: 'resource',
-                        params: {
-                            host_innerip: source['bk_host_innerip']
+                        query: {
+                            ip: source['bk_host_innerip'],
+                            outer: false,
+                            inner: true,
+                            exact: 1,
+                            assigned: true
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
@@ -374,7 +377,7 @@
             left: 50%;
             background: #ffffff;
             transform: translateX(-50%);
-            z-index: 10001;
+            z-index: 10;
         }
         .search-bar {
             position: relative;
@@ -420,6 +423,9 @@
             margin: 0 auto;
             &.searching {
                 min-height: 500px;
+            }
+            .bk-loading {
+                z-index: 9 !important;
             }
             .results-list {
                 padding-top: 14px;
