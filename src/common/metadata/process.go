@@ -213,7 +213,7 @@ type ProcessProperty struct {
 	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
 	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
 	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyInt64    `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
 	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
 	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`

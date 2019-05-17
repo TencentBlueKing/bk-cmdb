@@ -26,7 +26,7 @@ func createServiceTemplateTables(ctx context.Context, db dal.RDB, conf *upgrader
 		common.BKTableNameServiceTemplate,
 		common.BKTableNameServiceInstance,
 		common.BKTableNameProcessTemplate,
-		common.BKTableNameServiceInstanceRelations,
+		common.BKTableNameProcessInstanceRelation,
 	}
 
 	for _, tablename := range tables {
