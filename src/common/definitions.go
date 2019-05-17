@@ -1009,11 +1009,15 @@ const (
 
 const (
 	// MetaDataSynchronizeField Synchronous data aggregation field
-	MetaDataSynchronizeField        = "sync"
-	MetaDataSynchronizeFlagField    = "metadata_sync_flag"
-	MetaDataSynchronizeVersionField = "metadata_sync_version"
+	MetaDataSynchronizeField = "sync"
+	// MetaDataSynchronizeFlagField synchronize flag
+	MetaDataSynchronizeFlagField = "flag"
+	// MetaDataSynchronizeVersionField synchronize version
+	MetaDataSynchronizeVersionField = "version"
 	// MetaDataSynchronizeIdentifierField 数据需要同步cmdb系统的身份标识， 值是数组
 	MetaDataSynchronizeIdentifierField = "identifier"
+	// MetaDataSynchronIdentifierFlagSyncAllValue 数据可以被任何系统同步
+	MetaDataSynchronIdentifierFlagSyncAllValue = "__bk_cmdb__"
 
 	// SynchronizeSignPrefix  synchronize sign , Should appear in the configuration file
 	SynchronizeSignPrefix = "sync_blueking"

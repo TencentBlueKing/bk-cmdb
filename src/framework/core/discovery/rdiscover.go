@@ -13,6 +13,7 @@
 package discovery
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -20,7 +21,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"context"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
