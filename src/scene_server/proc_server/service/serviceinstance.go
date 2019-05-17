@@ -46,7 +46,7 @@ func (p *ProcServer) CreateServiceInstancesForTemplate(ctx *rest.Contexts) {
 		}
 
 		// create service instance at first
-		temp, err := p.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Ctx, ctx.Header, instance)
+		temp, err := p.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed,
 				"create service instance for template: %d, moduleID: %d, failed, err: %v",

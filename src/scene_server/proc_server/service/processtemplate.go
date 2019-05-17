@@ -13,10 +13,11 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"strconv"
 )
 
 // create a process template for a service template.
@@ -41,7 +42,7 @@ func (p *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 			Template:          process.Spec,
 		}
 
-		temp, err := p.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Ctx, ctx.Header, t)
+		temp, err := p.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create process template failed, err: %v, template: +%v", err, *t)
 			return
@@ -68,7 +69,7 @@ func (p *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	// TODO: use batch delete api when it's ready
-	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Ctx, ctx.Header, input.ProcessTemplates)
+	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete process template: %v failed, err: %v.",
 			input.ProcessTemplates, err)
@@ -96,7 +97,7 @@ func (p *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	tmp, err := p.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Ctx, ctx.Header, input.ID, input)
+	tmp, err := p.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update process template: %v failed, err: %v.", input, err)
 		return
@@ -124,7 +125,7 @@ func (p *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	tmp, err := p.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Ctx, ctx.Header, templateID)
+	tmp, err := p.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return
@@ -153,7 +154,7 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	// TODO: wait for list api update
-	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Ctx, ctx.Header, templateID)
+	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return

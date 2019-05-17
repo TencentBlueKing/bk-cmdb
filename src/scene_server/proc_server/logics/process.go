@@ -108,24 +108,3 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64) (map[int
 
 	return gseProc, nil
 }
-
-func (lgc *Logics) GetProcessbyProcID(ctx context.Context, procID string) (map[string]interface{}, error) {
-	condition := map[string]interface{}{
-		common.BKProcessIDField: procID,
-	}
-
-	reqParam := new(metadata.QueryCondition)
-	reqParam.Condition = condition
-	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDProc, reqParam)
-	if nil != err {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http do error:%s, logID::%s", procID, lgc.ownerID, err.Error(), lgc.rid)
-		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !ret.Result {
-		blog.Errorf("getProcInfoByID procID %v supplierID %s  http reply error:%s, logID:%s", procID, lgc.ownerID, ret.ErrMsg, lgc.rid)
-		return nil, lgc.ccErr.New(ret.Code, ret.ErrMsg)
-
-	}
-
-	return ret.Data.Info[0], nil
-}
