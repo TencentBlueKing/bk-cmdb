@@ -135,7 +135,7 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 
 type ServiceCategoryWithStatistics struct {
 	ServiceCategory ServiceCategory `field:"category" json:"category" bson:"category"`
-	UsageAmount     int64           `field:"usageAmount" json:"usageAmount" bson:"usageAmount"`
+	UsageAmount     int64           `field:"usage_amount" json:"usage_amount" bson:"usage_amount"`
 }
 
 type ServiceTemplate struct {
@@ -185,26 +185,6 @@ type ProcessTemplate struct {
 	CreateTime      time.Time `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
 	LastTime        time.Time `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
-}
-
-type Property interface {
-	GetValue() interface{}
-	SetValue(interface{})
-
-	GetAsDefaultValue() interface{}
-	SetAsDefaultValue(interface{})
-}
-
-func UpdateProperty(to Property, from Property) {
-	value := from.GetValue()
-	if value != nil {
-		to.SetValue(value)
-	}
-
-	asDefaultValue := from.GetValue()
-	if asDefaultValue != nil {
-		to.SetAsDefaultValue(asDefaultValue)
-	}
 }
 
 func (pt *ProcessTemplate) Validate() (field string, err error) {
@@ -307,26 +287,145 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 }
 
 func (pt *ProcessProperty) Update(input ProcessProperty) {
-	UpdateProperty(&input.ProcNum, &input.ProcNum)
-	UpdateProperty(&input.StopCmd, &input.StopCmd)
-	UpdateProperty(&input.RestartCmd, &input.RestartCmd)
-	UpdateProperty(&input.ForceStopCmd, &input.ForceStopCmd)
-	UpdateProperty(&input.ProcessID, &input.ProcessID)
-	UpdateProperty(&input.FuncName, &input.FuncName)
-	UpdateProperty(&input.WorkPath, &input.WorkPath)
-	UpdateProperty(&input.BindIP, &input.BindIP)
-	UpdateProperty(&input.ReloadCmd, &input.ReloadCmd)
-	UpdateProperty(&input.ProcessName, &input.ProcessName)
-	UpdateProperty(&input.Port, &input.Port)
-	UpdateProperty(&input.PidFile, &input.PidFile)
-	UpdateProperty(&input.AutoStart, &input.AutoStart)
-	UpdateProperty(&input.AutoTimeGapSeconds, &input.AutoTimeGapSeconds)
-	UpdateProperty(&input.StartCmd, &input.StartCmd)
-	UpdateProperty(&input.FuncID, &input.FuncID)
-	UpdateProperty(&input.User, &input.User)
-	UpdateProperty(&input.TimeoutSeconds, &input.TimeoutSeconds)
-	UpdateProperty(&input.Protocol, &input.Protocol)
-	UpdateProperty(&input.Description, &input.Description)
+	if input.ProcNum.Value != nil {
+		pt.ProcNum.Value = input.ProcNum.Value
+	}
+	if input.ProcNum.AsDefaultValue != nil {
+		pt.ProcNum.AsDefaultValue = input.ProcNum.AsDefaultValue
+	}
+
+	if input.StopCmd.Value != nil {
+		pt.StopCmd.Value = input.StopCmd.Value
+	}
+	if input.StopCmd.AsDefaultValue != nil {
+		pt.StopCmd.AsDefaultValue = input.StopCmd.AsDefaultValue
+	}
+
+	if input.RestartCmd.Value != nil {
+		pt.RestartCmd.Value = input.RestartCmd.Value
+	}
+	if input.RestartCmd.AsDefaultValue != nil {
+		pt.RestartCmd.AsDefaultValue = input.RestartCmd.AsDefaultValue
+	}
+
+	if input.ForceStopCmd.Value != nil {
+		pt.ForceStopCmd.Value = input.ForceStopCmd.Value
+	}
+	if input.ForceStopCmd.AsDefaultValue != nil {
+		pt.ForceStopCmd.AsDefaultValue = input.ForceStopCmd.AsDefaultValue
+	}
+
+	if input.ProcessID.Value != nil {
+		pt.ProcessID.Value = input.ProcessID.Value
+	}
+	if input.ProcessID.AsDefaultValue != nil {
+		pt.ProcessID.AsDefaultValue = input.ProcessID.AsDefaultValue
+	}
+
+	if input.FuncName.Value != nil {
+		pt.FuncName.Value = input.FuncName.Value
+	}
+	if input.FuncName.AsDefaultValue != nil {
+		pt.FuncName.AsDefaultValue = input.FuncName.AsDefaultValue
+	}
+
+	if input.WorkPath.Value != nil {
+		pt.WorkPath.Value = input.WorkPath.Value
+	}
+	if input.WorkPath.AsDefaultValue != nil {
+		pt.WorkPath.AsDefaultValue = input.WorkPath.AsDefaultValue
+	}
+
+	if input.BindIP.Value != nil {
+		pt.BindIP.Value = input.BindIP.Value
+	}
+	if input.BindIP.AsDefaultValue != nil {
+		pt.BindIP.AsDefaultValue = input.BindIP.AsDefaultValue
+	}
+
+	if input.ReloadCmd.Value != nil {
+		pt.ReloadCmd.Value = input.ReloadCmd.Value
+	}
+	if input.ReloadCmd.AsDefaultValue != nil {
+		pt.ReloadCmd.AsDefaultValue = input.ReloadCmd.AsDefaultValue
+	}
+
+	if input.ProcessName.Value != nil {
+		pt.ProcessName.Value = input.ProcessName.Value
+	}
+	if input.ProcessName.AsDefaultValue != nil {
+		pt.ProcessName.AsDefaultValue = input.ProcessName.AsDefaultValue
+	}
+
+	if input.Port.Value != nil {
+		pt.Port.Value = input.Port.Value
+	}
+	if input.Port.AsDefaultValue != nil {
+		pt.Port.AsDefaultValue = input.Port.AsDefaultValue
+	}
+
+	if input.PidFile.Value != nil {
+		pt.PidFile.Value = input.PidFile.Value
+	}
+	if input.PidFile.AsDefaultValue != nil {
+		pt.PidFile.AsDefaultValue = input.PidFile.AsDefaultValue
+	}
+
+	if input.AutoStart.Value != nil {
+		pt.AutoStart.Value = input.AutoStart.Value
+	}
+	if input.AutoStart.AsDefaultValue != nil {
+		pt.AutoStart.AsDefaultValue = input.AutoStart.AsDefaultValue
+	}
+
+	if input.AutoTimeGapSeconds.Value != nil {
+		pt.AutoTimeGapSeconds.Value = input.AutoTimeGapSeconds.Value
+	}
+	if input.AutoTimeGapSeconds.AsDefaultValue != nil {
+		pt.AutoTimeGapSeconds.AsDefaultValue = input.AutoTimeGapSeconds.AsDefaultValue
+	}
+
+	if input.StartCmd.Value != nil {
+		pt.StartCmd.Value = input.StartCmd.Value
+	}
+	if input.StartCmd.AsDefaultValue != nil {
+		pt.StartCmd.AsDefaultValue = input.StartCmd.AsDefaultValue
+	}
+
+	if input.FuncID.Value != nil {
+		pt.FuncID.Value = input.FuncID.Value
+	}
+	if input.FuncID.AsDefaultValue != nil {
+		pt.FuncID.AsDefaultValue = input.FuncID.AsDefaultValue
+	}
+
+	if input.User.Value != nil {
+		pt.User.Value = input.User.Value
+	}
+	if input.User.AsDefaultValue != nil {
+		pt.User.AsDefaultValue = input.User.AsDefaultValue
+	}
+
+	if input.TimeoutSeconds.Value != nil {
+		pt.TimeoutSeconds.Value = input.TimeoutSeconds.Value
+	}
+	if input.TimeoutSeconds.AsDefaultValue != nil {
+		pt.TimeoutSeconds.AsDefaultValue = input.TimeoutSeconds.AsDefaultValue
+	}
+
+	if input.Protocol.Value != nil {
+		pt.Protocol.Value = input.Protocol.Value
+	}
+	if input.Protocol.AsDefaultValue != nil {
+		pt.Protocol.AsDefaultValue = input.Protocol.AsDefaultValue
+	}
+
+	if input.Description.Value != nil {
+		pt.Description.Value = input.Description.Value
+	}
+	if input.Description.AsDefaultValue != nil {
+		pt.Description.AsDefaultValue = input.Description.AsDefaultValue
+	}
 }
 
 /*  TimeoutSeconds
@@ -338,89 +437,29 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 */
 type PropertyInt64 struct {
 	Value          *int64 `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool  `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool  `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyInt64) Validate() error {
 	return nil
 }
 
-func (ti *PropertyInt64) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyInt64) SetValue(value interface{}) {
-	ti.Value = value.(*int64)
-}
-
-func (ti *PropertyInt64) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyInt64) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
-func (ti *PropertyInt64) AsDefaultValueField() interface{} {
-	return ti.AsDefaultValue
-}
-
 type PropertyBool struct {
 	Value          *bool `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyBool) Validate() error {
 	return nil
 }
 
-func (ti *PropertyBool) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyBool) SetValue(value interface{}) {
-	ti.Value = value.(*bool)
-}
-
-func (ti *PropertyBool) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyBool) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
-func (ti *PropertyBool) AsDefaultValueField() interface{} {
-	return ti.AsDefaultValue
-}
-
 type PropertyString struct {
 	Value          *string `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool   `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyString) Validate() error {
 	return nil
-}
-
-func (ti *PropertyString) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyString) SetValue(value interface{}) {
-	ti.Value = value.(*string)
-}
-
-func (ti *PropertyString) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyString) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
-func (ti *PropertyString) AsDefaultValueField() interface{} {
-	return ti.AsDefaultValue
 }
 
 var (
@@ -429,7 +468,7 @@ var (
 
 type PropertyPort struct {
 	Value          *string `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool   `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool   `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyPort) Validate() error {
@@ -441,25 +480,9 @@ func (ti *PropertyPort) Validate() error {
 	return nil
 }
 
-func (ti *PropertyPort) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyPort) SetValue(value interface{}) {
-	ti.Value = value.(*string)
-}
-
-func (ti *PropertyPort) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyPort) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
 type PropertyBindIP struct {
 	Value          *SocketBindType `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool           `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool           `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyBindIP) Validate() error {
@@ -471,29 +494,9 @@ func (ti *PropertyBindIP) Validate() error {
 	return nil
 }
 
-func (ti *PropertyBindIP) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyBindIP) SetValue(value interface{}) {
-	ti.Value = value.(*SocketBindType)
-}
-
-func (ti *PropertyBindIP) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyBindIP) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
-func (ti *PropertyBindIP) AsDefaultValueField() interface{} {
-	return ti.AsDefaultValue
-}
-
 type PropertyProtocol struct {
 	Value          *ProtocolType `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool         `field:"asDefaultValue" json:"asDefaultValue" bson:"asDefaultValue"`
+	AsDefaultValue *bool         `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyProtocol) Validate() error {
@@ -505,26 +508,6 @@ func (ti *PropertyProtocol) Validate() error {
 	return nil
 }
 
-func (ti *PropertyProtocol) GetValue() interface{} {
-	return ti.Value
-}
-
-func (ti *PropertyProtocol) SetValue(value interface{}) {
-	ti.Value = value.(*ProtocolType)
-}
-
-func (ti *PropertyProtocol) GetAsDefaultValue() interface{} {
-	return ti.AsDefaultValue
-}
-
-func (ti *PropertyProtocol) SetAsDefaultValue(asDefaultValue interface{}) {
-	ti.AsDefaultValue = asDefaultValue.(*bool)
-}
-
-func (ti *PropertyProtocol) AsDefaultValueField() interface{} {
-	return ti.AsDefaultValue
-}
-
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
@@ -533,11 +516,11 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64 `field:"serviceTemplateID" json:"serviceTemplateID,omitempty" bson:"serviceTemplateID"`
-	HostID            int64 `field:"hostID" json:"hostID,omitempty" bson:"hostID"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64 `field:"host_id" json:"host_id,omitempty" bson:"host_id"`
 
 	// the module that this service belongs to.
-	ModuleID int64 `field:"moduleID" json:"moduleID,omitempty" bson:"moduleID"`
+	ModuleID int64 `field:"module_id" json:"module_id,omitempty" bson:"module_id"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -560,14 +543,20 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
+	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
 	// unique field, 1:1 mapping with ProcessInstance.
-	ProcessID         int64 `field:"processID" json:"processID" bson:"processID"`
-	ServiceInstanceID int64 `field:"serviceInstanceID" json:"serviceInstanceID" bson:"serviceInstanceID"`
+	ProcessID         int64 `field:"process_id" json:"process_id" bson:"process_id"`
+	ServiceInstanceID int64 `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id"`
 
 	// ProcessTemplateID indicate which template are current process instantiate from.
-	ProcessTemplateID int64 `field:"processTemplateID" json:"processTemplateID" bson:"processTemplateID"`
+	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
 
 	// redundant field for accelerating processes by HostID
-	HostID          int64  `field:"hostID" json:"hostID" bson:"hostID"`
+	HostID          int64  `field:"host_id" json:"host_id" bson:"host_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
+	return "", nil
 }
