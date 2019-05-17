@@ -115,7 +115,11 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 					Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 					ID:                int64(procTemplateID),
 					ServiceTemplateID: serviceTemplate.ID,
-					Template:          procInstToProcTemplate(oldInst),
+					Property:          procInstToProcTemplate(oldInst),
+					Creator:           conf.User,
+					Modifier:          conf.User,
+					CreateTime:        time.Now(),
+					LastTime:          time.Now(),
 				}
 				inst2ProcessInstTemplate[oldInst.ProcessID] = procTemplate
 				blog.InfoJSON("procTemplate: %s", procTemplate)
@@ -146,6 +150,10 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						HostID:            moduleHost.HostID,
 						ModuleID:          module.ModuleID,
 						SupplierAccount:   ownerID,
+						Creator:           conf.User,
+						Modifier:          conf.User,
+						CreateTime:        time.Now(),
+						LastTime:          time.Now(),
 					}
 					blog.InfoJSON("srvInst: %s", srvInst)
 					if err = db.Table(common.BKTableNameServiceInstance).Insert(ctx, srvInst); err != nil {
@@ -161,13 +169,15 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						}
 						inst.ProcessID = int64(procInstID)
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+						inst.CreateTime = time.Now()
+						inst.LastTime = time.Now()
 						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
 						}
 
 						// build service instance relation
-						relateion := metadata.ServiceInstanceRelations{
+						relateion := metadata.ProcessInstanceRelation{
 							Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 							ProcessID:         inst.ProcessID,
 							ServiceInstanceID: srvInst.ID,
@@ -176,7 +186,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							SupplierAccount:   ownerID,
 						}
 						blog.InfoJSON("relateion: %s", relateion)
-						if err = db.Table(common.BKTableNameServiceInstanceRelations).Insert(ctx, relateion); err != nil {
+						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relateion); err != nil {
 							return err
 						}
 					}
@@ -210,86 +220,87 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 }
 
 func procInstToProcTemplate(inst metadata.Process) metadata.ProcessProperty {
+	var True = true
 	template := metadata.ProcessProperty{}
 	if inst.ProcNum > 0 {
-		template.ProcNum.Value = inst.ProcNum
-		template.ProcNum.AsDefaultValue = true
+		template.ProcNum.Value = &inst.ProcNum
+		template.ProcNum.AsDefaultValue = &True
 	}
 	if inst.StopCmd != "" {
-		template.StopCmd.Value = inst.StopCmd
-		template.StopCmd.AsDefaultValue = true
+		template.StopCmd.Value = &inst.StopCmd
+		template.StopCmd.AsDefaultValue = &True
 	}
 	if inst.RestartCmd != "" {
-		template.RestartCmd.Value = inst.RestartCmd
-		template.RestartCmd.AsDefaultValue = true
+		template.RestartCmd.Value = &inst.RestartCmd
+		template.RestartCmd.AsDefaultValue = &True
 	}
 	if inst.ForceStopCmd != "" {
-		template.ForceStopCmd.Value = inst.ForceStopCmd
-		template.ForceStopCmd.AsDefaultValue = true
+		template.ForceStopCmd.Value = &inst.ForceStopCmd
+		template.ForceStopCmd.AsDefaultValue = &True
 	}
 	if inst.FuncName != "" {
-		template.FuncName.Value = inst.FuncName
-		template.FuncName.AsDefaultValue = true
+		template.FuncName.Value = &inst.FuncName
+		template.FuncName.AsDefaultValue = &True
 	}
 	if inst.WorkPath != "" {
-		template.WorkPath.Value = inst.WorkPath
-		template.WorkPath.AsDefaultValue = true
+		template.WorkPath.Value = &inst.WorkPath
+		template.WorkPath.AsDefaultValue = &True
 	}
 	if inst.BindIP != "" {
-		template.BindIP.Value = inst.BindIP
-		template.BindIP.AsDefaultValue = true
+		template.BindIP.Value = &inst.BindIP
+		template.BindIP.AsDefaultValue = &True
 	}
 	if inst.Priority > 0 {
-		template.Priority.Value = inst.Priority
-		template.Priority.AsDefaultValue = true
+		template.Priority.Value = &inst.Priority
+		template.Priority.AsDefaultValue = &True
 	}
 	if inst.ReloadCmd != "" {
-		template.ReloadCmd.Value = inst.ReloadCmd
-		template.ReloadCmd.AsDefaultValue = true
+		template.ReloadCmd.Value = &inst.ReloadCmd
+		template.ReloadCmd.AsDefaultValue = &True
 	}
 	if inst.ProcessName != "" {
-		template.ProcessName.Value = inst.ProcessName
-		template.ProcessName.AsDefaultValue = true
+		template.ProcessName.Value = &inst.ProcessName
+		template.ProcessName.AsDefaultValue = &True
 	}
 	if inst.Port != "" {
-		template.Port.Value = inst.Port
-		template.Port.AsDefaultValue = true
+		template.Port.Value = &inst.Port
+		template.Port.AsDefaultValue = &True
 	}
 	if inst.PidFile != "" {
-		template.PidFile.Value = inst.PidFile
-		template.PidFile.AsDefaultValue = true
+		template.PidFile.Value = &inst.PidFile
+		template.PidFile.AsDefaultValue = &True
 	}
 	if inst.AutoStart == true {
-		template.AutoStart.Value = inst.AutoStart
-		template.AutoStart.AsDefaultValue = true
+		template.AutoStart.Value = &inst.AutoStart
+		template.AutoStart.AsDefaultValue = &True
 	}
 	if inst.AutoTimeGap > 0 {
-		template.AutoTimeGap.Value = inst.AutoTimeGap
-		template.AutoTimeGap.AsDefaultValue = true
+		template.AutoTimeGapSeconds.Value = &inst.AutoTimeGap
+		template.AutoTimeGapSeconds.AsDefaultValue = &True
 	}
 	if inst.StartCmd != "" {
-		template.StartCmd.Value = inst.StartCmd
-		template.StartCmd.AsDefaultValue = true
+		template.StartCmd.Value = &inst.StartCmd
+		template.StartCmd.AsDefaultValue = &True
 	}
 	if inst.FuncID != "" {
-		template.FuncID.Value = inst.FuncID
-		template.FuncID.AsDefaultValue = true
+		template.FuncID.Value = &inst.FuncID
+		template.FuncID.AsDefaultValue = &True
 	}
 	if inst.User != "" {
-		template.User.Value = inst.User
-		template.User.AsDefaultValue = true
+		template.User.Value = &inst.User
+		template.User.AsDefaultValue = &True
 	}
 	if inst.TimeoutSeconds > 0 {
-		template.TimeoutSeconds.Value = inst.TimeoutSeconds
-		template.TimeoutSeconds.AsDefaultValue = true
+		template.TimeoutSeconds.Value = &inst.TimeoutSeconds
+		template.TimeoutSeconds.AsDefaultValue = &True
 	}
 	if inst.Protocol != "" {
-		template.Protocol.Value = inst.Protocol
-		template.Protocol.AsDefaultValue = true
+		template.Protocol.Value = &inst.Protocol
+		template.Protocol.AsDefaultValue = &True
 	}
 	if inst.Description != "" {
-		template.Description.Value = inst.Description
-		template.Description.AsDefaultValue = true
+		template.Description.Value = &inst.Description
+		template.Description.AsDefaultValue = &True
 	}
 
 	return template
