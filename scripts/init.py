@@ -349,6 +349,34 @@ maxIDleConns = 1000
     with open(output + "proccontroller.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
+    # statistics.conf
+    statistics_file_template_str = '''
+[mongodb]
+host = $mongo_host
+usr = $mongo_user
+pwd = $mongo_pass
+database = $db
+port = $mongo_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+mechanism = SCRAM-SHA-1
+
+[redis]
+host = $redis_host
+port = $redis_port
+usr = $redis_user
+pwd = $redis_pass
+database = 0
+port = $redis_port
+maxOpenConns = 3000
+maxIDleConns = 1000
+'''
+
+    template = FileTemplate(statistics_file_template_str)
+    result = template.substitute(**context)
+    with open(output + "statistics.conf", 'w') as tmp_file:
+        tmp_file.write(result)
+
     # txc.conf
     txcserver_file_template_str = '''
 [mongodb]
