@@ -120,7 +120,6 @@ func main() {
 	if nil != err {
 		log.Errorf("error info is %s\n", err.Error())
 	}
-
 	log.Infof("host num is %d\n", len(items))
 
 	httpChan := make(chan error, 1)
