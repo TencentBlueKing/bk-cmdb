@@ -13,6 +13,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -22,7 +23,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) CreateServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (resp *metadata.ServiceTemplate, err error) {
+func (s *coreService) CreateServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	template := metadata.ServiceTemplate{}
 	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
@@ -62,16 +63,27 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		BizID          int64 `json:"biz_id"`
-		ServiceCategoryID int64  `json:"service_category_id"`
+		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
+		ServiceCategoryID int64  `json:"service_category_id" field:"service_category_id"`
+		Limit metadata.SearchLimit `json:"limit" field:"limit"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
 		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, fmt.Errorf("decode request body failed, err: %v", err)
 	}
+	
+	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
+	if err != nil {
+		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
+		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
+	}
+	if bizID == 0 {
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
+		return nil, errors.New("business id can't be empty")
+	}
 
-	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp.BizID, fp.ServiceCategoryID)
+	result, err := s.core.ProcessOperation().ListServiceTemplates(params, bizID, fp.ServiceCategoryID, fp.Limit)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, err: %+v", err)
 		return nil, err
@@ -108,24 +120,24 @@ func (s *coreService) UpdateServiceTemplate(params core.ContextParams, pathParam
 	return result, nil
 }
 
-func (s *coreService) DeleteServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) error {
+func (s *coreService) DeleteServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceTemplateIDField := "service_template_id"
 	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
 		blog.Errorf("DeleteServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return fmt.Errorf("path parameter `%s` empty", serviceTemplateIDField)
+		return nil, fmt.Errorf("path parameter `%s` empty", serviceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
+		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceTemplate(params, serviceTemplateID); err != nil {
 		blog.Errorf("DeleteServiceTemplate failed, err: %+v", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
