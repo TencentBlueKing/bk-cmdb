@@ -23,6 +23,7 @@
     "lodash.throttle": "4.1.1",
     "md5": "2.2.1",
     "moment": "2.22.2",
+    "plotly.js": "^1.47.4",
     "v-click-outside": "1.0.5",
     "v-tooltip": "2.0.0-rc.33",
     "vee-validate": "2.0.9",
