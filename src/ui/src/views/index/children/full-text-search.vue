@@ -158,7 +158,7 @@
                         limit: this.pagination.limit
                     },
                     bk_obj_id: this.query.objId,
-                    query_string: this.query.queryString,
+                    query_string: `${this.query.queryString}`,
                     filter: ['model']
                 }
             },
