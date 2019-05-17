@@ -25,6 +25,12 @@ func init() {
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
 	blog.Infof("from now on, the cmdb version will be v3.5.x")
+
+	err = changeProcessName(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] changeProcessName error  %s", err.Error())
+		return err
+	}
 	err = createServiceTemplateTables(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x19.05.16.01] createServiceTemplateTables error  %s", err.Error())
