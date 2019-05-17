@@ -90,8 +90,12 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 	attrCond[common.BKObjIDField] = objID
 	attrCond[common.BKOwnerIDField] = ownerID
 	attrResult, aErr := lgc.Engine.CoreAPI.ApiServer().GetObjectAttr(context.Background(), header, attrCond)
-	if nil != aErr || !attrResult.Result {
+	if nil != aErr {
 		blog.Errorf("get object attr error: %s", aErr.Error())
+		return nil, errors.New(result.ErrMsg)
+	}
+	if !attrResult.Result {
+		blog.Errorf("get object attr error, errorcode : %d, errormsg :%s", attrResult.ErrMsg)
 		return nil, errors.New(result.ErrMsg)
 	}
 	for _, cell := range attrResult.Data {
@@ -122,7 +126,7 @@ func (lgc *Logics) ImportInsts(ctx context.Context, f *xlsx.File, objID string, 
 	params["input_type"] = common.InputTypeExcel
 	params["BatchInfo"] = insts
 	result, resultErr := lgc.CoreAPI.ApiServer().AddInst(context.Background(), header, util.GetOwnerID(header), objID, params)
-	if nil != err {
+	if nil != resultErr {
 		blog.Errorf("ImportInsts add inst info  http request  error:%s, rid:%s", resultErr.Error(), util.GetHTTPCCRequestID(header))
 		return nil, common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
