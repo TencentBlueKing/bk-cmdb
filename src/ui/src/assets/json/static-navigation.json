@@ -104,6 +104,13 @@
             "name": "操作审计",
             "authorized": true,
             "classificationId": "bk_audit_analysis"
+        }, {
+            "i18n": "Nav['统计报表']",
+            "path": "/statistics",
+            "id": "statistics",
+            "name": "统计报表",
+            "authorized": true,
+            "classificationId": "bk_audit_analysis"
         }]
     },
     "bk_authority": {

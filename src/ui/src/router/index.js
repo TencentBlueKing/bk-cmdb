@@ -28,6 +28,7 @@ import cagetory from '@/views/service-cagetory/router.config'
 
 import serviceInstance from '@/views/service-instance/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
+import statisticalReport from '@/views/statistical-report/router.config'
 
 Vue.use(Router)
 
@@ -45,6 +46,8 @@ export const viewRouters = [
     modelTopology,
     resource,
     ...template,
+    topology,
+    statisticalReport,
     ...generalModel,
     ...business,
     ...model,
