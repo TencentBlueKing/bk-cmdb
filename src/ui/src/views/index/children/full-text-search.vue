@@ -150,7 +150,7 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
-            ...mapGetters('objectModelClassify', ['getModelById']),
+            ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
                 return {
                     page: {
@@ -198,7 +198,7 @@
             removeMainScrollListener(this.scrollTop)
         },
         methods: {
-            ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
+            ...mapActions('objectModelProperty', ['searchObjectAttribute', 'batchSearchObjectAttribute']),
             initScrollListener (domRefs) {
                 this.scrollTop = event => {
                     const target = event.target
@@ -227,6 +227,10 @@
                 }
                 this.sizeTransitionReady = true
             },
+            isPublicModel (objId) {
+                const model = this.models.find(model => model['bk_obj_id'] === objId) || {}
+                return !this.$tools.getMetadataBiz(model)
+            },
             toggleClassify (index, model) {
                 this.currentClassify = index
                 this.query.objId = model
@@ -238,7 +242,7 @@
                 // })
                 // model && (this.modelClassifyName[model] = `<em>${this.modelClassifyName[model]}</em>`)
             },
-            async getProperties (objId) {
+            async getPublicModelProperties (objId) {
                 this.propertyMap = await this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: objId,
@@ -249,6 +253,19 @@
                         requestGroup: objId['$in'].map(id => `post_searchObjectAttribute_${id}`)
                     }
                 })
+            },
+            async getProperties (objId) {
+                const properties = await this.searchObjectAttribute({
+                    params: this.$injectMetadata({
+                        bk_obj_id: objId,
+                        bk_supplier_account: this.supplierAccount
+                    }, { inject: true }),
+                    config: {
+                        requestId: `post_searchObjectAttribute_${objId}`,
+                        fromCache: false
+                    }
+                })
+                this.$set(this.propertyMap, objId, properties)
             },
             handleSearch (wait = 0) {
                 const debounceTimer = this.debounceTimer
@@ -282,10 +299,7 @@
                                 this.modelClassify.forEach(model => {
                                     this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
                                 })
-                                const objId = {
-                                    '$in': modelData.map(aggregation => aggregation.key)
-                                }
-                                this.getProperties(objId)
+                                this.processArray(modelData)
                                 this.allSearchCount = data.total
                                 this.hasData = data.total
                             }
@@ -308,6 +322,21 @@
                         this.showNoData = true
                     })
                 }, wait)
+            },
+            async processArray (data) {
+                const publicObj = data.filter(aggregation => this.isPublicModel(aggregation.key)).map(model => model.key)
+                const privateObj = data.filter(aggregation => !this.isPublicModel(aggregation.key)).map(model => model.key)
+                if (publicObj.length) {
+                    const objId = {
+                        '$in': publicObj
+                    }
+                    await this.getPublicModelProperties(objId)
+                }
+                if (privateObj.length) {
+                    for (let i = 0; i < privateObj.length; i++) {
+                        await this.getProperties(privateObj[i])
+                    }
+                }
             },
             jumpPage (source) {
                 this.$store.commit('setHeaderStatus', {
