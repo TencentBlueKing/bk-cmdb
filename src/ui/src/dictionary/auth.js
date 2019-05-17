@@ -90,6 +90,9 @@ export const R_CLOUD_CONFIRM = 'cloudConfirm.findMany'
 // 确认历史
 export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 
+// 统计报表
+export const R_STATISTICAL_REPORT = 'statisticalReport.findMany'
+
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
