@@ -162,7 +162,7 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 
 	// service template that referenced by process template shouldn't be removed
 	usageFilter := map[string]int64{"service_instance_id": instance.ID}
-	usageCount, err := p.dbProxy.Table(common.BKTableNameServiceInstanceRelations).Find(usageFilter).Count(ctx.Context)
+	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return err
