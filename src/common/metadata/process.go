@@ -61,6 +61,7 @@ func (p ProtocolType) String() string {
 }
 
 type Process struct {
+	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
 	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
 	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
 	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
@@ -120,7 +121,7 @@ type ServiceCategoryWithStatistics struct {
 }
 
 type ServiceTemplate struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
 	// name of this service, can not be empty
@@ -139,9 +140,11 @@ type ServiceTemplate struct {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+
 	ID int64 `json:"id"`
 	// the service template's, which this process template belongs to.
-	ServiceTemplateID int64 `json:"serviceTemplateID"`
+	ServiceTemplateID int64 `json:"service_template_id"`
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
@@ -183,9 +186,9 @@ type PropertyDetail struct {
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	ID       int64  `field:"id" json:"id" bson:"id"`
-	Name     string `field:"name" json:"name,omitempty" bson:"name"`
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64    `field:"id" json:"id" bson:"id"`
+	Name     string   `field:"name" json:"name,omitempty" bson:"name"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
@@ -199,6 +202,7 @@ type ServiceInstance struct {
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
 type ServiceInstanceRelations struct {
+	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	// unique field, 1:1 mapping with ProcessInstance.
 	ProcessID         int64 `field:"processID" json:"processID" bson:"processID"`
 	ServiceInstanceID int64 `field:"serviceInstanceID" json:"serviceInstanceID" bson:"serviceInstanceID"`

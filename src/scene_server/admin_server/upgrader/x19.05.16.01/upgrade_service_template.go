@@ -37,7 +37,9 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	allmodules := []metadata.ModuleInst{}
-	if err = db.Table(common.BKTableNameBaseModule).Find(nil).All(ctx, &allmodules); err != nil {
+	if err = db.Table(common.BKTableNameBaseModule).Find(condition.CreateCondition().
+		Field(common.BKDefaultField).NotGt(0).ToMapStr()).
+		All(ctx, &allmodules); err != nil {
 		return err
 	}
 
@@ -110,6 +112,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				}
 
 				procTemplate := metadata.ProcessTemplate{
+					Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 					ID:                int64(procTemplateID),
 					ServiceTemplateID: serviceTemplate.ID,
 					Template:          procInstToProcTemplate(oldInst),
@@ -157,6 +160,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							return err
 						}
 						inst.ProcessID = int64(procInstID)
+						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
@@ -164,6 +168,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 
 						// build service instance relation
 						relateion := metadata.ServiceInstanceRelations{
+							Metadata:          metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 							ProcessID:         inst.ProcessID,
 							ServiceInstanceID: srvInst.ID,
 							ProcessTemplateID: processTemplateID,
@@ -181,7 +186,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		}
 	}
 
-	return nil
+	return db.Table(common.BKTableNameBaseProcess).Delete(ctx, mapstr.MapStr{"old_flag": true})
 }
 
 func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
