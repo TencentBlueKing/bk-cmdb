@@ -14,9 +14,11 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"time"
 
+	"configcenter/src/common"
 	"configcenter/src/common/util"
 )
 
@@ -178,13 +180,12 @@ type ServiceCategory struct {
 }
 
 func (sc *ServiceCategory) Validate() (field string, err error) {
-	MaxLen := 128
 	if len(sc.Name) == 0 {
 		return "name", errors.New("name can't be empty")
 	}
 
-	if len(sc.Name) > MaxLen {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), MaxLen)
+	if len(sc.Name) > common.NameFieldMaxLength {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(sc.Name), common.NameFieldMaxLength)
 	}
 	return "", nil
 }
@@ -213,13 +214,12 @@ type ServiceTemplate struct {
 }
 
 func (st *ServiceTemplate) Validate() (field string, err error) {
-	MaxLen := 128
 	if len(st.Name) == 0 {
 		return "name", errors.New("name can't be empty")
 	}
 
-	if len(st.Name) > MaxLen {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(st.Name), MaxLen)
+	if len(st.Name) > common.NameFieldMaxLength {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(st.Name), common.NameFieldMaxLength)
 	}
 	return "", nil
 }
@@ -251,11 +251,10 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	ProcNum            PropertyString   `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
 	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
 	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
 	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	ProcessID          PropertyInt64    `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id,omitempty"`
 	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
 	WorkPath           PropertyString   `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
 	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
@@ -286,9 +285,6 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	}
 	if err := pt.ForceStopCmd.Validate(); err != nil {
 		return "face_stop_cmd", err
-	}
-	if err := pt.ProcessID.Validate(); err != nil {
-		return "bk_process_id", err
 	}
 	if err := pt.FuncName.Validate(); err != nil {
 		return "bk_func_name", err
@@ -342,6 +338,25 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 }
 
 func (pt *ProcessProperty) Update(input ProcessProperty) {
+	ptVal := reflect.ValueOf(*pt)
+	inputVal := reflect.ValueOf(input)
+	fieldCount := ptVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		inputField := inputVal.Field(fieldIdx)
+		ptField := ptVal.Field(fieldIdx)
+		if inputField.IsNil() {
+			continue
+		}
+		subFields := []string{"Value", "AsDefaultValue"}
+		for _, subField := range subFields {
+			inputFieldValue := inputField.FieldByName(subField)
+			if !inputFieldValue.IsNil() {
+				ptField.FieldByName(subField).Set(inputFieldValue)
+			}
+		}
+	}
+
+	return
 	if input.ProcNum.Value != nil {
 		pt.ProcNum.Value = input.ProcNum.Value
 	}
@@ -368,13 +383,6 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 	}
 	if input.ForceStopCmd.AsDefaultValue != nil {
 		pt.ForceStopCmd.AsDefaultValue = input.ForceStopCmd.AsDefaultValue
-	}
-
-	if input.ProcessID.Value != nil {
-		pt.ProcessID.Value = input.ProcessID.Value
-	}
-	if input.ProcessID.AsDefaultValue != nil {
-		pt.ProcessID.AsDefaultValue = input.ProcessID.AsDefaultValue
 	}
 
 	if input.FuncName.Value != nil {
@@ -584,13 +592,12 @@ type ServiceInstance struct {
 }
 
 func (si *ServiceInstance) Validate() (field string, err error) {
-	MaxLen := 128
 	if len(si.Name) == 0 {
 		return "name", errors.New("name can't be empty")
 	}
 
-	if len(si.Name) > MaxLen {
-		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), MaxLen)
+	if len(si.Name) > common.NameFieldMaxLength {
+		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), common.NameFieldMaxLength)
 	}
 	return "", nil
 }
