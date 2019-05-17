@@ -331,7 +331,7 @@ type OneProcessInstanceRelationResult struct {
 }
 
 type MultipleProcessInstanceRelation struct {
-	Count int64                     `json:"count"`
+	Count uint64                    `json:"count"`
 	Info  []ProcessInstanceRelation `json:"info"`
 }
 

@@ -340,6 +340,32 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
+func (p *process) BatchDeleteProcessTemplate(ctx context.Context, h http.Header, templateIDs []int64) error {
+	ret := new(metadata.OneProcessTemplateResult)
+	subPath := "/delete/process/process_template"
+
+	input := map[string]interface{}{
+		"process_template_ids": templateIDs,
+	}
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.ErrMsg)
+	}
+
+	return nil
+}
+
 func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64) (resp *metadata.MultipleProcessTemplate, err error) {
 	ret := new(metadata.MultipleProcessTemplateResult)
 	subPath := "/list/process/process_template"
@@ -581,7 +607,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	input := map[string]interface{}{
 		"metadata":            md,
 		"service_template_id": serviceInstanceID,
-		"hostID":              hostID,
+		"host_id":             hostID,
 	}
 
 	err = p.client.Delete().

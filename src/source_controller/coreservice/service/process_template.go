@@ -142,3 +142,23 @@ func (s *coreService) DeleteProcessTemplate(params core.ContextParams, pathParam
 
 	return nil, nil
 }
+
+func (s *coreService) BatchDeleteProcessTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	input := struct {
+		ProcessTemplateIDs []int64 `json:"process_template_ids" field:"process_template_ids"`
+	}{}
+
+	if err := mapstr.SetValueToStructByTags(&input, data); err != nil {
+		blog.Errorf("BatchDeleteProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
+		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+	}
+
+	// TODO: replace with batch delete interface
+	for _, id := range input.ProcessTemplateIDs {
+		if err := s.core.ProcessOperation().DeleteProcessTemplate(params, id); err != nil {
+			blog.Errorf("BatchDeleteProcessTemplate failed, templateID: %d, err: %+v", id, err)
+			return nil, err
+		}
+	}
+	return nil, nil
+}
