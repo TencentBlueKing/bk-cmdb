@@ -1,0 +1,201 @@
+@charset "utf-8";
+@import "./conf";
+@import "./mixins/create-square-button";
+
+.bk-icon-button {
+    min-width: 36px;
+    height: 36px;
+    line-height: 34px;
+    display: inline-block;
+    white-space: nowrap;
+    outline: none;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-appearance: none;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+    font-size: $fnNormalSize;
+    background: $defaultColor;
+    border: 1px solid $borderColor;
+    border-radius: 2px;
+    color: $fnMainColor;
+    overflow: hidden;
+    text-decoration: none;
+    box-sizing: border-box;
+    &:hover,
+    &.hover {
+        background-color: $defaultHoverColor;
+        color: $fnMainColor;
+        text-decoration: none;
+        opacity: 1;
+    }
+    &:active,
+    &.active {
+        background-color: $defaultActiveColor;
+        color: $fnMainColor;
+        text-decoration: none;
+        opacity: 1;
+    }
+    &.is-disabled,
+    &[disabled] {
+        background-color: #ffffff !important;
+        border-color: #e5e5e5 !important;
+        color: #e6e6e6 !important;
+        cursor: not-allowed;
+
+        .bk-text {
+            background-color: #ffffff !important;
+            border-color: #e5e5e5 !important;
+            color: #e6e6e6 !important;
+            cursor: default;
+        }
+    }
+    &.is-loading {
+        position: relative;
+        .bk-icon {
+            font-family: "yahei" !important;
+            position: relative;
+            &::before {
+                content: "";
+                display: block;
+                width: 12px;
+                height: 12px;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                background: url('#{$imagePath}/loading_circle2.png') no-repeat 0 0;
+                margin: -6px 0 0 -6px;
+                animation: bk-icon-button-loading 0.8s infinite linear;
+                -ms-animation: bk-icon-button-loading 0.8s infinite linear;
+                -moz-animation: bk-icon-button-loading 0.8s infinite linear;
+                -webkit-animation: bk-icon-button-loading 0.8s infinite linear;
+            }
+        }
+        &:hover {
+            .bk-icon::before {
+                background-image: url('#{$imagePath}/loading_circle1.png');
+            }
+        }
+    }
+
+    &.bk-default {
+        &.is-loading {
+            &:hover {
+                .bk-icon::before {
+                    background-image: url('#{$imagePath}/loading_circle2.png');
+                }
+            }
+        }
+    }
+
+    &.bk-info {
+        @include create-square-button($infoColor, $infoHoverColor, $infoActiveColor);
+    }
+    &.bk-primary {
+        @include create-square-button($primaryColor, $primaryHoverColor, $primaryActiveColor);
+    }
+    &.bk-success {
+        @include create-square-button($successColor, $successHoverColor, $successActiveColor);
+    }
+    &.bk-warning {
+        @include create-square-button($warningColor, $warningHoverColor, $warningActiveColor);
+    }
+    &.bk-danger {
+        @include create-square-button($dangerColor, $dangerHoverColor, $dangerActiveColor);
+    }
+
+    .bk-icon {
+        display: inline-block;
+        width: 34px;
+        height: 34px;
+        line-height: 34px;
+        text-align: center;
+        vertical-align: middle;
+        float: left;
+        margin-top: 0; // font-weight: bold;
+    }
+    .bk-text {
+        // background: #fff;
+        display: inline-block;
+        height: 34px;
+        line-height: 36px;
+        padding: 0 10px;
+        font-style: normal;
+        border-left: 1px solid $borderColor;
+        min-width: 70px;
+        vertical-align: middle;
+        float: left;
+        color: #666;
+        &.is-disabled {
+            cursor: not-allowed;
+        }
+    }
+    //尺寸
+    &.bk-button-mini {
+        min-width: 24px;
+        height: 24px;
+        line-height: 22px;
+        font-size: $fnSmallSize;
+
+        .bk-icon {
+            width: 24px;
+            height: 24px;
+            line-height: 22px;
+        }
+        .bk-text {
+            height: 24px;
+            line-height: 22px;
+            padding: 0 5px;
+            min-width: 30px;
+        }
+    }
+    &.bk-button-small {
+        min-width: 32px;
+        height: 32px;
+        line-height: 30px;
+        .bk-icon {
+            width: 32px;
+            height: 32px;
+            line-height: 30px;
+        }
+        .bk-text {
+            height: 32px;
+            line-height: 30px;
+            min-width: 60px;
+        }
+    }
+    &.bk-button-large {
+        min-width: 42px;
+        height: 42px;
+        line-height: 40px;
+        .bk-icon {
+            width: 42px;
+            height: 42px;
+            line-height: 40px;
+        }
+        .bk-text {
+            height: 42px;
+            line-height: 40px;
+            min-width: 80px;
+        }
+    }
+}
+
+@keyframes bk-icon-button-loading {
+    from {
+        transform: rotate(0);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes bk-icon-button-loading {
+    from {
+        transform: rotate(0);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

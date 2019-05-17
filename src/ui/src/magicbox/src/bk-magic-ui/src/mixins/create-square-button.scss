@@ -1,0 +1,29 @@
+// 正方形按钮
+@mixin create-square-button($color, $hover, $active) {
+    background: #fafafa;
+    color: $color;
+    &:hover,
+    &.hover {
+        background-color: $hover;
+        border-color: $hover;
+        color: #fff;
+        opacity: 1;
+        .bk-text {
+            color: #fff;
+            background-color: lighten($hover, 7%);
+            border-color: lighten($hover, 7%);
+        }
+    }
+    &:active,
+    &.active {
+        background-color: $active;
+        border-color: $active;
+        color: #fff;
+        opacity: 1;
+        .bk-text {
+            color: #fff;
+            background-color: lighten($active, 10%);
+            border-color: lighten($active, 10%);
+        }
+    }
+}

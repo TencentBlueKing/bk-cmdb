@@ -1,0 +1,16 @@
+{
+    "val_type_text":"文本",
+    "val_type_bool":"布尔",
+    "unit":"单位",
+    "placeholder":"提示",
+    "desc":"描述",
+    "is_editable":"是否可编辑",
+    "property_option":"数据配置",
+    "property_is_only":"是否唯一",
+    "property_is_required":"是否必填",
+    "property_is_readonly": "是否只读",
+    "app_not_exist":"业务不存在",
+    "import_row_int_error_str":"%d行%s",
+    "property_group":"字段分组",
+    "":""
+}

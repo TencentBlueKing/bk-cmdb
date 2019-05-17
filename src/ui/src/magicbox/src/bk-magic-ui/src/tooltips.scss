@@ -1,0 +1,247 @@
+@charset "UTF-8";
+
+// 兼容之前以及 jQuery
+$tooltips: '.bk-tooltips';
+#{$tooltips} {
+    position: absolute;
+    z-index: 999999;
+    &-wrapper {
+        padding: 6px 12px;
+        background-color: #333;
+        border: 1px solid #000;
+        border-radius: 3px;
+        color: #fff;
+        line-height: 1.5;
+        font: {
+            size: 12px;
+            weight: normal;
+        }
+        span {
+            display: inline-block;
+        }
+        a {
+            padding: 6px 18px;
+            display: inline-block;
+            border-right: solid 1px #000;
+            cursor: pointer;
+            &:last-child {
+                border-right: none;
+            }
+            &:hover {
+                background-color: #000
+            }
+        }
+    }
+    &-default {
+        padding: 0;
+    }
+    &-arrow {
+        position: absolute;
+        display: block;
+        width: 10px;
+        height: 12px;
+        &:before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 3px;
+            border-right: 7px solid #333;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            z-index: 20;
+        }
+        &:after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 2px;
+            border-right: 8px solid #000;
+            border-top: 9px solid transparent;
+            border-bottom: 9px solid transparent;
+            z-index: 10;
+        }
+    }
+    &.top {
+        #{$tooltips}-arrow {
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(270deg);
+        }
+    }
+    &.right {
+        #{$tooltips}-arrow {
+            top: 50%;
+            left: -9px;
+            transform: translateY(-50%);
+        }
+    }
+    &.bottom {
+        #{$tooltips}-arrow {
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(90deg);
+        }
+    }
+    &.left {
+        #{$tooltips}-arrow {
+            top: 50%;
+            left: calc(100% - 1px);
+            transform: translateY(-50%) rotate(180deg);
+        }
+    }
+}
+
+.v-tooltips-container {
+    $lightBorderColor: #d9d9d9;
+    $lightBackgroundColor: #fff;
+    $lightColor: #000;
+    $darkBorderColor: #333;
+    $darkBackgroundColor: #333;
+    $darkColor: #fff;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    box-sizing: border-box;
+    width: 200px;
+    padding: 6px 8px;
+    margin: 0;
+    color: $lightColor;
+    font-size: 12px;
+    background: $lightBackgroundColor;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .1);
+    border: 1px solid $lightBorderColor;
+    border-radius: 4px;
+    transform: translate3d(0, 0, 0);
+    transition: opacity .3s;
+    will-change: opacity, transform;
+    -webkit-font-smoothing: subpixel-antialiased;
+
+    .v-tooltips-title,
+    .v-tooltips-content {
+        padding: 0;
+        margin: 0;
+    }
+
+    .v-tooltips-title {
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .v-tooltips-content {
+        overflow-y: auto;
+        line-height: 2;
+        text-align: left;
+        word-wrap: break-word;
+        background-color: inherit;
+    }
+
+    .v-tooltips-arrows {
+        position: absolute;
+        z-index: -1;
+        width: 0;
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border-color: transparent;
+        border-style: inherit;
+        border-width: 10px;
+
+        &::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-color: transparent;
+            border-style: inherit;
+            border-width: inherit;
+            transform: translate(-50%, -50%);
+        }
+
+        &[class^='top-'],
+        &[class*=' top-'] {
+            border-top-color: inherit;
+            transform: translate(-50%, 0);
+
+            &::after {
+                top: -2px;
+                border-top-color: $lightBackgroundColor;
+            }
+        }
+
+        &[class^='bottom-'],
+        &[class*=' bottom-'] {
+            border-bottom-color: inherit;
+            transform: translate(-50%, -100%);
+
+            &::after {
+                top: 2px;
+                border-bottom-color: $lightBackgroundColor;
+            }
+        }
+
+        &[class^='left-'],
+        &[class*=' left-'] {
+            border-left-color: inherit;
+            transform: translate(0, -50%);
+
+            &::after {
+                left: -2px;
+                border-left-color: $lightBackgroundColor;
+            }
+        }
+
+        &[class^='right-'],
+        &[class*=' right-'] {
+            border-right-color: inherit;
+            transform: translate(-100%, -50%);
+
+            &::after {
+                left: 2px;
+                border-right-color: $lightBackgroundColor;
+            }
+        }
+    }
+
+    &.dark {
+        color: $darkColor;
+        background: $darkBackgroundColor;
+        border-color: $darkBorderColor;
+
+        [class^='top-'],
+        [class*=' top-'] {
+            &::after {
+                border-top-color: $darkBorderColor;
+            }
+        }
+
+        [class^='bottom-'],
+        [class*=' bottom-'] {
+            &::after {
+                border-bottom-color: $darkBorderColor;
+            }
+        }
+
+        [class^='left-'],
+        [class*=' left-'] {
+            &::after {
+                border-left-color: $darkBorderColor;
+            }
+        }
+
+        [class^='right-'],
+        [class*=' right-'] {
+            &::after {
+                border-right-color: $darkBorderColor;
+            }
+        }
+    }
+
+    &.v-tooltips-fade-enter,
+    &.v-tooltips-fade-leave-active {
+        opacity: 0;
+    }
+}
+
+

@@ -1,0 +1,10 @@
+{
+    "apiv2_set_default_name": "空闲机池",
+    "apiv2_module_type_error": "模块类型不正确",
+    "apiv2_module_edit_multi_module_name": "一次只能更新一个模块",
+    "apiv2_module_name_lt_24": "模块名长度不能大于24个字节",
+    "apiv2_set_name_lt_24": "集群名称长度不能超过24个字节",
+    "apiv2_process_bind_innerip": "第一内网IP",
+    "apiv2_process_bind_outerip": "第一公网IP",
+    "": ""
+}

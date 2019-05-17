@@ -1,0 +1,52 @@
+.model-field-wrapper {
+    .form-item {
+        font-size: 0;
+        float: left;
+        vertical-align: middle;
+        &.has-right-content {
+            margin-right: 30px;
+        }
+        .form-label {
+            display: inline-block;
+            width: 65px;
+            margin-right: 10px;
+            font-size: 14px;
+            text-align: right;
+            vertical-align: top;
+            line-height: 36px;
+        }
+        .cmdb-form-input {
+            display: inline-block;
+            width: 150px;
+        }
+        .form-selector {
+            width: 150px;
+            display: inline-block;
+        }
+        .error-msg {
+            font-size: 12px;
+            display: block;
+        }
+        .input-box {
+            display: inline-block;
+            width: 150px;
+        }
+    }
+}
+.model-wrapper .details-wrapper {
+    .footer-btn {
+        width: calc(100% + 40px);
+        margin: 0 -20px;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        padding: 10px 30px;
+        background: #fff;
+        font-size: 0;
+        border-top: 1px solid #e7e9ef;
+        z-index: 3;
+        button {
+            margin-right: 10px;
+        }
+    }
+}

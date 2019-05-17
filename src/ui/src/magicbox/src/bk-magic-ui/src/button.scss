@@ -1,0 +1,468 @@
+@charset "utf-8";
+@import "./conf.scss";
+@import "./mixins/create-button.scss";
+@import "./mixins/create-square-button.scss";
+
+.bk-button {
+    // min-width: 100px;
+    height: 36px;
+    line-height: 34px;
+    display: inline-block;
+    white-space: nowrap;
+    outline: none;
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-appearance: none;
+    padding: 0 19px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: $fnNormalSize;
+    background: $defaultColor;
+    border: 1px solid $borderColor;
+    border-radius: 2px;
+    box-sizing: border-box;
+    color: $fnMainColor;
+    text-decoration: none;
+    transition: background-color ease 0.3s;
+    &:hover,
+    &.hover {
+        background-color: $defaultHoverColor;
+        color: $fnMainColor;
+        text-decoration: none;
+    }
+    &:active,
+    &.active {
+        background-color: $defaultActiveColor;
+        color: $fnMainColor;
+        text-decoration: none;
+    }
+    &.bk-iconed {
+        min-width: 36px;
+        width: 36px;
+        padding: 0;
+    }
+    &.is-disabled,
+    &[disabled] {
+        background-color: #fafafa !important;
+        border-color: #e6e6e6 !important;
+        color: #cccccc !important;
+        cursor: not-allowed !important;
+    }
+
+    &.is-loading {
+        color: #fff;
+        background-color: #fff !important;
+        span {
+            opacity: 0;
+        }
+        .bk-icon {
+            opacity: 0;
+            display: none;
+        }
+        position: relative;
+        cursor: default;
+        &::before {
+            content: "";
+            display: block;
+            width: 28px;
+            height: 4px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background-image: url('#{$imagePath}/loading-point1.png');
+            background-position: 0 0;
+            background-repeat: no-repeat;
+            transform: translate(-50%, -50%);
+            animation: bk-button-loading1 1s infinite linear;
+            -ms-animation: bk-button-loading1 1s infinite linear;
+            -moz-animation: bk-button-loading1 1s infinite linear;
+            -webkit-animation: bk-button-loading1 1s infinite linear;
+        }
+    }
+
+    &.is-selected {
+        background-color: $primaryColor !important;
+        border-color: $primaryColor !important;
+        color: #fff !important;
+        position: relative;
+        z-index: 1;
+        cursor: default;
+    }
+
+    &.is-outline {
+        color: $fnMainColor;
+        border-color: $borderColor;
+        background-color: #fff;
+        &:hover,
+        &.hover {
+            background-color: #fff;
+            border-color: $primaryColor;
+            color: $primaryColor;
+        }
+        &:active,
+        &.active {
+            background-color: #fff;
+            border-color: $primaryActiveColor;
+            color: $primaryActiveColor;
+        }
+    }
+
+    &.is-icon {
+        min-width: 36px;
+        padding: 0 9px;
+        &.bk-button-mini {
+            min-width: 24px;
+            padding: 0 3px;
+        }
+        &.bk-button-small {
+            min-width: 32px;
+            padding: 0 7px;
+        }
+        &.bk-button-large {
+            min-width: 42px;
+            padding: 0 7px;
+        }
+        &.bk-button-larger {
+            min-width: 54px;
+            padding: 0 7px;
+        }
+    }
+
+    &.bk-button-mini {
+        height: 24px;
+        line-height: 22px;
+        padding: 0 11px;
+        // min-width: 50px;
+        font-size: $fnSmallSize;
+        &.bk-iconed {
+            min-width: 24px;
+            width: 24px;
+            padding: 0;
+        }
+    }
+    &.bk-button-small {
+        height: 32px;
+        line-height: 30px;
+        padding: 0 14px;
+        // min-width: 80px;
+        &.bk-iconed {
+            min-width: 32px;
+            width: 32px;
+            padding: 0;
+        }
+    }
+    &.bk-button-large {
+        height: 42px;
+        line-height: 40px;
+        padding: 0 19px;
+        // min-width: 120px;
+        &.bk-iconed {
+            min-width: 42px;
+            width: 42px;
+            padding: 0;
+        }
+    }
+    &.bk-button-larger {
+        height: 54px;
+        line-height: 52px;
+        padding: 0 20px;
+        min-width: 150px;
+        font-size: 18px;
+        &.bk-iconed {
+            min-width: 54px;
+            width: 54px;
+            padding: 0;
+        }
+    }
+    &.bk-default {
+        &.is-loading {
+            position: relative;
+            &::before {
+                content: "";
+                display: block;
+                width: 28px;
+                height: 4px;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                background-image: url('#{$imagePath}/loading-point7.png');
+                background-position: 0 0;
+                background-repeat: no-repeat;
+                transform: translate(-50%, -50%);
+                animation: bk-button-loading2 1s infinite linear;
+                -ms-animation: bk-button-loading2 1s infinite linear;
+                -moz-animation: bk-button-loading2 1s infinite linear;
+                -webkit-animation: bk-button-loading2 1s infinite linear;
+            }
+        }
+    }
+
+    &.bk-info {
+        @include create-button($infoColor, $infoHoverColor, $infoActiveColor);
+    }
+    &.bk-primary {
+        @include create-button($primaryColor, $primaryHoverColor, $primaryActiveColor);
+    }
+    &.bk-success {
+        @include create-button($successColor, $successHoverColor, $successActiveColor);
+    }
+    &.bk-warning {
+        @include create-button($warningColor, $warningHoverColor, $warningActiveColor);
+    }
+    &.bk-danger {
+        @include create-button($dangerColor, $dangerHoverColor, $dangerActiveColor);
+    }
+    .bk-icon {
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        min-width: 16px;
+        display: inline-block;
+        // vertical-align: middle;
+        position: relative;
+        top: 1px;
+        + span {
+            // vertical-align: middle;
+            margin-left: 7px;
+        }
+    }
+    span + .bk-icon {
+        margin-left: 7px;
+    }
+}
+
+.bk-button-group {
+    font-size: 0;
+    margin-left: 1px;
+    display: inline-block;
+    .bk-button {
+        margin: 0 0 0 -1px;
+        border-radius: 0;
+        &.hover,
+        &:hover {
+            position: relative;
+            z-index: 1;
+        }
+        &:first-child {
+            border-radius: 2px 0 0 2px;
+        }
+        &:last-child {
+            border-radius: 0 2px 2px 0;
+        }
+    }
+}
+
+.bk-text-button {
+    border: none;
+    background: none;
+    color: $primaryColor;
+    cursor: pointer;
+    text-decoration: none;
+    .bk-icon {
+        width: 16px;
+        min-width: 16px;
+        margin-right: 5px;
+        display: inline-block;
+    }
+
+    +.bk-text-button {
+        margin-left: 15px;
+    }
+    &:hover {
+        color: $primaryHoverColor;
+        text-decoration: none;
+    }
+    &.is-disabled {
+        color: #e6e6e6 !important;
+        cursor: not-allowed;
+    }
+    &.bk-default {
+        color: $fnMainColor;
+        &:hover {
+            color: darken($fnMainColor, 10%);
+        }
+    }
+    &.bk-info {
+        color: $infoColor;
+        &:hover {
+            color: $infoHoverColor;
+        }
+    }
+    &.bk-primary {
+        color: $primaryColor;
+        &:hover {
+            color: $primaryHoverColor;
+        }
+    }
+    &.bk-success {
+        color: $successColor;
+        &:hover {
+            color: $successHoverColor;
+        }
+    }
+    &.bk-warning {
+        color: $warningColor;
+        &:hover {
+            color: $warningHoverColor;
+        }
+    }
+    &.bk-danger {
+        color: $dangerColor;
+        &:hover {
+            color: $dangerHoverColor;
+        }
+    }
+    .bk-icon {
+        width: 16px;
+        min-width: 16px; // font-weight: bold;
+    }
+}
+
+.bk-radio-group {
+    display: inline-block;
+    margin-left: 1px;
+    .bk-radio-button {
+        float: left;
+        margin-left: -1px;
+        min-width: 100px;
+        height: 36px;
+        line-height: 34px;
+        white-space: nowrap;
+        outline: none;
+        cursor: pointer;
+        padding: 0 15px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: $fnNormalSize;
+        background: $defaultColor;
+        border: 1px solid #d6d6d6;
+        box-sizing: border-box;
+        color: $fnMainColor;
+        position: relative;
+        &:nth-of-type(1) {
+            border-top-left-radius: 2px;
+            border-bottom-left-radius: 2px;
+        }
+        &:nth-last-of-type(1) {
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+        &:hover {
+            background-color: $defaultHoverColor;
+            color: $fnMainColor;
+            text-decoration: none;
+            opacity: 1;
+        }
+        &.is-checked {
+            color: #fff;
+            background: $primaryColor;
+            border-color: $primaryColor;
+            z-index: 10;
+        }
+        &.is-disabled,
+        &[disabled] {
+            background-color: #ffffff !important;
+            border-color: #e5e5e5 !important;
+            color: #e6e6e6 !important;
+            cursor: not-allowed;
+        }
+    }
+    &.bk-radio-mini {
+
+        .bk-radio-button {
+            height: 24px;
+            line-height: 22px;
+            padding: 0 7px;
+            min-width: 50px;
+            font-size: $fnSmallSize;
+        }
+    }
+    &.bk-radio-small {
+        .bk-radio-button {
+            height: 32px;
+            line-height: 30px;
+            padding: 0 10px;
+            min-width: 80px;
+        }
+    }
+    &.bk-radio-large {
+        .bk-radio-button {
+            height: 42px;
+            line-height: 40px;
+            padding: 0 16px;
+            min-width: 120px;
+        }
+    }
+}
+
+@keyframes bk-button-loading1 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point1.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point2.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point3.png');
+    }
+}
+
+@-ms-keyframes bk-button-loading1 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point1.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point2.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point3.png');
+    }
+}
+
+@-moz-keyframes bk-button-loading1 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point1.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point2.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point3.png');
+    }
+}
+
+@-webkit-keyframes bk-button-loading1 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point1.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point2.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point3.png');
+    }
+}
+
+@keyframes bk-button-loading2 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point7.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point8.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point9.png');
+    }
+}
+
+@-webkit-keyframes bk-button-loading2 {
+    0% {
+        background-image: url('#{$imagePath}/loading-point7.png');
+    }
+    50% {
+        background-image: url('#{$imagePath}/loading-point8.png');
+    }
+    100% {
+        background-image: url('#{$imagePath}/loading-point9.png');
+    }
+}

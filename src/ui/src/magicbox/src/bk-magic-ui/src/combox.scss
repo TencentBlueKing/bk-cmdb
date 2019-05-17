@@ -1,0 +1,153 @@
+@charset "utf-8";
+@import "./conf.scss";
+
+// 插件统一前缀
+$comboboxPrefix: bk-combobox;
+
+
+.#{$comboboxPrefix} {
+    position: relative;
+    width: 100%;
+    &-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    &-input {
+        width: 100%;
+        height: 36px;
+        line-height: 36px;
+        padding: 0 10px;
+        padding-right: 60px;
+        border: 1px solid $borderColor;
+        border-radius: 2px;
+        font-size: 14px;
+        color: #666;
+        outline: none;
+        box-shadow: none;
+        cursor: text;
+        transition: border linear .2s;
+        &:hover {
+            &:not([disabled="disabled"]) {
+                border-color: $borderColor;
+            }
+            + .bk-icon {
+                color: $primaryColor;
+            }
+        }
+        &::placeholder {
+            color: $fnMinorColor;
+        }
+        &.active {
+            border-color: $primaryHoverColor !important;
+            + .bk-icon {
+                color: $primaryColor;
+            }
+        }
+        &[disabled="disabled"] {
+            color: #aaa;
+            cursor: not-allowed;
+            background: $defaultBackgroundColor;
+        }
+    }
+    &-icon-box {
+        position: absolute;
+        height: 100%;
+        width: 33px;
+        right: 0;
+        top: 0;
+        /*background: $borderColor;*/
+        cursor: pointer;
+    }
+    &-icon-clear {
+        position: absolute;
+        height: 100%;
+        width: 14px;
+        right: 33px;
+        top: 0;
+        span {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            transform: translate(0, -50%);
+            font-size: 12px;
+        }
+    }
+    &-icon {
+        position: absolute;
+        top: 12px;
+        right: 10px;
+        font-size: 12px;
+        transition: all linear .2s;
+    }
+    &-list {
+        position: absolute;
+        top: 40px;
+        left: 0;
+        right: 0;
+        box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
+        background-color: $defaultColor;
+        z-index: $selectorZIndex;
+        overflow-y: hidden;
+        > ul {
+            max-height: 300px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            overflow-y: auto;
+            &::-webkit-scrollbar {
+                width: 6px;
+                height: 5px;
+            }
+            &::-webkit-scrollbar-thumb {
+                border-radius: 20px;
+                background: #a5a5a5;
+                -webkit-box-shadow: inset 0 0 6px hsla(0,0%,80%,.3);
+            }
+        }
+    }
+    &-item {
+        position: relative;
+        width: 100%;
+        border-left: $formBorderColor;
+        border-right: $formBorderColor;
+        background-color: $defaultColor;
+        &:not([disabled='disabled']) {
+            cursor: pointer;
+            &:hover,
+            &.selected {
+                background-color: #eef6fe;
+                color: $primaryColor;
+                .bk-selector-tools {
+                    display: block;
+                }
+                &:hover .bk-selector-deleted{
+                    background: #de5353;
+                    color: $defaultColor;
+                }
+            }
+        }
+
+        .text {
+            padding: 0 10px;
+            line-height: 42px;
+            font-size: 14px;
+        }
+    }
+    &-item-target {
+        background-color: #eef6fe;
+        color: $primaryColor;
+        .bk-selector-tools {
+            display: block;
+        }
+        &:hover .bk-selector-deleted{
+            background: #de5353;
+            color: $defaultColor;
+        }
+    }
+    &.open {
+        border-color: $formBorderFocusColor;
+        .#{$comboboxPrefix}-icon {
+            transform: rotate(180deg);
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "web_srv_not_found_file": "The upload file was not found",
+    "web_srv_file_save_failed": "Failed to save file",
+    "web_en_name_required": "English name (required)",
+    "web_bk_alias_name_required": "Chinese name (required)",
+    "web_bk_data_type_required": "Data Type (required)",
+    "web_excel_not_data": "No data in excel file",
+    "web_import_field_not_found": "Import nonexistent fields,Please re-download the template and do not delete the first three lines of excel, %s",
+    "web_excel_row_handle_error": "%s %d row could not process content;",
+    "web_excel_header_required": "(Required)",
+    "web_excel_header_field_error": "[No Field Name (Error)]",
+    "web_excel_content_empty": "The contents of the file cannot be empty, no workbook was found",
+    "web_excel_sheet_not_found": "The content of the file cannot be empty, the workbook content does not exist",
+    "web_get_object_field_failure": "Query fields fail, error:%s",
+    "web_ext_field_topo":"business topology",
+    "": ""
+}

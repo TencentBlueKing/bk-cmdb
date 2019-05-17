@@ -1,0 +1,122 @@
+// common transition effect
+.transition-effect {
+    transition: all linear .2s;
+}
+
+// fade
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity linear .2s;
+}
+
+.fade-enter,
+.fade-leave-active {
+    opacity: 0;
+}
+
+// fade
+// fade-show
+.fade-show-enter-active,
+.fade-show-leave-active {
+    transition: opacity linear .2s, margin linear .2s;
+}
+
+.fade-show-enter,
+.fade-show-leave-active {
+    opacity: 0;
+    margin-top: -20px;
+}
+
+// fade-show
+// info-box
+.displacement-fade-show-enter-active,
+.displacement-fade-show-leave-active {
+    transition: opacity linear .2s, margin linear .2s;
+}
+
+.displacement-fade-show-enter,
+.displacement-fade-show-leave-active {
+    opacity: 0;
+    margin-top: -50px;
+}
+
+// info-box
+// fade-center
+.fade-center-enter-active,
+.fade-center-leave-active {
+    transition: opacity linear .2s, transform linear .2s;
+    transform-origin: center center;
+}
+
+.fade-center-enter,
+.fade-center-leave-active {
+    opacity: 0;
+    transform: translate(50%, -50%) scale(0, 0) !important;
+}
+
+// fade-center
+// slide
+.slide-leave,
+.slide-enter-active {
+    .bk-sideslider-wrapper {
+        transition: all linear .2s;
+        right: 0;
+    }
+}
+
+.slide-enter,
+.slide-leave-active {
+    .bk-sideslider-wrapper {
+        &.left {
+            left: -100%;
+        }
+        &.right {
+            right: -100%;
+        }
+    }
+}
+
+// slide
+// slide-fade
+.slide-fade-enter-active,
+.fade-leave-active {
+    transition: transform linear .2s, opacity linear .2s;
+}
+
+.slide-fade-enter {
+    opacity: 0;
+    transform: translateX(20%);
+}
+
+.slide-fade-leave-active {
+    opacity: 0;
+    transform: translateX(-20%);
+}
+
+// slide-fade
+// toggle-slide
+.toggle-slide-enter-active,
+.toggle-slide-leave-active {
+    transition: transform .3s cubic-bezier(.23, 1, .23, 1), opacity .5s cubic-bezier(.23, 1, .23, 1);
+    transform-origin: center top;
+}
+
+.toggle-slide-enter,
+.toggle-slide-leave-active {
+    transform: translateZ(0) scaleY(0);
+    opacity: 0;
+}
+
+.toggle-slide2-enter-active,
+.toggle-slide2-leave-active {
+    transition: transform .3s cubic-bezier(.23, 1, .23, 1), opacity .5s cubic-bezier(.23, 1, .23, 1);
+    transform-origin: center bottom;
+}
+
+.toggle-slide2-enter,
+.toggle-slide2-leave-active {
+    transform: translateZ(0) scaleY(0);
+    opacity: 0;
+}
+
+// toggle-slide

@@ -1,0 +1,38 @@
+language: go
+
+go:
+  - "1.8.x"
+
+# safelist
+branches:
+  only:
+    - master
+    - /^v3\.[1-9]+[0-9]*[0-9]*\.x$/
+    - travis_ci
+
+env:
+  global:
+    - REPO_NAME=bk-cmdb
+    - BUILD_DIR=configcenter
+
+cache:
+  directories:
+    - node_modules
+
+
+install: true
+
+script:
+ - pwd && ls ./ && ls ../
+ - cd ../ && mv $REPO_NAME ../../$BUILD_DIR
+ - cd ../../$BUILD_DIR
+ - ./scripts/travis_ci.sh
+ - cd src
+ - make
+
+notifications:
+  email:
+    recipients:
+      - lowenitt@sina.com
+    on_success: always # default: change
+    on_failure: always # default: always

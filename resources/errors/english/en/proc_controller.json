@@ -1,0 +1,9 @@
+{
+    "1107001": "Remove process from module failed",
+    "1107002": "Failed to add process to module",
+    "1107003": "The query process failed",
+    "1107011": "delete process template bind failed",
+	"1107012": "create process template bind failed",
+	"1107013": "search process template bind failed",
+    "": ""
+}

@@ -1,0 +1,21 @@
+{
+    "import_property_str_not_found": "property %s does not exists",
+    "import_property_str_format_error": "property %s format error",
+    "import_asst_property_str_not_found": "property %s does not exists",
+    "import_asst_property_str_primary_count_len": "Association Object %s primary Key  count error",
+    "import_str_asst_str_query_data_format_error": "Get %s Association Object %s Data Format",
+    "import_asst_obj_property_str_primary_count_len": " [%s] Object [%s] primary Key  count error",
+    "import_asst_obj_property_str_primary_format_error": "[%s] association primary Key [%s] data format error",
+    "import_asst_obj_property_str_primary_type_error": "[%s] association primary Key [%s] data transform type  error",
+    "import_asstid_not_foud":"association [%s]  does not exists",
+    "import_instance_not_foud":"[%s] model [%s]  does not exists",
+    "import_asst_obj_primary_property_str_not_found": "[%s] property [%s] does not exists",
+    "excel_association_object_id": "association ID",
+    "excel_association_op": "Operation",
+    "excel_association_src_inst": "source instance",
+    "excel_association_dst_inst": "target instance",
+    "import_association_id_not_found": "The association [%s]  does not exist",
+    "import_association_operate_not_found":"operate not found",
+
+    "": ""
+}

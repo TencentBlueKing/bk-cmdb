@@ -1,0 +1,9 @@
+{
+    "test_key_val": "string",
+    "test_key_val1": "string1",
+    "test_key_val2": "string2",
+    "test_key_val3": "string3",
+    "test_key_format_str": "string with parameters %s",
+    "test_key_format_int": "int with parameters %d"
+
+}

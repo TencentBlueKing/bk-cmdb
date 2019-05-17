@@ -1,0 +1,54 @@
+@charset "utf-8";
+@import "./conf";
+
+@import "./mixins/create-label";
+
+.bk-tag {
+    display: inline-block;
+    background-color: $defaultBackgroundColor;
+    color: $fnMinorColor;
+    font-size: 12px;
+    border: 1px solid $borderColor;
+    vertical-align: middle;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 2px;
+    white-space: nowrap;
+    padding: 0 9px;
+    height: 21px;
+    line-height: 19px;
+
+    &.is-round {
+        border-radius: 21px;
+        padding: 0 14px;
+    }
+    &.is-text {
+        border-color: #fff;
+        background-color: #fff;
+    }
+    &.is-fill {
+        background-color: $borderColor;
+        color: #fff;
+    }
+    &.bk-gray {
+        @include create-label(#ebf0f5, #fafbfd, $fnMinorColor, $fnMinorColor);
+    }
+    &.bk-light-gray {
+        @include create-label(#737987, #e7edf2, $fnMinorColor, #fff);
+    }
+    &.bk-info {
+        @include create-label($infoColor, $infoLightColor, $infoColor, #fff);
+    }
+    &.bk-danger {
+        @include create-label($dangerColor, $dangerLightColor, $dangerColor, #fff);
+    }
+    &.bk-warning {
+        @include create-label($warningColor, $warningLightColor, $warningColor, #fff);
+    }
+    &.bk-success {
+        @include create-label($successColor, $successLightColor, $successColor, #fff);
+    }
+    &.bk-primary {
+        @include create-label($primaryColor, $primaryLightColor, $primaryColor, #fff);
+    }
+}

@@ -1,0 +1,68 @@
+.model-detail-wrapper,
+.relation-wrapper,
+.topo-wrapper,
+.model-manage-wrapper {
+    .slider-content {
+        height: 100%;
+        padding: 20px 20px 0;
+        @include scrollbar;
+        .form-label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 0;
+            >.label-text {
+                position: relative;
+                display: block;
+                padding-right: 10px;
+                width: 110px;
+                line-height: 36px;
+                font-size: 14px;
+                @include ellipsis;
+            }
+            .cmdb-form-item {
+                display: inline-block;
+                width: calc(100% - 145px);
+                width: 100%;
+                vertical-align: middle;
+            }
+            textarea {
+                padding: 6px;
+                width: 100%;
+                height: 84px;
+                font-size: 14px;
+                border: 1px solid $cmdbBorderColor;
+                border-radius: 2px;
+                outline: none;
+                resize: none;
+            }
+        }
+        .radio-box {
+            font-size: 0;
+            .label-text {
+                display: block;
+                padding-right: 10px;
+                width: 130px;
+                font-size: 14px;
+                line-height: 32px;
+            }
+            .cmdb-form-checkbox,
+            .cmdb-form-radio {
+                margin-right: 10px;
+                width: 170px;
+                height: 32px;
+            }
+        }
+        .btn-group {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 0;
+            font-size: 0;
+            background: #fff;
+            .bk-primary {
+                margin-right: 10px;
+            }
+        }
+    }
+}

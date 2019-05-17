@@ -1,0 +1,7 @@
+// 纯文本按钮
+// 正方形按钮
+@mixin create-text-button($color, $hover) {
+    &:hover {
+        color: $hover;
+    }
+}

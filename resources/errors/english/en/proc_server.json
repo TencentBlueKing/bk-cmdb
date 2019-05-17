@@ -1,0 +1,22 @@
+{
+    "1108001": "Query process details failed",
+    "1108002": "Bind process model failed",
+    "1108003": "Unlocking process model binding failed",
+    "1108004": "Unlocking process model binding failed",
+    "1108005": "The update process failed",
+    "1108006": "The query process failed",
+    "1108007": "Delete process failed",
+    "1108008": "The creation process failed",
+    "1108013": "the process bind with module",
+    "1108014": "delete config template failed",
+    "1108015": "update config template failed",
+    "1108016": "search config template failed",
+    "1108017": "bind template to process failed",
+    "1108018": "unbind template from process failed",
+    "1108019": "search template process relation failed",
+    "1108020": "Query process execution status failed to execute",
+    "1108021": "Process operation waiting to be executed",
+    "1108022": "Process operation error",
+    "1108023": "create config template failed",
+    "": ""
+}

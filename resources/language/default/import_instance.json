@@ -1,0 +1,22 @@
+{
+    "import_property_str_not_found": "主机属性%s不存在",
+    "import_property_str_format_error": "主机属性%s格式错误",
+    "import_asst_property_str_not_found": "主机关联属性%s格式错误",
+    "import_asst_property_str_primary_count_len": "主机关联对象%s唯一键个数错误",
+    "import_str_asst_str_query_data_format_error": "获取%s的%s关联对象%s数据格式",
+    "import_asst_obj_property_str_primary_count_len": "[%s]关联对象[%s]唯一键个数错误",
+    "import_asst_obj_property_str_primary_format_error": "[%s]关联对象唯一键[%s]数据格式错误",
+    "import_asst_obj_property_str_primary_type_error": "[%s]关联对象唯一键[%s]数据类型错误",
+    "import_asstid_not_foud":"关联关系[%s] 不存在",
+    "import_instance_not_foud":"[%s] 模型 [%s] 不存在",
+    "import_asst_obj_primary_property_str_not_found": "[%s]属性[%s]不存在",
+    "excel_association_object_id":"关联标识",
+    "excel_association_op":"操作",
+    "excel_association_src_inst":"源实例",
+    "excel_association_dst_inst":"目标实例",
+    "import_association_id_not_found":"关联关系[%s]不存在",
+    "import_association_operate_not_found":"操作类型不存在",
+
+
+    "":""
+}

@@ -1,0 +1,16 @@
+{
+    "val_type_text": "Text",
+    "val_type_bool": "Boolean",
+    "unit": "Unit",
+    "placeholder": "Prompt",
+    "desc": "Description",
+    "is_editable": "Can edit",
+    "property_option": "Data Configuration",
+    "property_is_only": "is it unique?",
+    "property_is_required": "Required",
+    "property_is_readonly": "Read-only",
+    "app_not_exist": "Business does not exist",
+    "import_row_int_error_str":"%d row %s",
+    "property_group":"Field Group",
+    "": ""
+}

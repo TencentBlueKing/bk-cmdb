@@ -1,0 +1,10 @@
+{
+    "1103000": "Failed to create subscription",
+    "1103001": "Failed to delete subscription",
+    "1103002": "Failed to update subscription",
+    "1103003": "Failed to query subscription",
+    "1103004": "Failed to test callback",
+    "1103005": "Failed to telnet callback",
+    "1103006": "Failed to push event",
+    "": ""
+}

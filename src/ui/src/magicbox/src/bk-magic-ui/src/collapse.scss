@@ -1,0 +1,24 @@
+@charset "utf-8";
+@import "./conf.scss";
+
+.bk-collapse {
+    border-top: 1px solid $borderColor;
+    &-header {
+        padding: 10px;
+        font-size: $fnNormalSize;
+        i.bk-icon {
+            transition: all linear 0.3s;
+        }
+        .rotate-icon {
+            position: relative;
+            transform: rotate(90deg);
+        }
+    }
+    
+    &-content {
+        padding: 5px 10px 20px 10px;
+        will-change: all;
+        font-size: $fnNormalSize;
+        color: $fnMainColor;
+    }
+}

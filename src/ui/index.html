@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title><%= htmlWebpackPlugin.options.config.BUILD_TITLE %></title>
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+    <script type="text/javascript">
+        window.Site = {
+            url: <%= htmlWebpackPlugin.options.config.API_URL %>,
+            version: <%= htmlWebpackPlugin.options.config.API_VERSION %>,
+            login: <%= htmlWebpackPlugin.options.config.API_LOGIN %>,
+            agent: <%= htmlWebpackPlugin.options.config.AGENT_URL %>, 
+            buildVersion: '<%= htmlWebpackPlugin.options.config.BUILD_VERSION %>'
+        }
+        window.User = {
+            admin: <%= htmlWebpackPlugin.options.config.USER_ROLE %>,
+            name: <%= htmlWebpackPlugin.options.config.USER_NAME %>
+        }
+        window.Supplier = {
+            account: '0'
+        }
+    </script>
+  </body>
+</html>

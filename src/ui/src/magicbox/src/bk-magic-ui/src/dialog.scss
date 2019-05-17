@@ -1,0 +1,321 @@
+@charset "utf-8";
+@import "./conf";
+
+$bkDialog: '.bk-dialog';
+$info: $infoColor;
+$primary: $primaryColor;
+$danger: $dangerColor;
+$success: $successColor;
+$warning: $warningColor;
+
+$hoverInfo: $infoHoverColor;
+$hoverPrimary: $primaryHoverColor;
+$hoverDanger: $dangerHoverColor;
+$hoverSuccess: $successHoverColor;
+$hoverWarning: $warningHoverColor;
+
+$activeInfo: $infoActiveColor;
+$activePrimary: $primaryActiveColor;
+$activeDanger: $dangerActiveColor;
+$activeSuccess: $successActiveColor;
+$activeWarning: $warningActiveColor;
+
+#{$bkDialog} {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, .6);
+    z-index: $dialogZIndex;
+    font-family: $globalFontFamily;
+    &-wrapper {
+        display: table;
+        width: 100%;
+        height: 100%;
+    }
+    &-position {
+        display: table-cell;
+        vertical-align: middle;
+    }
+    &-style {
+        position: relative;
+        width: 400px;
+        margin: 0 auto;
+        background-color: #fff;
+        border-radius: 2px;
+        box-shadow: 0 0 7px 3px rgba(0, 0, 0, 0.1);
+    }
+    &-tool {
+        min-height: 30px;
+        position: relative;
+        &.draggable {
+            cursor: move;
+        }
+        #{$bkDialog}-mark {
+            cursor: pointer;
+        }
+    }
+    .bk-dialog-close {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
+        text-align: center;
+        border-radius: 50%;
+        background-repeat: no-repeat;
+        background-size: 11px 11px;
+        background-position: 50% 50%;
+        cursor: pointer;
+        &:hover {
+            background-color: #f3f3f3;
+        }
+    }
+    #{$bkDialog}-mark {
+        display: block;
+        width: 27px;
+        height: 27px;
+        line-height: 27px;
+        margin: 4px 4px 0 0;
+        border-radius: 50%;
+        text-align: center;
+        font-size: 12px;
+        color: #4c4c4c;
+        &:hover {
+            background-color: #f3f3f3;
+        }
+    }
+    &-header {
+        padding: 10px 30px 10px;
+        color: #333;
+        font-size: 22px;
+        .bk-dialog-title {
+            margin: 0;
+        }
+    }
+    &-body {
+        padding: 15px 65px;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    &-footer {
+        text-align: center;
+        padding: 20px 65px 40px;
+        &.bk-d-footer {
+            height: 60px;
+            line-height: 60px;
+            padding: 0;
+            border-top: 1px solid #e5e5e5;
+            background-color: #fafafa;
+        }
+        .bk-dialog-outer {
+            padding: 0 10px 0 0;
+            text-align: right;
+            button {
+                width: 72px;
+                height: 36px;
+                line-height: 34px;
+                min-width: 72px;
+                margin-right: 10px;
+                margin-top: 12px;
+                &.bk-dialog-btn-cancel {
+                    margin-left: 0;
+                    background-color: #fff;
+                }
+            }
+        }
+    }
+    &-title {
+        text-align: center;
+        font-size: 22px;
+        color: #333;
+    }
+    &-subtitle {
+        color: #666;
+    }
+    &-default-status {
+        padding: 40px 0;
+        &.bk-dialog-warning-body {
+            padding-bottom: 15px;
+        }
+        &.bk-dialog-warning {
+            padding-bottom: 35px;
+        }
+        &~.bk-dialog-footer {
+            padding-top: 0;
+        }
+        .bk-dialog-mark {
+            display: block;
+            margin: 0 auto;
+            &.bk-dialog-loading {
+                width: 58px;
+                height: 58px;
+                line-height: 58px;
+                font-size: 30px;
+                border-radius: 50%;
+                animation: loading linear 1s infinite;
+            }
+            &.bk-dialog- {
+                &warning,
+                &error,
+                &success {
+                    width: 58px;
+                    height: 58px;
+                    line-height: 58px;
+                    font-size: 30px;
+                    color: #fff;
+                    border-radius: 50%;
+                }
+                &warning {
+                    background-color: #ffc200;
+                }
+                &error {
+                    background-color: #ff5454;
+                }
+                &success {
+                    background-color: #5bd18a;
+                }
+            }
+        }
+        .bk-dialog-title {
+            margin: 20px 20px 0 20px;
+        }
+        .bk-dialog-subtitle {
+            margin: 16px 20px 0 20px;
+        }
+    } // 默认状态 end
+    &-error-text {
+        color: #ff7979;
+    }
+    &-primary-text {
+        color: #6793ee;
+    }
+    &-btn {
+        width: 110px;
+        height: 36px;
+        box-shadow: none;
+        outline: none;
+        border-radius: 2px;
+        background-color: #fff;
+        font-size: 14px;
+        border: 1px solid $borderColor;
+        cursor: pointer;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        &:hover {
+            background-color: #fafafa;
+            opacity: 1;
+        }
+        &:active {
+            background-color: $defaultActiveColor;
+            opacity: 1;
+        }
+        &.bk-btn-info {
+            color: #fff;
+            background-color: $infoColor;
+            border-color: $infoColor;
+            &:hover {
+                background-color: $hoverInfo;
+                border-color: $hoverInfo;
+            }
+            &:active {
+                background-color: $activeInfo;
+                border-color: $activeInfo;
+            }
+        }
+        &.bk-btn-primary {
+            color: #fff;
+            background-color: $primary;
+            border-color: $primary;
+            &:hover {
+                background-color: $hoverPrimary;
+                border-color: $hoverPrimary;
+            }
+            &:active {
+                background-color: $activePrimary;
+                border-color: $activePrimary;
+            }
+        }
+        &.bk-btn-danger {
+            color: #fff;
+            background-color: $danger;
+            border-color: $danger;
+            &:hover {
+                background-color: $hoverDanger;
+                border-color: $hoverDanger;
+            }
+            &:active {
+                background-color: $activeDanger;
+                border-color: $activeDanger;
+            }
+        }
+        &.bk-btn-success {
+            color: #fff;
+            background-color: $success;
+            border-color: $success;
+            &:hover {
+                background-color: $hoverSuccess;
+                border-color: $hoverSuccess;
+            }
+            &:active {
+                background-color: $activeSuccess;
+                border-color: $activeSuccess;
+            }
+        }
+        &.bk-btn-warning {
+            color: #fff;
+            background-color: $warning;
+            border-color: $warning;
+            &:hover {
+                background-color: $hoverWarning;
+                border-color: $hoverWarning;
+            }
+            &:active {
+                background-color: $activeWarning;
+                border-color: $activeWarning;
+            }
+        }
+        &-confirm {
+            margin-right: 10px;
+            color: #fff;
+        }
+        &-cancel {
+            margin-left: 10px;
+            color: #666;
+        }
+    }
+    &-row {
+        text-align: center;
+    }
+    @for $i from 1 through 6 {
+        h#{$i} {
+            margin: 0;
+            padding: 0;
+            font-weight: normal;
+        }
+    } // 重置部分样式 start
+    p {
+        margin: 0;
+    }
+    a {
+        text-decoration: none;
+    } // 重置部分样式 end
+    .hidden {
+        display: none;
+    }
+}
+
+// loading 的动画
+@keyframes loading {
+    from {
+        transform: rotate(0);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

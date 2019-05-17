@@ -1,0 +1,177 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package distribution
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"reflect"
+	"strings"
+	"time"
+
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/event_server/types"
+	"configcenter/src/storage/dal"
+	
+	"github.com/tidwall/gjson"
+	redis "gopkg.in/redis.v5"
+)
+
+type reconciler struct {
+	db                   dal.RDB
+	cache                *redis.Client
+	cached               map[string][]string
+	persisted            map[string][]string
+	cachedSubscribers    []string
+	persistedSubscribers []string
+	processID            string
+	ctx                  context.Context
+}
+
+func newReconciler(ctx context.Context, cache *redis.Client, db dal.RDB) *reconciler {
+	return &reconciler{
+		ctx:                  ctx,
+		db:                   db,
+		cache:                cache,
+		cached:               map[string][]string{},
+		persisted:            map[string][]string{},
+		persistedSubscribers: []string{},
+	}
+}
+
+var MsgChan = make(chan string, 3)
+
+func (r *reconciler) loadAll() {
+	r.cached = map[string][]string{}
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
+	r.loadAllCached()
+	r.loadAllPersisted()
+}
+
+func (r *reconciler) loadAllCached() {
+	r.cached = map[string][]string{}
+	for _, formkey := range r.cache.Keys(types.EventCacheSubscribeformKey + "*").Val() {
+		if formkey != "" && formkey != nilstr && formkey != "redis" {
+			r.cached[strings.TrimPrefix(formkey, types.EventCacheSubscribeformKey)] = r.cache.SMembers(formkey).Val()
+		}
+	}
+}
+
+func (r *reconciler) loadAllPersisted() {
+	r.persisted = map[string][]string{}
+	r.persistedSubscribers = []string{}
+	subscriptions := []metadata.Subscription{}
+	if err := r.db.Table(common.BKTableNameSubscription).Find(nil).All(r.ctx, &subscriptions); err != nil {
+		blog.Errorf("reconcile err: %v", err)
+	}
+	blog.Infof("loaded %v subscriptions from persistent", len(subscriptions))
+	for _, sub := range subscriptions {
+		eventnames := strings.Split(sub.SubscriptionForm, ",")
+		r.persistedSubscribers = append(r.persistedSubscribers, sub.GetCacheKey())
+		for _, eventname := range eventnames {
+			eventname = sub.OwnerID + ":" + eventname
+			r.persisted[eventname] = append(r.persisted[eventname], fmt.Sprint(sub.SubscriptionID))
+		}
+	}
+}
+
+func (r *reconciler) reconcile() {
+
+	for k, v := range r.persisted {
+		subs, plugs := util.CalSliceDiff(r.cached[k], v)
+		if len(subs) > 0 {
+			subss, _ := util.GetMapInterfaceByInerface(subs)
+			if err := r.cache.SRem(types.EventCacheSubscribeformKey+k, subss...).Err(); err != nil {
+				blog.Errorf("reconcile err: %v", err)
+			}
+		}
+		if len(plugs) > 0 {
+			plugss, _ := util.GetMapInterfaceByInerface(plugs)
+			if err := r.cache.SAdd(types.EventCacheSubscribeformKey+k, plugss...).Err(); err != nil {
+				blog.Errorf("reconcile err: %v", err)
+			}
+		}
+		delete(r.cached, k)
+	}
+
+	for k := range r.cached {
+		r.cache.Del(types.EventCacheSubscribeformKey + k)
+	}
+
+}
+
+func SubscribeChannel(redisCli *redis.Client) (err error) {
+	subChan, err := redisCli.PSubscribe(types.EventCacheProcessChannel)
+	if err != nil {
+		return err
+	}
+	blog.Info("receiving massages")
+	for {
+		mesg, err := subChan.Receive()
+		if err == redis.Nil || err == io.EOF {
+			continue
+		}
+		if nil != err {
+			blog.Warnf("SubscribeChannel err %s,, continue", err.Error())
+			subChan.Unsubscribe(types.EventCacheProcessChannel)
+			time.Sleep(time.Second)
+			subChan.Subscribe(types.EventCacheProcessChannel)
+			continue
+		}
+		msg, ok := mesg.(*redis.Message)
+		if !ok {
+			blog.Warnf("SubscribeChannel msg not message type but %v, continue", reflect.TypeOf(mesg).String())
+			continue
+		}
+		if "" == msg.Payload {
+			blog.Warnf("SubscribeChannel Payload empty, continue")
+			continue
+		}
+		MsgChan <- msg.Payload
+	}
+}
+
+func cleanOutdateEvents(redisCli *redis.Client) {
+	var err error
+	tick := util.NewTicker(time.Hour * 24)
+	tick.Tick()
+	for range tick.C {
+		blog.Infof("starting clean outdate events")
+		var keys = []string{}
+		if err = redisCli.Keys(types.EventCacheDistDonePrefix + "*").ScanSlice(&keys); err != nil {
+			blog.Errorf("fetch outdate event keys failed: %v", err)
+		}
+		keys = append(keys, types.EventCacheEventDoneKey)
+
+		for _, key := range keys {
+			iter := redisCli.HScan(key, 0, "*", 10).Iterator()
+			for iter.Next() {
+				if strings.HasPrefix(iter.Val(), "{") {
+					if time.Now().Sub(gjson.Get(iter.Val(), "action_time").Time()) > time.Hour*24 {
+						if err = redisCli.HDel(gjson.Get(iter.Val(), "event_id").String()).Err(); err != nil {
+							blog.Errorf("remove outdate event %s failed: %v", iter.Val(), err)
+						}
+					}
+				}
+			}
+			if err := iter.Err(); err != nil {
+				blog.Errorf("scan outdate events failed: %v", err)
+			}
+		}
+	}
+}
