@@ -16,6 +16,7 @@
 
 在技术构建上，架构的核心聚焦于资源，我们把CMDB管理的原子资源分为主机、进程和通用对象三种类型，并构建了对这些资源的原子操作层。在这些原子操作之上，我们构建了更贴近用户操作的场景层，场景层通过对不同资源的组合操作来完成用户的请求。
 
+![front-page](docs/resource/img/frontpage.png)
 
 ## Overview
 * [架构设计](docs/overview/architecture.md)
