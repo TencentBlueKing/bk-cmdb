@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/common/metadata"
 	"configcenter/src/framework/core/errors"
@@ -463,6 +464,124 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, bizID 
 		"bizID":             bizID,
 		"serviceTemplateID": serviceTemplateID,
 		"hostID":            hostID,
+	}
+
+	err = p.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+/*
+	process instance relation api
+*/
+func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+	ret := new(metadata.OneProcessInstanceRelationResult)
+	subPath := "/create/process/process_instance_relation"
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(instance).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error) {
+	ret := new(metadata.OneProcessInstanceRelationResult)
+	subPath := fmt.Sprintf("/find/process/process_instance_relation/%d", processID)
+
+	err = p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+	ret := new(metadata.OneProcessInstanceRelationResult)
+	subPath := fmt.Sprintf("/update/process/process_instance_relation/%d", instanceID)
+
+	err = p.client.Post().
+		WithContext(ctx).
+		Body(instance).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.New(ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
+func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) error {
+	ret := new(metadata.OneProcessInstanceRelationResult)
+	subPath := fmt.Sprintf("/delete/process/process_instance_relation/%d", processID)
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return errors.New(ret.ErrMsg)
+	}
+
+	return nil
+}
+
+func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header, bizID int64, serviceInstanceID int64, hostID int64) (resp *metadata.MultipleProcessInstanceRelation, err error) {
+	ret := new(metadata.MultipleProcessInstanceRelationResult)
+	subPath := "/list/process/process_instance_relation"
+
+	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	input := map[string]interface{}{
+		"metadata":            md,
+		"service_template_id": serviceInstanceID,
+		"hostID":              hostID,
 	}
 
 	err = p.client.Delete().

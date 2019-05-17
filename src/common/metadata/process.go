@@ -559,7 +559,7 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 }
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
-type ServiceInstanceRelations struct {
+type ProcessInstanceRelation struct {
 	// unique field, 1:1 mapping with ProcessInstance.
 	ProcessID         int64 `field:"processID" json:"processID" bson:"processID"`
 	ServiceInstanceID int64 `field:"serviceInstanceID" json:"serviceInstanceID" bson:"serviceInstanceID"`
