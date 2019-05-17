@@ -163,6 +163,9 @@ const (
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
 	CCErrCommGetMultipleObject = 1199052
+	CCErrCommOperateBuiltInItemForbidden = 1199053
+	CCErrCommRemoveRecordHasChildrenForbidden = 1199054
+	CCErrCommRemoveReferencedRecordForbidden = 1199055
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -634,13 +637,6 @@ const (
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
 	
-	CCErrCoreServiceServiceCategoryNotFound = 1113011
-	CCErrCoreServiceServiceTemplateNotFound = 1113012
-	CCErrCoreServiceServiceInstanceNotFound = 1113013
-	CCErrCoreServiceProcessTemplateNotFound = 1113014
-	CCErrCoreServiceProcessInstanceNotFound = 1113015
-	CCErrCoreServiceServiceProcessRelationNotFound = 1113016
-
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
