@@ -47,13 +47,13 @@ type ProcessInterface interface {
 	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
 	GetServiceInstance(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceInstance, err error)
 	UpdateServiceInstance(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
-	ListServiceInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, hostID int64) (resp *metadata.MultipleServiceInstance, err error)
-	DeleteServiceInstance(ctx context.Context, h http.Header, processTemplateID int64) error
+	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (resp *metadata.MultipleServiceInstance, err error)
+	DeleteServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) error
 
 	// service instance relation
-	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
+	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
-	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
+	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	ListProcessInstanceRelation(ctx context.Context, h http.Header, bizID int64, serviceInstanceID int64, hostID int64) (resp *metadata.MultipleProcessInstanceRelation, err error)
 	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) error
 }

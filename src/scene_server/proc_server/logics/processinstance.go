@@ -15,6 +15,7 @@ package logics
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -86,20 +87,38 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc mapstr.MapStr) error {
-	inst := metadata.CreateModelInstance{
-		Data: proc,
+func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procID []int64) error {
+	cond := condition.CreateCondition()
+	cond.AddContionItem(condition.ConditionItem{Field: "id", Operator: "$in", Value: procID})
+	option := metadata.DeleteOption{
+		Condition: cond.ToMapStr(),
 	}
-
-	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inst)
+	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return err
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
+		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
 		return kit.CCError.Error(result.Code)
 	}
-
 	return nil
+}
+
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (uint64, error) {
+	inst := metadata.CreateModelInstance{
+		Data: mapstr.NewFromStruct(proc, "field"),
+	}
+
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inst)
+	if err != nil {
+		return 0, err
+	}
+
+	if !result.Result {
+		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
+		return 0, kit.CCError.Error(result.Code)
+	}
+
+	return result.Data.Created.ID, nil
 }

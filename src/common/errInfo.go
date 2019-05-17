@@ -162,10 +162,10 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
-	CCErrCommGetMultipleObject = 1199052
-	CCErrCommOperateBuiltInItemForbidden = 1199053
+	CCErrCommGetMultipleObject                = 1199052
+	CCErrCommOperateBuiltInItemForbidden      = 1199053
 	CCErrCommRemoveRecordHasChildrenForbidden = 1199054
-	CCErrCommRemoveReferencedRecordForbidden = 1199055
+	CCErrCommRemoveReferencedRecordForbidden  = 1199055
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -477,29 +477,32 @@ const (
 	CCErrProcSelectProc2Template = 1107013
 
 	// procserver 1108XXX
-	CCErrProcSearchDetailFaile          = 1108001
-	CCErrProcBindToMoudleFaile          = 1108002
-	CCErrProcUnBindToMoudleFaile        = 1108003
-	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFaile         = 1108005
-	CCErrProcSearchProcessFaile         = 1108006
-	CCErrProcDeleteProcessFaile         = 1108007
-	CCErrProcCreateProcessFaile         = 1108008
-	CCErrProcFieldValidFaile            = 1108009
-	CCErrProcGetByApplicationIDFail     = 1108010
-	CCErrProcGetByIP                    = 1108011
-	CCErrProcOperateFaile               = 1108012
-	CCErrProcBindWithModule             = 1108013
-	CCErrProcDeleteTemplateFail         = 1108014
-	CCErrProcUpdateTemplateFail         = 1108015
-	CCErrProcSearchTemplateFail         = 1108016
-	CCErrProcBindToTemplateFailed       = 1108017
-	CCErrProcUnBindToTemplateFailed     = 1108018
-	CCErrProcSelectBindToTemplateFailed = 1108019
-	CCErrProcQueryTaskInfoFail          = 1108020
-	CCErrProcQueryTaskWaitOPFail        = 1108021
-	CCErrProcQueryTaskOPErrFail         = 1108022
-	CCErrProcCreateTemplateFail         = 1108023
+	CCErrProcSearchDetailFaile            = 1108001
+	CCErrProcBindToMoudleFaile            = 1108002
+	CCErrProcUnBindToMoudleFaile          = 1108003
+	CCErrProcSelectBindToMoudleFaile      = 1108004
+	CCErrProcUpdateProcessFaile           = 1108005
+	CCErrProcSearchProcessFaile           = 1108006
+	CCErrProcDeleteProcessFailed          = 1108007
+	CCErrProcCreateProcessFailed          = 1108008
+	CCErrProcFieldValidFaile              = 1108009
+	CCErrProcGetByApplicationIDFail       = 1108010
+	CCErrProcGetByIP                      = 1108011
+	CCErrProcOperateFaile                 = 1108012
+	CCErrProcBindWithModule               = 1108013
+	CCErrProcDeleteTemplateFail           = 1108014
+	CCErrProcUpdateTemplateFail           = 1108015
+	CCErrProcSearchTemplateFail           = 1108016
+	CCErrProcBindToTemplateFailed         = 1108017
+	CCErrProcUnBindToTemplateFailed       = 1108018
+	CCErrProcSelectBindToTemplateFailed   = 1108019
+	CCErrProcQueryTaskInfoFail            = 1108020
+	CCErrProcQueryTaskWaitOPFail          = 1108021
+	CCErrProcQueryTaskOPErrFail           = 1108022
+	CCErrProcCreateTemplateFail           = 1108023
+	CCErrProcGetServiceInstancesFailed    = 1108024
+	CCErrProcCreateServiceInstancesFailed = 1108025
+	CCErrProcDeleteServiceInstancesFailed = 1108026
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -636,7 +639,7 @@ const (
 	CCErrCoreServiceTransferHostModuleErr = 1113009
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
-	
+
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist

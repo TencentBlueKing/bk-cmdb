@@ -60,6 +60,21 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
 
+type DeleteProcessInstanceInServiceInstanceInput struct {
+	Metadata           Metadata `json:"metadata"`
+	ProcessInstanceIDs []int64  `json:"process_instance_ids"`
+}
+
+type GetServiceInstanceInModuleInput struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"module_id"`
+	Page     BasePage `json:"page"`
+}
+type DeleteServiceInstanceOption struct {
+	Metadata         Metadata `json:"metadata"`
+	ServiceInstancID int64    `json:"id"`
+}
+
 type ServiceInstanceDetail struct {
 	HostID    int64                   `json:"hostID"`
 	Processes []ProcessInstanceDetail `json:"processes"`
