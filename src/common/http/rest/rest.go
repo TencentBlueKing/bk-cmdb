@@ -101,13 +101,16 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 	return func(req *restful.Request, resp *restful.Response) {
 		restContexts := new(Contexts)
 		restContexts.Request = req
-		restContexts.Header = req.Request.Header
 		restContexts.resp = resp
-		restContexts.Rid = util.GetHTTPCCRequestID(req.Request.Header)
-		restContexts.Ctx = req.Request.Context()
-		restContexts.SupplierAccount = util.GetOwnerID(req.Request.Header)
-		restContexts.User = util.GetUser(req.Request.Header)
-		restContexts.CCError = r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
+		restContexts.Kit = &Kit{
+			Header:          req.Request.Header,
+			Rid:             util.GetHTTPCCRequestID(req.Request.Header),
+			Ctx:             req.Request.Context(),
+			User:            util.GetUser(req.Request.Header),
+			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)),
+			SupplierAccount: util.GetOwnerID(req.Request.Header),
+		}
+
 		action.Handler(restContexts)
 	}
 }
