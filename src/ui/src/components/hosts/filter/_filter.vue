@@ -245,6 +245,7 @@
         async created () {
             this.setQueryParams()
             await this.getProperties()
+            this.ip.text = this.$route.params.host_innerip ? this.$route.params.host_innerip : ''
             this.refresh()
         },
         mounted () {

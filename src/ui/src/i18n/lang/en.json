@@ -175,7 +175,9 @@
         "更多": "More",
         "查看更多结果": "More",
         "数量": "Amount",
-        "暂无使用记录": "No record"
+        "暂无使用记录": "No record",
+        "搜不到相关内容": "Sorry, I can't find the relevant content, try another word~",
+        "全部结果": "all"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

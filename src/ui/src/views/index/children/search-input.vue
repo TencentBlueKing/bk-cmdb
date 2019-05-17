@@ -22,14 +22,12 @@
         },
         methods: {
             handleSearch () {
+                if (!this.queryString) return
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
                 this.$router.push({
-                    name: 'search',
-                    params: {
-                        queryString: this.queryString
-                    }
+                    path: `/index/search?keywords=${this.queryString}`
                 })
             }
         }
