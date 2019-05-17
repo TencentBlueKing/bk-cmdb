@@ -233,8 +233,7 @@ type ProcessTemplate struct {
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Template *ProcessProperty `field:"template" json:"template,omitempty" bson:"template"`
-	Property ProcessProperty `field:"property" json:"property" bson:"property"`
+	Property *ProcessProperty `field:"template" json:"template,omitempty" bson:"template"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -484,16 +483,15 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 	}
 }
 
-/*  TimeoutSeconds
-// AProtocol          sDefaultValue records the relations between process instance's property and
-// wDescription       hether it's used as a default value, the empty value can also be a default value.
-// If the property's value is used as a default value, then this property
-// can not be changed in all the process instance's created by this process
-// template. or, it can only be changed to this default value.
-*/
 type PropertyInt64 struct {
-	Value          *int64 `field:"value" json:"value" bson:"value"`
-	AsDefaultValue *bool  `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
+	Value *int64 `field:"value" json:"value" bson:"value"`
+
+	// AsDefaultValue records the relations between process instance's property and
+	// whether it's used as a default value, the empty value can also be a default value.
+	// If the property's value is used as a default value, then this property
+	// can not be changed in all the process instance's created by this process
+	// template. or, it can only be changed to this default value.
+	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
 }
 
 func (ti *PropertyInt64) Validate() error {

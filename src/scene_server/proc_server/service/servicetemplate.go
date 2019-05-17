@@ -31,7 +31,7 @@ func (p *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := p.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Ctx, ctx.Header, template)
+	temp, err := p.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
@@ -53,7 +53,7 @@ func (p *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := p.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Ctx, ctx.Header, bizID, input.ServiceCategoryID)
+	temp, err := p.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, bizID, input.ServiceCategoryID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, err: %v, input: %+v", err, input)
 		return
@@ -77,7 +77,7 @@ func (p *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Ctx, ctx.Header, input.ServiceTemplateID)
+	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service template:%d failed, err: %v", input.ServiceTemplateID, err)
 		return
