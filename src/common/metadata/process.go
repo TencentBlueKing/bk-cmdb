@@ -70,9 +70,52 @@ type GetServiceInstanceInModuleInput struct {
 	ModuleID int64    `json:"module_id"`
 	Page     BasePage `json:"page"`
 }
+
+type FindServiceTemplateAndInstanceDifferenceOption struct {
+	Metadata          Metadata `json:"metadata"`
+	ModuleID          int64    `json:"module_id"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+}
+
 type DeleteServiceInstanceOption struct {
-	Metadata         Metadata `json:"metadata"`
-	ServiceInstancID int64    `json:"id"`
+	Metadata          Metadata `json:"metadata"`
+	ServiceInstanceID int64    `json:"id"`
+}
+
+type FindServiceAndProcessInstanceOption struct {
+	Metadata          Metadata `json:"metadata"`
+	ModuleID          int64    `json:"module_id"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+}
+
+// to describe the differences between service instance and it's service template's
+// process template's attribute.
+type ServiceProcessInstanceDifference struct {
+	ServiceInstanceID   int64             `json:"service_instance_id"`
+	ServiceInstanceName string            `json:"service_instance_name"`
+	HostID              int64             `json:"host_id"`
+	Differences         *DifferenceDetail `json:"differences"`
+}
+
+type DifferenceDetail struct {
+	Unchanged *ProcessDifferenceDetail `json:"unchanged"`
+	Changed   *ProcessDifferenceDetail `json:"changed"`
+	Added     *ProcessDifferenceDetail `json:"added"`
+	Removed   *ProcessDifferenceDetail `json:"removed"`
+}
+
+type ProcessDifferenceDetail struct {
+	ProcessTemplateID int64                     `json:"process_template_id"`
+	ProcessInstance   Process                   `json:"process_instance"`
+	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes"`
+}
+
+type ProcessChangedAttribute struct {
+	ID                    int64       `json:"id"`
+	PropertyID            string      `json:"property_id"`
+	PropertyName          string      `json:"property_name"`
+	PropertyValue         interface{} `json:"property_value"`
+	TemplatePropertyValue interface{} `json:"template_property_value"`
 }
 
 type ServiceInstanceDetail struct {
@@ -282,7 +325,7 @@ type ProcessProperty struct {
 	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
 	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
 	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyInt64    `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
 	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
 	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`

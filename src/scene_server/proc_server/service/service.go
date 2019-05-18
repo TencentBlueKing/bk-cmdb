@@ -156,8 +156,9 @@ func (s *ProcServer) WebService2() *restful.WebService {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: s.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: s.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: s.DeleteProcessInstanceInServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "find/proc/service_instance", Handler: s.GetServiceInstancesInModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "delete/proc/service_instance", Handler: s.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance", Handler: s.GetServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance", Handler: s.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance/difference", Handler: s.FindDifferencesBetweenServiceAndProcessInstance})
 
 	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
 }
