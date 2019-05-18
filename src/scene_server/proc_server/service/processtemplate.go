@@ -69,7 +69,7 @@ func (p *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	// TODO: use batch delete api when it's ready
-	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
+	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete process template: %v failed, err: %v.",
 			input.ProcessTemplates, err)
@@ -140,13 +140,7 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	templateID, err := strconv.ParseInt(ctx.Request.PathParameter("processTemplateID"), 10, 64)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get process template id failed, err: %v", err)
-		return
-	}
-
-	_, err = metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v",
 			err, input)
@@ -154,7 +148,12 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	// TODO: wait for list api update
-	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	option := &metadata.ListProcessTemplatesOption{
+		BusinessID:         bizID,
+		ServiceTemplateID:  input.ServiceTemplateID,
+		ProcessTemplateIDs: input.ProcessTemplatesID,
+	}
+	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return

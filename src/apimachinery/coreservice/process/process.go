@@ -34,12 +34,13 @@ type ProcessInterface interface {
 	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error
+	DeleteServiceTemplateBatch(ctx context.Context, h http.Header, serviceTemplateIDs []int64) error
 
 	// process template
 	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
 	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ProcessTemplate, err error)
 	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
-	ListProcessTemplates(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64) (resp *metadata.MultipleProcessTemplate, err error)
+	ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (resp *metadata.MultipleProcessTemplate, err error)
 	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) error
 	DeleteProcessTemplateBatch(ctx context.Context, h http.Header, processTemplateIDs []int64) error
 
@@ -54,7 +55,7 @@ type ProcessInterface interface {
 	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
-	ListProcessInstanceRelation(ctx context.Context, h http.Header, bizID int64, serviceInstanceID int64, hostID int64) (resp *metadata.MultipleProcessInstanceRelation, err error)
+	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error)
 	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) error
 }
 
