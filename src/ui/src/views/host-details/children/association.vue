@@ -41,6 +41,12 @@
 </script>
 
 <style lang="scss" scoped>
+    .association {
+        height: 100%;
+        .association-view {
+            height: calc(100% - 62px);
+        }
+    }
     .options {
         padding: 15px 0;
         font-size: 0;
