@@ -5,6 +5,9 @@
             <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
                 <cmdb-host-property></cmdb-host-property>
             </bk-tabpanel>
+            <bk-tabpanel name="association" :title="$t('HostDetails[\'关联\']')">
+                <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
+            </bk-tabpanel>
             <bk-tabpanel name="status" :title="$t('HostDetails[\'实时状态\']')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tabpanel>
@@ -18,12 +21,14 @@
 <script>
     import { mapState } from 'vuex'
     import cmdbHostInfo from './children/info.vue'
+    import cmdbHostAssociation from './children/association.vue'
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
     import cmdbHostHistory from './children/history.vue'
     export default {
         components: {
             cmdbHostInfo,
+            cmdbHostAssociation,
             cmdbHostProperty,
             cmdbHostStatus,
             cmdbHostHistory
