@@ -1,5 +1,5 @@
 <template>
-    <div class="details-layout" v-bkloading="{ isLoading: $loading() }">
+    <div class="details-layout">
         <cmdb-host-info></cmdb-host-info>
         <bk-tab class="details-tab" :active-name.sync="active">
             <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
