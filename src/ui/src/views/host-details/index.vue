@@ -1,15 +1,14 @@
 <template>
     <div class="details-layout" v-bkloading="{ isLoading: $loading() }">
         <cmdb-host-info></cmdb-host-info>
-        <bk-tab :active-name.sync="active">
+        <bk-tab class="details-tab" :active-name.sync="active">
             <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
                 <cmdb-host-property></cmdb-host-property>
             </bk-tabpanel>
             <bk-tabpanel name="status" :title="$t('HostDetails[\'实时状态\']')">
-                <cmdb-host-status></cmdb-host-status>
+                <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('HostDetails[\'变更记录\']')">
-                <cmdb-host-status></cmdb-host-status>
             </bk-tabpanel>
         </bk-tab>
     </div>
@@ -131,5 +130,9 @@
 <style lang="scss" scoped>
     .details-layout {
         padding: 0;
+        height: 100%;
+        .details-tab {
+            height: calc(100% - 81px) !important;
+        }
     }
 </style>
