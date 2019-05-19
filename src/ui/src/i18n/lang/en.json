@@ -782,6 +782,8 @@
         "主机详情": "Host Details",
         "主机属性": "Host Properties",
         "实时状态": "Real-Time Status",
-        "变更记录": "Change Log"
+        "变更记录": "Change Log",
+        "基本值": "Basic Value",
+        "最近更新时间": "Update Time"
     }
 }
