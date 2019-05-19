@@ -9,6 +9,7 @@
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
             </bk-tabpanel>
             <bk-tabpanel name="history" :title="$t('HostDetails[\'变更记录\']')">
+                <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
             </bk-tabpanel>
         </bk-tab>
     </div>
@@ -19,11 +20,13 @@
     import cmdbHostInfo from './children/info.vue'
     import cmdbHostProperty from './children/property.vue'
     import cmdbHostStatus from './children/status.vue'
+    import cmdbHostHistory from './children/history.vue'
     export default {
         components: {
             cmdbHostInfo,
             cmdbHostProperty,
-            cmdbHostStatus
+            cmdbHostStatus,
+            cmdbHostHistory
         },
         data () {
             return {
