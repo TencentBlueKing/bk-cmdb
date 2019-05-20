@@ -64,33 +64,6 @@ func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64) (name string
 
 }
 
-func (lgc *Logics) getModuleIDByProcID(ctx context.Context, appID, procID int64) ([]int64, error) {
-	condition := make(map[string]interface{}, 0)
-	condition[common.BKProcessIDField] = procID
-	defErr := lgc.ccErr
-	// get process by module
-	ret, err := lgc.CoreAPI.ProcController().GetProc2Module(ctx, lgc.header, condition)
-	if nil != err {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http do error:%s,query:%+v,rid:%s", appID, procID, err.Error(), condition, lgc.rid)
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
-	}
-	if !ret.Result {
-		blog.Errorf("getModuleIDByProcID  GetProc2Module appID %d moduleID %d  http reply error:%s,query:%+v,rid:%s", appID, procID, ret.ErrMsg, condition, lgc.rid)
-		return nil, defErr.New(ret.Code, ret.ErrMsg)
-	}
-	var moduleIDs []int64
-	for _, item := range ret.Data {
-		ids, err := lgc.HandleProcInstNumByModuleName(ctx, appID, item.ModuleName)
-		if nil != err {
-			blog.Errorf("getModuleIDByProcID get module id by module name %s  in application id  %d error %s,rid:%s", item.ModuleName, item.ApplicationID, err.Error(), lgc.rid)
-			return nil, err
-		}
-		moduleIDs = append(moduleIDs, ids...)
-	}
-
-	return moduleIDs, nil
-}
-
 func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, hostID int64) ([]metadata.ModuleHost, error) {
 	defErr := lgc.ccErr
 	dat := map[string][]int64{

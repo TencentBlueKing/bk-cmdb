@@ -95,12 +95,6 @@ func (ps *ProcServer) DeleteModuleProcessBind(req *restful.Request, resp *restfu
 	cell[common.BKProcessIDField] = procID
 	cell[common.BKModuleNameField] = moduleName
 
-	if err := srvData.lgc.DeleteProcInstanceModel(srvData.ctx, appIDStr, procIDStr, moduleName); err != nil {
-		blog.Errorf("DeleteModuleProcessBind DeleteProcInstanceModel %v,input:%+v,rid:%s", err, cell, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: err})
-		return
-	}
-
 	ret, err := ps.CoreAPI.ProcController().DeleteProc2Module(srvData.ctx, srvData.header, cell)
 	if nil != err {
 		blog.Errorf("DeleteModuleProcessBind DeleteProc2Module http do error.  err:%s, input:%+v,rid:%s", err.Error(), cell, srvData.rid)
