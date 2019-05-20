@@ -334,25 +334,28 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 
 		// it's time to see if a new process template has been added.
 		for _, t := range processTemplates.Info {
-			if _, exist := processTemplatesUsing[t.ID]; !exist {
-				// this process template does not exist in this template's all service instances.
-				// so it's a new one to be added.
-				if t.Property == nil {
-					continue
-				}
-
-				differences = append(differences, &metadata.ServiceProcessInstanceDifference{
-					ServiceInstanceID:   serviceInstance.ID,
-					ServiceInstanceName: serviceInstance.Name,
-					HostID:              serviceInstance.HostID,
-					Differences: &metadata.DifferenceDetail{
-						Added: &metadata.ProcessDifferenceDetail{
-							ProcessTemplateID: t.ID,
-							ProcessInstance:   *p.Logic.CreateProcessInstanceFromProcessTemplate(t.Property),
-						},
-					},
-				})
+			if _, exist := processTemplatesUsing[t.ID]; exist {
+				continue
 			}
+
+			// this process template does not exist in this template's all service instances.
+			// so it's a new one to be added.
+			if t.Property == nil {
+				continue
+			}
+
+			differences = append(differences, &metadata.ServiceProcessInstanceDifference{
+				ServiceInstanceID:   serviceInstance.ID,
+				ServiceInstanceName: serviceInstance.Name,
+				HostID:              serviceInstance.HostID,
+				Differences: &metadata.DifferenceDetail{
+					Added: &metadata.ProcessDifferenceDetail{
+						ProcessTemplateID: t.ID,
+						ProcessInstance:   *p.Logic.NewProcessInstanceFromProcessTemplate(t.Property),
+					},
+				},
+			})
+
 		}
 	}
 
