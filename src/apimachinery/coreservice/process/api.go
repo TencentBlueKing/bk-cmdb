@@ -13,11 +13,12 @@
 package process
 
 import (
-	"configcenter/src/common/metadata"
-	"configcenter/src/framework/core/errors"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
 func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {

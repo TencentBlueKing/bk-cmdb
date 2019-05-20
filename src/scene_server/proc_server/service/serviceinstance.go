@@ -14,7 +14,6 @@ package service
 
 import (
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -250,7 +249,7 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 		return
 	}
 
-	// step 4: compare the process instance with it's process template one by one in a service instance.
+	// step 5: compare the process instance with it's process template one by one in a service instance.
 	differences := make([]*metadata.ServiceProcessInstanceDifference, 0)
 	processTemplatesUsing := make(map[int64]bool)
 	for _, serviceInstance := range serviceInstances.Info {
@@ -289,8 +288,6 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 			// if not exist, that means that this process has already been removed from service template.
 			pTemplate, exist := pTemplateMap[r.ProcessTemplateID]
 			if !exist {
-				blog.Warnf("find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but can not find process template: %d, err: %v",
-					input.ServiceTemplateID, bizID, input.ModuleID, r.ProcessTemplateID)
 				// the process instance's bounded process template has already been removed from this service template.
 				diff := &metadata.ServiceProcessInstanceDifference{
 					ServiceInstanceID:   serviceInstance.ID,
