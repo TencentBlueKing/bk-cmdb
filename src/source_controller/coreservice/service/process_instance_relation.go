@@ -27,7 +27,7 @@ func (s *coreService) CreateProcessInstanceRelation(params core.ContextParams, p
 	relation := metadata.ProcessInstanceRelation{}
 	if err := mapstr.SetValueToStructByTags(&relation, data); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateProcessInstanceRelation(params, relation)
@@ -43,13 +43,13 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 	processInstanceIDStr := pathParams(processInstanceIDField)
 	if len(processInstanceIDStr) == 0 {
 		blog.Errorf("GetProcessInstanceRelation failed, path parameter `%s` empty", processInstanceIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", processInstanceIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("GetProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetProcessInstanceRelation(params, serviceTemplateID)
@@ -79,7 +79,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 	if bizID == 0 {
 		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
@@ -99,19 +99,19 @@ func (s *coreService) UpdateProcessInstanceRelation(params core.ContextParams, p
 	processInstanceIDStr := pathParams(processInstanceIDField)
 	if len(processInstanceIDStr) == 0 {
 		blog.Errorf("UpdateProcessInstanceRelation failed, path parameter `%s` empty", processInstanceIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", processInstanceIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
 	processInstanceID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("UpdateProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
 	relation := metadata.ProcessInstanceRelation{}
 	if err := mapstr.SetValueToStructByTags(&relation, data); err != nil {
 		blog.Errorf("UpdateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateProcessInstanceRelation(params, processInstanceID, relation)
@@ -135,6 +135,7 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 	if err != nil {
 		blog.Errorf("DeleteProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
 		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteProcessInstanceRelation(params, processInstanceID); err != nil {
