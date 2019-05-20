@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -89,15 +88,6 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 		newLgc.ccLang = lgc.Language.CreateDefaultCCLanguageIf(lang)
 	}
 	return newLgc
-}
-
-//InitFunc The method that needs to be executed when the service starts.
-func (lgc *Logics) InitFunc(ctx context.Context) {
-	//init resource
-	chnOpLock.Do(func() { lgc.bgHandle(ctx) })
-	// timed tigger refresh  host
-	go lgc.timedTriggerRefreshHostInstance(ctx)
-
 }
 
 // SetCache  set the cache object
