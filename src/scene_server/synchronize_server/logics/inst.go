@@ -51,7 +51,7 @@ func (fi *FetchInst) Pretreatment() errors.CCError {
 		conds.Field(common.BKOwnerIDField).In(fi.syncConfig.SupplerAccount)
 	}
 
-	// 根据身份过滤数据
+	// 是否开启实例数据根据同步身份过滤
 	if fi.syncConfig.EnableInstFilter {
 		conds.Field(util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField)).In([]string{fi.syncConfig.SynchronizeFlag, common.MetaDataSynchronIdentifierFlagSyncAllValue})
 	}
