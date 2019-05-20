@@ -177,7 +177,8 @@
         "数量": "Amount",
         "暂无使用记录": "No record",
         "搜不到相关内容": "Sorry, I can't find the relevant content, try another word~",
-        "全部结果": "all"
+        "全部结果": "all",
+        "该模型已停用": "The model has been disabled"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",

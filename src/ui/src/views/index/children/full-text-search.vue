@@ -365,7 +365,7 @@
                     const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
                     if (isPauserd) {
                         this.$bkMessage({
-                            message: '该模型已停用',
+                            message: this.$t("Index['该模型已停用']"),
                             theme: 'warning'
                         })
                         return
