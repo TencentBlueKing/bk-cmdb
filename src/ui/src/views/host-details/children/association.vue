@@ -7,34 +7,44 @@
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
-                    :type="active === 'list' ? 'primary' : 'default'"
-                    @click="active = 'list'">
+                    :type="activeView === viewName.list ? 'primary' : 'default'"
+                    @click="toggleView(viewName.list)">
                     {{$t('Association["列表"]')}}
                 </bk-button>
                 <bk-button class="options-button options-button-view"
-                    :type="active === 'topology' ? 'primary' : 'default'"
-                    @click="active = 'topology'">
+                    :type="activeView === viewName.graphics ? 'primary' : 'default'"
+                    @click="toggleView(viewName.graphics)">
                     {{$t('Association["拓扑"]')}}
                 </bk-button>
             </div>
         </div>
         <div class="association-view">
-            <component :is="view"></component>
+            <component :is="activeView"></component>
         </div>
     </div>
 </template>
 
 <script>
     import cmdbHostAssociationList from './association-list.vue'
+    import cmdbHostAssociationGraphics from './association-graphics.vue'
     export default {
         name: 'cmdb-host-association',
         components: {
-            cmdbHostAssociationList
+            cmdbHostAssociationList,
+            cmdbHostAssociationGraphics
         },
         data () {
             return {
-                active: 'list',
-                view: cmdbHostAssociationList.name
+                viewName: {
+                    'list': cmdbHostAssociationList.name,
+                    'graphics': cmdbHostAssociationGraphics.name
+                },
+                activeView: cmdbHostAssociationList.name
+            }
+        },
+        methods: {
+            toggleView (view) {
+                this.activeView = view
             }
         }
     }
