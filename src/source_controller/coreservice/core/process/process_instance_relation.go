@@ -100,7 +100,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	return relation, nil
 }
 
-func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
+func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTempalteID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -108,6 +108,19 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	// filter with matching any sub category
 	if serviceInstanceID > 0 {
 		filter["service_instance_id"] = serviceInstanceID
+	}
+
+	if processTempalteID > 0 {
+		filter["process_template_id"] = processTempalteID
+	}
+
+	if hostID > 0 {
+		filter["host_id"] = hostID
+	}
+
+	if processIDs != nil && len(processIDs) > 0 {
+		processIDFilter := map[string]interface{}{"$in": processIDs}
+		filter["process_id"] = processIDFilter
 	}
 
 	var total uint64
