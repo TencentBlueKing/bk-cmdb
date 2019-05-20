@@ -25,7 +25,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	// base attribute validate
 	if field, err := relation.Validate(); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	// update fields to local object
 	if field, err := relation.Validate(); err != nil {
 		blog.Errorf("UpdateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 

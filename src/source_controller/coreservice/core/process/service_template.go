@@ -27,7 +27,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	// base attribute validate
 	if field, err := template.Validate(); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -35,7 +35,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	var err error
 	if bizID, err = p.validateBizID(ctx, template.Metadata); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// keep metadata clean
@@ -45,7 +45,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	_, err = p.GetServiceCategory(ctx, template.ServiceCategoryID)
 	if err != nil {
 		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "service_category_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
 	}
 
 	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
@@ -96,7 +96,7 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	template.Name = input.Name
 	if field, err := template.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
