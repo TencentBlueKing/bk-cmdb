@@ -16,7 +16,15 @@ const state = {
         back: false
     },
     userList: [],
-    headerTitle: ''
+    headerTitle: '',
+    featureTipsParams: {
+        process: true,
+        customQuery: true,
+        model: true,
+        modelBusiness: true,
+        association: true,
+        eventpush: true
+    }
 }
 
 const getters = {
@@ -51,7 +59,8 @@ const getters = {
     navFold: state => state.nav.fold,
     showBack: state => state.header.back,
     userList: state => state.userList,
-    headerTitle: state => state.headerTitle
+    headerTitle: state => state.headerTitle,
+    featureTipsParams: state => state.featureTipsParams
 }
 
 const actions = {
@@ -85,7 +94,19 @@ const mutations = {
     },
     setAdminView (state, isAdminView) {
         window.sessionStorage.setItem('isAdminView', isAdminView)
-        window.location.reload()
+        window.location = '/'
+    },
+    setFeatureTipsParams (state, tab) {
+        if (tab) {
+            state.featureTipsParams[tab] = false
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        } else if (window.localStorage.getItem('featureTipsParams')) {
+            state.featureTipsParams = {
+                ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
+            }
+        } else {
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        }
     }
 }
 

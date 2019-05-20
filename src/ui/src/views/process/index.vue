@@ -1,5 +1,12 @@
 <template>
-    <div class="process-wrapper">
+    <div class="process-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'process'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ProcessManagement[\'进程管理提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%885%EF%BC%89%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
@@ -83,15 +90,18 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
+    import featureTips from '@/components/feature-tips/index'
     import vModule from './module'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
-            vModule
+            vModule,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 objectUnique: [],
                 properties: [],
@@ -128,7 +138,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'featureTipsParams']),
             ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
@@ -148,6 +158,8 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
+            this.showFeatureTips = this.featureTipsParams['process']
+            console.log(this.featureTipsParams['process'])
             this.reload()
         },
         methods: {
