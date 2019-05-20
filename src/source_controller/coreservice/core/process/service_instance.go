@@ -13,12 +13,13 @@
 package process
 
 import (
+	"strconv"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"strconv"
-	"time"
 )
 
 func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instance metadata.ServiceInstance) (*metadata.ServiceInstance, error) {
@@ -120,7 +121,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 	return instance, nil
 }
 
-func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleServiceInstance, error) {
+func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleServiceInstance, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -141,7 +142,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int
 	}
 	instances := make([]metadata.ServiceInstance, 0)
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(
-		uint64(limit.Offset)).Limit(uint64(limit.Limit)).All(ctx.Context, &instances); nil != err {
+		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &instances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return nil, err
 	}

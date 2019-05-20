@@ -14,9 +14,9 @@ package metadata
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"regexp"
 	"time"
+	"unsafe"
 
 	"configcenter/src/common"
 	"configcenter/src/common/util"
@@ -229,11 +229,11 @@ type ProcessTemplate struct {
 	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	// the service template's, which this process template belongs to.
-	ServiceTemplateID int64 `field:"serviceTemplateID" json:"serviceTemplateID" bson:"serviceTemplateID"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 
 	// stores a process instance's data includes all the process's
 	// properties's value.
-	Property *ProcessProperty `field:"template" json:"template,omitempty" bson:"template"`
+	Property *ProcessProperty `field:"property" json:"property,omitempty" bson:"property"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -243,9 +243,11 @@ type ProcessTemplate struct {
 }
 
 func (pt *ProcessTemplate) Validate() (field string, err error) {
-	field, err = pt.Property.Validate()
-	if err != nil {
-		return field, err
+	if pt.Property != nil {
+		field, err = pt.Property.Validate()
+		if err != nil {
+			return field, err
+		}
 	}
 	return "", nil
 }
@@ -266,7 +268,7 @@ type ProcessProperty struct {
 	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
 	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
 	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyInt64    `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
 	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
 	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
 	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
@@ -337,26 +339,28 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	return "", nil
 }
 
-func (pt *ProcessProperty) Update(input ProcessProperty) {
-	ptVal := reflect.ValueOf(*pt)
-	inputVal := reflect.ValueOf(input)
-	fieldCount := ptVal.NumField()
-	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-		inputField := inputVal.Field(fieldIdx)
-		ptField := ptVal.Field(fieldIdx)
-		if inputField.IsNil() {
-			continue
-		}
-		subFields := []string{"Value", "AsDefaultValue"}
-		for _, subField := range subFields {
-			inputFieldValue := inputField.FieldByName(subField)
-			if !inputFieldValue.IsNil() {
-				ptField.FieldByName(subField).Set(inputFieldValue)
+func (pt *ProcessProperty) Update(input ProcessProp
+	/*
+		// TODO: 方案遗留问题： 如何赋值
+		ptVal := reflect.ValueOf(*pt)
+		inputVal := reflect.ValueOf(input)
+		fieldCount := ptVal.NumField()
+		for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+			inputField := inputVal.Field(fieldIdx)
+			ptField := ptVal.Field(fieldIdx)
+			subFields := []string{"Value", "AsDefaultValue"}
+			for _, subField := range subFields {
+				inputFieldValue := inputField.FieldByName(subField)
+				if !inputFieldValue.IsNil() {
+					ptFieldValue := ptField.FieldByName(subField)
+					v := inputFieldValue.Pointer()
+					p := unsafe.Pointer(v)
+					ptFieldValue.SetPointer(p)
+				}
 			}
 		}
-	}
+	*/
 
-	return
 	if input.ProcNum.Value != nil {
 		pt.ProcNum.Value = input.ProcNum.Value
 	}

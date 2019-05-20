@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/mapstr"
 )
 
-// SearchLimit sub condition
+// Deprecated: SearchLimit sub condition
 type SearchLimit struct {
 	Offset int64 `json:"start" field:"start"`
 	Limit  int64 `json:"limit" field:"limit"`
