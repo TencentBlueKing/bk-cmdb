@@ -270,6 +270,12 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 		}
 
 		// now, we can compare the differences between process template and process instance.
+		diff := &metadata.ServiceProcessInstanceDifference{
+			ServiceInstanceID:   serviceInstance.ID,
+			ServiceInstanceName: serviceInstance.Name,
+			HostID:              serviceInstance.HostID,
+			Differences:         new(metadata.DifferenceDetail),
+		}
 		for _, r := range relations {
 			// remember what process template is using, so that we can check whether a new process template has
 			// been added or not.
@@ -284,21 +290,15 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 				return
 			}
 
-			// let's check if the process instance bounded process template is still exit in it's service template
+			// let's check if the process instance bounded process template is still exist in it's service template
 			// if not exist, that means that this process has already been removed from service template.
 			pTemplate, exist := pTemplateMap[r.ProcessTemplateID]
 			if !exist {
 				// the process instance's bounded process template has already been removed from this service template.
-				diff := &metadata.ServiceProcessInstanceDifference{
-					ServiceInstanceID:   serviceInstance.ID,
-					ServiceInstanceName: serviceInstance.Name,
-					HostID:              serviceInstance.HostID,
-					Differences: &metadata.DifferenceDetail{
-						Removed: &metadata.ProcessDifferenceDetail{
-							ProcessInstance: *processInstance,
-						},
-					},
-				}
+				diff.Differences.Removed = append(diff.Differences.Removed, metadata.ProcessDifferenceDetail{
+					ProcessTemplateID: r.ProcessTemplateID,
+					ProcessInstance:   *processInstance,
+				})
 				differences = append(differences, diff)
 				continue
 			}
@@ -316,23 +316,22 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 			diffAttributes := p.Logic.GetDifferenceInProcessTemplateAndInstance(pTemplate.Property, processInstance, attributeMap)
 			if len(diffAttributes) == 0 {
 				// the process instance's value is exactly same with the process template's value
-				diff.Differences.Unchanged = &metadata.ProcessDifferenceDetail{
+				diff.Differences.Unchanged = append(diff.Differences.Unchanged, metadata.ProcessDifferenceDetail{
 					ProcessTemplateID: pTemplate.ID,
 					ProcessInstance:   *processInstance,
-				}
+				})
 			} else {
 				// the process instance's value is not same with the process template's value
-				diff.Differences.Changed = &metadata.ProcessDifferenceDetail{
+				diff.Differences.Changed = append(diff.Differences.Changed, metadata.ProcessDifferenceDetail{
 					ProcessTemplateID: pTemplate.ID,
 					ProcessInstance:   *processInstance,
 					ChangedAttributes: diffAttributes,
-				}
+				})
 			}
 
-			differences = append(differences, diff)
 		}
 
-		// it's time to see if a new process template has been added.
+		// it's time to see whether a new process template has been added.
 		for _, t := range processTemplates.Info {
 			if _, exist := processTemplatesUsing[t.ID]; exist {
 				continue
@@ -343,20 +342,14 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 			if t.Property == nil {
 				continue
 			}
-
-			differences = append(differences, &metadata.ServiceProcessInstanceDifference{
-				ServiceInstanceID:   serviceInstance.ID,
-				ServiceInstanceName: serviceInstance.Name,
-				HostID:              serviceInstance.HostID,
-				Differences: &metadata.DifferenceDetail{
-					Added: &metadata.ProcessDifferenceDetail{
-						ProcessTemplateID: t.ID,
-						ProcessInstance:   *p.Logic.NewProcessInstanceFromProcessTemplate(t.Property),
-					},
-				},
+			diff.Differences.Added = append(diff.Differences.Added, metadata.ProcessDifferenceDetail{
+				ProcessTemplateID: t.ID,
+				ProcessInstance:   *p.Logic.NewProcessInstanceFromProcessTemplate(t.Property),
 			})
 
 		}
+
+		differences = append(differences, diff)
 	}
 
 	ctx.RespEntity(differences)

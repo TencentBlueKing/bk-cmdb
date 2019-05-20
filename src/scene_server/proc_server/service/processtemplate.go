@@ -150,7 +150,7 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	option := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ServiceTemplateID:  input.ServiceTemplateID,
-		ProcessTemplateIDs: input.ProcessTemplatesID,
+		ProcessTemplateIDs: input.ProcessTemplatesIDs,
 	}
 	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
