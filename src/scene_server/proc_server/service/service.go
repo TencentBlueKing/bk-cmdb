@@ -59,6 +59,7 @@ type ProcServer struct {
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
+	Logic              *logics.Logic
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
@@ -134,19 +135,30 @@ func (s *ProcServer) WebService2() *restful.WebService {
 		Language: s.Engine.Language,
 	})
 
+	// service category
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: s.GetServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: s.CreateServiceCategory})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: s.DeleteServiceCategory})
 
+	// service template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: s.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_template", Handler: s.ListServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: s.DeleteServiceTemplate})
 
+	// process template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template/for_service_template", Handler: s.CreateProcessTemplateBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template/for_service_template", Handler: s.UpdateProcessTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template/for_service_template", Handler: s.DeleteProcessTemplateBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: s.GetProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template/id", Handler: s.ListProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template", Handler: s.ListProcessTemplate})
+
+	// service instance
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: s.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: s.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: s.DeleteProcessInstanceInServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance", Handler: s.GetServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance", Handler: s.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance/difference", Handler: s.FindDifferencesBetweenServiceAndProcessInstance})
 
 	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
 }

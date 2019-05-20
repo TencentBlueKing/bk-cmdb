@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -33,6 +31,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -47,6 +46,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 	container := restful.NewContainer()
 	container.Add(procSvr.WebService())
+	container.Add(procSvr.WebService2())
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
