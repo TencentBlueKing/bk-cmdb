@@ -14,6 +14,7 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"time"
@@ -398,172 +399,32 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 }
 
 func (pt *ProcessProperty) Update(input ProcessProperty) {
-	/*
-		// TODO: 方案遗留问题： 如何赋值
-		selfVal := reflect.ValueOf(*pt)
-		inputVal := reflect.ValueOf(input)
-		fieldCount := selfVal.NumField()
-		for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-			inputField := inputVal.Field(fieldIdx)
-			selfField := selfVal.Field(fieldIdx)
-			subFields := []string{"Value", "AsDefaultValue"}
-			for _, subField := range subFields {
-				inputFieldValue := inputField.FieldByName(subField).Elem()
-				inputFieldPtr := inputField.FieldByName(subField)
-				if inputFieldPtr.IsNil() {
-					continue
-				}
-
-				selfFieldValuePtr := selfField.FieldByName(subField)
-
-				t := selfFieldValuePtr.Type()
-				fmt.Sprintf("type: %s", t)
-
-				if selfFieldValuePtr.Kind() == reflect.Ptr {
-					if selfFieldValuePtr.IsNil() {
-						selfFieldValuePtr.Set(reflect.New(selfFieldValuePtr.Type().Elem()))
-					}
-				}
-
-				selfFieldValue := selfField.FieldByName(subField).Elem()
-				selfFieldValue.Set(inputFieldValue)
+	selfVal := reflect.ValueOf(pt).Elem()
+	inputVal := reflect.ValueOf(input)
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		inputField := inputVal.Field(fieldIdx)
+		selfField := selfVal.Field(fieldIdx)
+		subFieldCount := inputField.NumField()
+		for subFieldIdx := 0; subFieldIdx < subFieldCount; subFieldIdx++ {
+			inputFieldPtr := inputField.Field(subFieldIdx)
+			if inputFieldPtr.IsNil() {
+				continue
 			}
+			inputFieldValue := inputFieldPtr.Elem()
+
+			selfFieldValuePtr := selfField.Field(subFieldIdx)
+			if selfFieldValuePtr.Kind() == reflect.Ptr {
+				if selfFieldValuePtr.IsNil() && selfFieldValuePtr.CanSet() {
+					selfFieldValuePtr.Set(reflect.New(selfFieldValuePtr.Type().Elem()))
+				}
+			}
+
+			selfFieldValue := selfFieldValuePtr.Elem()
+			selfFieldValue.Set(inputFieldValue)
 		}
-		return
-	*/
-
-	if input.ProcNum.Value != nil {
-		pt.ProcNum.Value = input.ProcNum.Value
 	}
-	if input.ProcNum.AsDefaultValue != nil {
-		pt.ProcNum.AsDefaultValue = input.ProcNum.AsDefaultValue
-	}
-
-	if input.StopCmd.Value != nil {
-		pt.StopCmd.Value = input.StopCmd.Value
-	}
-	if input.StopCmd.AsDefaultValue != nil {
-		pt.StopCmd.AsDefaultValue = input.StopCmd.AsDefaultValue
-	}
-
-	if input.RestartCmd.Value != nil {
-		pt.RestartCmd.Value = input.RestartCmd.Value
-	}
-	if input.RestartCmd.AsDefaultValue != nil {
-		pt.RestartCmd.AsDefaultValue = input.RestartCmd.AsDefaultValue
-	}
-
-	if input.ForceStopCmd.Value != nil {
-		pt.ForceStopCmd.Value = input.ForceStopCmd.Value
-	}
-	if input.ForceStopCmd.AsDefaultValue != nil {
-		pt.ForceStopCmd.AsDefaultValue = input.ForceStopCmd.AsDefaultValue
-	}
-
-	if input.FuncName.Value != nil {
-		pt.FuncName.Value = input.FuncName.Value
-	}
-	if input.FuncName.AsDefaultValue != nil {
-		pt.FuncName.AsDefaultValue = input.FuncName.AsDefaultValue
-	}
-
-	if input.WorkPath.Value != nil {
-		pt.WorkPath.Value = input.WorkPath.Value
-	}
-	if input.WorkPath.AsDefaultValue != nil {
-		pt.WorkPath.AsDefaultValue = input.WorkPath.AsDefaultValue
-	}
-
-	if input.BindIP.Value != nil {
-		pt.BindIP.Value = input.BindIP.Value
-	}
-	if input.BindIP.AsDefaultValue != nil {
-		pt.BindIP.AsDefaultValue = input.BindIP.AsDefaultValue
-	}
-
-	if input.ReloadCmd.Value != nil {
-		pt.ReloadCmd.Value = input.ReloadCmd.Value
-	}
-	if input.ReloadCmd.AsDefaultValue != nil {
-		pt.ReloadCmd.AsDefaultValue = input.ReloadCmd.AsDefaultValue
-	}
-
-	if input.ProcessName.Value != nil {
-		pt.ProcessName.Value = input.ProcessName.Value
-	}
-	if input.ProcessName.AsDefaultValue != nil {
-		pt.ProcessName.AsDefaultValue = input.ProcessName.AsDefaultValue
-	}
-
-	if input.Port.Value != nil {
-		pt.Port.Value = input.Port.Value
-	}
-	if input.Port.AsDefaultValue != nil {
-		pt.Port.AsDefaultValue = input.Port.AsDefaultValue
-	}
-
-	if input.PidFile.Value != nil {
-		pt.PidFile.Value = input.PidFile.Value
-	}
-	if input.PidFile.AsDefaultValue != nil {
-		pt.PidFile.AsDefaultValue = input.PidFile.AsDefaultValue
-	}
-
-	if input.AutoStart.Value != nil {
-		pt.AutoStart.Value = input.AutoStart.Value
-	}
-	if input.AutoStart.AsDefaultValue != nil {
-		pt.AutoStart.AsDefaultValue = input.AutoStart.AsDefaultValue
-	}
-
-	if input.AutoTimeGapSeconds.Value != nil {
-		pt.AutoTimeGapSeconds.Value = input.AutoTimeGapSeconds.Value
-	}
-	if input.AutoTimeGapSeconds.AsDefaultValue != nil {
-		pt.AutoTimeGapSeconds.AsDefaultValue = input.AutoTimeGapSeconds.AsDefaultValue
-	}
-
-	if input.StartCmd.Value != nil {
-		pt.StartCmd.Value = input.StartCmd.Value
-	}
-	if input.StartCmd.AsDefaultValue != nil {
-		pt.StartCmd.AsDefaultValue = input.StartCmd.AsDefaultValue
-	}
-
-	if input.FuncID.Value != nil {
-		pt.FuncID.Value = input.FuncID.Value
-	}
-	if input.FuncID.AsDefaultValue != nil {
-		pt.FuncID.AsDefaultValue = input.FuncID.AsDefaultValue
-	}
-
-	if input.User.Value != nil {
-		pt.User.Value = input.User.Value
-	}
-	if input.User.AsDefaultValue != nil {
-		pt.User.AsDefaultValue = input.User.AsDefaultValue
-	}
-
-	if input.TimeoutSeconds.Value != nil {
-		pt.TimeoutSeconds.Value = input.TimeoutSeconds.Value
-	}
-	if input.TimeoutSeconds.AsDefaultValue != nil {
-		pt.TimeoutSeconds.AsDefaultValue = input.TimeoutSeconds.AsDefaultValue
-	}
-
-	if input.Protocol.Value != nil {
-		pt.Protocol.Value = input.Protocol.Value
-	}
-	if input.Protocol.AsDefaultValue != nil {
-		pt.Protocol.AsDefaultValue = input.Protocol.AsDefaultValue
-	}
-
-	if input.Description.Value != nil {
-		pt.Description.Value = input.Description.Value
-	}
-	if input.Description.AsDefaultValue != nil {
-		pt.Description.AsDefaultValue = input.Description.AsDefaultValue
-	}
+	return
 }
 
 type PropertyInt64 struct {
