@@ -24,7 +24,7 @@ import (
 
 func (s *coreService) CreateServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	category := metadata.ServiceCategory{}
-	if err := mapstr.SetValueToStructByTags(&category, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
 		blog.Errorf("CreateServiceCategory failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -66,7 +66,7 @@ func (s *coreService) ListServiceCategories(params core.ContextParams, pathParam
 		WithStatistics bool              `json:"with_statistics" field:"with_statistics"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceCategories failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -104,7 +104,7 @@ func (s *coreService) UpdateServiceCategory(params core.ContextParams, pathParam
 	}
 
 	category := metadata.ServiceCategory{}
-	if err := mapstr.SetValueToStructByTags(&category, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
 		blog.Errorf("UpdateServiceCategory failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}

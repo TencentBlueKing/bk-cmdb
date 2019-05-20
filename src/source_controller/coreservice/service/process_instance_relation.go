@@ -13,7 +13,6 @@
 package service
 
 import (
-	"fmt"
 	"strconv"
 
 	"configcenter/src/common"
@@ -25,7 +24,7 @@ import (
 
 func (s *coreService) CreateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	relation := metadata.ProcessInstanceRelation{}
-	if err := mapstr.SetValueToStructByTags(&relation, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&relation, data); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -109,7 +108,7 @@ func (s *coreService) UpdateProcessInstanceRelation(params core.ContextParams, p
 	}
 
 	relation := metadata.ProcessInstanceRelation{}
-	if err := mapstr.SetValueToStructByTags(&relation, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&relation, data); err != nil {
 		blog.Errorf("UpdateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -134,7 +133,6 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 	processInstanceID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
 	}
 
