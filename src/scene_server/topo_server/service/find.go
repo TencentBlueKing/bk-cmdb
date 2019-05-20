@@ -47,6 +47,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		query.Paging.Start = -1
 		query.Paging.Limit = -1
 		query.BkObjId = ""
+		query.BkBizId = ""
 		if err := data.MarshalJSONInto(query); err != nil {
 			blog.Errorf("full_text_find failed, import query params, but got invalid query params:[%v], err: %+v", query, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
@@ -121,14 +122,18 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	//		}
 	//  ],
 	//	"minimum_should_match" : 1
-	qBool.MinimumNumberShouldMatch(1)
-	qBizExist := elastic.NewExistsQuery(common.BkBizMetaKey)
-	qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
 
-	qBizBool := elastic.NewBoolQuery()
-	qBizBool.MustNot(qBizExist)
+	// if set bk_biz_id
+	if query.BkBizId != "" {
+		qBool.MinimumNumberShouldMatch(1)
+		qBizExist := elastic.NewExistsQuery(common.BkBizMetaKey)
+		qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
 
-	qBool.Should(qBizBool, qBizTerm)
+		qBizBool := elastic.NewBoolQuery()
+		qBizBool.MustNot(qBizExist)
+
+		qBool.Should(qBizBool, qBizTerm)
+	}
 
 	qString := elastic.NewQueryStringQuery(query.QueryString)
 	if query.BkObjId == "" {
