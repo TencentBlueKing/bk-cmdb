@@ -68,8 +68,7 @@ func (p *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	// TODO: use batch delete api when it's ready
-	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
+	err = p.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete process template: %v failed, err: %v.",
 			input.ProcessTemplates, err)
