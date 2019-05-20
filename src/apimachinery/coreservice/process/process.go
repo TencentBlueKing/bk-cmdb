@@ -51,7 +51,7 @@ type ProcessInterface interface {
 	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (resp *metadata.MultipleServiceInstance, err error)
 	DeleteServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) error
 
-	// service instance relation
+	// process instance relation
 	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)

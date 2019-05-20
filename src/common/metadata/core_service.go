@@ -13,11 +13,12 @@
 package metadata
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"fmt"
 )
 
 // CreateModelAttributeGroup used to create a new group for some attributes
