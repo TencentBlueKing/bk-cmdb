@@ -13,8 +13,7 @@
 package service
 
 import (
-	"errors"
-	"fmt"
+	"configcenter/src/common"
 	"strconv"
 
 	"configcenter/src/common/blog"
@@ -27,7 +26,7 @@ func (s *coreService) CreateServiceTemplate(params core.ContextParams, pathParam
 	template := metadata.ServiceTemplate{}
 	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateServiceTemplate(params, template)
@@ -43,13 +42,13 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
 		blog.Errorf("GetServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("GetServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetServiceTemplate(params, serviceTemplateID)
@@ -70,17 +69,17 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
 		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 	if bizID == 0 {
 		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, errors.New("business id can't be empty")
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	result, err := s.core.ProcessOperation().ListServiceTemplates(params, bizID, fp.ServiceCategoryID, fp.Page)
@@ -96,19 +95,19 @@ func (s *coreService) UpdateServiceTemplate(params core.ContextParams, pathParam
 	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
 		blog.Errorf("UpdateServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	template := metadata.ServiceTemplate{}
 	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateServiceTemplate(params, serviceTemplateID, template)
@@ -125,13 +124,13 @@ func (s *coreService) DeleteServiceTemplate(params core.ContextParams, pathParam
 	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
 		blog.Errorf("DeleteServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceTemplate(params, serviceTemplateID); err != nil {
