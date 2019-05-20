@@ -1,8 +1,16 @@
 <template>
     <div class="group-wrapper">
         <cmdb-main-inject
+            :style="{ 'padding-top': showFeatureTips ? '10px' : '' }"
             inject-type="prepend"
             :class="['btn-group', 'clearfix', { sticky: !!scrollTop }]">
+            <feature-tips
+                :feature-name="'model'"
+                :show-tips="showFeatureTips"
+                :desc="$t('ModelManagement[\'模型顶部提示\']')"
+                :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#ModelManagement'"
+                @close-tips="showFeatureTips = false">
+            </feature-tips>
             <div class="fl">
                 <bk-button type="primary"
                     v-if="isAdminView"
@@ -150,6 +158,7 @@
 <script>
     import cmdbMainInject from '@/components/layout/main-inject'
     import theCreateModel from '@/components/model-manage/_create-model'
+    import featureTips from '@/components/feature-tips/index'
     // import theModel from './children'
     import { mapGetters, mapMutations, mapActions } from 'vuex'
     import { addMainScrollListener, removeMainScrollListener } from '@/utils/main-scroller'
@@ -158,10 +167,12 @@
         components: {
             // theModel,
             theCreateModel,
-            cmdbMainInject
+            cmdbMainInject,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 scrollHandler: null,
                 scrollTop: 0,
@@ -182,7 +193,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected']),
+            ...mapGetters(['supplierAccount', 'userName', 'admin', 'isAdminView', 'isBusinessSelected', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', [
                 'classifications'
             ]),
@@ -226,6 +237,7 @@
             this.searchClassificationsObjects({
                 params: this.$injectMetadata()
             })
+            this.showFeatureTips = this.featureTipsParams['model']
         },
         beforeDestroy () {
             removeMainScrollListener(this.scrollHandler)
@@ -361,7 +373,7 @@
 
 <style lang="scss" scoped>
     .group-wrapper {
-        padding: 76px 20px 20px 0;
+        padding: 130px 20px 20px 0;
     }
     .btn-group {
         position: absolute;
