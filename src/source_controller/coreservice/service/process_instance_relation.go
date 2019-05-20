@@ -66,10 +66,12 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
 		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
 		HostID            int64             `json:"host_id" field:"host_id"`
+		ProcessIDs        []int64           `json:"process_ids" field:"process_ids"`
+		ProcessTemplateID int64             `json:"process_template_id" field:"process_template_id"`
 		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Errorf(common.CCErrCommHTTPReadBodyFailed)
 	}
@@ -84,7 +86,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v", err)
 		return nil, err
