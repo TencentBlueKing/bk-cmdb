@@ -1,26 +1,44 @@
 <template>
-    <div class="table">
+    <div class="table" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
         <div class="table-info clearfix">
-            <div class="info-title fl">
-                {{model.bk_obj_name}}
+            <div class="info-title fl" @click="localVisible = !localVisible">
+                <i class="icon bk-icon icon-right-shape"
+                    :class="{ 'is-open': localVisible }">
+                </i>
+                <span class="title-text">{{title}}</span>
+                <span class="title-count">({{instances.length}})</span>
             </div>
-            <div class="info-pagination fr"></div>
-        </div>
-        <cmdb-table class="association-table"
-            :loading="$loading(propertyRequest, instanceRequest)"
-            :header="header"
-            :list="list"
-            :show-footer="false"
-            :sortable="false"
-            :max-height="462"
-            :empty-height="100">
-            <template slot="__operation__" slot-scope="{ item }">
-                <span class="text-primary"
-                    @click="cancelAssociation(item)">
-                    {{$t('Association["取消关联"]')}}
+            <div class="info-pagination fr" v-show="pagination.count">
+                <span class="pagination-info">{{getPaginationInfo()}}</span>
+                <span class="pagination-toggle">
+                    <i class="pagination-icon bk-icon icon-angle-left"
+                        :class="{ disabled: pagination.current === 1 }"
+                        @click="togglePage(-1)">
+                    </i>
+                    <i class="pagination-icon bk-icon icon-angle-right"
+                        :class="{ disabled: pagination.current === totalPage }"
+                        @click="togglePage(1)">
+                    </i>
                 </span>
-            </template>
-        </cmdb-table>
+            </div>
+        </div>
+        <cmdb-collapse-transition>
+            <cmdb-table class="association-table"
+                v-show="localVisible"
+                :header="header"
+                :list="list"
+                :show-footer="false"
+                :sortable="false"
+                :max-height="462"
+                :empty-height="40">
+                <template slot="__operation__" slot-scope="{ item }">
+                    <span class="text-primary"
+                        @click="cancelAssociation(item)">
+                        {{$t('Association["取消关联"]')}}
+                    </span>
+                </template>
+            </cmdb-table>
+        </cmdb-collapse-transition>
     </div>
 </template>
 
@@ -36,10 +54,15 @@
                 type: String,
                 required: true
             },
+            associationType: {
+                type: Object,
+                required: true
+            },
             instances: {
                 type: Array,
                 required: true
-            }
+            },
+            visible: Boolean
         },
         data () {
             return {
@@ -49,7 +72,8 @@
                     count: 0,
                     current: 1,
                     size: 10
-                }
+                },
+                localVisible: this.visible
             }
         },
         computed: {
@@ -61,6 +85,10 @@
             },
             isBusinessModel () {
                 return !!this.$tools.getMetadataBiz(this.model)
+            },
+            title () {
+                const desc = this.type === 'source' ? this.associationType.src_des : this.associationType.dest_des
+                return `${desc}-${this.model.bk_obj_name}`
             },
             propertyRequest () {
                 return `get_${this.id}_association_list_table_properties`
@@ -74,35 +102,46 @@
                     start: (this.pagination.current - 1) * this.pagination.size
                 }
             },
+            totalPage () {
+                return Math.ceil(this.pagination.count / this.pagination.size)
+            },
             instanceIds () {
                 return this.instances.map(instance => instance.bk_inst_id)
             },
             header () {
-                const keyMap = {
-                    host: 'bk_host_id',
-                    biz: 'bk_biz_id'
-                }
                 const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
-                return [{
-                    id: keyMap[this.id] || 'bk_inst_id',
-                    type: 'checkbox'
-                }].concat(headerProperties.map(property => {
+                return headerProperties.map(property => {
                     return {
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                })).concat([{
+                }).concat([{
                     id: '__operation__',
                     name: this.$t('Common["操作"]'),
                     width: 150
                 }])
             }
         },
+        watch: {
+            visible (visible) {
+                this.localVisible = visible
+            },
+            localVisible (visible) {
+                if (visible) {
+                    this.getData()
+                }
+            }
+        },
         created () {
-            this.getProperties()
-            this.getInstances()
+            if (this.visible) {
+                this.getData()
+            }
         },
         methods: {
+            getData () {
+                this.getProperties()
+                this.getInstances()
+            },
             async getProperties () {
                 try {
                     this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
@@ -227,7 +266,48 @@
                     return data
                 })
             },
-            cancelAssociation (item) {}
+            async cancelAssociation (item) {
+                const keyMap = {
+                    host: 'bk_host_id',
+                    biz: 'bk_biz_id'
+                }
+                const idKey = keyMap[this.id] || 'bk_inst_id'
+                try {
+                    const associationInstance = this.instances.find(instance => instance.bk_inst_id === item[idKey])
+                    await this.$store.dispatch('objectAssociation/deleteInstAssociation', {
+                        id: associationInstance.asso_id,
+                        config: {
+                            data: this.$injectMetadata({}, {
+                                inject: !!this.$tools.getMetadataBiz(this.model)
+                            })
+                        }
+                    })
+                    this.$emit('delete-association', associationInstance)
+                    this.$nextTick(() => {
+                        this.pagination.current = 1
+                        this.getInstances()
+                    })
+                    this.$success(this.$t('Association["取消关联成功"]'))
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            getPaginationInfo () {
+                return this.$tc('Common["页码"]', this.pagination.current, {
+                    current: this.pagination.current,
+                    count: this.pagination.count,
+                    total: this.totalPage
+                })
+            },
+            togglePage (step) {
+                const current = this.pagination.current
+                const newCurrent = current + step
+                if (newCurrent < 1 || newCurrent > this.totalPage) {
+                    return false
+                }
+                this.pagination.current = newCurrent
+                this.getInstances()
+            }
         }
     }
 </script>
@@ -239,9 +319,41 @@
     .table-info {
         height: 42px;
         padding: 0 20px;
-        border-radius: 2px;
+        border-radius: 2px 2px 0 0;
         line-height: 42px;
         background-color: #DCDEE5;
         font-size: 14px;
+    }
+    .info-title {
+        cursor: pointer;
+        .icon {
+            display: inline-block;
+            vertical-align: middle;
+            transition: transform .2s linear;
+            &.is-open {
+                transform: rotate(90deg);
+            }
+        }
+        .title-text {
+            color: #000;
+        }
+        .title-count {
+            color: #8b8d95;
+        }
+    }
+    .info-pagination {
+        color: #8b8d95;
+        .pagination-toggle {
+            .pagination-icon {
+                transform: scale(.5);
+                font-size: 20px;
+                color: #979BA5;
+                cursor: pointer;
+                &.disabled {
+                    color: #C4C6CC;
+                    cursor: not-allowed;
+                }
+            }
+        }
     }
 </style>

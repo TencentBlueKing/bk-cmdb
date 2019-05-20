@@ -1,9 +1,9 @@
 <template>
     <div class="association">
         <div class="options clearfix">
-            <div class="fl">
+            <div class="fl" v-show="activeView === viewName.list">
                 <bk-button type="primary" class="options-button">{{$t('Association["关联管理"]')}}</bk-button>
-                <bk-button type="default" class="options-button">{{$t('Association["批量取消"]')}}</bk-button>
+                <!-- <bk-button type="default" class="options-button">{{$t('Association["批量取消"]')}}</bk-button> -->
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
