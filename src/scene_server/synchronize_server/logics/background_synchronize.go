@@ -127,7 +127,7 @@ func (s *synchronizeItem) synchronizeInstanceTask(ctx context.Context) (errorInf
 	inst := s.lgc.NewFetchInst(s.config, s.baseCondition)
 	err = inst.Pretreatment()
 	if err != nil {
-		blog.Errorf("inst Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
+		blog.Errorf("instance Pretreatment error. err:%s, rid:%s", err.Error(), s.lgc.rid)
 		return nil, err
 	}
 	var partErrorInfoArr []metadata.ExceptionResult
