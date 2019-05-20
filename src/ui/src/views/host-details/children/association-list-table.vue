@@ -282,7 +282,11 @@
                             })
                         }
                     })
-                    this.$emit('delete-association', associationInstance)
+                    this.$store.commit('hostDetails/deleteAssociation', {
+                        type: this.type,
+                        model: this.id,
+                        association: associationInstance
+                    })
                     this.$nextTick(() => {
                         this.pagination.current = 1
                         this.getInstances()

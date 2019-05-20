@@ -8,31 +8,29 @@
                 :id="item.id"
                 :association-type="item.associationType"
                 :instances="association.instances"
-                :visible="!(itemIndex || associationIndex)"
-                @delete-association="handleDeleteAssociation(...arguments, item)">
+                :visible="!(itemIndex || associationIndex)">
             </cmdb-host-association-list-table>
         </template>
     </div>
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     import cmdbHostAssociationListTable from './association-list-table.vue'
     export default {
         name: 'cmdb-host-association-list',
         components: {
             cmdbHostAssociationListTable
         },
-        data () {
-            return {
-                mainLine: [],
-                source: [],
-                sourceInstances: [],
-                target: [],
-                targetInstances: [],
-                associationTypes: []
-            }
-        },
         computed: {
+            ...mapGetters('hostDetails', [
+                'mainLine',
+                'source',
+                'sourceInstances',
+                'target',
+                'targetInstances',
+                'associationTypes'
+            ]),
             id () {
                 return parseInt(this.$route.params.id)
             },
@@ -94,21 +92,36 @@
                         this.getAssociationType(),
                         this.getInstRelation()
                     ])
-                    this.mainLine = mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
-                    this.source = this.getAvailableAssociation(source)
-                    this.target = this.getAvailableAssociation(target, this.source)
-                    this.associationTypes = associationTypes
-                    this.sourceInstances = root.prev
-                    this.targetInstances = root.next
+                    const availabelSource = this.getAvailableAssociation(source)
+                    const availabelTarget = this.getAvailableAssociation(target, availabelSource)
+                    this.setState({
+                        source: availabelSource,
+                        target: availabelTarget,
+                        mainLine: mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id)),
+                        associationTypes: associationTypes,
+                        root
+                    })
                 } catch (e) {
-                    this.mainLine = []
-                    this.source = []
-                    this.target = []
-                    this.associationTypes = []
-                    this.sourceInstances = []
-                    this.targetInstances = []
+                    this.setState({
+                        source: [],
+                        target: [],
+                        mainLine: [],
+                        associationTypes: [],
+                        root: {
+                            prev: [],
+                            next: []
+                        }
+                    })
                     console.error(e)
                 }
+            },
+            setState ({ source, target, mainLine, associationTypes, root }) {
+                this.$store.commit('hostDetails/setAssociation', { type: 'source', association: source })
+                this.$store.commit('hostDetails/setAssociation', { type: 'target', association: target })
+                this.$store.commit('hostDetails/setMainLine', mainLine)
+                this.$store.commit('hostDetails/setInstances', { type: 'source', instances: root.prev })
+                this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
+                this.$store.commit('hostDetails/setAssociationTypes', associationTypes)
             },
             getAssociation (condition) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
@@ -152,15 +165,6 @@
                     const isExist = reference.some(target => target.id === association.id)
                     return !isMainLine && !isExist
                 })
-            },
-            handleDeleteAssociation (associationInstance, item) {
-                const type = item.type
-                const instances = {
-                    source: this.targetInstances,
-                    target: this.sourceInstances
-                }
-                const associations = instances[type].find(data => data.bk_obj_id === item.id)
-                associations.children = associations.children.filter(association => association.asso_id !== associationInstance.asso_id)
             }
         }
     }
