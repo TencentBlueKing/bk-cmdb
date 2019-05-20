@@ -13,14 +13,16 @@
 package service
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/types"
+	"strconv"
+	"time"
+
+	"gopkg.in/mgo.v2"
 )
 
 // CreateObjectBatch batch to create some objects
@@ -40,6 +42,46 @@ func (s *Service) SearchObjectBatch(params types.ContextParams, pathParams, quer
 func (s *Service) CreateObject(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	rsp, err := s.Core.ObjectOperation().CreateObject(params, false, data)
 	if nil != err {
+		return nil, err
+	}
+	//////////
+	dail_info := &mgo.DialInfo{
+		Addrs:     []string{"127.0.0.1"},
+		Direct:    false,
+		Timeout:   time.Second * 1,
+		PoolLimit: 1024,
+	}
+
+	session, err := mgo.DialWithInfo(dail_info)
+	if err != nil {
+		return nil, err
+	}
+
+	defer session.Close()
+
+	session.SetMode(mgo.Monotonic, true)
+	c := session.DB("cmdb").C("cc_OperationLog")
+
+	//get meta info
+	_meta_data, _ := data.Get("metadata")
+	_bk_bi_id := _meta_data.(common.KvMap)["lable"]
+	log := common.KvMap{
+		"bk_supplier_account": common.BKDefaultSupplierID,
+		"bk_biz_id":           _bk_bi_id,
+		"ext_key":             "",
+		"op_desc":             "create module",
+		"op_type":             1,
+		"op_target":           "module",
+		"content":             data,
+		"operator":            params.User,
+		"op_from":             "",
+		"ext_info":            "",
+		"op_time":             time.Now(),
+		"inst_id":             nil,
+	}
+	err = c.Insert(log)
+
+	if err != nil {
 		return nil, err
 	}
 
