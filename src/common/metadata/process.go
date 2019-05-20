@@ -310,7 +310,7 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyString   `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
 	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
 	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
 	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
