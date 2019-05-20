@@ -63,10 +63,10 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata          metadata.Metadata    `json:"metadata" field:"metadata"`
-		ServiceInstanceID int64                `json:"service_instance_id" field:"service_instance_id"`
-		HostID            int64                `json:"host_id" field:"host_id"`
-		Limit             metadata.SearchLimit `json:"limit" field:"limit"`
+		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
+		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
+		HostID            int64             `json:"host_id" field:"host_id"`
+		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
@@ -84,7 +84,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, errors.New("business id can't be empty")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.Limit)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v", err)
 		return nil, err

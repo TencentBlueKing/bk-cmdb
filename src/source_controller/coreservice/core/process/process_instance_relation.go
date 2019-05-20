@@ -100,7 +100,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	return relation, nil
 }
 
-func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessInstanceRelation, error) {
+func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -118,7 +118,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
-		uint64(limit.Offset)).Limit(uint64(limit.Limit)).All(ctx.Context, &relations); nil != err {
+		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &relations); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
 		return nil, err
 	}
