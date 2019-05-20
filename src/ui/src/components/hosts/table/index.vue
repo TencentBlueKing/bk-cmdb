@@ -133,7 +133,7 @@
                 <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['details', 'update'].includes(tab.attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="host"
-                        :ext-key="{ '$in': [tab.attribute.inst.details['bk_host_innerip']] }">
+                        :inst-id="tab.attribute.inst.details['bk_host_id']">
                     </cmdb-audit-history>
                 </bk-tabpanel>
             </bk-tab>
