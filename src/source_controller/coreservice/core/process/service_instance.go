@@ -13,19 +13,20 @@
 package process
 
 import (
+	"strconv"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"strconv"
-	"time"
 )
 
 func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instance metadata.ServiceInstance) (*metadata.ServiceInstance, error) {
 	// base attribute validate
 	if field, err := instance.Validate(); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -33,7 +34,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	var err error
 	if bizID, err = p.validateBizID(ctx, instance.Metadata); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// keep metadata clean
@@ -43,19 +44,19 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	_, err = p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
 	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "service_category_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
 	}
 
 	// validate module id field
 	if err = p.validateModuleID(ctx, instance.ModuleID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "module_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "module_id")
 	}
 
 	// validate host id field
 	if err = p.validateHostID(ctx, instance.HostID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "host_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "host_id")
 	}
 	// TODO: bizID == serviceTemplate.Metadata.Label.bk_biz_id
 
@@ -103,7 +104,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 
 	if field, err := input.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -120,7 +121,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 	return instance, nil
 }
 
-func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleServiceInstance, error) {
+func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleServiceInstance, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -141,7 +142,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int
 	}
 	instances := make([]metadata.ServiceInstance, 0)
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(
-		uint64(limit.Offset)).Limit(uint64(limit.Limit)).All(ctx.Context, &instances); nil != err {
+		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &instances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return nil, err
 	}

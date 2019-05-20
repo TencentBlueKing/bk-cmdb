@@ -26,7 +26,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	// base attribute validate
 	if field, err := template.Validate(); err != nil {
 		blog.Errorf("CreateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	var err error
 	if bizID, err = p.validateBizID(ctx, template.Metadata); err != nil {
 		blog.Errorf("CreateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// keep metadata clean
@@ -43,8 +43,8 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	// validate service template id field
 	_, err = p.GetServiceTemplate(ctx, template.ServiceTemplateID)
 	if err != nil {
-		blog.Errorf("CreateProcessTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "service_category_id")
+		blog.Errorf("CreateProcessTemplate failed, template id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_template_id")
 	}
 
 	// TODO: bizID == serviceTemplate.Metadata.Label.bk_biz_id
@@ -93,12 +93,14 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 
 	if field, err := input.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
 	// update fields to local object
-	template.Property.Update(*input.Property)
+	if input.Property != nil {
+		template.Property.Update(*input.Property)
+	}
 
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
@@ -109,7 +111,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	return template, nil
 }
 
-func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.SearchLimit) (*metadata.MultipleProcessTemplate, error) {
+func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.BasePage) (*metadata.MultipleProcessTemplate, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -130,7 +132,7 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID in
 	}
 	templates := make([]metadata.ProcessTemplate, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Start(
-		uint64(limit.Offset)).Limit(uint64(limit.Limit)).All(ctx.Context, &templates); nil != err {
+		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
 		return nil, err
 	}
@@ -157,7 +159,7 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 		return err
 	}
 	if usageCount > 0 {
-		blog.Errorf("DeleteProcessTemplate failed, forbidden delete category be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+		blog.Errorf("DeleteProcessTemplate failed, forbidden delete process template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
 		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
 		return err
 	}

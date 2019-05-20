@@ -13,10 +13,10 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -63,15 +63,17 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata          metadata.Metadata    `json:"metadata" field:"metadata"`
-		ServiceInstanceID int64                `json:"service_instance_id" field:"service_instance_id"`
-		HostID            int64                `json:"host_id" field:"host_id"`
-		Limit             metadata.SearchLimit `json:"limit" field:"limit"`
+		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
+		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
+		HostID            int64             `json:"host_id" field:"host_id"`
+		ProcessIDs        []int64           `json:"process_ids" field:"process_ids"`
+		ProcessTemplateID int64             `json:"process_template_id" field:"process_template_id"`
+		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Errorf(common.CCErrCommHTTPReadBodyFailed)
 	}
 
 	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
@@ -81,10 +83,10 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 	}
 	if bizID == 0 {
 		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, errors.New("business id can't be empty")
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.Limit)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v", err)
 		return nil, err
@@ -126,7 +128,7 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 	processInstanceIDStr := pathParams(processInstanceIDField)
 	if len(processInstanceIDStr) == 0 {
 		blog.Errorf("DeleteProcessInstanceRelation failed, path parameter `%s` empty", processInstanceIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", processInstanceIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "process_instance_id")
 	}
 
 	processInstanceID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)

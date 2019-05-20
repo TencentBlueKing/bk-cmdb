@@ -25,7 +25,7 @@ import (
 
 func (s *coreService) CreateServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	template := metadata.ServiceTemplate{}
-	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("CreateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, fmt.Errorf("decode request body failed, err: %v", err)
 	}
@@ -64,15 +64,15 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 	// filter parameter
 	fp := struct {
 		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
-		ServiceCategoryID int64  `json:"service_category_id" field:"service_category_id"`
-		Limit metadata.SearchLimit `json:"limit" field:"limit"`
+		ServiceCategoryID int64             `json:"service_category_id" field:"service_category_id"`
+		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
 		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, fmt.Errorf("decode request body failed, err: %v", err)
 	}
-	
+
 	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
@@ -83,7 +83,7 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 		return nil, errors.New("business id can't be empty")
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceTemplates(params, bizID, fp.ServiceCategoryID, fp.Limit)
+	result, err := s.core.ProcessOperation().ListServiceTemplates(params, bizID, fp.ServiceCategoryID, fp.Page)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, err: %+v", err)
 		return nil, err
