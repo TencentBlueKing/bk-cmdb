@@ -34,7 +34,6 @@ type ProcessInterface interface {
 	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error
-	DeleteServiceTemplateBatch(ctx context.Context, h http.Header, serviceTemplateIDs []int64) error
 
 	// process template
 	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)

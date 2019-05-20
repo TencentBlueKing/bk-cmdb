@@ -222,27 +222,6 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 
 	return nil
 }
-func (p *process) DeleteServiceTemplateBatch(ctx context.Context, h http.Header, templateIDs []int64) error {
-	ret := new(metadata.OneServiceTemplateResult)
-	subPath := "/deletemany/process/service_template"
-
-	err := p.client.Delete().
-		WithContext(ctx).
-		SubResource(subPath).
-		WithHeaders(h).
-		Body(templateIDs).
-		Do().
-		Into(ret)
-
-	if err != nil {
-		return err
-	}
-	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
-	}
-
-	return nil
-}
 
 func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error) {
 	ret := new(metadata.MultipleServiceTemplateResult)
