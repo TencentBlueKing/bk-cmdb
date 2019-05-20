@@ -130,15 +130,17 @@
         .breadcrumbs-back{
             display: inline-block;
             vertical-align: middle;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
             text-align: center;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            color: #3c96ff;
+            margin-right: 8px;
             &:hover{
-                color: #3c96ff;
+                background-color: #F0F1F5;
             }
         }
         .breadcrumbs-current{
@@ -148,6 +150,7 @@
             vertical-align: middle;
             font-size: 16px;
             font-weight: normal;
+            color: #313238;
         }
         .icon-info-circle {
             margin-left: 5px;
