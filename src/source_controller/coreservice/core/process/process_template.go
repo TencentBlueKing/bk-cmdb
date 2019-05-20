@@ -98,7 +98,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	}
 
 	// update fields to local object
-	template.Property.Update(input.Property)
+	template.Property.Update(*input.Property)
 
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}

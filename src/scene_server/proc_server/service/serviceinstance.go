@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -221,7 +222,7 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 
 		relations, err := p.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+			ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
 				"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance relations failed, err: %v",
 				input.ServiceTemplateID, bizID, input.ModuleID, err)
 			return
@@ -353,4 +354,185 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 	}
 
 	ctx.RespEntity(differences)
+}
+
+// Force sync the service instance with it's bounded service template.
+// It keeps the processes exactly same with the process template in the service template,
+// which means the number of process is same, and the process instance's info is also exactly same.
+// It contains several scenarios in a service instance:
+// 1. add a new process
+// 2. update a process
+// 3. removed a process
+
+func (p *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *rest.Contexts) {
+	input := new(metadata.ForceSyncServiceInstanceWithTemplateInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"force sync service instance according to service template, but parse biz id failed, err: %v", err)
+		return
+	}
+
+	// step 1:
+	// find all the process template according to the service template id
+	option := &metadata.ListProcessTemplatesOption{
+		BusinessID:        bizID,
+		ServiceTemplateID: input.ServiceTemplateID,
+	}
+	processTemplate, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
+				"force sync service instance according to service template: %d, but list process template failed, err: %v",
+				input.ServiceTemplateID, err)
+			return
+		}
+	}
+	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
+	for _, t := range processTemplate.Info {
+		processTemplateMap[t.ID] = &t
+	}
+
+	// step2:
+	// find all the process instances relations for the usage of getting process instances.
+	relationOption := &metadata.ListProcessInstanceRelationOption{
+		Metadata:          input.Metadata,
+		ServiceInstanceID: input.ServiceInstances,
+	}
+	relations, err := p.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
+			"force sync service instance according to service template: %d, but list process template failed, err: %v",
+			input.ServiceTemplateID, err)
+		return
+	}
+	procIDs := make([]int64, 0)
+	for _, r := range relations.Info {
+		procIDs = append(procIDs, r.ProcessID)
+	}
+
+	// step 3:
+	// find all the process instance in process instance relation.
+	processInstances, err := p.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+			"force sync service instance according to service template: %d, but list process instance: %v failed, err: %v",
+			input.ServiceTemplateID, procIDs, err)
+		return
+	}
+	processInstanceMap := make(map[int64]*metadata.Process)
+	for _, p := range processInstances {
+		processInstanceMap[p.ProcessID] = &p
+	}
+
+	// step 4:
+	// rearrange the service instance with process instance.
+	serviceInstanceWithProcessMap := make(map[int64][]*metadata.Process)
+	serviceInstanceWithTemplateMap := make(map[int64]map[int64]bool)
+	serviceInstanceWithHostMap := make(map[int64]int64)
+	processInstanceWithTemplateMap := make(map[int64]int64)
+	for _, r := range relations.Info {
+		p, exist := processInstanceMap[r.ProcessID]
+		if !exist {
+			// something is wrong, but can this process instance,
+			// but we can find it in the process instance relation.
+			blog.Warnf("force sync service instance according to service template: %d, but can not find the process instance: %d",
+				input.ServiceTemplateID, r.ProcessID)
+			continue
+		}
+		if _, exist := serviceInstanceWithProcessMap[r.ServiceInstanceID]; !exist {
+			serviceInstanceWithProcessMap[r.ServiceInstanceID] = make([]*metadata.Process, 0)
+		}
+		serviceInstanceWithProcessMap[r.ServiceInstanceID] = append(serviceInstanceWithProcessMap[r.ServiceInstanceID], p)
+		processInstanceWithTemplateMap[r.ProcessID] = r.ProcessTemplateID
+		serviceInstanceWithHostMap[r.ServiceInstanceID] = r.HostID
+
+		if _, exist := serviceInstanceWithTemplateMap[r.ServiceInstanceID][r.ProcessTemplateID]; !exist {
+			serviceInstanceWithTemplateMap[r.ServiceInstanceID] = make(map[int64]bool)
+		}
+		serviceInstanceWithTemplateMap[r.ServiceInstanceID][r.ProcessTemplateID] = true
+	}
+
+	// step 5:
+	// compare the difference between process instance and process template from one service instance to another.
+	for svcInstanceID, processes := range serviceInstanceWithProcessMap {
+		for _, process := range processes {
+			template, exist := processTemplateMap[processInstanceWithTemplateMap[process.ProcessID]]
+			if !exist {
+				// this process template has already removed form the service template,
+				// which means this process instance need to be removed from this service instance
+				if err := p.Logic.DeleteProcessInstance(ctx.Kit, process.ProcessID); err != nil {
+					ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+						"force sync service instance according to service template: %d, but delete process instance: %d with template: %d failed, err: %v",
+						input.ServiceTemplateID, process.ProcessID, template.ID, err)
+					return
+				}
+				continue
+			}
+
+			// this process's bounded is still exist, need to check whether this process instance
+			// need to be updated or not.
+			proc, changed := p.Logic.CheckProcessTemplateAndInstanceIsDifferent(template.Property, process)
+			if !changed {
+				// nothing is changed.
+				continue
+			}
+
+			// process template has already changed, this process instance need to be updated.
+			if err := p.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, proc); err != nil {
+				ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed,
+					"force sync service instance according to service template: %d, service instance: %d, but update process instance with template: %d failed, err: %v, process: %v",
+					input.ServiceTemplateID, svcInstanceID, template.ID, err, proc)
+				return
+			}
+		}
+	}
+
+	// step 6:
+	// check if a new process is added to the service template.
+	// if true, then create a new process instance for every service instance with process template's default value.
+	for id, pt := range processTemplateMap {
+		for svcID, templates := range serviceInstanceWithTemplateMap {
+			if _, exist := templates[id]; !exist {
+				// nothing is changed.
+				continue
+			}
+
+			// we can not find this process template in all this service instance,
+			// which means that a new process template need to be added to this service instance
+			process, err := p.Logic.CreateProcessInstance(ctx.Kit, p.Logic.NewProcessInstanceFromProcessTemplate(pt.Property))
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"force sync service instance according to service template: %d, but create process instance with template: %d failed, err: %v",
+					input.ServiceTemplateID, id, err)
+				return
+			}
+
+			relation := &metadata.ProcessInstanceRelation{
+				Metadata:          input.Metadata,
+				ProcessID:         int64(process),
+				ServiceInstanceID: svcID,
+				ProcessTemplateID: id,
+				HostID:            serviceInstanceWithHostMap[svcID],
+			}
+
+			// create service instance relation, so that the process instance created upper can be related to this service instance.
+			_, err = p.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
+			if err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"force sync service instance according to service template: %d, but create process instance relation with template: %d failed, err: %v",
+					input.ServiceTemplateID, id, err)
+				return
+			}
+
+		}
+	}
+
+	// Finally, we do the force sync successfully.
+	ctx.RespEntity(metadata.NewSuccessResp(nil))
 }
