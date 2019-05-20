@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"regexp"
 	"time"
-	"unsafe"
 
 	"configcenter/src/common"
 	"configcenter/src/common/util"
@@ -339,7 +338,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	return "", nil
 }
 
-func (pt *ProcessProperty) Update(input ProcessProp
+func (pt *ProcessProperty) Update(input ProcessProperty) {
 	/*
 		// TODO: 方案遗留问题： 如何赋值
 		ptVal := reflect.ValueOf(*pt)
