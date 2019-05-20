@@ -61,7 +61,6 @@ func (s *Service) CreateObject(params types.ContextParams, pathParams, queryPara
 	session.SetMode(mgo.Monotonic, true)
 	c := session.DB("cmdb").C("cc_OperationLog")
 
-	//get meta info
 	_meta_data, _ := data.Get("metadata")
 	_bk_bi_id := _meta_data.(common.KvMap)["lable"]
 	log := common.KvMap{
