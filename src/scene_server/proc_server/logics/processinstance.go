@@ -375,7 +375,7 @@ func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessP
 }
 
 // this function works to create a new process instance from a process template.
-func (lgc *Logic) CreateProcessInstanceFromProcessTemplate(t *metadata.ProcessProperty) *metadata.Process {
+func (lgc *Logic) NewProcessInstanceFromProcessTemplate(t *metadata.ProcessProperty) *metadata.Process {
 	p := new(metadata.Process)
 	if t.ProcNum.Value != nil {
 		p.ProcNum = *t.ProcNum.Value

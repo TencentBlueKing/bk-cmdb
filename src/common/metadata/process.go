@@ -55,8 +55,8 @@ type DeleteServiceTemplatesInput struct {
 type CreateServiceInstanceForServiceTemplateInput struct {
 	Metadata   Metadata                `json:"metadata"`
 	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"templateID"`
-	ModuleID   int64                   `json:"moduleID"`
+	TemplateID int64                   `json:"template_id"`
+	ModuleID   int64                   `json:"module_id"`
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
 
@@ -119,19 +119,19 @@ type ProcessChangedAttribute struct {
 }
 
 type ServiceInstanceDetail struct {
-	HostID    int64                   `json:"hostID"`
+	HostID    int64                   `json:"host_id"`
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
 type ProcessInstanceDetail struct {
-	ProcessTemplateID int64   `json:"processTemplateID"`
-	ProcessInfo       Process `json:"processInfo"`
+	ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo       Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
-	Metadata           Metadata `json:"metadata"`
-	ProcessTemplatesID []int64  `json:"processTemplatesID"`
-	ServiceTemplateID  int64    `json:"serviceTemplateID"`
+	Metadata            Metadata `json:"metadata"`
+	ProcessTemplatesIDs []int64  `json:"process_templates_ids"`
+	ServiceTemplateID   int64    `json:"service_template_id"`
 }
 
 type SocketBindType string
