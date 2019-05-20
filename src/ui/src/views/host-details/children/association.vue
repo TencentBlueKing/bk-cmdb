@@ -2,8 +2,8 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <bk-button type="primary" class="options-button">{{$t('Association["关联管理"]')}}</bk-button>
-                <!-- <bk-button type="default" class="options-button">{{$t('Association["批量取消"]')}}</bk-button> -->
+                <bk-button type="primary" class="options-button" @click="showCreate = true">{{$t('Association["新增关联"]')}}</bk-button>
+                <bk-button type="default" class="options-button" v-show="false">{{$t('Association["批量取消"]')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
@@ -21,17 +21,23 @@
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
+        <cmdb-slider :is-show.sync="showCreate">
+            <cmdb-host-association-create slot="content" v-if="showCreate">
+            </cmdb-host-association-create>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
     import cmdbHostAssociationList from './association-list.vue'
     import cmdbHostAssociationGraphics from './association-graphics.vue'
+    import cmdbHostAssociationCreate from './association-create.vue'
     export default {
         name: 'cmdb-host-association',
         components: {
             cmdbHostAssociationList,
-            cmdbHostAssociationGraphics
+            cmdbHostAssociationGraphics,
+            cmdbHostAssociationCreate
         },
         data () {
             return {
@@ -39,7 +45,8 @@
                     'list': cmdbHostAssociationList.name,
                     'graphics': cmdbHostAssociationGraphics.name
                 },
-                activeView: cmdbHostAssociationList.name
+                activeView: cmdbHostAssociationList.name,
+                showCreate: false
             }
         },
         methods: {
