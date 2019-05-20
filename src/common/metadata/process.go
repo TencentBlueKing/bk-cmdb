@@ -132,7 +132,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs []int64  `json:"process_templates_ids"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 }
 
@@ -400,23 +400,36 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 func (pt *ProcessProperty) Update(input ProcessProperty) {
 	/*
 		// TODO: 方案遗留问题： 如何赋值
-		ptVal := reflect.ValueOf(*pt)
+		selfVal := reflect.ValueOf(*pt)
 		inputVal := reflect.ValueOf(input)
-		fieldCount := ptVal.NumField()
+		fieldCount := selfVal.NumField()
 		for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 			inputField := inputVal.Field(fieldIdx)
-			ptField := ptVal.Field(fieldIdx)
+			selfField := selfVal.Field(fieldIdx)
 			subFields := []string{"Value", "AsDefaultValue"}
 			for _, subField := range subFields {
-				inputFieldValue := inputField.FieldByName(subField)
-				if !inputFieldValue.IsNil() {
-					ptFieldValue := ptField.FieldByName(subField)
-					v := inputFieldValue.Pointer()
-					p := unsafe.Pointer(v)
-					ptFieldValue.SetPointer(p)
+				inputFieldValue := inputField.FieldByName(subField).Elem()
+				inputFieldPtr := inputField.FieldByName(subField)
+				if inputFieldPtr.IsNil() {
+					continue
 				}
+
+				selfFieldValuePtr := selfField.FieldByName(subField)
+
+				t := selfFieldValuePtr.Type()
+				fmt.Sprintf("type: %s", t)
+
+				if selfFieldValuePtr.Kind() == reflect.Ptr {
+					if selfFieldValuePtr.IsNil() {
+						selfFieldValuePtr.Set(reflect.New(selfFieldValuePtr.Type().Elem()))
+					}
+				}
+
+				selfFieldValue := selfField.FieldByName(subField).Elem()
+				selfFieldValue.Set(inputFieldValue)
 			}
 		}
+		return
 	*/
 
 	if input.ProcNum.Value != nil {

@@ -62,7 +62,7 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata           metadata.Metadata `json:"metadata" field:"metadata"`
+		BusinessID         int64             `json:"bk_biz_id" field:"bk_biz_id"`
 		ServiceTemplateID  int64             `json:"service_template_id" field:"service_template_id"`
 		ProcessTemplateIDs *[]int64          `json:"process_template_ids" field:"process_template_ids"`
 		Page               metadata.BasePage `json:"page" field:"page"`
@@ -73,17 +73,12 @@ func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
-	if err != nil {
-		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
-	}
-	if bizID == 0 {
-		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	if fp.BusinessID == 0 {
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessTemplates(params, fp.BusinessID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessTemplates failed, err: %+v", err)
 		return nil, err
