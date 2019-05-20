@@ -62,7 +62,7 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
+		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
 		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
 		HostID            int64             `json:"host_id" field:"host_id"`
 		ProcessIDs        []int64           `json:"process_ids" field:"process_ids"`
@@ -75,17 +75,12 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, params.Error.Errorf(common.CCErrCommHTTPReadBodyFailed)
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
-	if err != nil {
-		blog.Errorf("ListProcessInstanceRelation failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
-	}
-	if bizID == 0 {
-		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	if fp.BusinessID == 0 {
+		blog.Errorf("ListProcessInstanceRelation failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, bizID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp.BusinessID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v", err)
 		return nil, err
