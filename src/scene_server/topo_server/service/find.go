@@ -37,6 +37,7 @@ type Query struct {
 	QueryString string   `json:"query_string"`
 	TypeFilter  []string `json:"filter"`
 	BkObjId     string   `json:"bk_obj_id"`
+	BkBizId     string   `json:"bk_biz_id"`
 }
 
 func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -104,20 +105,44 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 }
 
 func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
+	qBool := elastic.NewBoolQuery()
+	//	"should": [
+	//		{
+	//			"bool": {
+	//				"must_not": [
+	//					{
+	//						"exists": { "field": "metadata.label.bk_biz_id" }
+	//					}
+	//				]
+	//			}
+	//		},
+	//		{
+	//			"term": { "metadata.label.bk_biz_id": "2" }
+	//		}
+	//  ],
+	//	"minimum_should_match" : 1
+	qBool.MinimumNumberShouldMatch(1)
+	qBizExist := elastic.NewExistsQuery(common.BkBizMetaKey)
+	qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
+
+	qBizBool := elastic.NewBoolQuery()
+	qBizBool.MustNot(qBizExist)
+
+	qBool.Should(qBizBool, qBizTerm)
+
 	qString := elastic.NewQueryStringQuery(query.QueryString)
 	if query.BkObjId == "" {
 		// get search types from filter
 		types := getEsIndexTypes(query.TypeFilter)
-		return qString, types
+		return qBool.Must(qString), types
 	} else if query.BkObjId == common.TypeHost {
 		// if bk_obj_id is host, we search only from type cc_HostBase
 		types := []string{common.BKTableNameBaseHost}
-		return qString, types
+		return qBool.Must(qString), types
 	} else {
 		// if define bk_obj_id, we use bool query include must(bk_obj_id=xxx) and should(query string)
-		qBool := elastic.NewBoolQuery()
 		qBool.Must(elastic.NewTermQuery("bk_obj_id", query.BkObjId))
-		qBool.Should(qString)
+		qBool.Must(qString)
 		types := getEsIndexTypes(query.TypeFilter)
 		return qBool, types
 	}

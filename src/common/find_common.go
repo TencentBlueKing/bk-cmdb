@@ -14,6 +14,7 @@ const (
 
 	BkObjIdAggName  = "bk_obj_id_agg"
 	BkObjIdAggField = "bk_obj_id.keyword"
+	BkBizMetaKey    = "metadata.label.bk_biz_id"
 )
 
 var (

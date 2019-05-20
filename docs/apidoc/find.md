@@ -13,6 +13,8 @@
         "limit": 10
     },
     "query_string": "test",
+    "bk_obj_id": "host",
+    "bk_biz_id": "2",
     "filter": ["model"]
 }
 ```
@@ -25,6 +27,8 @@
 | start| int|否|-1|分页开始| 分页开始|
 | limit| int|否|-1|分页大小| 分页大小|
 | query_string| string|否|无|检索内容 | query string content|
+| bk_obj_id| string|否|无|对象实例id| 指定对象|
+| bk_biz_id| string|否|无|业务id|指定业务|
 | filter| string list|否|空|过滤搜索表| 取值范围["model", "object", "host", "process", "application"]|
 
 
