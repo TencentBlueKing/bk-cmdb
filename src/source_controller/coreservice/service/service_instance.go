@@ -64,9 +64,9 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 	// filter parameter
 	fp := struct {
 		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
-		ServiceTemplateID int64 `json:"service_template_id"`
-		HostID int64 `json:"host_id"`
-		Limit metadata.SearchLimit `json:"limit" field:"limit"`
+		ServiceTemplateID int64             `json:"service_template_id"`
+		HostID            int64             `json:"host_id"`
+		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
@@ -83,8 +83,8 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
 		return nil, errors.New("business id can't be empty")
 	}
-	
-	result, err := s.core.ProcessOperation().ListServiceInstance(params, bizID, fp.ServiceTemplateID, fp.HostID, fp.Limit)
+
+	result, err := s.core.ProcessOperation().ListServiceInstance(params, bizID, fp.ServiceTemplateID, fp.HostID, fp.Page)
 	if err != nil {
 		blog.Errorf("ListServiceInstance failed, err: %+v", err)
 		return nil, err
