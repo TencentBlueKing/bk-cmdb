@@ -112,7 +112,7 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	//			"bool": {
 	//				"must_not": [
 	//					{
-	//						"exists": { "field": "metadata.label.bk_biz_id" }
+	//						"regexp": { "metadata.label.bk_biz_id": "[0-9]*" }
 	//					}
 	//				]
 	//			}
@@ -124,15 +124,14 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	//	"minimum_should_match" : 1
 
 	// if set bk_biz_id
+	qBool.MinimumNumberShouldMatch(1)
+	qBizRegex := elastic.NewRegexpQuery(common.BkBizMetaKey, "[0-9]*")
+	qBizBool := elastic.NewBoolQuery()
+	qBizBool.MustNot(qBizRegex)
+	qBool.Should(qBizBool)
 	if query.BkBizId != "" {
-		qBool.MinimumNumberShouldMatch(1)
-		qBizExist := elastic.NewExistsQuery(common.BkBizMetaKey)
 		qBizTerm := elastic.NewTermQuery(common.BkBizMetaKey, query.BkBizId)
-
-		qBizBool := elastic.NewBoolQuery()
-		qBizBool.MustNot(qBizExist)
-
-		qBool.Should(qBizBool, qBizTerm)
+		qBool.Should(qBizTerm)
 	}
 
 	qString := elastic.NewQueryStringQuery(query.QueryString)
