@@ -123,7 +123,6 @@
                 transformOrigin: 'top',
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
-                // queryString: '',
                 query: {
                     queryString: '',
                     objId: ''
@@ -150,15 +149,18 @@
         },
         computed: {
             ...mapGetters(['supplierAccount']),
+            ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
+                const notZhCn = this.query.queryString.replace(/\w/g, '').length === 0
                 return {
                     page: {
                         start: this.pagination.start,
                         limit: this.pagination.limit
                     },
                     bk_obj_id: this.query.objId,
-                    query_string: `${this.query.queryString}`,
+                    bk_biz_id: this.bizId ? this.bizId.toString() : '',
+                    query_string: notZhCn ? `*${this.query.queryString}*` : this.query.queryString,
                     filter: ['model']
                 }
             },
@@ -180,6 +182,9 @@
                 window.location.hash = this.hash.replace(this.reg, this.query.queryString)
                 this.query.objId = ''
                 if (queryString) {
+                    this.propertyMap = {}
+                    this.pagination.start = 0
+                    this.pagination.current = 1
                     this.handleSearch(600)
                 }
             }
@@ -232,6 +237,7 @@
                 return !this.$tools.getMetadataBiz(model)
             },
             toggleClassify (index, model) {
+                if (index === this.currentClassify) return
                 this.currentClassify = index
                 this.query.objId = model
                 this.pagination.start = 0
@@ -326,15 +332,17 @@
             async processArray (data) {
                 const publicObj = data.filter(aggregation => this.isPublicModel(aggregation.key)).map(model => model.key)
                 const privateObj = data.filter(aggregation => !this.isPublicModel(aggregation.key)).map(model => model.key)
-                if (publicObj.length) {
+                const getPublicAttribute = publicObj.filter(model => !this.propertyMap[model])
+                const getPrivateAttribute = privateObj.filter(model => !this.propertyMap[model])
+                if (getPublicAttribute.length) {
                     const objId = {
-                        '$in': publicObj
+                        '$in': getPublicAttribute
                     }
                     await this.getPublicModelProperties(objId)
                 }
-                if (privateObj.length) {
-                    for (let i = 0; i < privateObj.length; i++) {
-                        await this.getProperties(privateObj[i])
+                if (getPrivateAttribute.length) {
+                    for (let i = 0; i < getPrivateAttribute.length; i++) {
+                        await this.getProperties(getPrivateAttribute[i])
                     }
                 }
             },
@@ -346,7 +354,7 @@
                     this.$router.push({
                         name: 'resource',
                         query: {
-                            ip: source['bk_host_innerip'],
+                            ip: source['bk_host_innerip'].toString().replace(/(\<\/?em\>)/g, ''),
                             outer: false,
                             inner: true,
                             exact: 1,
@@ -354,6 +362,14 @@
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
+                    const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
+                    if (isPauserd) {
+                        this.$bkMessage({
+                            message: '该模型已停用',
+                            theme: 'warning'
+                        })
+                        return
+                    }
                     this.$router.push({
                         name: 'generalModel',
                         params: {
@@ -467,6 +483,7 @@
                         font-style: normal !important;
                     }
                     .results-title {
+                        display: inline-block;
                         font-size: 16px;
                         font-weight: bold;
                         margin-bottom: 4px;
