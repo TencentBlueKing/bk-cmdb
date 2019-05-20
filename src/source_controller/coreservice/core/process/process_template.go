@@ -93,7 +93,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 
 	if field, err := input.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 

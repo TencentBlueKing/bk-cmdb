@@ -26,7 +26,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	// base attribute validate
 	if field, err := instance.Validate(); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	var err error
 	if bizID, err = p.validateBizID(ctx, instance.Metadata); err != nil {
 		blog.Errorf("CreateServiceInstance failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
 	// keep metadata clean
@@ -44,19 +44,19 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	_, err = p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
 	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "service_category_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
 	}
 
 	// validate module id field
 	if err = p.validateModuleID(ctx, instance.ModuleID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "module_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "module_id")
 	}
 
 	// validate host id field
 	if err = p.validateHostID(ctx, instance.HostID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.New(common.CCErrCommParamsInvalid, "host_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "host_id")
 	}
 	// TODO: bizID == serviceTemplate.Metadata.Label.bk_biz_id
 
@@ -104,7 +104,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 
 	if field, err := input.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
