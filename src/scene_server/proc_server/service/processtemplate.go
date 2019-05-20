@@ -146,7 +146,6 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	// TODO: wait for list api update
 	option := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ServiceTemplateID:  input.ServiceTemplateID,

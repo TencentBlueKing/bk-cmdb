@@ -134,6 +134,13 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	ServiceTemplateID   int64    `json:"service_template_id"`
 }
 
+type ForceSyncServiceInstanceWithTemplateInput struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+	ModuleID          int64    `json:"module_id"`
+	ServiceInstances  []int64  `json:"service_instances"`
+}
+
 type SocketBindType string
 
 const (
