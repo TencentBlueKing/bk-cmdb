@@ -44,7 +44,6 @@ func (s *Service) CreateObject(params types.ContextParams, pathParams, queryPara
 	if nil != err {
 		return nil, err
 	}
-	//////////
 	dail_info := &mgo.DialInfo{
 		Addrs:     []string{"127.0.0.1"},
 		Direct:    false,
