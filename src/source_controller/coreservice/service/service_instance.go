@@ -24,7 +24,7 @@ import (
 
 func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	instance := metadata.ServiceInstance{}
-	if err := mapstr.SetValueToStructByTags(&instance, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&instance, data); err != nil {
 		blog.Errorf("CreateServiceInstance failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -68,7 +68,7 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 		Page              metadata.BasePage `json:"page" field:"page"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceInstances failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -106,7 +106,7 @@ func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParam
 	}
 
 	instance := metadata.ServiceInstance{}
-	if err := mapstr.SetValueToStructByTags(&instance, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&instance, data); err != nil {
 		blog.Errorf("UpdateServiceInstance failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}

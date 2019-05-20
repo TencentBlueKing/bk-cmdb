@@ -68,7 +68,7 @@ func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams
 		Page               metadata.BasePage `json:"page" field:"page"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -106,7 +106,7 @@ func (s *coreService) UpdateProcessTemplate(params core.ContextParams, pathParam
 	}
 
 	template := metadata.ProcessTemplate{}
-	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("UpdateProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -147,7 +147,7 @@ func (s *coreService) BatchDeleteProcessTemplate(params core.ContextParams, path
 		ProcessTemplateIDs []int64 `json:"process_template_ids" field:"process_template_ids"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&input, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&input, data); err != nil {
 		blog.Errorf("BatchDeleteProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
