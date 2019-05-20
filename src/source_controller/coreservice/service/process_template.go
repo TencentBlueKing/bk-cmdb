@@ -25,7 +25,7 @@ import (
 
 func (s *coreService) CreateProcessTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	template := metadata.ProcessTemplate{}
-	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("CreateProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
 		return nil, fmt.Errorf("decode request body failed, err: %v", err)
 	}
@@ -63,10 +63,10 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata           metadata.Metadata    `json:"metadata" field:"metadata"`
-		ServiceTemplateID  int64                `json:"service_template_id" field:"service_template_id"`
-		ProcessTemplateIDs *[]int64             `json:"process_template_ids" field:"process_template_ids"`
-		Limit              metadata.SearchLimit `json:"limit" field:"limit"`
+		Metadata           metadata.Metadata `json:"metadata" field:"metadata"`
+		ServiceTemplateID  int64             `json:"service_template_id" field:"service_template_id"`
+		ProcessTemplateIDs *[]int64          `json:"process_template_ids" field:"process_template_ids"`
+		Page               metadata.BasePage `json:"page" field:"page"`
 	}{}
 
 	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
@@ -84,7 +84,7 @@ func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams
 		return nil, errors.New("business id can't be empty")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Limit)
+	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessTemplates failed, err: %+v", err)
 		return nil, err
