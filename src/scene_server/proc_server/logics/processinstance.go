@@ -582,10 +582,6 @@ func (lgc *Logic) NewProcessInstanceFromProcessTemplate(t *metadata.ProcessPrope
 		p.ProcNum = *t.ProcNum.Value
 	}
 
-	if t.ProcNum.Value != nil {
-		p.ProcNum = *t.ProcNum.Value
-	}
-
 	if t.StopCmd.Value != nil {
 		p.StopCmd = *t.StopCmd.Value
 	}
@@ -596,10 +592,6 @@ func (lgc *Logic) NewProcessInstanceFromProcessTemplate(t *metadata.ProcessPrope
 
 	if t.ForceStopCmd.Value != nil {
 		p.ForceStopCmd = *t.ForceStopCmd.Value
-	}
-
-	if t.ProcessID.Value != nil {
-		p.ProcessID = *t.ProcessID.Value
 	}
 
 	if t.FuncName.Value != nil {

@@ -25,7 +25,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	// base attribute validate
 	if field, err := relation.Validate(); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -87,7 +87,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	// update fields to local object
 	if field, err := relation.Validate(); err != nil {
 		blog.Errorf("UpdateProcessInstanceRelation failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		err := ctx.Error.New(common.CCErrCommParamsInvalid, field)
+		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	return relation, nil
 }
 
-func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, limit metadata.SearchLimit) (*metadata.MultipleProcessInstanceRelation, error) {
+func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTempalteID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
 	filter["metadata"] = md.ToMapStr()
@@ -108,6 +108,19 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	// filter with matching any sub category
 	if serviceInstanceID > 0 {
 		filter["service_instance_id"] = serviceInstanceID
+	}
+
+	if processTempalteID > 0 {
+		filter["process_template_id"] = processTempalteID
+	}
+
+	if hostID > 0 {
+		filter["host_id"] = hostID
+	}
+
+	if processIDs != nil && len(processIDs) > 0 {
+		processIDFilter := map[string]interface{}{"$in": processIDs}
+		filter["process_id"] = processIDFilter
 	}
 
 	var total uint64
@@ -118,7 +131,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
-		uint64(limit.Offset)).Limit(uint64(limit.Limit)).All(ctx.Context, &relations); nil != err {
+		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &relations); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
 		return nil, err
 	}
