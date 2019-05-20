@@ -385,16 +385,23 @@
             },
             async handleShowDetails () {
                 const nodeData = this.hoverNode.data
-                const [inst, properties, propertyGroups] = await Promise.all([
-                    this.getInst(),
-                    this.getProperties(),
-                    this.getPropertyGroups()
-                ])
-                this.details.inst = inst
-                this.details.properties = properties
-                this.details.propertyGroups = propertyGroups
                 this.details.title = `${nodeData['bk_obj_name']}-${nodeData['bk_inst_name']}`
-                this.details.show = true
+                try {
+                    const [inst, properties, propertyGroups] = await Promise.all([
+                        this.getInst(),
+                        this.getProperties(),
+                        this.getPropertyGroups()
+                    ])
+                    this.details.inst = inst
+                    this.details.properties = properties
+                    this.details.propertyGroups = propertyGroups
+                    this.details.show = true
+                } catch (e) {
+                    this.details.inst = {}
+                    this.details.properties = []
+                    this.details.propertyGroups = []
+                    this.details.show = false
+                }
             },
             async getInst () {
                 const modelId = this.hoverNode.data.bk_obj_id

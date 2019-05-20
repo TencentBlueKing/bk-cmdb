@@ -1,12 +1,15 @@
 <template>
     <div class="association-list" v-bkloading="{ isLoading: loading }">
-        <template v-for="item in list">
+        <template v-for="(item, itemIndex) in list">
             <cmdb-host-association-list-table
-                v-for="association in item.associations"
+                v-for="(association, associationIndex) in item.associations"
                 :key="association.id"
                 :type="item.type"
                 :id="item.id"
-                :instances="association.instances">
+                :association-type="item.associationType"
+                :instances="association.instances"
+                :visible="!(itemIndex || associationIndex)"
+                @delete-association="handleDeleteAssociation(...arguments, item)">
             </cmdb-host-association-list-table>
         </template>
     </div>
@@ -26,7 +29,7 @@
                 sourceInstances: [],
                 target: [],
                 targetInstances: [],
-                type: []
+                associationTypes: []
             }
         },
         computed: {
@@ -58,6 +61,7 @@
                             list.push({
                                 type: isSource ? 'source' : 'target',
                                 id: modelId,
+                                associationType: this.associationTypes.find(target => target.bk_asst_id === association.bk_asst_id),
                                 associations: [associationData]
                             })
                         }
@@ -83,7 +87,7 @@
         methods: {
             async getData () {
                 try {
-                    const [source, target, mainLine, type, root] = await Promise.all([
+                    const [source, target, mainLine, associationTypes, root] = await Promise.all([
                         this.getAssociation({ bk_obj_id: 'host' }),
                         this.getAssociation({ bk_asst_obj_id: 'host' }),
                         this.getMainLine(),
@@ -93,14 +97,14 @@
                     this.mainLine = mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
                     this.source = this.getAvailableAssociation(source)
                     this.target = this.getAvailableAssociation(target, this.source)
-                    this.type = type
+                    this.associationTypes = associationTypes
                     this.sourceInstances = root.prev
                     this.targetInstances = root.next
                 } catch (e) {
                     this.mainLine = []
                     this.source = []
                     this.target = []
-                    this.type = []
+                    this.associationTypes = []
                     this.sourceInstances = []
                     this.targetInstances = []
                     console.error(e)
@@ -148,6 +152,15 @@
                     const isExist = reference.some(target => target.id === association.id)
                     return !isMainLine && !isExist
                 })
+            },
+            handleDeleteAssociation (associationInstance, item) {
+                const type = item.type
+                const instances = {
+                    source: this.targetInstances,
+                    target: this.sourceInstances
+                }
+                const associations = instances[type].find(data => data.bk_obj_id === item.id)
+                associations.children = associations.children.filter(association => association.asso_id !== associationInstance.asso_id)
             }
         }
     }
