@@ -98,10 +98,10 @@ type ServiceProcessInstanceDifference struct {
 }
 
 type DifferenceDetail struct {
-	Unchanged *ProcessDifferenceDetail `json:"unchanged"`
-	Changed   *ProcessDifferenceDetail `json:"changed"`
-	Added     *ProcessDifferenceDetail `json:"added"`
-	Removed   *ProcessDifferenceDetail `json:"removed"`
+	Unchanged []ProcessDifferenceDetail `json:"unchanged"`
+	Changed   []ProcessDifferenceDetail `json:"changed"`
+	Added     []ProcessDifferenceDetail `json:"added"`
+	Removed   []ProcessDifferenceDetail `json:"removed"`
 }
 
 type ProcessDifferenceDetail struct {
