@@ -73,7 +73,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: index.name
+        name: index[0].name
     }
 }]
 
