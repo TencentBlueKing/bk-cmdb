@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -335,65 +336,31 @@ type ProcessProperty struct {
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
-	if err := pt.ProcNum.Validate(); err != nil {
-		return "proc_num", err
-	}
-	if err := pt.StopCmd.Validate(); err != nil {
-		return "stop_cmd", err
-	}
-	if err := pt.RestartCmd.Validate(); err != nil {
-		return "restart_cmd", err
-	}
-	if err := pt.ForceStopCmd.Validate(); err != nil {
-		return "face_stop_cmd", err
-	}
-	if err := pt.FuncName.Validate(); err != nil {
-		return "bk_func_name", err
-	}
-	if err := pt.WorkPath.Validate(); err != nil {
-		return "work_path", err
-	}
-	if err := pt.BindIP.Validate(); err != nil {
-		return "bind_ip", err
-	}
-	if err := pt.Priority.Validate(); err != nil {
-		return "priority", err
-	}
-	if err := pt.ReloadCmd.Validate(); err != nil {
-		return "reload_cmd", err
-	}
-	if err := pt.ProcessName.Validate(); err != nil {
-		return "bk_process_name", err
-	}
-	if err := pt.Port.Validate(); err != nil {
-		return "port", err
-	}
-	if err := pt.PidFile.Validate(); err != nil {
-		return "pid_file", err
-	}
-	if err := pt.AutoStart.Validate(); err != nil {
-		return "auto_start", err
-	}
-	if err := pt.AutoTimeGapSeconds.Validate(); err != nil {
-		return "auto_time_gap", err
-	}
-	if err := pt.StartCmd.Validate(); err != nil {
-		return "start_cmd", err
-	}
-	if err := pt.FuncID.Validate(); err != nil {
-		return "bk_func_id", err
-	}
-	if err := pt.User.Validate(); err != nil {
-		return "user", err
-	}
-	if err := pt.TimeoutSeconds.Validate(); err != nil {
-		return "timeout", err
-	}
-	if err := pt.Protocol.Validate(); err != nil {
-		return "protocol", err
-	}
-	if err := pt.Description.Validate(); err != nil {
-		return "description", err
+	// call all field's Validate method one by one
+	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
+	selfVal := reflect.ValueOf(pt).Elem()
+	selfType := reflect.TypeOf(pt).Elem()
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		field := selfType.Field(fieldIdx)
+		fieldVal := selfVal.Field(fieldIdx)
+
+		// check implements interface
+		fieldValType := fieldVal.Addr().Type()
+		if !fieldValType.Implements(propertyInterfaceType) {
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(), propertyInterfaceType.Name())
+			panic(msg)
+		}
+
+		// call validate method by interface
+		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
+		out := checkResult[0]
+		if !out.IsNil() {
+			err := out.Interface().(error)
+			tag := field.Tag.Get("json")
+			fieldName := strings.Split(tag, ",")[0]
+			return fieldName, err
+		}
 	}
 	return "", nil
 }
@@ -406,6 +373,7 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 		inputField := inputVal.Field(fieldIdx)
 		selfField := selfVal.Field(fieldIdx)
 		subFieldCount := inputField.NumField()
+		// subFields: Value, AsDefaultValue
 		for subFieldIdx := 0; subFieldIdx < subFieldCount; subFieldIdx++ {
 			inputFieldPtr := inputField.Field(subFieldIdx)
 			if inputFieldPtr.IsNil() {
@@ -425,6 +393,10 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 		}
 	}
 	return
+}
+
+type ProcessPropertyInterface interface {
+	Validate() error
 }
 
 type PropertyInt64 struct {
