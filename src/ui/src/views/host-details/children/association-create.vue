@@ -62,6 +62,7 @@
 
 <script>
     import cmdbAssociationPropertyFilter from './association-property-filter.vue'
+    import bus from '@/utils/bus.js'
     import { mapGetters, mapActions } from 'vuex'
     export default {
         name: 'cmdb-host-association-create',
@@ -104,7 +105,8 @@
                 currentOption: {},
                 currentAsstObj: '',
                 existInstAssociation: [],
-                tempData: []
+                tempData: [],
+                hasChange: false
             }
         },
         computed: {
@@ -193,6 +195,12 @@
                 this.getObjAssociation()
             ])
             this.setAssociationOptions()
+        },
+        beforeDestroy () {
+            if (this.hasChange) {
+                this.hasChange = false
+                bus.$emit('association-change')
+            }
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -378,6 +386,7 @@
                         this.$success(this.$t('Association["添加关联成功"]'))
                     }
                     this.getExistInstAssociation()
+                    this.hasChange = true
                 } catch (e) {
                     console.log(e)
                 }
