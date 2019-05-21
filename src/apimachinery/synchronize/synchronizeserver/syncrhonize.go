@@ -30,6 +30,6 @@ func (s *synchronize) Find(ctx context.Context, h http.Header, input *metadata.S
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	
+
 	return
 }

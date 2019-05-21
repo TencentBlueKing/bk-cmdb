@@ -57,7 +57,9 @@ func (fa *FetchAssociation) Fetch(ctx context.Context, dataClassify string, star
 		input.Condition.Merge(fa.getAppCondition())
 	}
 
-	result, err := fa.lgc.synchronizeSrv.SynchronizeSrv(fa.syncConfig.SynchronizeFlag).Find(ctx, fa.lgc.header, input)
+	result, err := fa.lgc.synchronizeSrv.SynchronizeSrv(fa.syncConfig.Name).Find(ctx, fa.lgc.header, input)
+	blog.V(5).Infof("SynchronizeSrv %s conditon:%#v, rid:%s", fa.syncConfig.Name, input, fa.lgc.rid)
+	blog.V(6).Infof("SynchronizeSrv %s result:%#v, rid:%s", fa.syncConfig.Name, result, fa.lgc.rid)
 	if err != nil {
 		blog.Errorf("FetchModuleHostConfig http do error. err:%s,input:%#v,rid:%s", err.Error(), input, fa.lgc.rid)
 		return nil, fa.lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
