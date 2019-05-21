@@ -314,6 +314,9 @@
                         this.setTableHeader(),
                         this.setFilterOptions()
                     ])
+                    if (this.$route.params.source) {
+                        this.filter.value = this.$route.params.source[this.filter.id].toString().replace(/(\<\/?em\>)/g, '')
+                    }
                     this.getTableData()
                 } catch (e) {
                     // ignore
