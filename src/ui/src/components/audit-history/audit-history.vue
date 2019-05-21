@@ -105,10 +105,10 @@
             this.refresh()
         },
         beforeDestroy () {
-            this.$http.cancel('getOperationLog')
+            this.$http.cancel('getUserOperationLog')
         },
         methods: {
-            ...mapActions('operationAudit', ['getOperationLog']),
+            ...mapActions('operationAudit', ['getUserOperationLog']),
             initDateRange () {
                 const start = this.$tools.formatTime(moment().subtract(14, 'days'), 'YYYY-MM-DD')
                 const end = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
@@ -125,11 +125,12 @@
                     this.pagination.current = 1
                     this.sendOperator = this.operator
                 }
-                this.getOperationLog({
+                this.getUserOperationLog({
+                    objId: this.target,
                     params: this.getParams(),
                     config: {
                         cancelPrevious: true,
-                        requestId: 'getOperationLog'
+                        requestId: 'getUserOperationLog'
                     }
                 }).then(data => {
                     this.list = data.info

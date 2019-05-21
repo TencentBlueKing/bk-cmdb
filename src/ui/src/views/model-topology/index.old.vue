@@ -138,6 +138,7 @@
             </span>
             <span class="icon-box is-del"
                 ref="deleteNodeIcon"
+                v-show="topoTooltip.showDelete"
                 @click="deleteNode">
                 <i class="icon-cc-del"></i>
             </span>
@@ -182,7 +183,8 @@
                     hoverNode: null,
                     hoverNodeTimer: null,
                     hoverEdge: null,
-                    hoverEdgeTimer: null
+                    hoverEdgeTimer: null,
+                    showDelete: true
                 },
                 topoEdit: {
                     isEdit: false,
@@ -553,6 +555,7 @@
             popupNodeTooltips (data) {
                 const nodeId = data.node
                 this.topoTooltip.hoverNode = this.network.nodes.find(node => node.id === nodeId)
+                this.checkIsShowDelete(nodeId)
                 this.$nextTick(() => {
                     const view = this.networkInstance.getViewPosition()
                     const scale = this.networkInstance.getScale()
@@ -578,6 +581,14 @@
                     deleteNodeIcon.style.top = y2 + 'px'
                     deleteNodeIcon.style.left = -1 * x2 + 'px'
                 })
+            },
+            checkIsShowDelete (id) {
+                if (this.isAdminView) {
+                    this.topoTooltip.showDelete = true
+                } else {
+                    const model = this.getModelById(id)
+                    this.topoTooltip.showDelete = !!this.$tools.getMetadataBiz(model)
+                }
             },
             clearHoverTooltip () {
                 this.topoTooltip.hoverNode = null
