@@ -497,6 +497,12 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleRowClick (item) {
+                this.$router.push({
+                    name: 'hostDetails',
+                    params: {
+                        id: item.host.bk_host_id
+                    }
+                })
                 const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
                 this.slider.show = true
                 this.slider.title = inst['bk_host_innerip']
