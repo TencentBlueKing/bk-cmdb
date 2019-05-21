@@ -3,6 +3,7 @@
         <div class="full-text-sticky-layout" ref="topSticky">
             <div class="search-bar">
                 <input id="fullTextSearch"
+                    ref="searchInput"
                     autocomplete="off"
                     class="search-keywords"
                     type="text"
@@ -122,7 +123,7 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
-                const notZhCn = this.query.queryString.replace(/\w/g, '').length === 0
+                const notZhCn = this.query.queryString.replace(/\w\.?/g, '').length === 0
                 return {
                     page: {
                         start: this.pagination.start,
@@ -149,7 +150,7 @@
             'query.queryString' (queryString) {
                 this.showNoData = false
                 this.hasData = false
-                window.location.hash = this.hash.replace(this.reg, this.query.queryString)
+                window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
                 this.query.objId = ''
                 if (queryString) {
                     this.propertyMap = {}
@@ -168,6 +169,9 @@
         },
         mounted () {
             this.initScrollListener(this.$refs.topSticky)
+            this.$nextTick(() => {
+                this.$refs.searchInput.focus()
+            })
         },
         destroyed () {
             removeMainScrollListener(this.scrollTop)
