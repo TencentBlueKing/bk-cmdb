@@ -161,7 +161,8 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
-	CCErrCommGetMultipleObject = 1199052
+	CCErrCommGetMultipleObject      = 1199052
+	CCErrCommAuthCenterIsNotEnabled = 1199053
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999
