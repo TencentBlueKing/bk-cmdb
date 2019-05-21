@@ -26,7 +26,7 @@
             <cmdb-table class="association-table"
                 v-show="localVisible"
                 :header="header"
-                :list="list"
+                :list="flatternList"
                 :show-footer="false"
                 :sortable="false"
                 :max-height="462"
@@ -43,6 +43,7 @@
 </template>
 
 <script>
+    import { mapGetters } from 'vuex'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -56,10 +57,6 @@
             },
             associationType: {
                 type: Object,
-                required: true
-            },
-            instances: {
-                type: Array,
                 required: true
             },
             visible: Boolean
@@ -77,6 +74,13 @@
             }
         },
         computed: {
+            ...mapGetters('hostDetails', [
+                'sourceInstances',
+                'targetInstances'
+            ]),
+            flatternList () {
+                return this.$tools.flatternList(this.properties, this.list)
+            },
             hostId () {
                 return parseInt(this.$route.params.id)
             },
@@ -105,6 +109,11 @@
             totalPage () {
                 return Math.ceil(this.pagination.count / this.pagination.size)
             },
+            instances () {
+                const topology = this.type === 'source' ? this.targetInstances : this.sourceInstances
+                const data = topology.find(data => data.bk_obj_id === this.id) || {}
+                return data.children || []
+            },
             instanceIds () {
                 return this.instances.map(instance => instance.bk_inst_id)
             },
@@ -128,6 +137,11 @@
             },
             localVisible (visible) {
                 if (visible) {
+                    this.getData()
+                }
+            },
+            instances () {
+                if (this.localVisible) {
                     this.getData()
                 }
             }

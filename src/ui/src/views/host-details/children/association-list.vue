@@ -7,7 +7,6 @@
                 :type="item.type"
                 :id="item.id"
                 :association-type="item.associationType"
-                :instances="association.instances"
                 :visible="!(itemIndex || associationIndex)">
             </cmdb-host-association-list-table>
         </template>
@@ -15,6 +14,7 @@
 </template>
 
 <script>
+    import bus from '@/utils/bus.js'
     import { mapGetters } from 'vuex'
     import cmdbHostAssociationListTable from './association-list-table.vue'
     export default {
@@ -26,9 +26,7 @@
             ...mapGetters('hostDetails', [
                 'mainLine',
                 'source',
-                'sourceInstances',
                 'target',
-                'targetInstances',
                 'associationTypes'
             ]),
             id () {
@@ -44,23 +42,17 @@
                     associations.forEach((association, index) => {
                         const isSource = index < this.source.length
                         const modelId = isSource ? association.bk_asst_obj_id : association.bk_obj_id
-                        const topologyData = isSource ? this.targetInstances : this.sourceInstances
-                        const modelTopologyData = topologyData.find(data => data.bk_obj_id === modelId) || {}
-                        const associationData = {
-                            ...association,
-                            instances: modelTopologyData.children || []
-                        }
                         const item = list.find(item => {
                             return isSource ? item.source === 'host' : item.target === 'host'
                         })
                         if (item) {
-                            item.associations.push(associationData)
+                            item.associations.push(association)
                         } else {
                             list.push({
                                 type: isSource ? 'source' : 'target',
                                 id: modelId,
                                 associationType: this.associationTypes.find(target => target.bk_asst_id === association.bk_asst_id),
-                                associations: [associationData]
+                                associations: [association]
                             })
                         }
                     })
@@ -81,6 +73,11 @@
         },
         created () {
             this.getData()
+            bus.$on('association-change', async () => {
+                const root = await this.getInstRelation()
+                this.$store.commit('hostDetails/setInstances', { type: 'source', instances: root.prev })
+                this.$store.commit('hostDetails/setInstances', { type: 'target', instances: root.next })
+            })
         },
         methods: {
             async getData () {
@@ -92,12 +89,13 @@
                         this.getAssociationType(),
                         this.getInstRelation()
                     ])
-                    const availabelSource = this.getAvailableAssociation(source)
-                    const availabelTarget = this.getAvailableAssociation(target, availabelSource)
+                    const mainLineModels = mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id))
+                    const availabelSource = this.getAvailableAssociation(source, [], mainLineModels)
+                    const availabelTarget = this.getAvailableAssociation(target, availabelSource, mainLineModels)
                     this.setState({
                         source: availabelSource,
                         target: availabelTarget,
-                        mainLine: mainLine.filter(model => !['biz', 'host'].includes(model.bk_obj_id)),
+                        mainLine: mainLineModels,
                         associationTypes: associationTypes,
                         root
                     })
@@ -157,11 +155,11 @@
                 })
                 return Promise.resolve(root)
             },
-            getAvailableAssociation (data, reference = []) {
+            getAvailableAssociation (data, reference = [], mainLine = []) {
                 return data.filter(association => {
                     const sourceId = association.bk_obj_id
                     const targetId = association.bk_asst_obj_id
-                    const isMainLine = this.mainLine.some(model => [sourceId, targetId].includes(model.bk_obj_id))
+                    const isMainLine = mainLine.some(model => [sourceId, targetId].includes(model.bk_obj_id))
                     const isExist = reference.some(target => target.id === association.id)
                     return !isMainLine && !isExist
                 })

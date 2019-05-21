@@ -22,8 +22,7 @@
             <component :is="activeView"></component>
         </div>
         <cmdb-slider :is-show.sync="showCreate">
-            <cmdb-host-association-create slot="content" v-if="showCreate">
-            </cmdb-host-association-create>
+            <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
         </cmdb-slider>
     </div>
 </template>
