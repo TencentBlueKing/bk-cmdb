@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -214,6 +215,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				}
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
+				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,

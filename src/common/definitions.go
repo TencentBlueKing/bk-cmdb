@@ -1033,3 +1033,7 @@ const (
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
 )
+
+const (
+	ContextRequestIDField = "request_id"
+)

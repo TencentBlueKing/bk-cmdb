@@ -30,13 +30,15 @@ import (
  */
 
 func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]ProcessSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := metadata.QueryCondition{
 		Fields:    []string{common.BKAppIDField, common.BKProcessIDField, common.BKProcessNameField},
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
 	if err != nil {
-		blog.V(3).Infof("get processes by business %d failed, err: %+v", businessID, err)
+		blog.V(3).Infof("get processes by business %d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get processes by business %d failed, err: %+v", businessID, err)
 	}
 	processes := make([]ProcessSimplify, 0)
@@ -52,6 +54,8 @@ func (am *AuthManager) CollectProcessesByBusinessID(ctx context.Context, header 
 }
 
 func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]ProcessSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
 
@@ -60,7 +64,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
 	if err != nil {
-		blog.Errorf("get processes by id %+v failed, err: %+v", ids, err)
+		blog.Errorf("get processes by id %+v failed, err: %+v, rid: %s", ids, err, rid)
 		return nil, fmt.Errorf("get processes by id failed, err: %+v", err)
 	}
 	processes := make([]ProcessSimplify, 0)
@@ -68,7 +72,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 		process := ProcessSimplify{}
 		_, err = process.Parse(item)
 		if err != nil {
-			blog.Errorf("collectProcessesByIDs by id %+v failed, parse process %+v failed, err: %+v ", ids, item, err)
+			blog.Errorf("collectProcessesByIDs by id %+v failed, parse process %+v failed, err: %+v, rid: %s", ids, item, err, rid)
 			return nil, fmt.Errorf("parse process from db data failed, err: %+v", err)
 		}
 		processes = append(processes, process)
@@ -136,7 +140,7 @@ func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Hea
 	if err != nil {
 		return fmt.Errorf("authorize processes failed, collect process by id failed, id: %+v, err: %+v", ids, err)
 	}
-	
+
 	return am.AuthorizeByProcesses(ctx, header, action, processes...)
 }
 
