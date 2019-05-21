@@ -30,6 +30,8 @@ import (
  */
 
 func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]SetSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	query := &metadata.QueryCondition{
@@ -38,7 +40,7 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 	}
 	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDSet, query)
 	if err != nil {
-		blog.Errorf("get set:%+v by businessID:%d failed, err: %+v", businessID, err)
+		blog.Errorf("get set:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get set by businessID:%d failed, err: %+v", businessID, err)
 	}
 
@@ -48,24 +50,25 @@ func (am *AuthManager) CollectSetByBusinessID(ctx context.Context, header http.H
 		setSimplify := SetSimplify{}
 		_, err := setSimplify.Parse(instance)
 		if err != nil {
-			blog.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
+			blog.Errorf("parse set %+v simplify information failed, err: %+v, rid: %s", setSimplify, err, rid)
 			return nil, fmt.Errorf("parse set %+v simplify information failed, err: %+v", setSimplify, err)
 		}
 		sets = append(sets, setSimplify)
 	}
 
-	blog.V(4).Infof("list sets by business:%d result: %+v", businessID, sets)
+	blog.V(4).Infof("list sets by business:%d result: %+v, rid: %s", businessID, sets, rid)
 	return sets, nil
 }
 
 func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKSetIDField).In(setIDs).ToMapStr(),
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, &cond)
 	if err != nil {
-		blog.V(3).Infof("get sets by id failed, err: %+v", err)
+		blog.V(3).Infof("get sets by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get sets by id failed, err: %+v", err)
 	}
 	sets := make([]SetSimplify, 0)
@@ -123,7 +126,7 @@ func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header,
 	if am.RegisterSetEnabled == false {
 		return nil
 	}
-	
+
 	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("collect set by id failed, err: %+v", err)
@@ -132,12 +135,14 @@ func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action, sets ...SetSimplify) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if am.Enabled() == false {
 		return nil
 	}
 
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, sets: %+v", sets)
+		blog.V(4).Infof("skip authorization for reading, sets: %+v, rid: %s", sets, rid)
 		return nil
 	}
 	if am.RegisterSetEnabled == false {
