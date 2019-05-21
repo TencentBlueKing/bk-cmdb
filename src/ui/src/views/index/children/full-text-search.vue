@@ -92,7 +92,6 @@
         },
         data () {
             return {
-                reg: /(?<=keywords=).*/,
                 scrollTop: null,
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
@@ -165,7 +164,7 @@
                 back: true
             })
             this.$store.commit('setHeaderTitle', this.$t('Common["搜索结果"]'))
-            this.query.queryString = this.reg.exec(this.hash)[0]
+            this.query.queryString = this.$route.query.keywords
         },
         mounted () {
             this.initScrollListener(this.$refs.topSticky)
