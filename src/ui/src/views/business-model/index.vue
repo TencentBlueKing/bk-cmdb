@@ -1,5 +1,13 @@
 <template>
-    <div class="business-topo-wrapper">
+    <div class="business-topo-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            style="text-align: left;"
+            :feature-name="'modelBusiness'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ModelManagement[\'业务层级提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%882%EF%BC%89%E6%96%B0%E5%A2%9E%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B1%82%E7%BA%A7'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="topo-level" v-bkloading="{ isLoading: $loading() }">
             <div class="topo-node"
                 v-for="(model, index) in topo"
@@ -35,15 +43,18 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
+    import featureTips from '@/components/feature-tips/index'
     import { OPERATION } from './router.config.js'
     const NODE_MARGIN = 62
 
     export default {
         components: {
-            theCreateModel
+            theCreateModel,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
@@ -55,14 +66,15 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
                 return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务层级"]'))
+            this.showFeatureTips = this.featureTipsParams['modelBusiness']
             this.getMainLineModel()
         },
         methods: {
@@ -149,7 +161,7 @@
             display: inline-block;
             vertical-align: middle;
             width: 0;
-            height: 100%;
+            height: calc(100% - 20px);
         }
     }
     .topo-level {

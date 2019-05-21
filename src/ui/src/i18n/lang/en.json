@@ -124,7 +124,8 @@
         "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
-        "请选择时间": "Please select time"
+        "请选择时间": "Please select time",
+        "更多详情": "More details"
     },
     "Nav": {
         "首页": "Index",
@@ -142,7 +143,7 @@
         "系统权限管理": "System Authority",
         "模型管理": "Model Management",
         "模型拓扑": "Model Topology",
-        "业务模型": "Business Model",
+        "业务层级": "Business Level",
         "关联模型": "Association Model",
         "事件推送": "Event Push",
         "主机查询": "Host Query",
@@ -238,7 +239,8 @@
         "收起": "Collapse",
         "展开": "Expand",
         "主机身份": "Host Identifier",
-        "事件推送功能提示": "The event push function can realize real-time notification to the associated system when the configuration information changes, and currently supports the push mode of http."
+        "事件推送功能提示": "The event push function can realize real-time notification to the associated system when the configuration information changes, and currently supports the push mode of http.",
+        "事件推送顶部提示": "The “event push” function enables real-time notification to the associated system when configuration information changes."
     },
     "Permission": {
         "权限管理": "Permission Manage",
@@ -407,7 +409,10 @@
         "自定义": "Custom",
         "新增模型提示": "Can only add in custom group",
         "无自定义分组": "There are no custom groups",
-        "停用模型提示": "No model disabled"
+        "停用模型提示": "No model disabled",
+        "模型顶部提示": "The model can view and dynamically change the current data structure of the CMDB. For example, a new device needs to be recorded to the CMDB, which can be implemented by creating a new corresponding model.",
+        "业务层级提示": "The service level shows the hierarchical settings of the current service topology. You can modify the attributes of each layer or increase the topology level according to the needs of the enterprise.",
+        "关联关系提示": "The “association type” is the classification associated with the model. For example, the relationship between the host and the switch can be classified as “uplink” type."
     },
     "HostResourcePool": {
         "资源池": "Resource Pool",
@@ -471,7 +476,7 @@
         "查询定义": "Group Definition",
         "确认要删除": "Confirm to delete {name}?",
         "保存后的查询可通过接口调用生效": "The saved group can be validated through an interface call",
-        "动态分组空数据提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
+        "动态分组提示": "Dynamic grouping is mainly used to define commonly used conditional queries, and can quickly retrieve target hosts based on dynamic grouping when operating platforms or standard operations"
     },
     "ProcessManagement": {
         "进程": "Process",
@@ -499,7 +504,8 @@
         "在进程管理中绑定进程到模块，": "To bind a process to a module in process management,",
         "点击此跳转": "click to jump",
         "进程信息": "Process information",
-        "当前业务并无进程，可点击下方按钮新增": "The current business does not have a process, click the button below to add"
+        "当前业务并无进程，可点击下方按钮新增": "The current business does not have a process, click the button below to add",
+        "进程管理提示": "The \"process management\" function can help the business management process port and other basic information. The main application scenario is the monitoring system of Blue Whale monitoring the process."
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
