@@ -67,12 +67,16 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 }
 
 // SelectObjectAttWithParams select object att with params
-func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attributeArr []metadata.Attribute, err error) {
 	attributeArr = make([]metadata.Attribute, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
+	}
+	if bizID != 0 {
+		bizCond := metadata.NewPublicOrBizConditionByBizID(bizID)
+		queryCond.Condition.Merge(bizCond)
 	}
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	return result.Info, err
