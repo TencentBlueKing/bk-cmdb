@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal"
 )
@@ -103,7 +104,7 @@ func (s *setIdentifierFlag) addFlag(ctx core.ContextParams) errors.CCErrorCoder 
 	}
 	// 如果同步数据cmdb身份标识已经存在，不做任何操作。否则新加同步标志
 	data := mapstr.MapStr{
-		getMetaSyncFieldItem(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
+		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
 	err = s.dbProxy.Table(s.tableName).UpdateMultiModel(ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpAddToSet, Doc: data})
 	if err != nil {
@@ -119,7 +120,7 @@ func (s *setIdentifierFlag) replaceFlag(ctx core.ContextParams) errors.CCErrorCo
 	conds.Field(s.instIDField).In(s.params.IdentifierID)
 	condMap := conds.ToMapStr()
 	data := mapstr.MapStr{
-		getMetaSyncFieldItem(common.MetaDataSynchronizeIdentifierField): []string{s.params.Flag},
+		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): []string{s.params.Flag},
 	}
 	err := s.dbProxy.Table(s.tableName).Update(ctx, condMap, data)
 	if err != nil {
@@ -136,7 +137,7 @@ func (s *setIdentifierFlag) deleteFlag(ctx core.ContextParams) errors.CCErrorCod
 	conds.Field(common.MetadataField).NotEq(nil)
 	condMap := conds.ToMapStr()
 	data := mapstr.MapStr{
-		getMetaSyncFieldItem(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
+		util.BuildMongoSyncItemField(common.MetaDataSynchronizeIdentifierField): s.params.Flag,
 	}
 	err := s.dbProxy.Table(s.tableName).UpdateMultiModel(ctx, condMap, dal.ModeUpdate{Op: dal.UpdateOpPull, Doc: data})
 	if err != nil {
