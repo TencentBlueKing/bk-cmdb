@@ -227,6 +227,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
@@ -241,7 +242,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
-					blog.Errorf("read http request body failed, error:%s", err.Error())
+					blog.Errorf("read http request body failed, err: %+v, rid: %s", err, rid)
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
@@ -250,7 +251,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -258,7 +259,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -271,7 +272,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
-					ReqID:           util.GetHTTPCCRequestID(req.Request.Header),
+					ReqID:           rid,
 					User:            user,
 				},
 					req.PathParameter,

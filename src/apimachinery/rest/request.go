@@ -200,6 +200,11 @@ func (r *Request) WrapURL() *url.URL {
 }
 
 func (r *Request) Do() *Result {
+	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
+	if rid == "" {
+		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+	}
+
 	result := new(Result)
 	if r.err != nil {
 		result.Err = r.err
@@ -258,7 +263,7 @@ func (r *Request) Do() *Result {
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					if r.peek {
-						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					}
 					return result
 				}
@@ -280,13 +285,13 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					return result
 				}
 				body = data
 			}
 			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
-				cost, string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
+				cost, string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status
