@@ -28,6 +28,11 @@ import (
 func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	if !s.Config.AuthCenter.Enable {
+		blog.Error("received init auth center request, but not enable authcenter, maybe the configure is wrong.")
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommAuthCenterIsNotEnabled)})
+		return
+	}
 
 	bizs := []metadata.BizInst{}
 	if err := s.db.Table(common.BKTableNameBaseApp).Find(condition.CreateCondition().Field("default").NotEq(1).ToMapStr()).All(s.ctx, &bizs); err != nil {
@@ -50,10 +55,18 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	associationKinds := make([]metadata.AssociationKind, 0)
+	if err := s.db.Table(common.BKTableNameAsstDes).Find(condition.CreateCondition().Field("ispre").Eq(true).ToMapStr()).All(s.ctx, &associationKinds); err != nil {
+		blog.Errorf("init authcent with association kind, but get details association kind failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
+		return
+	}
+
 	if err := s.authCenter.Init(s.ctx, meta.InitConfig{
-		Bizs:            bizs,
-		Models:          models,
-		Classifications: cls,
+		Bizs:             bizs,
+		Models:           models,
+		Classifications:  cls,
+		AssociationKinds: associationKinds,
 	}); nil != err {
 		blog.Errorf("init authcenter error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
