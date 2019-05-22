@@ -2,7 +2,7 @@
     <header class="header-layout clearfix"
         :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
-            <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
+            <i class="breadcrumbs-back icon-cc-arrow" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
@@ -125,7 +125,7 @@
     .breadcrumbs{
         line-height: 60px;
         position: relative;
-        margin: 0 0 0 25px;
+        margin: 0 0 0 12px;
         font-size: 0;
         .breadcrumbs-back{
             display: inline-block;
@@ -135,16 +135,15 @@
             line-height: 32px;
             text-align: center;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
             color: #3c96ff;
-            margin-right: 8px;
+            transition: background-color .1s ease-in;
             &:hover{
-                background-color: #F0F1F5;
+                background-color: #f0f1f5;
             }
         }
         .breadcrumbs-current{
-            margin: 0;
+            margin: 0 0 0 8px;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
