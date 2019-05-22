@@ -122,6 +122,7 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 		if nil != err {
 			return nil, err
 		}
+		hasInstID = true
 		instItem.Field = common.BKInstParentStr
 		instItem.Operator = i.Operator
 		instItem.Value = i.Value
