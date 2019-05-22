@@ -784,6 +784,11 @@
         "实时状态": "Real-Time Status",
         "变更记录": "Change Log",
         "基本值": "Basic Value",
-        "最近更新时间": "Update Time"
+        "最近更新时间": "Update Time",
+        "关联": "Association",
+        "新增关联": "New Association",
+        "批量取消": "Batch Cancel",
+        "列表": "List",
+        "暂无关联关系": "No Association"
     }
 }

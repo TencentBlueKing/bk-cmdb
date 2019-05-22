@@ -2,19 +2,23 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <bk-button type="primary" class="options-button" @click="showCreate = true">{{$t('Association["新增关联"]')}}</bk-button>
-                <bk-button type="default" class="options-button" v-show="false">{{$t('Association["批量取消"]')}}</bk-button>
+                <bk-button type="primary" class="options-button"
+                    v-if="updateAuth && hasAssociation"
+                    @click="showCreate = true">
+                    {{$t('HostDetails["新增关联"]')}}
+                </bk-button>
+                <bk-button type="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
                     :type="activeView === viewName.list ? 'primary' : 'default'"
                     @click="toggleView(viewName.list)">
-                    {{$t('Association["列表"]')}}
+                    {{$t('HostDetails["列表"]')}}
                 </bk-button>
                 <bk-button class="options-button options-button-view"
                     :type="activeView === viewName.graphics ? 'primary' : 'default'"
                     @click="toggleView(viewName.graphics)">
-                    {{$t('Association["拓扑"]')}}
+                    {{$t('HostDetails["拓扑"]')}}
                 </bk-button>
             </div>
         </div>
@@ -31,6 +35,7 @@
     import cmdbHostAssociationList from './association-list.vue'
     import cmdbHostAssociationGraphics from './association-graphics.vue'
     import cmdbHostAssociationCreate from './association-create.vue'
+    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-association',
         components: {
@@ -46,6 +51,19 @@
                 },
                 activeView: cmdbHostAssociationList.name,
                 showCreate: false
+            }
+        },
+        computed: {
+            updateAuth () {
+                const isResourceHost = this.$route.name === RESOURCE_HOST
+                if (isResourceHost) {
+                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                }
+                return this.$isAuthorized(OPERATION.U_HOST)
+            },
+            hasAssociation () {
+                const association = this.$store.state.hostDetails.association
+                return !!(association.source.length || association.target.length)
             }
         },
         methods: {

@@ -35,7 +35,7 @@ export const viewRouters = [
     eventpush,
     history,
     hosts,
-    hostDetails,
+    ...hostDetails,
     modelAssociation,
     modelTopology,
     process,
