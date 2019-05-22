@@ -24,6 +24,8 @@ import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
 
+import tree from '@/views/tree/router.config'
+
 Vue.use(Router)
 
 export const viewRouters = [
@@ -42,7 +44,8 @@ export const viewRouters = [
     ...generalModel,
     ...business,
     ...model,
-    ...permission
+    ...permission,
+    tree
 ]
 
 const statusRouters = [
