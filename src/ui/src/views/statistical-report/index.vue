@@ -312,6 +312,7 @@
                     }
                 })
             },
+<<<<<<< HEAD
             async openNew (type, host, data, key) {
                 this.editType.hostType = host
                 this.editType.key = key
@@ -338,6 +339,22 @@
                     editList.push(data)
                 } else {
                     editList[this.editType.key] = data
+=======
+            mutipChart () {
+                const muDiv = document.getElementById('muDiv')
+                const trace1 = {
+                    x: ['giraffes', 'orangutans', 'monkeys'],
+                    y: [20, 14, 23],
+                    name: 'SF Zoo',
+                    type: 'line'
+                }
+
+                const trace2 = {
+                    x: ['giraffes', 'orangutans', 'monkeys'],
+                    y: [12, 18, 29],
+                    name: 'LA Zoo',
+                    type: 'line'
+>>>>>>> 22d308250... feature： statistical ui
                 }
                 this.isShow = false
                 await this.getNavData(data, this.editType.hostType,
