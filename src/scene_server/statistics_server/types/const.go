@@ -10,12 +10,29 @@
  * limitations under the License.
  */
 
-package service
+package types
 
-import "configcenter/src/common"
+import (
+	"configcenter/src/common"
+)
 
 // Report statistics_server cache keys
 const (
 	HostInfoStatistics = common.BKCacheKeyV3Prefix + "hostinfostatistics:list"
 	InstInfoStatistics = common.BKCacheKeyV3Prefix + "instinfostatistics:list"
+	HostCountBizLevel  = common.BKCacheKeyV3Prefix + "hostcountbizlevel:list"
 )
+
+type StatisticalObject struct {
+	ObjectID  string        `json:"bk_object_id"`
+	ChartType string        `json:"chart_type"`
+	Field     string        `json:"field"`
+	Width     string        `json:"width"`
+	Position  ChartPosition `json:"position"`
+}
+
+type ChartPosition struct {
+	Attributes string `json:"attributes"`
+	Left       string `json:"left"`
+	Right      string `json:"right"`
+}

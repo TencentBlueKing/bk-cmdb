@@ -12,11 +12,16 @@
 
 package metadata
 
-type HostStatisticsData struct {
-	StatisticsFields StatisticalDimension
-	Info             map[string]SpecificDimension
+import "time"
+
+type StatisticChartInfo struct {
+	SticId     int64     `json:"bk_stic_id"`
+	ObjId      string    `json:"bk_obj_id"`
+	Title      string    `json:"title"`
+	ChartType  string    `json:"bk_chart_type"`
+	Field      string    `json:"bk_field"`
+	Width      string    `json:"bk_width"`
+	Position   string    `json:"position"`
+	CreateTime time.Time `json:"create_time"`
+	LastTime   time.Time `json:"last_time"`
 }
-
-type SpecificDimension []map[string]interface{}
-
-type StatisticalDimension []string
