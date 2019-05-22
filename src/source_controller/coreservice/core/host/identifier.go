@@ -29,16 +29,15 @@ type identifier struct {
 	hosts       []metadata.HostIdentifier
 
 	// tmp data
-	setIDs            []int64
-	moduleIDs         []int64
-	bizIDs            []int64
-	sets              map[int64]metadata.SetInst
-	modules           map[int64]*metadata.ModuleInst
-	bizs              map[int64]metadata.BizInst
-	clouds            map[int64]metadata.CloudInst
-	procs             map[int64]metadata.HostIdentProcess
-	modulehosts       map[int64][]metadata.ModuleHost
-	hostProcRealtions map[int64][]metadata.ProcessInstanceRelation
+	setIDs           []int64
+	moduleIDs        []int64
+	bizIDs           []int64
+	sets             map[int64]metadata.SetInst
+	modules          map[int64]*metadata.ModuleInst
+	bizs             map[int64]metadata.BizInst
+	clouds           map[int64]metadata.CloudInst
+	hostProcRelation map[int64][]metadata.HostIdentProcess
+	modulehosts      map[int64][]metadata.ModuleHost
 }
 
 func (h *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
@@ -54,13 +53,12 @@ func (h *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchH
 
 func (h *hostManager) NewIdentifier() *identifier {
 	return &identifier{
-		hostManager:       h,
-		modulehosts:       make(map[int64][]metadata.ModuleHost, 0),
-		sets:              make(map[int64]metadata.SetInst, 0),
-		bizs:              make(map[int64]metadata.BizInst, 0),
-		clouds:            make(map[int64]metadata.CloudInst, 0),
-		procs:             make(map[int64]metadata.HostIdentProcess, 0),
-		hostProcRealtions: make(map[int64][]metadata.ProcessInstanceRelation, 0),
+		hostManager:      h,
+		modulehosts:      make(map[int64][]metadata.ModuleHost, 0),
+		sets:             make(map[int64]metadata.SetInst, 0),
+		bizs:             make(map[int64]metadata.BizInst, 0),
+		clouds:           make(map[int64]metadata.CloudInst, 0),
+		hostProcRelation: make(map[int64][]metadata.HostIdentProcess, 0),
 	}
 }
 
@@ -80,11 +78,11 @@ func (i *identifier) Identifier(ctx core.ContextParams, hostIDs []int64) ([]meta
 		return nil, err
 	}
 
-	err = i.identifierHostTopoInfo(ctx)
+	err = i.findHostTopoInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = i.identifierHostCloud(ctx)
+	err = i.findHostCloud(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +132,8 @@ func (i *identifier) findModuleHostRelation(ctx core.ContextParams, hostIDs []in
 	return nil
 }
 
-// identifierHostTopoInfo handle host biz,set, module info
-func (i *identifier) identifierHostTopoInfo(ctx core.ContextParams) error {
+// findHostTopoInfo handle host biz,set, module info
+func (i *identifier) findHostTopoInfo(ctx core.ContextParams) error {
 
 	// fetch set info
 	if len(i.setIDs) > 0 {
@@ -143,7 +141,7 @@ func (i *identifier) identifierHostTopoInfo(ctx core.ContextParams) error {
 		cond := condition.CreateCondition().Field(common.BKSetIDField).In(i.setIDs)
 		err := i.hostManager.dbExecQuery(ctx, common.BKTableNameBaseSet, nil, cond.ToMapStr(), &setInfoArr)
 		if err != nil {
-			blog.Errorf("identifierHostTopoInfo query set info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
+			blog.Errorf("findHostTopoInfo query set info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
 			return err
 		}
 		for _, setInfo := range setInfoArr {
@@ -155,7 +153,7 @@ func (i *identifier) identifierHostTopoInfo(ctx core.ContextParams) error {
 		cond := condition.CreateCondition().Field(common.BKModuleIDField).In(i.moduleIDs)
 		err := i.hostManager.dbExecQuery(ctx, common.BKTableNameBaseModule, nil, cond.ToMapStr(), &moduleInfoArr)
 		if err != nil {
-			blog.Errorf("identifierHostTopoInfo query module info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
+			blog.Errorf("findHostTopoInfo query module info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
 			return err
 		}
 		for _, moduleInfo := range moduleInfoArr {
@@ -167,20 +165,20 @@ func (i *identifier) identifierHostTopoInfo(ctx core.ContextParams) error {
 		cond := condition.CreateCondition().Field(common.BKAppIDField).In(i.bizIDs)
 		err := i.hostManager.dbExecQuery(ctx, common.BKTableNameBaseApp, nil, cond.ToMapStr(), &bizInfoArr)
 		if err != nil {
-			blog.Errorf("identifierHostTopoInfo query biz info error. rid:%s", ctx.ReqID)
+			blog.Errorf("findHostTopoInfo query biz info error. rid:%s", ctx.ReqID)
 			return err
 		}
 		for _, bizInfo := range bizInfoArr {
 			i.bizs[bizInfo.BizID] = bizInfo
 		}
 	}
-	blog.V(5).Infof("identifierHostTopoInfo query host topo info. bizIDs:%#v, setIDs:%#v, moduleIDs:%#v, biz:%#v, set:%#v, module:%#v, rid;%s", i.bizIDs, i.setIDs, i.moduleIDs, i.bizs, i.sets, i.modules, ctx.ReqID)
+	blog.V(5).Infof("findHostTopoInfo query host topo info. bizIDs:%#v, setIDs:%#v, moduleIDs:%#v, biz:%#v, set:%#v, module:%#v, rid;%s", i.bizIDs, i.setIDs, i.moduleIDs, i.bizs, i.sets, i.modules, ctx.ReqID)
 
 	return nil
 }
 
-// identifierHostCloud find host cloud area info
-func (i *identifier) identifierHostCloud(ctx core.ContextParams) error {
+// findHostCloud find host cloud area info
+func (i *identifier) findHostCloud(ctx core.ContextParams) error {
 	var cloudIDs []int64
 	// parse  host  cloud id
 	for _, host := range i.hosts {
@@ -192,11 +190,11 @@ func (i *identifier) identifierHostCloud(ctx core.ContextParams) error {
 		cond := condition.CreateCondition().Field(common.BKCloudIDField).In(cloudIDs)
 		err := i.hostManager.dbExecQuery(ctx, common.BKTableNameBasePlat, nil, cond.ToMapStr(), &cloudInfoArr)
 		if err != nil {
-			blog.Errorf("identifierHostCloud query cloud info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
+			blog.Errorf("findHostCloud query cloud info error. condition:%#v, rid:%s", cond.ToMapStr(), ctx.ReqID)
 			return err
 		}
 
-		blog.V(5).Infof("identifierHostCloud query cloud info. cloud id:%#v, cloud info:%#v, rid;%s", cloudIDs, cloudInfoArr, ctx.ReqID)
+		blog.V(5).Infof("findHostCloud query cloud info. cloud id:%#v, cloud info:%#v, rid;%s", cloudIDs, cloudInfoArr, ctx.ReqID)
 
 		for _, cloudInfo := range cloudInfoArr {
 			i.clouds[cloudInfo.CloudID] = cloudInfo
@@ -221,9 +219,37 @@ func (i *identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v, rid;%s", hostIDs, relations, ctx.ReqID)
 
 	var procIDs []int64
+	var serviceInstIDs []int64
+	// 进程与服务实例的关系
+	procServiceInstMap := make(map[int64][]int64, 0)
 	for _, relation := range relations {
 		procIDs = append(procIDs, relation.ProcessID)
-		i.hostProcRealtions[relation.HostID] = append(i.hostProcRealtions[relation.HostID], relation)
+		serviceInstIDs = append(serviceInstIDs, relation.ServiceInstanceID)
+		procServiceInstMap[relation.ProcessID] = append(procServiceInstMap[relation.ProcessID], relation.ServiceInstanceID)
+	}
+
+	serviceInstInfos := make([]metadata.ServiceInstance, 0)
+	serviceInstCond := condition.CreateCondition().Field(common.BKFieldID).In(serviceInstIDs)
+	err = i.hostManager.dbExecQuery(ctx, common.BKTableNameServiceInstance, nil, serviceInstCond.ToMapStr(), &serviceInstInfos)
+	if err != nil {
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s, rid:%s", common.BKTableNameBaseProcess, serviceInstCond.ToMapStr(), ctx.ReqID)
+		return err
+	}
+	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v, rid;%s", serviceInstIDs, serviceInstInfos, ctx.ReqID)
+	// 服务实例与模块的关系
+	serviceInstModuleRealtion := make(map[int64][]int64, 0)
+	for _, serviceInstInfo := range serviceInstInfos {
+		serviceInstModuleRealtion[serviceInstInfo.ID] = append(serviceInstModuleRealtion[serviceInstInfo.ID], serviceInstInfo.ModuleID)
+	}
+
+	procModuleRelation := make(map[int64][]int64, 0)
+	for procID, serviceInstIDs := range procServiceInstMap {
+		for _, serviceInstID := range serviceInstIDs {
+			for _, moduleID := range serviceInstModuleRealtion[serviceInstID] {
+				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
+			}
+		}
+
 	}
 
 	procInfos := make([]metadata.HostIdentProcess, 0)
@@ -237,8 +263,19 @@ func (i *identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 
 	blog.V(5).Infof("findHostServiceInst query process info. procIDs:%#v, info:%#v, rid;%s", procIDs, procInfos, ctx.ReqID)
 
+	procs := make(map[int64]metadata.HostIdentProcess, 0)
 	for _, procInfo := range procInfos {
-		i.procs[procInfo.ProcessID] = procInfo
+		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
+			procInfo.BindModules = moduleIDs
+		}
+		procs[procInfo.ProcessID] = procInfo
+	}
+
+	// 主机和进程之间的关系,生成主机与进程的关系
+	for _, relation := range relations {
+		if procInfo, ok := procs[relation.ProcessID]; ok {
+			i.hostProcRelation[relation.HostID] = append(i.hostProcRelation[relation.HostID], procInfo)
+		}
 	}
 
 	return nil
@@ -270,16 +307,8 @@ func (i *identifier) build(ctx core.ContextParams) {
 				mod.SetStatus = set.SetStatus
 			}
 
-			// 根据主机ID及服务实例。获取主机上的进程信息
-			for _, hostProcRealtions := range i.hostProcRealtions[host.HostID] {
-				if proc, ok := i.procs[hostProcRealtions.ProcessID]; ok {
-					proc.BindModules = append(proc.BindModules, hostProcRealtions.ServiceInstanceID)
-					host.Process = append(host.Process, proc)
-				}
-
-			}
-
 		}
+		host.Process = i.hostProcRelation[host.HostID]
 		i.hosts[idx] = host
 
 	}
