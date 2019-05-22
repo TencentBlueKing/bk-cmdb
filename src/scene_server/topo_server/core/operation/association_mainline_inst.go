@@ -71,20 +71,20 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	defaultCond := &metadata.QueryInput{}
 	defaultCond.Condition = cond.ToMapStr()
 
-	// fetch all parent inst
+	// 获取 current 模型的所有实例
 	_, currentInsts, err := cli.inst.FindInst(params, current, defaultCond, false)
 	if nil != err {
 		blog.Errorf("[operation-asst] failed to find current object(%s) inst, err: %+v, rid: %s", cObj.ObjectID, err, rid)
 		return err
 	}
 
+	// 检查实例删除后，会不会出现重名冲突
 	var canReset bool
 	var repeatedInstName string
 	if canReset, repeatedInstName, err = cli.checkInstNameRepeat(params, currentInsts); nil != err {
 		blog.Errorf("[operation-asst] can not be reset, err: %+v, rid: %s", err, rid)
 		return err
 	}
-
 	if canReset == false {
 		blog.Errorf("[operation-asst] can not be reset, inst name repeated, inst: %s, rid: %s", repeatedInstName, rid)
 		errMsg := params.Err.Error(common.CCErrTopoDeleteMainLineObjectAndInstNameRepeat).Error() + " " + repeatedInstName
@@ -92,9 +92,8 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 	}
 
 	// NEED FIX: 下面循环中的continue ，会在处理实例异常的时候跳过当前拓扑的处理，此方式可能会导致某个业务拓扑失败，但是不会影响所有。
-	// reset the parent's inst
+	// 修改 currentInsts 所有孩子结点的父节点，为 currentInsts 的父节点，并删除 currentInsts
 	for _, currentInst := range currentInsts {
-		// delete the current inst
 		instID, err := currentInst.GetInstID()
 		if nil != err {
 			blog.Errorf("[operation-asst] failed to get the inst id from the inst(%#v), rid: %s", currentInst.ToMapStr(), rid)
@@ -103,21 +102,20 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 
 		parentID, err := currentInst.GetParentID()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent id, the current inst(%v), err: %s", cObj.ObjectID, currentInst.GetValues(), err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline parent id, the current inst(%v), err: %+v, rid: %s", cObj.ObjectID, currentInst.GetValues(), err, rid)
 			continue
 		}
 
 		// reset the child's parent
-		childs, err := currentInst.GetMainlineChildInst()
+		children, err := currentInst.GetMainlineChildInst()
 		if nil != err {
-			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, err: %s", cObj.ObjectID, err.Error())
+			blog.Errorf("[operation-asst] failed to get the object(%s) mainline child inst, err: %+v, rid: %s", cObj.ObjectID, err, rid)
 			continue
 		}
-		for _, child := range childs {
-
+		for _, child := range children {
 			// set the child's parent
 			if err = child.SetMainlineParentInst(parentID); nil != err {
-				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %s", child.GetObject().Object().ObjectID, err.Error())
+				blog.Errorf("[operation-asst] failed to set the object(%s) mainline child inst, err: %+v, rid: %s", child.GetObject().Object().ObjectID, err, rid)
 				continue
 			}
 		}
@@ -126,7 +124,7 @@ func (cli *association) ResetMainlineInstAssociatoin(params types.ContextParams,
 		cond := condition.CreateCondition()
 		cond.Field(currentInst.GetObject().GetInstIDFieldName()).Eq(instID)
 		if err := cli.inst.DeleteInst(params, current, cond, false); nil != err {
-			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), err: %s", currentInst.ToMapStr(), err.Error())
+			blog.Errorf("[operation-asst] failed to delete the current inst(%#v), err: %+v, rid: %s", currentInst.ToMapStr(), err, rid)
 			continue
 		}
 	}
