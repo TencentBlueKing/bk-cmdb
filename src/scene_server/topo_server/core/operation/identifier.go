@@ -80,7 +80,7 @@ func (g *identifier) SearchIdentifier(params types.ContextParams, objType string
 		hostIDs = append(hostIDs, hostID)
 	}
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
-	rsp, err := g.clientSet.CoreService().Host().Identifier(context.Background(), params.Header, queryHostIdentifier)
+	rsp, err := g.clientSet.CoreService().Host().FindIdentifier(context.Background(), params.Header, queryHostIdentifier)
 	if nil != err {
 		blog.ErrorJSON("[identifier]  SearchIdentifier http do error. error:%s, input:%s,  rid:%s", err.Error(), params, params.ReqID)
 		return nil, params.Err.CCErrorf(common.CCErrCommHTTPDoRequestFailed)
