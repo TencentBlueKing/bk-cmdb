@@ -509,7 +509,7 @@ func (p *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *res
 	// if true, then create a new process instance for every service instance with process template's default value.
 	for id, pt := range processTemplateMap {
 		for svcID, templates := range serviceInstanceWithTemplateMap {
-			if _, exist := templates[id]; !exist {
+			if _, exist := templates[id]; exist {
 				// nothing is changed.
 				continue
 			}
