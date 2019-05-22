@@ -66,6 +66,15 @@ func GetHTTPCCRequestID(header http.Header) string {
 	return rid
 }
 
+func ExtractRequestIDFromContext(ctx context.Context) string {
+	rid := ctx.Value(common.ContextRequestIDField)
+	ridValue, ok := rid.(string)
+	if ok == true {
+		return ridValue
+	}
+	return ""
+}
+
 // GetSupplierID return supplier_id from http header
 func GetSupplierID(header http.Header) (int64, error) {
 	return GetInt64ByInterface(header.Get(common.BKHTTPSupplierID))
@@ -87,10 +96,13 @@ func GetHTTPCCTransaction(header http.Header) string {
 
 // GetDBContext returns a new context that contains JoinOption
 func GetDBContext(parent context.Context, header http.Header) context.Context {
-	return context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
-		RequestID: header.Get(common.BKHTTPCCRequestID),
+	rid := header.Get(common.BKHTTPCCRequestID)
+	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
+		RequestID: rid,
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	return ctx
 }
 
 // IsNil returns whether value is nil value, including map[string]interface{}{nil}, *Struct{nil}

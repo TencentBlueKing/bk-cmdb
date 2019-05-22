@@ -27,6 +27,7 @@ import (
 	"configcenter/src/auth/authcenter/permit"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
+	commonutil "configcenter/src/common/util"
 )
 
 const (
@@ -193,6 +194,7 @@ func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (dec
 }
 
 func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error) {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
 	decisions = make([]meta.Decision, len(resources))
 	if !ac.Config.Enable {
 		for i := range decisions {
@@ -229,7 +231,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 	for index, rsc := range resources {
 		action, err := adaptorAction(&rsc)
 		if err != nil {
-			blog.Errorf("auth batch, but adaptor action:%s failed, err: %v", rsc.Action, err)
+			blog.Errorf("auth batch, but adaptor action:%s failed, err: %v, rid: %s", rsc.Action, err, rid)
 			return nil, err
 		}
 
@@ -237,19 +239,19 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 		if permit.ShouldSkipAuthorize(&rsc) {
 			// this resource should be skipped, do not need to verify in auth center.
 			decisions[index].Authorized = true
-			blog.V(5).Infof("skip authorization for resource: %+v", rsc)
+			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", rsc, rid)
 			continue
 		}
 
 		info, err := adaptor(&rsc)
 		if err != nil {
-			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v", rsc.Basic.Type, err)
+			blog.Errorf("auth batch, but adaptor resource type:%s failed, err: %v, rid: %s", rsc.Basic.Type, err, rid)
 			return nil, err
 		}
 
 		// modify special resource
 		if rsc.Type == meta.MainlineModel || rsc.Type == meta.ModelTopology {
-			blog.Warnf("force convert scope type to global for resource type: %s", rsc.Type)
+			blog.Warnf("force convert scope type to global for resource type: %s, rid: %s", rsc.Type, rid)
 			rsc.BusinessID = 0
 		}
 
@@ -500,8 +502,10 @@ func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.User
 }
 
 func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) error {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	if ac.Config.Enable == false {
-		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
+		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
 		return nil
 	}
 
@@ -528,13 +532,15 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 }
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+
 	if ac.Config.Enable == false {
-		blog.V(5).Infof("auth disabled, auth config: %+v", ac.Config)
+		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
 		return nil, nil
 	}
 
 	if len(rs) <= 0 {
-		blog.V(5).Info("no resource should be register")
+		blog.V(5).Infof("no resource should be register, rid: %s", rid)
 		return nil, nil
 	}
 	info := RegisterInfo{}

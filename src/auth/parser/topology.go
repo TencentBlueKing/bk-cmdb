@@ -1837,8 +1837,8 @@ func (ps *parseStream) objectUnique() *parseStream {
 }
 
 var (
-	searchAuditlog         = `/api/v3/audit/search`
-	searchInstanceAuditlog = `/api/v3/object/[^\s/]+/audit/search`
+	searchAuditlog               = `/api/v3/audit/search`
+	searchInstanceAuditlogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1869,7 +1869,7 @@ func (ps *parseStream) instanceAudit() *parseStream {
 	}
 
 	// add object unique operation.
-	if ps.hitPattern(searchInstanceAuditlog, http.MethodPost) {
+	if ps.hitRegexp(searchInstanceAuditlogRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{

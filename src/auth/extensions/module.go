@@ -30,6 +30,8 @@ import (
  */
 
 func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]ModuleSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	query := &metadata.QueryCondition{
@@ -39,7 +41,7 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 	}
 	instances, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKInnerObjIDModule, query)
 	if err != nil {
-		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v", businessID, err)
+		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
 	}
 
@@ -49,17 +51,19 @@ func (am *AuthManager) CollectModuleByBusinessIDs(ctx context.Context, header ht
 		moduleSimplify := ModuleSimplify{}
 		_, err := moduleSimplify.Parse(instance)
 		if err != nil {
-			blog.Errorf("parse module: %+v simplify information failed, err: %+v", instance, err)
+			blog.Errorf("parse module: %+v simplify information failed, err: %+v, rid: %s", instance, err, rid)
 			continue
 		}
 		moduleArr = append(moduleArr, moduleSimplify)
 	}
 
-	blog.V(4).Infof("list modules by business:%d result: %+v", businessID, moduleArr)
+	blog.V(4).Infof("list modules by business:%d result: %+v, rid: %s", businessID, moduleArr, rid)
 	return moduleArr, nil
 }
 
 func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http.Header, moduleIDs ...int64) ([]ModuleSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	moduleIDs = util.IntArrayUnique(moduleIDs)
 
@@ -68,7 +72,7 @@ func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, &cond)
 	if err != nil {
-		blog.V(3).Infof("get modules by id failed, err: %+v", err)
+		blog.V(3).Infof("get modules by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get modules by id failed, err: %+v", err)
 	}
 	modules := make([]ModuleSimplify, 0)
@@ -126,7 +130,7 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 	if am.RegisterModuleEnabled == false {
 		return nil
 	}
-	
+
 	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
@@ -135,6 +139,8 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 }
 
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if am.Enabled() == false {
 		return nil
 	}
@@ -142,12 +148,12 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 	if am.RegisterModuleEnabled == false {
 		return nil
 	}
-	
+
 	if len(modules) == 0 {
 		return nil
 	}
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, modules: %+v", modules)
+		blog.V(4).Infof("skip authorization for reading, modules: %+v, rid: %s", modules, rid)
 		return nil
 	}
 
@@ -164,6 +170,8 @@ func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header
 }
 
 func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.Header, modules ...ModuleSimplify) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if am.Enabled() == false {
 		return nil
 	}
@@ -178,7 +186,7 @@ func (am *AuthManager) UpdateRegisteredModule(ctx context.Context, header http.H
 	// extract business id
 	bizID, err := am.extractBusinessIDFromModules(modules...)
 	if err != nil {
-		return fmt.Errorf("authorize modules failed, extract business id from modules failed, err: %+v", err)
+		return fmt.Errorf("authorize modules failed, extract business id from modules failed, err: %+v, rid: %s", err, rid)
 	}
 
 	// make auth resources
