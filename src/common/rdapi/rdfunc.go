@@ -124,6 +124,7 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 		}
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
+	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 }
 
 func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *restful.Response) {
