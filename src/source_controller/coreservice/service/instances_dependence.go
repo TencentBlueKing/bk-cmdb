@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
@@ -74,10 +75,13 @@ func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID st
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
+	var bizCond mapstr.MapStr
 	if bizID != 0 {
-		bizCond := metadata.NewPublicOrBizConditionByBizID(bizID)
-		queryCond.Condition.Merge(bizCond)
+		bizCond = metadata.NewPublicOrBizConditionByBizID(bizID)
+	} else {
+		bizCond = metadata.BizLabelNotExist
 	}
+	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	return result.Info, err
 }
