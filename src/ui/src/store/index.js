@@ -40,6 +40,7 @@ import netCollectDevice from './modules/api/net-collect-device.js'
 import netCollectProperty from './modules/api/net-collect-property.js'
 import netDataCollection from './modules/api/net-data-collection.js'
 import netDiscovery from './modules/api/net-discovery.js'
+import serviceTemplate from './modules/api/service-template.js'
 
 Vue.use(Vuex)
 
@@ -81,6 +82,7 @@ export default new Vuex.Store({
         netCollectDevice,
         netCollectProperty,
         netDataCollection,
-        netDiscovery
+        netDiscovery,
+        serviceTemplate
     }
 })
