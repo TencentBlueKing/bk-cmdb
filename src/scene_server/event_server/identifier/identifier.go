@@ -323,34 +323,17 @@ func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []i
 			return nil, err
 		}
 	} else if objType == common.BKInnerObjIDProc {
-		proc2module := []metadata.ProcessModule{}
-		// get process to module
-		if err = ih.db.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ih.ctx, &proc2module); err != nil {
+		// 根据进程获取主机信息
+		serviceInstRelationArr := make([]metadata.ProcessInstanceRelation, 0)
+		if err = ih.db.Table(common.BKTableNameProcessInstanceRelation).Find(cond.ToMapStr).All(context.Background(), &serviceInstRelationArr); err != nil {
+			blog.ErrorJSON("find table(%s) data error. err:%s, condition:%s", err.Error(), cond.ToMapStr())
 			return nil, err
 		}
-		if len(proc2module) > 0 {
-			modulenames := make([]string, len(proc2module))
-			for index := range proc2module {
-				modulenames[index] = proc2module[index].ModuleName
-			}
-			// get module ids
-			relations = []metadata.ModuleHost{}
-			cond = condition.CreateCondition().Field(common.BKAppIDField).Eq(proc2module[0].AppID).Field(common.BKModuleNameField).In(modulenames)
-			if err = ih.db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).Fields(common.BKModuleIDField).All(ih.ctx, &relations); err != nil {
-				return nil, err
-			}
-
-			moduleids := make([]int64, len(relations))
-			for index := range proc2module {
-				moduleids[index] = relations[index].ModuleID
-			}
-
-			relations = []metadata.ModuleHost{}
-			cond = condition.CreateCondition().Field(common.BKModuleIDField).In(moduleids)
-			if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
-				return nil, err
-			}
+		for _, item := range serviceInstRelationArr {
+			hostIDs = append(hostIDs, item.HostID)
 		}
+		return hostIDs, nil
+
 	} else {
 		if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
 			return nil, err
