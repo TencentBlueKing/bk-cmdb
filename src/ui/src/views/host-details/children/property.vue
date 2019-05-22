@@ -17,7 +17,7 @@
                         :title="$tools.getPropertyText(property, host)">
                         {{$tools.getPropertyText(property, host)}}
                     </span>
-                    <template v-if="isPropertyEditable(property)">
+                    <template v-if="updateAuth && isPropertyEditable(property)">
                         <i class="property-edit icon-cc-edit"
                             v-show="property !== editState.property"
                             @click="setEditState(property)">
@@ -45,10 +45,12 @@
 
 <script>
     import { mapGetters, mapState } from 'vuex'
+    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-property',
         data () {
             return {
+                OPERATION,
                 editState: {
                     property: null,
                     value: null
@@ -60,6 +62,13 @@
             ...mapGetters('hostDetails', ['groupedProperties']),
             host () {
                 return this.info.host || {}
+            },
+            updateAuth () {
+                const isResourceHost = this.$route.name === RESOURCE_HOST
+                if (isResourceHost) {
+                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                }
+                return this.$isAuthorized(OPERATION.U_HOST)
             }
         },
         methods: {
@@ -91,6 +100,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .property {
+        overflow: hidden;
+    }
     .group {
         margin: 22px 0 0 0;
         .group-name {

@@ -44,6 +44,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -78,6 +79,13 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
+            updateAuth () {
+                const isResourceHost = this.$route.name === RESOURCE_HOST
+                if (isResourceHost) {
+                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                }
+                return this.$isAuthorized(OPERATION.U_HOST)
+            },
             flatternList () {
                 return this.$tools.flatternList(this.properties, this.list)
             },
@@ -119,16 +127,20 @@
             },
             header () {
                 const headerProperties = this.$tools.getDefaultHeaderProperties(this.properties)
-                return headerProperties.map(property => {
+                const header = headerProperties.map(property => {
                     return {
                         id: property.bk_property_id,
                         name: property.bk_property_name
                     }
-                }).concat([{
-                    id: '__operation__',
-                    name: this.$t('Common["操作"]'),
-                    width: 150
-                }])
+                })
+                if (this.updateAuth) {
+                    header.push({
+                        id: '__operation__',
+                        name: this.$t('Common["操作"]'),
+                        width: 150
+                    })
+                }
+                return header
             }
         },
         watch: {

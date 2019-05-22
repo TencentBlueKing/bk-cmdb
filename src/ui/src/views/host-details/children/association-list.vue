@@ -1,14 +1,20 @@
 <template>
     <div class="association-list" v-bkloading="{ isLoading: loading }">
-        <template v-for="(item, itemIndex) in list">
-            <cmdb-host-association-list-table
-                v-for="(association, associationIndex) in item.associations"
-                :key="association.id"
-                :type="item.type"
-                :id="item.id"
-                :association-type="item.associationType"
-                :visible="!(itemIndex || associationIndex)">
-            </cmdb-host-association-list-table>
+        <div class="association-empty" v-if="!hasAssociation">
+            <i class="bk-icon icon-empty"></i>
+            <span>{{$t('HostDetails["暂无关联关系"]')}}</span>
+        </div>
+        <template v-else>
+            <template v-for="(item, itemIndex) in list">
+                <cmdb-host-association-list-table
+                    v-for="(association, associationIndex) in item.associations"
+                    :key="association.id"
+                    :type="item.type"
+                    :id="item.id"
+                    :association-type="item.associationType"
+                    :visible="!(itemIndex || associationIndex)">
+                </cmdb-host-association-list-table>
+            </template>
         </template>
     </div>
 </template>
@@ -171,5 +177,23 @@
 <style lang="scss" scoped>
     .association-list {
         height: 100%;
+    }
+    .association-empty {
+        height: 100%;
+        text-align: center;
+        font-size: 14px;
+        &:before {
+            display: inline-block;
+            vertical-align: middle;
+            width: 0;
+            height: 100%;
+            content: "";
+        }
+        .bk-icon {
+            display: inline-block;
+            margin: 0 0 10px 0;
+            font-size: 65px;
+            color: #c3cdd7;
+        }
     }
 </style>

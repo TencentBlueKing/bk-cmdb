@@ -448,16 +448,22 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleRowClick (item) {
-                const params = {
-                    id: item.host.bk_host_id
-                }
                 if (this.filter.business > -1) {
-                    params.business = this.filter.business
+                    this.$router.push({
+                        name: 'businessHostDetails',
+                        params: {
+                            business: this.filter.business,
+                            id: item.host.bk_host_id
+                        }
+                    })
+                } else {
+                    this.$router.push({
+                        name: 'resourceHostDetails',
+                        params: {
+                            id: item.host.bk_host_id
+                        }
+                    })
                 }
-                this.$router.push({
-                    name: 'hostDetails',
-                    params
-                })
             },
             batchUpdate (params) {
                 return this.updateHost(params).then(data => {

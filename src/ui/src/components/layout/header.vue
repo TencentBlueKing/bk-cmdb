@@ -132,7 +132,6 @@
             vertical-align: middle;
             width: 32px;
             height: 32px;
-            margin: 0 8px 0 0;
             line-height: 32px;
             text-align: center;
             font-size: 16px;
@@ -144,7 +143,7 @@
             }
         }
         .breadcrumbs-current{
-            margin: 0;
+            margin: 0 0 0 8px;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
