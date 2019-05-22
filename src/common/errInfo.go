@@ -481,8 +481,8 @@ const (
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
 	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFaile         = 1108005
-	CCErrProcSearchProcessFaile         = 1108006
+	CCErrProcUpdateProcessFailed        = 1108005
+	CCErrProcSearchProcessFailed        = 1108006
 	CCErrProcDeleteProcessFailed        = 1108007
 	CCErrProcCreateProcessFailed        = 1108008
 	CCErrProcFieldValidFaile            = 1108009
@@ -501,11 +501,12 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	CCErrProcGetServiceInstancesFailed    = 1108024
-	CCErrProcCreateServiceInstancesFailed = 1108025
-	CCErrProcDeleteServiceInstancesFailed = 1108026
-	CCErrProcGetProcessTemplatesFailed    = 1108027
-	CCErrProcGetProcessInstanceFailed     = 1108028
+	CCErrProcGetServiceInstancesFailed        = 1108024
+	CCErrProcCreateServiceInstancesFailed     = 1108025
+	CCErrProcDeleteServiceInstancesFailed     = 1108026
+	CCErrProcGetProcessTemplatesFailed        = 1108027
+	CCErrProcGetProcessInstanceFailed         = 1108028
+	CCErrProcGetProcessInstanceRelationFailed = 1108029
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
