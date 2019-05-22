@@ -1,8 +1,10 @@
 <template>
     <div class="feature-tips" v-if="showTips">
-        <i class="icon-cc-exclamation-tips"></i>
-        <span>{{desc}}</span>
-        <a :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
+        <div class="main-box">
+            <i class="icon-cc-exclamation-tips"></i>
+            <span>{{desc}}</span>
+            <a v-if="moreHref" :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
+        </div>
         <span class="icon-cc-tips-close fr" @click="HandleCloseTips"></span>
     </div>
 </template>
@@ -24,7 +26,7 @@
             },
             moreHref: {
                 type: String,
-                default: 'javascript: (0)'
+                default: ''
             }
         },
         methods: {
@@ -43,6 +45,12 @@
         background-color: rgba(240,248,255,1);
         padding: 6px 16px;
         margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        .main-box {
+            padding-right: 30px;
+            flex: 1;
+        }
         .icon-cc-exclamation-tips {
             color: #3a84ff;
             font-size: 16px;
@@ -58,7 +66,6 @@
         }
         .icon-cc-tips-close {
             font-size: 14px;
-            margin-top: 1px;
             cursor: pointer;
             color: #979ba5;
             &:hover {
