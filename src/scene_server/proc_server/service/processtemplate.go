@@ -141,8 +141,7 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 
 	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v",
-			err, input)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "get process template, but get business id failed, err: %v, input: %+v", err, input)
 		return
 	}
 
@@ -150,7 +149,7 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	option := &metadata.ListProcessTemplatesOption{
 		BusinessID:         bizID,
 		ServiceTemplateID:  input.ServiceTemplateID,
-		ProcessTemplateIDs: input.ProcessTemplatesID,
+		ProcessTemplateIDs: input.ProcessTemplatesIDs,
 	}
 	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {

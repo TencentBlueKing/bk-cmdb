@@ -13,10 +13,9 @@
 package service
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -25,9 +24,9 @@ import (
 
 func (s *coreService) CreateServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	category := metadata.ServiceCategory{}
-	if err := mapstr.SetValueToStructByTags(&category, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
 		blog.Errorf("CreateServiceCategory failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateServiceCategory(params, category)
@@ -43,13 +42,13 @@ func (s *coreService) GetServiceCategory(params core.ContextParams, pathParams, 
 	serviceCategoryIDStr := pathParams(serviceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
 		blog.Errorf("GetServiceCategory failed, path parameter `%s` empty", serviceCategoryIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceCategoryIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("GetServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetServiceCategory(params, serviceCategoryID)
@@ -63,26 +62,21 @@ func (s *coreService) GetServiceCategory(params core.ContextParams, pathParams, 
 func (s *coreService) ListServiceCategories(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata          metadata.Metadata `json:"metadata" field:"metadata"`
+		BusinessID     int64 `json:"bk_biz_id" field:"bk_biz_id"`
 		WithStatistics bool  `json:"with_statistics" field:"with_statistics"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceCategories failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
-	if err != nil {
-		blog.Errorf("ListServiceCategories failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
+	if fp.BusinessID == 0 {
+		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
-	if bizID == 0 {
-		blog.Errorf("ListServiceCategories failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, errors.New("business id can't be empty")
-	}
-	
-	result, err := s.core.ProcessOperation().ListServiceCategories(params, bizID, fp.WithStatistics)
+
+	result, err := s.core.ProcessOperation().ListServiceCategories(params, fp.BusinessID, fp.WithStatistics)
 	if err != nil {
 		blog.Errorf("ListServiceCategories failed, err: %+v", err)
 		return nil, err
@@ -95,19 +89,19 @@ func (s *coreService) UpdateServiceCategory(params core.ContextParams, pathParam
 	serviceCategoryIDStr := pathParams(serviceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
 		blog.Errorf("UpdateServiceCategory failed, path parameter `%s` empty", serviceCategoryIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceCategoryIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("UpdateServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	category := metadata.ServiceCategory{}
-	if err := mapstr.SetValueToStructByTags(&category, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&category, data); err != nil {
 		blog.Errorf("UpdateServiceCategory failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateServiceCategory(params, serviceCategoryID, category)
@@ -124,13 +118,13 @@ func (s *coreService) DeleteServiceCategory(params core.ContextParams, pathParam
 	serviceCategoryIDStr := pathParams(serviceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
 		blog.Errorf("DeleteServiceCategory failed, path parameter `%s` empty", serviceCategoryIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", serviceCategoryIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", serviceCategoryIDField, serviceCategoryIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceCategoryIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceCategory(params, serviceCategoryID); err != nil {
