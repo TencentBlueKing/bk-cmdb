@@ -102,10 +102,10 @@ type ServiceProcessInstanceDifference struct {
 }
 
 type DifferenceDetail struct {
-	Unchanged *ProcessDifferenceDetail `json:"unchanged"`
-	Changed   *ProcessDifferenceDetail `json:"changed"`
-	Added     *ProcessDifferenceDetail `json:"added"`
-	Removed   *ProcessDifferenceDetail `json:"removed"`
+	Unchanged []ProcessDifferenceDetail `json:"unchanged"`
+	Changed   []ProcessDifferenceDetail `json:"changed"`
+	Added     []ProcessDifferenceDetail `json:"added"`
+	Removed   []ProcessDifferenceDetail `json:"removed"`
 }
 
 type ProcessDifferenceDetail struct {
@@ -136,6 +136,13 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
 	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
+}
+
+type ForceSyncServiceInstanceWithTemplateInput struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+	ModuleID          int64    `json:"module_id"`
+	ServiceInstances  []int64  `json:"service_instances"`
 }
 
 type SocketBindType string
