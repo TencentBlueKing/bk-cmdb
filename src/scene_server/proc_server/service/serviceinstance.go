@@ -275,7 +275,12 @@ func (p *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.C
 			ServiceInstanceID:   serviceInstance.ID,
 			ServiceInstanceName: serviceInstance.Name,
 			HostID:              serviceInstance.HostID,
-			Differences:         new(metadata.DifferenceDetail),
+			Differences: &metadata.DifferenceDetail{
+				Unchanged: make([]metadata.ProcessDifferenceDetail, 0),
+				Changed:   make([]metadata.ProcessDifferenceDetail, 0),
+				Added:     make([]metadata.ProcessDifferenceDetail, 0),
+				Removed:   make([]metadata.ProcessDifferenceDetail, 0),
+			},
 		}
 		for _, r := range relations {
 			// remember what process template is using, so that we can check whether a new process template has
@@ -386,12 +391,11 @@ func (p *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *res
 	}
 	processTemplate, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-				"force sync service instance according to service template: %d, but list process template failed, err: %v",
-				input.ServiceTemplateID, err)
-			return
-		}
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
+			"force sync service instance according to service template: %d, but list process template failed, err: %v",
+			input.ServiceTemplateID, err)
+		return
+
 	}
 	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 	for _, t := range processTemplate.Info {
@@ -467,10 +471,17 @@ func (p *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *res
 				// this process template has already removed form the service template,
 				// which means this process instance need to be removed from this service instance
 				if err := p.Logic.DeleteProcessInstance(ctx.Kit, process.ProcessID); err != nil {
-					ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
 						"force sync service instance according to service template: %d, but delete process instance: %d with template: %d failed, err: %v",
 						input.ServiceTemplateID, process.ProcessID, template.ID, err)
 					return
+				}
+
+				// remove process instance relation now.
+				if err := p.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, process.ProcessID); err != nil {
+					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
+						"force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v",
+						input.ServiceTemplateID, process.ProcessID, template.ID, err)
 				}
 				continue
 			}
