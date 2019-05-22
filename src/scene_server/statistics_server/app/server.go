@@ -43,12 +43,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service := new(svc.Service)
-	statisticalSrv := new(StatisticalServer)
+	statisticSrv := new(StatisticServer)
 
 	input := &backbone.BackboneParameter{
 		Regdiscv:     op.ServConf.RegDiscover,
 		ConfigPath:   op.ServConf.ExConfig,
-		ConfigUpdate: statisticalSrv.onStatisticalConfigUpdate,
+		ConfigUpdate: statisticSrv.onStatisticalConfigUpdate,
 		SrvInfo:      svrInfo,
 	}
 
@@ -59,7 +59,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		if "" != statisticalSrv.Config.Redis.Address {
+		if "" != statisticSrv.Config.Redis.Address {
 			configReady = true
 			break
 		}
@@ -70,14 +70,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
-	cacheDB, err := redis.NewFromConfig(statisticalSrv.Config.Redis)
+	cacheDB, err := redis.NewFromConfig(statisticSrv.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
-	blog.Info("host server auth config is: %+v", statisticalSrv.Config.Auth)
-	authorizer, err := auth.NewAuthorize(nil, statisticalSrv.Config.Auth)
+	authorizer, err := auth.NewAuthorize(nil, statisticSrv.Config.Auth)
 	if err != nil {
 		blog.Errorf("new host authorizer failed, err: %+v", err)
 		return fmt.Errorf("new host authorizer failed, err: %+v", err)
@@ -86,8 +85,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	service.AuthManager = authManager
 	service.Engine = engine
 	service.CacheDB = cacheDB
-	statisticalSrv.Core = engine
-	statisticalSrv.Service = service
+	statisticSrv.Core = engine
+	statisticSrv.Service = service
 
 	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
@@ -97,13 +96,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	select {}
 }
 
-type StatisticalServer struct {
+type StatisticServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
 	Service *svc.Service
 }
 
-func (h *StatisticalServer) onStatisticalConfigUpdate(previous, current cc.ProcessConfig) {
+func (h *StatisticServer) onStatisticalConfigUpdate(previous, current cc.ProcessConfig) {
 	var err error
 
 	h.Config.Redis.Address = current.ConfigMap["redis.host"]
