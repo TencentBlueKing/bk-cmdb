@@ -94,8 +94,8 @@ func (h *host) DeleteHost(ctx context.Context, header http.Header, input *metada
 	return
 }
 
-// Identifier  query host identifier
-func (h *host) Identifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
+// FindIdentifier  query host identifier
+func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
 	resp = new(metadata.SearchHostIdentifierResult)
 	subPath := "/read/host/indentifier"
 
