@@ -14,7 +14,10 @@ package metadata
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -131,7 +134,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs []int64  `json:"process_templates_ids"`
+	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 }
 
@@ -310,246 +313,90 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64    `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
-	StopCmd            PropertyString   `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
-	RestartCmd         PropertyString   `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
-	ForceStopCmd       PropertyString   `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	FuncName           PropertyString   `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
-	WorkPath           PropertyString   `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
-	BindIP             PropertyBindIP   `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
-	Priority           PropertyInt64    `field:"priority" json:"priority,omitempty" bson:"priority,omitempty"`
-	ReloadCmd          PropertyString   `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
-	ProcessName        PropertyString   `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty"`
-	Port               PropertyPort     `field:"port" json:"port,omitempty" bson:"port,omitempty"`
-	PidFile            PropertyString   `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
-	AutoStart          PropertyBool     `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
-	AutoTimeGapSeconds PropertyInt64    `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
-	StartCmd           PropertyString   `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
-	FuncID             PropertyString   `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
-	User               PropertyString   `field:"user" json:"user,omitempty" bson:"user,omitempty"`
-	TimeoutSeconds     PropertyInt64    `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
-	Protocol           PropertyProtocol `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
-	Description        PropertyString   `field:"description" json:"description,omitempty" bson:"description,omitempty"`
+	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	StopCmd            PropertyString      `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
+	RestartCmd         PropertyString      `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
+	ForceStopCmd       PropertyString      `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
+	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
+	WorkPath           PropertyString      `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
+	BindIP             PropertyBindIP      `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
+	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty"`
+	ReloadCmd          PropertyString      `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
+	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty"`
+	Port               PropertyPort        `field:"port" json:"port,omitempty" bson:"port,omitempty"`
+	PidFile            PropertyString      `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
+	AutoStart          PropertyBool        `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
+	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
+	StartCmd           PropertyString      `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
+	FuncID             PropertyInt64String `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
+	User               PropertyString      `field:"user" json:"user,omitempty" bson:"user,omitempty"`
+	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
+	Protocol           PropertyProtocol    `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
+	Description        PropertyString      `field:"description" json:"description,omitempty" bson:"description,omitempty"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
-	if err := pt.ProcNum.Validate(); err != nil {
-		return "proc_num", err
-	}
-	if err := pt.StopCmd.Validate(); err != nil {
-		return "stop_cmd", err
-	}
-	if err := pt.RestartCmd.Validate(); err != nil {
-		return "restart_cmd", err
-	}
-	if err := pt.ForceStopCmd.Validate(); err != nil {
-		return "face_stop_cmd", err
-	}
-	if err := pt.FuncName.Validate(); err != nil {
-		return "bk_func_name", err
-	}
-	if err := pt.WorkPath.Validate(); err != nil {
-		return "work_path", err
-	}
-	if err := pt.BindIP.Validate(); err != nil {
-		return "bind_ip", err
-	}
-	if err := pt.Priority.Validate(); err != nil {
-		return "priority", err
-	}
-	if err := pt.ReloadCmd.Validate(); err != nil {
-		return "reload_cmd", err
-	}
-	if err := pt.ProcessName.Validate(); err != nil {
-		return "bk_process_name", err
-	}
-	if err := pt.Port.Validate(); err != nil {
-		return "port", err
-	}
-	if err := pt.PidFile.Validate(); err != nil {
-		return "pid_file", err
-	}
-	if err := pt.AutoStart.Validate(); err != nil {
-		return "auto_start", err
-	}
-	if err := pt.AutoTimeGapSeconds.Validate(); err != nil {
-		return "auto_time_gap", err
-	}
-	if err := pt.StartCmd.Validate(); err != nil {
-		return "start_cmd", err
-	}
-	if err := pt.FuncID.Validate(); err != nil {
-		return "bk_func_id", err
-	}
-	if err := pt.User.Validate(); err != nil {
-		return "user", err
-	}
-	if err := pt.TimeoutSeconds.Validate(); err != nil {
-		return "timeout", err
-	}
-	if err := pt.Protocol.Validate(); err != nil {
-		return "protocol", err
-	}
-	if err := pt.Description.Validate(); err != nil {
-		return "description", err
+	// call all field's Validate method one by one
+	propertyInterfaceType := reflect.TypeOf((*ProcessPropertyInterface)(nil)).Elem()
+	selfVal := reflect.ValueOf(pt).Elem()
+	selfType := reflect.TypeOf(pt).Elem()
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		field := selfType.Field(fieldIdx)
+		fieldVal := selfVal.Field(fieldIdx)
+
+		// check implements interface
+		fieldValType := fieldVal.Addr().Type()
+		if !fieldValType.Implements(propertyInterfaceType) {
+			msg := fmt.Sprintf("field %s of type: %s should implements %s", field.Name, fieldVal.Type().Elem().Name(), propertyInterfaceType.Name())
+			panic(msg)
+		}
+
+		// call validate method by interface
+		checkResult := fieldVal.Addr().MethodByName("Validate").Call([]reflect.Value{})
+		out := checkResult[0]
+		if !out.IsNil() {
+			err := out.Interface().(error)
+			tag := field.Tag.Get("json")
+			fieldName := strings.Split(tag, ",")[0]
+			return fieldName, err
+		}
 	}
 	return "", nil
 }
 
 func (pt *ProcessProperty) Update(input ProcessProperty) {
-	/*
-		// TODO: 方案遗留问题： 如何赋值
-		ptVal := reflect.ValueOf(*pt)
-		inputVal := reflect.ValueOf(input)
-		fieldCount := ptVal.NumField()
-		for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
-			inputField := inputVal.Field(fieldIdx)
-			ptField := ptVal.Field(fieldIdx)
-			subFields := []string{"Value", "AsDefaultValue"}
-			for _, subField := range subFields {
-				inputFieldValue := inputField.FieldByName(subField)
-				if !inputFieldValue.IsNil() {
-					ptFieldValue := ptField.FieldByName(subField)
-					v := inputFieldValue.Pointer()
-					p := unsafe.Pointer(v)
-					ptFieldValue.SetPointer(p)
+	selfVal := reflect.ValueOf(pt).Elem()
+	inputVal := reflect.ValueOf(input)
+	fieldCount := selfVal.NumField()
+	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		inputField := inputVal.Field(fieldIdx)
+		selfField := selfVal.Field(fieldIdx)
+		subFieldCount := inputField.NumField()
+		// subFields: Value, AsDefaultValue
+		for subFieldIdx := 0; subFieldIdx < subFieldCount; subFieldIdx++ {
+			inputFieldPtr := inputField.Field(subFieldIdx)
+			if inputFieldPtr.IsNil() {
+				continue
+			}
+			inputFieldValue := inputFieldPtr.Elem()
+
+			selfFieldValuePtr := selfField.Field(subFieldIdx)
+			if selfFieldValuePtr.Kind() == reflect.Ptr {
+				if selfFieldValuePtr.IsNil() && selfFieldValuePtr.CanSet() {
+					selfFieldValuePtr.Set(reflect.New(selfFieldValuePtr.Type().Elem()))
 				}
 			}
+
+			selfFieldValue := selfFieldValuePtr.Elem()
+			selfFieldValue.Set(inputFieldValue)
 		}
-	*/
+	}
+	return
+}
 
-	if input.ProcNum.Value != nil {
-		pt.ProcNum.Value = input.ProcNum.Value
-	}
-	if input.ProcNum.AsDefaultValue != nil {
-		pt.ProcNum.AsDefaultValue = input.ProcNum.AsDefaultValue
-	}
-
-	if input.StopCmd.Value != nil {
-		pt.StopCmd.Value = input.StopCmd.Value
-	}
-	if input.StopCmd.AsDefaultValue != nil {
-		pt.StopCmd.AsDefaultValue = input.StopCmd.AsDefaultValue
-	}
-
-	if input.RestartCmd.Value != nil {
-		pt.RestartCmd.Value = input.RestartCmd.Value
-	}
-	if input.RestartCmd.AsDefaultValue != nil {
-		pt.RestartCmd.AsDefaultValue = input.RestartCmd.AsDefaultValue
-	}
-
-	if input.ForceStopCmd.Value != nil {
-		pt.ForceStopCmd.Value = input.ForceStopCmd.Value
-	}
-	if input.ForceStopCmd.AsDefaultValue != nil {
-		pt.ForceStopCmd.AsDefaultValue = input.ForceStopCmd.AsDefaultValue
-	}
-
-	if input.FuncName.Value != nil {
-		pt.FuncName.Value = input.FuncName.Value
-	}
-	if input.FuncName.AsDefaultValue != nil {
-		pt.FuncName.AsDefaultValue = input.FuncName.AsDefaultValue
-	}
-
-	if input.WorkPath.Value != nil {
-		pt.WorkPath.Value = input.WorkPath.Value
-	}
-	if input.WorkPath.AsDefaultValue != nil {
-		pt.WorkPath.AsDefaultValue = input.WorkPath.AsDefaultValue
-	}
-
-	if input.BindIP.Value != nil {
-		pt.BindIP.Value = input.BindIP.Value
-	}
-	if input.BindIP.AsDefaultValue != nil {
-		pt.BindIP.AsDefaultValue = input.BindIP.AsDefaultValue
-	}
-
-	if input.ReloadCmd.Value != nil {
-		pt.ReloadCmd.Value = input.ReloadCmd.Value
-	}
-	if input.ReloadCmd.AsDefaultValue != nil {
-		pt.ReloadCmd.AsDefaultValue = input.ReloadCmd.AsDefaultValue
-	}
-
-	if input.ProcessName.Value != nil {
-		pt.ProcessName.Value = input.ProcessName.Value
-	}
-	if input.ProcessName.AsDefaultValue != nil {
-		pt.ProcessName.AsDefaultValue = input.ProcessName.AsDefaultValue
-	}
-
-	if input.Port.Value != nil {
-		pt.Port.Value = input.Port.Value
-	}
-	if input.Port.AsDefaultValue != nil {
-		pt.Port.AsDefaultValue = input.Port.AsDefaultValue
-	}
-
-	if input.PidFile.Value != nil {
-		pt.PidFile.Value = input.PidFile.Value
-	}
-	if input.PidFile.AsDefaultValue != nil {
-		pt.PidFile.AsDefaultValue = input.PidFile.AsDefaultValue
-	}
-
-	if input.AutoStart.Value != nil {
-		pt.AutoStart.Value = input.AutoStart.Value
-	}
-	if input.AutoStart.AsDefaultValue != nil {
-		pt.AutoStart.AsDefaultValue = input.AutoStart.AsDefaultValue
-	}
-
-	if input.AutoTimeGapSeconds.Value != nil {
-		pt.AutoTimeGapSeconds.Value = input.AutoTimeGapSeconds.Value
-	}
-	if input.AutoTimeGapSeconds.AsDefaultValue != nil {
-		pt.AutoTimeGapSeconds.AsDefaultValue = input.AutoTimeGapSeconds.AsDefaultValue
-	}
-
-	if input.StartCmd.Value != nil {
-		pt.StartCmd.Value = input.StartCmd.Value
-	}
-	if input.StartCmd.AsDefaultValue != nil {
-		pt.StartCmd.AsDefaultValue = input.StartCmd.AsDefaultValue
-	}
-
-	if input.FuncID.Value != nil {
-		pt.FuncID.Value = input.FuncID.Value
-	}
-	if input.FuncID.AsDefaultValue != nil {
-		pt.FuncID.AsDefaultValue = input.FuncID.AsDefaultValue
-	}
-
-	if input.User.Value != nil {
-		pt.User.Value = input.User.Value
-	}
-	if input.User.AsDefaultValue != nil {
-		pt.User.AsDefaultValue = input.User.AsDefaultValue
-	}
-
-	if input.TimeoutSeconds.Value != nil {
-		pt.TimeoutSeconds.Value = input.TimeoutSeconds.Value
-	}
-	if input.TimeoutSeconds.AsDefaultValue != nil {
-		pt.TimeoutSeconds.AsDefaultValue = input.TimeoutSeconds.AsDefaultValue
-	}
-
-	if input.Protocol.Value != nil {
-		pt.Protocol.Value = input.Protocol.Value
-	}
-	if input.Protocol.AsDefaultValue != nil {
-		pt.Protocol.AsDefaultValue = input.Protocol.AsDefaultValue
-	}
-
-	if input.Description.Value != nil {
-		pt.Description.Value = input.Description.Value
-	}
-	if input.Description.AsDefaultValue != nil {
-		pt.Description.AsDefaultValue = input.Description.AsDefaultValue
-	}
+type ProcessPropertyInterface interface {
+	Validate() error
 }
 
 type PropertyInt64 struct {
@@ -564,6 +411,27 @@ type PropertyInt64 struct {
 }
 
 func (ti *PropertyInt64) Validate() error {
+	return nil
+}
+
+// PropertyInt64String is a string field that parse into int64
+type PropertyInt64String struct {
+	Value *string `field:"value" json:"value" bson:"value"`
+
+	// AsDefaultValue records the relations between process instance's property and
+	// whether it's used as a default value, the empty value can also be a default value.
+	// If the property's value is used as a default value, then this property
+	// can not be changed in all the process instance's created by this process
+	// template. or, it can only be changed to this default value.
+	AsDefaultValue *bool `field:"as_default_value" json:"as_default_value" bson:"as_default_value"`
+}
+
+func (ti *PropertyInt64String) Validate() error {
+	if ti.Value != nil {
+		if _, err := strconv.ParseInt(*ti.Value, 10, 64); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

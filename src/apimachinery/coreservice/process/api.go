@@ -112,8 +112,8 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
-		"bizID":          bizID,
-		"withStatistics": withStatistics,
+		"bk_biz_id":       bizID,
+		"with_statistics": withStatistics,
 	}
 
 	err = p.client.Delete().
@@ -228,8 +228,8 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/findmany/process/service_template"
 
 	input := map[string]interface{}{
-		"bizID":      bizID,
-		"categoryID": categoryID,
+		"bk_biz_id":           bizID,
+		"service_category_id": categoryID,
 	}
 
 	err = p.client.Delete().
