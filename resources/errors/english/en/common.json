@@ -51,6 +51,7 @@
     "1199053": "operate built-in object forbidden",
     "1199054": "forbidden remove item with child node",
     "1199055": "remove referenced record forbidden",
+    "1199060": "prase biz id from metadata in db failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
