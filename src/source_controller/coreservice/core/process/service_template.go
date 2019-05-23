@@ -39,7 +39,7 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	}
 
 	// keep metadata clean
-	template.Metadata = metadata.NewMetaDataNGFromBusinessID(bizID)
+	template.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
 	// validate service category id field
 	_, err = p.GetServiceCategory(ctx, template.ServiceCategoryID)

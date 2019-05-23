@@ -38,7 +38,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// keep metadata clean
-	instance.Metadata = metadata.NewMetaDataNGFromBusinessID(bizID)
+	instance.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
 	// validate service template id field
 	_, err = p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
