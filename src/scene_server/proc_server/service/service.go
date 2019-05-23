@@ -228,15 +228,15 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	if val, ok := current.ConfigMap[hostInstPrefix+".maxModuleIDCount"]; ok {
-		mid_count, err := util.GetIntByInterface(val)
+		midCount, err := util.GetIntByInterface(val)
 		if nil == err {
-			procHostInstConfig.MaxRefreshModuleCount = mid_count
+			procHostInstConfig.MaxRefreshModuleCount = midCount
 		}
 	}
 	if val, ok := current.ConfigMap[hostInstPrefix+".getModuleIDInterval"]; ok {
-		get_mid_interval, err := util.GetIntByInterface(val)
+		getMidInterval, err := util.GetIntByInterface(val)
 		if nil == err {
-			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
+			procHostInstConfig.GetModuleIDInterval = time.Duration(getMidInterval) * time.Second
 		}
 	}
 	ps.ConfigMap = current.ConfigMap
