@@ -80,7 +80,8 @@ func (lgc *Logics) getProcInfoByID(ctx context.Context, procID []int64) (map[int
 		}
 		item := new(metadata.InlineProcInfo)
 
-		item.ProcNum = 1 //ProcNum not set, use default value 1
+		// ProcNum not set, use default value 1
+		item.ProcNum = 1
 		procNumI, ok := proc.Get(common.BKProcInstNum)
 		if ok && nil != procNumI {
 			item.ProcNum, err = proc.Int64(common.BKProcInstNum)
