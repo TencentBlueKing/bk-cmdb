@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"github.com/emicklei/go-restful"
 )
@@ -72,12 +71,12 @@ func (r *RestUtility) AddHandler(action Action) {
 	r.actions = append(r.actions, action)
 }
 
-func (r *RestUtility) GetRestfulWebService(cfg RestfulConfig) *restful.WebService {
-	ws := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
-		return r.ErrorIf
-	}
-	ws.Path(cfg.RootPath).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+func (r *RestUtility) AddToRestfulWebService(ws *restful.WebService) {
+	// ws := new(restful.WebService)
+	// getErrFunc := func() errors.CCErrorIf {
+	// 	return r.ErrorIf
+	// }
+	// ws.Path(cfg.RootPath).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	for _, action := range r.actions {
 		switch action.Verb {
@@ -94,7 +93,7 @@ func (r *RestUtility) GetRestfulWebService(cfg RestfulConfig) *restful.WebServic
 		}
 
 	}
-	return ws
+	return
 }
 
 func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, resp *restful.Response) {
