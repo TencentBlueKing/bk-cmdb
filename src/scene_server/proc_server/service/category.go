@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (p *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
+func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 	meta := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(meta); err != nil {
 		ctx.RespAutoError(err)
@@ -31,7 +31,7 @@ func (p *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	list, err := p.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, bizID, true)
+	list, err := ps.CoreAPI.CoreService().Process().ListServiceCategories(ctx.Kit.Ctx, ctx.Kit.Header, bizID, true)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPReadBodyFailed, "get service category list failed, err: %v", err)
 		return
@@ -40,7 +40,7 @@ func (p *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.NewSuccessResp(list))
 }
 
-func (p *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
+func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.ServiceCategory)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -53,7 +53,7 @@ func (p *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	category, err := p.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	category, err := ps.CoreAPI.CoreService().Process().CreateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service category failed, err: %v", err)
 		return
@@ -62,7 +62,7 @@ func (p *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.NewSuccessResp(category))
 }
 
-func (p *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
+func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 	input := new(metadata.DeleteCategoryInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -75,7 +75,7 @@ func (p *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	err = p.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
+	err = ps.CoreAPI.CoreService().Process().DeleteServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service category failed, err: %v", err)
 		return

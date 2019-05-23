@@ -13,7 +13,6 @@
 package registerdiscover
 
 import (
-	"configcenter/src/common/blog"
 	"context"
 	"fmt"
 	"sort"
@@ -21,6 +20,7 @@ import (
 	"time"
 
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/zkclient"
 
 	gozk "github.com/samuel/go-zookeeper/zk"
@@ -73,17 +73,17 @@ func (zkRD *ZkRegDiscv) RegisterAndWatch(path string, data []byte) error {
 					blog.Errorf("fail to watch register node(%s), err:%s\n", registerPath, err.Error())
 
 					// clear register path, so that it can register to a new path
-					zkRD.zkcli.Del(registerPath, -1)
+					_ = zkRD.zkcli.Del(registerPath, -1)
 					registerPath = ""
 					continue
 				}
 			case <-watchCtx.Done():
 				blog.Infof("watch register node(%s) done, now exist service register.\n", path)
-				zkRD.zkcli.Del(registerPath, -1)
+				_ = zkRD.zkcli.Del(registerPath, -1)
 				return
 			case <-watchEvn:
 				blog.Infof("watch register node(%s) exist changed, event(%v)\n", path, watchEvn)
-				zkRD.zkcli.Del(registerPath, -1)
+				_ = zkRD.zkcli.Del(registerPath, -1)
 				registerPath = ""
 				continue
 			}
