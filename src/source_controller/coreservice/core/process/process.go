@@ -14,6 +14,7 @@ package process
 
 import (
 	"fmt"
+	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -33,11 +34,11 @@ func New(dbProxy dal.RDB) core.ProcessOperation {
 	return processOps
 }
 
-func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Metadata) (int64, error) {
+func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.MetadataNG) (int64, error) {
 	// extract biz id from metadata
-	bizID, err := metadata.BizIDFromMetadata(md)
+	bizID, err := strconv.ParseInt(md.Label.BusinessID, 10, 64)
 	if err != nil {
-		blog.Errorf("parse biz id from metadata failed, err: %+v", err)
+		blog.Errorf("parse biz id from metadata failed, bizID: %s, err: %+v", md.Label.BusinessID, err)
 		return 0, err
 	}
 

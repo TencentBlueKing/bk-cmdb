@@ -38,7 +38,7 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	}
 
 	// keep metadata clean
-	category.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	category.Metadata = metadata.NewMetaDataNGFromBusinessID(bizID)
 
 	category.RootID = 0
 	if category.ParentID > 0 {
