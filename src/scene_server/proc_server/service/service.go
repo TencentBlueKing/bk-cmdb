@@ -12,7 +12,6 @@
 package service
 
 import (
-	"configcenter/src/common/http/rest"
 	"context"
 	"net/http"
 	"time"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
@@ -62,19 +62,19 @@ type ProcServer struct {
 	Logic              *logics.Logic
 }
 
-func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
+func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
 	lang := util.GetLanguage(header)
-	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	ctx, cancel := ps.Engine.CCCtx.WithCancel()
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),
-		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ccErr:         ps.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        ps.Language.CreateDefaultCCLanguageIf(lang),
 		ctx:           ctx,
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbServ, &ps.procHostInstConfig),
 	}
 }
 
@@ -101,7 +101,7 @@ func (ps *ProcServer) WebService() *restful.WebService {
 
 	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
-	//v2
+	// v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
@@ -109,46 +109,46 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	return ws
 }
 
-func (s *ProcServer) WebService2() *restful.WebService {
+func (ps *ProcServer) WebService2() *restful.WebService {
 	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.Engine.CCErr,
-		Language: s.Engine.Language,
+		ErrorIf:  ps.Engine.CCErr,
+		Language: ps.Engine.Language,
 	})
 
 	// service category
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: s.GetServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: s.CreateServiceCategory})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: s.DeleteServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: ps.GetServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: ps.CreateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: ps.DeleteServiceCategory})
 
 	// service template
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: s.CreateServiceTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_template", Handler: s.ListServiceTemplates})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: s.DeleteServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
 
 	// process template
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template/for_service_template", Handler: s.CreateProcessTemplateBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template/for_service_template", Handler: s.UpdateProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template/for_service_template", Handler: s.DeleteProcessTemplateBatch})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: s.GetProcessTemplate})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template", Handler: s.ListProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template/for_service_template", Handler: ps.CreateProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template/for_service_template", Handler: ps.UpdateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template/for_service_template", Handler: ps.DeleteProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
 
 	// service instance
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: s.CreateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: s.CreateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: s.DeleteProcessInstanceInServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance", Handler: s.GetServiceInstancesInModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance", Handler: s.DeleteServiceInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance/difference", Handler: s.FindDifferencesBetweenServiceAndProcessInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: ps.DeleteProcessInstanceInServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance", Handler: ps.GetServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance", Handler: ps.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance/difference", Handler: ps.FindDifferencesBetweenServiceAndProcessInstance})
 
 	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
 }
 
-func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
+func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	if err := ps.Engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
@@ -156,7 +156,7 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// object controller
 	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
 		objCtr.IsHealthy = false
 		objCtr.Message = err.Error()
 	}
@@ -164,14 +164,14 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
 		hostCtrl.IsHealthy = false
 		hostCtrl.Message = err.Error()
 	}
 
 	// host controller
 	procCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROCCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
 		procCtrl.IsHealthy = false
 		procCtrl.Message = err.Error()
 	}
