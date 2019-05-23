@@ -506,7 +506,14 @@
         "点击此跳转": "click to jump",
         "进程信息": "Process information",
         "当前业务并无进程，可点击下方按钮新增": "The current business does not have a process, click the button below to add",
-        "进程管理提示": "The \"process management\" function can help the business management process port and other basic information. The main application scenario is the monitoring system of Blue Whale monitoring the process."
+        "进程管理提示": "The \"process management\" function can help the business management process port and other basic information. The main application scenario is the monitoring system of Blue Whale monitoring the process.",
+        "进程名称": "Process Name",
+        "监听IP": "Listening IP",
+        "端口": "Port",
+        "启动路径": "Work Path",
+        "启动用户": "User",
+        "添加进程": "Add Process",
+        "锁定": "Locking"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",

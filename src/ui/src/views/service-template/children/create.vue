@@ -39,27 +39,61 @@
             <h3>进程服务</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <bk-button class="create-btn">
+                    <bk-button class="create-btn" @click="handleCreateProcess">
                         <i class="bk-icon icon-plus"></i>
                         <span>{{$t("ServiceManagement['新建进程']")}}</span>
                     </bk-button>
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
-                <div class="process-table">
-                </div>
+                <process-table></process-table>
                 <div class="btn-box">
                     <bk-button type="primary">{{$t("Common['确定']")}}</bk-button>
                     <bk-button>{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
         </div>
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
+            <template slot="content">
+                <process-form
+                    :properties="properties"
+                    :property-groups="propertyGroups"
+                    :object-unique="objectUnique"
+                    :inst="attribute.inst.details"
+                    :type="attribute.type"
+                    :save-disabled="true"
+                    @on-submit="handleSave"
+                    @on-cancel="handleCancel">
+                </process-form>
+            </template>
+        </cmdb-slider>
     </div>
 </template>
 
 <script>
+    import processForm from '@/components/service/process-form'
+    import processTable from './process'
+    import { mapActions } from 'vuex'
     export default {
+        components: {
+            processTable,
+            processForm
+        },
         data () {
             return {
+                properties: [],
+                propertyGroups: [],
+                objectUnique: [],
+                attribute: {
+                    type: null,
+                    inst: {
+                        details: {},
+                        edit: {}
+                    }
+                },
+                slider: {
+                    show: false,
+                    title: ''
+                },
                 formData: {
                     primaryClassification: '',
                     secondaryClassification: '',
@@ -69,6 +103,58 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t("ServiceManagement['新建服务模版']"))
+            this.reload()
+        },
+        methods: {
+            ...mapActions('objectModelFieldGroup', ['searchGroup']),
+            ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+            ...mapActions('objectUnique', ['searchObjectUniqueConstraints']),
+            async reload () {
+                this.properties = await this.searchObjectAttribute({
+                    params: this.$injectMetadata({
+                        bk_obj_id: 'process',
+                        bk_supplier_account: this.supplierAccount
+                    }),
+                    config: {
+                        requestId: `post_searchObjectAttribute_process`,
+                        fromCache: false
+                    }
+                })
+                this.getPropertyGroups()
+                this.getObjectUnique()
+            },
+            getPropertyGroups () {
+                return this.searchGroup({
+                    objId: 'process',
+                    params: this.$injectMetadata(),
+                    config: {
+                        fromCache: false,
+                        requestId: 'post_searchGroup_process'
+                    }
+                }).then(groups => {
+                    this.propertyGroups = groups
+                    return groups
+                })
+            },
+            async getObjectUnique () {
+                this.objectUnique = await this.searchObjectUniqueConstraints({
+                    objId: 'process',
+                    params: {},
+                    config: {
+                        requestId: 'searchObjectUniqueConstraints'
+                    }
+                })
+            },
+            handleSave () {
+
+            },
+            handleCancel () {
+                this.slider.show = false
+            },
+            handleCreateProcess () {
+                this.slider.show = true
+                this.slider.title = this.$t("ProcessManagement['添加进程']")
+            }
         }
     }
 </script>
@@ -101,6 +187,7 @@
                 padding-left: 30px;
             }
             .process-create {
+                padding-bottom: 14px;
                 .create-btn {
                     padding: 0 16px;
                     span {
