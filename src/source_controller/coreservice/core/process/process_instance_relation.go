@@ -37,7 +37,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	}
 
 	// keep metadata clean
-	relation.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+	relation.Metadata = metadata.NewMetaDataNGFromBusinessID(bizID)
 
 	// validate service category id field
 	_, err = p.GetServiceInstance(ctx, relation.ServiceInstanceID)
