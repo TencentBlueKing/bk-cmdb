@@ -233,7 +233,7 @@ type Process struct {
 }
 
 type ServiceCategory struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata MetadataNG `field:"metadata" json:"metadata" bson:"metadata"`
 
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
@@ -263,7 +263,7 @@ type ServiceCategoryWithStatistics struct {
 }
 
 type ServiceTemplate struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata MetadataNG `field:"metadata" json:"metadata" bson:"metadata"`
 
 	ID int64 `field:"id" json:"id,omitempty" bson:"id"`
 	// name of this service, can not be empty
@@ -293,8 +293,8 @@ func (st *ServiceTemplate) Validate() (field string, err error) {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64      `field:"id" json:"id,omitempty" bson:"id"`
+	Metadata MetadataNG `field:"metadata" json:"metadata" bson:"metadata"`
 	// the service template's, which this process template belongs to.
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 
@@ -508,9 +508,9 @@ func (ti *PropertyProtocol) Validate() error {
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
-	Name     string   `field:"name" json:"name,omitempty" bson:"name"`
+	Metadata MetadataNG `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64      `field:"id" json:"id,omitempty" bson:"id"`
+	Name     string     `field:"name" json:"name,omitempty" bson:"name"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
@@ -540,7 +540,7 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 
 // ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
-	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	Metadata MetadataNG `field:"metadata" json:"metadata" bson:"metadata"`
 
 	// unique field, 1:1 mapping with ProcessInstance.
 	ProcessID         int64 `field:"process_id" json:"process_id" bson:"process_id"`
