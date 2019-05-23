@@ -58,6 +58,7 @@
             margin-right: 4px;
         }
         a {
+            display: inline-block;
             margin-left: 40px;
             color: #3a84ff;
             &:hover {
