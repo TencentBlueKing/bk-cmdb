@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/common/metadata"
 )
@@ -107,16 +108,17 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error) {
-	ret := new(metadata.ServiceCategoryWithStatisticsResult)
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error) {
+	ret := new(metadata.MultipleServiceCategoryResult)
 	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
-		"bk_biz_id":       bizID,
+		// "bk_biz_id": bizID,
+		"metadata":        metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 		"with_statistics": withStatistics,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
