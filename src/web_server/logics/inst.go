@@ -99,7 +99,7 @@ func (lgc *Logics) GetInstData(ownerID, objID, instIDStr string, header http.Hea
 		return nil, errors.New(aErr.Error())
 	}
 	if !attrResult.Result {
-		blog.Errorf("get object attr error, errorcode : %d, errormsg :%s", attrResult.ErrMsg)
+		blog.Errorf("get object attr error, errorcode : %d, errormsg :%s", attrResult.Code, attrResult.ErrMsg)
 		return nil, errors.New(result.ErrMsg)
 	}
 	for _, cell := range attrResult.Data {
