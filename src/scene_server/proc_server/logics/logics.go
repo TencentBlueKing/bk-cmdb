@@ -95,7 +95,7 @@ func (lgc *Logics) SetCache(db *redis.Client) {
 	lgc.cache = db
 }
 
-//ProcHostInstConfig refresh process host instance number need config
+// ProcHostInstConfig refresh process host instance number need config
 type ProcHostInstConfig struct {
 	MaxEventCount                int
 	MaxRefreshModuleCount        int

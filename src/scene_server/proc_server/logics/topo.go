@@ -67,7 +67,7 @@ func (lgc *Logics) getModuleNameByID(ctx context.Context, ID int64) (name string
 func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, hostID int64) ([]metadata.ModuleHost, error) {
 	defErr := lgc.ccErr
 	dat := map[string][]int64{
-		common.BKHostIDField: []int64{hostID},
+		common.BKHostIDField: {hostID},
 	}
 	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, dat)
 	if nil != err {
@@ -82,7 +82,7 @@ func (lgc *Logics) GetModuleIDByHostID(ctx context.Context, hostID int64) ([]met
 	return ret.Data, nil
 }
 
-func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, appID int64) ([]int64, error) {
+func (lgc *Logics) GetModuleIDByAppID(ctx context.Context, appID int64) ([]int64, error) {
 	supplierID := lgc.ownerID
 	defErr := lgc.ccErr
 	dat := new(metadata.QueryCondition)
@@ -91,16 +91,16 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, appID int64) ([]int6
 	dat.Limit.Limit = common.BKNoLimit
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(ctx, lgc.header, common.BKInnerObjIDModule, dat)
 	if nil != err {
-		blog.Errorf("GetModueleIDByAppID appID %v supplierID %s  http do error:%s,query:%+v,rid:%s", appID, supplierID, err.Error(), dat, lgc.rid)
+		blog.Errorf("GetModuleIDByAppID appID %v supplierID %s  http do error:%s,query:%+v,rid:%s", appID, supplierID, err.Error(), dat, lgc.rid)
 		return make([]int64, 0), defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !ret.Result {
-		blog.Errorf("GetModueleIDByAppID appID %v supplierID %s  http reply error:%s,query:%+v,rid:%s", appID, supplierID, ret.ErrMsg, dat, lgc.rid)
+		blog.Errorf("GetModuleIDByAppID appID %v supplierID %s  http reply error:%s,query:%+v,rid:%s", appID, supplierID, ret.ErrMsg, dat, lgc.rid)
 		return make([]int64, 0), defErr.New(ret.Code, ret.ErrMsg)
 
 	}
 	if 0 == ret.Data.Count {
-		blog.V(5).Infof("GetModueleIDByAppID appID %v supplierID %s  not found module info,query:%+v,rid:%s", appID, supplierID, dat, lgc.rid)
+		blog.V(5).Infof("GetModuleIDByAppID appID %v supplierID %s  not found module info,query:%+v,rid:%s", appID, supplierID, dat, lgc.rid)
 		return make([]int64, 0), nil
 	}
 	moduleIDs := make([]int64, 0)
@@ -108,7 +108,7 @@ func (lgc *Logics) GetModueleIDByAppID(ctx context.Context, appID int64) ([]int6
 		moduleID, err := module.Int64(common.BKModuleIDField)
 		if nil != err {
 			byteModule, _ := json.Marshal(module)
-			blog.Errorf("GetModueleIDByAppID moduleID %v supplierID %s  get set name error:%s raw:%s,query:%+v,rid:%s", appID, supplierID, err.Error(), string(byteModule), dat, lgc.rid)
+			blog.Errorf("GetModuleIDByAppID moduleID %v supplierID %s  get set name error:%s raw:%s,query:%+v,rid:%s", appID, supplierID, err.Error(), string(byteModule), dat, lgc.rid)
 			return nil, err
 		}
 		moduleIDs = append(moduleIDs, moduleID)
