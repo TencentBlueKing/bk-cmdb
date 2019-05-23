@@ -412,7 +412,7 @@ func (lgc *Logic) CheckProcessTemplateAndInstanceIsDifferent(t *metadata.Process
 		return nil, false
 	}
 
-	var process mapstr.MapStr
+	process := make(mapstr.MapStr)
 	if t.ProcNum.Value != nil {
 		if *t.ProcNum.Value != i.ProcNum {
 			process["proc_num"] = *t.ProcNum.Value
