@@ -116,15 +116,6 @@ func NewMetaDataFromBusinessID(value string) Metadata {
 	return meta
 }
 
-func NewMetaDataNGFromBusinessID(bizID int64) MetadataNG {
-	md := MetadataNG{
-		Label: LabelNG{
-			BusinessID: strconv.FormatInt(bizID, 10),
-		},
-	}
-	return md
-}
-
 func GetBusinessIDFromMeta(data interface{}) string {
 	if nil == data {
 		return ""
@@ -216,15 +207,6 @@ func (label Label) ToMapStr() mapstr.MapStr {
 		result[key] = value
 	}
 	return result
-}
-
-// MetadataNG is next generation metadata that define with struct
-type MetadataNG struct {
-	Label LabelNG `field:"label" json:"label" bson:"label"`
-}
-
-type LabelNG struct {
-	BusinessID string `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 }
 
 // isTrue is used to check if the label key is a true value or not.
