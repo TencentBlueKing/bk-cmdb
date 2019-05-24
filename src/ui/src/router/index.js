@@ -15,6 +15,7 @@ import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
+import hostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -35,6 +36,7 @@ export const viewRouters = [
     eventpush,
     history,
     hosts,
+    ...hostDetails,
     modelAssociation,
     modelTopology,
     process,

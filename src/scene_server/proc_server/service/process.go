@@ -249,7 +249,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			return
 		}
 		// save change log
-		headers := []meta.Header{}
+		headers := make([]meta.Header, 0)
 		curData := map[string]interface{}{}
 		for _, detail := range details {
 			curData[detail[common.BKPropertyIDField].(string)] = detail[common.BKPropertyValueField]
@@ -307,7 +307,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 		}
 	}
 
-	logscontent := make([]meta.SaveAuditLogParams, 0)
+	logsContent := make([]meta.SaveAuditLogParams, 0)
 	// update audit log content after modify
 	for index, procID := range iProcIDArr {
 
@@ -328,7 +328,7 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 
 		// save proc info before modify
 		auditContentArr[index].CurData = curData
-		logscontent = append(logscontent, meta.SaveAuditLogParams{
+		logsContent = append(logsContent, meta.SaveAuditLogParams{
 			ID:      int64(procID),
 			Model:   common.BKInnerObjIDProc,
 			Content: auditContentArr[index],
@@ -337,10 +337,10 @@ func (ps *ProcServer) BatchUpdateProcess(req *restful.Request, resp *restful.Res
 			BizID:   int64(appID),
 		})
 	}
-	if 0 < len(logscontent) {
-		auditrsp, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logscontent...)
-		if err != nil || (auditrsp != nil && !auditrsp.Result) {
-			blog.Errorf("save auditlog failed %v %v,rid:%s", auditrsp, err, srvData.rid)
+	if 0 < len(logsContent) {
+		auditResponse, err := ps.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logsContent...)
+		if err != nil || (auditResponse != nil && !auditResponse.Result) {
+			blog.Errorf("save audit log failed %v %v,rid:%s", auditResponse, err, srvData.rid)
 		}
 	}
 
@@ -386,18 +386,18 @@ func (ps *ProcServer) DeleteProcess(req *restful.Request, resp *restful.Response
 		blog.Errorf("get process instance detail failed. err:%s", err.Error())
 	}
 
-	conditon := make(map[string]interface{})
-	conditon[common.BKAppIDField] = appID
-	conditon[common.BKProcessIDField] = procID
-	conditon[common.BKOwnerIDField] = ownerID
-	ret, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, &meta.DeleteOption{Condition: conditon})
+	cond := make(map[string]interface{})
+	cond[common.BKAppIDField] = appID
+	cond[common.BKProcessIDField] = procID
+	cond[common.BKOwnerIDField] = ownerID
+	ret, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(srvData.ctx, srvData.header, common.BKInnerObjIDProc, &meta.DeleteOption{Condition: cond})
 	if err != nil {
-		blog.Errorf("DeleteProcess DelObject http do error.err:%s,input:%+v,rid:%s", err.Error(), conditon, srvData.rid)
+		blog.Errorf("DeleteProcess DelObject http do error.err:%s,input:%+v,rid:%s", err.Error(), cond, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})
 		return
 	}
 	if !ret.Result {
-		blog.Errorf("DeleteProcess DelObject http reply error.err code:%d,err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, conditon, srvData.rid)
+		blog.Errorf("DeleteProcess DelObject http reply error.err code:%d,err msg:%s,input:%+v,rid:%s", ret.Code, ret.ErrMsg, cond, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.New(ret.Code, ret.ErrMsg)})
 		return
 	}
@@ -432,15 +432,15 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 		return
 	}
 
-	var srchparam params.SearchParams
-	srchparam.Condition = mapstr.New()
-	if err := json.NewDecoder(req.Request.Body).Decode(&srchparam); err != nil {
+	var sp params.SearchParams
+	sp.Condition = mapstr.New()
+	if err := json.NewDecoder(req.Request.Body).Decode(&sp); err != nil {
 		blog.Errorf("decode request body err: %v,rid:%s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
-	condition := srchparam.Condition
+	condition := sp.Condition
 	condition[common.BKOwnerIDField] = ownerID
 	condition[common.BKAppIDField] = appID
 	if processName, ok := condition[common.BKProcessNameField]; ok {
@@ -453,10 +453,10 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 
 		}
 	}
-	page := srchparam.Page
+	page := sp.Page
 	searchParams := new(meta.QueryCondition)
 	searchParams.Condition = condition
-	searchParams.Fields = srchparam.Fields
+	searchParams.Fields = sp.Fields
 	searchParams.Limit.Offset, err = util.GetInt64ByInterface(page["start"])
 	if nil != err {
 		searchParams.Limit.Offset = 0
@@ -522,7 +522,7 @@ func (ps *ProcServer) SearchProcess(req *restful.Request, resp *restful.Response
 
 func (ps *ProcServer) addProcLog(ctx context.Context, appID int64, user string, preProcDetails, curProcDetails []map[string]interface{}, auditType auditoplog.AuditOpType, instanceID int64, header http.Header) error {
 
-	headers := []meta.Header{}
+	headers := make([]meta.Header, 0)
 	curData := map[string]interface{}{}
 	preData := map[string]interface{}{}
 	for _, detail := range preProcDetails {
@@ -550,7 +550,7 @@ func (ps *ProcServer) addProcLog(ctx context.Context, appID int64, user string, 
 		PreData: preData,
 		Headers: headers,
 	}
-	desc := fmt.Sprintf("unknown type:%s", auditType)
+	desc := fmt.Sprintf("unknown type: %d", auditType)
 	switch auditType {
 	case auditoplog.AuditOpTypeAdd:
 		desc = "create process"

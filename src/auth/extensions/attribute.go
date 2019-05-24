@@ -26,6 +26,8 @@ import (
 )
 
 func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, header http.Header, attributeIDs ...int64) ([]metadata.Attribute, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	attributeIDs = util.IntArrayUnique(attributeIDs)
 
@@ -48,7 +50,7 @@ func (am *AuthManager) collectAttributesByAttributeIDs(ctx context.Context, head
 		attribute := metadata.Attribute{}
 		_, err := attribute.Parse(item)
 		if err != nil {
-			blog.Errorf("collectAttributesByAttributeIDs %+v failed, parse attribute %+v failed, err: %+v ", attributeIDs, item, err)
+			blog.Errorf("collectAttributesByAttributeIDs %+v failed, parse attribute %+v failed, err: %+v, rid: %s", attributeIDs, item, err, rid)
 			return nil, fmt.Errorf("parse attribute from db data failed, err: %+v", err)
 		}
 		attributes = append(attributes, attribute)
@@ -82,12 +84,14 @@ func (am *AuthManager) ExtractBusinessIDFromModelAttributes(attributes ...metada
 }
 
 func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) ([]meta.ResourceAttribute, error) {
-	blog.V(9).Infof("makeResourceByAttributes input: %+v", attributes)
+	rid := util.ExtractRequestIDFromContext(ctx)
+
+	blog.V(9).Infof("makeResourceByAttributes input: %+v, rid: %s", attributes, rid)
 	objectIDs := make([]string, 0)
 	for _, attribute := range attributes {
 		objectIDs = append(objectIDs, attribute.ObjectID)
 	}
-	
+
 	businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
 	if err != nil {
 		return nil, fmt.Errorf("extract business id from model attribute failed, err: %+v", err)
@@ -123,7 +127,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 
 		// check obj's group id in map
 		if _, exist := classificationMap[object.ObjCls]; exist == false {
-			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist")
+			blog.V(3).Infof("authorization failed, get classification by object failed, err: bk_classification_id not exist, rid: %s", rid)
 			return nil, fmt.Errorf("authorization failed, get classification by object failed, err: bk_classification_id not exist")
 		}
 
@@ -158,7 +162,7 @@ func (am *AuthManager) makeResourceByAttributes(ctx context.Context, header http
 		resources = append(resources, resource)
 	}
 
-	blog.V(9).Infof("makeResourceByAttributes output: %+v", resources)
+	blog.V(9).Infof("makeResourceByAttributes output: %+v, rid: %s", resources, rid)
 	return resources, nil
 }
 
@@ -232,7 +236,7 @@ func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.
 	if len(attributes) == 0 {
 		return nil
 	}
-	
+
 	if am.RegisterModelAttributeEnabled == false {
 		businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
 		if err != nil {
