@@ -26,6 +26,8 @@ import (
 )
 
 func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]*metadata.AssociationKind, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
 
@@ -34,7 +36,7 @@ func (am *AuthManager) collectAssociationTypesByIDs(ctx context.Context, header 
 	queryCond := &metadata.QueryCondition{Condition: cond.ToMapStr()}
 	resp, err := am.clientSet.CoreService().Association().ReadAssociationType(ctx, header, queryCond)
 	if err != nil {
-		blog.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
+		blog.Errorf("get association types by id: %+v failed, err: %+v, rid: %s", ids, err, rid)
 		return nil, fmt.Errorf("get association types by id: %+v failed, err: %+v", ids, err)
 	}
 	if len(resp.Data.Info) == 0 {
@@ -71,7 +73,7 @@ func (am *AuthManager) RegisterAssociationType(ctx context.Context, header http.
 	if am.Enabled() == false {
 		return nil
 	}
-	
+
 	if len(aks) == 0 {
 		return nil
 	}

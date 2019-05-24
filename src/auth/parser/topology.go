@@ -13,6 +13,8 @@
 package parser
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"errors"
 	"fmt"
 	"net/http"
@@ -888,20 +890,36 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// find object/s instance list details operation.
 	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.FindMany,
-				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[7],
+		// TODO: parse these query condition
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[7]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			bizID, err := metadata.BizIDFromMetadata(model.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelInstance,
+						Action: meta.FindMany,
+					},
+					Layers: []meta.Item{
+						{
+							Type: meta.Model,
+							Name: ps.RequestCtx.Elements[7],
+						},
 					},
 				},
-			},
+			)
 		}
+
 		return ps
 	}
 
@@ -1837,8 +1855,8 @@ func (ps *parseStream) objectUnique() *parseStream {
 }
 
 var (
-	searchAuditlog         = `/api/v3/audit/search`
-	searchInstanceAuditlog = `/api/v3/object/[^\s/]+/audit/search`
+	searchAuditlog               = `/api/v3/audit/search`
+	searchInstanceAuditlogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1869,7 +1887,7 @@ func (ps *parseStream) instanceAudit() *parseStream {
 	}
 
 	// add object unique operation.
-	if ps.hitPattern(searchInstanceAuditlog, http.MethodPost) {
+	if ps.hitRegexp(searchInstanceAuditlogRegexp, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
