@@ -513,7 +513,8 @@
         "启动路径": "Work Path",
         "启动用户": "User",
         "添加进程": "Add Process",
-        "锁定": "Locking"
+        "锁定": "Locking",
+        "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications."
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
@@ -798,6 +799,7 @@
         "请输入模版名称": "Please enter the template name",
         "服务分类": "Service Classification",
         "新建进程": "Create Process",
+        "应用实例": "Applications",
         "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance."
     }
 }

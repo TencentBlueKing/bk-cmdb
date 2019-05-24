@@ -150,7 +150,10 @@
                 })
             },
             editeTemplate (template) {
-
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
+                this.$router.push({ name: 'updateTemplate' })
             }
         }
     }
