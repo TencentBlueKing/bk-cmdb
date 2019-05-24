@@ -62,8 +62,11 @@ type ProcServer struct {
 }
 
 func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
+	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
 	ctx, cancel := ps.Engine.CCCtx.WithCancel()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),

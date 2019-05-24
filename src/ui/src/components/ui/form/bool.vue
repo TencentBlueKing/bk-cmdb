@@ -102,6 +102,13 @@
         &.disabled {
             cursor: not-allowed;
         }
+        &:before {
+            content: "";
+            display: inline-block;
+            vertical-align: middle;
+            width: 0;
+            height: 100%;
+        }
     }
     .form-bool-input{
         display: inline-block;

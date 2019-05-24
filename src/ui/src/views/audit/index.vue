@@ -29,6 +29,7 @@
                         :selected.sync="filter.classify"
                         :has-children="true"
                         :searchable="true"
+                        :allow-clear="true"
                     ></bk-selector>
                 </div>
             </div>
