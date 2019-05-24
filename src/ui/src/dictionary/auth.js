@@ -45,9 +45,9 @@ export const D_HOST = 'hostInstance.delete'
 export const HOST_TO_RESOURCE = 'hostInstance.moveHostFromModuleToResPool'
 
 // 资源池主机
-export const C_RESOURCE_HOST = 'hostInstance.create'
-export const U_RESOURCE_HOST = 'hostInstance.update'
-export const D_RESOURCE_HOST = 'hostInstance.delete'
+export const C_RESOURCE_HOST = 'hostInstance.create.global'
+export const U_RESOURCE_HOST = 'hostInstance.update.global'
+export const D_RESOURCE_HOST = 'hostInstance.delete.global'
 export const HOST_ASSIGN = 'hostInstance.moveResPoolHostToBizIdleModule'
 
 // 关联类型
