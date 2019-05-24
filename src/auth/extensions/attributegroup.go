@@ -26,6 +26,8 @@ import (
 )
 
 func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header http.Header, agIDs ...int64) ([]metadata.Group, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	agIDs = util.IntArrayUnique(agIDs)
 
@@ -48,7 +50,7 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 		pg := metadata.Group{}
 		_, err := pg.Parse(item)
 		if err != nil {
-			blog.Errorf("collectAttributesGroupByAttributeIDs %+v failed, parse attribute group %+v failed, err: %+v ", agIDs, item, err)
+			blog.Errorf("collectAttributesGroupByAttributeIDs %+v failed, parse attribute group %+v failed, err: %+v, rid: %s", agIDs, item, err, rid)
 			return nil, fmt.Errorf("parse attribute group from db data failed, err: %+v", err)
 		}
 		pgs = append(pgs, pg)
@@ -57,11 +59,13 @@ func (am *AuthManager) collectAttributesGroupByIDs(ctx context.Context, header h
 }
 
 func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) ([]meta.ResourceAttribute, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
 	if err != nil {
 		return nil, fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
 	}
-	
+
 	objectIDs := make([]string, 0)
 	for _, attributeGroup := range attributeGroups {
 		objectIDs = append(objectIDs, attributeGroup.ObjectID)
@@ -69,11 +73,11 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 
 	objectIDs = util.StrArrayUnique(objectIDs)
 	if len(objectIDs) > 1 {
-		blog.Errorf("makeResourceByAttributeGroup failed, model attribute group belongs to multiple models: %+v", objectIDs)
+		blog.Errorf("makeResourceByAttributeGroup failed, model attribute group belongs to multiple models: %+v, rid: %s", objectIDs, rid)
 		return nil, fmt.Errorf("model attribute groups belongs to multiple models: %+v", objectIDs)
 	}
 	if len(objectIDs) == 0 {
-		blog.Errorf("makeResourceByAttributeGroup failed, model id not found, attribute groups: %+v", attributeGroups)
+		blog.Errorf("makeResourceByAttributeGroup failed, model id not found, attribute groups: %+v, rid: %s", attributeGroups, rid)
 		return nil, fmt.Errorf("model id not found")
 	}
 
@@ -84,21 +88,21 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 	}
 
 	if len(objects) == 0 {
-		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v", objectIDs, err)
+		blog.Errorf("makeResourceByAttributeGroup failed, collectObjectsByObjectIDs no objects found, objectIDs: %+v, err: %+v, rid: %s", objectIDs, err, rid)
 		return nil, fmt.Errorf("collect object by id not found")
 	}
 
 	parentResources, err := am.MakeResourcesByObjects(ctx, header, meta.EmptyAction, objects...)
 	if err != nil {
-		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource failed, objects: %+v, err: %+v", objects, err)
+		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource failed, objects: %+v, err: %+v, rid: %s", objects, err, rid)
 		return nil, fmt.Errorf("get parent resources failed, objects: %+v, err: %+v", objects, err)
 	}
 	if len(parentResources) > 1 {
-		blog.Errorf("makeResourceByAttributeGroup failed, get multiple parent resource, parent resources: %+v", parentResources)
+		blog.Errorf("makeResourceByAttributeGroup failed, get multiple parent resource, parent resources: %+v, rid: %s", parentResources, rid)
 		return nil, fmt.Errorf("get multiple parent resources, parent resources: %+v", parentResources)
 	}
 	if len(parentResources) == 0 {
-		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource empty, objects: %+v", objects)
+		blog.Errorf("makeResourceByAttributeGroup failed, get parent resource empty, objects: %+v, rid: %s", objects, rid)
 		return nil, fmt.Errorf("get parent resources empty, objects: %+v", objects)
 	}
 
@@ -130,7 +134,7 @@ func (am *AuthManager) makeResourceByAttributeGroup(ctx context.Context, header 
 		resources = append(resources, resource)
 	}
 
-	blog.V(5).Infof("makeResourceByAttributeGroup result: %+v", resources)
+	blog.V(5).Infof("makeResourceByAttributeGroup result: %+v, rid: %s", resources, rid)
 	return resources, nil
 }
 
@@ -230,7 +234,7 @@ func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header 
 	if err != nil {
 		return fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
 	}
-	
+
 	if am.RegisterModelAttributeEnabled == false {
 		objectIDs := make([]string, 0)
 		for _, attributeGroup := range attributeGroups {
