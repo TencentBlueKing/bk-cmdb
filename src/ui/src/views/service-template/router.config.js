@@ -20,4 +20,8 @@ export default [{
     name: 'createTemplate',
     path: '/service/create',
     component: () => import('./children/create.vue')
+}, {
+    name: 'updateTemplate',
+    path: '/service/update',
+    component: () => import('./children/update.vue')
 }]

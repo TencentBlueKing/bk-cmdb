@@ -1,5 +1,10 @@
 <template>
     <div class="form-layout">
+        <feature-tips
+            class="process-tips"
+            :show-tips="true"
+            :desc="$t('ProcessManagement[\'添加进程提示\']')">
+        </feature-tips>
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -63,7 +68,11 @@
 <script>
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
+    import featureTips from '@/components/feature-tips/index'
     export default {
+        components: {
+            featureTips
+        },
         mixins: [formMixins],
         props: {
             inst: {
@@ -137,8 +146,6 @@
         },
         created () {
             this.initValues()
-            console.log(this.groupedProperties)
-            console.log(this.$sortedGroups)
         },
         mounted () {
             RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
@@ -240,6 +247,9 @@
     .form-layout{
         height: 100%;
         @include scrollbar-y;
+    }
+    .process-tips {
+        margin: 10px 20px 0;
     }
     .form-groups{
         padding: 0 0 0 32px;

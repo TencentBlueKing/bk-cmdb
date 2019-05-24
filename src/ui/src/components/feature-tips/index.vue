@@ -1,11 +1,11 @@
 <template>
     <div class="feature-tips" v-if="showTips">
-        <div class="main-box">
+        <div class="main-box" :style="{ 'padding-right': featureName ? '30px' : 0 }">
             <i class="icon-cc-exclamation-tips"></i>
             <span>{{desc}}</span>
             <a v-if="moreHref" :href="moreHref" target="_blank">{{$t("Common['更多详情']")}} >></a>
         </div>
-        <span class="icon-cc-tips-close fr" @click="HandleCloseTips"></span>
+        <span class="icon-cc-tips-close fr" v-if="featureName" @click="HandleCloseTips"></span>
     </div>
 </template>
 
@@ -14,7 +14,7 @@
         props: {
             featureName: {
                 type: String,
-                required: true
+                default: ''
             },
             showTips: {
                 type: Boolean,
@@ -48,7 +48,7 @@
         display: flex;
         align-items: center;
         .main-box {
-            padding-right: 30px;
+            line-height: 1.5;
             flex: 1;
         }
         .icon-cc-exclamation-tips {
