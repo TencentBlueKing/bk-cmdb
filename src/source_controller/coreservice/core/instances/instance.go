@@ -48,9 +48,11 @@ func (m *instanceManager) instCnt(ctx core.ContextParams, objID string, cond map
 }
 
 func (m *instanceManager) CreateModelInstance(ctx core.ContextParams, objID string, inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	err := m.validCreateInstanceData(ctx, objID, inputParam.Data)
 	if nil != err {
-		blog.Errorf("create inst valid error: %v", err)
+		blog.Errorf("CreateModelInstance failed, valid error: %+v, rid: %s", err, rid)
 		return nil, err
 	}
 	id, err := m.save(ctx, objID, inputParam.Data)

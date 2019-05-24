@@ -59,7 +59,7 @@ type Basic struct {
 
 	// the instance id of this resource, which could be a model's instance id.
 	// InstanceIDEx is a extend for instanceID which can only be integer, but some resources only have string format id.
-	InstanceID int64
+	InstanceID   int64
 	InstanceIDEx string
 }
 
@@ -104,7 +104,7 @@ const (
 	// unknown action, which is also unsupported actions.
 	Unknown     Action = "unknown"
 	EmptyAction Action = "" // used for register resources
-	SkipAction Action = "skip"
+	SkipAction  Action = "skip"
 
 	Execute Action = "execute"
 
@@ -131,7 +131,8 @@ const (
 )
 
 type InitConfig struct {
-	Bizs            []metadata.BizInst
-	Models          []metadata.Object
-	Classifications []metadata.Classification
+	Bizs             []metadata.BizInst
+	Models           []metadata.Object
+	Classifications  []metadata.Classification
+	AssociationKinds []metadata.AssociationKind
 }
