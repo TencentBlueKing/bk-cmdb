@@ -106,7 +106,7 @@ func (eh *EventHandle) Push(ctx core.ContextParams, objType, eventAction string)
 	err := eh.instanceManager.EventC.Push(ctx, eventInstArr...)
 	if err != nil {
 		blog.ErrorJSON("Push objType(%s) change to event server error. data:%s, rid:%s", objType, eventInstArr, ctx.ReqID)
-		ctx.Error.Errorf(common.CCErrEventPushEventFailed)
+		return ctx.Error.Errorf(common.CCErrEventPushEventFailed)
 	}
 	return nil
 }
