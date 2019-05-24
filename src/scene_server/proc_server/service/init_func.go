@@ -11,13 +11,8 @@
  */
 package service
 
-import (
-	"net/http"
-)
+import ()
 
-func (s *ProcServer) InitFunc() {
-	header := make(http.Header, 0)
-	srvData := s.newSrvComm(header)
+func (ps *ProcServer) InitFunc() {
 
-	go srvData.lgc.InitFunc(srvData.ctx)
 }

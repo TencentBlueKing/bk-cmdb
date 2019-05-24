@@ -12,7 +12,6 @@
 package service
 
 import (
-	"configcenter/src/common/http/rest"
 	"context"
 	"net/http"
 	"time"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/backbone"
 	cfnc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
@@ -33,7 +33,6 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-
 	"github.com/emicklei/go-restful"
 	redis "gopkg.in/redis.v5"
 )
@@ -59,21 +58,25 @@ type ProcServer struct {
 	procHostInstConfig logics.ProcHostInstConfig
 	ConfigMap          map[string]string
 	AuthManager        *extensions.AuthManager
+	Logic              *logics.Logic
 }
 
-func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
+func (ps *ProcServer) newSrvComm(header http.Header) *srvComm {
+	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
-	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	ctx, cancel := ps.Engine.CCCtx.WithCancel()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+
 	return &srvComm{
 		header:        header,
 		rid:           util.GetHTTPCCRequestID(header),
-		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
+		ccErr:         ps.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        ps.Language.CreateDefaultCCLanguageIf(lang),
 		ctx:           ctx,
 		ctxCancelFunc: cancel,
 		user:          util.GetUser(header),
 		ownerID:       util.GetOwnerID(header),
-		lgc:           logics.NewLogics(s.Engine, header, s.Cache, s.EsbServ, &s.procHostInstConfig),
+		lgc:           logics.NewLogics(ps.Engine, header, ps.Cache, ps.EsbServ, &ps.procHostInstConfig),
 	}
 }
 
@@ -88,63 +91,66 @@ func (ps *ProcServer) WebService() *restful.WebService {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateProcess))
-	ws.Route(ws.DELETE("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.DeleteProcess))
-	ws.Route(ws.POST("/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchProcess))
-	ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.UpdateProcess))
-	ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}").To(ps.BatchUpdateProcess))
+	// ws.Route(ws.POST("/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateProcess))
+	// ws.Route(ws.DELETE("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.DeleteProcess))
+	// ws.Route(ws.POST("/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchProcess))
+	// ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.UpdateProcess))
+	// ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}").To(ps.BatchUpdateProcess))
+	//
+	// ws.Route(ws.GET("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcessBindModule))
+	// ws.Route(ws.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
+	// ws.Route(ws.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
+	//
+	// ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
-	ws.Route(ws.GET("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcessBindModule))
-	ws.Route(ws.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
-	ws.Route(ws.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
-
-	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
-
-	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
-
-	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
-	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
-	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
-	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
-	ws.Route(ws.POST("/template/version/search/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.SearchTemplateVersion))
-	ws.Route(ws.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateTemplateVersion))
-	ws.Route(ws.PUT("/template/vesrion/{bk_supplier_account}/{bk_biz_id}/{template_id}/{version_id}").To(ps.UpdateTemplateVersion))
-	ws.Route(ws.GET("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
-	ws.Route(ws.PUT("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.BindProc2Template))
-	ws.Route(ws.DELETE("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.DeleteProc2Template))
-	ws.Route(ws.POST("/template/preview/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PreviewCfg))
-	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
-	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
-	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
-	ws.Route(ws.GET("/template/group/{bk_supplier_account}/{bk_biz_id}").To(ps.GetTemplateGroup))
-
-	//v2
+	// v2
 	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
 	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
 	ws.Route(ws.GET("/healthz").To(ps.Healthz))
-	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
 	return ws
 }
 
-func (s *ProcServer) WebService2() *restful.WebService {
+func (ps *ProcServer) WebService2(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.Engine.CCErr,
-		Language: s.Engine.Language,
+		ErrorIf:  ps.Engine.CCErr,
+		Language: ps.Engine.Language,
 	})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: s.GetServiceCategory})
+	// service category
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_category", Handler: ps.GetServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_category", Handler: ps.CreateServiceCategory})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_category", Handler: ps.DeleteServiceCategory})
 
-	return utility.GetRestfulWebService(rest.RestfulConfig{RootPath: "/process/v3"})
+	// service template
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
+
+	// process template
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/proc/proc_template/for_service_template", Handler: ps.CreateProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/proc_template/for_service_template", Handler: ps.UpdateProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/proc/proc_template/for_service_template", Handler: ps.DeleteProcessTemplateBatch})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/proc_template/id/{processTemplateID}", Handler: ps.GetProcessTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/findmany/proc/proc_template", Handler: ps.ListProcessTemplate})
+
+	// service instance
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: ps.CreateServiceInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: ps.DeleteProcessInstanceInServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance", Handler: ps.GetServiceInstancesInModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance", Handler: ps.DeleteServiceInstance})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_instance/difference", Handler: ps.FindDifferencesBetweenServiceAndProcessInstance})
+
+	utility.AddToRestfulWebService(web)
 }
 
-func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
+func (ps *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
 	// zk health status
 	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
+	if err := ps.Engine.Ping(); err != nil {
 		zkItem.IsHealthy = false
 		zkItem.Message = err.Error()
 	}
@@ -152,7 +158,7 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// object controller
 	objCtr := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_OBJECTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_OBJECTCONTROLLER); err != nil {
 		objCtr.IsHealthy = false
 		objCtr.Message = err.Error()
 	}
@@ -160,14 +166,14 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
 		hostCtrl.IsHealthy = false
 		hostCtrl.Message = err.Error()
 	}
 
 	// host controller
 	procCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_PROCCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
+	if _, err := ps.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_PROCCONTROLLER); err != nil {
 		procCtrl.IsHealthy = false
 		procCtrl.Message = err.Error()
 	}
@@ -224,15 +230,15 @@ func (ps *ProcServer) OnProcessConfigUpdate(previous, current cfnc.ProcessConfig
 		}
 	}
 	if val, ok := current.ConfigMap[hostInstPrefix+".maxModuleIDCount"]; ok {
-		mid_count, err := util.GetIntByInterface(val)
+		midCount, err := util.GetIntByInterface(val)
 		if nil == err {
-			procHostInstConfig.MaxRefreshModuleCount = mid_count
+			procHostInstConfig.MaxRefreshModuleCount = midCount
 		}
 	}
 	if val, ok := current.ConfigMap[hostInstPrefix+".getModuleIDInterval"]; ok {
-		get_mid_interval, err := util.GetIntByInterface(val)
+		getMidInterval, err := util.GetIntByInterface(val)
 		if nil == err {
-			procHostInstConfig.GetModuleIDInterval = time.Duration(get_mid_interval) * time.Second
+			procHostInstConfig.GetModuleIDInterval = time.Duration(getMidInterval) * time.Second
 		}
 	}
 	ps.ConfigMap = current.ConfigMap

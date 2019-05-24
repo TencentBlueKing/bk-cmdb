@@ -1,5 +1,12 @@
 <template>
-    <div class="push-wrapper">
+    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'eventpush'"
+            :show-tips="showFeatureTips"
+            :desc="$t('EventPush[\'事件推送顶部提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="btn-wrapper clearfix">
             <bk-button type="primary"
                 :disabled="!$isAuthorized(OPERATION.C_EVENT)"
@@ -60,15 +67,18 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
+    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
-            vPushDetail
+            vPushDetail,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 curPush: {},
                 table: {
@@ -110,9 +120,13 @@
                 }
             }
         },
+        computed: {
+            ...mapGetters(['featureTipsParams'])
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
+            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [

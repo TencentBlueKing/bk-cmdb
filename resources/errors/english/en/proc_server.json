@@ -18,5 +18,11 @@
     "1108021": "Process operation waiting to be executed",
     "1108022": "Process operation error",
     "1108023": "create config template failed",
+    "1108024": "get service instances failed",
+    "1108025": "create service instance failed",
+    "1108026": "delete service instance failed",
+    "1108027": "get process template failed",
+    "1108028": "get process instance failed",
+    "1108029": "get process relation failed",
     "": ""
 }
