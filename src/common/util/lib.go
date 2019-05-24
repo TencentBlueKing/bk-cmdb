@@ -67,6 +67,9 @@ func GetHTTPCCRequestID(header http.Header) string {
 }
 
 func ExtractRequestIDFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
 	rid := ctx.Value(common.ContextRequestIDField)
 	ridValue, ok := rid.(string)
 	if ok == true {
