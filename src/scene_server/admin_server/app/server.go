@@ -63,6 +63,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service.Engine = engine
+	service.Config = *process.Config
 	process.Core = engine
 	process.Service = service
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
@@ -87,17 +88,22 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return err
 		}
 
-		if process.Config.AuthCenter.EnableSync {
+		if process.Config.AuthCenter.Enable {
+			blog.Info("enable auth center access.")
 			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
-			} else {
-				process.Service.SetAuthcenter(authcli)
 			}
-			authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
-			authSynchronizer.Run()
+			process.Service.SetAuthcenter(authcli)
+
+			if process.Config.AuthCenter.EnableSync {
+				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+				authSynchronizer.Run()
+				blog.Info("enable auth center and enable auth sync function.")
+			}
+
 		} else {
-			blog.Infof("auth sync disabled")
+			blog.Infof("disable auth center access.")
 		}
 		break
 	}
