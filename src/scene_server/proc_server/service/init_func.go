@@ -13,6 +13,6 @@ package service
 
 import ()
 
-func (s *ProcServer) InitFunc() {
+func (ps *ProcServer) InitFunc() {
 
 }

@@ -26,13 +26,13 @@ import (
 
 func (lgc *Logics) getHostByModuleID(ctx context.Context, moduleID int64) (map[int64]*metadata.GseHost, error) {
 	dat := map[string][]int64{
-		common.BKModuleIDField: []int64{moduleID},
+		common.BKModuleIDField: {moduleID},
 	}
 	supplierID := lgc.ownerID
 	intSupplierID, err := util.GetInt64ByInterface(supplierID)
 	defErr := lgc.ccErr
 	if nil != err {
-		blog.Errorf("getHostByModuleID supplierID %s  not interger", supplierID)
+		blog.Errorf("getHostByModuleID supplierID %s not integer", supplierID)
 		return nil, err
 	}
 
@@ -73,19 +73,19 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, moduleID int64) (map[i
 
 		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
 		if nil != err {
-			blog.Errorf("getHostByModuleID hostInfo %+v  hostID   not interger,rid:%s", host, lgc.rid)
+			blog.Errorf("getHostByModuleID hostInfo %+v hostID not integer,rid:%s", host, lgc.rid)
 			return nil, err
 		}
 		cloudID, err := util.GetInt64ByInterface(host[common.BKCloudIDField])
 		if nil != err {
 			byteHost, _ := json.Marshal(host)
-			blog.Errorf("getHostByModuleID  hostInfo %v  cloudID  not interger, host:%s,rid:%s", host, string(byteHost), lgc.rid)
+			blog.Errorf("getHostByModuleID  hostInfo %v  cloudID  not integer, host:%s,rid:%s", host, string(byteHost), lgc.rid)
 			return nil, err
 		}
 		innerIP, ok := host[common.BKHostInnerIPField].(string)
 		if !ok {
 			byteHost, _ := json.Marshal(host)
-			blog.Errorf("getHostByModuleID  hostInfo %v  innerip  not found, host:%s,rid:%s", host, string(byteHost), lgc.rid)
+			blog.Errorf("getHostByModuleID  hostInfo %v innerIP not found, host:%s,rid:%s", host, string(byteHost), lgc.rid)
 			return nil, err
 		}
 		item.HostID = hostID

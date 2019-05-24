@@ -48,9 +48,10 @@
     "1199050": "unregister resource to IAM failed",
     "1199051": "inappropriate calling, auth is disabled",
     "1199052": "get multiple objects",
-    "1199053": "operate built-in object forbidden",
-    "1199054": "forbidden remove item with child node",
-    "1199055": "remove referenced record forbidden",
+    "1199053": "blueking auth center is not enabled",
+    "1199054": "operate built-in object forbidden",
+    "1199055": "forbidden remove item with child node",
+    "1199056": "remove referenced record forbidden",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",

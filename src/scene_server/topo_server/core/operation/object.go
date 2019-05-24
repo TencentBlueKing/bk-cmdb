@@ -792,8 +792,14 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
+	bizID, err := metadata.BizIDFromMetadata(object.Metadata)
+	if err != nil {
+		blog.Error("update object: %s, but parse business id failed, err: %v", object.ObjectID, err)
+		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
+	}
+
 	// auth update register info
-	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, id); err != nil {
+	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, bizID, id); err != nil {
 		blog.Errorf("update object %s success, but update to auth failed, err: %v", object.ObjectName, err)
 		return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}

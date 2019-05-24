@@ -21,6 +21,36 @@ import (
 	"configcenter/src/common/metadata"
 )
 
+func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, error) {
+	cond := condition.CreateCondition()
+	cond.AddContionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: "$in", Value: procIDs})
+
+	reqParam := new(metadata.QueryCondition)
+	reqParam.Condition = cond.ToMapStr()
+	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != err {
+		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, err)
+		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+	}
+
+	if !ret.Result {
+		blog.Errorf("rid: %s list process instance with procID: %d failed, err: %v", kit.Rid, procIDs, ret.ErrMsg)
+		return nil, kit.CCError.New(ret.Code, ret.ErrMsg)
+
+	}
+
+	processes := make([]metadata.Process, 0)
+	for _, p := range ret.Data.Info {
+		process := new(metadata.Process)
+		if err := p.ToStructByTag(process, "field"); err != nil {
+			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
+		}
+		processes = append(processes, *process)
+	}
+
+	return processes, nil
+}
+
 func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, error) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
@@ -89,7 +119,7 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 
 func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procID []int64) error {
 	cond := condition.CreateCondition()
-	cond.AddContionItem(condition.ConditionItem{Field: "id", Operator: "$in", Value: procID})
+	cond.AddContionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: "$in", Value: procID})
 	option := metadata.DeleteOption{
 		Condition: cond.ToMapStr(),
 	}
@@ -372,6 +402,177 @@ func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessP
 	}
 
 	return changes
+}
+
+// if process instance is not same with the process template, then update the process instance's value,
+// and return the updated process, with a true bool value.
+func (lgc *Logic) CheckProcessTemplateAndInstanceIsDifferent(t *metadata.ProcessProperty, i *metadata.Process) (mapstr.MapStr, bool) {
+	var changed bool
+	if t == nil || i == nil {
+		return nil, false
+	}
+
+	process := make(mapstr.MapStr)
+	if t.ProcNum.Value != nil {
+		if *t.ProcNum.Value != i.ProcNum {
+			process["proc_num"] = *t.ProcNum.Value
+
+		}
+	}
+
+	if t.StopCmd.Value != nil {
+		if *t.StopCmd.Value != i.StopCmd {
+			process["stop_cmd"] = *t.StopCmd.Value
+			changed = true
+
+		}
+	}
+
+	if t.RestartCmd.Value != nil {
+		if *t.RestartCmd.Value != i.RestartCmd {
+			process["restart_cmd"] = *t.RestartCmd.Value
+			changed = true
+
+		}
+	}
+
+	if t.ForceStopCmd.Value != nil {
+		if *t.ForceStopCmd.Value != i.ForceStopCmd {
+			process["face_stop_cmd"] = *t.ForceStopCmd.Value
+			changed = true
+
+		}
+	}
+
+	if t.FuncName.Value != nil {
+		if *t.FuncName.Value != i.FuncName {
+			process["bk_func_name"] = *t.FuncName.Value
+			changed = true
+
+		}
+	}
+
+	if t.WorkPath.Value != nil {
+		if *t.WorkPath.Value != i.WorkPath {
+			process["work_path"] = *t.WorkPath.Value
+			changed = true
+
+		}
+	}
+
+	if t.BindIP.Value != nil {
+		if *t.BindIP.Value != i.BindIP {
+			process["bind_ip"] = *t.BindIP.Value
+			changed = true
+
+		}
+	}
+
+	if t.Priority.Value != nil {
+		if *t.Priority.Value != i.Priority {
+			process["priority"] = *t.Priority.Value
+			changed = true
+
+		}
+	}
+
+	if t.ReloadCmd.Value != nil {
+		if *t.ReloadCmd.Value != i.ReloadCmd {
+			process["reload_cmd"] = *t.ReloadCmd.Value
+			changed = true
+
+		}
+	}
+
+	if t.ProcessName.Value != nil {
+		if *t.ProcessName.Value != i.ProcessName {
+			process["bk_process_name"] = *t.ProcessName.Value
+			changed = true
+
+		}
+	}
+
+	if t.Port.Value != nil {
+		if *t.Port.Value != i.Port {
+			process["port"] = *t.Port.Value
+			changed = true
+
+		}
+	}
+
+	if t.PidFile.Value != nil {
+		if *t.PidFile.Value != i.PidFile {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+
+		}
+	}
+
+	if t.AutoStart.Value != nil {
+		if *t.AutoStart.Value != i.AutoStart {
+			process["auto_start"] = *t.AutoStart.Value
+			changed = true
+
+		}
+	}
+
+	if t.AutoTimeGapSeconds.Value != nil {
+		if *t.AutoTimeGapSeconds.Value != i.AutoTimeGap {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+
+		}
+	}
+
+	if t.StartCmd.Value != nil {
+		if *t.StartCmd.Value != i.StartCmd {
+			process["start_cmd"] = *t.StartCmd.Value
+			changed = true
+
+		}
+	}
+
+	if t.FuncID.Value != nil {
+		if *t.FuncID.Value != i.FuncID {
+			process["bk_func_id"] = *t.FuncID.Value
+			changed = true
+
+		}
+	}
+
+	if t.User.Value != nil {
+		if *t.User.Value != i.User {
+			process["user"] = *t.User.Value
+			changed = true
+
+		}
+	}
+
+	if t.TimeoutSeconds.Value != nil {
+		if *t.TimeoutSeconds.Value != i.TimeoutSeconds {
+			process["timeout"] = *t.TimeoutSeconds.Value
+			changed = true
+
+		}
+	}
+
+	if t.Protocol.Value != nil {
+		if *t.Protocol.Value != i.Protocol {
+			process["protocol"] = *t.Protocol.Value
+			changed = true
+
+		}
+	}
+
+	if t.Description.Value != nil {
+		if *t.Description.Value != i.Description {
+			process["description"] = *t.Description.Value
+			changed = true
+
+		}
+	}
+
+	return process, changed
 }
 
 // this function works to create a new process instance from a process template.

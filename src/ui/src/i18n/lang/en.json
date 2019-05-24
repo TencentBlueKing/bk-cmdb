@@ -125,7 +125,8 @@
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
         "请选择时间": "Please select time",
-        "更多详情": "More details"
+        "更多详情": "More details",
+        "更多": "Show All"
     },
     "Nav": {
         "首页": "Index",
@@ -801,5 +802,18 @@
         "新建进程": "Create Process",
         "应用实例": "Applications",
         "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance."
+    },
+    "HostDetails": {
+        "主机详情": "Host Details",
+        "主机属性": "Host Properties",
+        "实时状态": "Real-Time Status",
+        "变更记录": "Change Log",
+        "基本值": "Basic Value",
+        "最近更新时间": "Update Time",
+        "关联": "Association",
+        "新增关联": "New Association",
+        "批量取消": "Batch Cancel",
+        "列表": "List",
+        "暂无关联关系": "No Association"
     }
 }
