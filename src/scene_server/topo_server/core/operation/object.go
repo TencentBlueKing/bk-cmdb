@@ -124,14 +124,17 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 			metaAttr := metadata.Attribute{}
 			targetAttr, err := metaAttr.Parse(attr)
-			targetAttr.OwnerID = params.SupplierAccount
-			targetAttr.ObjectID = objID
 			if nil != err {
 				blog.Errorf("create object batch, but got invalid object attribute, object id: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
 				hasError = true
 				continue
+			}
+			targetAttr.OwnerID = params.SupplierAccount
+			targetAttr.ObjectID = objID
+			if params.MetaData != nil {
+				targetAttr.Metadata = *params.MetaData
 			}
 
 			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
@@ -165,12 +168,16 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			} else {
 
 				newGrp := o.modelFactory.CreateGroup(params)
-				newGrp.SetGroup(metadata.Group{
+				g := metadata.Group{
 					GroupName: targetAttr.PropertyGroupName,
 					GroupID:   model.NewGroupID(false),
 					ObjectID:  objID,
 					OwnerID:   params.SupplierAccount,
-				})
+				}
+				if params.MetaData != nil {
+					g.Metadata = *params.MetaData
+				}
+				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
 				if nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
