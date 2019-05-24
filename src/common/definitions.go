@@ -450,6 +450,9 @@ const (
 	// BKProtocol the protocol
 	BKProtocol = "protocol"
 
+	// the process object name
+	BKProcessObjectName = "process"
+
 	// BKProcessIDField the process id field
 	BKProcessIDField = "bk_process_id"
 
@@ -1032,4 +1035,12 @@ const (
 	AttributeOptionMaxLength      = 1000
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
+)
+
+const (
+	NameFieldMaxLength = 256
+)
+
+const (
+	ContextRequestIDField = "request_id"
 )

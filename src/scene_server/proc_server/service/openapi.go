@@ -29,11 +29,11 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
 
-	//get appID
+	// get appID
 	pathParams := req.PathParameters()
 	appID, err := util.GetInt64ByInterface(pathParams[common.BKAppIDField])
 	if err != nil {
-		blog.Errorf("fail to get appid from pathparameter. err: %s,queryString:%+v,rid:%s", err.Error(), pathParams, srvData.rid)
+		blog.Errorf("fail to get appid from path parameter. err: %s,queryString:%+v,rid:%s", err.Error(), pathParams, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommHTTPInputInvalid)})
 		return
 	}
@@ -145,7 +145,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 	resp.WriteEntity(meta.NewSuccessResp(retData))
 }
 
-//根据IP获取进程端口
+// 根据IP获取进程端口
 func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Response) {
 	srvData := ps.newSrvComm(req.Request.Header)
 	defErr := srvData.ccErr
@@ -176,20 +176,20 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		return
 	}
 	blog.V(5).Infof("configArr: %+v,rid:%s", confArr, srvData.rid)
-	//根据业务id获取进程
+	// 根据业务id获取进程
 	resultData := make([]interface{}, 0)
 	for _, item := range confArr {
 		appId := item[common.BKAppIDField]
 		moduleId := item[common.BKModuleIDField]
 		hostId := item[common.BKHostIDField]
-		//业务
+		// 业务
 		appData, err := ps.getAppInfoByID(appId, srvData.header)
 		if err != nil {
 			blog.Errorf("fail to getAppInfoByID in GetProcessPortByIP. err: %s,rid:%s", err.Error(), srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrProcGetByIP)})
 			return
 		}
-		//模块
+		// 模块
 		moduleData, err := ps.getModuleMapByCond(srvData.header, nil, map[string]interface{}{
 			common.BKModuleIDField: moduleId,
 			common.BKAppIDField:    appId,
@@ -207,7 +207,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 		}
 		blog.V(5).Infof("moduleData:%+v,rid:%s", moduleData, srvData.rid)
 
-		//进程
+		// 进程
 		procData, err := ps.getProcessMapByAppID(appId, srvData.header)
 		if err != nil {
 			blog.Errorf("fail to getProcessMapByAppID. err: %s,rid:%s", err.Error(), srvData.rid)
@@ -215,7 +215,7 @@ func (ps *ProcServer) GetProcessPortByIP(req *restful.Request, resp *restful.Res
 			return
 		}
 		blog.V(5).Infof("procData: %+v,rid:%s", procData, srvData.rid)
-		//获取绑定关系
+		// 获取绑定关系
 		for _, itemProcData := range procData {
 			result := make(map[string]interface{})
 			procID, err := itemProcData.Int64(common.BKProcessIDField)
@@ -290,7 +290,7 @@ func (ps *ProcServer) getProcessesByModuleName(forward http.Header, moduleName s
 
 func (ps *ProcServer) getModuleHostConfigsByAppID(appID int64, forward http.Header) (moduleHostConfigs []map[string]int64, err error) {
 	return ps.getConfigByCond(forward, map[string][]int64{
-		common.BKAppIDField: []int64{int64(appID)},
+		common.BKAppIDField: {int64(appID)},
 	})
 }
 
@@ -337,7 +337,7 @@ func (ps *ProcServer) getAppMapByCond(forward http.Header, fields []string, cond
 	input := new(meta.QueryCondition)
 	input.Condition = cond
 	input.Fields = fields
-	input.SortArr = []meta.SearchSort{meta.SearchSort{Field: common.BKAppIDField}}
+	input.SortArr = []meta.SearchSort{{Field: common.BKAppIDField}}
 	input.Limit.Offset = 0
 	input.Limit.Limit = common.BKNoLimit
 
@@ -423,15 +423,15 @@ func (ps *ProcServer) getHostMapByCond(forward http.Header, condition map[string
 	}
 
 	for _, info := range ret.Data.Info {
-		host_id, err := info.Int64(common.BKHostIDField)
+		hostID, err := info.Int64(common.BKHostIDField)
 		if nil != err {
 			blog.Errorf("getHostMapByCond hostID not integer, err:%s,Search input:%+v, host info:%+v,rid:%s", err.Error(), input, info, srvData.rid)
 			// CCErrCommInstFieldConvFail  convert %s  field %s to %s error %s
 			return nil, nil, defErr.Errorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDHost, common.BKHostIDField, "string", err.Error())
 		}
 
-		hostMap[host_id] = info
-		hostIdArr = append(hostIdArr, host_id)
+		hostMap[hostID] = info
+		hostIdArr = append(hostIdArr, hostID)
 	}
 
 	return hostMap, hostIdArr, nil
@@ -443,7 +443,7 @@ func (ps *ProcServer) getModuleMapByCond(forward http.Header, field []string, co
 	moduleMap := make(map[int64]mapstr.MapStr)
 	input := new(meta.QueryCondition)
 	input.Fields = field
-	input.SortArr = []meta.SearchSort{meta.SearchSort{Field: common.BKModuleIDField}}
+	input.SortArr = []meta.SearchSort{{Field: common.BKModuleIDField}}
 	input.Limit.Limit = common.BKNoLimit
 	input.Condition = cond
 	ret, err := ps.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDModule, input)

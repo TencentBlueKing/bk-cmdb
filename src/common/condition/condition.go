@@ -219,7 +219,7 @@ func (cli *condition) ToMapStr() types.MapStr {
 	return tmpResult
 }
 
-// AddContionItem add ConditionItem into condition
+// AddConditionItem add ConditionItem into condition
 func (cli *condition) AddContionItem(cond ConditionItem) error {
 	switch cond.Operator {
 	case common.BKDBEQ:

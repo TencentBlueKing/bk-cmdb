@@ -162,10 +162,11 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
-	CCErrCommGetMultipleObject = 1199052
-	CCErrCommOperateBuiltInItemForbidden = 1199053
-	CCErrCommRemoveRecordHasChildrenForbidden = 1199054
-	CCErrCommRemoveReferencedRecordForbidden = 1199055
+	CCErrCommGetMultipleObject                = 1199052
+    CCErrCommAuthCenterIsNotEnabled = 1199053
+    CCErrCommOperateBuiltInItemForbidden      = 1199054
+	CCErrCommRemoveRecordHasChildrenForbidden = 1199055
+	CCErrCommRemoveReferencedRecordForbidden  = 1199056
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -481,10 +482,10 @@ const (
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
 	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFaile         = 1108005
-	CCErrProcSearchProcessFaile         = 1108006
-	CCErrProcDeleteProcessFaile         = 1108007
-	CCErrProcCreateProcessFaile         = 1108008
+	CCErrProcUpdateProcessFailed        = 1108005
+	CCErrProcSearchProcessFailed        = 1108006
+	CCErrProcDeleteProcessFailed        = 1108007
+	CCErrProcCreateProcessFailed        = 1108008
 	CCErrProcFieldValidFaile            = 1108009
 	CCErrProcGetByApplicationIDFail     = 1108010
 	CCErrProcGetByIP                    = 1108011
@@ -500,6 +501,13 @@ const (
 	CCErrProcQueryTaskWaitOPFail        = 1108021
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
+
+	CCErrProcGetServiceInstancesFailed        = 1108024
+	CCErrProcCreateServiceInstancesFailed     = 1108025
+	CCErrProcDeleteServiceInstancesFailed     = 1108026
+	CCErrProcGetProcessTemplatesFailed        = 1108027
+	CCErrProcGetProcessInstanceFailed         = 1108028
+	CCErrProcGetProcessInstanceRelationFailed = 1108029
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -636,7 +644,7 @@ const (
 	CCErrCoreServiceTransferHostModuleErr = 1113009
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
-	
+
 	// synchronize data coreservice  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist

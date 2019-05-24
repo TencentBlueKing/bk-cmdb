@@ -14,12 +14,12 @@ package process
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/framework/core/errors"
 )
 
 func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
@@ -65,7 +65,7 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
+func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
 
@@ -108,16 +108,17 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error) {
-	ret := new(metadata.ServiceCategoryWithStatisticsResult)
-	subPath := "/list/process/service_category"
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error) {
+	ret := new(metadata.MultipleServiceCategoryResult)
+	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
-		"bizID":          bizID,
-		"withStatistics": withStatistics,
+		// "bk_biz_id": bizID,
+		"metadata":        metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		"with_statistics": withStatistics,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -138,7 +139,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 /*
 	service template api
 */
-func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := "/create/process/service_template"
 
@@ -181,7 +182,7 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
+func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/update/process/service_template/%d", templateID)
 
@@ -226,11 +227,11 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 
 func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error) {
 	ret := new(metadata.MultipleServiceTemplateResult)
-	subPath := "/list/process/service_template"
+	subPath := "/findmany/process/service_template"
 
 	input := map[string]interface{}{
-		"bizID":      bizID,
-		"categoryID": categoryID,
+		"bk_biz_id":           bizID,
+		"service_category_id": categoryID,
 	}
 
 	err = p.client.Delete().
@@ -254,7 +255,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 /*
 	process template api
 */
-func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
 
@@ -297,7 +298,7 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
+func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
@@ -340,7 +341,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) BatchDeleteProcessTemplate(ctx context.Context, h http.Header, templateIDs []int64) error {
+func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header, templateIDs []int64) error {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/delete/process/process_template"
 
@@ -366,18 +367,13 @@ func (p *process) BatchDeleteProcessTemplate(ctx context.Context, h http.Header,
 	return nil
 }
 
-func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64) (resp *metadata.MultipleProcessTemplate, err error) {
+func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (resp *metadata.MultipleProcessTemplate, err error) {
 	ret := new(metadata.MultipleProcessTemplateResult)
-	subPath := "/list/process/process_template"
-
-	input := map[string]interface{}{
-		"bizID":             bizID,
-		"serviceTemplateID": serviceTemplateID,
-	}
+	subPath := "/findmany/process/process_template"
 
 	err = p.client.Delete().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -396,7 +392,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, bizID
 /*
 	service instance api
 */
-func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := "/create/process/service_instance"
 
@@ -439,7 +435,7 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
+func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error) {
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := fmt.Sprintf("/update/process/service_instance/%d", instanceID)
 
@@ -482,19 +478,13 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, inst
 	return nil
 }
 
-func (p *process) ListServiceInstance(ctx context.Context, h http.Header, bizID int64, serviceTemplateID int64, hostID int64) (resp *metadata.MultipleServiceInstance, err error) {
+func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (resp *metadata.MultipleServiceInstance, err error) {
 	ret := new(metadata.MultipleServiceInstanceResult)
-	subPath := "/list/process/service_instance"
-
-	input := map[string]interface{}{
-		"bizID":             bizID,
-		"serviceTemplateID": serviceTemplateID,
-		"hostID":            hostID,
-	}
+	subPath := "/findmany/process/service_instance"
 
 	err = p.client.Delete().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -513,7 +503,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, bizID 
 /*
 	process instance relation api
 */
-func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Header, instance *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := "/create/process/process_instance_relation"
 
@@ -556,7 +546,7 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 	return &ret.Data, nil
 }
 
-func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
+func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Header, instanceID int64, instance *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error) {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := fmt.Sprintf("/update/process/process_instance_relation/%d", instanceID)
 
@@ -599,20 +589,13 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 	return nil
 }
 
-func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header, bizID int64, serviceInstanceID int64, hostID int64) (resp *metadata.MultipleProcessInstanceRelation, err error) {
+func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error) {
 	ret := new(metadata.MultipleProcessInstanceRelationResult)
-	subPath := "/list/process/process_instance_relation"
-
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-	input := map[string]interface{}{
-		"metadata":            md,
-		"service_template_id": serviceInstanceID,
-		"host_id":             hostID,
-	}
+	subPath := "/findmany/process/process_instance_relation"
 
 	err = p.client.Delete().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

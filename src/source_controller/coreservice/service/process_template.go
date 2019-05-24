@@ -13,10 +13,9 @@
 package service
 
 import (
-	"errors"
-	"fmt"
 	"strconv"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -25,9 +24,9 @@ import (
 
 func (s *coreService) CreateProcessTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	template := metadata.ProcessTemplate{}
-	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("CreateProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateProcessTemplate(params, template)
@@ -43,13 +42,13 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 	processTemplateIDStr := pathParams(processTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
 		blog.Errorf("GetProcessTemplate failed, path parameter `%s` empty", processTemplateIDStr)
-		return nil, fmt.Errorf("path parameter `%s` empty", processTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	processTemplateID, err := strconv.ParseInt(processTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("GetProcessTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", processTemplateIDField, processTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %d, err: %v", processTemplateIDField, processTemplateID, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetProcessTemplate(params, processTemplateID)
@@ -63,28 +62,23 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
-		Metadata           metadata.Metadata    `json:"metadata" field:"metadata"`
-		ServiceTemplateID  int64                `json:"service_template_id" field:"service_template_id"`
-		ProcessTemplateIDs *[]int64             `json:"process_template_ids" field:"process_template_ids"`
-		Limit              metadata.SearchLimit `json:"limit" field:"limit"`
+		BusinessID         int64             `json:"bk_biz_id" field:"bk_biz_id"`
+		ServiceTemplateID  int64             `json:"service_template_id" field:"service_template_id"`
+		ProcessTemplateIDs *[]int64          `json:"process_template_ids" field:"process_template_ids"`
+		Page               metadata.BasePage `json:"page" field:"page"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&fp, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	bizID, err := metadata.BizIDFromMetadata(fp.Metadata)
-	if err != nil {
-		blog.Errorf("ListServiceTemplates failed, parse business id from metadata failed, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, fmt.Errorf("parse business id from metadata failed, err: %v", err)
-	}
-	if bizID == 0 {
-		blog.Errorf("ListServiceTemplates failed, business id can't be empty, metadata: %+v, err: %v", fp.Metadata, err)
-		return nil, errors.New("business id can't be empty")
+	if fp.BusinessID == 0 {
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessTemplates(params, bizID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Limit)
+	result, err := s.core.ProcessOperation().ListProcessTemplates(params, fp.BusinessID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Page)
 	if err != nil {
 		blog.Errorf("ListProcessTemplates failed, err: %+v", err)
 		return nil, err
@@ -97,19 +91,19 @@ func (s *coreService) UpdateProcessTemplate(params core.ContextParams, pathParam
 	processTemplateIDStr := pathParams(processTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
 		blog.Errorf("UpdateProcessTemplate failed, path parameter `%s` empty", processTemplateIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", processTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	processTemplateID, err := strconv.ParseInt(processTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("UpdateProcessTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", processTemplateIDField, processTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processTemplateIDField, processTemplateIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	template := metadata.ProcessTemplate{}
-	if err := mapstr.SetValueToStructByTags(&template, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
 		blog.Errorf("UpdateProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateProcessTemplate(params, processTemplateID, template)
@@ -126,13 +120,13 @@ func (s *coreService) DeleteProcessTemplate(params core.ContextParams, pathParam
 	processTemplateIDStr := pathParams(processTemplateIDField)
 	if len(processTemplateIDStr) == 0 {
 		blog.Errorf("DeleteProcessTemplate failed, path parameter `%s` empty", processTemplateIDField)
-		return nil, fmt.Errorf("path parameter `%s` empty", processTemplateIDField)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	processTemplateID, err := strconv.ParseInt(processTemplateIDStr, 10, 64)
 	if err != nil {
 		blog.Errorf("DeleteProcessTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", processTemplateIDField, processTemplateIDStr, err)
-		return nil, fmt.Errorf("convert path parameter %s to int failed, value: %s, err: %v", processTemplateIDField, processTemplateIDStr, err)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processTemplateIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteProcessTemplate(params, processTemplateID); err != nil {
@@ -148,9 +142,9 @@ func (s *coreService) BatchDeleteProcessTemplate(params core.ContextParams, path
 		ProcessTemplateIDs []int64 `json:"process_template_ids" field:"process_template_ids"`
 	}{}
 
-	if err := mapstr.SetValueToStructByTags(&input, data); err != nil {
+	if err := mapstr.DecodeFromMapStr(&input, data); err != nil {
 		blog.Errorf("BatchDeleteProcessTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
-		return nil, fmt.Errorf("decode request body failed, err: %v", err)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	// TODO: replace with batch delete interface

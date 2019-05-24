@@ -139,5 +139,29 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 		}
 	}
 
+	// init association kind
+	for _, kind := range configs.AssociationKinds {
+		info := RegisterInfo{
+			CreatorID:   "system",
+			CreatorType: "user",
+			Resources: []ResourceEntity{
+				{
+					ResourceType: SysAssociationType,
+					ResourceID: []RscTypeAndID{
+						{ResourceType: SysAssociationType, ResourceID: strconv.FormatInt(kind.ID, 10)},
+					},
+					ResourceName: kind.AssociationKindID,
+					ScopeInfo: ScopeInfo{
+						ScopeType: ScopeTypeIDSystem,
+						ScopeID:   SystemIDCMDB,
+					},
+				},
+			},
+		}
+
+		if err := ac.authClient.registerResource(ctx, header, &info); err != nil && err != ErrDuplicated {
+			return err
+		}
+	}
 	return nil
 }

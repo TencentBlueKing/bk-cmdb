@@ -291,6 +291,22 @@ type MultipleServiceTemplate struct {
 	Info  []ServiceTemplate `json:"info"`
 }
 
+type ListServiceInstanceOption struct {
+	BusinessID        int64    `json:"business_id"`
+	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
+	HostID            int64    `json:"host_id,omitempty"`
+	ModuleID          int64    `json:"module_id,omitempty"`
+	Page              BasePage `json:"page,omitempty"`
+}
+
+type ListProcessInstanceRelationOption struct {
+	Metadata          Metadata `json:"metadata"`
+	ProcessIDs        []int64  `json:"process_ids,omitempty"`
+	ServiceInstanceID []int64  `json:"service_instance_id,omitempty"`
+	ProcessTemplateID int64    `json:"process_template_id,omitempty"`
+	HostID            int64    `json:"host_id,omitempty"`
+}
+
 type MultipleServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceTemplate `json:"data"`
@@ -310,6 +326,13 @@ type MultipleProcessTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessTemplate `json:"data"`
 }
+
+type ListProcessTemplatesOption struct {
+	BusinessID         int64   `json:"bk_biz_id"`
+	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
+	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+}
+
 type OneServiceInstanceResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceInstance `json:"data"`

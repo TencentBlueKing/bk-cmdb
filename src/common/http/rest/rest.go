@@ -18,7 +18,6 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 	"github.com/emicklei/go-restful"
 )
@@ -72,12 +71,12 @@ func (r *RestUtility) AddHandler(action Action) {
 	r.actions = append(r.actions, action)
 }
 
-func (r *RestUtility) GetRestfulWebService(cfg RestfulConfig) *restful.WebService {
-	ws := new(restful.WebService)
-	getErrFunc := func() errors.CCErrorIf {
-		return r.ErrorIf
-	}
-	ws.Path(cfg.RootPath).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+func (r *RestUtility) AddToRestfulWebService(ws *restful.WebService) {
+	// ws := new(restful.WebService)
+	// getErrFunc := func() errors.CCErrorIf {
+	// 	return r.ErrorIf
+	// }
+	// ws.Path(cfg.RootPath).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	for _, action := range r.actions {
 		switch action.Verb {
@@ -94,20 +93,23 @@ func (r *RestUtility) GetRestfulWebService(cfg RestfulConfig) *restful.WebServic
 		}
 
 	}
-	return ws
+	return
 }
 
 func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, resp *restful.Response) {
 	return func(req *restful.Request, resp *restful.Response) {
 		restContexts := new(Contexts)
 		restContexts.Request = req
-		restContexts.Header = req.Request.Header
 		restContexts.resp = resp
-		restContexts.Rid = util.GetHTTPCCRequestID(req.Request.Header)
-		restContexts.Ctx = req.Request.Context()
-		restContexts.SupplierAccount = util.GetOwnerID(req.Request.Header)
-		restContexts.User = util.GetUser(req.Request.Header)
-		restContexts.CCError = r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header))
+		restContexts.Kit = &Kit{
+			Header:          req.Request.Header,
+			Rid:             util.GetHTTPCCRequestID(req.Request.Header),
+			Ctx:             req.Request.Context(),
+			User:            util.GetUser(req.Request.Header),
+			CCError:         r.ErrorIf.CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)),
+			SupplierAccount: util.GetOwnerID(req.Request.Header),
+		}
+
 		action.Handler(restContexts)
 	}
 }

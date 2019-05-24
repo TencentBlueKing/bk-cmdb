@@ -31,7 +31,7 @@ type validator struct {
 }
 
 // Init init
-func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID string) (*validator, error) {
+func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID string, bizID int64) (*validator, error) {
 	valid := &validator{}
 	valid.propertys = make(map[string]metadata.Attribute)
 	valid.idToProperty = make(map[int64]metadata.Attribute)
@@ -39,7 +39,7 @@ func NewValidator(ctx core.ContextParams, dependent OperationDependences, objID 
 	valid.require = make(map[string]bool)
 	valid.requirefields = make([]string, 0)
 	valid.errif = ctx.Error
-	result, err := dependent.SelectObjectAttWithParams(ctx, objID)
+	result, err := dependent.SelectObjectAttWithParams(ctx, objID, bizID)
 	if nil != err {
 		return valid, err
 	}

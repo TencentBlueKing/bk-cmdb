@@ -219,7 +219,7 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 	return db.Table(common.BKTableNameBaseProcess).Update(ctx, nil, mapstr.MapStr{"old_flag": true})
 }
 
-func procInstToProcTemplate(inst metadata.Process) metadata.ProcessProperty {
+func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 	var True = true
 	template := metadata.ProcessProperty{}
 	if inst.ProcNum > 0 {
@@ -303,5 +303,5 @@ func procInstToProcTemplate(inst metadata.Process) metadata.ProcessProperty {
 		template.Description.AsDefaultValue = &True
 	}
 
-	return template
+	return &template
 }
