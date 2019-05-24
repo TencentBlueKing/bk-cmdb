@@ -43,6 +43,7 @@ func New(dbProxy dal.RDB, dependent OperationDependences, cache *redis.Client) c
 	return &instanceManager{
 		dbProxy:   dbProxy,
 		dependent: dependent,
+		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
 	}
 }
 
