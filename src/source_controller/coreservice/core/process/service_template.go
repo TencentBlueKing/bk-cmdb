@@ -42,13 +42,22 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 	template.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
 	// validate service category id field
-	_, err = p.GetServiceCategory(ctx, template.ServiceCategoryID)
+	category, err := p.GetServiceCategory(ctx, template.ServiceCategoryID)
 	if err != nil {
 		blog.Errorf("CreateServiceTemplate failed, category id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
 	}
 
-	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
+	// make sure biz id identical with category
+	categoryBizID, err := metadata.BizIDFromMetadata(category.Metadata)
+	if err != nil {
+		blog.Errorf("CreateServiceTemplate failed, parse biz id from category failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
+	}
+	if bizID != categoryBizID {
+		blog.Errorf("CreateServiceTemplate failed, validation failed, input bizID:%d not equal category bizID:%d, rid: %s", bizID, categoryBizID, ctx.ReqID)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	}
 
 	// generate id field
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameServiceTemplate)
@@ -118,13 +127,18 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 	if categoryID > 0 {
 		categories, err := p.ListServiceCategories(ctx, bizID, false)
 		if err != nil {
+			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v", err)
+			return nil, err
 		}
 		childrenIDs := make([]int64, 0)
 		childrenIDs = append(childrenIDs, categoryID)
 		for {
 			pre := len(childrenIDs)
 			for _, category := range categories.Info {
-				if util.InArray(category.ParentID, childrenIDs) == false {
+				if category.ParentID == 0 {
+					continue
+				}
+				if util.InArray(category.ParentID, childrenIDs) == true {
 					childrenIDs = append(childrenIDs, category.ID)
 				}
 			}

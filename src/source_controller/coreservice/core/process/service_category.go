@@ -50,6 +50,21 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 		category.RootID = parentCategory.RootID
 	}
 
+	// check name unique in business scope
+	var count uint64
+	filter := map[string]interface{}{
+		"metadata": category.Metadata,
+		"name":     category.Name,
+	}
+	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
+		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, err, ctx.ReqID)
+		return nil, err
+	}
+	if count > 0 {
+		blog.Errorf("CreateServiceCategory failed, category name duplicated, already exist %d, rid: %s", count, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrorTopoMutipleObjectInstanceName, category.Name)
+	}
+
 	// generate id field
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameServiceCategory)
 	if nil != err {
