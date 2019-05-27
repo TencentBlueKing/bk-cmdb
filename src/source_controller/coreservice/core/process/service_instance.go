@@ -74,7 +74,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
 	if nil != err {
 		blog.Errorf("CreateServiceInstance failed, generate id failed, err: %+v, rid: %s", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	instance.ID = int64(id)
 
@@ -86,7 +86,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Insert(ctx.Context, &instance); nil != err {
 		blog.Errorf("CreateServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBInsertFailed)
 	}
 	return &instance, nil
 }
@@ -100,7 +100,7 @@ func (p *processOperation) GetServiceInstance(ctx core.ContextParams, templateID
 		if err.Error() == "document not found" {
 			return nil, ctx.Error.CCError(common.CCErrCommNotFound)
 		}
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
 	return &instance, nil
@@ -126,7 +126,7 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 	filter := map[string]int64{common.BKFieldID: instanceID}
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Update(ctx, filter, instance); nil != err {
 		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBUpdateFailed)
 	}
 	return instance, nil
 }
@@ -148,13 +148,13 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, bizID int
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	instances := make([]metadata.ServiceInstance, 0)
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Start(
 		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &instances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
 	result := &metadata.MultipleServiceInstance{
@@ -187,7 +187,7 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 	deleteFilter := map[string]int64{common.BKFieldID: instance.ID}
 	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Delete(ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
 }
