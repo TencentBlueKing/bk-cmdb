@@ -27,6 +27,12 @@
 * [权限管理](user_privilege.md)
 * [事件订阅](event_sub.md)
 
+#### 新增类型
+* [关联类型](association_type.md)
+* [模型关联](model_association.md)
+* [实例关联](instance_association.md)
+* [搜索](find.md)
+
 #### 调用指引
 * api请求调用请使用cmdb_apiserver的地址
 * 请在http请求中加入BK_USER和HTTP_BLUEKING_SUPPLIER_ID 这两个参数， 分别代表调用用户和供应商的ID（默认为0）

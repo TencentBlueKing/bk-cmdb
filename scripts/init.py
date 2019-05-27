@@ -15,8 +15,8 @@ class FileTemplate(Template):
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v, redis_user_v,
         redis_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v,
-        cc_url_v, paas_url_v, es_url_v, auth_address, auth_app_code,
-        auth_app_secret, auth_enabled, auth_scheme, full_text_search
+        cc_url_v, paas_url_v, full_text_search, es_url_v, auth_address, auth_app_code,
+        auth_app_secret, auth_enabled, auth_scheme
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
     context = dict(
@@ -692,7 +692,7 @@ def main(argv):
 
     generate_config_file(rd_server, db_name, redis_ip, redis_port, redis_user,
                          redis_pass, mongo_ip, mongo_port, mongo_user,
-                         mongo_pass, cc_url, paas_url, es_url, **auth)
+                         mongo_pass, cc_url, paas_url, full_text_search, es_url, **auth)
     update_start_script(rd_server, server_ports)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 

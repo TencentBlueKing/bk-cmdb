@@ -141,6 +141,8 @@ namespaces里面配置要同步的mongo里的table，false代表不同步，true
     },
 
     "__fields": ["field1", "field2", "field3"],
+    
+    "exclude_fields": ["create_time", "last_time"],
 
     "namespaces": {
         "cmdb.cc_HostBase": true,
@@ -244,6 +246,7 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 	--blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
 	--blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
 	--listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <cc_url> specified, default:8083
+	--full_text_search   <full_text_search>     full text search function, off or on, default off
 	--es_url             <es_url>               the elasticsearch listen url
 
 ```
@@ -271,7 +274,7 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 **示例(示例中的参数需要用真实的值替换)：**
 
 ``` shell
-python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083 --es_url http://127.0.0.1:9200
+python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083 --full_text_search on --es_url http://127.0.0.1:9200
 ```
 
 
