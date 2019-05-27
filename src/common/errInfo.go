@@ -390,7 +390,7 @@ const (
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
 
-	// objectcontroller 1102XXX
+	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
 	CCErrObjectPropertyGroupInsertFailed = 1102000
@@ -438,7 +438,7 @@ const (
 	CCErrCommMigrateFailed        = 1105000
 	CCErrCommInitAuthcenterFailed = 1105001
 
-	// hostcontroller 1106XXX
+	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
 	CCErrHostCreateInst                  = 1106002
 	CCErrHostGetSnapshot                 = 1106003
@@ -463,7 +463,7 @@ const (
 	CCErrCloudConfirmHistoryAddFail      = 1106022
 	CCErrCloudSyncHistorySearchFail      = 1106023
 
-	// proccontroller 1107XXX
+	// process controller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
 	CCErrProcCreateProc2Module   = 1107002
 	CCErrProcSelectProc2Module   = 1107003
@@ -478,7 +478,7 @@ const (
 	CCErrProcCreateProc2Template = 1107012
 	CCErrProcSelectProc2Template = 1107013
 
-	// procserver 1108XXX
+	// process server 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
@@ -510,11 +510,11 @@ const (
 	CCErrProcGetProcessInstanceFailed         = 1108028
 	CCErrProcGetProcessInstanceRelationFailed = 1108029
 
-	// auditlog 1109XXX
+	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
 	CCErrAuditTakeSnapshotFaile = 1109001
 
-	//hostserver
+	// host server
 	CCErrHostGetFail              = 1110001
 	CCErrHostUpdateFail           = 1110002
 	CCErrHostUpdateFieldFail      = 1110003
@@ -646,7 +646,10 @@ const (
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
 
-	// synchronize data coreservice  11139xx
+	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
+	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
+
+	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
@@ -654,7 +657,7 @@ const (
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
-	// CCErrAPIServerV2DirectErr  disply error
+	// CCErrAPIServerV2DirectErr  display error
 	CCErrAPIServerV2DirectErr = 1170002
 
 	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len
