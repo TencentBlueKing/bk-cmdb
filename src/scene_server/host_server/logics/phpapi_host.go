@@ -131,7 +131,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int
 		return phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 	if !res.Result {
-		blog.Errorf("AddModuleHostConfig http reponse error. reply:%#v,msg:%s,param:%+v,rid:%s", res, data, phpapi.rid)
+		blog.Errorf("AddModuleHostConfig http reponse error. reply:%#v,param:%+v,rid:%s", res, data, phpapi.rid)
 		if len(res.Data) != 0 {
 			return phpapi.ccErr.New(int(res.Data[0].Code), res.Data[0].Message)
 		}
