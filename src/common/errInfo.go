@@ -169,6 +169,8 @@ const (
 	CCErrCommRemoveReferencedRecordForbidden  = 1199056
 	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
 
+	CCErrCommGenerateRecordIDFailed = 1199058
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 

@@ -62,7 +62,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
 	if nil != err {
 		blog.Errorf("CreateProcessTemplate failed, generate id failed, err: %+v, rid: %s", err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	template.ID = int64(id)
 
@@ -74,7 +74,7 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Insert(ctx.Context, &template); nil != err {
 		blog.Errorf("CreateProcessTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBInsertFailed)
 	}
 	return &template, nil
 }
@@ -88,7 +88,7 @@ func (p *processOperation) GetProcessTemplate(ctx core.ContextParams, templateID
 		if err.Error() == "document not found" {
 			return nil, ctx.Error.CCError(common.CCErrCommNotFound)
 		}
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
 	return &template, nil
@@ -115,7 +115,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	filter := map[string]int64{common.BKFieldID: templateID}
 	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Update(ctx, filter, template); nil != err {
 		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBUpdateFailed)
 	}
 	return template, nil
 }
@@ -137,13 +137,13 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID in
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Count(ctx.Context); nil != err {
 		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	templates := make([]metadata.ProcessTemplate, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Start(
 		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
 	result := &metadata.MultipleProcessTemplate{
@@ -176,7 +176,7 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Delete(ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	return nil
 }
