@@ -181,7 +181,7 @@ func (p *processOperation) DeleteServiceTemplate(ctx core.ContextParams, service
 	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if usageCount > 0 {
 		blog.Errorf("DeleteServiceTemplate failed, forbidden delete category be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)

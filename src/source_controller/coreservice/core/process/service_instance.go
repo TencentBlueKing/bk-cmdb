@@ -176,7 +176,7 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if usageCount > 0 {
 		blog.Errorf("DeleteServiceInstance failed, forbidden delete service instance be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)

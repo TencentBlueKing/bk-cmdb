@@ -165,7 +165,7 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if usageCount > 0 {
 		blog.Errorf("DeleteProcessTemplate failed, forbidden delete process template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
