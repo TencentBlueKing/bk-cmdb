@@ -163,10 +163,11 @@ const (
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
 	CCErrCommGetMultipleObject                = 1199052
-    CCErrCommAuthCenterIsNotEnabled = 1199053
-    CCErrCommOperateBuiltInItemForbidden      = 1199054
+	CCErrCommAuthCenterIsNotEnabled           = 1199053
+	CCErrCommOperateBuiltInItemForbidden      = 1199054
 	CCErrCommRemoveRecordHasChildrenForbidden = 1199055
 	CCErrCommRemoveReferencedRecordForbidden  = 1199056
+	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
