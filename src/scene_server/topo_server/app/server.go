@@ -59,6 +59,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	t.Config.FullTextSearch = current.ConfigMap["es.full_text_search"]
 	t.Config.EsUrl = current.ConfigMap["es.url"]
 	t.Config.ConfigMap = current.ConfigMap
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
@@ -111,11 +112,13 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	essrv := new(elasticsearch.EsSrv)
-	esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl)
-	if err != nil {
-		blog.Errorf("failed to create elasticsearch client, err:%s", err.Error())
+	if server.Config.FullTextSearch == "on" {
+		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl)
+		if err != nil {
+			blog.Errorf("failed to create elasticsearch client, err:%s", err.Error())
+		}
+		essrv.Client = esclient
 	}
-	essrv.Client = esclient
 
 	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
 	server.Service = &service.Service{
