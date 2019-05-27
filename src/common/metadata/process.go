@@ -372,6 +372,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	return "", nil
 }
 
+// Update all not nil field from input to pt
 func (pt *ProcessProperty) Update(input ProcessProperty) {
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
@@ -543,14 +544,14 @@ type ProcessInstanceRelation struct {
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	// unique field, 1:1 mapping with ProcessInstance.
-	ProcessID         int64 `field:"process_id" json:"process_id" bson:"process_id"`
+	ProcessID         int64 `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id"`
 	ServiceInstanceID int64 `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id"`
 
 	// ProcessTemplateID indicate which template are current process instantiate from.
 	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
 
 	// redundant field for accelerating processes by HostID
-	HostID          int64  `field:"host_id" json:"host_id" bson:"host_id"`
+	HostID          int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
