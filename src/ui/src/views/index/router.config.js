@@ -20,5 +20,10 @@ export default [{
 }, {
     name: 'search',
     path: '/index/search',
-    component: () => import('./children/full-text-search.vue')
+    component: () => import('./children/full-text-search.vue'),
+    meta: new Meta({
+        checkAvailable: (to, from, app) => {
+            return window.Site.fullTextSearch === 'on'
+        }
+    })
 }]
