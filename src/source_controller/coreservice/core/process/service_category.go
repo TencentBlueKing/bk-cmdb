@@ -58,7 +58,7 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	}
 	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, err, ctx.ReqID)
-		return nil, err
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
 		blog.Errorf("CreateServiceCategory failed, category name duplicated, already exist %d, rid: %s", count, ctx.ReqID)
@@ -170,7 +170,7 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 	childrenCount, err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(childrenFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceCategory failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, err, ctx.ReqID)
-		return err
+		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if childrenCount > 0 {
 		blog.Errorf("DeleteServiceCategory failed, forbidden delete category has children node, childrenCount: %d, code: %d, rid: %s", childrenCount, common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
