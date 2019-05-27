@@ -13,14 +13,14 @@
 package service
 
 import (
+	restful "github.com/emicklei/go-restful"
+
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 func (s *service) healthz(req *restful.Request, resp *restful.Response) {
@@ -92,5 +92,4 @@ func (s *service) V3Healthz() *restful.WebService {
 	ws.Route(ws.GET("healthz").To(s.healthz))
 
 	return ws
-
 }
