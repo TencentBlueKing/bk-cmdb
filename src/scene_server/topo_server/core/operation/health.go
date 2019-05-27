@@ -52,6 +52,14 @@ func (h *health) Health(params types.ContextParams) (*metric.HealthResponse, err
 	}
 	meta.Items = append(meta.Items, objCtr)
 
+	// coreservice
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: gtypes.CC_MODULE_CORESERVICE}
+	if _, err := h.clientSet.Healthz().HealthCheck(gtypes.CC_MODULE_CORESERVICE); err != nil {
+		coreSrv.IsHealthy = false
+		coreSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, coreSrv)
+
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
 			meta.IsHealthy = false
