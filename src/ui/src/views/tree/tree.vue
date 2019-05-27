@@ -1,11 +1,21 @@
 <template>
-    <div class="cmdb-tree"></div>
+    <div class="cmdb-tree">
+        <tree-item v-for="node in nodes"
+            :key="node.id"
+            :node="node">
+            <slot :node="node"></slot>
+        </tree-item>
+    </div>
 </template>
 
 <script>
     import TreeNode from './tree-node.js'
+    import treeItem from './tree-item.vue'
     export default {
         name: 'cmdb-tree',
+        components: {
+            treeItem
+        },
         props: {
             data: {
                 type: Array,
@@ -18,12 +28,35 @@
                 default () {
                     return {}
                 }
+            },
+            lazy: Boolean,
+            showCheckbox: Boolean,
+            showLinkLine: {
+                type: Boolean,
+                default: true
+            },
+            expandIcon: {
+                type: String,
+                default: 'bk-icon icon-folder-open'
+            },
+            collapseIcon: {
+                type: String,
+                default: 'bk-icon icon-folder'
+            },
+            nodeIcon: {
+                type: [String, Function]
+            },
+            defaultExpandNode: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
             return {
-                flatternTree: [],
-                nodeMap: {}
+                nodes: [],
+                map: {}
             }
         },
         computed: {
@@ -41,83 +74,76 @@
         },
         methods: {
             setData (data) {
-                try {
-                    const flatternTree = []
-                    data.forEach(nodeData => {
-                        const node = new TreeNode(nodeData, this.getNodeOptions({
-                            level: 0,
-                            parent: null
-                        }))
-
-                        flatternTree.push(node)
-                        this.$set(this.nodeMap, node.id, node)
-
-                        this.recurrenceNodes(flatternTree, node)
-                    })
-                    this.flatternTree = flatternTree
-                    this.updateIndex()
-                } catch (e) {
-                    console.error(e)
-                    this.flatternTree = []
-                }
+                const nodes = []
+                const map = {}
+                this.recurrenceNodes(data, null, nodes, map)
+                this.nodes = nodes
+                this.map = map
             },
-            recurrenceNodes (tree, parent) {
-                const children = parent.data[this.nodeOptions.childrenKey]
-                if (Array.isArray(children)) {
-                    children.forEach(nodeData => {
-                        const node = new TreeNode(nodeData, this.getNodeOptions({
-                            level: parent.level + 1,
-                            parent: parent.id
-                        }))
+            recurrenceNodes (data, parent, nodes, map) {
+                data.forEach((datum, index) => {
+                    const node = new TreeNode(datum, {
+                        level: parent ? parent.level + 1 : 0,
+                        parent: parent
+                    }, this)
+                    node.setState('expanded', this.defaultExpandNode.includes(node.id))
+                    nodes.push(node)
+                    map[node.id] = node
 
-                        tree.push(node)
-                        this.$set(this.nodeMap, node.id, node)
-
-                        this.recurrenceNodes(tree, node)
-                    })
-                }
+                    const children = datum[this.nodeOptions.childrenKey]
+                    if (Array.isArray(children) && children.length) {
+                        this.recurrenceNodes(children, node, nodes, map)
+                    }
+                })
             },
             getNodeById (id) {
-                return this.nodeMap[id]
+                return this.map[id]
             },
-            removeNode (id) {
-                const node = this.getNodeById(id)
-                this.flatternTree.splice(node.index, 1)
-                this.$delete(this.nodeMap, id)
-                this.updateIndex()
-            },
-            addNode (data, parentId = null, trailing = true) {
-                if (parentId !== null) {
-                    const parentNode = this.getNodeById(parentId)
-                    if (parentNode) {
-                        const children = parentNode.data[this.nodeOptions.childrenKey]
-                        const indexIncrement = Array.isArray(children) ? children.length : 0
-                        const index = trailing ? parentNode.index + indexIncrement + 1 : parentNode.index + 1
-                        const node = new TreeNode(data, this.getNodeOptions({
-                            level: parentNode.level + 1
-                        }))
-                        this.flatternTree.splice(index - 1, 0, node)
-                        this.$set(this.nodeMap, node.id, node)
-                        this.updateIndex()
-                    } else {
-                        throw new Error('Cant not find parent node with id:', parentId)
-                    }
-                } else {
-                    const node = new TreeNode(data, this.getNodeOptions({
-                        level: 0
-                    }))
-                    const index = trailing ? this.flatternTree.length - 1 : 0
-                    this.flatternTree.splice(index, 0, node)
-                    this.$set(this.nodeMap, node.id, node)
-                    this.updateIndex()
+            addNode (nodeData, parentId, leading = true) {
+                const parentNode = this.getNodeById(parentId)
+                if (!parentNode) {
+                    throw new Error('Unexpected parent id, add node failed')
                 }
+                const parentVNode = parentNode.vNode
+                const data = Array.isArray(nodeData) ? nodeData : [nodeData]
+                const insertIndex = (leading ? parentVNode.index : parentVNode.index + parentVNode.children.length) + 1
+                const nodes = data.map((datum, index) => {
+                    return new TreeNode(datum, {
+                        level: parentNode.level + 1,
+                        parent: parentNode,
+                        children: []
+                    }, this)
+                })
+                nodes.forEach(node => {
+                    this.$set(this.map, node.id, node)
+                })
+                this.nodes.splice(insertIndex, 0, ...nodes)
             },
-            getNodeOptions (options = {}) {
-                return Object.assign({}, this.nodeOptions, options)
-            },
-            updateIndex (index) {
-                this.flatternTree.forEach((node, index) => {
-                    node.setValue('index', index)
+            removeNode (nodeId) {
+                const ids = Array.isArray(nodeId) ? nodeId : [nodeId]
+                const deletedIndex = []
+                const deletedNodeParent = []
+                ids.forEach(id => {
+                    const node = this.getNodeById(id)
+                    if (node) {
+                        deletedIndex.push(id)
+                        this.$delete(this.map, id)
+                        this.nodes.splice(node.index, 1)
+                        if (node.parent) {
+                            node.parent.children.splice(node.vNode.childIndex, 1)
+                            deletedNodeParent.push(node.parent)
+                        }
+                    }
+                })
+                this.nodes.slice(Math.min(...deletedIndex)).forEach(node => {
+                    const referenceIndex = deletedIndex.findIndex(index => index > node.index)
+                    const changedStep = referenceIndex > -1 ? referenceIndex - 1 : deletedIndex.length
+                    node.index = node.index - changedStep
+                })
+                setTimeout(() => {
+                    deletedNodeParent.forEach(parent => {
+                        parent.vNode.handleDescendantsChange()
+                    })
                 })
             }
         }
