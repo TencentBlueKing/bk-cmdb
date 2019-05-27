@@ -108,7 +108,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 	// connect the remote mongodb
 	s.core = core.New(
 		model.New(db, s),
-		instances.New(db, s),
+		instances.New(db, s, cache),
 		association.New(db, s),
 		datasynchronize.New(db, s),
 		mainline.New(db),
