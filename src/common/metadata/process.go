@@ -205,6 +205,7 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
+	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
 	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
 	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
 	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
