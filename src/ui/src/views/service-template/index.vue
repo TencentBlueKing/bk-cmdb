@@ -8,7 +8,7 @@
         </feature-tips>
         <div class="template-filter clearfix">
             <bk-button class="fl mr10" type="primary" @click="createTemplate">{{$t("Common['新建']")}}</bk-button>
-            <bk-button class="fl mr10" type="danger">{{$t("ServiceManagement['批量删除']")}}</bk-button>
+            <bk-button class="fl mr10">{{$t("ServiceManagement['批量删除']")}}</bk-button>
             <div class="filter-text fr">
                 <bk-selector
                     class="fl"
@@ -89,12 +89,7 @@
                         }
                     ],
                     checked: [],
-                    list: [{
-                        id: 66,
-                        name: '服务模板',
-                        modifier: '666',
-                        last_time: '666'
-                    }],
+                    list: [],
                     pagination: {
                         current: 1,
                         count: 0,
@@ -118,12 +113,15 @@
             getTableData () {
                 this.searchServiceTemplate({
                     params: this.$injectMetadata({
-                        service_category_id: ''
+                        service_category_id: null
                     }),
                     config: {
                         requestId: 'get_proc_service_template',
                         cancelPrevious: true
                     }
+                }).then(data => {
+                    this.table.list = data.info
+                    this.table.pagination.count = data.count
                 })
             },
             createTemplate () {

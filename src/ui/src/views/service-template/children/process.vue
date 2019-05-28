@@ -4,17 +4,17 @@
             :loading="$loading('post_searchProcess_list')"
             :checked.sync="table.checked"
             :header="table.header"
-            :list="table.list"
+            :list="list"
             :pagination.sync="table.pagination"
             :default-sort="table.defaultSort"
             :wrapper-minus-height="300">
             <template slot="operation" slot-scope="{ item }">
                 <button class="text-primary mr10"
-                    @click.stop="editeTemplate(item)">
+                    @click.stop="handleEdite(item)">
                     {{$t('Common["编辑"]')}}
                 </button>
                 <button class="text-primary"
-                    @click.stop="deleteTemplate(item)">
+                    @click.stop="handleDelete(item)">
                     {{$t('Common["删除"]')}}
                 </button>
             </template>
@@ -24,6 +24,20 @@
 
 <script>
     export default {
+        props: {
+            list: {
+                type: Array,
+                default: () => {
+                    return []
+                }
+            },
+            properties: {
+                type: Array,
+                default: () => {
+
+                }
+            }
+        },
         data () {
             return {
                 table: {
@@ -54,22 +68,22 @@
                             sortable: false
                         }
                     ],
-                    list: [{
-                        bk_process_name: '123',
-                        bind_ip: '127.0.0.1',
-                        port: 8080,
-                        work_path: 'D:/wer',
-                        user: 666
-                    }],
                     pagination: {
                         current: 1,
                         count: 0,
                         size: 10
                     },
-                    checked: [],
                     defaultSort: '-bk_process_id',
                     sort: '-bk_process_id'
                 }
+            }
+        },
+        methods: {
+            handleEdite (process) {
+
+            },
+            handleDelete (process) {
+
             }
         }
     }

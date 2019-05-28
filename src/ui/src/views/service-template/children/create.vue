@@ -21,18 +21,25 @@
                     {{$t('ServiceManagement["服务分类"]')}}
                     <span class="color-danger">*</span>
                 </span>
-                <bk-selector
-                    class="fl"
-                    placeholder="请选择一级分类"
-                    :list="[]"
-                    :selected.sync="formData.primaryClassification">
-                </bk-selector>
-                <bk-selector
-                    class="fl"
-                    placeholder="请选择二级分类"
-                    :list="[]"
-                    :selected.sync="formData.secondaryClassification">
-                </bk-selector>
+                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('classificationId') }" style="width: auto;">
+                    <bk-selector
+                        class="fl"
+                        placeholder="请选择一级分类"
+                        :list="[]"
+                        v-validate="'required'"
+                        name="classificationId"
+                        :selected.sync="formData.primaryClassification">
+                    </bk-selector>
+                    <bk-selector
+                        class="fl"
+                        placeholder="请选择二级分类"
+                        :list="[]"
+                        v-validate="'required'"
+                        name="classificationId"
+                        :selected.sync="formData.secondaryClassification">
+                    </bk-selector>
+                    <p class="form-error">{{errors.first('classificationId')}}</p>
+                </div>
             </div>
         </div>
         <div class="info-group">
@@ -47,7 +54,7 @@
                 </div>
                 <process-table></process-table>
                 <div class="btn-box">
-                    <bk-button type="primary">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
                     <bk-button>{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
@@ -57,10 +64,9 @@
                 <process-form
                     :properties="properties"
                     :property-groups="propertyGroups"
-                    :object-unique="objectUnique"
-                    :inst="attribute.inst.details"
+                    :inst="attribute.inst.edit"
                     :type="attribute.type"
-                    :save-disabled="true"
+                    :save-disabled="false"
                     @on-submit="handleSave"
                     @on-cancel="handleCancel">
                 </process-form>
@@ -70,7 +76,7 @@
 </template>
 
 <script>
-    import processForm from '@/components/service/process-form'
+    import processForm from './process-form.vue'
     import processTable from './process'
     import { mapActions } from 'vuex'
     export default {
@@ -109,6 +115,9 @@
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectUnique', ['searchObjectUniqueConstraints']),
+            ...mapActions('procConfig', [
+                'searchProcess'
+            ]),
             async reload () {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -154,6 +163,11 @@
             handleCreateProcess () {
                 this.slider.show = true
                 this.slider.title = this.$t("ProcessManagement['添加进程']")
+            },
+            handleSubmit () {
+                this.$validator.validateAll().then(result => {
+                    console.log(result)
+                })
             }
         }
     }
