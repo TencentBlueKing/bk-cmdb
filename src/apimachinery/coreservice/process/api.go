@@ -230,11 +230,11 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/findmany/process/service_template"
 
 	input := map[string]interface{}{
-		"bk_biz_id":           bizID,
+		"metadata":            metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 		"service_category_id": categoryID,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -302,7 +302,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).

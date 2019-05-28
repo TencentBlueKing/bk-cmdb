@@ -44,7 +44,7 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 
 		temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create process template failed, err: %v, template: +%v", err, *t)
+			ctx.RespWithError(err, common.CCErrProcCreateProcessTemplateFailed, "create process template failed, template: +%v", *t)
 			return
 		}
 
@@ -70,8 +70,8 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 
 	err = ps.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete process template: %v failed, err: %v.",
-			input.ProcessTemplates, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "delete process template: %v failed",
+			input.ProcessTemplates)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(nil))
@@ -98,7 +98,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 
 	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update process template: %v failed, err: %v.", input, err)
+		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(tmp))
@@ -152,7 +152,7 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 	tmp, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplateFailed, "get process template: %v failed", input)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(tmp))
