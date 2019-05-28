@@ -509,6 +509,10 @@ const (
 	CCErrProcGetProcessTemplatesFailed        = 1108027
 	CCErrProcGetProcessInstanceFailed         = 1108028
 	CCErrProcGetProcessInstanceRelationFailed = 1108029
+	CCErrProcDeleteServiceTemplateFailed      = 1108030
+	CCErrProcCreateProcessTemplateFailed      = 1108031
+	CCErrProcUpdateProcessTemplateFailed      = 1108032
+	CCErrProcGetProcessTemplateFailed         = 1108033
 
 	// auditlog 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
