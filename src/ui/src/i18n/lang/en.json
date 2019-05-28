@@ -515,7 +515,14 @@
         "启动用户": "User",
         "添加进程": "Add Process",
         "锁定": "Locking",
-        "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications."
+        "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications.",
+        "基本属性": "Basic Attribute",
+        "端口信息": "Port Information",
+        "其他属性": "Other Attributes",
+        "进程别名": "Process alias",
+        "启动参数匹配规则": "Start parameter matching rule",
+        "进程描述": "Process description",
+        "协议": "protocol"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
