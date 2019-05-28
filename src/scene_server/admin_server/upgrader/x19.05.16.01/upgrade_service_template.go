@@ -94,10 +94,10 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				processIDInModule = append(processIDInModule, mapping.ProcessID)
 			}
 			oldProcess := []metadata.Process{}
-			if err = db.Table(common.BKTableNameBaseProcess).Find(
-				condition.CreateCondition().Field(common.BKProcessIDField).In(processIDInModule).
-					Field(common.BKAppIDField).Eq(bizID).ToMapStr(),
-			).All(ctx, &oldProcess); err != nil {
+			processBaseCond := condition.CreateCondition().Field(common.BKProcessIDField).In(processIDInModule).
+				Field(common.BKAppIDField).Eq(bizID).ToMapStr()
+			if err = db.Table(common.BKTableNameBaseProcess).Find(processBaseCond).All(ctx, &oldProcess); err != nil {
+				blog.Errorf("find process failed: %v %v", processBaseCond, err)
 				return err
 			}
 			if len(oldProcess) <= 0 {
