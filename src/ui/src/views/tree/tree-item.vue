@@ -1,23 +1,27 @@
 <template>
     <div class="tree-node"
-        v-if="showNode"
+        v-show="node.parent === null || (node.visible && node.parent.expanded)"
         :class="{
-            'is-root': !parent,
-            'is-leaf': isLeaf,
-            'is-last-child': isLast,
+            'is-root': node.parent === null,
+            'is-leaf': node.isLeaf,
             'is-first-child': isFirst,
+            'is-last-child': isLast,
             'is-expand': node.expanded,
-            'has-link-line': tree.showLinkLine,
-            'has-sibling': parent && parent.children.length > 1
+            'is-selected': $parent.selected === node.id,
+            'has-link-line': $parent.showLinkLine
         }"
-        :style="style">
-        <i v-if="!isLeaf"
-            :class="['node-folder-icon', folderIcon]"
-            @click="toggleExpand">
+        :style="style"
+        @click="$parent.setSelected(node.id, true)">
+        <i v-if="!node.isLeaf"
+            :class="['node-folder-icon', node.expanded ? node.expandIcon : node.collapseIcon]"
+            @click.stop="toggleExpand">
         </i>
-        <input type="checkbox" class="node-checkbox" v-if="tree.showCheckbox">
-        <i v-if="node.icon.node"
-            :class="['node-icon', node.icon.node]">
+        <input type="checkbox" class="node-checkbox"
+            v-if="$parent.showCheckbox"
+            :checked="node.checked"
+            @click.prevent.stop="$parent.setChecked(node.id, !node.checked, true)">
+        <i v-if="node.nodeIcon"
+            :class="['node-icon', node.nodeIcon]">
         </i>
         <span class="node-content">
             <slot>{{node.name}}</slot>
@@ -38,102 +42,45 @@
         },
         data () {
             return {
-                line: 0,
-                timer: null
+                line: 0
             }
         },
         computed: {
-            tree () {
-                return this.$parent
-            },
-            children () {
-                return this.tree.nodes.filter(node => node.parent === this.node)
-            },
-            index () {
-                return this.tree.nodes.indexOf(this.node)
-            },
-            parent () {
-                return this.node.parent
-            },
-            showNode () {
-                return !this.parent || (this.node.visible && this.parent.expanded)
-            },
-            isLeaf () {
-                return !this.children.length
-            },
             isLast () {
-                return this.childIndex === this.parentChildren.length - 1
+                return false
             },
             isFirst () {
-                return this.childIndex === 0
-            },
-            parentChildren () {
-                const parentChildren = this.parent ? this.parent.vNode.children : []
-                return parentChildren
-            },
-            childIndex () {
-                return this.parentChildren.indexOf(this.node)
+                return this.childIndex === 0 || this.index === 0
             },
             style () {
-                const paddingLeft = this.node.level * 30
-                const folderIconWidth = 16
                 return {
-                    'padding-left': (this.isLeaf ? paddingLeft + folderIconWidth : paddingLeft) + 'px',
+                    'margin-left': this.node.level * 30 + 'px',
                     '--level': this.node.level,
                     '--line': this.line
                 }
-            },
-            folderIcon () {
-                return this.node.expanded ? this.node.icon.expand : this.node.icon.collapse
-            },
-            parentVisible () {
-                return !this.parent || (this.parent.expanded && this.parent.visible)
-            }
-        },
-        watch: {
-            parentVisible (visible) {
-                this.node.setState('visible', visible)
-            },
-            children () {
-                this.handleDescendantsChange()
             }
         },
         created () {
             this.node.vNode = this
-            this.checkState()
         },
         methods: {
-            toggleSelect (selected) {},
             toggleExpand () {
                 this.node.expanded = !this.node.expanded
-                this.handleDescendantsChange()
-                this.parent && this.parent.vNode.handleDescendantsChange()
+                this.$parent.$emit('toggleExpand', this.node.expanded, this.node)
             },
-            checkState () {
-                if (this.parent && this.node.expanded) {
-                    this.parent.expanded = true
-                    this.parent.vNode.checkState()
-                    this.parent.vNode.handleDescendantsChange()
-                    setTimeout(() => {
-                        this.calcLine()
-                    }, 0)
-                }
-            },
-            calcLine () {
-                const children = this.children
-                if (this.isLeaf || !this.node.expanded) {
+            calulateLine () {
+                const {
+                    children,
+                    isLeaf,
+                    expanded
+                } = this.node
+                if (isLeaf || !expanded) {
                     this.line = 0
                     return
                 }
                 const firstChild = children[0]
                 const lastChild = children[children.length - 1]
                 this.line = lastChild.vNode.$el.getBoundingClientRect().bottom - firstChild.vNode.$el.getBoundingClientRect().top
-                this.parent && this.parent.vNode.handleDescendantsChange()
-            },
-            handleDescendantsChange () {
-                this.$nextTick(() => {
-                    this.calcLine()
-                })
             }
         }
     }
@@ -149,26 +96,37 @@
         height: 32px;
         line-height: 32px;
         font-size: 0;
+        cursor: pointer;
         &:not(.is-root):before {
             content: "";
             position: absolute;
             width: 22px;
             height: 0;
             border-bottom: 1px dashed #c3cdd7;
-            left: calc((var(--level) - 1) * 30px + 8px);
+            left: -22px;
             top: 15px;
-            z-index: 100;
+            z-index: 1;
             pointer-events: none;
         }
         &:after {
             position: absolute;
             top: 16px;
-            left: calc(var(--level) * 30px + 8px);
+            left: 8px;
             width: 0;
             height: calc(var(--line) * 1px);
             border-left: 1px dashed #c3cdd7;
             content: "";
             pointer-events: none;
+            z-index: 1;
+        }
+        &:hover {
+            background-color: #f1f7ff;
+        }
+        &.is-selected {
+            background-color: #e1ecff;
+        }
+        &.is-leaf {
+            padding-left: 16px;
         }
         &.is-first-child {
             .node-link-line {
@@ -193,7 +151,6 @@
             position: relative;
             font-size: 16px;
             background-color: #fff;
-            cursor: pointer;
             z-index: 2;
             @include middleBlock;
         }

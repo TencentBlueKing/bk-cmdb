@@ -9,7 +9,8 @@
                 childrenKey: 'child'
             }"
             :node-icon="getNodeIcon"
-            :default-expand-node="[8, 20]"
+            :default-expanded-nodes="[8, 20]"
+            :default-selected-node="0"
             show-checkbox
             expand-icon="icon-cc-rect-sub"
             collapse-icon="icon-cc-rect-add">
@@ -38,7 +39,7 @@
                 // this.data = data
                 // this.$refs.tree.setData(data)
                 const repeat = []
-                for (let i = 0; i < 300; i++) {
+                for (let i = 0; i < 100; i++) {
                     repeat.push(data[0])
                 }
                 this.$refs.tree.setData(repeat)
@@ -57,7 +58,7 @@
                     bk_obj_name: 'fuck',
                     child: [],
                     default: 0
-                }, 8)
+                }, 8, false)
             },
             deleteNode () {}
         }
