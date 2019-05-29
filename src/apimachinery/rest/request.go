@@ -182,7 +182,7 @@ func (r *Request) WrapURL() *url.URL {
 		*finalUrl = *u
 	}
 
-	finalUrl.Path = finalUrl.Path + "/" + r.subPath
+	finalUrl.Path = finalUrl.Path + r.subPath
 
 	query := url.Values{}
 	for key, values := range r.params {
