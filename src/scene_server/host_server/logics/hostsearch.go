@@ -790,14 +790,14 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 			// intersection of two array
 			value, ok := cond.Value.([]interface{})
 			if ok == false {
-				blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v", cond.Value)
+				blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 				return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 			}
 			shareIDs := make([]int64, 0)
 			for _, hostID := range value {
 				id, err := util.GetInt64ByInterface(hostID)
 				if err != nil {
-					blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, err: %+v", cond.Value, err)
+					blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, rid: %s", cond.Value, sh.ccRid)
 					return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
 				}
 				if in := util.InArray(id, hostIDArr); in == true {
