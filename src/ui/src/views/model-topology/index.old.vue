@@ -922,25 +922,21 @@
                 })
             },
             initPosition () {
-                try {
-                    let nodesId = []
-                    this.topoModelList.forEach(model => {
-                        if (model.hasOwnProperty('assts') && model.assts.length) {
-                            nodesId.push(model['bk_obj_id'])
-                            model.assts.forEach(asst => {
-                                nodesId.push(asst['bk_obj_id'])
-                            })
-                        }
-                    })
-                    nodesId = [...new Set(nodesId)]
-                    nodesId = nodesId.filter(id => {
-                        return this.topoModelList.some(({ bk_obj_id: objId, position }) => objId === id && position.x === null && position.y === null)
-                    })
-                    if (nodesId.length) {
-                        this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
+                let nodesId = []
+                this.topoModelList.forEach(model => {
+                    if (model.hasOwnProperty('assts') && model.assts.length) {
+                        nodesId.push(model['bk_obj_id'])
+                        model.assts.forEach(asst => {
+                            nodesId.push(asst['bk_obj_id'])
+                        })
                     }
-                } catch (e) {
-                    console.log(e)
+                })
+                nodesId = [...new Set(nodesId)]
+                nodesId = nodesId.filter(id => {
+                    return this.topoModelList.some(({ bk_obj_id: objId, position }) => objId === id && position.x === null && position.y === null)
+                })
+                if (nodesId.length) {
+                    this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
                 }
             },
             updateSingleNodePosition (node) {

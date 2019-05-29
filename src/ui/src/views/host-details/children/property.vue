@@ -29,7 +29,6 @@
                                 :options="property.option || []"
                                 :data-vv-name="property.bk_property_id"
                                 :data-vv-as="property.bk_property_name"
-                                :exclude="false"
                                 v-validate="$tools.getValidateRules(property)"
                                 v-model.trim="editState.value">
                             </component>
@@ -80,7 +79,12 @@
                 this.editState.value = value === null ? '' : value
                 this.editState.property = property
             },
-            confirm () {
+            async confirm () {
+                const isValid = await this.$validator.validateAll()
+                if (!isValid) {
+                    this.$error(this.errors.first(this.editState.property.bk_property_id))
+                    return false
+                }
                 const { property, value } = this.editState
                 this.$store.dispatch('hostUpdate/updateHost', this.$injectMetadata({
                     [property.bk_property_id]: value,
@@ -120,11 +124,6 @@
                 background-color: $cmdbBorderColor;
             }
         }
-        &:hover {
-            .property-item .property-edit {
-                display: inline-block;
-            }
-        }
     }
     .property-list {
         width: 740px;
@@ -134,6 +133,11 @@
         .property-item {
             width: 50%;
             font-size: 0;
+            &:hover {
+                .property-edit {
+                    display: inline-block;
+                }
+            }
             .property-name {
                 position: relative;
                 display: inline-block;
@@ -163,6 +167,9 @@
                 font-size: 16px;
                 color: #3c96ff;
                 cursor: pointer;
+                &:hover {
+                    opacity: .8;
+                }
             }
             .property-form {
                 display: inline-block;
