@@ -44,7 +44,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	serviceTemplate, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
 	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_template_id")
 	}
 
 	// validate module id field
