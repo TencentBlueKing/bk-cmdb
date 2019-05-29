@@ -31,14 +31,14 @@ type DeleteCategoryInput struct {
 
 type CreateProcessTemplateBatchInput struct {
 	Metadata          Metadata        `json:"metadata"`
-	ServiceTemplateID int64           `json:"serviceTemplateID"`
+	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
 type DeleteProcessTemplateBatchInput struct {
 	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"serviceTemplateID"`
-	ProcessTemplates  []int64  `json:"processTemplates"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+	ProcessTemplates  []int64  `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -48,12 +48,12 @@ type ProcessDetail struct {
 type ListServiceTemplateInput struct {
 	Metadata Metadata `json:"metadata"`
 	// this field can be empty, it a optional condition.
-	ServiceCategoryID int64 `json:"serviceCategoryID,omitempty"`
+	ServiceCategoryID int64 `json:"service_category_id,omitempty"`
 }
 
 type DeleteServiceTemplatesInput struct {
 	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"serviceTemplateID"`
+	ServiceTemplateID int64    `json:"service_template_id"`
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
@@ -205,6 +205,7 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
+	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
 	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
 	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
 	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
