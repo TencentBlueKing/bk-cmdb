@@ -384,7 +384,7 @@ func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, b
 		return nil, nil
 	}
 
-	// retrieve original datas
+	// retrieve original data
 	originDatas := make([]mapstr.MapStr, 0)
 	getErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(ctx, &originDatas)
 	if getErr != nil {
@@ -402,7 +402,7 @@ func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, b
 	return originDatas, nil
 }
 
-//AddSingleHostModuleRelation add single host module relation
+// AddSingleHostModuleRelation add single host module relation
 func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
 
@@ -460,7 +460,7 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 // getInnerModuleIDArr get default module
 func (t *transferHostModule) getInnerModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
 	bizID := t.bizID
-	// transfer the host across businees,
+	// transfer the host across business,
 	// check host belongs to the original business ID
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
@@ -518,4 +518,30 @@ func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error
 
 	}
 	return false, nil
+}
+
+// DoTransferToInnerCheck check whether could be transfer to inner module
+func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams) error {
+	innerModuleIDArr, err := t.GetInnerModuleIDArr(ctx)
+	if err != nil {
+		return err
+	}
+	if len(innerModuleIDArr) == 0 {
+		return nil
+	}
+
+	// check 1: 不能有服务实例/进程实例
+	filter := map[string]interface{}{
+		common.BKHostIDField: map[string][]int64{"$in": innerModuleIDArr},
+	}
+	var count uint64
+	if count, err = t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context); nil != err {
+		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
+	}
+
+	return nil
 }

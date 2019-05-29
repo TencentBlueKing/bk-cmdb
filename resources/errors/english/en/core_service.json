@@ -9,6 +9,7 @@
     "1113008": "businessID [%d] of moduleID[%d] not inner module",
     "1113009": "transfer module host relation failure.",
     "1113010": "failed to sent event",
+    "1113011": "forbidden release host referenced by service instance",
 
     "":""
 }
