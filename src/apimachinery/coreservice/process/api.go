@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -113,8 +112,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
-		// "bk_biz_id": bizID,
-		"metadata":        metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		"bk_biz_id":       bizID,
 		"with_statistics": withStatistics,
 	}
 
