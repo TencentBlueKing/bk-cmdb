@@ -28,8 +28,11 @@ type ClientInterface interface {
 }
 
 func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
-	baseUrl = strings.Trim(baseUrl, "/")
-	baseUrl = "/" + baseUrl + "/"
+	if baseUrl != "/" {
+		baseUrl = strings.Trim(baseUrl, "/")
+		baseUrl = "/" + baseUrl + "/"
+	}
+
 	return &RESTClient{
 		baseUrl:    baseUrl,
 		capability: c,
