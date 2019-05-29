@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
+	"configcenter/src/scene_server/proc_server/logics"
 	"configcenter/src/scene_server/proc_server/service"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
@@ -91,6 +92,9 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
+	procSvr.Logic = &logics.Logic{
+		Engine: procSvr.Engine,
+	}
 	go procSvr.InitFunc()
 
 	webservice := procSvr.WebService()
