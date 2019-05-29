@@ -762,11 +762,58 @@ func (sh *searchHost) appendHostTopoConds() errors.CCError {
 		hostIDArr = append(hostIDArr, hostIDArrItem...)
 	}
 
-	sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
-		Field:    common.BKHostIDField,
-		Operator: common.BKDBIN,
-		Value:    hostIDArr,
-	})
+	// 合并两种涞源的根据 host_id 查询的 condition
+	// 详情见issue: https://github.com/Tencent/bk-cmdb/issues/2461
+	hostIDConditionExist := false
+	for idx, cond := range sh.conds.hostCond.Condition {
+		if cond.Field != common.BKHostIDField {
+			continue
+		}
+
+		// merge two condition
+		// {"field": "bk_host_id", "operator": "$eq", "value": 1}
+		// {"field": "bk_host_id", "operator": "$eq", "value": [1, 2]}
+		// ==> {"field": "bk_host_id", "operator": "", "value": {"$in": [1,2], "$eq": 1}}
+		hostIDConditionExist = true
+		if cond.Operator != common.BKDBIN {
+			// it's somewhat trick here to use common.BKDBEQ as merge operator
+			cond = metadata.ConditionItem{
+				Field:    common.BKHostIDField,
+				Operator: common.BKDBEQ,
+				Value: map[string]interface{}{
+					cond.Operator: cond.Value,
+					common.BKDBIN: hostIDArr,
+				},
+			}
+			sh.conds.hostCond.Condition[idx] = cond
+		} else {
+			// intersection of two array
+			value, ok := cond.Value.([]interface{})
+			if ok == false {
+				blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v", cond.Value)
+				return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+			}
+			shareIDs := make([]int64, 0)
+			for _, hostID := range value {
+				id, err := util.GetInt64ByInterface(hostID)
+				if err != nil {
+					blog.Errorf("invalid query condition with $in operator, value must be []int64, but got: %+v, err: %+v", cond.Value, err)
+					return sh.ccErr.New(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+				}
+				if in := util.InArray(id, hostIDArr); in == true {
+					shareIDs = append(shareIDs, id)
+				}
+			}
+			sh.conds.hostCond.Condition[idx].Value = shareIDs
+		}
+	}
+	if hostIDConditionExist == false {
+		sh.conds.hostCond.Condition = append(sh.conds.hostCond.Condition, metadata.ConditionItem{
+			Field:    common.BKHostIDField,
+			Operator: common.BKDBIN,
+			Value:    hostIDArr,
+		})
+	}
 
 	return nil
 }
