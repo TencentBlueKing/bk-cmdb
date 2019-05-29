@@ -11,7 +11,8 @@
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
                     v-model.trim="query.queryString"
                     @keypress.enter="handleSearch">
-                <label class="bk-icon icon-search" for="fullTextSearch"></label>
+                <label class="bk-icon icon-search" for="fullTextSearch" v-if="!query.queryString"></label>
+                <i class="bk-icon icon-close-circle-shape" v-else @click="query.queryString = ''"></i>
             </div>
             <div class="classify" v-show="hasData">
                 <span class="classify-item"
@@ -41,7 +42,7 @@
                             <div class="results-title"
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
-                            <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]">
+                            <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -54,7 +55,7 @@
                             <div class="results-title"
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
-                            <div class="results-desc" v-if="propertyMap['host']">
+                            <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
@@ -149,6 +150,7 @@
             'query.queryString' (queryString) {
                 this.showNoData = false
                 this.hasData = false
+                this.searching = true
                 window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
                 this.query.objId = ''
                 if (queryString) {
@@ -156,6 +158,8 @@
                     this.pagination.start = 0
                     this.pagination.current = 1
                     this.handleSearch(600)
+                } else {
+                    this.searching = false
                 }
             }
         },
@@ -191,15 +195,12 @@
             },
             toggleClassify (index, model) {
                 if (index === this.currentClassify) return
+                this.searching = true
                 this.currentClassify = index
                 this.query.objId = model
                 this.pagination.start = 0
                 this.pagination.current = 1
                 this.handleSearch()
-                // Object.keys(this.modelClassifyName).forEach(key => {
-                //     this.modelClassifyName[key] = this.modelClassifyName[key].replace(/(\<\/?em\>)/g, '')
-                // })
-                // model && (this.modelClassifyName[model] = `<em>${this.modelClassifyName[model]}</em>`)
             },
             async getPublicModelProperties (objId) {
                 this.propertyMap = await this.batchSearchObjectAttribute({
@@ -234,15 +235,13 @@
                 }
                 this.debounceTimer = setTimeout(() => {
                     if (!this.query.queryString) return
-                    this.searching = true
                     this.$store.dispatch('fullTextSearch/search', {
                         params: this.params,
                         config: {
                             requestId: this.requestId,
                             cancelPrevious: true
                         }
-                    }).then(data => {
-                        this.searching = false
+                    }).then(async data => {
                         this.pagination.total = data.total
                         const hitsData = data.hits
                         const modelData = data.aggregations
@@ -252,14 +251,14 @@
                                 this.modelClassify = modelData.map(item => {
                                     return {
                                         ...this.getModelById(item.key),
-                                        count: item.count
+                                        count: item.count > 999 ? '999+' : item.count
                                     }
-                                })
+                                }).sort((prev, next) => next.count - prev.count)
                                 this.modelClassify.forEach(model => {
                                     this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
                                 })
-                                this.processArray(modelData)
-                                this.allSearchCount = data.total
+                                await this.processArray(modelData)
+                                this.allSearchCount = data.total > 999 ? '999+' : data.total
                                 this.hasData = data.total
                             }
                             this.searchData = hitsData.map(hits => {
@@ -278,6 +277,7 @@
                             this.initScrollListener(this.$refs.topSticky)
                         })
                     }).finally(() => {
+                        this.searching = false
                         this.showNoData = true
                     })
                 }, wait)
@@ -387,11 +387,20 @@
                 padding: 0 56px 0 16px;
                 font-size: 14px;
             }
-            .icon-search {
+            .bk-icon {
                 position: absolute;
                 right: 20px;
                 top: 13px;
                 font-size: 18px;
+                &.icon-close-circle-shape {
+                    font-size: 16px;
+                    right: 10px;
+                    color: #c4c6cc;
+                    cursor: pointer;
+                    &:hover {
+                        color: #979ba5;
+                    }
+                }
             }
         }
         .classify {
@@ -426,14 +435,15 @@
                 color: $cmdbTextColor;
                 .results-item {
                     width: 60%;
-                    padding-bottom: 14px;
+                    padding-bottom: 35px;
+                    color: #63656e;
                     em {
                         color: #3a84ff !important;
                         font-style: normal !important;
                     }
                     .results-title {
                         display: inline-block;
-                        font-size: 16px;
+                        font-size: 18px;
                         font-weight: bold;
                         margin-bottom: 4px;
                         cursor: pointer;
@@ -443,11 +453,15 @@
                         }
                     }
                     .results-desc {
-                        font-size: 12px;
+                        font-size: 14px;
                         .desc-item {
                             display: inline-block;
                             padding-right: 16px;
                             padding-bottom: 6px;
+                        }
+                        &:hover {
+                            color: #313238;
+                            cursor: pointer;
                         }
                     }
                 }
