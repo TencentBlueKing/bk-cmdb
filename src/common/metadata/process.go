@@ -145,6 +145,11 @@ type ForceSyncServiceInstanceWithTemplateInput struct {
 	ServiceInstances  []int64  `json:"service_instances"`
 }
 
+type ListServiceInstancesWithHostInput struct {
+	Metadata Metadata `json:"metadata"`
+	HostID   int64    `json:"host_id"`
+}
+
 type SocketBindType string
 
 const (
