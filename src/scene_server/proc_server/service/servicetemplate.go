@@ -79,7 +79,7 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 
 	err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service template:%d failed, err: %v", input.ServiceTemplateID, err)
+		ctx.RespWithError(err, common.CCErrProcDeleteServiceTemplateFailed, "delete service template: %d failed", input.ServiceTemplateID)
 		return
 	}
 

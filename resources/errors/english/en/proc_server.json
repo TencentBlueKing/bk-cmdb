@@ -24,5 +24,9 @@
     "1108027": "get process template failed",
     "1108028": "get process instance failed",
     "1108029": "get process relation failed",
+    "1108030": "delete service template failed",
+    "1108031": "create process template failed",
+    "1108032": "update process template failed",
+    "1108033": "get process template failed",
     "": ""
 }
