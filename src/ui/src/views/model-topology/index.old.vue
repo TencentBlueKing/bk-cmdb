@@ -922,28 +922,32 @@
                 })
             },
             initPosition () {
-                let nodesId = []
-                this.topoModelList.forEach(model => {
-                    if (model.hasOwnProperty('assts') && model.assts.length) {
-                        nodesId.push(model['bk_obj_id'])
-                        model.assts.forEach(asst => {
-                            nodesId.push(asst['bk_obj_id'])
-                        })
+                try {
+                    let nodesId = []
+                    this.topoModelList.forEach(model => {
+                        if (model.hasOwnProperty('assts') && model.assts.length) {
+                            nodesId.push(model['bk_obj_id'])
+                            model.assts.forEach(asst => {
+                                nodesId.push(asst['bk_obj_id'])
+                            })
+                        }
+                    })
+                    nodesId = [...new Set(nodesId)]
+                    nodesId = nodesId.filter(id => {
+                        return this.topoModelList.some(({ bk_obj_id: objId, position }) => objId === id && position.x === null && position.y === null)
+                    })
+                    if (nodesId.length) {
+                        this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
                     }
-                })
-                nodesId = [...new Set(nodesId)]
-                nodesId = nodesId.filter(id => {
-                    return this.topoModelList.some(({ bk_obj_id: objId, position }) => objId === id && position.x === null && position.y === null)
-                })
-                if (nodesId.length) {
-                    this.updateNodePosition(this.networkDataSet.nodes.get(nodesId))
+                } catch (e) {
+                    console.log(e)
                 }
             },
             updateSingleNodePosition (node) {
                 this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: [node]
-                    })
+                    }
                 })
             },
             // 批量更新节点位置信息
@@ -981,9 +985,9 @@
                 }
 
                 await this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: params
-                    })
+                    }
                 })
                 updateNodes.forEach(node => {
                     const model = this.localTopoModelList.find(({ bk_obj_id: objId }) => objId === node.id)
