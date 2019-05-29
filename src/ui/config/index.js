@@ -19,7 +19,7 @@ process.CMDB_CONFIG = config
 const dev = {
     // custom config
     config: Object.assign({}, config, {
-        'API_URL': '"http://dev.cmdbee-p.o.qcloud.com:9090/proxy/"',
+        'API_URL': '"http://{host}:{port}/proxy/"',
         'API_VERSION': '"v3"',
         'API_LOGIN': '""',
         'AGENT_URL': 'null',
@@ -37,14 +37,14 @@ const dev = {
         '/proxy': {
             logLevel: 'info',
             changeOrigin: true,
-            target: 'http://cmdbee-p.o.qcloud.com/',
+            target: 'http://{webserver地址}/',
             pathRewrite: {
                 '^/proxy': ''
             }
         }
     },
     // Various Dev Server settings
-    host: 'dev.cmdbee-p.o.qcloud.com', // can be overwritten by process.env.HOST
+    host: 'localhost', // can be overwritten by process.env.HOST
     port: 9090, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
     autoOpenBrowser: true,
     errorOverlay: true,
