@@ -55,7 +55,7 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 	// TODO: asset bizID == category.Metadata.Label.bk_biz_id
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx.Context, &relation); nil != err {
-		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
+		blog.Errorf("CreateProcessInstanceRelation failed, mongodb failed, table: %s, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relation, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBInsertFailed)
 	}
 	return &relation, nil
@@ -66,8 +66,8 @@ func (p *processOperation) GetProcessInstanceRelation(ctx core.ContextParams, pr
 
 	filter := map[string]int64{"process_id": processInstanceID}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(ctx.Context, &relation); nil != err {
-		blog.Errorf("GetProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, err, ctx.ReqID)
-		if err.Error() == "document not found" {
+		blog.Errorf("GetProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, relation, err, ctx.ReqID)
+		if p.dbProxy.IsNotFoundError(err) {
 			return nil, ctx.Error.CCError(common.CCErrCommNotFound)
 		}
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
@@ -94,7 +94,7 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	// do update
 	filter := map[string]int64{"process_id": processInstanceID}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(ctx, filter, relation); nil != err {
-		blog.Errorf("UpdateProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
+		blog.Errorf("UpdateProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, filter, relation, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBUpdateFailed)
 	}
 	return relation, nil
@@ -126,7 +126,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	var total uint64
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context); nil != err {
-		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, err, ctx.ReqID)
+		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
@@ -152,7 +152,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 
 	deleteFilter := map[string]int64{"process_id": relation.ProcessID}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {
-		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
+		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
