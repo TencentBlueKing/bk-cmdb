@@ -37,7 +37,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(temp))
+	ctx.RespEntity(temp)
 }
 
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
@@ -65,11 +65,11 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, err: %v, input: %+v", err, input)
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(temp))
+	ctx.RespEntity(temp)
 }
 
 // a service template can be delete only when it is not be used any more,
@@ -93,5 +93,5 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }

@@ -51,7 +51,7 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 		ids = append(ids, temp.ID)
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(ids))
+	ctx.RespEntity(ids)
 }
 
 func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
@@ -74,7 +74,7 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 			input.ProcessTemplates)
 		return
 	}
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
 func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
@@ -101,7 +101,7 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return
 	}
-	ctx.RespEntity(metadata.NewSuccessResp(tmp))
+	ctx.RespEntity(tmp)
 }
 
 func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
@@ -129,7 +129,7 @@ func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return
 	}
-	ctx.RespEntity(metadata.NewSuccessResp(tmp))
+	ctx.RespEntity(tmp)
 }
 
 func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
@@ -155,5 +155,5 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 		ctx.RespWithError(err, common.CCErrProcGetProcessTemplateFailed, "get process template: %v failed", input)
 		return
 	}
-	ctx.RespEntity(metadata.NewSuccessResp(tmp))
+	ctx.RespEntity(tmp)
 }
