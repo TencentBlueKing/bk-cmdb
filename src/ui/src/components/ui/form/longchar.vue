@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-longchar">
         <input class="cmdb-form-input form-longchar-input" type="text"
-            :placeholder="$t('Form[\'请输入长字符\']')"
+            :placeholder="placeholder || $t('Form[\'请输入长字符\']')"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
@@ -25,6 +25,10 @@
             maxlength: {
                 type: Number,
                 default: 2000
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         methods: {

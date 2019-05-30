@@ -14,12 +14,12 @@
             v-model="localSelected.operator"
             @on-selected="handleOperatorSelected">
         </cmdb-selector>
-        <div class="property-value fl" style="width: 245px;"
+        <div class="property-value fl" style="width: 325px;"
             v-if="Object.keys(selectedProperty).length">
             <component
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
                 :options="selectedProperty.option || []"
-                :palceholder="$t('Common[\'请输入关键字\']')"
+                :placeholder="$t('Common[\'请输入关键字\']')"
                 v-model.trim="localSelected.value">
             </component>
         </div>
