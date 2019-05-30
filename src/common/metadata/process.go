@@ -108,6 +108,15 @@ type DifferenceDetail struct {
 	Removed   []ProcessDifferenceDetail `json:"removed"`
 }
 
+func NewDifferenceDetail() *DifferenceDetail {
+	return &DifferenceDetail{
+		Unchanged: make([]ProcessDifferenceDetail, 0),
+		Changed:   make([]ProcessDifferenceDetail, 0),
+		Added:     make([]ProcessDifferenceDetail, 0),
+		Removed:   make([]ProcessDifferenceDetail, 0),
+	}
+}
+
 type ProcessDifferenceDetail struct {
 	ProcessTemplateID int64                     `json:"process_template_id"`
 	ProcessInstance   Process                   `json:"process_instance"`
