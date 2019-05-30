@@ -518,6 +518,9 @@
             margin: 32px 10px 32px 0;
             line-height: 36px;
             font-size: 0;
+            &:hover .icon-cc-edit {
+                display: inline-block;
+            }
             >span {
                 display: inline-block;
                 vertical-align: middle;
@@ -533,6 +536,7 @@
                 }
             }
             .icon-cc-edit {
+                display: none;
                 vertical-align: middle;
                 font-size: 14px;
             }

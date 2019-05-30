@@ -79,6 +79,19 @@ const actions = {
      */
     getUserDefaultCustom ({ commit, state, dispatch }) {
         return $http.post(`usercustom/default/search`)
+    },
+
+    setRencentlyData ({ commit, state, dispatch }, { id }) {
+        const usercustomData = state.usercustom.recently_models || []
+        const isExist = usercustomData.some(target => target === id)
+        let newUsercustomData = [...usercustomData]
+        if (isExist) {
+            newUsercustomData = newUsercustomData.filter(target => target !== id)
+        }
+        newUsercustomData.unshift(id)
+        dispatch('saveUsercustom', {
+            recently_models: newUsercustomData
+        })
     }
 }
 
