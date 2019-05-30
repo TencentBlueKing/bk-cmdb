@@ -15,6 +15,9 @@ const actions = {
 const mutations = {
     setProperties (state, data) {
         Vue.set(state.propertyMap, data.id, data.properties)
+    },
+    resetProperties (state) {
+        this.propertyMap = {}
     }
 }
 
