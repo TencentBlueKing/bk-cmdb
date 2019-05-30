@@ -323,34 +323,17 @@ func (ih *IdentifierHandler) findHost(objType string, instID int64) (hostIDs []i
 			return nil, err
 		}
 	} else if objType == common.BKInnerObjIDProc {
-		proc2module := []metadata.ProcessModule{}
-		// get process to module
-		if err = ih.db.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ih.ctx, &proc2module); err != nil {
+		// 根据进程获取主机信息
+		serviceInstRelationArr := make([]metadata.ProcessInstanceRelation, 0)
+		if err = ih.db.Table(common.BKTableNameProcessInstanceRelation).Find(cond.ToMapStr).All(context.Background(), &serviceInstRelationArr); err != nil {
+			blog.ErrorJSON("find table(%s) data error. err:%s, condition:%s", err.Error(), cond.ToMapStr())
 			return nil, err
 		}
-		if len(proc2module) > 0 {
-			modulenames := make([]string, len(proc2module))
-			for index := range proc2module {
-				modulenames[index] = proc2module[index].ModuleName
-			}
-			// get module ids
-			relations = []metadata.ModuleHost{}
-			cond = condition.CreateCondition().Field(common.BKAppIDField).Eq(proc2module[0].AppID).Field(common.BKModuleNameField).In(modulenames)
-			if err = ih.db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).Fields(common.BKModuleIDField).All(ih.ctx, &relations); err != nil {
-				return nil, err
-			}
-
-			moduleids := make([]int64, len(relations))
-			for index := range proc2module {
-				moduleids[index] = relations[index].ModuleID
-			}
-
-			relations = []metadata.ModuleHost{}
-			cond = condition.CreateCondition().Field(common.BKModuleIDField).In(moduleids)
-			if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
-				return nil, err
-			}
+		for _, item := range serviceInstRelationArr {
+			hostIDs = append(hostIDs, item.HostID)
 		}
+		return hostIDs, nil
+
 	} else {
 		if err = ih.db.Table(common.BKTableNameModuleHostConfig).Find(cond.ToMapStr()).Fields(common.BKHostIDField).All(ih.ctx, &relations); err != nil {
 			return nil, err
@@ -475,57 +458,13 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 			inst.data["associations"] = inst.ident.Module
 
 			// 2. fill process
-			hostprocess := []Process{}
-
-			// 2.1 find modules belongs to host
-			modules := []metadata.ModuleInst{}
-			cond := condition.CreateCondition().Field(common.BKModuleIDField).In(hostmoduleids)
-			if err = db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(ctx, &modules); err != nil {
+			hostProcessMap, err := getHostIdentifierProcInfo(ctx, db, []int64{instID})
+			if err != nil {
+				blog.InfoJSON("find host")
 				return nil, err
 			}
-
-			// 2.2 find process belong to module within app
-			appmodule := map[int64][]metadata.ModuleInst{}
-			for _, module := range modules {
-				appmodule[module.BizID] = append(appmodule[module.BizID], module)
-			}
-			for appid, modules := range appmodule {
-				// 2.2.1 find process id belong to module within app
-				moulename2ids := map[string][]int64{}
-				procmoulenames := []string{}
-				for _, module := range modules {
-					moulename2ids[module.ModuleName] = append(moulename2ids[module.ModuleName], module.ModuleID)
-					procmoulenames = append(procmoulenames, module.ModuleName)
-				}
-				proc2modules := []metadata.ProcessModule{}
-				cond := condition.CreateCondition().Field(common.BKAppIDField).Eq(appid).Field(common.BKModuleNameField).In(procmoulenames)
-				if err = db.Table(common.BKTableNameProcModule).Find(cond.ToMapStr()).All(ctx, &proc2modules); err != nil {
-					return nil, err
-				}
-
-				// 2.2.2 find process by process id
-				processids := []int64{}
-				proc2moulenames := map[int64][]string{}
-				for _, proc2module := range proc2modules {
-					proc2moulenames[proc2module.ProcessID] = append(proc2moulenames[proc2module.ProcessID], proc2module.ModuleName)
-					processids = append(processids, proc2module.ProcessID)
-				}
-				process := []Process{}
-				cond = condition.CreateCondition().Field(common.BKProcIDField).In(processids)
-				if err = db.Table(common.BKTableNameBaseProcess).Find(cond.ToMapStr()).All(ctx, &process); err != nil {
-					return nil, err
-				}
-
-				// 2.3 bind module id
-				for index := range process {
-					for _, modulename := range proc2moulenames[process[index].ProcessID] {
-						process[index].BindModules = moulename2ids[modulename]
-					}
-				}
-				hostprocess = append(hostprocess, process...)
-			}
-			inst.ident.Process = hostprocess
-			inst.data["process"] = hostprocess
+			inst.ident.Process = hostProcessMap[instID]
+			inst.data["process"] = inst.ident.Process
 		}
 		inst.saveCache(cache)
 	} else {
@@ -548,6 +487,83 @@ func getCache(ctx context.Context, cache *redis.Client, db dal.RDB, objType stri
 	}
 
 	return &inst, nil
+}
+
+// getHostIdentifierProcInfo 根据主机ID生成主机身份
+func getHostIdentifierProcInfo(ctx context.Context, db dal.RDB, hostIDs []int64) (map[int64][]Process, error) {
+	relationCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
+	relations := []metadata.ProcessInstanceRelation{}
+
+	// query process id with host id
+	err := db.Table(common.BKTableNameProcessInstanceRelation).Find(relationCond.ToMapStr()).All(ctx, &relations)
+	if err != nil {
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameProcessInstanceRelation, relationCond.ToMapStr())
+		return nil, err
+	}
+
+	blog.V(5).Infof("findHostServiceInst query host and process relation. hostID:%#v, relation:%#v", hostIDs, relations)
+
+	var procIDs []int64
+	var serviceInstIDs []int64
+	// 进程与服务实例的关系
+	procServiceInstMap := make(map[int64][]int64, 0)
+	for _, relation := range relations {
+		procIDs = append(procIDs, relation.ProcessID)
+		serviceInstIDs = append(serviceInstIDs, relation.ServiceInstanceID)
+		procServiceInstMap[relation.ProcessID] = append(procServiceInstMap[relation.ProcessID], relation.ServiceInstanceID)
+	}
+
+	serviceInstInfos := make([]metadata.ServiceInstance, 0)
+	serviceInstCond := condition.CreateCondition().Field(common.BKFieldID).In(serviceInstIDs)
+	err = db.Table(common.BKTableNameServiceInstance).Find(serviceInstCond.ToMapStr()).All(ctx, &serviceInstInfos)
+	if err != nil {
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, serviceInstCond.ToMapStr())
+		return nil, err
+	}
+	blog.V(5).Infof("findHostServiceInst query service instance info. service instance id:%#v, info:%#v", serviceInstIDs, serviceInstInfos)
+	// 服务实例与模块的关系
+	serviceInstModuleRealtion := make(map[int64][]int64, 0)
+	for _, serviceInstInfo := range serviceInstInfos {
+		serviceInstModuleRealtion[serviceInstInfo.ID] = append(serviceInstModuleRealtion[serviceInstInfo.ID], serviceInstInfo.ModuleID)
+	}
+
+	procModuleRelation := make(map[int64][]int64, 0)
+	for procID, serviceInstIDs := range procServiceInstMap {
+		for _, serviceInstID := range serviceInstIDs {
+			for _, moduleID := range serviceInstModuleRealtion[serviceInstID] {
+				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
+			}
+		}
+
+	}
+
+	procInfos := make([]Process, 0)
+	// query process info with process id
+	cond := condition.CreateCondition().Field(common.BKProcIDField).In(procIDs)
+	err = db.Table(common.BKTableNameBaseProcess).Find(cond.ToMapStr()).All(ctx, &procInfos)
+	if err != nil {
+		blog.ErrorJSON("findHostServiceInst query table %s err. cond:%s", common.BKTableNameBaseProcess, cond.ToMapStr())
+		return nil, err
+	}
+
+	blog.V(5).Infof("findHostServiceInst query process info. procIDs:%#v, info:%#v", procIDs, procInfos)
+
+	procs := make(map[int64]Process, 0)
+	for _, procInfo := range procInfos {
+		if moduleIDs, ok := procModuleRelation[procInfo.ProcessID]; ok {
+			procInfo.BindModules = moduleIDs
+		}
+		procs[procInfo.ProcessID] = procInfo
+	}
+
+	hostProcRelation := make(map[int64][]Process, 0)
+	// 主机和进程之间的关系,生成主机与进程的关系
+	for _, relation := range relations {
+		if procInfo, ok := procs[relation.ProcessID]; ok {
+			hostProcRelation[relation.HostID] = append(hostProcRelation[relation.HostID], procInfo)
+		}
+	}
+	return hostProcRelation, nil
 }
 
 func (ih *IdentifierHandler) StartHandleInsts() error {
