@@ -591,7 +591,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	ret := new(metadata.MultipleProcessInstanceRelationResult)
 	subPath := "/findmany/process/process_instance_relation"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
