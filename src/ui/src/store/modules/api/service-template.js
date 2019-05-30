@@ -16,7 +16,7 @@ const getters = {}
 
 const actions = {
     /**
-     * 获取服务模板列表
+     * 查询服务模板详情列表
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -24,7 +24,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_template`, params, config)
+        return $http.post(`findmany/proc/service_template/with_detail`, params, config)
     },
     /**
      * 创建\编辑服务模板

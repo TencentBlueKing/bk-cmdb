@@ -800,6 +800,8 @@
         "功能提示": "Service template: By creating a template, the automatic application process is configured. When the template is applied, the instance automatically applies all the information of the template template. The template is not valid immediately when the template is modified. Manual synchronization is required on the host instance interface.",
         "批量删除": "Batch Deletion",
         "模板名称": "Template name",
+        "进程数量": "Number of processes",
+        "应用数量": "Number of applications",
         "修改人": "Modifier",
         "修改时间": "Update Time",
         "新建服务模版": "New Service Template",

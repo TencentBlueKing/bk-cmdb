@@ -1,5 +1,5 @@
 <template>
-    <div class="template-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="template-wrapper" ref="templateWrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
             :feature-name="'serviceTemplate'"
             :show-tips="showFeatureTips"
@@ -8,7 +8,6 @@
         </feature-tips>
         <div class="template-filter clearfix">
             <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
-            <bk-button class="fl mr10">{{$t("ServiceManagement['批量删除']")}}</bk-button>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
@@ -32,14 +31,14 @@
                     <input type="text"
                         class="bk-form-input"
                         :placeholder="$t('ServiceManagement[\'模板名称\']')"
-                        v-model.trim="filter.templateName">
-                    <i class="bk-icon icon-search"></i>
+                        v-model.trim="filter.templateName"
+                        @keypress.enter="searchByTemplateName">
+                    <i class="bk-icon icon-search" @click="searchByTemplateName"></i>
                 </div>
             </div>
         </div>
         <cmdb-table class="template-table" ref="table"
             :loading="$loading('get_proc_service_template')"
-            :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
@@ -56,11 +55,17 @@
                     @click.stop="operationTemplate(item)">
                     {{$t('Common["编辑"]')}}
                 </button>
-                <span class="text-primary" style="color: #c4c6cc !important;" v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">{{$t('Common["删除"]')}}</span>
-                <!-- <button class="text-primary"
+                <span class="text-primary"
+                    style="color: #c4c6cc !important;"
+                    v-if="item['service_instance_count']"
+                    v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
+                    {{$t('Common["删除"]')}}
+                </span>
+                <button class="text-primary"
+                    v-else
                     @click.stop="deleteTemplate(item)">
                     {{$t('Common["删除"]')}}
-                </button> -->
+                </button>
             </template>
         </cmdb-table>
     </div>
@@ -84,12 +89,17 @@
                 table: {
                     header: [
                         {
-                            id: 'id',
-                            type: 'checkbox',
-                            width: 50
-                        }, {
                             id: 'name',
                             name: this.$t("ServiceManagement['模板名称']")
+                        }, {
+                            id: 'service_category',
+                            name: this.$t("ServiceManagement['服务分类']")
+                        }, {
+                            id: 'process_template_count',
+                            name: this.$t("ServiceManagement['进程数量']")
+                        }, {
+                            id: 'service_instance_count',
+                            name: this.$t("ServiceManagement['应用数量']")
                         }, {
                             id: 'modifier',
                             name: this.$t("ServiceManagement['修改人']")
@@ -102,8 +112,9 @@
                             sortable: false
                         }
                     ],
-                    checked: [],
+                    height: 600,
                     list: [],
+                    allList: [],
                     pagination: {
                         current: 1,
                         count: 0,
@@ -114,7 +125,8 @@
                 },
                 mainList: [],
                 secondaryList: [],
-                allSecondaryList: []
+                allSecondaryList: [],
+                originTemplateData: []
             }
         },
         computed: {
@@ -122,46 +134,68 @@
             params () {
                 const categoryId = this.filter.secondaryClassification ? Number(this.filter.secondaryClassification) : null
                 return {
-                    service_category_id: categoryId,
-                    page: {
-                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                        limit: this.table.pagination.size,
-                        sort: this.table.sort
-                    }
+                    service_category_id: categoryId
                 }
             }
         },
-        created () {
+        async created () {
             this.$store.commit('setHeaderTitle', this.$t("Nav['服务模板']"))
             this.showFeatureTips = this.featureTipsParams['serviceTemplate']
-            this.getTableData()
-            this.getServiceClassification()
+            try {
+                await this.getServiceClassification()
+                await this.getTableData()
+            } catch (e) {
+                console.log(e)
+            }
+        },
+        mounted () {
+            // this.setTableHight()
         },
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
-            getTableData () {
-                this.searchServiceTemplate({
+            // setTableHight () {
+            //     this.table['height'] = this.$refs.templateWrapper.clientHeight - this.$refs.table.$el.getBoundingClientRect().top + 20
+            // },
+            async getTableData () {
+                const templateData = await this.getTemplateData()
+                this.table.allList = templateData.info.map(template => {
+                    const result = {
+                        process_template_count: template['process_template_count'],
+                        service_instance_count: template['service_instance_count'],
+                        ...template['service_template']
+                    }
+                    const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])
+                    const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['parent_id'])
+                    const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
+                    const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
+                    result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
+                    return result
+                })
+                this.table.list = this.table.allList
+            },
+            getTemplateData () {
+                return this.searchServiceTemplate({
                     params: this.$injectMetadata(this.params),
                     config: {
                         requestId: 'get_proc_service_template',
                         cancelPrevious: true
                     }
-                }).then(data => {
-                    this.table.list = data.info
-                    this.table.pagination.count = data.count
                 })
             },
-            getServiceClassification () {
-                this.searchServiceCategory({
+            async getServiceClassification () {
+                this.classificationList = await this.searchServiceCategory({
                     params: this.$injectMetadata(),
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
-                }).then(data => {
-                    this.mainList = data.info.filter(classification => !classification['parent_id'])
-                    this.allSecondaryList = data.info.filter(classification => classification['parent_id'])
                 })
+                this.mainList = this.classificationList.info.filter(classification => !classification['parent_id'])
+                this.allSecondaryList = this.classificationList.info.filter(classification => classification['parent_id'])
+            },
+            searchByTemplateName () {
+                const filterList = this.table.allList.filter(template => template['name'] === this.filter.templateName)
+                this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
@@ -185,10 +219,10 @@
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
                             params: this.$injectMetadata({
-                                service_category_id: template.id
+                                service_template_id: template.id
                             }),
                             config: {
-                                requestId: 'deleteServiceTemplate'
+                                requestId: 'delete_proc_service_template'
                             }
                         })
                         this.getTableData()
