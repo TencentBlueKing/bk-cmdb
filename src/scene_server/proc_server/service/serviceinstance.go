@@ -420,7 +420,7 @@ func (ps *ProcServer) FindDifferencesBetweenProcessTemplateAndInstancesInService
 		pTemplateMap[pTemplate.ID] = &pTemplate
 
 		option := metadata.ListProcessInstanceRelationOption{
-			Metadata:          input.Metadata,
+			BusinessID:        bizID,
 			ProcessTemplateID: pTemplate.ID,
 		}
 

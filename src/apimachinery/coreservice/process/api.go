@@ -245,7 +245,6 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 	return &ret.Data, nil
 }
 
-
 func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
