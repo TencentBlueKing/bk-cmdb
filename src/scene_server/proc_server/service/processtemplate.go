@@ -21,7 +21,7 @@ import (
 )
 
 // create a process template for a service template.
-func (p *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
+func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	template := new(metadata.CreateProcessTemplateBatchInput)
 	if err := ctx.DecodeInto(template); err != nil {
 		ctx.RespAutoError(err)
@@ -42,9 +42,9 @@ func (p *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 			Property:          process.Spec,
 		}
 
-		temp, err := p.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
+		temp, err := ps.CoreAPI.CoreService().Process().CreateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, t)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create process template failed, err: %v, template: +%v", err, *t)
+			ctx.RespWithError(err, common.CCErrProcCreateProcessTemplateFailed, "create process template failed, template: +%v", *t)
 			return
 		}
 
@@ -54,7 +54,7 @@ func (p *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.NewSuccessResp(ids))
 }
 
-func (p *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
+func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessTemplateBatchInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -68,16 +68,16 @@ func (p *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	err = p.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessTemplateBatch(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplates)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete process template: %v failed, err: %v.",
-			input.ProcessTemplates, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed, "delete process template: %v failed",
+			input.ProcessTemplates)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(nil))
 }
 
-func (p *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	input := new(metadata.ProcessTemplate)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -96,15 +96,15 @@ func (p *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	tmp, err := p.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
+	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update process template: %v failed, err: %v.", input, err)
+		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(tmp))
 }
 
-func (p *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 	input := new(metadata.MetadataWrapper)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -124,7 +124,7 @@ func (p *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	tmp, err := p.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	tmp, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
 		return
@@ -132,7 +132,7 @@ func (p *ProcServer) GetProcessTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.NewSuccessResp(tmp))
 }
 
-func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	input := new(metadata.ListProcessTemplateWithServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -150,9 +150,9 @@ func (p *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 		ServiceTemplateID:  input.ServiceTemplateID,
 		ProcessTemplateIDs: input.ProcessTemplatesIDs,
 	}
-	tmp, err := p.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	tmp, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get process template: %v failed, err: %v.", input, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessTemplateFailed, "get process template: %v failed", input)
 		return
 	}
 	ctx.RespEntity(metadata.NewSuccessResp(tmp))

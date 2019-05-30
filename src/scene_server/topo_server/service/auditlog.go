@@ -108,13 +108,13 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	objectID := pathParams("bk_obj_id")
 	if len(objectID) == 0 {
 		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v", query)
-		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "bk_obj_id")
 	}
 
 	queryCondition := query.Condition
 	if nil == queryCondition {
 		blog.Errorf("InstanceAuditQuery failed, host audit query condition can't be empty, query: %+v", query)
-		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "condition")
 	}
 
 	cond := queryCondition.(map[string]interface{})
@@ -122,7 +122,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	if ok {
 		if 2 != len(times) {
 			blog.Errorf("InstanceAuditQuery failed, search operation log input params times error, info: %v", times)
-			return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "op_time")
 		}
 
 		cond[common.BKOpTimeField] = common.KvMap{
@@ -154,12 +154,12 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	instID, exist := queryCondition.(map[string]interface{})["inst_id"]
 	if exist == false {
 		blog.Errorf("InstanceAuditQuery failed, instance audit query condition condition.ext_key not exist, query: %+v", query)
-		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "inst_id")
 	}
 	instanceID, err := util.GetInt64ByInterface(instID)
 	if err != nil {
 		blog.Errorf("InstanceAuditQuery failed, instance audit query condition instanceID in condition.ext_key.$in invalid, instanceID: %+v, query: %+v", instID, query)
-		return nil, params.Err.Error(common.CCErrCommParamsInvalid)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "inst_id")
 	}
 
 	action := meta.Find

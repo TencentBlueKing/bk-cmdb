@@ -14,10 +14,11 @@ package process
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -37,7 +38,7 @@ func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, cate
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -58,7 +59,7 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -80,7 +81,7 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -101,14 +102,14 @@ func (p *process) DeleteServiceCategory(ctx context.Context, h http.Header, cate
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
 }
 
-func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.ServiceCategoryWithStatistics, err error) {
-	ret := new(metadata.ServiceCategoryWithStatisticsResult)
+func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error) {
+	ret := new(metadata.MultipleServiceCategoryResult)
 	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
@@ -116,7 +117,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 		"with_statistics": withStatistics,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -128,7 +129,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -153,7 +154,7 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -174,7 +175,7 @@ func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templat
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -196,7 +197,7 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -217,7 +218,7 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -228,11 +229,11 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/findmany/process/service_template"
 
 	input := map[string]interface{}{
-		"bk_biz_id":           bizID,
+		"metadata":            metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
 		"service_category_id": categoryID,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -244,7 +245,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -269,7 +270,7 @@ func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, temp
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -290,7 +291,7 @@ func (p *process) GetProcessTemplate(ctx context.Context, h http.Header, templat
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -300,7 +301,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -312,7 +313,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -333,7 +334,7 @@ func (p *process) DeleteProcessTemplate(ctx context.Context, h http.Header, temp
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -359,7 +360,7 @@ func (p *process) DeleteProcessTemplateBatch(ctx context.Context, h http.Header,
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -381,7 +382,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -406,7 +407,7 @@ func (p *process) CreateServiceInstance(ctx context.Context, h http.Header, inst
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -427,7 +428,7 @@ func (p *process) GetServiceInstance(ctx context.Context, h http.Header, instanc
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -449,7 +450,7 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -470,7 +471,7 @@ func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, inst
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -492,7 +493,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -517,7 +518,7 @@ func (p *process) CreateProcessInstanceRelation(ctx context.Context, h http.Head
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -538,7 +539,7 @@ func (p *process) GetProcessInstanceRelation(ctx context.Context, h http.Header,
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -560,7 +561,7 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil
@@ -581,7 +582,7 @@ func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Head
 		return err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return errors.New(ret.ErrMsg)
+		return errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return nil
@@ -603,7 +604,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 		return nil, err
 	}
 	if ret.Result == false || ret.Code != 0 {
-		return nil, errors.New(ret.ErrMsg)
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
 	}
 
 	return &ret.Data, nil

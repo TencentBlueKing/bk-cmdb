@@ -37,7 +37,7 @@ func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Met
 	// extract biz id from metadata
 	bizID, err := metadata.BizIDFromMetadata(md)
 	if err != nil {
-		blog.Errorf("parse biz id from metadata failed, err: %+v", err)
+		blog.Errorf("parse biz id from metadata failed, metadata: %+v, err: %+v", md, err)
 		return 0, err
 	}
 

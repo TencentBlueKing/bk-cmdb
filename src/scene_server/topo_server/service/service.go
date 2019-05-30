@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -168,12 +169,12 @@ func (s *Service) addActionEx(method string, path string, handlerFunc LogicFunc,
 // Actions return the all actions
 func (s *Service) Actions() []*httpserver.Action {
 
-	var httpactions []*httpserver.Action
+	var httpActions []*httpserver.Action
 	for _, a := range s.actions {
 
 		func(act action) {
 
-			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			httpActions = append(httpActions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
 				rid := util.GetHTTPCCRequestID(req.Request.Header)
@@ -214,6 +215,7 @@ func (s *Service) Actions() []*httpserver.Action {
 				}
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
+				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,
@@ -258,7 +260,7 @@ func (s *Service) Actions() []*httpserver.Action {
 		}(a)
 
 	}
-	return httpactions
+	return httpActions
 }
 
 type MetaShell struct {

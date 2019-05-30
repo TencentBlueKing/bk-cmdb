@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (p *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	template := new(metadata.ServiceTemplate)
 	if err := ctx.DecodeInto(template); err != nil {
 		ctx.RespAutoError(err)
@@ -31,7 +31,7 @@ func (p *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := p.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+	temp, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
@@ -40,7 +40,7 @@ func (p *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.NewSuccessResp(temp))
 }
 
-func (p *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
+func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -53,7 +53,7 @@ func (p *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := p.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, bizID, input.ServiceCategoryID)
+	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, bizID, input.ServiceCategoryID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, err: %v, input: %+v", err, input)
 		return
@@ -64,7 +64,7 @@ func (p *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 
 // a service template can be delete only when it is not be used any more,
 // which means that no process instance belongs to it.
-func (p *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 	input := new(metadata.DeleteServiceTemplatesInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -77,9 +77,9 @@ func (p *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	err = p.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
+	err = ps.CoreAPI.CoreService().Process().DeleteServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceTemplateID)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "delete service template:%d failed, err: %v", input.ServiceTemplateID, err)
+		ctx.RespWithError(err, common.CCErrProcDeleteServiceTemplateFailed, "delete service template: %d failed", input.ServiceTemplateID)
 		return
 	}
 
