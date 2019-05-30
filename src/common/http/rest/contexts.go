@@ -67,6 +67,29 @@ func (c *Contexts) RespEntity(data interface{}) {
 	}
 }
 
+type CountInfo struct {
+	Count int64       `json:"count"`
+	Info  interface{} `json:"info"`
+}
+
+func (c *Contexts) RespEntityWithCount(count int64, info interface{}) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+	c.resp.Header().Set("Content-Type", "application/json")
+	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	resp := metadata.Response{
+		BaseResp: metadata.SuccessBaseResp,
+		Data: CountInfo{
+			Count: count,
+			Info:  info,
+		},
+	}
+	if err := c.resp.WriteAsJson(resp); err != nil {
+		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
+	}
+}
+
 func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
 	c.respStatusCode = statusCode
 	return c
