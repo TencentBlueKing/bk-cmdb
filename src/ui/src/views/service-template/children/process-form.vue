@@ -5,305 +5,6 @@
             :show-tips="true"
             :desc="$t('ProcessManagement[\'添加进程提示\']')">
         </feature-tips>
-        <!-- <div class="form-groups" ref="formGroups">
-            <div class="property-group">
-                <div class="group-name">{{$t("ProcessManagement['基本属性']")}}</div>
-                <ul class="property-list clearfix">
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text required">{{$t("ProcessManagement['进程名称']")}}</span>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-singlechar class="form-component"
-                                :class="{ error: errors.has('bk_func_name') }"
-                                :data-vv-name="'bk_func_name'"
-                                :data-vv-as="$t('ProcessManagement[\'进程名称\']')"
-                                v-validate="'required|singlechar'"
-                                v-model.trim="values['bk_func_name']">
-                            </cmdb-form-singlechar>
-                            <span class="form-error">{{errors.first('bk_func_name')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text required">{{$t("ProcessManagement['进程别名']")}}</span>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-singlechar class="form-component"
-                                :class="{ error: errors.has('bk_process_name') }"
-                                :data-vv-name="'bk_process_name'"
-                                :data-vv-as="$t('ProcessManagement[\'进程别名\']')"
-                                v-validate="'required|singlechar'"
-                                v-model.trim="values['bk_process_name']">
-                            </cmdb-form-singlechar>
-                            <span class="form-error">{{errors.first('bk_process_name')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动参数匹配规则']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('bk_start_param_regex') }"
-                                :data-vv-name="'bk_start_param_regex'"
-                                :data-vv-as="$t('ProcessManagement[\'启动参数匹配规则\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['bk_start_param_regex']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('bk_start_param_regex')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['进程描述']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-singlechar class="form-component"
-                                :class="{ error: errors.has('description') }"
-                                :data-vv-name="'description'"
-                                :data-vv-as="$t('ProcessManagement[\'进程描述\']')"
-                                v-validate="'singlechar'"
-                                v-model.trim="values['description']">
-                            </cmdb-form-singlechar>
-                            <span class="form-error">{{errors.first('description')}}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            <div class="property-group">
-                <div class="group-name">{{$t("ProcessManagement['端口信息']")}}</div>
-                <ul class="property-list clearfix">
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['监听IP']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-enum class="form-component" v-model.trim="values['bind_ip']"></cmdb-form-enum>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['端口']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-singlechar class="form-component"
-                                :class="{ error: errors.has('port') }"
-                                :data-vv-name="'port'"
-                                :data-vv-as="$t('ProcessManagement[\'端口\']')"
-                                v-validate="'singlechar'"
-                                v-model.trim="values['port']">
-                            </cmdb-form-singlechar>
-                            <span class="form-error">{{errors.first('port')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['协议']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-enum class="form-component" v-model.trim="values['protocol']"></cmdb-form-enum>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            <div class="property-group">
-                <div class="group-name">{{$t("ProcessManagement['其他属性']")}}</div>
-                <ul class="property-list clearfix">
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动用户']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-singlechar class="form-component"
-                                :class="{ error: errors.has('user') }"
-                                :data-vv-name="'user'"
-                                :data-vv-as="$t('ProcessManagement[\'启动用户\']')"
-                                v-validate="'singlechar'"
-                                v-model.trim="values['user']">
-                            </cmdb-form-singlechar>
-                            <span class="form-error">{{errors.first('user')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['工作路径']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('work_path') }"
-                                :data-vv-name="'work_path'"
-                                :data-vv-as="$t('ProcessManagement[\'工作路径\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['work_path']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('work_path')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动数量']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-int class="form-component"
-                                :class="{ error: errors.has('proc_num') }"
-                                :data-vv-name="'proc_num'"
-                                :data-vv-as="$t('ProcessManagement[\'启动数量\']')"
-                                v-validate="'int'"
-                                v-model.trim="values['proc_num']">
-                            </cmdb-form-int>
-                            <span class="form-error">{{errors.first('proc_num')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动优先级']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-int class="form-component"
-                                :class="{ error: errors.has('priority') }"
-                                :data-vv-name="'priority'"
-                                :data-vv-as="$t('ProcessManagement[\'启动优先级\']')"
-                                v-validate="'int'"
-                                v-model.trim="values['priority']">
-                            </cmdb-form-int>
-                            <span class="form-error">{{errors.first('priority')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动超时时长']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-int class="form-component"
-                                :class="{ error: errors.has('timeout') }"
-                                :data-vv-name="'timeout'"
-                                :data-vv-as="$t('ProcessManagement[\'启动超时时长\']')"
-                                v-validate="'int'"
-                                v-model.trim="values['timeout']">
-                            </cmdb-form-int>
-                            <span class="form-error">{{errors.first('timeout')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['启动命令']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('start_cmd') }"
-                                :data-vv-name="'start_cmd'"
-                                :data-vv-as="$t('ProcessManagement[\'启动命令\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['start_cmd']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('start_cmd')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['停止命令']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('stop_cmd') }"
-                                :data-vv-name="'stop_cmd'"
-                                :data-vv-as="$t('ProcessManagement[\'停止命令\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['stop_cmd']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('stop_cmd')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['重启命令']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('restart_cmd') }"
-                                :data-vv-name="'restart_cmd'"
-                                :data-vv-as="$t('ProcessManagement[\'重启命令\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['restart_cmd']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('restart_cmd')}}</span>
-                        </div>
-                    </li>
-                    <li class="property-item fl">
-                        <div class="property-name clearfix">
-                            <span class="property-name-text">{{$t("ProcessManagement['强制停止命令']")}}</span>
-                            <label class="cmdb-form-checkbox cmdb-checkbox-small">
-                                <input type="checkbox">
-                                <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
-                            </label>
-                        </div>
-                        <div class="property-value">
-                            <cmdb-form-longchar class="form-component"
-                                :class="{ error: errors.has('restart_cmd') }"
-                                :data-vv-name="'restart_cmd'"
-                                :data-vv-as="$t('ProcessManagement[\'重启命令\']')"
-                                v-validate="'longchar'"
-                                v-model.trim="values['restart_cmd']">
-                            </cmdb-form-longchar>
-                            <span class="form-error">{{errors.first('restart_cmd')}}</span>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div> -->
         <div class="form-groups" ref="formGroups">
             <template v-for="(group, groupIndex) in $sortedGroups">
                 <div class="property-group"
@@ -313,7 +14,8 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item fl"
+                            <li class="property-item"
+                                :style="{ float: property['bk_property_id'] === 'bk_process_name' ? 'right !important' : 'left !important' }"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
@@ -377,6 +79,7 @@
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import featureTips from '@/components/feature-tips/index'
+    import { mapMutations } from 'vuex'
     export default {
         components: {
             featureTips
@@ -418,11 +121,11 @@
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (const propertyId in this.values) {
-                    if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
-                        changedValues[propertyId] = this.values[propertyId]
-                    }
-                }
+                // for (const propertyId in this.values) {
+                //     if (JSON.stringify(this.values[propertyId]) !== JSON.stringify(this.refrenceValues[propertyId])) {
+                //         changedValues[propertyId] = this.values[propertyId]
+                //     }
+                // }
                 return changedValues
             },
             hasChange () {
@@ -432,11 +135,12 @@
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                     filterProperties.map(property => {
-                        if (property['bk_property_id'] === 'bk_func_name') {
-                            property['bk_property_name'] = '进程名称'
-                        }
                         if (property['bk_property_id'] === 'bk_process_name') {
-                            property['bk_property_name'] = '进程别名'
+                            property['isrequired'] = true
+                            property['bk_property_name'] = this.$t("ProcessManagement['进程别名']")
+                        }
+                        if (property['bk_property_id'] === 'bk_func_name') {
+                            property['bk_property_name'] = this.$t("ProcessManagement['进程名称']")
                         }
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
@@ -467,6 +171,7 @@
             RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
+            ...mapMutations('serviceProcess', ['hasProcessName', 'addLocalProcessTemplate']),
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -551,14 +256,14 @@
                     if (result) {
                         console.log(this.values)
                         console.log(this.changedValues)
-                        this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                        // if (this.type === 'create') {
+                        //     this.hasProcessName()
+                        // }
+                        // this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
                     } else {
                         this.uncollapseGroup()
                     }
                 })
-            },
-            handleSelected (value) {
-                
             },
             uncollapseGroup () {
                 this.errors.items.forEach(item => {

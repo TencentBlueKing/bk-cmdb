@@ -7,25 +7,32 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" type="primary" @click="createTemplate">{{$t("Common['新建']")}}</bk-button>
+            <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
             <bk-button class="fl mr10">{{$t("ServiceManagement['批量删除']")}}</bk-button>
             <div class="filter-text fr">
-                <bk-selector
+                <cmdb-selector
                     class="fl"
-                    placeholder="请选择一级分类"
-                    :list="[]"
-                    :selected.sync="filter.primaryClassification">
-                </bk-selector>
-                <bk-selector
+                    :placeholder="$t('ServiceManagement[\'请选择一级分类\']')"
+                    :auto-select="false"
+                    :allow-clear="true"
+                    :list="mainList"
+                    v-model="filter['mainClassification']"
+                    @on-selected="handleSelect">
+                </cmdb-selector>
+                <cmdb-selector
                     class="fl"
-                    placeholder="请选择二级分类"
-                    :list="[]"
-                    :selected.sync="filter.secondaryClassification">
-                </bk-selector>
+                    :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
+                    :auto-select="false"
+                    :allow-clear="true"
+                    :list="secondaryList"
+                    v-model="filter['secondaryClassification']"
+                    @on-selected="getTableData">
+                </cmdb-selector>
                 <div class="filter-search fl">
                     <input type="text"
                         class="bk-form-input"
-                        :placeholder="$t('ServiceManagement[\'模板名称\']')">
+                        :placeholder="$t('ServiceManagement[\'模板名称\']')"
+                        v-model.trim="filter.templateName">
                     <i class="bk-icon icon-search"></i>
                 </div>
             </div>
@@ -37,10 +44,16 @@
             :list="table.list"
             :pagination.sync="table.pagination"
             :default-sort="table.defaultSort"
-            :wrapper-minus-height="300">
+            :wrapper-minus-height="300"
+            @handleSortChange="handleSortChange"
+            @handleSizeChange="handleSizeChange"
+            @handlePageChange="handlePageChange">
+            <template slot="last_time" slot-scope="{ item }">
+                {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
+            </template>
             <template slot="operation" slot-scope="{ item }">
                 <button class="text-primary mr10"
-                    @click.stop="editeTemplate(item)">
+                    @click.stop="operationTemplate(item)">
                     {{$t('Common["编辑"]')}}
                 </button>
                 <span class="text-primary" style="color: #c4c6cc !important;" v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">{{$t('Common["删除"]')}}</span>
@@ -64,8 +77,9 @@
             return {
                 showFeatureTips: false,
                 filter: {
-                    primaryClassification: '',
-                    secondaryClassification: ''
+                    mainClassification: '',
+                    secondaryClassification: '',
+                    templateName: ''
                 },
                 table: {
                     header: [
@@ -97,24 +111,38 @@
                     },
                     defaultSort: '-id',
                     sort: '-id'
-                }
+                },
+                mainList: [],
+                secondaryList: [],
+                allSecondaryList: []
             }
         },
         computed: {
-            ...mapGetters(['featureTipsParams'])
+            ...mapGetters(['featureTipsParams']),
+            params () {
+                const categoryId = this.filter.secondaryClassification ? Number(this.filter.secondaryClassification) : null
+                return {
+                    service_category_id: categoryId,
+                    page: {
+                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                        limit: this.table.pagination.size,
+                        sort: this.table.sort
+                    }
+                }
+            }
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t("Nav['服务模板']"))
             this.showFeatureTips = this.featureTipsParams['serviceTemplate']
             this.getTableData()
+            this.getServiceClassification()
         },
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
+            ...mapActions('serviceClassification', ['searchServiceCategory']),
             getTableData () {
                 this.searchServiceTemplate({
-                    params: this.$injectMetadata({
-                        service_category_id: null
-                    }),
+                    params: this.$injectMetadata(this.params),
                     config: {
                         requestId: 'get_proc_service_template',
                         cancelPrevious: true
@@ -124,11 +152,31 @@
                     this.table.pagination.count = data.count
                 })
             },
-            createTemplate () {
+            getServiceClassification () {
+                this.searchServiceCategory({
+                    params: this.$injectMetadata(),
+                    config: {
+                        requestId: 'get_proc_services_categories'
+                    }
+                }).then(data => {
+                    this.mainList = data.info.filter(classification => !classification['parent_id'])
+                    this.allSecondaryList = data.info.filter(classification => classification['parent_id'])
+                })
+            },
+            handleSelect (id, data) {
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
+                this.filter.secondaryClassification = ''
+            },
+            operationTemplate (item) {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
-                this.$router.push({ name: 'createTemplate' })
+                this.$router.push({
+                    name: 'createTemplate',
+                    params: {
+                        template: item
+                    }
+                })
             },
             deleteTemplate (template) {
                 this.$bkInfo({
@@ -147,11 +195,17 @@
                     }
                 })
             },
-            editeTemplate (template) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
-                this.$router.push({ name: 'updateTemplate' })
+            handleSortChange (sort) {
+                this.table.sort = sort
+                this.handlePageChange(1)
+            },
+            handleSizeChange (size) {
+                this.table.pagination.size = size
+                this.handlePageChange(1)
+            },
+            handlePageChange (page) {
+                this.table.pagination.current = page
+                this.getTableData()
             }
         }
     }

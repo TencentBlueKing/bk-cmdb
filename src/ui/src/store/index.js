@@ -6,6 +6,7 @@ import request from './modules/request.js'
 
 import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
+import serviceProcess from './modules/view/service-process.js'
 
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
@@ -42,6 +43,7 @@ import netCollectProperty from './modules/api/net-collect-property.js'
 import netDataCollection from './modules/api/net-data-collection.js'
 import netDiscovery from './modules/api/net-discovery.js'
 import serviceTemplate from './modules/api/service-template.js'
+import serviceClassification from './modules/api/service-classification.js'
 
 Vue.use(Vuex)
 
@@ -50,6 +52,7 @@ export default new Vuex.Store({
     modules: {
         index,
         hostDetails,
+        serviceProcess,
         
         auth,
         menu,
@@ -86,6 +89,7 @@ export default new Vuex.Store({
         netCollectProperty,
         netDataCollection,
         netDiscovery,
-        serviceTemplate
+        serviceTemplate,
+        serviceClassification
     }
 })

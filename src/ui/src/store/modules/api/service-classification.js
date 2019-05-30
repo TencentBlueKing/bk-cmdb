@@ -16,37 +16,15 @@ const getters = {}
 
 const actions = {
     /**
-     * 获取服务模板列表
+     * 获取服务分类
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_template`, params, config)
-    },
-    /**
-     * 创建\编辑服务模板
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    operationServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`create/proc/service_template`, params, config)
-    },
-    /**
-     * 删除服务模板
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    deleteServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`delete/proc/service_template`, params, config)
+    searchServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`findmany/proc/service_category`, params, config)
     }
 }
 
