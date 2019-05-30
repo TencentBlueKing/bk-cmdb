@@ -155,7 +155,8 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (
 
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // return with the changed attribute's details.
-func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessProperty, i *metadata.Process, attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessProperty, i *metadata.Process,
+	attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
 		return changes

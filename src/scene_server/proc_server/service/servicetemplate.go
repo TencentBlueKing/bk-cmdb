@@ -53,7 +53,17 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, bizID, input.ServiceCategoryID)
+	if input.Page.Limit >= common.BKMaxPageLimit {
+		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
+		return
+	}
+
+	option := metadata.ListServiceTemplateOption{
+		BusinessID:        bizID,
+		Page:              input.Page,
+		ServiceCategoryID: input.ServiceCategoryID,
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, err: %v, input: %+v", err, input)
 		return

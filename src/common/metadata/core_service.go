@@ -281,6 +281,12 @@ type MultipleServiceCategoryResult struct {
 	Data     MultipleServiceCategory `json:"data"`
 }
 
+type ListServiceTemplateOption struct {
+	BusinessID        int64    `json:"bk_biz_id"`
+	ServiceCategoryID int64    `json:"service_category_id"`
+	Page              BasePage `json:"page,omitempty"`
+}
+
 type OneServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplate `json:"data"`

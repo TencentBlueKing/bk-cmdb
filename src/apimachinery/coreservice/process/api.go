@@ -13,13 +13,11 @@
 package process
 
 import (
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
-
-	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 )
 
 func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
@@ -224,18 +222,13 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error) {
+func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error) {
 	ret := new(metadata.MultipleServiceTemplateResult)
 	subPath := "/findmany/process/service_template"
 
-	input := map[string]interface{}{
-		"bk_biz_id":           bizID,
-		"service_category_id": categoryID,
-	}
-
 	err = p.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
