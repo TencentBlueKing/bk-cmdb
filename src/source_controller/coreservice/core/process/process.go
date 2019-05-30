@@ -51,7 +51,7 @@ func (p *processOperation) validateBizID(ctx core.ContextParams, md metadata.Met
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	count, err := p.dbProxy.Table(common.BKTableNameBaseApp).Find(cond.ToMapStr()).Count(ctx.Context)
 	if nil != err {
-		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameObjDes, err.Error(), ctx.ReqID)
+		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, ctx.ReqID)
 		return 0, err
 	}
 	if count < 1 {
@@ -72,7 +72,7 @@ func (p *processOperation) validateModuleID(ctx core.ContextParams, moduleID int
 	cond.Field(common.BKModuleIDField).Eq(moduleID)
 	count, err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).Count(ctx.Context)
 	if nil != err {
-		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err.Error(), ctx.ReqID)
+		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, ctx.ReqID)
 		return err
 	}
 	if count < 1 {
