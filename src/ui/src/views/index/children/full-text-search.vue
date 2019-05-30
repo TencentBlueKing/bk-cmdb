@@ -148,9 +148,6 @@
                 }
             },
             'query.queryString' (queryString) {
-                // this.showNoData = false
-                // this.hasData = false
-                // this.searching = true
                 window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
                 this.query.objId = ''
                 if (queryString) {
@@ -158,9 +155,6 @@
                     this.pagination.current = 1
                     this.handleSearch(600)
                 }
-                // else {
-                //     this.searching = false
-                // }
             }
         },
         created () {
