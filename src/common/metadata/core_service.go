@@ -292,7 +292,7 @@ type MultipleServiceTemplate struct {
 }
 
 type ListServiceInstanceOption struct {
-	BusinessID        int64    `json:"business_id"`
+	BusinessID        int64    `json:"bk_biz_id"`
 	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
