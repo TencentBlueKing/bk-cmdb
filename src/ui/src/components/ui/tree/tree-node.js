@@ -43,11 +43,21 @@ export default class TreeNode {
     }
 
     get parents () {
-        console.log(this.parent, this.parent && this.parent.parents)
-        if (this.parent) {
+        if (!this.parent) {
             return []
         }
         return [...this.parent.parents, this.parent]
+    }
+
+    get isFirst () {
+        return this.index === 0 || this.childIndex === 0
+    }
+
+    get isLast () {
+        if (this.parent) {
+            return this.childIndex === (this.parent.children.length - 1)
+        }
+        return false
     }
 
     get collapseIcon () {
@@ -120,21 +130,12 @@ export default class TreeNode {
         }
     }
 
-    appendChild (node, trailing = true) {
+    appendChild (node, offset) {
         const nodes = Array.isArray(node) ? node : [node]
-        const oldLength = this.children.length
-        if (trailing) {
-            this.children.push(...nodes)
-            nodes.forEach((node, index) => {
-                node.childIndex = oldLength + index
-            })
-        } else {
-            this.children.unshift(...nodes)
-            this.children.forEach((node, index) => {
-                node.childIndex = index
-            })
-        }
-
+        this.children.splice(offset, 0, ...nodes)
+        this.children.slice(offset).forEach((node, index) => {
+            node.childIndex = offset + index
+        })
         this.isLeaf = false
         this.expanded = true
         this.recaculateLinkLine()

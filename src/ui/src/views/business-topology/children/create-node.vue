@@ -107,12 +107,12 @@
             handleSave () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        this.$emit('on-submit', this.values)
+                        this.$emit('submit', this.values)
                     }
                 })
             },
             handleCancel () {
-                this.$emit('on-cancel')
+                this.$emit('cancel')
             }
         }
     }

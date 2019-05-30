@@ -4,18 +4,18 @@
         :class="{
             'is-root': node.parent === null,
             'is-leaf': node.isLeaf,
-            'is-first-child': isFirst,
-            'is-last-child': isLast,
+            'is-first-child': node.isFirst,
+            'is-last-child': node.isLast,
             'is-expand': node.expanded,
             'is-selected': node.selected,
             'has-link-line': $parent.showLinkLine
         }"
         :style="style"
-        @click="$parent.setSelected(node.id, true)">
+        @click="$parent.setSelected(node.id, true, true)">
         <div class="node-options fl">
             <i v-if="!node.isLeaf"
                 :class="['node-folder-icon', node.expanded ? node.expandIcon : node.collapseIcon]"
-                @click.stop="toggleExpand">
+                @click.stop="$parent.setExpanded(node.id, !node.expanded, true)">
             </i>
             <input type="checkbox" class="node-checkbox"
                 v-if="$parent.showCheckbox"
@@ -48,12 +48,6 @@
             }
         },
         computed: {
-            isLast () {
-                return false
-            },
-            isFirst () {
-                return this.childIndex === 0 || this.index === 0
-            },
             style () {
                 return {
                     'margin-left': this.node.level * 30 + 'px',
@@ -66,10 +60,6 @@
             this.node.vNode = this
         },
         methods: {
-            toggleExpand () {
-                this.node.expanded = !this.node.expanded
-                this.$parent.$emit('toggleExpand', this.node.expanded, this.node)
-            },
             calulateLine () {
                 const {
                     children,
@@ -138,7 +128,6 @@
             height: 100%;
             .node-folder-icon {
                 position: relative;
-                margin: 0 6px 0 0;
                 font-size: 16px;
                 z-index: 2;
                 @include inlineBlock;
@@ -148,7 +137,7 @@
                 @include inlineBlock;
             }
             .node-icon {
-                margin: 0 6px 0 0;
+                margin: 0 6px;
                 font-size: 18px;
                 @include inlineBlock;
             }
