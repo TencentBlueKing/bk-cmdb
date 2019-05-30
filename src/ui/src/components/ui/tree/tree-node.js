@@ -25,7 +25,6 @@ export default class TreeNode {
             expanded: false,
             visible: true
         }
-        console.log(tree.defaultExpandedNodes)
         this.checked = tree.defaultCheckedNodes.includes(this.id)
         this.expanded = tree.defaultExpandedNodes.includes(this.id)
 
@@ -41,6 +40,14 @@ export default class TreeNode {
 
     get vNode () {
         return this._vNode
+    }
+
+    get parents () {
+        console.log(this.parent, this.parent && this.parent.parents)
+        if (this.parent) {
+            return []
+        }
+        return [...this.parent.parents, this.parent]
     }
 
     get collapseIcon () {
