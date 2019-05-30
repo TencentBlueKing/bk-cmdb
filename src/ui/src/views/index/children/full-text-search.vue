@@ -148,19 +148,19 @@
                 }
             },
             'query.queryString' (queryString) {
-                this.showNoData = false
-                this.hasData = false
-                this.searching = true
+                // this.showNoData = false
+                // this.hasData = false
+                // this.searching = true
                 window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
                 this.query.objId = ''
                 if (queryString) {
-                    this.propertyMap = {}
                     this.pagination.start = 0
                     this.pagination.current = 1
                     this.handleSearch(600)
-                } else {
-                    this.searching = false
                 }
+                // else {
+                //     this.searching = false
+                // }
             }
         },
         created () {
@@ -235,6 +235,7 @@
                 }
                 this.debounceTimer = setTimeout(() => {
                     if (!this.query.queryString) return
+                    this.searching = true
                     this.$store.dispatch('fullTextSearch/search', {
                         params: this.params,
                         config: {
@@ -242,10 +243,11 @@
                             cancelPrevious: true
                         }
                     }).then(async data => {
+                        this.propertyMap = {}
                         this.pagination.total = data.total
                         const hitsData = data.hits
                         const modelData = data.aggregations
-                        if (hitsData && modelData) {
+                        if (data.total) {
                             if (!this.query.objId) {
                                 this.currentClassify = -1
                                 this.modelClassify = modelData.map(item => {
@@ -272,10 +274,14 @@
                                 }
                                 return hit
                             })
+                        } else {
+                            this.hasData = false
                         }
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
                         })
+                    }).catch(() => {
+                        this.hasData = false
                     }).finally(() => {
                         this.searching = false
                         this.showNoData = true
@@ -315,8 +321,15 @@
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
+                    const model = this.getModelById(source['bk_obj_id'])
                     const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
-                    if (isPauserd) {
+                    if (model['bk_classification_id'] === 'bk_biz_topo') {
+                        this.$bkMessage({
+                            message: this.$t("Index['主线模型无法查看']"),
+                            theme: 'warning'
+                        })
+                        return
+                    } else if (isPauserd) {
                         this.$bkMessage({
                             message: this.$t("Index['该模型已停用']"),
                             theme: 'warning'
@@ -326,8 +339,10 @@
                     this.$router.push({
                         name: 'generalModel',
                         params: {
-                            objId: source['bk_obj_id'],
-                            source: source
+                            objId: source['bk_obj_id']
+                        },
+                        query: {
+                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
                         }
                     })
                 }
