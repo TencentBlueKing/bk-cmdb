@@ -298,7 +298,7 @@ type MultipleServiceTemplate struct {
 }
 
 type ListServiceInstanceOption struct {
-	BusinessID        int64    `json:"business_id"`
+	BusinessID        int64    `json:"bk_biz_id"`
 	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
@@ -306,11 +306,11 @@ type ListServiceInstanceOption struct {
 }
 
 type ListProcessInstanceRelationOption struct {
-	Metadata          Metadata `json:"metadata"`
-	ProcessIDs        []int64  `json:"process_ids,omitempty"`
-	ServiceInstanceID []int64  `json:"service_instance_id,omitempty"`
-	ProcessTemplateID int64    `json:"process_template_id,omitempty"`
-	HostID            int64    `json:"host_id,omitempty"`
+	BusinessID        int64   `json:"bk_biz_id"`
+	ProcessIDs        []int64 `json:"process_ids,omitempty"`
+	ServiceInstanceID []int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateID int64   `json:"process_template_id,omitempty"`
+	HostID            int64   `json:"host_id,omitempty"`
 }
 
 type MultipleServiceTemplateResult struct {

@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -44,7 +45,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	serviceTemplate, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
 	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_category_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_template_id")
 	}
 
 	// validate module id field
@@ -184,9 +185,33 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 		return err
 	}
 
-	deleteFilter := map[string]int64{common.BKFieldID: instance.ID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Delete(ctx, deleteFilter); nil != err {
-		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, deleteFilter, err, ctx.ReqID)
+	serviceInstanceFilter := map[string]int64{common.BKFieldID: instance.ID}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(serviceInstanceFilter).All(ctx, &relations); nil != err {
+		blog.Errorf("DeleteServiceInstance failed, delete relation failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, serviceInstanceFilter, err, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
+	}
+	processIDs := make([]int64, 0)
+	for _, relation := range relations {
+		if util.InArray(relation.ProcessID, processIDs) == false {
+			processIDs = append(processIDs, relation.ProcessID)
+		}
+	}
+	processFilter := map[string]interface{}{
+		common.BKProcessIDField: map[string]interface{}{
+			"$in": processIDs,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Delete(ctx, serviceInstanceFilter); nil != err {
+		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, serviceInstanceFilter, err, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
+	}
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, serviceInstanceFilter); nil != err {
+		blog.Errorf("DeleteServiceInstance failed, delete relation failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, serviceInstanceFilter, err, ctx.ReqID)
+		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Delete(ctx, processFilter); nil != err {
+		blog.Errorf("DeleteServiceInstance failed, delete process instance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, processFilter, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)
 	}
 	return nil
