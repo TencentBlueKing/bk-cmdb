@@ -19,9 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// create service instance batch, which must belongs to a same module and service template.
-// if needed, it also create process instance for a service instance at the same time.
-func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
+func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -31,10 +29,47 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	_, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
-			"create service instance for template: %d, moduleID: %d, but get business id failed, err: %v",
+			"create service instance with raw , moduleID: %d, but get business id failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	if input.TemplateID != 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"create service instance with raw, moduleID: %d, but with a service template id, err: %v", input.ModuleID, err)
+		return
+	}
+
+	ps.createServiceInstances(ctx, input)
+}
+
+func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
+	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"create service instance with template : %d, moduleID: %d, but get business id failed, err: %v",
 			input.TemplateID, input.ModuleID, err)
 		return
 	}
+
+	if input.TemplateID == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"create service instance for template: %d, moduleID: %d, but get empty service template id, err: %v",
+			input.TemplateID, input.ModuleID, err)
+		return
+	}
+
+	ps.createServiceInstances(ctx, input)
+}
+
+// create service instance batch, which must belongs to a same module and service template.
+// if needed, it also create process instance for a service instance at the same time.
+func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata.CreateServiceInstanceForServiceTemplateInput) {
 
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
