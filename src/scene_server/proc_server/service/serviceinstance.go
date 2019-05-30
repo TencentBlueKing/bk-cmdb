@@ -85,7 +85,7 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		serviceInstanceIDs = append(serviceInstanceIDs, temp.ID)
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(serviceInstanceIDs))
+	ctx.RespEntity(serviceInstanceIDs)
 }
 
 func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts) {
@@ -106,7 +106,7 @@ func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts)
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
 func (ps *ProcServer) GetServiceInstancesInModule(ctx *rest.Contexts) {
@@ -133,7 +133,7 @@ func (ps *ProcServer) GetServiceInstancesInModule(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(instances))
+	ctx.RespEntity(instances)
 }
 
 func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
@@ -155,7 +155,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
 // this function works to find differences between the service template and service instances in a module.
@@ -804,7 +804,7 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 	}
 
 	// Finally, we do the force sync successfully.
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
 
 func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
