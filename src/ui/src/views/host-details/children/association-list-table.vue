@@ -90,6 +90,12 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
+            expandAll () {
+                return this.$store.state.hostDetails.expandAll
+            },
+            indeterminate () {
+                return this.$store.state.hostDetails.indeterminate
+            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
@@ -162,17 +168,29 @@
                 if (visible) {
                     this.getData()
                 }
+                this.$store.commit('hostDetails/updateExpandCount', visible ? 1 : -1)
+                this.checkExpandAllState()
             },
             instances () {
                 if (this.localVisible) {
                     this.getData()
                 }
+            },
+            expandAll (expandAll) {
+                if (!this.indeterminate) {
+                    this.localVisible = expandAll
+                }
             }
         },
         created () {
+            this.$store.commit('hostDetails/updateTableCount', 1)
             if (this.visible) {
                 this.getData()
+                this.$store.commit('hostDetails/updateExpandCount', 1)
             }
+        },
+        beforeDestroy () {
+            this.$store.commit('hostDetails/updateTableCount', -1)
         },
         methods: {
             getData () {
@@ -369,6 +387,15 @@
                     target: event.target
                 })
                 this.confirm.instance.$el.append(this.$refs.confirmTips)
+            },
+            checkExpandAllState () {
+                this.$nextTick(() => {
+                    const state = this.$store.state.hostDetails
+                    const tableCount = state.tableCount
+                    const expandCount = state.expandCount
+                    this.$store.commit('hostDetails/setExpandIndeterminate', expandCount !== 0 && tableCount !== expandCount)
+                    this.$store.commit('hostDetails/toggleExpandAll', tableCount === expandCount)
+                })
             }
         }
     }

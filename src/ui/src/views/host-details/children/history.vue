@@ -126,6 +126,9 @@
 </script>
 
 <style lang="scss" scoped>
+    .history {
+        height: 100%;
+    }
     .history-filter {
         padding: 14px 0;
         .filter-item {
