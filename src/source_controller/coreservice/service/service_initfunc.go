@@ -16,10 +16,6 @@ import (
 	"net/http"
 )
 
-func (s *coreService) initHealth() {
-	s.addAction(http.MethodGet, "/healthz", s.Health, nil)
-}
-
 func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
 	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
@@ -130,7 +126,6 @@ func (s *coreService) audit() {
 }
 
 func (s *coreService) initService() {
-	s.initHealth()
 	s.initModelClassification()
 	s.initModel()
 	s.initAssociationKind()
