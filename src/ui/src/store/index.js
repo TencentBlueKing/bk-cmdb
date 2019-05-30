@@ -6,6 +6,7 @@ import request from './modules/request.js'
 
 import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
+import businessTopology from './modules/view/business-topology.js'
 
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
@@ -49,6 +50,7 @@ export default new Vuex.Store({
     modules: {
         index,
         hostDetails,
+        businessTopology,
         
         auth,
         menu,

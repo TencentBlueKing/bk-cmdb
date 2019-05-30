@@ -29,3 +29,8 @@
     overflow-x: hidden;
     overflow-y: auto;
 }
+
+@mixin inlineBlock ($align: middle) {
+    display: inline-block;
+    vertical-align: $align;
+}

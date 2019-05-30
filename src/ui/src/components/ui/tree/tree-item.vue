@@ -1,5 +1,5 @@
 <template>
-    <div class="tree-node"
+    <div class="tree-node clearfix"
         v-show="node.parent === null || (node.visible && node.parent.expanded)"
         :class="{
             'is-root': node.parent === null,
@@ -12,20 +12,22 @@
         }"
         :style="style"
         @click="$parent.setSelected(node.id, true)">
-        <i v-if="!node.isLeaf"
-            :class="['node-folder-icon', node.expanded ? node.expandIcon : node.collapseIcon]"
-            @click.stop="toggleExpand">
-        </i>
-        <input type="checkbox" class="node-checkbox"
-            v-if="$parent.showCheckbox"
-            :checked="node.checked"
-            @click.prevent.stop="$parent.setChecked(node.id, !node.checked, true)">
-        <i v-if="node.nodeIcon"
-            :class="['node-icon', node.nodeIcon]">
-        </i>
-        <span class="node-content">
+        <div class="node-options fl">
+            <i v-if="!node.isLeaf"
+                :class="['node-folder-icon', node.expanded ? node.expandIcon : node.collapseIcon]"
+                @click.stop="toggleExpand">
+            </i>
+            <input type="checkbox" class="node-checkbox"
+                v-if="$parent.showCheckbox"
+                :checked="node.checked"
+                @click.prevent.stop="$parent.setChecked(node.id, !node.checked, true)">
+            <i v-if="node.nodeIcon"
+                :class="['node-icon', node.nodeIcon]">
+            </i>
+        </div>
+        <div class="node-content">
             <slot>{{node.name}}</slot>
-        </span>
+        </div>
     </div>
 </template>
 
@@ -87,16 +89,13 @@
 </script>
 
 <style lang="scss" scoped>
-    @mixin middleBlock {
-        display: inline-block;
-        vertical-align: middle;
-    }
     .tree-node {
         position: relative;
         height: 32px;
         line-height: 32px;
         font-size: 0;
         cursor: pointer;
+        @include ellipsis;
         &.has-link-line:not(.is-root):before {
             content: "";
             position: absolute;
@@ -124,46 +123,39 @@
         }
         &.is-selected {
             background-color: #e1ecff;
+            .node-icon {
+                color: #fff;
+                background-color: #498fe0;
+            }
+            .node-content {
+                color: #498fe0;
+            }
         }
         &.is-leaf {
             padding-left: 16px;
         }
-        &.is-first-child {
-            .node-link-line {
-                height: 40px;
-                top: -16px;
+        .node-options {
+            height: 100%;
+            .node-folder-icon {
+                position: relative;
+                margin: 0 6px 0 0;
+                font-size: 16px;
+                z-index: 2;
+                @include inlineBlock;
             }
-        }
-        &.is-last-child {
-            .node-link-line {
-                height: 24px;
+            .node-checkbox {
+                margin: 0 6px 0 0;
+                @include inlineBlock;
             }
-        }
-        .node-link-line {
-            position: absolute;
-            top: -8px;
-            width: 1px;
-            height: 32px;
-            background-color: #f30;
-            z-index: 99;
-        }
-        .node-folder-icon {
-            position: relative;
-            margin: 0 6px 0 0;
-            font-size: 16px;
-            z-index: 2;
-            @include middleBlock;
-        }
-        .node-checkbox {
-            @include middleBlock;
-        }
-        .node-icon {
-            font-size: 18px;
-            @include middleBlock;
+            .node-icon {
+                margin: 0 6px 0 0;
+                font-size: 18px;
+                @include inlineBlock;
+            }
         }
         .node-content {
             font-size: 14px;
-            @include middleBlock;
+            @include ellipsis;
         }
     }
 </style>
