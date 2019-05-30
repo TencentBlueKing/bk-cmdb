@@ -127,8 +127,8 @@
         "请选择时间": "Please select time",
         "搜索结果": "Search results",
         "请输入搜索内容": "Enter search content",
-        "共计N条": "A total of {N}",
-        "每页显示条数": "{num} data per page"
+        "共计N条": "Total {N}",
+        "每页显示条数": "{num} per page"
     },
     "Nav": {
         "首页": "Index",
@@ -178,7 +178,8 @@
         "暂无使用记录": "No record",
         "搜不到相关内容": "Sorry, I can't find the relevant content, try another word~",
         "全部结果": "all",
-        "该模型已停用": "The model has been disabled"
+        "该模型已停用": "The model has been disabled",
+        "主线模型无法查看": "Mainline model connot be viewed"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
