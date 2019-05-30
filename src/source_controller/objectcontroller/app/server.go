@@ -30,8 +30,6 @@ import (
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -68,7 +66,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, coreService.WebService()); err != nil {
 		return err
 	}
 	select {

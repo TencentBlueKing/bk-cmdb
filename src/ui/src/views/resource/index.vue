@@ -181,6 +181,7 @@
         async created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["主机"]'))
             try {
+                this.$store.dispatch('userCustom/setRencentlyData', { id: 'resource' })
                 this.setQueryParams()
                 await Promise.all([
                     this.getParams(),
