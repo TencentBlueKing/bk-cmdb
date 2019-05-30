@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -229,7 +228,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	subPath := "/findmany/process/service_template"
 
 	input := map[string]interface{}{
-		"metadata":            metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		"bk_biz_id":           bizID,
 		"service_category_id": categoryID,
 	}
 
@@ -370,7 +369,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 	ret := new(metadata.MultipleProcessTemplateResult)
 	subPath := "/findmany/process/process_template"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -481,7 +480,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	ret := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/process/service_instance"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).

@@ -59,7 +59,7 @@ type DeleteServiceTemplatesInput struct {
 type CreateServiceInstanceForServiceTemplateInput struct {
 	Metadata   Metadata                `json:"metadata"`
 	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"template_id"`
+	TemplateID int64                   `json:"service_template_id"`
 	ModuleID   int64                   `json:"module_id"`
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
