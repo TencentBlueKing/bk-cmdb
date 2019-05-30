@@ -13,11 +13,12 @@
 package process
 
 import (
-	"configcenter/src/common/errors"
-	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
+
+	"configcenter/src/common/errors"
+	"configcenter/src/common/metadata"
 )
 
 func (p *process) CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
@@ -244,9 +245,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, optio
 	return &ret.Data, nil
 }
 
-/*
-	process template api
-*/
+
 func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
@@ -363,7 +362,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 	ret := new(metadata.MultipleProcessTemplateResult)
 	subPath := "/findmany/process/process_template"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -474,7 +473,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	ret := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/process/service_instance"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -585,7 +584,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	ret := new(metadata.MultipleProcessInstanceRelationResult)
 	subPath := "/findmany/process/process_instance_relation"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).

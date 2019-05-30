@@ -138,7 +138,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 				if category.ParentID == 0 {
 					continue
 				}
-				if util.InArray(category.ParentID, childrenIDs) == true {
+				if util.InArray(category.ParentID, childrenIDs) == true && util.InArray(category.ID, childrenIDs) == false {
 					childrenIDs = append(childrenIDs, category.ID)
 				}
 			}

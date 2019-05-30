@@ -216,7 +216,7 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 		pTemplateMap[pTemplate.ID] = &pTemplate
 
 		option := metadata.ListProcessInstanceRelationOption{
-			Metadata:          input.Metadata,
+			BusinessID:        bizID,
 			ProcessTemplateID: pTemplate.ID,
 		}
 
@@ -265,7 +265,7 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 				ServiceInstanceID:   serviceInstance.ID,
 				ServiceInstanceName: serviceInstance.Name,
 				HostID:              serviceInstance.HostID,
-				// Differences: ???,
+				Differences:         metadata.NewDifferenceDetail(),
 			})
 			continue
 		}
@@ -275,12 +275,7 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 			ServiceInstanceID:   serviceInstance.ID,
 			ServiceInstanceName: serviceInstance.Name,
 			HostID:              serviceInstance.HostID,
-			Differences: &metadata.DifferenceDetail{
-				Unchanged: make([]metadata.ProcessDifferenceDetail, 0),
-				Changed:   make([]metadata.ProcessDifferenceDetail, 0),
-				Added:     make([]metadata.ProcessDifferenceDetail, 0),
-				Removed:   make([]metadata.ProcessDifferenceDetail, 0),
-			},
+			Differences:         metadata.NewDifferenceDetail(),
 		}
 		for _, r := range relations {
 			// remember what process template is using, so that we can check whether a new process template has
@@ -313,6 +308,7 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 				ServiceInstanceID:   serviceInstance.ID,
 				ServiceInstanceName: serviceInstance.Name,
 				HostID:              serviceInstance.HostID,
+				Differences:         metadata.NewDifferenceDetail(),
 			}
 
 			if pTemplate.Property == nil {
@@ -668,7 +664,7 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 	// step2:
 	// find all the process instances relations for the usage of getting process instances.
 	relationOption := &metadata.ListProcessInstanceRelationOption{
-		Metadata:          input.Metadata,
+		BusinessID:        bizID,
 		ServiceInstanceID: input.ServiceInstances,
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)

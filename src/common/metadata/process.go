@@ -60,7 +60,7 @@ type DeleteServiceTemplatesInput struct {
 type CreateServiceInstanceForServiceTemplateInput struct {
 	Metadata   Metadata                `json:"metadata"`
 	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"template_id"`
+	TemplateID int64                   `json:"service_template_id"`
 	ModuleID   int64                   `json:"module_id"`
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
@@ -107,6 +107,15 @@ type DifferenceDetail struct {
 	Changed   []ProcessDifferenceDetail `json:"changed"`
 	Added     []ProcessDifferenceDetail `json:"added"`
 	Removed   []ProcessDifferenceDetail `json:"removed"`
+}
+
+func NewDifferenceDetail() *DifferenceDetail {
+	return &DifferenceDetail{
+		Unchanged: make([]ProcessDifferenceDetail, 0),
+		Changed:   make([]ProcessDifferenceDetail, 0),
+		Added:     make([]ProcessDifferenceDetail, 0),
+		Removed:   make([]ProcessDifferenceDetail, 0),
+	}
 }
 
 type ProcessDifferenceDetail struct {
