@@ -129,9 +129,13 @@
             console.log(this.originTemplateValues)
             const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
             this.$store.commit('setHeaderTitle', title)
-            await this.reload()
-            if (!this.isCreatedType) {
-                this.initFill()
+            try {
+                await this.reload()
+                if (!this.isCreatedType) {
+                    this.initFill()
+                }
+            } catch (e) {
+                console.log(e)
             }
         },
         methods: {
