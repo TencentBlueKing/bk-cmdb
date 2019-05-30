@@ -151,7 +151,7 @@
     }
     .property-list {
         width: 1000px;
-        margin: 15px 0 0 0;
+        margin: 25px 0 0 0;
         line-height: 38px;
         color: #63656e;
         .property-item {
