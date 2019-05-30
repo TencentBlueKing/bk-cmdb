@@ -48,7 +48,8 @@ type ProcessDetail struct {
 type ListServiceTemplateInput struct {
 	Metadata Metadata `json:"metadata"`
 	// this field can be empty, it a optional condition.
-	ServiceCategoryID int64 `json:"service_category_id,omitempty"`
+	ServiceCategoryID int64    `json:"service_category_id,omitempty"`
+	Page              BasePage `json:"page"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -120,6 +121,25 @@ type ProcessChangedAttribute struct {
 	PropertyName          string      `json:"property_name"`
 	PropertyValue         interface{} `json:"property_value"`
 	TemplatePropertyValue interface{} `json:"template_property_value"`
+}
+
+type ProcessTemplateWithInstancesDifference struct {
+	Unchanged []ServiceInstanceDifferenceDetail `json:"unchanged"`
+	Changed   []ServiceInstanceDifferenceDetail `json:"changed"`
+	Added     []ServiceInstanceDifferenceDetail `json:"added"`
+	Removed   []ServiceInstanceDifferenceDetail `json:"removed"`
+}
+
+type ServiceInstanceDifferenceDetail struct {
+	ProcessTemplateID    int64                      `json:"process_template_id"`
+	ProcessTemplateName  string                     `json:"process_template_name"`
+	ServiceInstanceCount int                        `json:"service_instance_count"`
+	ServiceInstances     []ServiceDifferenceDetails `json:"service_instances"`
+}
+
+type ServiceDifferenceDetails struct {
+	ServiceInstance   ServiceInstance           `json:"service_instance"`
+	ChangedAttributes []ProcessChangedAttribute `json:"changed_attributes,omitempty"`
 }
 
 type ServiceInstanceDetail struct {
@@ -299,8 +319,9 @@ func (st *ServiceTemplate) Validate() (field string, err error) {
 
 // this works for the process instance which is used for a template.
 type ProcessTemplate struct {
-	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+	ID          int64    `field:"id" json:"id,omitempty" bson:"id"`
+	ProcessName string   `field:"bk_process_name" json:"bk_process_name" bson:"bk_process_name"`
+	Metadata    Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 	// the service template's, which this process template belongs to.
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 
