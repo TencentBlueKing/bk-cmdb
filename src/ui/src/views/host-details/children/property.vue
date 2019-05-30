@@ -12,11 +12,21 @@
                         :title="property.bk_property_name">
                         {{property.bk_property_name}}
                     </span>
-                    <span class="property-value"
-                        v-show="property !== editState.property"
-                        :title="$tools.getPropertyText(property, host)">
-                        {{$tools.getPropertyText(property, host)}}
-                    </span>
+                    <v-popover class="property-popover"
+                        trigger="hover"
+                        placement="bottom"
+                        :disabled="!tooltipState[property.bk_property_id]"
+                        :delay="300"
+                        :offset="-5">
+                        <span class="property-value"
+                            v-show="property !== editState.property"
+                            @mouseover="handleHover($event, property)">
+                            {{$tools.getPropertyText(property, host)}}
+                        </span>
+                        <span class="popover-content" slot="popover">
+                            {{$tools.getPropertyText(property, host)}}
+                        </span>
+                    </v-popover>
                     <template v-if="updateAuth && isPropertyEditable(property)">
                         <i class="property-edit icon-cc-edit"
                             v-show="property !== editState.property"
@@ -34,6 +44,10 @@
                             </component>
                             <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
                             <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                            <span class="form-error"
+                                v-if="errors.has(property.bk_property_id)">
+                                {{errors.first(property.bk_property_id)}}
+                            </span>
                         </div>
                     </template>
                 </li>
@@ -53,7 +67,8 @@
                 editState: {
                     property: null,
                     value: null
-                }
+                },
+                tooltipState: {}
             }
         },
         computed: {
@@ -82,7 +97,6 @@
             async confirm () {
                 const isValid = await this.$validator.validateAll()
                 if (!isValid) {
-                    this.$error(this.errors.first(this.editState.property.bk_property_id))
                     return false
                 }
                 const { property, value } = this.editState
@@ -98,6 +112,14 @@
             exitForm () {
                 this.editState.property = null
                 this.editState.value = null
+            },
+            handleHover (event, property) {
+                const target = event.target
+                const range = document.createRange()
+                range.selectNode(target)
+                const rangeWidth = range.getBoundingClientRect().width
+                const threshold = Math.max(rangeWidth - target.offsetWidth, target.scrollWidth - target.offsetWidth)
+                this.$set(this.tooltipState, property.bk_property_id, threshold > 0.5)
             }
         }
     }
@@ -105,13 +127,15 @@
 
 <style lang="scss" scoped>
     .property {
-        overflow: hidden;
+        height: 100%;
+        overflow: auto;
+        @include scrollbar-y;
     }
     .group {
         margin: 22px 0 0 0;
         .group-name {
-            line-height: 19px;
-            font-size: 14px;
+            line-height: 21px;
+            font-size: 16px;
             font-weight: normal;
             color: #313238;
             &:before {
@@ -126,9 +150,9 @@
         }
     }
     .property-list {
-        width: 740px;
+        width: 1000px;
         margin: 15px 0 0 0;
-        line-height: 26px;
+        line-height: 38px;
         color: #63656e;
         .property-item {
             width: 50%;
@@ -141,11 +165,11 @@
             .property-name {
                 position: relative;
                 display: inline-block;
-                width: 105px;
-                padding: 0 16px 0 0;
+                width: 150px;
+                padding: 0 16px 0 36px;
                 vertical-align: middle;
-                text-align: right;
-                font-size: 12px;
+                font-size: 14px;
+                color: #63656E;
                 @include ellipsis;
                 &:after {
                     position: absolute;
@@ -154,10 +178,12 @@
                 }
             }
             .property-value {
-                font-size: 12px;
                 display: inline-block;
-                max-width: 240px;
+                margin: 0 0 0 4px;
+                max-width: 310px;
+                font-size: 14px;
                 vertical-align: middle;
+                color: #313238;
                 @include ellipsis;
             }
             .property-edit {
@@ -177,8 +203,18 @@
             }
         }
     }
+    .property-popover {
+        display: inline-block;
+    }
+    .popover-content {
+        display: inline-block;
+        max-width: 300px;
+        white-space: normal;
+        word-break: break-all;
+    }
     .property-form {
         font-size: 0;
+        position: relative;
         .bk-icon {
             display: inline-block;
             vertical-align: middle;
@@ -209,11 +245,20 @@
                 font-weight: bold;
             }
         }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin: -2px 0 0 0;
+            font-size: 12px;
+            line-height: 1;
+            color: $cmdbDangerColor;
+        }
         .form-component {
             display: inline-block;
             vertical-align: middle;
-            width: 195px;
-            height: 26px;
+            width: 280px;
+            height: 30px;
             margin: 0 4px 0 0;
             /deep/ {
                 .bk-date-picker,
@@ -223,31 +268,31 @@
                 .form-longchar-input,
                 .form-int-input,
                 [name="date-select"] {
-                    height: 26px ;
-                    font-size: 12px !important;
+                    height: 30px ;
+                    font-size: 14px !important;
                 }
                 .bk-date-picker:after {
-                    width: 26px;
-                    height: 26px;
+                    width: 30px;
+                    height: 30px;
                 }
                 .date-dropdown-panel,
                 .bk-selector-list {
                     margin-top: -10px;
                 }
                 .bk-selector-icon {
-                    top: 7px;
+                    top: 9px;
                 }
                 .bk-selector-node .text {
-                    line-height: 26px;
-                    font-size: 12px;
+                    line-height: 30px;
+                    font-size: 14px;
                 }
                 .objuser-layout {
-                    font-size: 12px;
+                    font-size: 14px;
                     .objuser-container {
-                        min-height: 26px;
+                        min-height: 30px;
                     }
                     .objuser-container.placeholder:after {
-                        line-height: 24px;
+                        line-height: 28px;
                     }
                     .objuser-selected {
                         height: 18px;
