@@ -16,14 +16,10 @@
         </cmdb-selector>
         <div class="property-value fl" style="width: 245px;"
             v-if="Object.keys(selectedProperty).length">
-            <cmdb-form-enum
-                v-if="selectedProperty['bk_property_type'] === 'enum'"
-                :options="selectedProperty.option || []"
-                v-model="localSelected.value">
-            </cmdb-form-enum>
             <component
-                v-else
                 :is="`cmdb-form-${selectedProperty['bk_property_type']}`"
+                :options="selectedProperty.option || []"
+                :palceholder="$t('Common[\'请输入关键字\']')"
                 v-model.trim="localSelected.value">
             </component>
         </div>
