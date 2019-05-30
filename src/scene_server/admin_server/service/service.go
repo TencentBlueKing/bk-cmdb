@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
+	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/storage/dal"
 
 	"github.com/emicklei/go-restful"
@@ -33,8 +34,8 @@ type Service struct {
 	db           dal.RDB
 	ccApiSrvAddr string
 	ctx          context.Context
-
-	authCenter *authcenter.AuthCenter
+	Config       options.Config
+	authCenter   *authcenter.AuthCenter
 }
 
 func NewService(ctx context.Context) *Service {

@@ -149,6 +149,11 @@ var AllTables = []string{
 	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
+	BKTableNameServiceCategory,
+	BKTableNameServiceTemplate,
+	BKTableNameServiceInstance,
+	BKTableNameProcessTemplate,
+	BKTableNameProcessInstanceRelation,
 }
 
 // GetInstTableName returns inst data table name

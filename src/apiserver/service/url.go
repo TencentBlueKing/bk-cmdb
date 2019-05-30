@@ -14,6 +14,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -212,6 +214,10 @@ func (u *URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	return false
 }
 
+const verbs = "create|createmany|update|updatemany|delete|deletemany|find|findmany"
+
+var procUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/proc/.*$", verbs))
+
 // WithProc transform the proc's url
 func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	procRoot := "/process/v3"
@@ -220,7 +226,8 @@ func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/proc/"):
 		from, to, isHit = rootPath+"/proc", procRoot, true
-
+	case procUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, procRoot, true
 	default:
 		isHit = false
 	}

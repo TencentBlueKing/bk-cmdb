@@ -5,6 +5,7 @@ import global from './modules/global.js'
 import request from './modules/request.js'
 
 import index from './modules/view/index.js'
+import hostDetails from './modules/view/host-details.js'
 
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
@@ -47,6 +48,8 @@ export default new Vuex.Store({
     ...global,
     modules: {
         index,
+        hostDetails,
+        
         auth,
         menu,
         request,

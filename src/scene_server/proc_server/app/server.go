@@ -44,9 +44,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	procSvr := new(service.ProcServer)
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
-	container := restful.NewContainer()
-	container.Add(procSvr.WebService())
-	container.Add(procSvr.WebService2())
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
@@ -68,7 +65,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
 	if err != nil {
@@ -95,6 +92,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
+
+	webservice := procSvr.WebService()
+	procSvr.WebService2(webservice)
+	container := restful.NewContainer()
+	container.Add(webservice)
+
 	if err := backbone.StartServer(ctx, engine, container); err != nil {
 		return err
 	}

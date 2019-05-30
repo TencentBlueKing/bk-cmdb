@@ -81,11 +81,11 @@ func (ps *ProcServer) getProcDetail(req *restful.Request, ownerID string, appID,
 	}
 
 	// search objectatts
-	objattCondition := make(map[string]interface{})
-	objattCondition[common.BKObjIDField] = common.BKInnerObjIDProc
-	objattCondition[common.BKOwnerIDField] = ownerID
+	objAttCondition := make(map[string]interface{})
+	objAttCondition[common.BKObjIDField] = common.BKInnerObjIDProc
+	objAttCondition[common.BKOwnerIDField] = ownerID
 	attrQueryInput := new(meta.QueryCondition)
-	attrQueryInput.Condition = objattCondition
+	attrQueryInput.Condition = objAttCondition
 	retObjAtt, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(srvData.ctx, srvData.header, common.BKInnerObjIDProc, attrQueryInput)
 	if err != nil {
 		blog.Errorf("getProcDetail SelectObjectAttWithParams http do error.err:%s,input:%+v,rid:%s", err.Error(), searchParams, srvData.rid)
@@ -236,8 +236,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 		return s[:len(s)-1]
 	}
 
-	rstName := []instNameAsst{}
-
+	rstName := make([]instNameAsst, 0)
 	for _, infoItem := range dataInfo {
 		dataItemVal := infoItem[instName]
 		// 提取实例名

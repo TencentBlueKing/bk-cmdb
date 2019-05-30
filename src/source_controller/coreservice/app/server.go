@@ -93,7 +93,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 
 	coreSvr.Core = engine
