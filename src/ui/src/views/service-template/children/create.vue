@@ -7,13 +7,14 @@
                     {{$t('ServiceManagement["模板名称"]')}}
                     <span class="color-danger">*</span>
                 </label>
-                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('fieldId') }">
+                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('templateName') }">
                     <input type="text" class="cmdb-form-input" id="templateName"
-                        name="fieldId"
+                        name="templateName"
                         :placeholder="$t('ServiceManagement[\'请输入模版名称\']')"
+                        :disabled="!isCreatedType"
                         v-model.trim="formData.tempalteName"
-                        v-validate="'required|fieldId'">
-                    <p class="form-error">{{errors.first('fieldId')}}</p>
+                        v-validate="'required|singlechar'">
+                    <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>
             </div>
             <div class="form-info clearfix">
@@ -21,24 +22,30 @@
                     {{$t('ServiceManagement["服务分类"]')}}
                     <span class="color-danger">*</span>
                 </span>
-                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('classificationId') }" style="width: auto;">
-                    <bk-selector
+                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('mainClassificationId') }" style="width: auto;">
+                    <cmdb-selector
                         class="fl"
-                        placeholder="请选择一级分类"
-                        :list="[]"
+                        :placeholder="$t('ServiceManagement[\'请选择一级分类\']')"
+                        :auto-select="false"
+                        :list="mainList"
                         v-validate="'required'"
-                        name="classificationId"
-                        :selected.sync="formData.primaryClassification">
-                    </bk-selector>
-                    <bk-selector
+                        name="mainClassificationId"
+                        v-model="formData['mainClassification']"
+                        @on-selected="handleSelect">
+                    </cmdb-selector>
+                    <p class="form-error">{{errors.first('mainClassificationId')}}</p>
+                </div>
+                <div class="cmdb-form-item fl" :class="{ 'is-error': errors.has('secondaryClassificationId') }" style="width: auto;">
+                    <cmdb-selector
                         class="fl"
-                        placeholder="请选择二级分类"
-                        :list="[]"
+                        :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
+                        :auto-select="true"
+                        :list="secondaryList"
                         v-validate="'required'"
-                        name="classificationId"
-                        :selected.sync="formData.secondaryClassification">
-                    </bk-selector>
-                    <p class="form-error">{{errors.first('classificationId')}}</p>
+                        name="secondaryClassificationId"
+                        v-model="formData['secondaryClassification']">
+                    </cmdb-selector>
+                    <p class="form-error">{{errors.first('secondaryClassificationId')}}</p>
                 </div>
             </div>
         </div>
@@ -55,7 +62,7 @@
                 <process-table></process-table>
                 <div class="btn-box">
                     <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
-                    <bk-button>{{$t("Common['取消']")}}</bk-button>
+                    <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
         </div>
@@ -67,8 +74,8 @@
                     :inst="attribute.inst.edit"
                     :type="attribute.type"
                     :save-disabled="false"
-                    @on-submit="handleSave"
-                    @on-cancel="handleCancel">
+                    @on-submit="handleSaveProcess"
+                    @on-cancel="handleCancelProcess">
                 </process-form>
             </template>
         </cmdb-slider>
@@ -100,24 +107,45 @@
                     show: false,
                     title: ''
                 },
+                mainList: [],
+                secondaryList: [],
+                allSecondaryList: [],
                 formData: {
-                    primaryClassification: '',
+                    mainClassification: '',
                     secondaryClassification: '',
                     tempalteName: ''
                 }
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t("ServiceManagement['新建服务模版']"))
-            this.reload()
+        computed: {
+            isCreatedType () {
+                return !this.$route.params['template']
+            },
+            originTemplateValues () {
+                return this.$route.params['template']
+            }
+        },
+        async created () {
+            console.log(this.originTemplateValues)
+            const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
+            this.$store.commit('setHeaderTitle', title)
+            await this.reload()
+            if (!this.isCreatedType) {
+                this.initFill()
+            }
         },
         methods: {
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectUnique', ['searchObjectUniqueConstraints']),
-            ...mapActions('procConfig', [
-                'searchProcess'
-            ]),
+            ...mapActions('procConfig', ['searchProcess']),
+            ...mapActions('serviceClassification', ['searchServiceCategory']),
+            ...mapActions('serviceTemplate', ['operationServiceTemplate']),
+            initFill () {
+                this.formData.tempalteName = this.originTemplateValues['name']
+                this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['parent_id']
+                this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
+            },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -129,6 +157,7 @@
                         fromCache: false
                     }
                 })
+                await this.getServiceClassification()
                 this.getPropertyGroups()
                 this.getObjectUnique()
             },
@@ -145,8 +174,8 @@
                     return groups
                 })
             },
-            async getObjectUnique () {
-                this.objectUnique = await this.searchObjectUniqueConstraints({
+            getObjectUnique () {
+                this.objectUnique = this.searchObjectUniqueConstraints({
                     objId: 'process',
                     params: {},
                     config: {
@@ -154,20 +183,57 @@
                     }
                 })
             },
-            handleSave () {
-
+            async getServiceClassification () {
+                const result = await this.searchServiceCategory({
+                    params: this.$injectMetadata(),
+                    config: {
+                        requestId: 'get_proc_services_categories'
+                    }
+                })
+                this.mainList = result.info.filter(classification => !classification['parent_id'])
+                this.allSecondaryList = result.info.filter(classification => classification['parent_id'])
             },
-            handleCancel () {
+            handleSelect (id, data) {
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
+                if (!this.secondaryList.length) {
+                    this.formData.secondaryClassification = ''
+                }
+            },
+            handleSaveProcess (values, changedValues, originValues, type) {
+                console.log(values)
+                console.log(changedValues)
+                console.log(originValues)
+                // if (type === 'create') {}
+            },
+            handleCancelProcess () {
                 this.slider.show = false
             },
             handleCreateProcess () {
                 this.slider.show = true
                 this.slider.title = this.$t("ProcessManagement['添加进程']")
+                this.attribute.type = 'create'
             },
-            handleSubmit () {
-                this.$validator.validateAll().then(result => {
-                    console.log(result)
+            handleUpdateProcess () {
+                this.slider.show = true
+                // this.slider.title = this.$t("ProcessManagement['编辑进程']")
+                this.attribute.type = 'update'
+            },
+            async handleSubmit () {
+                if (!await this.$validator.validateAll()) return
+                this.operationServiceTemplate({
+                    params: this.$injectMetadata({
+                        name: this.formData.tempalteName,
+                        service_category_id: this.formData.secondaryClassification
+                    })
+                }).then(() => {
+                    this.$bkMessage({
+                        message: this.type,
+                        theme: 'success'
+                    })
                 })
+            },
+            handleCancelOperation () {
+                this.$router.push({ name: 'serviceTemplate' })
             }
         }
     }

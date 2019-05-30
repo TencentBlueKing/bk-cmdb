@@ -808,7 +808,11 @@
         "服务分类": "Service Classification",
         "新建进程": "Create Process",
         "应用实例": "Applications",
-        "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance."
+        "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance.",
+        "请选择一级分类": "Please select a first classification",
+        "请选择二级分类": "Please select a secondary classification",
+        "创建成功": "Created Successfully",
+        "保存成功": "Successfully Saved"
     },
     "HostDetails": {
         "主机详情": "Host Details",
