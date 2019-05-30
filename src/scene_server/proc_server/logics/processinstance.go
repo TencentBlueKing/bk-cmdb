@@ -106,6 +106,7 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 			common.BKProcessIDField: procID,
 		},
 	}
+
 	result, err := lgc.CoreAPI.CoreService().Instance().DeleteInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &option)
 	if err != nil {
 		return err
@@ -114,6 +115,12 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 	if !result.Result {
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
 		return kit.CCError.Error(result.Code)
+	}
+
+	err = lgc.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, procID)
+	if err != nil {
+		blog.Errorf("rid: %s, delete process instance relation failed, err: %v", err)
+		return err
 	}
 	return nil
 }
@@ -133,6 +140,9 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procID []int64) erro
 		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
 		return kit.CCError.Error(result.Code)
 	}
+
+	// TODO: delete process relation at the same time.
+
 	return nil
 }
 
