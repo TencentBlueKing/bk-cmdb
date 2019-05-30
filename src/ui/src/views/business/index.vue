@@ -210,6 +210,7 @@
         async created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
+                this.$store.dispatch('userCustom/setRencentlyData', { id: 'business' })
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',

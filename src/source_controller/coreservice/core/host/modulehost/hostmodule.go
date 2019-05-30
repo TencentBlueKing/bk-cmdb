@@ -13,7 +13,7 @@
 package modulehost
 
 import (
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -55,6 +55,10 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 		blog.ErrorJSON("TransferHostToInnerModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
 	}
+	if err := transfer.DoTransferToInnerCheck(ctx); err != nil {
+		blog.ErrorJSON("TransferHostToInnerModule failed. DoTransferToInnerCheck failed. err: %+v, rid:%s", err, ctx.ReqID)
+		return nil, err
+	}
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
 		blog.ErrorJSON("TransferHostToInnerModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
@@ -87,7 +91,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 
 	err := transfer.ValidParameter(ctx)
 	if err != nil {
-		blog.ErrorJSON("TrasferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("TransferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
 	var exceptionArr []metadata.ExceptionResult

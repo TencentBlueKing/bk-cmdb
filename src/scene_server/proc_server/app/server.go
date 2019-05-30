@@ -13,25 +13,25 @@
 package app
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"time"
+    "context"
+    "fmt"
+    "os"
+    "time"
 
-	"configcenter/src/auth"
-	"configcenter/src/auth/authcenter"
-	"configcenter/src/auth/extensions"
-	"configcenter/src/common"
-	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/types"
-	"configcenter/src/common/version"
-	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/service"
-	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdpartyclient/esbserver"
-	"configcenter/src/thirdpartyclient/esbserver/esbutil"
-	"github.com/emicklei/go-restful"
+    "configcenter/src/auth"
+    "configcenter/src/auth/authcenter"
+    "configcenter/src/auth/extensions"
+    "configcenter/src/common"
+    "configcenter/src/common/backbone"
+    "configcenter/src/common/blog"
+    "configcenter/src/common/types"
+    "configcenter/src/common/version"
+    "configcenter/src/scene_server/proc_server/app/options"
+    "configcenter/src/scene_server/proc_server/logics"
+    "configcenter/src/scene_server/proc_server/service"
+    "configcenter/src/storage/dal/redis"
+    "configcenter/src/thirdpartyclient/esbserver"
+    "configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -91,14 +91,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
+	procSvr.Logic = &logics.Logic{
+		Engine: procSvr.Engine,
+	}
 	go procSvr.InitFunc()
 
-	webservice := procSvr.WebService()
-	procSvr.WebService2(webservice)
-	container := restful.NewContainer()
-	container.Add(webservice)
-
-	if err := backbone.StartServer(ctx, engine, container); err != nil {
+	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err
 	}
 

@@ -39,6 +39,9 @@ var createIgnoreKeys = []string{
 	common.BKSupplierIDField,
 	common.BKInstIDField,
 	common.BKDataStatusField,
+	common.CreateTimeField,
+	common.LastTimeField,
+	common.BKProcIDField,
 }
 
 func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, error) {
@@ -105,7 +108,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		property, ok := valid.propertys[key]
 		if !ok {
 			blog.Errorf("field [%s] is not a valid property for model [%s]", key, objID)
-			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

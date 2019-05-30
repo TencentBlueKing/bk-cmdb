@@ -31,14 +31,14 @@ type DeleteCategoryInput struct {
 
 type CreateProcessTemplateBatchInput struct {
 	Metadata          Metadata        `json:"metadata"`
-	ServiceTemplateID int64           `json:"serviceTemplateID"`
+	ServiceTemplateID int64           `json:"service_template_id"`
 	Processes         []ProcessDetail `json:"processes"`
 }
 
 type DeleteProcessTemplateBatchInput struct {
 	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"serviceTemplateID"`
-	ProcessTemplates  []int64  `json:"processTemplates"`
+	ServiceTemplateID int64    `json:"service_template_id"`
+	ProcessTemplates  []int64  `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -48,18 +48,18 @@ type ProcessDetail struct {
 type ListServiceTemplateInput struct {
 	Metadata Metadata `json:"metadata"`
 	// this field can be empty, it a optional condition.
-	ServiceCategoryID int64 `json:"serviceCategoryID,omitempty"`
+	ServiceCategoryID int64 `json:"service_category_id,omitempty"`
 }
 
 type DeleteServiceTemplatesInput struct {
 	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"serviceTemplateID"`
+	ServiceTemplateID int64    `json:"service_template_id"`
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
 	Metadata   Metadata                `json:"metadata"`
 	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"template_id"`
+	TemplateID int64                   `json:"service_template_id"`
 	ModuleID   int64                   `json:"module_id"`
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
@@ -106,6 +106,15 @@ type DifferenceDetail struct {
 	Changed   []ProcessDifferenceDetail `json:"changed"`
 	Added     []ProcessDifferenceDetail `json:"added"`
 	Removed   []ProcessDifferenceDetail `json:"removed"`
+}
+
+func NewDifferenceDetail() *DifferenceDetail {
+	return &DifferenceDetail{
+		Unchanged: make([]ProcessDifferenceDetail, 0),
+		Changed:   make([]ProcessDifferenceDetail, 0),
+		Added:     make([]ProcessDifferenceDetail, 0),
+		Removed:   make([]ProcessDifferenceDetail, 0),
+	}
 }
 
 type ProcessDifferenceDetail struct {
@@ -205,6 +214,7 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
+	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
 	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
 	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
 	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
@@ -372,6 +382,7 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 	return "", nil
 }
 
+// Update all not nil field from input to pt
 func (pt *ProcessProperty) Update(input ProcessProperty) {
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
@@ -538,19 +549,19 @@ func (si *ServiceInstance) Validate() (field string, err error) {
 	return "", nil
 }
 
-// ServiceInstanceRelations record which service instance and process template are current process binding, process identified by ProcessID
+// ProcessInstanceRelation record which service instance and process template are current process binding, process identified by ProcessID
 type ProcessInstanceRelation struct {
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
 	// unique field, 1:1 mapping with ProcessInstance.
-	ProcessID         int64 `field:"process_id" json:"process_id" bson:"process_id"`
+	ProcessID         int64 `field:"bk_process_id" json:"bk_process_id" bson:"bk_process_id"`
 	ServiceInstanceID int64 `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id"`
 
 	// ProcessTemplateID indicate which template are current process instantiate from.
 	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
 
 	// redundant field for accelerating processes by HostID
-	HostID          int64  `field:"host_id" json:"host_id" bson:"host_id"`
+	HostID          int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 

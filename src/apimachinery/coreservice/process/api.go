@@ -16,7 +16,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -113,8 +112,7 @@ func (p *process) ListServiceCategories(ctx context.Context, h http.Header, bizI
 	subPath := "/findmany/process/service_category"
 
 	input := map[string]interface{}{
-		// "bk_biz_id": bizID,
-		"metadata":        metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		"bk_biz_id":       bizID,
 		"with_statistics": withStatistics,
 	}
 
@@ -234,7 +232,7 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 		"service_category_id": categoryID,
 	}
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -302,7 +300,7 @@ func (p *process) UpdateProcessTemplate(ctx context.Context, h http.Header, temp
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := fmt.Sprintf("/update/process/process_template/%d", templateID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -371,7 +369,7 @@ func (p *process) ListProcessTemplates(ctx context.Context, h http.Header, optio
 	ret := new(metadata.MultipleProcessTemplateResult)
 	subPath := "/findmany/process/process_template"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -482,7 +480,7 @@ func (p *process) ListServiceInstance(ctx context.Context, h http.Header, option
 	ret := new(metadata.MultipleServiceInstanceResult)
 	subPath := "/findmany/process/service_instance"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
@@ -593,7 +591,7 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 	ret := new(metadata.MultipleProcessInstanceRelationResult)
 	subPath := "/findmany/process/process_instance_relation"
 
-	err = p.client.Delete().
+	err = p.client.Post().
 		WithContext(ctx).
 		Body(option).
 		SubResource(subPath).
