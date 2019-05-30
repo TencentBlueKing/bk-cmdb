@@ -7,6 +7,13 @@
                     @click="showCreate = true">
                     {{$t('HostDetails["新增关联"]')}}
                 </bk-button>
+                <cmdb-form-bool
+                    :size="16" class="options-checkbox"
+                    :checked="expandAll"
+                    :indeterminate="indeterminate"
+                    @change="handleExpandAll">
+                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                </cmdb-form-bool>
                 <bk-button type="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
             </div>
             <div class="fr">
@@ -54,6 +61,12 @@
             }
         },
         computed: {
+            expandAll () {
+                return this.$store.state.hostDetails.expandAll
+            },
+            indeterminate () {
+                return this.$store.state.hostDetails.indeterminate
+            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
@@ -66,9 +79,17 @@
                 return !!(association.source.length || association.target.length)
             }
         },
+        beforeDestroy () {
+            this.$store.commit('hostDetails/toggleExpandAll', false)
+            this.$store.commit('hostDetails/setExpandIndeterminate', true)
+        },
         methods: {
             toggleView (view) {
                 this.activeView = view
+            },
+            handleExpandAll (expandAll) {
+                this.$store.commit('hostDetails/toggleExpandAll', expandAll)
+                this.$store.commit('hostDetails/setExpandIndeterminate', false)
             }
         }
     }
@@ -92,6 +113,13 @@
             &.options-button-view {
                 margin: 0 0 0 -1px;
                 border-radius: 0;
+            }
+        }
+        .options-checkbox {
+            margin: 0 0 0 25px;
+            line-height: 32px;
+            .checkbox-label {
+                padding-left: 4px;
             }
         }
     }
