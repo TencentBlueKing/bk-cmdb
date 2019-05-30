@@ -56,20 +56,28 @@ func (s *Service) SetApiSrvAddr(ccApiSrvAddr string) {
 	s.ccApiSrvAddr = ccApiSrvAddr
 }
 
-func (s *Service) WebService() *restful.WebService {
-	ws := new(restful.WebService)
+func (s *Service) WebService() *restful.Container {
+	container := restful.NewContainer()
+
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	ws.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/migrate/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/authcenter/init").To(s.InitAuthCenter))
-	ws.Route(ws.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
-	ws.Route(ws.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
-	ws.Route(ws.POST("/clear").To(s.clear))
-	ws.Route(ws.GET("/healthz").To(s.Healthz))
+	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
+	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
+	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
+	api.Route(api.POST("/clear").To(s.clear))
+	api.Route(api.GET("/healthz").To(s.Healthz))
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
@@ -84,7 +92,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb
-	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityServicediscover, s.db.Ping()))
+	meta.Items = append(meta.Items, metric.NewHealthItem(types.CCFunctionalityMongo, s.db.Ping()))
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -119,7 +117,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Config:      server.Config,
 	}
 
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(server.Service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, server.Service.WebService()); err != nil {
 		return err
 	}
 	select {

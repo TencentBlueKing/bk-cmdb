@@ -53,6 +53,7 @@
     "1199055": "forbidden remove item with child node",
     "1199056": "remove referenced record forbidden",
     "1199057": "prase biz id from metadata in db failed",
+    "1199058": "generate record id failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",

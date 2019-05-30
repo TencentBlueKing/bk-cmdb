@@ -120,7 +120,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	}
 
 	if err := c.resp.WriteAsJson(body); err != nil {
-		blog.ErrorfDepth(1, fmt.Errorf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
+		blog.ErrorfDepth(1, fmt.Sprintf("rid: %s, response http request with error failed, err: %v", c.Kit.Rid, err))
 		return
 	}
 }

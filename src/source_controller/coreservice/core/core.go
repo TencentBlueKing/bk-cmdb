@@ -139,6 +139,7 @@ type HostOperation interface {
 	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 }
 
 // AssociationOperation association methods
