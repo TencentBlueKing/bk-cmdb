@@ -52,6 +52,12 @@ type ListServiceTemplateInput struct {
 	Page              BasePage `json:"page"`
 }
 
+type ListServiceTemplateWithDetailResult struct {
+	ServiceTemplate      ServiceTemplate `json:"service_template"`
+	ProcessTemplateCount int64           `json:"process_template_count"`
+	ServiceInstanceCount int64           `json:"service_instance_count"`
+}
+
 type DeleteServiceTemplatesInput struct {
 	Metadata          Metadata `json:"metadata"`
 	ServiceTemplateID int64    `json:"service_template_id"`
