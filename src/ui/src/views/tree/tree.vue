@@ -3,10 +3,7 @@
         <tree-item v-for="node in nodes"
             :key="node.id"
             :node="node">
-            <slot
-                :node="node"
-                :data="node.data">
-            </slot>
+            <slot :node="node"></slot>
         </tree-item>
     </div>
 </template>
@@ -102,6 +99,7 @@
                 this.recurrenceNodes(data, null, nodes, map)
                 this.nodes = nodes
                 this.map = map
+                console.log(this.nodes.length)
             },
             recurrenceNodes (data, parent, nodes, map) {
                 data.forEach((datum, index) => {
@@ -132,9 +130,7 @@
                 if (!parent) {
                     throw new Error('Unexpected parent id, add node failed')
                 }
-                const children = parent.children
-                const offset = typeof trailing === 'number' ? trailing : trailing ? children.length : 0
-                const insertIndex = parent.index + Math.min(offset, children.length) + 1
+                const insertIndex = (trailing ? parent.index + parent.children.length : parent.index) + 1
                 const data = Array.isArray(nodeData) ? nodeData : [nodeData]
                 const nodes = data.map(datum => {
                     return new TreeNode(datum, {
@@ -142,7 +138,7 @@
                         parent: parent
                     }, this)
                 })
-                parent.appendChild(nodes, offset)
+                parent.appendChild(nodes, trailing)
                 nodes.forEach(node => {
                     this.$set(this.map, node.id, node)
                 })
@@ -170,11 +166,7 @@
                     node.index = changedIndex + index
                 })
             },
-            async setSelected (nodeId, selected = true, byEvent = false) {
-                if (!selected) {
-                    this.selected = null
-                    return false
-                }
+            async setSelected (nodeId, byEvent = false) {
                 if (nodeId === this.selected) {
                     return false
                 }
@@ -189,7 +181,7 @@
                     this.selected = nodeId
                 }
             },
-            async setChecked (nodeId, checked = true, byEvent = false) {
+            async setChecked (nodeId, checked, byEvent = false) {
                 const node = this.getNodeById(nodeId)
                 if (!node) {
                     throw new Error('Unexpected node id, set checked failed.')
@@ -212,16 +204,6 @@
                 }
                 if (byEvent) {
                     this.$emit('check-change', this.checked, node)
-                }
-            },
-            setExpanded (nodeId, expanded = true, byEvent = false) {
-                const node = this.getNodeById(nodeId)
-                if (!node) {
-                    throw new Error('Unexpected node id, set expanded failed.')
-                }
-                node.expanded = expanded
-                if (byEvent) {
-                    this.$emit('expand-change', expanded, node)
                 }
             },
             calulateLine () {
