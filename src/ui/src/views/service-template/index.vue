@@ -149,14 +149,10 @@
             }
         },
         mounted () {
-            // this.setTableHight()
         },
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
-            // setTableHight () {
-            //     this.table['height'] = this.$refs.templateWrapper.clientHeight - this.$refs.table.$el.getBoundingClientRect().top + 20
-            // },
             async getTableData () {
                 const templateData = await this.getTemplateData()
                 this.table.allList = templateData.info.map(template => {
@@ -218,9 +214,13 @@
                     content: this.$tc("ServiceManagement['即将删除服务模版']", name, { name: template.name }),
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
-                            params: this.$injectMetadata({
-                                service_template_id: template.id
-                            }),
+                            params: {
+                                data: {
+                                    ...this.$injectMetadata({
+                                        service_template_id: template.id
+                                    })
+                                }
+                            },
                             config: {
                                 requestId: 'delete_proc_service_template'
                             }

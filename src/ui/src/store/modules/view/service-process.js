@@ -3,20 +3,23 @@ const state = {
 }
 
 const getters = {
-    localProcessTemplate: state => state.localProcessTemplate
+    localProcessTemplate: state => state.localProcessTemplate,
+    hasProcessName: state => process => {
+        return state.localProcessTemplate.find(template => template['bk_func_name'] === process['bk_func_name'])
+    }
 }
 
 const actions = {}
 
 const mutations = {
-    hasProcessName (state, process) {
-        
-    },
     addLocalProcessTemplate (state, process) {
         state.localProcessTemplate.push(process)
     },
-    deleteClocalProcessTemplate (state, process) {
-
+    deleteLocalProcessTemplate (state, process) {
+        state.localProcessTemplate = state.localProcessTemplate.filter(template => template['id'] !== process['id'])
+    },
+    clearLocalProcessTemplate (state) {
+        state.localProcessTemplate = []
     }
 }
 
