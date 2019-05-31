@@ -37,7 +37,7 @@ func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(list))
+	ctx.RespEntity(list)
 }
 
 func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
@@ -59,7 +59,7 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(category))
+	ctx.RespEntity(category)
 }
 
 func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
@@ -81,5 +81,5 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }
