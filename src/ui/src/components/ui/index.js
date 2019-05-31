@@ -26,6 +26,7 @@ import tree from './tree/tree.vue'
 import resize from './other/resize.vue'
 import collapseTransition from './transition/collapse.js'
 import collapse from './collapse/collapse'
+import dotMenu from './dot-menu/dot-menu.vue'
 const install = (Vue, opts = {}) => {
     const components = [
         businessSelector,
@@ -53,7 +54,8 @@ const install = (Vue, opts = {}) => {
         tree,
         resize,
         collapseTransition,
-        collapse
+        collapse,
+        dotMenu
     ]
     components.forEach(component => {
         Vue.component(component.name, component)
@@ -86,5 +88,6 @@ export default {
     associateInput,
     tree,
     resize,
-    collapseTransition
+    collapseTransition,
+    dotMenu
 }
