@@ -4,19 +4,27 @@
             :loading="$loading('post_searchProcess_list')"
             :checked.sync="table.checked"
             :header="table.header"
-            :list="list"
+            :list="showList"
             :pagination.sync="table.pagination"
             :default-sort="table.defaultSort"
             :wrapper-minus-height="300">
-            <template slot="operation" slot-scope="{ item }">
-                <button class="text-primary mr10"
-                    @click.stop="handleEdite(item)">
-                    {{$t('Common["编辑"]')}}
-                </button>
-                <button class="text-primary"
-                    @click.stop="handleDelete(item)">
-                    {{$t('Common["删除"]')}}
-                </button>
+            <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
+                <template v-if="header.id === 'operation'">
+                    <div :key="index">
+                        <button class="text-primary mr10"
+                            @click.stop="handleEdite(item['originData'])">
+                            {{$t('Common["编辑"]')}}
+                        </button>
+                        <button class="text-primary"
+                            @click.stop="handleDelete(item['originData'])">
+                            {{$t('Common["删除"]')}}
+                        </button>
+                    </div>
+                </template>
+                <template v-else>
+                    <!-- <span :key="index">{{item[header.id] | formatValue}}</span> -->
+                    <span :key="index">{{item[header.id] ? item[header.id] : '--'}}</span>
+                </template>
             </template>
         </cmdb-table>
     </div>
@@ -24,6 +32,18 @@
 
 <script>
     export default {
+        filters: {
+            formatValue (value) {
+                let showValue = ''
+                const type = typeof value
+                if (value && type === 'object') {
+                    showValue = value['value'] ? value['value'] : '--'
+                } else {
+                    showValue = value
+                }
+                return showValue
+            }
+        },
         props: {
             list: {
                 type: Array,
@@ -34,7 +54,7 @@
             properties: {
                 type: Array,
                 default: () => {
-
+                    return []
                 }
             }
         },
@@ -78,12 +98,31 @@
                 }
             }
         },
+        computed: {
+            showList () {
+                let list = this.list.map(template => {
+                    const result = {}
+                    Object.keys(template).map(key => {
+                        const type = typeof template[key]
+                        if (type === 'object') {
+                            result[key] = template[key]['value']
+                        } else {
+                            result[key] = template[key]
+                        }
+                    })
+                    result['originData'] = template
+                    return result
+                })
+                list = this.$tools.flatternList(this.properties, list)
+                return list
+            }
+        },
         methods: {
             handleEdite (process) {
-
+                this.$emit('on-edit', process)
             },
             handleDelete (process) {
-
+                this.$emit('on-delete', process)
             }
         }
     }

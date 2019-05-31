@@ -16,37 +16,15 @@ const getters = {}
 
 const actions = {
     /**
-     * 查询服务模板详情列表
+     * 为服务模板新增进程
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_template/with_detail`, params, config)
-    },
-    /**
-     * 创建\编辑服务模板
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    operationServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`create/proc/service_template`, params, config)
-    },
-    /**
-     * 删除服务模板
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    deleteServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`delete/proc/service_template`, params)
+    createProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`createmany/proc/proc_template/for_service_template`, params, config)
     }
 }
 

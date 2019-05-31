@@ -34,12 +34,14 @@
                                     <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="checkDisabled(property)"
+                                        :disabled="type === 'update'"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]">
+                                        v-model.trim="values[property['bk_property_id']]"
+                                        @input="handleFuncNameInput(property['bk_property_id'])"
+                                        @on-change="handleFuncNameChange(property['bk_property_id'])">
                                     </component>
                                     <component class="form-component" v-else
                                         :is="`cmdb-form-${property['bk_property_type']}`"
@@ -79,7 +81,7 @@
     import formMixins from '@/mixins/form'
     import RESIZE_EVENTS from '@/utils/resize-events'
     import featureTips from '@/components/feature-tips/index'
-    import { mapMutations } from 'vuex'
+    import { mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             featureTips
@@ -102,6 +104,10 @@
                     return ['create', 'update'].includes(val)
                 }
             },
+            isCreateTemplate: {
+                type: Boolean,
+                default: true
+            },
             showOptions: {
                 type: Boolean,
                 default: true
@@ -115,17 +121,19 @@
                 scrollbar: false,
                 groupState: {
                     none: true
-                }
+                },
+                autoInput: true
             }
         },
         computed: {
+            ...mapGetters('serviceProcess', ['hasProcessName']),
             changedValues () {
                 const changedValues = {}
-                // for (const propertyId in this.values) {
-                //     if (JSON.stringify(this.values[propertyId]) !== JSON.stringify(this.refrenceValues[propertyId])) {
-                //         changedValues[propertyId] = this.values[propertyId]
-                //     }
-                // }
+                for (const propertyId in this.values) {
+                    if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
+                        changedValues[propertyId] = this.values[propertyId]
+                    }
+                }
                 return changedValues
             },
             hasChange () {
@@ -171,7 +179,7 @@
             RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
-            ...mapMutations('serviceProcess', ['hasProcessName', 'addLocalProcessTemplate']),
+            ...mapMutations('serviceProcess', ['addLocalProcessTemplate']),
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -186,14 +194,15 @@
                 const formValues = this.$tools.getInstFormValues(this.properties, inst)
                 Object.keys(formValues).forEach(key => {
                     if (['bk_func_name', 'bk_process_name'].includes(key)) {
-                        this.values[key] = formValues[key]
+                        this.values[key] = this.type === 'update' ? this.inst[key] : formValues[key]
                     } else {
                         this.values[key] = {
                             value: formValues[key],
-                            as_default_value: false
+                            as_default_value: this.type === 'update' ? this.inst[key]['as_default_value'] : false
                         }
                     }
                 })
+                // console.log(this.values)
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -251,14 +260,27 @@
                 }
                 return rules
             },
+            handleFuncNameChange (id) {
+                this.autoInput = !this.values['bk_process_name']
+            },
+            handleFuncNameInput (id) {
+                if (id === 'bk_func_name' && this.autoInput) {
+                    this.values['bk_process_name'] = this.values['bk_func_name']
+                }
+            },
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        console.log(this.values)
-                        console.log(this.changedValues)
-                        // if (this.type === 'create') {
-                        //     this.hasProcessName()
-                        // }
+                        if (this.type === 'create' && !this.hasProcessName(this.values)) {
+                            this.values['id'] = new Date().getTime()
+                            this.addLocalProcessTemplate(this.values)
+                            this.handleCancel()
+                        } else {
+                            this.$bkMessage({
+                                message: this.$t("ServiceManagement['进程名称已存在']"),
+                                theme: 'error'
+                            })
+                        }
                         // this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
                     } else {
                         this.uncollapseGroup()

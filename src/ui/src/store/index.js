@@ -44,6 +44,7 @@ import netDataCollection from './modules/api/net-data-collection.js'
 import netDiscovery from './modules/api/net-discovery.js'
 import serviceTemplate from './modules/api/service-template.js'
 import serviceClassification from './modules/api/service-classification.js'
+import processTemplate from './modules/api/process-template.js'
 
 Vue.use(Vuex)
 
@@ -90,6 +91,7 @@ export default new Vuex.Store({
         netDataCollection,
         netDiscovery,
         serviceTemplate,
-        serviceClassification
+        serviceClassification,
+        processTemplate
     }
 })

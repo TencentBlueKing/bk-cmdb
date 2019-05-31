@@ -59,7 +59,12 @@
                     </bk-button>
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
-                <process-table></process-table>
+                <process-table
+                    :properties="properties"
+                    @on-edit="handleUpdateProcess"
+                    @on-delete="handleDeleteProcess"
+                    :list="processList">
+                </process-table>
                 <div class="btn-box">
                     <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
                     <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
@@ -85,7 +90,7 @@
 <script>
     import processForm from './process-form.vue'
     import processTable from './process'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters, mapMutations } from 'vuex'
     export default {
         components: {
             processTable,
@@ -118,6 +123,10 @@
             }
         },
         computed: {
+            ...mapGetters('serviceProcess', ['localProcessTemplate']),
+            processList () {
+                return this.localProcessTemplate
+            },
             isCreatedType () {
                 return !this.$route.params['template']
             },
@@ -126,7 +135,6 @@
             }
         },
         async created () {
-            console.log(this.originTemplateValues)
             const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
             this.$store.commit('setHeaderTitle', title)
             try {
@@ -139,12 +147,13 @@
             }
         },
         methods: {
+            ...mapMutations('serviceProcess', ['deleteLocalProcessTemplate', 'clearLocalProcessTemplate']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('objectUnique', ['searchObjectUniqueConstraints']),
-            ...mapActions('procConfig', ['searchProcess']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             ...mapActions('serviceTemplate', ['operationServiceTemplate']),
+            ...mapActions('processTemplate', ['createProcessTemplate']),
             initFill () {
                 this.formData.tempalteName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['parent_id']
@@ -216,11 +225,23 @@
                 this.slider.show = true
                 this.slider.title = this.$t("ProcessManagement['添加进程']")
                 this.attribute.type = 'create'
+                this.attribute.inst.edit = {}
             },
-            handleUpdateProcess () {
+            handleUpdateProcess (template) {
                 this.slider.show = true
-                // this.slider.title = this.$t("ProcessManagement['编辑进程']")
+                this.slider.title = template['bk_func_name']
                 this.attribute.type = 'update'
+                this.attribute.inst.edit = template
+            },
+            handleDeleteProcess (template) {
+                if (this.isCreatedType) {
+                    this.$bkInfo({
+                        title: this.$t("ServiceManagement['确认删除模板进程']"),
+                        confirmFn: () => {
+                            this.deleteClocalProcessTemplate(template)
+                        }
+                    })
+                }
             },
             async handleSubmit () {
                 if (!await this.$validator.validateAll()) return
@@ -229,10 +250,19 @@
                         name: this.formData.tempalteName,
                         service_category_id: this.formData.secondaryClassification
                     })
-                }).then(() => {
-                    this.$bkMessage({
-                        message: this.type,
-                        theme: 'success'
+                }).then(data => {
+                    this.createProcessTemplate({
+                        params: this.$injectMetadata({
+                            service_template_id: data.id,
+                            processes: this.processList
+                        })
+                    }).then(() => {
+                        this.$bkMessage({
+                            message: this.$t("Common['保存成功']"),
+                            theme: 'success'
+                        })
+                        this.clearLocalProcessTemplate()
+                        this.handleCancelOperation()
                     })
                 })
             },
