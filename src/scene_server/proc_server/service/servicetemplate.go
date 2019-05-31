@@ -37,7 +37,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(temp))
+	ctx.RespEntity(temp)
 }
 
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
@@ -53,13 +53,86 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, bizID, input.ServiceCategoryID)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, err: %v, input: %+v", err, input)
+	if input.Page.Limit >= common.BKMaxPageLimit {
+		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(temp))
+	option := metadata.ListServiceTemplateOption{
+		BusinessID:        bizID,
+		Page:              input.Page,
+		ServiceCategoryID: input.ServiceCategoryID,
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
+		return
+	}
+
+	ctx.RespEntity(temp)
+}
+
+func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
+	input := new(metadata.ListServiceTemplateInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "list service template, but get business id failed, err: %v", err)
+		return
+	}
+
+	if input.Page.Limit >= common.BKMaxPageLimit {
+		ctx.RespErrorCodeOnly(common.CCErrCommPageLimitIsExceeded, "list service template, but page limit:%d is over limited.", input.Page.Limit)
+		return
+	}
+
+	option := metadata.ListServiceTemplateOption{
+		BusinessID:        bizID,
+		Page:              input.Page,
+		ServiceCategoryID: input.ServiceCategoryID,
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "list service template failed, input: %+v", input)
+		return
+	}
+
+	details := make([]metadata.ListServiceTemplateWithDetailResult, 0)
+	for _, serviceTemplate := range temp.Info {
+		option := &metadata.ListProcessTemplatesOption{
+			BusinessID:        bizID,
+			ServiceTemplateID: serviceTemplate.ID,
+		}
+		processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
+				"list service template: %d detail, but list process template failed.", serviceTemplate.ID)
+			return
+		}
+
+		serviceOption := &metadata.ListServiceInstanceOption{
+			BusinessID:        bizID,
+			ServiceTemplateID: serviceTemplate.ID,
+		}
+		serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+				"list service template: %d detail, but list service instance failed.", serviceTemplate.ID)
+			return
+		}
+
+		details = append(details, metadata.ListServiceTemplateWithDetailResult{
+			ServiceTemplate:      serviceTemplate,
+			ProcessTemplateCount: int64(processTemplates.Count),
+			ServiceInstanceCount: int64(serviceInstances.Count),
+		})
+	}
+
+	ctx.RespEntityWithCount(int64(temp.Count), details)
 }
 
 // a service template can be delete only when it is not be used any more,
@@ -83,5 +156,5 @@ func (ps *ProcServer) DeleteServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }

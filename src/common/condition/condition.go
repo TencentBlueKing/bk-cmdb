@@ -41,7 +41,7 @@ type Condition interface {
 	NewOR() OR
 	Parse(data types.MapStr) error
 	ToMapStr() types.MapStr
-	AddContionItem(cond ConditionItem) error
+	AddConditionItem(cond ConditionItem) error
 	IsFieldExist(fieldName string) bool
 }
 
@@ -220,7 +220,7 @@ func (cli *condition) ToMapStr() types.MapStr {
 }
 
 // AddConditionItem add ConditionItem into condition
-func (cli *condition) AddContionItem(cond ConditionItem) error {
+func (cli *condition) AddConditionItem(cond ConditionItem) error {
 	switch cond.Operator {
 	case common.BKDBEQ:
 		cli.Field(cond.Field).Eq(cond.Value)

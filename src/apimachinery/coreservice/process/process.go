@@ -13,6 +13,7 @@
 package process
 
 import (
+	"configcenter/src/common/condition"
 	"context"
 	"net/http"
 
@@ -32,7 +33,7 @@ type ProcessInterface interface {
 	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error)
 	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
-	ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error)
+	ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error
 
 	// process template
@@ -55,7 +56,7 @@ type ProcessInterface interface {
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error)
-	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) error
+	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, condition condition.Condition) error
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {

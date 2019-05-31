@@ -13,6 +13,7 @@
 package process
 
 import (
+	"configcenter/src/common/condition"
 	"context"
 	"fmt"
 	"net/http"
@@ -223,18 +224,13 @@ func (p *process) DeleteServiceTemplate(ctx context.Context, h http.Header, temp
 	return nil
 }
 
-func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID int64, categoryID int64) (resp *metadata.MultipleServiceTemplate, err error) {
+func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error) {
 	ret := new(metadata.MultipleServiceTemplateResult)
 	subPath := "/findmany/process/service_template"
 
-	input := map[string]interface{}{
-		"bk_biz_id":           bizID,
-		"service_category_id": categoryID,
-	}
-
 	err = p.client.Post().
 		WithContext(ctx).
-		Body(input).
+		Body(option).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -250,9 +246,6 @@ func (p *process) ListServiceTemplates(ctx context.Context, h http.Header, bizID
 	return &ret.Data, nil
 }
 
-/*
-	process template api
-*/
 func (p *process) CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error) {
 	ret := new(metadata.OneProcessTemplateResult)
 	subPath := "/create/process/process_template"
@@ -566,13 +559,14 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) error {
+func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, condition condition.Condition) error {
 	ret := new(metadata.OneProcessInstanceRelationResult)
-	subPath := fmt.Sprintf("/delete/process/process_instance_relation/%d", processID)
+	subPath := "/delete/process/process_instance_relation"
 
 	err := p.client.Delete().
 		WithContext(ctx).
 		SubResource(subPath).
+		Body(condition.ToMapStr()).
 		WithHeaders(h).
 		Do().
 		Into(ret)

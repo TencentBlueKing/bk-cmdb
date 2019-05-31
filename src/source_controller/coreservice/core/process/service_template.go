@@ -177,9 +177,9 @@ func (p *processOperation) DeleteServiceTemplate(ctx core.ContextParams, service
 
 	// service template that referenced by process template shouldn't be removed
 	usageFilter := map[string]int64{"service_template_id": template.ID}
-	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(usageFilter).Count(ctx.Context)
+	usageCount, err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
-		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, usageFilter, err, ctx.ReqID)
+		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	if usageCount > 0 {

@@ -30,14 +30,10 @@ const (
 	// HTTPDelete delete method
 	HTTPDelete = "DELETE"
 
-	// BKTrue the true definition
-	BKTrue = 1
-
-	// BKFalse the false definition
-	BKFalse = 2
-
 	// BKNoLimit no limit definition
 	BKNoLimit = 999999999
+	// max limit of a page
+	BKMaxPageLimit = 2000
 
 	// BKDefaultLimit the default limit definition
 	BKDefaultLimit = 20
@@ -455,6 +451,8 @@ const (
 
 	// BKProcessIDField the process id field
 	BKProcessIDField = "bk_process_id"
+
+	BKServiceInstanceIDField = "service_instance_id"
 
 	// BKProcessNameField the process name field
 	BKProcessNameField = "bk_process_name"
