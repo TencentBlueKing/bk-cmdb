@@ -24,7 +24,7 @@ import (
 
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, error) {
 	cond := condition.CreateCondition()
-	cond.AddContionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: "$in", Value: procIDs})
+	cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: "$in", Value: procIDs})
 
 	reqParam := new(metadata.QueryCondition)
 	reqParam.Condition = cond.ToMapStr()
@@ -117,17 +117,12 @@ func (lgc *Logic) DeleteProcessInstance(kit *rest.Kit, procID int64) error {
 		return kit.CCError.Error(result.Code)
 	}
 
-	err = lgc.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(kit.Ctx, kit.Header, procID)
-	if err != nil {
-		blog.Errorf("rid: %s, delete process instance relation failed, err: %v", err)
-		return err
-	}
 	return nil
 }
 
-func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procID []int64) error {
+func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) error {
 	cond := condition.CreateCondition()
-	cond.AddContionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: "$in", Value: procID})
+	cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBIN, Value: procIDs})
 	option := metadata.DeleteOption{
 		Condition: cond.ToMapStr(),
 	}
@@ -137,11 +132,9 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procID []int64) erro
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
+		blog.Errorf("rid: %s, delete process instance: %d failed, err: %s", kit.Rid, procIDs, result.ErrMsg)
 		return kit.CCError.Error(result.Code)
 	}
-
-	// TODO: delete process relation at the same time.
 
 	return nil
 }

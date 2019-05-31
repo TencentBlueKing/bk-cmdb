@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -136,6 +137,15 @@ func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts)
 		return
 	}
 
+	// delete process relation at the same time.
+	cond := condition.CreateCondition()
+	cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBIN, Value: input.ProcessInstanceIDs})
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
+		return
+	}
+
 	if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, input.ProcessInstanceIDs); err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance:%v failed, err: %v", input.ProcessInstanceIDs, err)
 		return
@@ -178,12 +188,51 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete service instances, but parse biz id failed, err: %v", err)
 		return
 	}
+	// when a service instance is deleted, the related data should be deleted at the same time:
+	// 1. service instance relation need to be deleted.
+	// 2. process instance belongs to this service instance should be deleted.
 
+	// Firstly, delete the service instance relation.
+	option := &metadata.ListProcessInstanceRelationOption{
+		BusinessID:        bizID,
+		ServiceInstanceID: []int64{input.ServiceInstanceID},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
+			"delete service instance: %d, but list service instance relation failed.", input.ServiceInstanceID)
+		return
+	}
+
+	cond := condition.CreateCondition()
+	cond.AddConditionItem(condition.ConditionItem{
+		Field:    common.BKServiceInstanceIDField,
+		Operator: condition.BKDBEQ,
+		Value:    input.ServiceInstanceID})
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed,
+			"delete service instance: %d, but delete service instance relations failed.", input.ServiceInstanceID)
+		return
+	}
+
+	// Secondly, delete process instance belongs to this service instance.
+	var processIDs []int64
+	for _, r := range relations.Info {
+		processIDs = append(processIDs, r.ProcessID)
+	}
+	if err := ps.Logic.DeleteProcessInstanceBatch(ctx.Kit, processIDs); err != nil {
+		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed,
+			"delete service instance: %d, but delete process instance failed.", input.ServiceInstanceID)
+		return
+	}
+
+	// Finally, delete service instance.
 	err = ps.CoreAPI.CoreService().Process().DeleteServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed, "delete service instance: %d failed, err: %v", input.ServiceInstanceID, err)
@@ -772,7 +821,9 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 				}
 
 				// remove process instance relation now.
-				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, process.ProcessID); err != nil {
+				cond := condition.CreateCondition()
+				cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBEQ, Value: process.ProcessID})
+				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
 						"force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v",
 						input.ServiceTemplateID, process.ProcessID, template.ID, err)
