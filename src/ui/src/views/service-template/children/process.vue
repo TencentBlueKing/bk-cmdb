@@ -1,7 +1,7 @@
 <template>
     <div class="process-wrapper">
         <cmdb-table class="process-table" ref="table"
-            :loading="$loading('post_searchProcess_list')"
+            :loading="loading"
             :checked.sync="table.checked"
             :header="table.header"
             :list="showList"
@@ -56,6 +56,10 @@
                 default: () => {
                     return []
                 }
+            },
+            loading: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
