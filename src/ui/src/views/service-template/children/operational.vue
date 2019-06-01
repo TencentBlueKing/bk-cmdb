@@ -138,7 +138,8 @@
                 return this.$route.params['template']
             },
             hasUsed () {
-                return Boolean(this.originTemplateValues['service_instance_count'])
+                const used = this.isCreatedType ? false : Boolean(this.originTemplateValues['service_instance_count'])
+                return used
             }
         },
         async created () {

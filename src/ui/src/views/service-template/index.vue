@@ -202,7 +202,7 @@
                     back: true
                 })
                 this.$router.push({
-                    name: 'createTemplate',
+                    name: 'operationalTemplate',
                     params: {
                         template: item
                     }
