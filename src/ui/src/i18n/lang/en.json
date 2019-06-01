@@ -158,7 +158,8 @@
         "云资源发现": "Cloud resource discovery",
         "资源确认": "Resource confirm",
         "服务管理": "Service Management",
-        "服务模板": "Service Template"
+        "服务模板": "Service Template",
+        "服务分类": "Service Cagetory"
     },
     "Index": {
         "首页": "Index",
@@ -817,6 +818,9 @@
         "请选择二级分类": "Please select a secondary classification",
         "进程名称已存在": "Process name already exists.",
         "确认删除模板进程": "Confirm delete template process?"
+    },
+    "ServiceCagetory": {
+        "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion."
     },
     "HostDetails": {
         "主机详情": "Host Details",
