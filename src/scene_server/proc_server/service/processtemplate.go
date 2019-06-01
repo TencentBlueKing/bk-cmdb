@@ -13,11 +13,10 @@
 package service
 
 import (
-	"strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"strconv"
 )
 
 // create a process template for a service template.
@@ -78,7 +77,7 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
-	input := new(metadata.ProcessTemplate)
+	input := new(metadata.UpdateProcessTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -91,12 +90,18 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	if input.Property == nil {
+	if input.ProcessProperty == nil || input.ProcessTemplateID <= 0 {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process template, but get nil process template, input: %+v", input)
 		return
 	}
 
-	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
+	template := metadata.ProcessTemplate{
+		ID:                input.ProcessTemplateID,
+		Metadata:          input.Metadata,
+		ServiceTemplateID: input.ServiceTemplateID,
+		Property:          input.ProcessProperty,
+	}
+	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcUpdateProcessTemplateFailed, "update process template: %v failed.", input)
 		return
