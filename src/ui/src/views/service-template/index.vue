@@ -215,11 +215,9 @@
                     confirmFn: async () => {
                         await this.deleteServiceTemplate({
                             params: {
-                                data: {
-                                    ...this.$injectMetadata({
-                                        service_template_id: template.id
-                                    })
-                                }
+                                data: this.$injectMetadata({
+                                    service_template_id: template.id
+                                })
                             },
                             config: {
                                 requestId: 'delete_proc_service_template'

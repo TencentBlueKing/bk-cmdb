@@ -25,8 +25,12 @@
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i> -->
-                                    <label class="cmdb-form-checkbox cmdb-checkbox-small" v-if="property['isLocking'] !== undefined">
-                                        <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
+                                    <label class=""
+                                        :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                        v-if="property['isLocking'] !== undefined">
+                                        <input type="checkbox"
+                                            v-model="values[property['bk_property_id']]['as_default_value']"
+                                            :disabled="hasUsed">
                                         <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
                                     </label>
                                 </div>
@@ -104,7 +108,7 @@
                     return ['create', 'update'].includes(val)
                 }
             },
-            isCreateTemplate: {
+            isCreatedService: {
                 type: Boolean,
                 default: true
             },
@@ -112,7 +116,11 @@
                 type: Boolean,
                 default: true
             },
-            saveDisabled: Boolean
+            saveDisabled: Boolean,
+            hasUsed: {
+                type: Boolean,
+                default: false
+            }
         },
         data () {
             return {
@@ -169,8 +177,6 @@
         },
         created () {
             this.initValues()
-            // console.log(this.$sortedGroups)
-            // console.log(this.groupedProperties)
         },
         mounted () {
             RESIZE_EVENTS.addResizeListener(this.$refs.formGroups, this.checkScrollbar)
@@ -179,7 +185,7 @@
             RESIZE_EVENTS.removeResizeListener(this.$refs.formGroups, this.checkScrollbar)
         },
         methods: {
-            ...mapMutations('serviceProcess', ['addLocalProcessTemplate']),
+            ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -188,7 +194,12 @@
                 const inst = {}
                 if (this.type === 'update') {
                     Object.keys(this.inst).forEach(key => {
-                        inst[key] = this.inst[key] ? this.inst[key]['value'] : this.inst[key]
+                        const type = typeof this.inst[key]
+                        if (type === 'object') {
+                            inst[key] = this.inst[key] ? this.inst[key]['value'] : this.inst[key]
+                        } else {
+                            inst[key] = this.inst[key]
+                        }
                     })
                 }
                 const formValues = this.$tools.getInstFormValues(this.properties, inst)
@@ -198,11 +209,13 @@
                     } else {
                         this.values[key] = {
                             value: formValues[key],
-                            as_default_value: this.type === 'update' ? this.inst[key]['as_default_value'] : false
+                            as_default_value: this.type === 'update'
+                                ? this.inst[key]['as_default_value'] ? this.inst[key]['as_default_value'] : false
+                                : false
                         }
                     }
                 })
-                // console.log(this.values)
+                if (this.isCreatedService) this.values['sign_id'] = inst['sign_id']
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -270,10 +283,13 @@
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
-                    if (result) {
+                    if (result && this.isCreatedService) {
                         if (this.type === 'create' && !this.hasProcessName(this.values)) {
-                            this.values['id'] = new Date().getTime()
+                            this.values['sign_id'] = new Date().getTime()
                             this.addLocalProcessTemplate(this.values)
+                            this.handleCancel()
+                        } else if (this.type === 'update') {
+                            this.updateLocalProcessTemplate(this.values)
                             this.handleCancel()
                         } else {
                             this.$bkMessage({
@@ -281,7 +297,8 @@
                                 theme: 'error'
                             })
                         }
-                        // this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                    } else if (result) {
+                        this.$emit('on-submit', this.values, this.type)
                     } else {
                         this.uncollapseGroup()
                     }
@@ -376,8 +393,15 @@
                 float: right;
                 line-height: 16px;
                 cursor: pointer;
+                &.disabled .cmdb-checkbox-text {
+                    cursor: not-allowed;
+                }
                 .cmdb-checkbox-text {
                     font-size: 12px;
+                }
+                input[type=checkbox][disabled] {
+                    background-color: #f1f1f1;
+                    cursor: not-allowed;
                 }
             }
         }

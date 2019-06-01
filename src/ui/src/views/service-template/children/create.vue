@@ -60,6 +60,7 @@
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
                 <process-table
+                    :loading="processLoading"
                     :properties="properties"
                     @on-edit="handleUpdateProcess"
                     @on-delete="handleDeleteProcess"
@@ -78,7 +79,9 @@
                     :property-groups="propertyGroups"
                     :inst="attribute.inst.edit"
                     :type="attribute.type"
+                    :is-created-service="isCreatedType"
                     :save-disabled="false"
+                    :has-used="hasUsed"
                     @on-submit="handleSaveProcess"
                     @on-cancel="handleCancelProcess">
                 </process-form>
@@ -98,9 +101,13 @@
         },
         data () {
             return {
+                processLoading: false,
                 properties: [],
                 propertyGroups: [],
-                objectUnique: [],
+                mainList: [],
+                secondaryList: [],
+                allSecondaryList: [],
+                processTemplateList: [],
                 attribute: {
                     type: null,
                     inst: {
@@ -112,9 +119,6 @@
                     show: false,
                     title: ''
                 },
-                mainList: [],
-                secondaryList: [],
-                allSecondaryList: [],
                 formData: {
                     mainClassification: '',
                     secondaryClassification: '',
@@ -125,39 +129,55 @@
         computed: {
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
             processList () {
-                return this.localProcessTemplate
+                return this.processTemplateList
             },
             isCreatedType () {
                 return !this.$route.params['template']
             },
             originTemplateValues () {
                 return this.$route.params['template']
+            },
+            hasUsed () {
+                return Boolean(this.originTemplateValues['service_instance_count'])
             }
         },
         async created () {
             const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
             this.$store.commit('setHeaderTitle', title)
+            this.processTemplateList = this.localProcessTemplate
             try {
                 await this.reload()
                 if (!this.isCreatedType) {
-                    this.initFill()
+                    this.initEdit()
                 }
             } catch (e) {
                 console.log(e)
             }
         },
+        beforeDestroy () {
+            this.clearLocalProcessTemplate()
+        },
         methods: {
-            ...mapMutations('serviceProcess', ['deleteLocalProcessTemplate', 'clearLocalProcessTemplate']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
-            ...mapActions('objectUnique', ['searchObjectUniqueConstraints']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             ...mapActions('serviceTemplate', ['operationServiceTemplate']),
-            ...mapActions('processTemplate', ['createProcessTemplate']),
-            initFill () {
+            ...mapActions('processTemplate', [
+                'createProcessTemplate',
+                'updateProcessTemplate',
+                'deleteProcessTemplate',
+                'getProcessTemplate',
+                'getBatchProcessTemplate'
+            ]),
+            ...mapMutations('serviceProcess', [
+                'deleteLocalProcessTemplate',
+                'clearLocalProcessTemplate'
+            ]),
+            initEdit () {
                 this.formData.tempalteName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['parent_id']
                 this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
+                this.getProcessList()
             },
             async reload () {
                 this.properties = await this.searchObjectAttribute({
@@ -172,28 +192,18 @@
                 })
                 await this.getServiceClassification()
                 this.getPropertyGroups()
-                this.getObjectUnique()
             },
             getPropertyGroups () {
                 return this.searchGroup({
                     objId: 'process',
                     params: this.$injectMetadata(),
                     config: {
-                        fromCache: false,
+                        fromCache: true,
                         requestId: 'post_searchGroup_process'
                     }
                 }).then(groups => {
                     this.propertyGroups = groups
                     return groups
-                })
-            },
-            getObjectUnique () {
-                this.objectUnique = this.searchObjectUniqueConstraints({
-                    objId: 'process',
-                    params: {},
-                    config: {
-                        requestId: 'searchObjectUniqueConstraints'
-                    }
                 })
             },
             async getServiceClassification () {
@@ -206,17 +216,51 @@
                 this.mainList = result.info.filter(classification => !classification['parent_id'])
                 this.allSecondaryList = result.info.filter(classification => classification['parent_id'])
             },
+            getProcessList () {
+                this.processLoading = true
+                this.getBatchProcessTemplate({
+                    params: this.$injectMetadata({
+                        service_template_id: this.originTemplateValues['id']
+                    })
+                }).then(data => {
+                    this.processTemplateList = data.info
+                }).finally(() => {
+                    this.processLoading = false
+                })
+            },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }
             },
-            handleSaveProcess (values, changedValues, originValues, type) {
-                console.log(values)
-                console.log(changedValues)
-                console.log(originValues)
-                // if (type === 'create') {}
+            handleSaveProcess (values, type) {
+                if (type === 'create') {
+                    this.createProcessTemplate({
+                        params: this.$injectMetadata({
+                            service_template_id: this.originTemplateValues['id'],
+                            processes: [values]
+                        })
+                    }).then(() => {
+                        this.$bkMessage({
+                            message: this.$t("Common['保存成功']"),
+                            theme: 'success'
+                        })
+                    })
+                } else {
+                    this.updateProcessTemplate({
+                        params: this.$injectMetadata({
+                            id: values['id'],
+                            service_template_id: this.originTemplateValues['id'],
+                            property: values
+                        })
+                    }).then(() => {
+                        this.$bkMessage({
+                            message: this.$t("Common['保存成功']"),
+                            theme: 'success'
+                        })
+                    })
+                }
             },
             handleCancelProcess () {
                 this.slider.show = false
@@ -234,14 +278,25 @@
                 this.attribute.inst.edit = template
             },
             handleDeleteProcess (template) {
-                if (this.isCreatedType) {
-                    this.$bkInfo({
-                        title: this.$t("ServiceManagement['确认删除模板进程']"),
-                        confirmFn: () => {
+                this.$bkInfo({
+                    title: this.$t("ServiceManagement['确认删除模板进程']"),
+                    confirmFn: () => {
+                        if (this.isCreatedType) {
                             this.deleteClocalProcessTemplate(template)
+                        } else {
+                            this.deleteProcessTemplate({
+                                params: {
+                                    data: this.$injectMetadata({
+                                        service_template_id: this.originTemplateValues['id'],
+                                        processes_templates: [template['id']]
+                                    })
+                                }
+                            }).then(() => {
+                                this.getProcessList()
+                            })
                         }
-                    })
-                }
+                    }
+                })
             },
             async handleSubmit () {
                 if (!await this.$validator.validateAll()) return
@@ -261,7 +316,6 @@
                             message: this.$t("Common['保存成功']"),
                             theme: 'success'
                         })
-                        this.clearLocalProcessTemplate()
                         this.handleCancelOperation()
                     })
                 })
