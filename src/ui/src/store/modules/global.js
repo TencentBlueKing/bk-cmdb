@@ -24,7 +24,8 @@ const state = {
         modelBusiness: true,
         association: true,
         eventpush: true,
-        serviceTemplate: true
+        serviceTemplate: true,
+        cagetory: true
     }
 }
 
