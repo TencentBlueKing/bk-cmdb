@@ -1,40 +1,56 @@
 <template>
     <div class="layout">
-        <div class="options">
-            <bk-button class="options-button" type="primary">
-                {{$t('BusinessTopology["添加服务实例"]')}}
-            </bk-button>
-            <bk-dropdown-menu trigger="click">
-                <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
-                    {{$t('Common["更多"]')}}
-                    <i class="bk-icon icon-angle-down"></i>
+        <template v-if="instances.length">
+            <div class="options">
+                <bk-button class="options-button" type="primary">
+                    {{$t('BusinessTopology["添加服务实例"]')}}
                 </bk-button>
-                <ul class="clipboard-list" slot="dropdown-content">
-                    <li v-for="(item, index) in menuItem"
-                        :class="['clipboard-item', { 'is-disabled': item.disabled }]"
-                        :key="index"
-                        @click="item.handler(item.disabled)">
-                        {{item.name}}
-                    </li>
-                </ul>
-            </bk-dropdown-menu>
-            <cmdb-form-bool class="options-checkbox"
-                :size="16">
-                <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
-            </cmdb-form-bool>
-            <cmdb-form-bool class="options-checkbox"
-                :size="16">
-                <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
-            </cmdb-form-bool>
-            <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
-        </div>
+                <bk-dropdown-menu trigger="click">
+                    <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
+                        {{$t('Common["更多"]')}}
+                        <i class="bk-icon icon-angle-down"></i>
+                    </bk-button>
+                    <ul class="clipboard-list" slot="dropdown-content">
+                        <li v-for="(item, index) in menuItem"
+                            :class="['clipboard-item', { 'is-disabled': item.disabled }]"
+                            :key="index"
+                            @click="item.handler(item.disabled)">
+                            {{item.name}}
+                        </li>
+                    </ul>
+                </bk-dropdown-menu>
+                <cmdb-form-bool class="options-checkbox"
+                    :size="16">
+                    <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
+                </cmdb-form-bool>
+                <cmdb-form-bool class="options-checkbox"
+                    :size="16">
+                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                </cmdb-form-bool>
+                <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
+            </div>
+            <div class="tables">
+                <service-instance-table v-for="n in 15" :key="n"></service-instance-table>
+            </div>
+        </template>
+        <service-instance-empty v-else></service-instance-empty>
+        <service-host-selector></service-host-selector>
     </div>
 </template>
 
 <script>
+    import serviceInstanceTable from './service-instance-table.vue'
+    import serviceInstanceEmpty from './service-instance-empty.vue'
+    import serviceHostSelector from './host-selector.vue'
     export default {
+        components: {
+            serviceInstanceTable,
+            serviceInstanceEmpty,
+            serviceHostSelector
+        },
         data () {
             return {
+                instances: []
             }
         },
         computed: {
@@ -125,5 +141,9 @@
                 cursor: not-allowed;
             }
         }
+    }
+    .tables {
+        height: calc(100% - 42px);
+        @include scrollbar-y;
     }
 </style>

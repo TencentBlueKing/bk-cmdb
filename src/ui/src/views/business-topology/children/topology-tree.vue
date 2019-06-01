@@ -29,14 +29,24 @@
             :has-footer="false"
             :padding="0"
             :quick-close="false"
+            :width="createInfo.nextModelId === 'module' ? 580 : 400"
             @after-transition-leave="handleAfterCancelCreateNode"
             @cancel="handleCancelCreateNode">
-            <create-node v-if="createInfo.visible" slot="content"
-                :properties="createInfo.properties"
-                :parent-node="createInfo.parentNode"
-                @submit="handleCreateNode"
-                @cancel="handleCancelCreateNode">
-            </create-node>
+            <template v-if="createInfo.nextModelId === 'module'">
+                <create-module v-if="createInfo.visible" slot="content"
+                    :parent-node="createInfo.parentNode"
+                    @sumit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-module>
+            </template>
+            <template v-else>
+                <create-node v-if="createInfo.visible" slot="content"
+                    :properties="createInfo.properties"
+                    :parent-node="createInfo.parentNode"
+                    @submit="handleCreateNode"
+                    @cancel="handleCancelCreateNode">
+                </create-node>
+            </template>
         </bk-dialog>
     </div>
 </template>
@@ -44,9 +54,11 @@
 <script>
     import { mapGetters } from 'vuex'
     import createNode from './create-node.vue'
+    import createModule from './create-module.vue'
     export default {
         components: {
-            createNode
+            createNode,
+            createModule
         },
         data () {
             return {
