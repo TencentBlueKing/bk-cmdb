@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 
 	"github.com/emicklei/go-restful"
+	"github.com/mssola/user_agent"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -84,6 +85,7 @@ func NewService(conf Config) *Service {
 const (
 	LableHandler         = "handler"
 	LableHTTPStatus      = "status_code"
+	LableOrigin          = "origin"
 	LableProcessName     = "process_name"
 	LableProcessInstance = "process_instance"
 )
@@ -97,7 +99,11 @@ func (s *Service) MiddleWareFunc(req *restful.Request, resp *restful.Response, c
 	chain.ProcessFilter(req, resp)
 	duration := time.Since(before).Seconds()
 
-	s.requestTotal.With(s.lable(LableHandler, uri, LableHTTPStatus, strconv.Itoa(resp.StatusCode()))).Inc()
+	s.requestTotal.With(s.lable(
+		LableHandler, uri,
+		LableHTTPStatus, strconv.Itoa(resp.StatusCode()),
+		LableOrigin, getOrigin(req.Request.Header),
+	)).Inc()
 	s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
 	s.requestInFlight.With(s.lable(LableHandler, uri)).Inc()
 }
@@ -114,14 +120,17 @@ func (s *Service) lable(lableKVs ...string) prometheus.Labels {
 	return lables
 }
 
-func requestAgent(header http.Header) string {
+func getOrigin(header http.Header) string {
 	if header.Get(common.BKHTTPOtherRequestID) != "" {
 		return "ESB"
 	}
-	if header.Get("User-Agent") != "" {
-
+	if uastring := header.Get("User-Agent"); uastring != "" {
+		ua := user_agent.New(uastring)
+		browser, _ := ua.Browser()
+		if browser != "" {
+			return "browser"
+		}
 	}
 
 	return "Unknow"
-
 }
