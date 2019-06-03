@@ -13,21 +13,20 @@
                         v-if="editMainStatus === mainCagetory['id']"
                         v-click-outside="handleCloseEditMain">
                         <input type="text" ref="editInput"
-                            placeholder="请输入一级分类，回车结束"
-                            v-model="mainCagetory['name']"
+                            :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
+                            v-model="mainCagetoryName"
                             @keypress.enter="handleEditCagetory(cagetoryName)">
                     </div>
                     <template v-else>
                         <div class="cagetory-name">
                             <span>{{mainCagetory['name']}}</span>
-                            <i class="property-edit icon-cc-edit" @click.stop="handleEditMain(mainCagetory['id'])">
-                            </i>
+                            <i class="property-edit icon-cc-edit" @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])"></i>
                         </div>
                         <cmdb-dot-menu class="dot-menu">
                             <div class="menu-operational">
-                                <i @click="handleShowAddChild(mainCagetory['id'])">添加</i>
-                                <i style="cursor: not-allowed;" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">删除</i>
-                                <i v-else @click.stop="handleDeleteCagetory(mainCagetory['id'])">删除</i>
+                                <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("Common['添加']")}}</i>
+                                <i style="cursor: not-allowed;" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">{{$t("Common['删除']")}}</i>
+                                <i v-else @click.stop="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
                     </template>
@@ -38,17 +37,17 @@
                             <input type="text"
                                 ref="editInput"
                                 class="bk-form-input"
-                                placeholder="请输入二级分类"
+                                :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
                                 v-model="cagetoryName">
                             <span class="text-primary btn-confirm"
-                                @click.stop="handleAddCagetory(cagetoryName, mainCagetory['root_id'])">确定
+                                @click.stop="handleAddCagetory(cagetoryName, mainCagetory['root_id'])">{{$t("Common['确定']")}}
                             </span>
-                            <span class="text-primary" @click="handleCloseAddChild">取消</span>
+                            <span class="text-primary" @click="handleCloseAddChild">{{$t("Common['取消']")}}</span>
                         </div>
                     </div>
                     <div class="child-item" v-if="!mainCagetory['child_cagetory_list'].length && editChildStatus !== mainCagetory['id']">
                         <div class="child-title" style="color: #dcdee5 !important; background-color: transparent !important;">
-                            <span>二级分类</span>
+                            <span>{{$t("ServiceCagetory['二级分类']")}}</span>
                         </div>
                     </div>
                     <div :class="['child-item', editChildStatus === childCagetory['id'] ? 'child-edit' : '']" v-else
@@ -60,19 +59,19 @@
                             <input type="text"
                                 ref="editInput"
                                 class="bk-form-input"
-                                placeholder="请输入二级分类"
-                                v-model="childCagetory['name']">
+                                :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
+                                v-model="childCagetoryName">
                             <span class="text-primary btn-confirm"
-                                @click.stop="handleEditCagetory(childCagetory['name'], childCagetory['parent_id'])">确定
+                                @click.stop="handleEditCagetory(childCagetory['name'], childCagetory['parent_id'])">{{$t("Common['确定']")}}
                             </span>
-                            <span class="text-primary" @click="handleCloseEditChild">取消</span>
+                            <span class="text-primary" @click="handleCloseEditChild">{{$t("Common['取消']")}}</span>
                         </div>
                         <template v-else>
                             <div class="child-title">
                                 <span>{{childCagetory['name']}}</span>
                                 <div class="child-edit" v-if="!childCagetory['is_built_in']">
                                     <i class="property-edit icon-cc-edit mr10"
-                                        @click.stop="handleEditChild(childCagetory['id'])">
+                                        @click.stop="handleEditChild(childCagetory['id'], childCagetory['name'])">
                                     </i>
                                     <i class="icon-cc-tips-close" @click.stop="handleDeleteCagetory(mainCagetory['id'])"></i>
                                 </div>
@@ -87,21 +86,21 @@
                     <div class="main-edit" v-if="showAddMianCagetory">
                         <input type="text"
                             ref="addCagetoryInput"
-                            placeholder="请输入一级分类，回车结束"
+                            :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
                             v-model="cagetoryName"
                             v-click-outside="handleCloseAddBox"
                             @keypress.enter="handleAddCagetory(cagetoryName)">
                     </div>
                     <template v-else>
                         <div class="cagetory-name">
-                            <span>一级分类</span>
+                            <span>{{$t("ServiceCagetory['一级分类']")}}</span>
                         </div>
                     </template>
                 </div>
                 <div class="child-cagetory">
                     <div class="child-item">
                         <div class="child-title">
-                            <span>二级分类</span>
+                            <span>{{$t("ServiceCagetory['二级分类']")}}</span>
                         </div>
                     </div>
                 </div>
@@ -127,7 +126,10 @@
                 editChildStatus: null,
                 addChildStatus: null,
                 cagetoryName: '',
-                list: []
+                mainCagetoryName: '',
+                childCagetoryName: '',
+                list: [],
+                originList: []
             }
         },
         computed: {
@@ -148,6 +150,7 @@
                 this.searchServiceCategory({
                     params: this.$injectMetadata({})
                 }).then((data) => {
+                    this.originList = data.info
                     const list = data.info.filter(cagetory => !cagetory.hasOwnProperty('parent_id'))
                     this.list = list.map(mainCagetory => {
                         return {
@@ -199,8 +202,9 @@
                     }
                 })
             },
-            handleEditMain (id) {
+            handleEditMain (id, name) {
                 this.editMainStatus = id
+                this.mainCagetoryName = name
                 this.$nextTick(() => {
                     this.$refs.editInput[0].focus()
                 })
@@ -208,8 +212,9 @@
             handleCloseEditMain () {
                 this.editMainStatus = null
             },
-            handleEditChild (id) {
+            handleEditChild (id, name) {
                 this.editChildStatus = id
+                this.childCagetoryName = name
                 this.$nextTick(() => {
                     this.$refs.editInput[0].focus()
                 })
@@ -249,7 +254,7 @@
         }
         .cagetory-item {
             position: relative;
-            width: 294px;
+            width: 320px;
             border: 1px solid #dcdee5;
             margin-right: 30px;
             margin-bottom: 20px;
@@ -305,7 +310,7 @@
                 display: flex;
                 align-items: center;
                 input {
-                    width: 192px;
+                    width: 240px;
                     height: 42px;
                     line-height: 42px;
                     color: #63656e;
