@@ -232,6 +232,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
 
+	data.ID = int64(rspAsst.Data.Created.ID)
 	return data, nil
 }
 

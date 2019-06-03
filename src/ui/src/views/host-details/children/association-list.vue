@@ -1,8 +1,11 @@
 <template>
     <div class="association-list" v-bkloading="{ isLoading: loading }">
         <div class="association-empty" v-if="!hasAssociation">
-            <i class="bk-icon icon-empty"></i>
-            <span>{{$t('HostDetails["暂无关联关系"]')}}</span>
+            <div class="empty-content">
+                <i class="bk-icon icon-empty">
+                </i>
+                <span>{{$t('HostDetails["暂无关联关系"]')}}</span>
+            </div>
         </div>
         <template v-else>
             <template v-for="(item, itemIndex) in list">
@@ -189,11 +192,19 @@
             height: 100%;
             content: "";
         }
-        .bk-icon {
+        .empty-content {
             display: inline-block;
-            margin: 0 0 10px 0;
-            font-size: 65px;
-            color: #c3cdd7;
+            vertical-align: middle;
+            .bk-icon {
+                display: inline-block;
+                margin: 0 0 10px 0;
+                font-size: 65px;
+                color: #c3cdd7;
+            }
+            span {
+                display: inline-block;
+                width: 100%;
+            }
         }
     }
 </style>

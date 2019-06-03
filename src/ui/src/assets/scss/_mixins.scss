@@ -4,6 +4,12 @@
     white-space: nowrap;
 }
 
+@mixin space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 @mixin scrollbar {
     overflow: auto;
     &::-webkit-scrollbar {
