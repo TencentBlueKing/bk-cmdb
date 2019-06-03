@@ -1,23 +1,33 @@
 <template>
-    <div class="selector-layout">
-        <div class="host-wrapper">
-            <h2 class="title">{{$t('BusinessTopology["添加主机"]')}}</h2>
-            <div class="options">
-                <cmdb-selector class="options-selector"></cmdb-selector>
-                <cmdb-input class="options-filter" icon="bk-icon icon-search"></cmdb-input>
-                <i18n class="options-count fr" path="BusinessTopology['已选择主机']">
-                    <span place="count">{{checked.length}}</span>
-                </i18n>
+    <transition name="fade" duration="200">
+        <div class="selector-layout" v-if="visible">
+            <div class="host-wrapper">
+                <h2 class="title">{{$t('BusinessTopology["添加主机"]')}}</h2>
+                <div class="options">
+                    <cmdb-selector class="options-selector"></cmdb-selector>
+                    <cmdb-input class="options-filter" icon="bk-icon icon-search"></cmdb-input>
+                    <i18n class="options-count fr" path="BusinessTopology['已选择主机']">
+                        <span place="count">{{checked.length}}</span>
+                    </i18n>
+                </div>
+                <cmdb-table class="host-table"
+                    :loading="$loading(['getServiceProcessProperties', 'getHostSelectorList'])"
+                    :header="header"
+                    :list="list"
+                    :checked.sync="checked"
+                    :pagination="pagination"
+                    :height="286"
+                    :cross-page-check="false"
+                    @handlePageChange="handlePageChange"
+                    @handleSizeChange="handleSizeChange">
+                </cmdb-table>
+                <div class="button-wrapper">
+                    <bk-button class="button" type="primary" @click="handleConfirm">{{$t('Common["确定"]')}}</bk-button>
+                    <bk-button class="button" type="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+                </div>
             </div>
-            <cmdb-table class="host-table"
-                :header="header"
-                :list="list"
-                :pagination="pagination"
-                :height="286"
-                :cross-page-check="false">
-            </cmdb-table>
         </div>
-    </div>
+    </transition>
 </template>
 
 <script>
@@ -25,6 +35,7 @@
         data () {
             return {
                 checked: [],
+                storeChecked: [],
                 list: [],
                 header: [],
                 pagination: {
@@ -52,15 +63,24 @@
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
                     page: {
-                        start: (this.current - 1) * this.pagination.size,
+                        start: (this.pagination.current - 1) * this.pagination.size,
                         limit: this.pagination.size
                     }
                 }
+            },
+            visible () {
+                return this.$store.state.businessTopology.hostSelectorVisible
             }
         },
-        async created () {
-            await this.getProperties()
-            this.getList()
+        watch: {
+            visible (visible) {
+                if (visible) {
+                    (async () => {
+                        await this.getProperties()
+                        this.getList()
+                    })()
+                }
+            }
         },
         methods: {
             async getProperties () {
@@ -71,7 +91,7 @@
                             bk_supplier_account: this.$store.getters.supplierAccount
                         },
                         config: {
-                            requestId: 'get_service_process_properties',
+                            requestId: 'getServiceProcessProperties',
                             fromCache: true
                         }
                     })
@@ -84,6 +104,7 @@
             },
             async getList () {
                 try {
+                    console.log('fuck')
                     const data = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.params,
                         config: {
@@ -91,11 +112,13 @@
                         }
                     })
                     this.pagination.count = data.count
-                    this.list = this.$tools.flatternList(this.properties, data.info.map(item => item.host))
+                    this.checked = []
+                    this.list = this.$tools.flattenList(this.properties, data.info.map(item => item.host))
                 } catch (e) {
                     console.error(e)
                     this.pagination.count = 0
                     this.list = []
+                    this.checked = []
                 }
             },
             setHeader () {
@@ -115,6 +138,22 @@
                         name: property.bk_property_name
                     }
                 }))
+            },
+            handlePageChange (page) {
+                this.pagination.current = page
+                this.getList()
+            },
+            handleSizeChange (size) {
+                this.pagination.size = size
+                this.pagination.current = 1
+                this.getList()
+            },
+            handleConfirm () {
+                this.$store.commit('businessTopology/setSelectedHost', [...this.checked])
+                this.$store.commit('businessTopology/setHostSelectorVisible', false)
+            },
+            handleCancel () {
+                this.$store.commit('businessTopology/setHostSelectorVisible', false)
             }
         }
     }
@@ -140,19 +179,20 @@
     .host-wrapper {
         width: 850px;
         height: 460px;
-        padding: 15px 24px 0;
+        padding: 15px 0 0;
         text-align: left;
         background-color: #fff;
         box-shadow:0px 4px 12px 0px rgba(0,0,0,0.2);
         border-radius:2px;
         @include inlineBlock;
         .title {
+            margin: 0 24px;
             font-size: 24px;
             font-weight: normal;
             line-height: 31px;
         }
         .options {
-            margin: 14px 0 0 0;
+            margin: 14px 24px 0;
             .options-selector {
                 width: 200px;
             }
@@ -171,7 +211,30 @@
             }
         }
         .host-table {
-            margin: 10px 0 0 0;
+            margin: 10px 24px 0;
         }
+    }
+    .button-wrapper {
+        height: 50px;
+        margin: 18px 0 0;
+        padding: 0 24px;
+        line-height: 50px;
+        text-align: right;
+        font-size: 0;
+        background-color: #FAFBFD;
+        border-top: 1px solid #DCDEE5;
+        .button {
+            height: 32px;
+            line-height: 30px;
+            font-size: 14px;
+            margin: 0 0 0 10px;
+        }
+    }
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .2s;
+    }
+    .fade-enter,
+    .fade-leave-to {
+        opacity: 0;
     }
 </style>
