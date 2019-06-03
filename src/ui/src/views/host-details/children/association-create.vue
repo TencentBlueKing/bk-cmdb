@@ -328,7 +328,9 @@
                         '_label': `${isSource ? type['src_des'] : type['dest_des']}-${model['bk_obj_name']}`
                     }
                 })
-                this.options = options
+                const allLabel = options.map(option => option._label)
+                const uniqueLabel = [...new Set(allLabel)]
+                this.options = uniqueLabel.map(label => options.find(option => option._label === label))
             },
             async handleSelectObj (asstId, option) {
                 this.tempData = []

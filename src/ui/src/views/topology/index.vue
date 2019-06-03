@@ -281,7 +281,6 @@
             },
             getCommonProperties (objId) {
                 if (this.properties.hasOwnProperty(objId)) {
-                    this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
@@ -294,7 +293,6 @@
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
-                    this.tab.properties = properties
                     return properties
                 })
             },
@@ -504,7 +502,8 @@
                 const selectedNode = this.tree.selectedNode
                 if (this.showAttributePanel && active === 'attribute') {
                     if (this.tab.type === 'details') {
-                        await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        const [, properties] = await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        this.tab.properties = properties
                         await this.getNodeInst()
                     } else {
                         const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])

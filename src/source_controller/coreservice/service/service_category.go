@@ -73,7 +73,7 @@ func (s *coreService) ListServiceCategories(params core.ContextParams, pathParam
 
 	if fp.BusinessID == 0 {
 		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
 	}
 
 	result, err := s.core.ProcessOperation().ListServiceCategories(params, fp.BusinessID, fp.WithStatistics)

@@ -126,7 +126,9 @@
         "申请创建业务": "Apply to create business",
         "请选择时间": "Please select time",
         "更多详情": "More details",
-        "更多": "Show All"
+        "更多": "Show All",
+        "请输入关键字": "Please input keyword...",
+        "添加": "Add"
     },
     "Nav": {
         "首页": "Index",
@@ -154,9 +156,11 @@
         "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
         "后台管理标题": "Back-stage Management",
-        "基础资源": "Basic Resource",
         "云资源发现": "Cloud resource discovery",
-        "资源确认": "Resource confirm"
+        "资源确认": "Resource confirm",
+        "服务管理": "Service Management",
+        "服务模板": "Service Template",
+        "服务分类": "Service Cagetory"
     },
     "Index": {
         "首页": "Index",
@@ -506,7 +510,22 @@
         "点击此跳转": "click to jump",
         "进程信息": "Process information",
         "当前业务并无进程，可点击下方按钮新增": "The current business does not have a process, click the button below to add",
-        "进程管理提示": "The \"process management\" function can help the business management process port and other basic information. The main application scenario is the monitoring system of Blue Whale monitoring the process."
+        "进程管理提示": "The \"process management\" function can help the business management process port and other basic information. The main application scenario is the monitoring system of Blue Whale monitoring the process.",
+        "进程名称": "Process Name",
+        "监听IP": "Listening IP",
+        "端口": "Port",
+        "启动路径": "Work Path",
+        "启动用户": "User",
+        "添加进程": "Add Process",
+        "锁定": "Locking",
+        "添加进程提示": "Fill in the instructions: Check \"Lock\", the value of this field will be set to a fixed value. This field does not support modification when creating a service instance. If it is not checked, it will be set to the default value and support subsequent modifications.",
+        "基本属性": "Basic Attribute",
+        "端口信息": "Port Information",
+        "其他属性": "Other Attributes",
+        "进程别名": "Process alias",
+        "启动参数匹配规则": "Start parameter matching rule",
+        "进程描述": "Process description",
+        "协议": "protocol"
     },
     "BusinessTopology": {
         "业务拓扑": "Business Topology",
@@ -605,7 +624,8 @@
         "条件筛选": "Filter",
         "树形": "Tree",
         "拓扑": "Topo",
-        "更新确认": "It's single relationship with current model, update relationship will cancel the previous relationship, confirm to update?"
+        "更新确认": "It's single relationship with current model, update relationship will cancel the previous relationship, confirm to update?",
+        "确认取消": "Confirm to cancel association?"
     },
     "Form": {
         "请输入长字符": "Please input long char",
@@ -777,6 +797,35 @@
         "最新": "Latest",
         "采集方式": "Action",
         "获取单个": "Single"
+    },
+    "ServiceManagement": {
+        "功能提示": "Service template: By creating a template, the automatic application process is configured. When the template is applied, the instance automatically applies all the information of the template template. The template is not valid immediately when the template is modified. Manual synchronization is required on the host instance interface.",
+        "批量删除": "Batch Deletion",
+        "模板名称": "Template name",
+        "进程数量": "Number of processes",
+        "应用数量": "Number of applications",
+        "修改人": "Modifier",
+        "修改时间": "Update Time",
+        "新建服务模版": "New Service Template",
+        "不可删除": "The template has been applied and cannot be deleted. To delete it, please clear the instance under the template first.",
+        "确认删除模版": "Confirm delete template?",
+        "即将删除服务模版": " Service template {name} will be deleted",
+        "请输入模版名称": "Please enter the template name",
+        "服务分类": "Service Classification",
+        "新建进程": "Create Process",
+        "应用实例": "Applications",
+        "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance.",
+        "请选择一级分类": "Please select first classification",
+        "请选择二级分类": "Please select secondary classification",
+        "进程名称已存在": "Process name already exists.",
+        "确认删除模板进程": "Confirm delete template process?"
+    },
+    "ServiceCagetory": {
+        "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion.",
+        "请输入一级分类": "Please enter and return to the end",
+        "请输入二级分类": "Please enter",
+        "一级分类": "First classification",
+        "二级分类": "Secondary classification"
     },
     "HostDetails": {
         "主机详情": "Host Details",
