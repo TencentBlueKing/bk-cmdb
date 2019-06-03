@@ -37,8 +37,8 @@ func (u URLPath) FilterChain(req *restful.Request) (RequestType, error) {
 		return EventType, nil
 	case u.WithDataCollect(req):
 		return DataCollectType, nil
-	case u.WithStatistics(req):
-		return StatisticsType, nil
+	case u.WithOperation(req):
+		return OperationType, nil
 	default:
 		return UnknownType, errors.New("unknown requested with backend process")
 	}
@@ -261,14 +261,14 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 	return false
 }
 
-// WithStatistics transform StatisticalReport's url
-func (u *URLPath) WithStatistics(req *restful.Request) (isHit bool) {
-	statisticsRoot := "/statistics/v3"
+// WithOperation transform OperationStatistic's url
+func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
+	statisticsRoot := "/operation/v3"
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/statistics/"):
-		from, to, isHit = rootPath+"/statistics", statisticsRoot, true
+	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
+		from, to, isHit = rootPath+"/operation", statisticsRoot, true
 
 	default:
 		isHit = false

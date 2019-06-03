@@ -349,7 +349,7 @@ maxIDleConns = 1000
     with open(output + "proccontroller.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
-    # statistics.conf
+    # operation.conf
     statistics_file_template_str = '''
 [mongodb]
 host = $mongo_host
@@ -374,7 +374,7 @@ maxIDleConns = 1000
 
     template = FileTemplate(statistics_file_template_str)
     result = template.substitute(**context)
-    with open(output + "statistics.conf", 'w') as tmp_file:
+    with open(output + "operation.conf", 'w') as tmp_file:
         tmp_file.write(result)
 
     # txc.conf

@@ -19,8 +19,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -31,149 +31,80 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/coreservice/app/options"
-	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/association"
-	"configcenter/src/source_controller/coreservice/core/auditlog"
-	"configcenter/src/source_controller/coreservice/core/datasynchronize"
-	"configcenter/src/source_controller/coreservice/core/host"
-	"configcenter/src/source_controller/coreservice/core/instances"
-	"configcenter/src/source_controller/coreservice/core/mainline"
-	"configcenter/src/source_controller/coreservice/core/model"
-<<<<<<< HEAD
-	"configcenter/src/source_controller/coreservice/core/process"
-=======
-	"configcenter/src/source_controller/coreservice/core/operation"
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/dal/mongo/remote"
-	dalredis "configcenter/src/storage/dal/redis"
+	"configcenter/src/scene_server/operation_server/app/options"
+	"configcenter/src/scene_server/operation_server/core"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
 )
 
-// CoreServiceInterface the topo service methods used to init
-type CoreServiceInterface interface {
-	WebService() *restful.Container
+type Service struct {
+	Engine      *backbone.Engine
+	Config      options.Config
+	Core        *core.Operation
+	AuthManager *extensions.AuthManager
+	Error       errors.CCErrorIf
+	Language    language.CCLanguageIf
+	actions     []action
+}
+
+type ServiceInterface interface {
+	WebService() *restful.WebService
 	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
 }
 
-// New create topo service instance
-func New() CoreServiceInterface {
-	return &coreService{}
+func New() ServiceInterface {
+	return &Service{}
 }
 
-// coreService topo service
-type coreService struct {
-	engin    *backbone.Engine
-	language language.CCLanguageIf
-	err      errors.CCErrorIf
-	actions  []action
-	cfg      options.Config
-	core     core.Core
-	db       dal.RDB
-	cahce    *redis.Client
-}
+func (s *Service) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
 
-func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
-
-	s.cfg = cfg
-	s.engin = engin
+	s.Config = cfg
+	s.Engine = engin
 
 	if nil != err {
-		s.err = err
+		s.Error = err
 	}
 
 	if nil != language {
-		s.language = language
+		s.Language = language
 	}
 
-	var db dal.DB
-	var dbErr error
-	if cfg.Mongo.Transaction == "enable" {
-		blog.Infof("connecting to transaction manager")
-		db, dbErr = remote.NewWithDiscover(engin.ServiceManageInterface.TMServer().GetServers, cfg.Mongo)
-		if dbErr != nil {
-			blog.Errorf("failed to connect the txc server, error info is %s", dbErr.Error())
-			return dbErr
-		}
-	} else {
-		db, dbErr = local.NewMgo(cfg.Mongo.BuildURI(), time.Minute)
-		if dbErr != nil {
-			blog.Errorf("failed to connect the remote server(%s), error info is %s", cfg.Mongo.BuildURI(), dbErr.Error())
-			return dbErr
-		}
-	}
-	cache, cacheRrr := dalredis.NewFromConfig(cfg.Redis)
-	if cacheRrr != nil {
-		blog.Errorf("new redis client failed, err: %v", cacheRrr)
-		return cacheRrr
-	}
-
-	s.db = db
-	s.cahce = cache
-
-	// connect the remote mongodb
-	s.core = core.New(
-		model.New(db, s),
-		instances.New(db, s, cache),
-		association.New(db, s),
-		datasynchronize.New(db, s),
-		mainline.New(db),
-		host.New(db, cache, s),
-		auditlog.New(db),
-<<<<<<< HEAD
-		process.New(db, s),
-=======
-		operation.New(db),
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
-	)
 	return nil
 }
 
 // WebService the web service
-func (s *coreService) WebService() *restful.Container {
+func (s *Service) WebService() *restful.WebService {
 
-	container := restful.NewContainer()
-	container.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 	// init service actions
 	s.initService()
 
-	api := new(restful.WebService)
+	ws := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
-		return s.err
+		return s.Error
 	}
-	api.Path("/api/v3").Filter(s.engin.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	ws.Path("/operation/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
 	for _, actionItem := range innerActions {
 		switch actionItem.Verb {
 		case http.MethodPost:
-			api.Route(api.POST(actionItem.Path).To(actionItem.Handler))
+			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
 		case http.MethodDelete:
-			api.Route(api.DELETE(actionItem.Path).To(actionItem.Handler))
+			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
 		case http.MethodPut:
-			api.Route(api.PUT(actionItem.Path).To(actionItem.Handler))
+			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
 		case http.MethodGet:
-			api.Route(api.GET(actionItem.Path).To(actionItem.Handler))
+			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
 		default:
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
 
-	container.Add(api)
-
-	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
-	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
-	container.Add(healthzAPI)
-
-	return container
+	return ws
 }
 
-func (s *coreService) createAPIRspStr(errcode int, info interface{}) (string, error) {
+func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
 
 	rsp := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
@@ -193,7 +124,7 @@ func (s *coreService) createAPIRspStr(errcode int, info interface{}) (string, er
 	return string(data), err
 }
 
-func (s *coreService) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
+func (s *Service) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
 
 	rsp := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
@@ -212,7 +143,7 @@ func (s *coreService) createCompleteAPIRspStr(errcode int, errmsg string, info i
 	return string(data), err
 }
 
-func (s *coreService) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
+func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
 		io.WriteString(resp, rsp)
@@ -221,7 +152,7 @@ func (s *coreService) sendResponse(resp *restful.Response, errorCode int, dataMs
 	}
 }
 
-func (s *coreService) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
+func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
 	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
 	if nil == rspErr {
@@ -232,7 +163,7 @@ func (s *coreService) sendCompleteResponse(resp *restful.Response, errorCode int
 
 }
 
-func (s *coreService) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
+func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
 	actionObject := action{
 		Method:                     method,
 		Path:                       path,
@@ -243,7 +174,7 @@ func (s *coreService) addAction(method string, path string, handlerFunc LogicFun
 }
 
 // Actions return the all actions
-func (s *coreService) Actions() []*httpserver.Action {
+func (s *Service) Actions() []*httpserver.Action {
 
 	var httpactions []*httpserver.Action
 	for _, a := range s.actions {
@@ -251,7 +182,6 @@ func (s *coreService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
@@ -259,14 +189,14 @@ func (s *coreService) Actions() []*httpserver.Action {
 				// get the language
 				language := util.GetLanguage(req.Request.Header)
 
-				defLang := s.language.CreateDefaultCCLanguageIf(language)
+				defLang := s.Language.CreateDefaultCCLanguageIf(language)
 
 				// get the error info by the language
-				defErr := s.err.CreateDefaultCCErrorIf(language)
+				defErr := s.Error.CreateDefaultCCErrorIf(language)
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
-					blog.Errorf("read http request body failed, err: %+v, rid: %s", err, rid)
+					blog.Errorf("read http request body failed, error:%s", err.Error())
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
@@ -275,7 +205,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -283,7 +213,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
-						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
+						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -296,7 +226,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
-					ReqID:           rid,
+					ReqID:           util.GetHTTPCCRequestID(req.Request.Header),
 					User:            user,
 				},
 					req.PathParameter,
