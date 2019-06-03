@@ -118,21 +118,14 @@ func (s *coreService) UpdateProcessInstanceRelation(params core.ContextParams, p
 }
 
 func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	processInstanceIDField := "process_instance_id"
-	processInstanceIDStr := pathParams(processInstanceIDField)
-	if len(processInstanceIDStr) == 0 {
-		blog.Errorf("DeleteProcessInstanceRelation failed, path parameter `%s` empty", processInstanceIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "process_instance_id")
+	option := metadata.DeleteProcessInstanceRelationOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("DeleteProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	processInstanceID, err := strconv.ParseInt(processInstanceIDStr, 10, 64)
-	if err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, convert path parameter %s to int failed, value: %s, err: %v", processInstanceIDField, processInstanceIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, processInstanceIDField)
-	}
-
-	if err := s.core.ProcessOperation().DeleteProcessInstanceRelation(params, processInstanceID); err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, err: %+v", err)
+	if err := s.core.ProcessOperation().DeleteProcessInstanceRelation(params, option); err != nil {
+		blog.Errorf("DeleteProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
