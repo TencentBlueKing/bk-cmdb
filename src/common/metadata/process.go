@@ -565,7 +565,7 @@ type ServiceInstance struct {
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64 `field:"host_id" json:"host_id,omitempty" bson:"host_id"`
+	HostID            int64 `field:"bk_host_id" json:"host_id,omitempty" bson:"host_id"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"module_id" json:"module_id,omitempty" bson:"module_id"`
