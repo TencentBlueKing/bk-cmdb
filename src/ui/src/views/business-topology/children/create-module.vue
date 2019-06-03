@@ -71,7 +71,6 @@
                 firstClass: '',
                 firstClassList: [],
                 secondClass: '',
-                secondClassList: [],
                 values: {}
             }
         },
@@ -79,9 +78,90 @@
             topoPath () {
                 const nodePath = [...this.parentNode.parents, this.parentNode]
                 return nodePath.map(node => node.data.bk_inst_name).join('/')
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
+            templateMap () {
+                return this.$store.state.businessTopology.templateMap
+            },
+            categoryMap () {
+                return this.$store.state.businessTopology.categoryMap
+            },
+            currentCategory () {
+                return this.firstClassList.find(category => category.id === this.firstClass) || {}
+            },
+            secondClassList () {
+                return this.currentCategory.secondCategory || []
             }
         },
+        watch: {
+            withTemplate (withTemplate) {
+                if (withTemplate) {
+                    this.firstClass = ''
+                    this.secondClass = ''
+                } else {
+                    this.template = ''
+                    this.getServiceCategories()
+                }
+            }
+        },
+        created () {
+            this.getServiceTemplates()
+        },
         methods: {
+            async getServiceTemplates () {
+                if (this.templateMap.hasOwnProperty(this.business)) {
+                    this.templateList = this.templateMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
+                            params: this.$injectMetadata()
+                        })
+                        const templates = data.info.map(item => item.service_template)
+                        this.templateList = templates
+                        this.$store.commit('businessTopology/setTemplates', {
+                            id: this.business,
+                            templates: templates
+                        })
+                    } catch (e) {
+                        console.error(e)
+                        this.templateList = []
+                    }
+                }
+            },
+            async getServiceCategories () {
+                if (this.categoryMap.hasOwnProperty(this.business)) {
+                    this.firstClassList = this.categoryMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
+                            params: this.$injectMetadata()
+                        })
+                        const categories = this.collectServiceCategories(data.info)
+                        this.firstClassList = categories
+                        this.$store.commit('businessTopology/setCategories', {
+                            id: this.business,
+                            categories: categories
+                        })
+                    } catch (e) {
+                        console.error(e)
+                        this.firstClassList = []
+                    }
+                }
+            },
+            collectServiceCategories (data) {
+                const categories = []
+                data.forEach(item => {
+                    if (!item.parent_id) {
+                        categories.push(item)
+                    }
+                })
+                categories.forEach(category => {
+                    category.secondCategory = data.filter(item => item.parent_id === category.id)
+                })
+                return categories
+            },
             handleSave () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
@@ -118,7 +198,7 @@
     .node-create-form {
         max-height: 400px;
         padding: 0 26px 27px;
-        @include scrollbar-y;
+        overflow: visible;
     }
     .form-item {
         margin: 15px 0 0 0;

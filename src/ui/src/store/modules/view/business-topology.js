@@ -2,6 +2,8 @@ import Vue from 'vue'
 const state = {
     propertyMap: {},
     propertyGroupMap: {},
+    templateMap: {},
+    categoryMap: {},
     selectedNode: null,
     hostSelectorVisible: false,
     selectedHost: []
@@ -23,6 +25,12 @@ const mutations = {
     setPropertyGroups (state, data) {
         Vue.set(state.propertyGroupMap, data.id, data.groups)
     },
+    setTemplates (state, data) {
+        Vue.set(state.templateMap, data.id, data.templates)
+    },
+    setCategories (state, data) {
+        Vue.set(state.categoryMap, data.id, data.categories)
+    },
     setSelectedNode (state, node) {
         state.selectedNode = node
     },
@@ -35,6 +43,8 @@ const mutations = {
     resetState (state) {
         state.propertyMap = {}
         state.propertyGroupMap = {}
+        state.templateMap = {}
+        state.categoryMap = {}
         state.selectedNode = null
         state.hostSelectorVisible = false
         state.selectedHost = []
