@@ -40,9 +40,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/common/expfmt"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/expfmt"
 )
 
 const (
