@@ -143,14 +143,31 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	return result, nil
 }
 
-func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams, processInstanceID int64) error {
-	relation, err := p.GetProcessInstanceRelation(ctx, processInstanceID)
-	if err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, GetProcessInstanceRelation failed, templateID: %d, err: %+v, rid: %s", processInstanceID, err, ctx.ReqID)
-		return err
+func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams, option metadata.DeleteProcessInstanceRelationOption) error {
+	deleteFilter := map[string]interface{}{}
+	if option.BusinessID != nil {
+		deleteFilter[common.BKAppIDField] = option.BusinessID
 	}
-
-	deleteFilter := map[string]int64{"process_id": relation.ProcessID}
+	if option.ProcessIDs != nil {
+		deleteFilter[common.BKProcIDField] = map[string]interface{}{
+			common.BKDBIN: option.ProcessIDs,
+		}
+	}
+	if option.ProcessTemplateIDs != nil {
+		deleteFilter[common.BKProcessTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ProcessTemplateIDs,
+		}
+	}
+	if option.ServiceInstanceIDs != nil {
+		deleteFilter[common.BKServiceInstanceIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceInstanceIDs,
+		}
+	}
+	if option.ModuleIDs != nil {
+		deleteFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
+	}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)

@@ -15,7 +15,6 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
@@ -138,9 +137,9 @@ func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts)
 	}
 
 	// delete process relation at the same time.
-	cond := condition.CreateCondition()
-	cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBIN, Value: input.ProcessInstanceIDs})
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+	deleteOption.ProcessIDs = &input.ProcessInstanceIDs
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
 		return
@@ -209,12 +208,9 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := condition.CreateCondition()
-	cond.AddConditionItem(condition.ConditionItem{
-		Field:    common.BKServiceInstanceIDField,
-		Operator: condition.BKDBEQ,
-		Value:    input.ServiceInstanceID})
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+	deleteOption.ServiceInstanceIDs = &[]int64{input.ServiceInstanceID}
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed,
 			"delete service instance: %d, but delete service instance relations failed.", input.ServiceInstanceID)
@@ -821,9 +817,9 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 				}
 
 				// remove process instance relation now.
-				cond := condition.CreateCondition()
-				cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBEQ, Value: process.ProcessID})
-				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond); err != nil {
+				deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
+				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
 						"force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v",
 						input.ServiceTemplateID, process.ProcessID, template.ID, err)
