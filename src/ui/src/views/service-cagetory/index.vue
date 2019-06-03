@@ -418,12 +418,17 @@
                     z-index: -1;
                 }
                 .child-title {
+                    @include ellipsis;
                     @include space-between;
                     color: #63656e;
                     flex: 1;
                     padding-right: 20px;
                     padding-left: 16px;
                     margin-left: 10px;
+                    span {
+                        @include ellipsis;
+                        padding-right: 10px;
+                    }
                 }
                 >span {
                     color: #c4c6cc;
