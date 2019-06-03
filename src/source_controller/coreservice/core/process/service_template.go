@@ -127,7 +127,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 	if categoryID > 0 {
 		categories, err := p.ListServiceCategories(ctx, bizID, false)
 		if err != nil {
-			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v", err)
+			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
 		}
 		childrenIDs := make([]int64, 0)
