@@ -550,7 +550,6 @@ var (
 	deleteObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/delete/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceSubTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/insttopo/object/[^\s/]+/inst/[0-9]+/?$`)
 	findObjectInstanceTopologyLatestRegexp    = regexp.MustCompile(`^/api/v3/find/instassttopo/object/[^\s/]+/inst/[0-9]+/?$`)
-	findBusinessInstanceTopologyLatestRegexp  = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
 	findObjectInstancesLatestRegexp           = regexp.MustCompile(`^/api/v3/find/instance/object/[^\s/]+/?$`)
 )
 
@@ -838,29 +837,6 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	// find business instance topology operation.
-	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
-		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("find business instance topology, but got invalid url")
-			return ps
-		}
-
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelInstanceTopology,
-					Action: meta.Find,
 				},
 			},
 		}
@@ -1530,10 +1506,10 @@ const (
 )
 
 var (
-	deleteMainlineObjectLatestRegexp        = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
-	findMainlineInstanceTopoLatestRegexp    = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
-	findMainineSubInstanceTopoLatestRegexp  = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
-	findMainlineIdleFaultModuleLatestRegexp = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
+	deleteMainlineObjectLatestRegexp         = regexp.MustCompile(`^/api/v3/delete/topomodelmainline/object/[^\s/]+/?$`)
+	findBusinessInstanceTopologyLatestRegexp = regexp.MustCompile(`^/api/v3/find/topoinst/biz/[0-9]+/?$`)
+	findMainineSubInstanceTopoLatestRegexp   = regexp.MustCompile(`^/api/v3/topoinstchild/object/[^\s/]+/biz/[0-9]+/inst/[0-9]+/?$`)
+	findMainlineIdleFaultModuleLatestRegexp  = regexp.MustCompile(`^/api/v3/find/topointernal/biz/[0-9]+/?$`)
 )
 
 func (ps *parseStream) mainlineLatest() *parseStream {
@@ -1598,26 +1574,6 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 		return ps
 	}
 
-	// find mainline instance topology operation.
-	// TODO: confirm this api about multiple biz filed in url and metadata.
-	if ps.hitRegexp(findMainlineInstanceTopoLatestRegexp, http.MethodGet) {
-		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
-		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
-		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.MainlineInstanceTopology,
-					Action: meta.Find,
-				},
-			},
-		}
-
-		return ps
-	}
-
 	// find mainline object instance's sub-instance topology operation.
 	if ps.hitRegexp(findMainineSubInstanceTopoLatestRegexp, http.MethodGet) {
 		if len(ps.RequestCtx.Elements) != 9 {
@@ -1665,6 +1621,30 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	// find business instance topology operation.
+	// also is find mainline instance topology operation.
+	if ps.hitRegexp(findBusinessInstanceTopologyLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				BusinessID: bizID,
+				Basic: meta.Basic{
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
+				},
+			},
+		}
 		return ps
 	}
 

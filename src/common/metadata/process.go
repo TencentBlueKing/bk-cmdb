@@ -185,6 +185,13 @@ type ListServiceInstancesWithHostInput struct {
 	HostID   int64    `json:"host_id"`
 }
 
+type UpdateProcessTemplateInput struct {
+	Metadata          Metadata         `json:"metadata"`
+	ProcessTemplateID int64            `json:"process_template_id"`
+	ServiceTemplateID int64            `json:"service_template_id"`
+	ProcessProperty   *ProcessProperty `json:"process_property"`
+}
+
 type SocketBindType string
 
 const (
