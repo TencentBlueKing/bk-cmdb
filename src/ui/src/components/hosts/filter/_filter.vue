@@ -173,11 +173,13 @@
             ...mapGetters('objectBiz', ['bizId']),
             filterConfigProperties () {
                 const properties = {}
+                console.log('properties: ', this.properties)
                 Object.keys(this.properties).forEach(objId => {
                     if (!['biz'].includes(objId)) {
                         properties[objId] = this.properties[objId]
                     }
                 })
+                console.log('properties2: ', properties)
                 return properties
             },
             customFields () {
@@ -282,7 +284,8 @@
                     }
                 }).then(result => {
                     Object.keys(this.properties).forEach(objId => {
-                        this.properties[objId] = result[objId].filter(property => property['bk_property_type'] !== 'foreignkey')
+                        // this.properties[objId] = result[objId].filter(property => property['bk_property_type'] !== 'foreignkey')
+                        this.properties[objId] = result[objId]
                     })
                     return result
                 })

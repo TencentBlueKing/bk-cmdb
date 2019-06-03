@@ -128,6 +128,15 @@ func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
 }
 
+func (s *coreService) initOperation() {
+	s.addAction(http.MethodPost, "/read/operation/inst/count", s.SearchInstCount, nil)
+	s.addAction(http.MethodPost, "/read/operation/common/aggregate", s.CommonAggregate, nil)
+	s.addAction(http.MethodDelete, "/delete/operation/chart/%v", s.DeleteOperationChart, nil)
+	s.addAction(http.MethodPost, "/create/operation/chart", s.CreateOperationChart, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart", s.SearchOperationChart, nil)
+	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)
+}
+
 func (s *coreService) initService() {
 	s.initHealth()
 	s.initModelClassification()
@@ -141,4 +150,5 @@ func (s *coreService) initService() {
 	s.initMainline()
 	s.host()
 	s.audit()
+	s.initOperation()
 }

@@ -1032,3 +1032,8 @@ const (
 	AttributeIDMaxLength          = 20
 	AttributeNameMaxLength        = 20
 )
+
+const (
+	OperationCustom     = "custom"
+	OperationReportType = "report_type"
+)

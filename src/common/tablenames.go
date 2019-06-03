@@ -94,6 +94,11 @@ const (
 	BKTableNameCloudSyncHistory       = "cc_CloudSyncHistory"
 	BKTableNameCloudResourceConfirm   = "cc_CloudResourceConfirm"
 	BKTableNameResourceConfirmHistory = "cc_ResourceConfirmHistory"
+
+	// Operation tables
+	BKTableNameChartConfig   = "cc_ChartConfig"
+	BKTableNameChartPosition = "cc_ChartPosition"
+	BKTableNameChartData     = "cc_ChartData"
 )
 
 // AllTables alltables
@@ -142,6 +147,9 @@ var AllTables = []string{
 	BKTableNameResourceConfirmHistory,
 	BKTableNameObjUnique,
 	BKTableNameAsstDes,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 }
 
 // GetInstTableName returns inst data table name

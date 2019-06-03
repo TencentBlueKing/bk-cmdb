@@ -153,6 +153,12 @@ type AuditOperation interface {
 	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
 }
 
+type StatisticOperation interface {
+	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
+	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
+	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
+}
+
 // Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
@@ -162,6 +168,7 @@ type Core interface {
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
+	StatisticOperation() StatisticOperation
 }
 
 type core struct {
@@ -172,10 +179,11 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
+	operation       StatisticOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -184,6 +192,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
+		operation:       operation,
 	}
 }
 
@@ -213,4 +222,8 @@ func (m *core) HostOperation() HostOperation {
 
 func (m *core) AuditOperation() AuditOperation {
 	return m.audit
+}
+
+func (m *core) StatisticOperation() StatisticOperation {
+	return m.operation
 }

@@ -13,19 +13,24 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/spf13/pflag"
 )
 
-// ServerOption define option of server in flags
 type ServerOption struct {
 	ServConf *config.CCAPIConfig
 }
 
-// NewServerOption create a ServerOption object
+type Config struct {
+	Mongo mongo.Config
+	Redis redis.Config
+	Auth  authcenter.AuthConfig
+}
+
 func NewServerOption() *ServerOption {
 	s := ServerOption{
 		ServConf: config.NewCCAPIConfig(),
@@ -34,14 +39,8 @@ func NewServerOption() *ServerOption {
 	return &s
 }
 
-// AddFlags add flags
 func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.ServConf.AddrPort, "addrport", "127.0.0.1:60011", "The ip address and port for the serve on")
 	fs.StringVar(&s.ServConf.RegDiscover, "regdiscv", "127.0.0.1:2181", "hosts of register and discover server. e.g: 127.0.0.1:2181")
 	fs.StringVar(&s.ServConf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
-}
-
-type Config struct {
-	Redis redis.Config
-	Auth  authcenter.AuthConfig
 }

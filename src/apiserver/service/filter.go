@@ -33,7 +33,7 @@ const (
 	ProcType        RequestType = "proc"
 	EventType       RequestType = "event"
 	DataCollectType RequestType = "collect"
-	StatisticsType  RequestType = "statistics"
+	OperationType   RequestType = "operation"
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -85,7 +85,7 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	case DataCollectType:
 		servers, err = s.discovery.DataCollect().GetServers()
 
-	case StatisticsType:
+	case OperationType:
 		servers, err = s.discovery.DataCollect().GetServers()
 	}
 

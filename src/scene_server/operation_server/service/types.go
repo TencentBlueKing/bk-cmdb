@@ -15,7 +15,7 @@ package service
 import (
 	"configcenter/src/common/http/httpserver"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/scene_server/operation_server/core"
 )
 
 // LogicFunc the core core function definition
