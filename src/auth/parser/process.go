@@ -708,7 +708,7 @@ func (ps *parseStream) ServiceInstance() *parseStream {
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
 					Type:   meta.ProcessServiceInstance,
-					Action: meta.Update,
+					Action: meta.Create,
 				},
 				BusinessID: bizID,
 			},
