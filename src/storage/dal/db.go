@@ -13,11 +13,11 @@
 package dal
 
 import (
-	"context"
-	"errors"
-
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/types"
+
+	"context"
+	"errors"
 )
 
 // Errors defind
