@@ -215,6 +215,7 @@ type ProcessOperation interface {
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
+	StatisticOperation() StatisticOperation
 }
 
 type core struct {
@@ -225,11 +226,14 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
+<<<<<<< HEAD
 	process         ProcessOperation
 }
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
+=======
+>>>>>>> 3a1b6ccd5... feature: 运营统计报表
 	operation       StatisticOperation
 }
 
@@ -243,7 +247,10 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
+<<<<<<< HEAD
 		process:         process,
+=======
+>>>>>>> 3a1b6ccd5... feature: 运营统计报表
 		operation:       operation,
 	}
 }
@@ -276,9 +283,12 @@ func (m *core) AuditOperation() AuditOperation {
 	return m.audit
 }
 
+<<<<<<< HEAD
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
 }
+=======
+>>>>>>> 3a1b6ccd5... feature: 运营统计报表
 func (m *core) StatisticOperation() StatisticOperation {
 	return m.operation
 }

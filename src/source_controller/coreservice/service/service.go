@@ -41,7 +41,11 @@ import (
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"configcenter/src/source_controller/coreservice/core/process"
+=======
+	"configcenter/src/source_controller/coreservice/core/operation"
+>>>>>>> 3a1b6ccd5... feature: 运营统计报表
 =======
 	"configcenter/src/source_controller/coreservice/core/operation"
 >>>>>>> 3a1b6ccd5... feature: 运营统计报表
@@ -125,7 +129,11 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		host.New(db, cache, s),
 		auditlog.New(db),
 <<<<<<< HEAD
+<<<<<<< HEAD
 		process.New(db, s),
+=======
+		operation.New(db),
+>>>>>>> 3a1b6ccd5... feature: 运营统计报表
 =======
 		operation.New(db),
 >>>>>>> 3a1b6ccd5... feature: 运营统计报表

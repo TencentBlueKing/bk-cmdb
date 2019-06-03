@@ -146,9 +146,6 @@ func (s *coreService) initService() {
 	s.initMainline()
 	s.host()
 	s.audit()
-<<<<<<< HEAD
 	s.initProcess()
-=======
 	s.initOperation()
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
 }
