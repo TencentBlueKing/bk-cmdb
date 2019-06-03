@@ -28,7 +28,7 @@ import cagetory from '@/views/service-cagetory/router.config'
 
 import serviceInstance from '@/views/service-instance/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
-import statisticalReport from '@/views/statistical-report/router.config'
+import statisticalReport from '@/views/operation/router.config'
 
 Vue.use(Router)
 

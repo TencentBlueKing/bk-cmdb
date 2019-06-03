@@ -101,6 +101,10 @@ const (
 	BKTableNameServiceInstance         = "cc_ServiceInstance"
 	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
 	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
+	// Operation tables
+	BKTableNameChartConfig   = "cc_ChartConfig"
+	BKTableNameChartPosition = "cc_ChartPosition"
+	BKTableNameChartData     = "cc_ChartData"
 )
 
 // AllTables alltables
@@ -154,6 +158,9 @@ var AllTables = []string{
 	BKTableNameServiceInstance,
 	BKTableNameProcessTemplate,
 	BKTableNameProcessInstanceRelation,
+	BKTableNameChartConfig,
+	BKTableNameChartPosition,
+	BKTableNameChartData,
 }
 
 // GetInstTableName returns inst data table name

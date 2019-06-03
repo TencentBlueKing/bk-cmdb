@@ -157,6 +157,13 @@ type AuditOperation interface {
 }
 
 // Core core interfaces methods
+type StatisticOperation interface {
+	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
+	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
+	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
+}
+
+// Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
@@ -223,6 +230,11 @@ type core struct {
 
 // New create core
 func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
+	operation       StatisticOperation
+}
+
+// New create core
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -232,6 +244,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		host:            host,
 		audit:           audit,
 		process:         process,
+		operation:       operation,
 	}
 }
 
@@ -265,4 +278,7 @@ func (m *core) AuditOperation() AuditOperation {
 
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
+}
+func (m *core) StatisticOperation() StatisticOperation {
+	return m.operation
 }

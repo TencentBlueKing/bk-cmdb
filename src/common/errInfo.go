@@ -639,6 +639,16 @@ const (
 
 	// coreservice 1113xxx
 
+	// operation 1114xxx
+	CCErrOperationBizModuleHostAmountFail = 1114001
+	CCErrOperationNewAddStatisticFail     = 1114002
+	CCErrOperationSearchStatisticsFail    = 1114003
+	CCErrOperationUpdateStatisticsFail    = 1114004
+	CCErrOperationGetChartDataFail        = 1114005
+	CCErrOperationDeleteStatisticFail     = 1114006
+	CCErrOperationChartAlreadyExist       = 1114007
+	CCErrOperationGetModelInstCountFail   = 1114008
+
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
