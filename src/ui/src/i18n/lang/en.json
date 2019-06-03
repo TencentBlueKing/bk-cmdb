@@ -127,7 +127,8 @@
         "请选择时间": "Please select time",
         "更多详情": "More details",
         "更多": "Show All",
-        "请输入关键字": "Please input keyword..."
+        "请输入关键字": "Please input keyword...",
+        "添加": "Add"
     },
     "Nav": {
         "首页": "Index",
@@ -814,13 +815,17 @@
         "新建进程": "Create Process",
         "应用实例": "Applications",
         "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance.",
-        "请选择一级分类": "Please select a first classification",
-        "请选择二级分类": "Please select a secondary classification",
+        "请选择一级分类": "Please select first classification",
+        "请选择二级分类": "Please select secondary classification",
         "进程名称已存在": "Process name already exists.",
         "确认删除模板进程": "Confirm delete template process?"
     },
     "ServiceCagetory": {
-        "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion."
+        "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion.",
+        "请输入一级分类": "Please enter and return to the end",
+        "请输入二级分类": "Please enter",
+        "一级分类": "First classification",
+        "二级分类": "Secondary classification"
     },
     "HostDetails": {
         "主机详情": "Host Details",
