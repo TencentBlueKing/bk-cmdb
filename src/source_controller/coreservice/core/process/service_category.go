@@ -53,8 +53,8 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	// check name unique in business scope
 	var count uint64
 	filter := map[string]interface{}{
-		"metadata": category.Metadata,
-		"name":     category.Name,
+		common.MetadataField: category.Metadata,
+		"name":               category.Name,
 	}
 	if count, err = p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Count(ctx); nil != err {
 		blog.Errorf("CreateServiceCategory failed, mongodb query failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
@@ -92,7 +92,9 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 func (p *processOperation) GetServiceCategory(ctx core.ContextParams, categoryID int64) (*metadata.ServiceCategory, error) {
 	category := metadata.ServiceCategory{}
 
-	filter := map[string]int64{common.BKFieldID: categoryID}
+	filter := map[string]int64{
+		common.BKFieldID: categoryID,
+	}
 	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx.Context, &category); nil != err {
 		blog.Errorf("GetServiceCategory failed, mongodb failed, table: %s, filter: %+v, category: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, category, err, ctx.ReqID)
 		if p.dbProxy.IsNotFoundError(err) {
@@ -136,7 +138,7 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategory, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]mapstr.MapStr{
-		"metadata": md.ToMapStr(),
+		common.MetadataField: md.ToMapStr(),
 	}
 
 	categories := make([]metadata.ServiceCategory, 0)
@@ -179,7 +181,7 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 	}
 
 	// category that referenced by service template shouldn't be removed
-	usageFilter := map[string]int64{"service_category_id": category.ID}
+	usageFilter := map[string]int64{common.BKServiceCategoryIDField: category.ID}
 	usageCount, err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, usageFilter, err, ctx.ReqID)
