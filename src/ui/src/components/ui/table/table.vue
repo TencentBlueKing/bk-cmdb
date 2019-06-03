@@ -7,7 +7,7 @@
         :style="{ height: wrapperHeight, width: wrapperWidth }">
         <div class="table-layout">
             <cmdb-table-selector ref="headSelector" class="head-selector"
-                v-if="hasCheckbox && (pagination.count > pagination.size)"
+                v-if="hasCheckbox && crossPageCheck && (pagination.count > pagination.size)"
                 :layout="layout"
                 :total="pagination.count"
                 :selected-count="checked.length"
@@ -116,6 +116,10 @@
                 }
             },
             multipleCheck: {
+                type: Boolean,
+                default: true
+            },
+            crossPageCheck: {
                 type: Boolean,
                 default: true
             },

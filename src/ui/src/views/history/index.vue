@@ -175,7 +175,7 @@
                                 'op_time': this.$tools.formatTime(data['op_time'])
                             }
                         })
-                        this.list = this.$tools.flatternList(this.properties, list)
+                        this.list = this.$tools.flattenList(this.properties, list)
                     } catch (e) {
                         this.list = []
                         this.$error(e.message)

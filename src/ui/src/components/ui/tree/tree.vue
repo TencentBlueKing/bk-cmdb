@@ -152,39 +152,51 @@
                 })
             },
             removeNode (nodeId) {
+                debugger
                 const ids = Array.isArray(nodeId) ? nodeId : [nodeId]
-                const deletedIndex = []
+                const nodes = []
                 ids.forEach(id => {
                     const node = this.getNodeById(id)
                     if (node) {
-                        deletedIndex.push(id)
-                        this.$delete(this.map, id)
-                        this.nodes.splice(node.index, 1)
-                        if (node.parent) {
-                            node.parent.removeChild(node)
-                        }
+                        nodes.push(node)
                     }
                 })
-                const changedIndex = Math.min(...deletedIndex)
-                this.nodes.slice(changedIndex).forEach((node, index) => {
-                    node.index = changedIndex + index
+                // 从最大的node.index开始倒序splice
+                nodes.sort((M, N) => N.index - M.index)
+                nodes.forEach(node => {
+                    const removeNodes = [node, ...node.descendants]
+                    this.nodes.splice(node.index, removeNodes.length)
+                    if (node.parent) {
+                        node.parent.removeChild(node)
+                    }
+                })
+                const minChangedIndex = Math.min(...nodes.map(node => node.index))
+                this.nodes.slice(minChangedIndex).forEach((node, index) => {
+                    node.index = minChangedIndex + index
                 })
             },
             async setSelected (nodeId, selected = true, byEvent = false) {
                 if (!selected) {
                     this.selected = null
+                    this.$emit('select-change', null)
                     return false
                 }
                 if (nodeId === this.selected) {
                     return false
                 }
                 const node = this.getNodeById(nodeId)
-                if (byEvent && typeof this.beforeSelect === 'function') {
-                    const confirmSelect = await this.beforeSelect(node)
-                    if (confirmSelect) {
+                if (byEvent) {
+                    if (typeof this.beforeSelect === 'function') {
+                        const confirmSelect = await this.beforeSelect(node)
+                        if (confirmSelect) {
+                            this.selected = nodeId
+                        } else {
+                            return false
+                        }
+                    } else {
                         this.selected = nodeId
-                        this.$emit('select-change', node)
                     }
+                    this.$emit('select-change', node)
                 } else {
                     this.selected = nodeId
                 }
