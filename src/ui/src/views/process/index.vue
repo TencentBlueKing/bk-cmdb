@@ -253,9 +253,9 @@
                 })
                 this.table.header = header
             },
-            async handleEdit (flatternItem) {
+            async handleEdit (flattenItem) {
                 const list = await this.getProcessList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_process_id'] === flatternItem['bk_process_id'])
+                const inst = list.info.find(item => item['bk_process_id'] === flattenItem['bk_process_id'])
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
             },
@@ -292,7 +292,7 @@
                             bizId: this.bizId,
                             processId: originalValues['bk_process_id']
                         }).then(process => {
-                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, process)
+                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, process)
                         })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
@@ -337,7 +337,7 @@
             },
             getTableData () {
                 this.getProcessList().then(data => {
-                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     return data
                 })

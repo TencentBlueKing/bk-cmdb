@@ -9,9 +9,7 @@ export default class TreeNode {
         this.tree = tree
         this._vNode = null
 
-        const treeOptions = tree.nodeOptions
         this.id = getNodeId(data, tree)
-        this.name = data[treeOptions.nameKey]
         this.icon = getNodeIcon(data, tree)
 
         this.level = options.level
@@ -31,6 +29,10 @@ export default class TreeNode {
         this.timer = null
     }
 
+    get name () {
+        return this.data[this.tree.nodeOptions.nameKey]
+    }
+
     set vNode (vNode) {
         this._vNode = vNode
         if (this.expanded) {
@@ -47,6 +49,15 @@ export default class TreeNode {
             return []
         }
         return [...this.parent.parents, this.parent]
+    }
+
+    get descendants () {
+        const descendants = []
+        this.children.forEach(node => {
+            descendants.push(node)
+            descendants.push(...node.descendants)
+        })
+        return descendants
     }
 
     get isFirst () {

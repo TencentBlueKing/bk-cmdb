@@ -6,7 +6,7 @@
             <p class="empty-tips">您可以先跳转模版添加进程或直接添加主机，后续再添加模版进程</p>
             <div class="empty-options">
                 <bk-button class="empty-button" type="primary">跳转模板添加进程</bk-button>
-                <bk-button class="empty-button" type="default">添加主机</bk-button>
+                <bk-button class="empty-button" type="default" @click="handleAddHost">添加主机</bk-button>
             </div>
         </div>
     </div>
@@ -16,6 +16,11 @@
     export default {
         data () {
             return {}
+        },
+        methods: {
+            handleAddHost () {
+                this.$store.commit('businessTopology/setHostSelectorVisible', true)
+            }
         }
     }
 </script>

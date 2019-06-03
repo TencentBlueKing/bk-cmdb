@@ -11,7 +11,8 @@
                 childrenKey: 'child'
             }"
             expand-icon="bk-icon icon-down-shape"
-            collapse-icon="bk-icon icon-right-shape">
+            collapse-icon="bk-icon icon-right-shape"
+            @select-change="handleSelectChange">
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', data.bk_obj_icon || modelIconMap[data.bk_obj_id]]"></i>
                 <bk-button class="node-button fr"
@@ -94,18 +95,16 @@
             }
         },
         async created () {
-            const [data, internal, mainLine] = await Promise.all([
+            const [data, mainLine] = await Promise.all([
                 this.getTopologyData(),
-                this.getInternalTopology(),
                 this.getMainLine()
             ])
-            data[0].child.unshift(...internal)
             this.treeData = data
             this.mainLine = mainLine
             const defaultNode = this.idGenerator(data[0])
             this.$nextTick(() => {
                 this.$refs.tree.setData(data)
-                this.$refs.tree.setSelected(defaultNode)
+                this.$refs.tree.setSelected(defaultNode, true, true)
                 this.$refs.tree.setExpanded(defaultNode)
             })
         },
@@ -115,23 +114,6 @@
                     bizId: this.business,
                     config: {
                         requestId: 'getTopologyData'
-                    }
-                })
-            },
-            async getInternalTopology () {
-                const data = await this.$store.dispatch('objectMainLineModule/getInternalTopo', {
-                    bizId: this.business
-                })
-                const moduleModel = this.$store.getters['objectModelClassify/getModelById']('module')
-                return data.module.map(module => {
-                    const isIdle = ['空闲机', 'idle machine'].includes(module.bk_module_name)
-                    return {
-                        'default': isIdle ? 1 : 2,
-                        'bk_obj_id': 'module',
-                        'bk_obj_name': moduleModel.bk_obj_name,
-                        'bk_inst_id': module.bk_module_id,
-                        'bk_inst_name': module.bk_module_name,
-                        'bk_obj_icon': isIdle ? 'icon-cc-host-free-pool' : 'icon-cc-host-breakdown'
                     }
                 })
             },
@@ -255,6 +237,9 @@
                     bk_inst_id: data.bk_inst_id,
                     bk_inst_name: data.bk_inst_name
                 }
+            },
+            handleSelectChange (node) {
+                this.$store.commit('businessTopology/setSelectedNode', node)
             }
         }
     }

@@ -26,7 +26,7 @@
             <cmdb-table class="association-table"
                 v-show="localVisible"
                 :header="header"
-                :list="flatternList"
+                :list="flattenList"
                 :show-footer="false"
                 :sortable="false"
                 :max-height="462"
@@ -86,8 +86,8 @@
                 }
                 return this.$isAuthorized(OPERATION.U_HOST)
             },
-            flatternList () {
-                return this.$tools.flatternList(this.properties, this.list)
+            flattenList () {
+                return this.$tools.flattenList(this.properties, this.list)
             },
             hostId () {
                 return parseInt(this.$route.params.id)

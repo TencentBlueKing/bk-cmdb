@@ -9,10 +9,14 @@
         </cmdb-resize-layout>
         <div class="tab-layout">
             <bk-tab :active-name="active">
-                <bk-tabpanel name="serviceInstances" :title="$t('BusinessTopology[\'服务实例\']')">
+                <bk-tabpanel name="serviceInstances"
+                    :title="$t('BusinessTopology[\'服务实例\']')"
+                    :show="isModuleNode">
                     <cmdb-service-instances></cmdb-service-instances>
                 </bk-tabpanel>
-                <bk-tabpanel name="nodeInfo" :title="$t('BusinessTopology[\'节点信息\']')"></bk-tabpanel>
+                <bk-tabpanel name="nodeInfo" :title="$t('BusinessTopology[\'节点信息\']')">
+                    <cmdb-service-node-info></cmdb-service-node-info>
+                </bk-tabpanel>
             </bk-tab>
         </div>
     </div>
@@ -21,18 +25,37 @@
 <script>
     import cmdbTopologyTree from './children/topology-tree.vue'
     import cmdbServiceInstances from './children/service-instances.vue'
+    import cmdbServiceNodeInfo from './children/service-node-info.vue'
     export default {
         components: {
             cmdbTopologyTree,
-            cmdbServiceInstances
+            cmdbServiceInstances,
+            cmdbServiceNodeInfo
         },
         data () {
             return {
-                active: 'serviceInstances'
+                active: 'nodeInfo'
+            }
+        },
+        computed: {
+            selectedNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
+            isModuleNode () {
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
+            }
+        },
+        watch: {
+            isModuleNode (isModuleNode) {
+                if (isModuleNode) {
+                    this.active = 'serviceInstances'
+                } else {
+                    this.active = 'nodeInfo'
+                }
             }
         },
         beforeDestroy () {
-            this.$store.commit('businessTopology/resetProperties')
+            this.$store.commit('businessTopology/resetState')
         }
     }
 </script>
