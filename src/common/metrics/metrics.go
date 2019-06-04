@@ -47,7 +47,7 @@ type Service struct {
 
 // NewService returns new metrics service
 func NewService(conf Config) *Service {
-	srv := Service{}
+	srv := Service{conf: conf}
 	registry := prometheus.NewRegistry()
 
 	srv.requestTotal = prometheus.NewCounterVec(
@@ -55,8 +55,9 @@ func NewService(conf Config) *Service {
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LableProcessName, LableProcessInstance, LableHandler, LableHTTPStatus},
+		[]string{LableProcessName, LableProcessInstance, LableHandler, LableHTTPStatus, LableOrigin},
 	)
+	srv.requestTotal.WithLabelValues(conf.ProcessName, conf.ProcessInstance, "", "")
 	registry.MustRegister(srv.requestTotal)
 
 	srv.requestDuration = prometheus.NewHistogramVec(
@@ -77,7 +78,13 @@ func NewService(conf Config) *Service {
 	)
 	registry.MustRegister(srv.requestInFlight)
 
-	srv.httpHandler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorLog: blog.GlogWriter{}})
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	registry.MustRegister(prometheus.NewGoCollector())
+
+	srv.httpHandler = // promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		promhttp.InstrumentMetricHandler(
+			registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+		)
 	return &srv
 }
 
@@ -90,13 +97,29 @@ const (
 	LableProcessInstance = "process_instance"
 )
 
-// MiddleWareFunc is the http middleware for go-restful framework
-func (s *Service) MiddleWareFunc(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	uri := req.SelectedRoutePath()
-	s.requestInFlight.With(s.lable(LableHandler, uri)).Inc()
+func (s *Service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	s.httpHandler.ServeHTTP(resp, req)
+}
 
+// RestfulWebService is the http WebService for go-restful framework
+func (s *Service) RestfulWebService() *restful.WebService {
+	ws := restful.WebService{}
+	ws.Path("/metrics")
+	ws.Route(ws.GET("/").To(func(req *restful.Request, resp *restful.Response) {
+		blog.Info("metrics")
+		s.httpHandler.ServeHTTP(resp, req.Request)
+	}))
+
+	return &ws
+}
+
+// RestfulMiddleWareFunc is the http middleware for go-restful framework
+func (s *Service) RestfulMiddleWareFunc(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	uri := req.SelectedRoutePath()
 	before := time.Now()
+	s.requestInFlight.With(s.lable(LableHandler, uri)).Inc()
 	chain.ProcessFilter(req, resp)
+	s.requestInFlight.With(s.lable(LableHandler, uri)).Dec()
 	duration := time.Since(before).Seconds()
 
 	s.requestTotal.With(s.lable(
@@ -105,11 +128,6 @@ func (s *Service) MiddleWareFunc(req *restful.Request, resp *restful.Response, c
 		LableOrigin, getOrigin(req.Request.Header),
 	)).Inc()
 	s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
-	s.requestInFlight.With(s.lable(LableHandler, uri)).Inc()
-}
-
-func (s *Service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	s.httpHandler.ServeHTTP(resp, req)
 }
 
 func (s *Service) lable(lableKVs ...string) prometheus.Labels {

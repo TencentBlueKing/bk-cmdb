@@ -26,7 +26,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -68,8 +70,10 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 		return s.engine.CCErr
 	}
 
+	metricService := metrics.NewService(metrics.Config{ProcessName: types.CC_MODULE_APISERVER, ProcessInstance: ""})
+
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(metricService.MiddleWareFunc).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
@@ -81,7 +85,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
+	allWebServices = append(allWebServices, metricService.WebService(), ws, s.core.CompatibleV2Operation().WebService())
 	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
