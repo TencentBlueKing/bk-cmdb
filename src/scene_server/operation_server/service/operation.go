@@ -28,6 +28,7 @@ func (s *Service) CreateStatisticChart(params core.ContextParams, pathParams, qu
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
+	blog.Debug("chartInfo: %v", chartInfo)
 	// 自定义报表
 	if chartInfo.ReportType == common.OperationCustom {
 		result, err := s.Engine.CoreAPI.CoreService().Operation().CreateOperationChart(params.Context, params.Header, chartInfo)
@@ -50,6 +51,8 @@ func (s *Service) CreateStatisticChart(params core.ContextParams, pathParams, qu
 }
 
 func (s *Service) DeleteStatisticChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	blog.Debug("id: %v", pathParams("id"))
+
 	result, err := s.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(params.Context, params.Header, pathParams("id"))
 	if err != nil {
 		blog.Errorf("search chart info fail, err: %v, id: %v", err, pathParams)
@@ -68,6 +71,7 @@ func (s *Service) SearchStatisticCharts(params core.ContextParams, pathParams, q
 		return nil, params.Error.Error(common.CCErrOperationSearchStatisticsFail)
 	}
 
+	blog.Debug("chart config: %v", result)
 	return result, nil
 }
 
@@ -108,6 +112,16 @@ func (s *Service) SearchChartData(params core.ContextParams, pathParams, queryPa
 	if err != nil {
 		blog.Errorf("search chart data fail, err: %v, chart name: %v", err, inputData.Name)
 		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *Service) UpdateChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.Core.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(params.Context, params.Header, data)
+	if err != nil {
+		blog.Errorf("update chart position fail, err: %v", err)
+		return nil, nil
 	}
 
 	return result, nil
