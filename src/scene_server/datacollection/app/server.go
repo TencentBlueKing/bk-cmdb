@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/datacollection/app/options"
@@ -42,6 +43,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
+	metricService := metrics.NewService(metrics.Config{ProcessName: types.CC_MODULE_EVENTSERVER, ProcessInstance: svrInfo.Address()})
 	service := new(svc.Service)
 	process := new(DCServer)
 
@@ -80,7 +82,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, instance, esb)
 
-		err = datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
+		err = datacollection.NewDataCollection(ctx, process.Config, process.Core, metricService.Registry()).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -88,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.InfoJSON("process started with info %s", svrInfo)
-	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
+	if err := backbone.StartServer(ctx, engine, metricService.HTTPMiddleware(service.WebService(metricService))); err != nil {
 		return err
 	}
 	<-ctx.Done()

@@ -13,6 +13,7 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -40,50 +41,49 @@ type Service struct {
 
 	httpHandler http.Handler
 
+	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
-	requestInFlight *prometheus.GaugeVec
+	requestInFlight prometheus.Gauge
 }
 
 // NewService returns new metrics service
 func NewService(conf Config) *Service {
-	srv := Service{conf: conf}
 	registry := prometheus.NewRegistry()
+	register := prometheus.WrapRegistererWith(prometheus.Labels{LableProcessName: conf.ProcessName, LableProcessInstance: conf.ProcessInstance}, registry)
+	srv := Service{conf: conf, registry: register}
 
 	srv.requestTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: ns + "http_request_total",
 			Help: "http request total.",
 		},
-		[]string{LableProcessName, LableProcessInstance, LableHandler, LableHTTPStatus, LableOrigin},
+		[]string{LableHandler, LableHTTPStatus, LableOrigin},
 	)
-	registry.MustRegister(srv.requestTotal)
+	register.MustRegister(srv.requestTotal)
 
 	srv.requestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name: ns + "http_request_duration_seconds",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
-		[]string{LableProcessName, LableProcessInstance, LableHandler},
+		[]string{LableHandler},
 	)
-	registry.MustRegister(srv.requestDuration)
+	register.MustRegister(srv.requestDuration)
 
-	srv.requestInFlight = prometheus.NewGaugeVec(
+	srv.requestInFlight = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Name: ns + "http_request_in_flight",
 			Help: "current number of request being served.",
 		},
-		[]string{LableProcessName, LableProcessInstance, LableHandler},
 	)
-	registry.MustRegister(srv.requestInFlight)
+	register.MustRegister(srv.requestInFlight)
+	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	register.MustRegister(prometheus.NewGoCollector())
 
-	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	registry.MustRegister(prometheus.NewGoCollector())
-
-	srv.httpHandler = // promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-		promhttp.InstrumentMetricHandler(
-			registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
-		)
+	srv.httpHandler = promhttp.InstrumentMetricHandler(
+		registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+	)
 	return &srv
 }
 
@@ -95,6 +95,16 @@ const (
 	LableProcessName     = "process_name"
 	LableProcessInstance = "process_instance"
 )
+
+// lables
+const (
+	KeySelectedRoutePath string = "SelectedRoutePath"
+)
+
+// Registry returns the prometheus.Registerer
+func (s *Service) Registry() prometheus.Registerer {
+	return s.registry
+}
 
 func (s *Service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	s.httpHandler.ServeHTTP(resp, req)
@@ -112,26 +122,48 @@ func (s *Service) RestfulWebService() *restful.WebService {
 	return &ws
 }
 
-// RestfulMiddleWareFunc is the http middleware for go-restful framework
-func (s *Service) RestfulMiddleWareFunc(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	uri := req.SelectedRoutePath()
-	before := time.Now()
-	s.requestInFlight.With(s.lable(LableHandler, uri)).Inc()
+// HTTPMiddleware is the http middleware for go-restful framework
+func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s.requestInFlight.Inc()
+		defer s.requestInFlight.Dec()
+		if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
+			s.ServeHTTP(w, r)
+			return
+		}
+
+		var uri string
+		req := r.WithContext(context.WithValue(r.Context(), KeySelectedRoutePath, &uri))
+		resp := restful.NewResponse(w)
+		before := time.Now()
+		next.ServeHTTP(resp, req)
+		if uri == "" {
+			uri = r.RequestURI
+		}
+		duration := time.Since(before).Seconds()
+
+		s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
+		s.requestTotal.With(s.lable(
+			LableHandler, uri,
+			LableHTTPStatus, strconv.Itoa(resp.StatusCode()),
+			LableOrigin, getOrigin(r.Header),
+		)).Inc()
+
+	})
+}
+
+// RestfulMiddleWare is the http middleware for go-restful framework
+func (s *Service) RestfulMiddleWare(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	if v := req.Request.Context().Value(KeySelectedRoutePath); v != nil {
+		if selectedRoutePath, ok := v.(*string); ok {
+			*selectedRoutePath = req.SelectedRoutePath()
+		}
+	}
 	chain.ProcessFilter(req, resp)
-	s.requestInFlight.With(s.lable(LableHandler, uri)).Dec()
-	duration := time.Since(before).Seconds()
-
-	s.requestTotal.With(s.lable(
-		LableHandler, uri,
-		LableHTTPStatus, strconv.Itoa(resp.StatusCode()),
-		LableOrigin, getOrigin(req.Request.Header),
-	)).Inc()
-
-	s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
 }
 
 func (s *Service) lable(lableKVs ...string) prometheus.Labels {
-	lables := prometheus.Labels{LableProcessName: s.conf.ProcessName, LableProcessInstance: s.conf.ProcessInstance}
+	lables := prometheus.Labels{}
 	for index := 0; index < len(lableKVs); index += 2 {
 		lables[lableKVs[index]] = lableKVs[index+1]
 	}

@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
+	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/logics"
@@ -42,7 +43,7 @@ func (s *Service) SetCache(db *redis.Client) {
 	s.cache = db
 }
 
-func (s *Service) WebService() *restful.Container {
+func (s *Service) WebService(metricService *metrics.Service) *restful.Container {
 
 	container := restful.NewContainer()
 
@@ -51,7 +52,7 @@ func (s *Service) WebService() *restful.Container {
 		return s.CCErr
 	}
 
-	api.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/collector/v3").Filter(metricService.RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	api.Route(api.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))

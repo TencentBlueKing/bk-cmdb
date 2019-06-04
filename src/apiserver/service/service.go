@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
-	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
@@ -41,19 +40,21 @@ type Service interface {
 }
 
 // NewService create a new service instance
-func NewService() Service {
+func NewService(metricService *metrics.Service) Service {
 	return &service{
-		core: core.New(nil, compatiblev2.New(nil)),
+		metricService: metricService,
+		core:          core.New(nil, compatiblev2.New(nil)),
 	}
 }
 
 type service struct {
-	enableAuth bool
-	engine     *backbone.Engine
-	client     HTTPClient
-	core       core.Core
-	discovery  discovery.DiscoveryInterface
-	authorizer auth.Authorizer
+	enableAuth    bool
+	engine        *backbone.Engine
+	client        HTTPClient
+	core          core.Core
+	discovery     discovery.DiscoveryInterface
+	authorizer    auth.Authorizer
+	metricService *metrics.Service
 }
 
 func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
@@ -70,10 +71,8 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 		return s.engine.CCErr
 	}
 
-	metricService := metrics.NewService(metrics.Config{ProcessName: types.CC_MODULE_APISERVER, ProcessInstance: ""})
-
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(metricService.RestfulMiddleWareFunc).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(s.metricService.RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
@@ -85,7 +84,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, metricService.RestfulWebService(), ws, s.core.CompatibleV2Operation().WebService())
+	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
 	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
