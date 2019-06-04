@@ -12,15 +12,32 @@
         </div>
         <cmdb-table
             :header="header"
-            :list="processList"
-            :empty-height="58">
+            :list="processFlattenList"
+            :empty-height="58"
+            :sortable="false">
             <template slot="data-empty">
-                <a href="javascript:void(0)" class="text-primary">
+                <a href="javascript:void(0)" class="text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </a>
             </template>
+            <template slot="__operation__" slot-scope="{ rowIndex }">
+                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('BusinessTopology["编辑"]')}}</a>
+                <a href="javascript:void(0)" class="text-primary" @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}</a>
+            </template>
         </cmdb-table>
+        <cmdb-slider
+            :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
+            :is-show.sync="processForm.show">
+            <cmdb-form slot="content"
+                :type="processForm.type"
+                :inst="processForm.instance"
+                :properties="processProperties"
+                :property-groups="processPropertyGroups"
+                @on-submit="handleSaveProcess"
+                @on-cancel="handleCancelCreateProcess">
+            </cmdb-form>
+        </cmdb-slider>
     </div>
 </template>
 
@@ -46,7 +63,13 @@
             return {
                 localExpanded: this.expanded,
                 processList: [],
-                processProperties: []
+                processProperties: [],
+                processPropertyGroups: [],
+                processForm: {
+                    show: false,
+                    type: 'create',
+                    instance: {}
+                }
             }
         },
         computed: {
@@ -73,10 +96,14 @@
                     name: this.$t('Common["操作"]')
                 })
                 return header
+            },
+            processFlattenList () {
+                return this.$tools.flattenList(this.processProperties, this.processList)
             }
         },
         created () {
             this.getProcessProperties()
+            this.getProcessPropertyGroups()
         },
         methods: {
             async getProcessProperties () {
@@ -96,8 +123,47 @@
                     console.error(e)
                 }
             },
+            async getProcessPropertyGroups () {
+                try {
+                    const action = 'objectModelFieldGroup/searchGroup'
+                    this.processPropertyGroups = await this.$store.dispatch(action, {
+                        objId: 'process',
+                        params: {},
+                        config: {
+                            requestId: 'get_service_process_property_groups',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleDelete () {
                 this.$emit('delete-instance', this.index)
+            },
+            handleAddProcess () {
+                this.processForm.instance = {}
+                this.processForm.type = 'create'
+                this.processForm.show = true
+            },
+            handleSaveProcess (values) {
+                if (this.processForm.type === 'create') {
+                    this.processList.push(values)
+                } else {
+                    Object.assign(this.processForm.instance, values)
+                }
+                this.processForm.show = false
+            },
+            handleCancelCreateProcess () {
+                this.processForm.show = false
+            },
+            handleEditProcess (rowIndex) {
+                this.processForm.instance = this.processList[rowIndex]
+                this.processForm.type = 'update'
+                this.processForm.show = true
+            },
+            handleDeleteProcess (rowIndex) {
+                this.processList.splice(rowIndex)
             }
         }
     }
