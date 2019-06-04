@@ -5,7 +5,7 @@ const state = {
 const getters = {
     localProcessTemplate: state => state.localProcessTemplate,
     hasProcessName: state => process => {
-        return state.localProcessTemplate.find(template => template['bk_func_name'] === process['bk_func_name'])
+        return state.localProcessTemplate.find(template => template['bk_func_name']['value'] === process['bk_func_name']['value'])
     }
 }
 
