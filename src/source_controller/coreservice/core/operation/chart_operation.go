@@ -29,10 +29,33 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 		return nil, err
 	}
 
-	chartPosition := make([]metadata.ChartPosition, 0)
+	chartPosition := metadata.ChartPosition{}
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
+	}
+
+	// 需要改一下chartConfig结构，objID放外面
+	for _, chart := range chartConfig {
+		matched := false
+		for _, info := range chartPosition.Position["host"] {
+			if chart.ConfigID == info.ConfigId {
+				chart.ChartPosition = info
+				matched = true
+				continue
+			}
+		}
+
+		if matched {
+			continue
+		}
+
+		for _, info := range chartPosition.Position["inst"] {
+			if chart.ConfigID == info.ConfigId {
+				chart.ChartPosition = info
+				continue
+			}
+		}
 	}
 
 	return chartConfig, nil
@@ -85,7 +108,7 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id uint6
 func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	opt := mapstr.MapStr{}
 	opt["config_id"] = inputParam.ConfigID
-
+	blog.Debug("input: %v", inputParam)
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
 		blog.Errorf("update chart config fail,id: %v err: %v", inputParam.ConfigID, err)
 		return nil, err

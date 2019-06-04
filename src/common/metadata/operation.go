@@ -20,12 +20,12 @@ import (
 type ChartConfig struct {
 	ConfigID      uint64 `json:"config_id" bson:"config_id"`
 	Metadata      `field:"metadata" json:"metadata" bson:"metadata"`
-	ReportType    string        `json:"report_type" bson:"report_type"`
-	Name          string        `json:"name" bson:"name"`
-	Option        ChartOption   `json:"options" bson:"option"`
-	ChartPosition ChartPosition `json:"chart_position" bson: "chart_position"`
-	CreateTime    time.Time     `json:"create_time" bson:"create_time"`
-	OwnerID       string        `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ReportType    string      `json:"report_type" bson:"report_type"`
+	Name          string      `json:"name" bson:"name"`
+	Option        ChartOption `json:"option" bson:"option"`
+	ChartPosition Info        `json:"chart_position" bson:"chart_position"`
+	CreateTime    time.Time   `json:"create_time" bson:"create_time"`
+	OwnerID       string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type ChartOption struct {
@@ -40,11 +40,11 @@ type ChartPosition struct {
 	OwnerID  string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-type PositionInfo map[string]Info
+type PositionInfo map[string][]Info
 
 type Info struct {
-	ConfigId int64  `json:"config_id"`
-	Width    string `json:"width"`
+	ConfigId uint64 `json:"config_id" bson:"config_id"`
+	Width    string `json:"width" bson:"width"`
 }
 
 type ModelInstChange map[string]*InstChangeCount
