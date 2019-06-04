@@ -31,8 +31,6 @@ import (
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	dalredis "configcenter/src/storage/dal/redis"
-
-	"github.com/emicklei/go-restful"
 )
 
 //Run ccapi server
@@ -74,7 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	coreService.Logics.Engine = coreService.Core
-	if err := backbone.StartServer(ctx, coreService.Core, restful.NewContainer().Add(coreService.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, coreService.Core, coreService.WebService()); err != nil {
 		return err
 	}
 	select {

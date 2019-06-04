@@ -68,7 +68,7 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, resources ...meta.ResourceAttribute) error {
 	commonInfo, err := parser.ParseCommonInfo(&header)
 	if err != nil {
-		return fmt.Errorf("authentication failed, parse user info from header failed, %+v", err)
+		return fmt.Errorf("authentication failed, parse user info from header failed, err: %+v", err)
 	}
 
 	decisions, err := am.Authorize.AuthorizeBatch(ctx, commonInfo.User, resources...)

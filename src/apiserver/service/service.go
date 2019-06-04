@@ -82,7 +82,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 
 	allWebServices := make([]*restful.WebService, 0)
 	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
-
+	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
 
