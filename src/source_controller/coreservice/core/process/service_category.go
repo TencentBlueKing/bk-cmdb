@@ -168,7 +168,12 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 	}
 
 	// category that has sub category shouldn't be removed
-	childrenFilter := map[string]int64{"parent_id": category.ID}
+	childrenFilter := map[string]interface{}{
+		"parent_id": category.ID,
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBNE: category.ID,
+		},
+	}
 	childrenCount, err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(childrenFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, childrenFilter, err, ctx.ReqID)
