@@ -15,6 +15,8 @@
                         <input type="text" ref="editInput"
                             :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
                             v-model="mainCagetoryName"
+                            name="cagetoryName"
+                            v-validate="'required|namedCharacter'"
                             @keypress.enter="handleEditCagetory(cagetoryName)">
                     </div>
                     <template v-else>
@@ -38,6 +40,8 @@
                                 ref="editInput"
                                 class="bk-form-input"
                                 :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
+                                name="cagetoryName"
+                                v-validate="'required|namedCharacter'"
                                 v-model="cagetoryName">
                             <span class="text-primary btn-confirm"
                                 @click.stop="handleAddCagetory(cagetoryName, mainCagetory['root_id'])">{{$t("Common['确定']")}}
@@ -60,6 +64,8 @@
                                 ref="editInput"
                                 class="bk-form-input"
                                 :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
+                                name="cagetoryName"
+                                v-validate="'required|namedCharacter'"
                                 v-model="childCagetoryName">
                             <span class="text-primary btn-confirm"
                                 @click.stop="handleEditCagetory(childCagetory['name'], childCagetory['parent_id'])">{{$t("Common['确定']")}}
@@ -86,8 +92,10 @@
                     <div class="main-edit" v-if="showAddMianCagetory">
                         <input type="text"
                             ref="addCagetoryInput"
+                            name="cagetoryName"
                             :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
                             v-model="cagetoryName"
+                            v-validate="'required|namedCharacter'"
                             v-click-outside="handleCloseAddBox"
                             @keypress.enter="handleAddCagetory(cagetoryName)">
                     </div>
@@ -173,10 +181,10 @@
                     this.getCagetoryList()
                 })
             },
-            handleAddCagetory (name, root_id = 0) {
-                if (!name) {
+            async handleAddCagetory (name, root_id = 0) {
+                if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
-                        message: '请输入分类名称',
+                        message: this.errors.first('cagetoryName') || this.$t("ServiceCagetory['请输入分类名称']"),
                         theme: 'error'
                     })
                 } else {
@@ -188,7 +196,7 @@
             },
             handleDeleteCagetory (id) {
                 this.$bkInfo({
-                    title: '确认删除分类?',
+                    title: this.$t("ServiceCagetory['确认删除分类']"),
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
