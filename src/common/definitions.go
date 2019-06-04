@@ -1036,3 +1036,8 @@ const (
 const (
 	ContextRequestIDField = "request_id"
 )
+
+const (
+	OperationCustom     = "custom"
+	OperationReportType = "report_type"
+)
