@@ -13,7 +13,6 @@
 package process
 
 import (
-	"configcenter/src/common/condition"
 	"context"
 	"fmt"
 	"net/http"
@@ -559,14 +558,14 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, condition condition.Condition) error {
+func (p *process) DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) error {
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := "/delete/process/process_instance_relation"
 
 	err := p.client.Delete().
 		WithContext(ctx).
 		SubResource(subPath).
-		Body(condition.ToMapStr()).
+		Body(option).
 		WithHeaders(h).
 		Do().
 		Into(ret)

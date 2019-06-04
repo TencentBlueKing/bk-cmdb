@@ -121,13 +121,13 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
-	filter["metadata"] = md.ToMapStr()
+	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
 	if categoryID > 0 {
 		categories, err := p.ListServiceCategories(ctx, bizID, false)
 		if err != nil {
-			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v", err)
+			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
 		}
 		childrenIDs := make([]int64, 0)
@@ -146,7 +146,9 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 				break
 			}
 		}
-		filter["service_category_id"] = map[string][]int64{"$in": childrenIDs}
+		filter[common.BKServiceCategoryIDField] = map[string][]int64{
+			common.BKDBIN: childrenIDs,
+		}
 	}
 
 	var total uint64
@@ -176,7 +178,9 @@ func (p *processOperation) DeleteServiceTemplate(ctx core.ContextParams, service
 	}
 
 	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{"service_template_id": template.ID}
+	usageFilter := map[string]int64{
+		common.BKServiceTemplateIDField: template.ID,
+	}
 	usageCount, err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, err, ctx.ReqID)

@@ -25,35 +25,34 @@ import (
 func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	instance := metadata.ServiceInstance{}
 	if err := mapstr.DecodeFromMapStr(&instance, data); err != nil {
-		blog.Errorf("CreateServiceInstance failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("CreateServiceInstance failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateServiceInstance(params, instance)
 	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, err: %+v", err)
+		blog.Errorf("CreateServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
 }
 
 func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceInstanceIDField := "service_instance_id"
-	serviceInstanceIDStr := pathParams(serviceInstanceIDField)
+	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
-		blog.Errorf("GetServiceInstance failed, path parameter `%s` empty", serviceInstanceIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("GetServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("GetServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("GetServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetServiceInstance(params, serviceInstanceID)
 	if err != nil {
-		blog.Errorf("GetServiceInstance failed, err: %+v", err)
+		blog.Errorf("GetServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
@@ -69,46 +68,45 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 	}{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
-		blog.Errorf("ListServiceInstances failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("ListServiceInstances failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	result, err := s.core.ProcessOperation().ListServiceInstance(params, fp.BusinessID, fp.ServiceTemplateID, fp.HostID, fp.Page)
 	if err != nil {
-		blog.Errorf("ListServiceInstance failed, err: %+v", err)
+		blog.Errorf("ListServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
 }
 
 func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceInstanceIDField := "service_instance_id"
-	serviceInstanceIDStr := pathParams(serviceInstanceIDField)
+	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
-		blog.Errorf("UpdateServiceInstance failed, path parameter `%s` empty", serviceInstanceIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("UpdateServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("UpdateServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	instance := metadata.ServiceInstance{}
 	if err := mapstr.DecodeFromMapStr(&instance, data); err != nil {
-		blog.Errorf("UpdateServiceInstance failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("UpdateServiceInstance failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateServiceInstance(params, serviceInstanceID, instance)
 	if err != nil {
-		blog.Errorf("UpdateServiceInstance failed, err: %+v", err)
+		blog.Errorf("UpdateServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
@@ -116,21 +114,20 @@ func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceInstanceIDField := "service_instance_id"
-	serviceInstanceIDStr := pathParams(serviceInstanceIDField)
+	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
-		blog.Errorf("DeleteServiceInstance failed, path parameter `%s` empty", serviceInstanceIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("DeleteServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v", serviceInstanceIDField, serviceInstanceIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceInstanceIDField)
+		blog.Errorf("DeleteServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceInstance(params, serviceInstanceID); err != nil {
-		blog.Errorf("DeleteServiceInstance failed, err: %+v", err)
+		blog.Errorf("DeleteServiceInstance failed, err: %+v, rid: %s", err, common.BKServiceInstanceIDField)
 		return nil, err
 	}
 
