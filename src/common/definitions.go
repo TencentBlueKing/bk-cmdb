@@ -455,6 +455,7 @@ const (
 	BKServiceInstanceIDField = "service_instance_id"
 	BKServiceTemplateIDField = "service_template_id"
 	BKProcessTemplateIDField = "process_template_id"
+	BKServiceCategoryIDField = "service_category_id"
 
 	// BKProcessNameField the process name field
 	BKProcessNameField = "bk_process_name"

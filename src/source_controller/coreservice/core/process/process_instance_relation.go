@@ -64,7 +64,9 @@ func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams,
 func (p *processOperation) GetProcessInstanceRelation(ctx core.ContextParams, processInstanceID int64) (*metadata.ProcessInstanceRelation, error) {
 	relation := metadata.ProcessInstanceRelation{}
 
-	filter := map[string]int64{"process_id": processInstanceID}
+	filter := map[string]int64{
+		common.BKProcessIDField: processInstanceID,
+	}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).One(ctx.Context, &relation); nil != err {
 		blog.Errorf("GetProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, relation: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, relation, err, ctx.ReqID)
 		if p.dbProxy.IsNotFoundError(err) {
@@ -103,24 +105,26 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTempalteID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
-	filter["metadata"] = md.ToMapStr()
+	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
 	if serviceInstanceID > 0 {
-		filter["service_instance_id"] = serviceInstanceID
+		filter[common.BKServiceInstanceIDField] = serviceInstanceID
 	}
 
 	if processTempalteID > 0 {
-		filter["process_template_id"] = processTempalteID
+		filter[common.BKProcessTemplateIDField] = processTempalteID
 	}
 
 	if hostID > 0 {
-		filter["host_id"] = hostID
+		filter[common.BKProcessIDField] = hostID
 	}
 
 	if processIDs != nil && len(processIDs) > 0 {
-		processIDFilter := map[string]interface{}{"$in": processIDs}
-		filter["process_id"] = processIDFilter
+		processIDFilter := map[string]interface{}{
+			common.BKDBIN: processIDs,
+		}
+		filter[common.BKProcIDField] = processIDFilter
 	}
 
 	var total uint64
@@ -143,14 +147,31 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	return result, nil
 }
 
-func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams, processInstanceID int64) error {
-	relation, err := p.GetProcessInstanceRelation(ctx, processInstanceID)
-	if err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, GetProcessInstanceRelation failed, templateID: %d, err: %+v, rid: %s", processInstanceID, err, ctx.ReqID)
-		return err
+func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams, option metadata.DeleteProcessInstanceRelationOption) error {
+	deleteFilter := map[string]interface{}{}
+	if option.BusinessID != nil {
+		deleteFilter[common.BKAppIDField] = option.BusinessID
 	}
-
-	deleteFilter := map[string]int64{"process_id": relation.ProcessID}
+	if option.ProcessIDs != nil {
+		deleteFilter[common.BKProcIDField] = map[string]interface{}{
+			common.BKDBIN: option.ProcessIDs,
+		}
+	}
+	if option.ProcessTemplateIDs != nil {
+		deleteFilter[common.BKProcessTemplateIDField] = map[string]interface{}{
+			common.BKDBIN: option.ProcessTemplateIDs,
+		}
+	}
+	if option.ServiceInstanceIDs != nil {
+		deleteFilter[common.BKServiceInstanceIDField] = map[string]interface{}{
+			common.BKDBIN: option.ServiceInstanceIDs,
+		}
+	}
+	if option.ModuleIDs != nil {
+		deleteFilter[common.BKModuleIDField] = map[string]interface{}{
+			common.BKDBIN: option.ModuleIDs,
+		}
+	}
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {
 		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
 		return ctx.Error.Errorf(common.CCErrCommDBDeleteFailed)

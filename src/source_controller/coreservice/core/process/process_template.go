@@ -123,14 +123,16 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.BasePage) (*metadata.MultipleProcessTemplate, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
-	filter["metadata"] = md.ToMapStr()
+	filter[common.MetadataField] = md.ToMapStr()
 
 	if serviceTemplateID != 0 {
-		filter["service_template_id"] = serviceTemplateID
+		filter[common.BKServiceTemplateIDField] = serviceTemplateID
 	}
 
 	if processTemplateIDs != nil {
-		filter["process_template_id"] = map[string][]int64{"$in": *processTemplateIDs}
+		filter[common.BKProcessTemplateIDField] = map[string][]int64{
+			common.BKDBIN: *processTemplateIDs,
+		}
 	}
 
 	var total uint64
@@ -161,7 +163,9 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 	}
 
 	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{"process_template_id": template.ID}
+	usageFilter := map[string]int64{
+		common.BKServiceTemplateIDField: template.ID,
+	}
 	usageCount, err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, usageFilter, err, ctx.ReqID)

@@ -333,6 +333,15 @@ type MultipleProcessTemplateResult struct {
 	Data     MultipleProcessTemplate `json:"data"`
 }
 
+type DeleteProcessInstanceRelationOption struct {
+	BusinessID         *int64   `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"bk_process_id,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_id,omitempty"`
+	HostIDs            *[]int64 `json:"bk_host_id,omitempty"`
+	ModuleIDs          *[]int64 `json:"bk_module_id,omitempty"`
+}
+
 type ListProcessTemplatesOption struct {
 	BusinessID         int64   `json:"bk_biz_id"`
 	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
