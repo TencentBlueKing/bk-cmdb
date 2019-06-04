@@ -57,7 +57,6 @@ func NewService(conf Config) *Service {
 		},
 		[]string{LableProcessName, LableProcessInstance, LableHandler, LableHTTPStatus, LableOrigin},
 	)
-	srv.requestTotal.WithLabelValues(conf.ProcessName, conf.ProcessInstance, "", "")
 	registry.MustRegister(srv.requestTotal)
 
 	srv.requestDuration = prometheus.NewHistogramVec(
@@ -127,6 +126,7 @@ func (s *Service) RestfulMiddleWareFunc(req *restful.Request, resp *restful.Resp
 		LableHTTPStatus, strconv.Itoa(resp.StatusCode()),
 		LableOrigin, getOrigin(req.Request.Header),
 	)).Inc()
+
 	s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
 }
 
