@@ -183,6 +183,7 @@ type ForceSyncServiceInstanceWithTemplateInput struct {
 type ListServiceInstancesWithHostInput struct {
 	Metadata Metadata `json:"metadata"`
 	HostID   int64    `json:"host_id"`
+	WithName bool     `json:"with_name"`
 }
 
 type UpdateProcessTemplateInput struct {
