@@ -199,8 +199,8 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 
 	// Firstly, delete the service instance relation.
 	option := &metadata.ListProcessInstanceRelationOption{
-		BusinessID:        bizID,
-		ServiceInstanceID: []int64{input.ServiceInstanceID},
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &[]int64{input.ServiceInstanceID},
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -745,8 +745,8 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 	// step2:
 	// find all the process instances relations for the usage of getting process instances.
 	relationOption := &metadata.ListProcessInstanceRelationOption{
-		BusinessID:        bizID,
-		ServiceInstanceID: input.ServiceInstances,
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &input.ServiceInstances,
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {

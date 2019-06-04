@@ -200,7 +200,7 @@ type ProcessOperation interface {
 	CreateProcessInstanceRelation(ctx ContextParams, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
 	GetProcessInstanceRelation(ctx ContextParams, processInstanceID int64) (*metadata.ProcessInstanceRelation, error)
 	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
-	ListProcessInstanceRelation(ctx ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTemplateID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error)
+	ListProcessInstanceRelation(ctx ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, error)
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) error
 }
 
