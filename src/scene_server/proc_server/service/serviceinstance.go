@@ -912,6 +912,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	option := metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 		HostID:     input.HostID,
+		WithName:   input.WithName,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
