@@ -1,5 +1,5 @@
 <template>
-    <div class="create-layout clearfix">
+    <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
         <label class="create-label fl">{{$t('businessTopology["添加主机"]')}}</label>
         <div class="create-hosts">
             <bk-button class="select-host-button" type="default"
@@ -10,20 +10,22 @@
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
                     v-for="(host, index) in hosts"
+                    ref="serviceInstanceTable"
                     deletable
                     expanded
                     :key="index"
                     :index="index"
                     :id="host.bk_host_id"
-                    :name="host.bk_host_innerip"
+                    :name="`${host.bk_host_innerip}_${moduleInstance.bk_module_name}`"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
                     <bk-button type="primary"
-                        :disabled="!hosts.length">
+                        :disabled="!hosts.length"
+                        @click="handleConfirm">
                         {{$t('Common["确定"]')}}
                     </bk-button>
-                    <bk-button>{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button @click="handleBackToModule">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
         </div>
@@ -97,6 +99,38 @@
             },
             handleDeleteInstance (index) {
                 this.hosts.splice(index, 1)
+            },
+            async handleConfirm () {
+                try {
+                    const serviceInstanceTables = this.$refs.serviceInstanceTable
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
+                        params: this.$injectMetadata({
+                            name: this.moduleInstance.bk_module_name,
+                            module_id: this.moduleId,
+                            instances: serviceInstanceTables.map(table => {
+                                return {
+                                    host_id: table.id,
+                                    processes: table.processList.map(item => {
+                                        return {
+                                            process_info: item
+                                        }
+                                    })
+                                }
+                            })
+                        })
+                    })
+                    this.handleBackToModule()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            handleBackToModule () {
+                this.$router.replace({
+                    name: 'topology',
+                    query: {
+                        module: this.moduleId
+                    }
+                })
             }
         }
     }
