@@ -92,8 +92,8 @@ func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id 
 	return
 }
 
-func (s *operation) SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.ResponseInstData, err error) {
-	resp = new(metadata.ResponseInstData)
+func (s *operation) SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartConfig, err error) {
+	resp = new(metadata.SearchChartConfig)
 	subPath := "/search/operation/chart"
 
 	err = s.client.Post().
@@ -122,7 +122,21 @@ func (s *operation) UpdateOperationChart(ctx context.Context, h http.Header, dat
 
 func (s *operation) SearchOperationChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/operation/data/search"
+	subPath := "/search/operation/chart/data"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (s *operation) UpdateOperationChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/update/operation/chart/position"
 
 	err = s.client.Post().
 		WithContext(ctx).

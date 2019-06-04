@@ -157,6 +157,10 @@ type StatisticOperation interface {
 	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
 	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, id uint64) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 }
 
 // Core core itnerfaces methods

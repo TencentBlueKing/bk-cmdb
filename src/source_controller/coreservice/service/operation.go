@@ -16,7 +16,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"strconv"
+	"time"
 )
 
 func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -45,26 +48,69 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 }
 
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	id, err := strconv.ParseUint(pathParams("id"), 10, 64)
+	if err != nil {
+		blog.Errorf("string convert to u")
+		return nil, err
+	}
+	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, id); err != nil {
+		return nil, err
+	}
 
 	return nil, nil
 }
 
 func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	chartConfig := metadata.ChartConfig{}
+	if err := data.MarshalJSONInto(&chartConfig); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
 
-	return nil, nil
+	ownerID := util.GetOwnerID(params.Header)
+	chartConfig.CreateTime = time.Now()
+	chartConfig.OwnerID = ownerID
+	blog.Debug("chartInfo---1： %v", chartConfig)
+	result, err := s.core.StatisticOperation().CreateOperationChart(params, chartConfig)
+	if err != nil {
+		blog.Errorf("save chart config fail, err: %v", err)
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+
 	result, err := s.core.StatisticOperation().SearchOperationChart(params, data)
 	if err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
 	}
 
+	blog.Debug("result: %v", result)
 	return result, err
 }
 
 func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	chartConfig := metadata.ChartConfig{}
+	if err := data.MarshalJSONInto(chartConfig); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
 
-	return nil, nil
+	result, err := s.core.StatisticOperation().UpdateOperationChart(params, chartConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.core.StatisticOperation().UpdateChartPosition(params, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

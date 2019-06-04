@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// ContextParams the logic function params
+// ContextParams the core function params
 type ContextParams struct {
 	context.Context
 	Engin           *backbone.Engine

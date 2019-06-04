@@ -22,12 +22,74 @@ import (
 
 func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	chartConfig := metadata.ChartConfig{}
+	chartConfig := make([]metadata.ChartConfig, 0)
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(ctx, &chartConfig); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
 	}
 
+	chartPosition := make([]metadata.ChartPosition, 0)
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
 	return chartConfig, nil
+}
+
+func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	objID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
+	if err != nil {
+		return nil, err
+	}
+	inputParam.ConfigID = objID
+
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
+		blog.Errorf("create chart fail, err: %v", err)
+		return nil, err
+	}
+
+	blog.Debug("objID: %v", objID)
+	return objID, nil
+}
+
+func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
+	opt := mapstr.MapStr{}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Delete(ctx, opt); err != nil {
+		blog.Errorf("delete chart position info fail, err: %v", err)
+		return nil, err
+	}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Insert(ctx, inputParam); err != nil {
+		blog.Errorf("update chart position fail, err: %v", err)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id uint64) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	opt["config_id"] = id
+	blog.Debug("opt: %v", opt)
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
+		blog.Errorf("create chart fail, err: %v", err)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	opt["config_id"] = inputParam.ConfigID
+
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
+		blog.Errorf("update chart config fail,id: %v err: %v", inputParam.ConfigID, err)
+		return nil, err
+	}
+
+	return nil, nil
 }

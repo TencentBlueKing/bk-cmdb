@@ -25,7 +25,7 @@ func (o *Operation) InitInnerChart(ctx context.Context) {
 		return
 	}
 
-	if result.Data.Count > 0 {
+	if result.Count > 0 {
 		return
 	}
 
