@@ -152,6 +152,7 @@
                         module: this.getModuleInstance
                     }
                     this.instance = await (promiseMap[modelId] || this.getCustomInstance)()
+                    this.$store.commit('businessTopology/setSelectedNodeInstance', this.instance)
                 } catch (e) {
                     console.error(e)
                     this.instance = {}

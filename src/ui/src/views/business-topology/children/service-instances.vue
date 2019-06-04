@@ -34,19 +34,16 @@
             </div>
         </template>
         <service-instance-empty v-else></service-instance-empty>
-        <service-host-selector></service-host-selector>
     </div>
 </template>
 
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
-    import serviceHostSelector from './host-selector.vue'
     export default {
         components: {
             serviceInstanceTable,
-            serviceInstanceEmpty,
-            serviceHostSelector
+            serviceInstanceEmpty
         },
         data () {
             return {
@@ -54,6 +51,13 @@
             }
         },
         computed: {
+            currentModule () {
+                const node = this.$store.state.businessTopology.selectedNode
+                if (node && node.data.bk_obj_id === 'module') {
+                    return node.data
+                }
+                return null
+            },
             menuItem () {
                 return [{
                     name: this.$t('BusinessTopology["批量编辑"]'),
@@ -70,7 +74,31 @@
                 }]
             }
         },
+        watch: {
+            currentModule (module) {
+                if (module) {
+                    this.getServiceInstances()
+                }
+            }
+        },
         methods: {
+            async getServiceInstances () {
+                try {
+                    const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
+                        params: this.$injectMetadata({
+                            module_id: this.currentModule.bk_inst_id
+                        }),
+                        config: {
+                            requestId: 'getModuleServiceInstances',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.instances = data.info
+                } catch (e) {
+                    console.error(e)
+                    this.instances = []
+                }
+            },
             batchEdit (disabled) {
                 if (disabled) {
                     return false

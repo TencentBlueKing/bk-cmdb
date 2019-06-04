@@ -36,7 +36,7 @@
             <template v-if="createInfo.nextModelId === 'module'">
                 <create-module v-if="createInfo.visible" slot="content"
                     :parent-node="createInfo.parentNode"
-                    @sumit="handleCreateNode"
+                    @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>

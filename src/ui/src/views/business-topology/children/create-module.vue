@@ -14,26 +14,42 @@
                 <label>{{$t('BusinessTopology["模板名称"]')}}</label>
                 <cmdb-selector
                     v-model="template"
+                    v-validate.disabled="'required'"
+                    data-vv-name="template"
+                    key="template"
                     :list="templateList">
                 </cmdb-selector>
+                <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
                 <label>{{$t('BusinessTopology["模块名称"]')}}</label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
+                    v-validate.disabled="'required|singlechar'"
+                    data-vv-name="moduleName"
+                    key="moduleName"
                     :disabled="!!withTemplate">
                 </cmdb-form-singlechar>
+                <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
                 <label>{{$t('BusinessTopology["服务实例分类"]')}}</label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
+                    v-validate.disabled="'required'"
+                    data-vv-name="firstClass"
+                    key="firstClass"
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
                     v-model="secondClass"
+                    v-validate.disabled="'required'"
+                    data-vv-name="secondClass"
+                    key="secondClass"
                     :list="secondClassList">
                 </cmdb-selector>
+                <span class="form-error" v-if="errors.has('firstClass')">{{errors.first('firstClass')}}</span>
+                <span class="form-error second-class" v-if="errors.has('secondClass')">{{errors.first('secondClass')}}</span>
             </div>
         </div>
         <div class="node-create-options">
@@ -85,6 +101,9 @@
             templateMap () {
                 return this.$store.state.businessTopology.templateMap
             },
+            currentTemplate () {
+                return this.templateList.find(item => item.id === this.template) || {}
+            },
             categoryMap () {
                 return this.$store.state.businessTopology.categoryMap
             },
@@ -103,6 +122,13 @@
                 } else {
                     this.template = ''
                     this.getServiceCategories()
+                }
+            },
+            template (template) {
+                if (template) {
+                    this.moduleName = this.currentTemplate.name
+                } else {
+                    this.moduleName = ''
                 }
             }
         },
@@ -165,7 +191,9 @@
             handleSave () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        this.$emit('submit', this.values)
+                        this.$emit('submit', {
+                            bk_module_name: this.moduleName
+                        })
                     }
                 })
             },
@@ -202,6 +230,7 @@
     }
     .form-item {
         margin: 15px 0 0 0;
+        position: relative;
         label {
             display: block;
             padding: 7px 0;
@@ -212,6 +241,16 @@
         .service-class {
             width: 260px;
             @include inlineBlock;
+        }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            color: $cmdbDangerColor;
+            &.second-class {
+                left: 270px;
+            }
         }
     }
     .node-create-options {
