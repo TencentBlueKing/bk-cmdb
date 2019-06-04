@@ -65,6 +65,31 @@ func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams
 }
 
 func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+<<<<<<< HEAD
+=======
+	chartConfig := metadata.ChartConfig{}
+	if err := data.MarshalJSONInto(&chartConfig); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	result, err := s.core.StatisticOperation().UpdateOperationChart(params, chartConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+>>>>>>> e4f2a1554... fix: operation add bug
 
 	return nil, nil
+}
+
+func (s *coreService) SearchOperationChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.core.StatisticOperation().UpdateChartPosition(params, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

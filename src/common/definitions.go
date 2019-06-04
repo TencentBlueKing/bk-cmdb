@@ -1063,3 +1063,8 @@ const (
 	OperationCustom       = "custom"
 	OperationReportType   = "report_type"
 )
+
+const (
+	OperationCustom     = "custom"
+	OperationReportType = "report_type"
+)
