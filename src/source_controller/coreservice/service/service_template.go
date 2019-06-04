@@ -73,7 +73,7 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 
 	if fp.BusinessID == 0 {
 		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
 	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp.BusinessID, fp.ServiceCategoryID, fp.Page)

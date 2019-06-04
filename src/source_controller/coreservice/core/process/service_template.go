@@ -54,7 +54,8 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		blog.Errorf("CreateServiceTemplate failed, parse biz id from category failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
 	}
-	if bizID != categoryBizID {
+	// categoryBizID 0 and 1 is default category
+	if bizID != categoryBizID && categoryBizID != 0 {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, input bizID:%d not equal category bizID:%d, rid: %s", bizID, categoryBizID, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
