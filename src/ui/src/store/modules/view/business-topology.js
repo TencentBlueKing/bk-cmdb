@@ -5,6 +5,7 @@ const state = {
     templateMap: {},
     categoryMap: {},
     selectedNode: null,
+    selectedNodeInstance: null,
     hostSelectorVisible: false,
     selectedHost: []
 }
@@ -34,6 +35,9 @@ const mutations = {
     setSelectedNode (state, node) {
         state.selectedNode = node
     },
+    setSelectedNodeInstance (state, instance) {
+        state.selectedNodeInstance = instance
+    },
     setHostSelectorVisible (state, visible) {
         state.hostSelectorVisible = visible
     },
@@ -46,6 +50,7 @@ const mutations = {
         state.templateMap = {}
         state.categoryMap = {}
         state.selectedNode = null
+        state.selectedNodeInstance = null
         state.hostSelectorVisible = false
         state.selectedHost = []
     }
