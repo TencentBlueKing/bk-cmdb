@@ -80,6 +80,7 @@ type GetServiceInstanceInModuleInput struct {
 	Metadata Metadata `json:"metadata"`
 	ModuleID int64    `json:"module_id"`
 	Page     BasePage `json:"page"`
+	WithName bool     `json:"with_name"`
 }
 
 type FindServiceTemplateAndInstanceDifferenceOption struct {

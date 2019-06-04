@@ -170,6 +170,7 @@ func (ps *ProcServer) GetServiceInstancesInModule(ctx *rest.Contexts) {
 		BusinessID: bizID,
 		ModuleID:   input.ModuleID,
 		Page:       input.Page,
+		WithName:   input.WithName,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {

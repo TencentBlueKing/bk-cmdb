@@ -213,9 +213,9 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 	// get instance
 	instance := metadata.ServiceInstance{}
 	instanceFilter := map[string]interface{}{
-		common.BKServiceInstanceIDField: instanceID,
+		common.BKFieldID: instanceID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(instanceFilter).One(ctx.Context, instance); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(instanceFilter).One(ctx.Context, &instance); err != nil {
 		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instanceFilter, err, ctx.ReqID)
 		if p.dbProxy.IsNotFoundError(err) == true {
 			return "", ctx.Error.Errorf(common.CCErrCommNotFound)
@@ -225,14 +225,14 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 
 	// get host inner ip
 	host := struct {
-		InnerIP string `json:"bk_host_innerip"`
-		HostID  int    `json:"bk_host_id"`
+		InnerIP string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+		HostID  int    `json:"bk_host_id" bson:"bk_host_id"`
 	}{}
 
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: instance.HostID,
 	}
-	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).One(ctx.Context, host); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(hostFilter).One(ctx.Context, &host); err != nil {
 		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameBaseHost, hostFilter, err, ctx.ReqID)
 		if p.dbProxy.IsNotFoundError(err) == true {
 			return "", ctx.Error.Errorf(common.CCErrCommNotFound)
@@ -247,7 +247,7 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 		common.BKServiceInstanceIDField: instance.ID,
 	}
 	order := "id"
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Sort(order).One(ctx.Context, relation); err != nil {
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Sort(order).One(ctx.Context, &relation); err != nil {
 		// relation not found means no process in service instance, service instance's name will only contains ip in that case
 		if p.dbProxy.IsNotFoundError(err) != true {
 			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, relationFilter, err, ctx.ReqID)
@@ -261,7 +261,7 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 		processFilter := map[string]interface{}{
 			common.BKProcIDField: relation.ProcessID,
 		}
-		if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).One(ctx.Context, process); err != nil {
+		if err := p.dbProxy.Table(common.BKTableNameBaseProcess).Find(processFilter).One(ctx.Context, &process); err != nil {
 			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameBaseProcess, processFilter, err, ctx.ReqID)
 			if p.dbProxy.IsNotFoundError(err) == true {
 				return "", ctx.Error.Errorf(common.CCErrCommNotFound)
@@ -269,10 +269,7 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 			return "", ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 		}
 
-		if process.ProcessID != 0 {
-			instanceName += fmt.Sprintf("-%s-%s", process.ProcessName, process.Port)
-		}
-
+		instanceName += fmt.Sprintf("-%s-%s", process.ProcessName, process.Port)
 	}
 	return instanceName, nil
 }
