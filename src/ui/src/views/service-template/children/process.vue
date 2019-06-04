@@ -117,7 +117,7 @@
                     result['originData'] = template
                     return result
                 })
-                list = this.$tools.flatternList(this.properties, list)
+                list = this.$tools.flattenList(this.properties, list)
                 return list
             }
         },
