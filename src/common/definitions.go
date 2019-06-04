@@ -1034,6 +1034,5 @@ const (
 )
 
 const (
-	OperationCustom     = "custom"
-	OperationReportType = "report_type"
+	ContextRequestIDField = "request_id"
 )

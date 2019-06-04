@@ -125,7 +125,9 @@
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
         "请选择时间": "Please select time",
-        "更多详情": "More details"
+        "更多详情": "More details",
+        "更多": "Show All",
+        "请输入关键字": "Please input keyword..."
     },
     "Nav": {
         "首页": "Index",
@@ -604,7 +606,8 @@
         "条件筛选": "Filter",
         "树形": "Tree",
         "拓扑": "Topo",
-        "更新确认": "It's single relationship with current model, update relationship will cancel the previous relationship, confirm to update?"
+        "更新确认": "It's single relationship with current model, update relationship will cancel the previous relationship, confirm to update?",
+        "确认取消": "Confirm to cancel association?"
     },
     "Form": {
         "请输入长字符": "Please input long char",
@@ -776,5 +779,18 @@
         "最新": "Latest",
         "采集方式": "Action",
         "获取单个": "Single"
+    },
+    "HostDetails": {
+        "主机详情": "Host Details",
+        "主机属性": "Host Properties",
+        "实时状态": "Real-Time Status",
+        "变更记录": "Change Log",
+        "基本值": "Basic Value",
+        "最近更新时间": "Update Time",
+        "关联": "Association",
+        "新增关联": "New Association",
+        "批量取消": "Batch Cancel",
+        "列表": "List",
+        "暂无关联关系": "No Association"
     }
 }

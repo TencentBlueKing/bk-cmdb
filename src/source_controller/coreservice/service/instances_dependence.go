@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/source_controller/coreservice/core"
@@ -67,13 +68,20 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 }
 
 // SelectObjectAttWithParams select object att with params
-func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string) (attributeArr []metadata.Attribute, err error) {
+func (s *coreService) SelectObjectAttWithParams(ctx core.ContextParams, objID string, bizID int64) (attributeArr []metadata.Attribute, err error) {
 	attributeArr = make([]metadata.Attribute, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	queryCond := metadata.QueryCondition{
 		Condition: cond.ToMapStr(),
 	}
+	var bizCond mapstr.MapStr
+	if bizID != 0 {
+		bizCond = metadata.NewPublicOrBizConditionByBizID(bizID)
+	} else {
+		bizCond = metadata.BizLabelNotExist
+	}
+	queryCond.Condition.Merge(bizCond)
 	result, err := s.core.ModelOperation().SearchModelAttributes(ctx, objID, queryCond)
 	return result.Info, err
 }

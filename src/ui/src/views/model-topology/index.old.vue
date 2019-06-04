@@ -941,9 +941,9 @@
             },
             updateSingleNodePosition (node) {
                 this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: [node]
-                    })
+                    }
                 })
             },
             // 批量更新节点位置信息
@@ -981,9 +981,9 @@
                 }
 
                 await this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: params
-                    })
+                    }
                 })
                 updateNodes.forEach(node => {
                     const model = this.localTopoModelList.find(({ bk_obj_id: objId }) => objId === node.id)

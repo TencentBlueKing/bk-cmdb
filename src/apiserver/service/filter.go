@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 )
@@ -37,17 +38,19 @@ const (
 )
 
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	rid := util.GetHTTPCCRequestID(req.Request.Header)
+
 	var kind RequestType
 	var err error
 	kind, err = URLPath(req.Request.RequestURI).FilterChain(req)
 	if err != nil {
-		blog.Errorf("rewrite request url[%s] failed, err: %v", req.Request.RequestURI, err)
+		blog.Errorf("rewrite request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
 		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
 			ErrCode: common.CCErrRewriteRequestUriFailed,
 			Data:    nil,
 		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
 			return
 		}
 		return
@@ -55,13 +58,13 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 
 	defer func() {
 		if err != nil {
-			blog.Errorf("proxy request url[%s] failed, err: %v", req.Request.RequestURI, err)
+			blog.Errorf("proxy request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
 			if rerr := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 				Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
 				ErrCode: common.CCErrRewriteRequestUriFailed,
 				Data:    nil,
 			}); rerr != nil {
-				blog.Errorf("proxy request[url: %s] failed, err: %v", req.Request.RequestURI, rerr)
+				blog.Errorf("proxy request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, rerr, rid)
 				return
 			}
 			return

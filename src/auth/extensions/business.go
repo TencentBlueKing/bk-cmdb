@@ -31,6 +31,8 @@ import (
 
 // CollectAllBusiness get all business
 func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Header) ([]BusinessSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := metadata.QueryCondition{}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(context.TODO(), header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
@@ -44,7 +46,7 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 		businessSimplify := BusinessSimplify{}
 		_, err := businessSimplify.Parse(business)
 		if err != nil {
-			blog.Errorf("parse businesses %+v simplify information failed, err: %+v", business, err)
+			blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
 			continue
 		}
 
@@ -54,6 +56,8 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 }
 
 func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) ([]BusinessSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	businessIDs = util.IntArrayUnique(businessIDs)
 
@@ -62,7 +66,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
-		blog.V(3).Infof("get businesses by id failed, err: %+v", err)
+		blog.V(3).Infof("get businesses by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get businesses by id failed, err: %+v", err)
 	}
 	blog.V(5).Infof("get businesses by id result: %+v", result)
