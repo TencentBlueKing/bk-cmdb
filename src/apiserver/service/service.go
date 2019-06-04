@@ -73,7 +73,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	metricService := metrics.NewService(metrics.Config{ProcessName: types.CC_MODULE_APISERVER, ProcessInstance: ""})
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(metricService.MiddleWareFunc).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(metricService.RestfulMiddleWareFunc).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
@@ -85,7 +85,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	ws.Route(ws.DELETE("{.*}").Filter(s.URLFilterChan).To(s.Delete))
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, metricService.WebService(), ws, s.core.CompatibleV2Operation().WebService())
+	allWebServices = append(allWebServices, metricService.RestfulWebService(), ws, s.core.CompatibleV2Operation().WebService())
 	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
