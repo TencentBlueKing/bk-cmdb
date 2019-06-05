@@ -98,8 +98,8 @@
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
-            templateMap () {
-                return this.$store.state.businessTopology.templateMap
+            serviceTemplateMap () {
+                return this.$store.state.businessTopology.serviceTemplateMap
             },
             currentTemplate () {
                 return this.templateList.find(item => item.id === this.template) || {}
@@ -137,8 +137,8 @@
         },
         methods: {
             async getServiceTemplates () {
-                if (this.templateMap.hasOwnProperty(this.business)) {
-                    this.templateList = this.templateMap[this.business]
+                if (this.serviceTemplateMap.hasOwnProperty(this.business)) {
+                    this.templateList = this.serviceTemplateMap[this.business]
                 } else {
                     try {
                         const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
@@ -146,7 +146,7 @@
                         })
                         const templates = data.info.map(item => item.service_template)
                         this.templateList = templates
-                        this.$store.commit('businessTopology/setTemplates', {
+                        this.$store.commit('businessTopology/setServiceTemplate', {
                             id: this.business,
                             templates: templates
                         })

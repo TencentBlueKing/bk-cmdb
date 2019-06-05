@@ -115,12 +115,29 @@
                             requestId: 'getModelProperties'
                         }
                     })
+                    if (modelId === 'module') {
+                        properties.push(...this.getModuleServiceTemplateProperties())
+                    }
                     this.$store.commit('businessTopology/setProperties', {
                         id: modelId,
                         properties: properties
                     })
                 }
                 return Promise.resolve(properties)
+            },
+            getModuleServiceTemplateProperties () {
+                const group = this.getModuleServiceTemplateGroup()
+                return [{
+                    bk_property_id: '__template_name__',
+                    bk_property_name: this.$t('BusinessTopology["模板名称"]'),
+                    bk_property_group: group.bk_group_id,
+                    bk_property_index: 1
+                }, {
+                    bk_property_id: '__service_category__',
+                    bk_property_name: this.$t('BusinessTopology["服务分类"]'),
+                    bk_property_group: group.bk_group_id,
+                    bk_property_index: 2
+                }]
             },
             async getPropertyGroups () {
                 let groups = []
@@ -136,12 +153,24 @@
                             requestId: 'getModelPropertyGroups'
                         }
                     })
+                    if (modelId === 'module') {
+                        groups.push(this.getModuleServiceTemplateGroup())
+                    }
                     this.$store.commit('businessTopology/setPropertyGroups', {
                         id: modelId,
                         groups: groups
                     })
                 }
                 return Promise.resolve(groups)
+            },
+            getModuleServiceTemplateGroup () {
+                return {
+                    bk_group_id: '__service_template_info__',
+                    bk_group_index: Infinity,
+                    bk_group_name: this.$t('BusinessTopology["服务模板信息"]'),
+                    bk_obj_id: 'module',
+                    ispre: true
+                }
             },
             async getInstance () {
                 try {

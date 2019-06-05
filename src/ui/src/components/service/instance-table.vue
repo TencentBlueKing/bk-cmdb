@@ -26,6 +26,12 @@
                 <a href="javascript:void(0)" class="text-primary" @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}</a>
             </template>
         </cmdb-table>
+        <div class="add-process-options" v-if="processList.length">
+            <a href="javascript:void(0)" class="text-primary" @click="handleAddProcess">
+                <i class="bk-icon icon-plus"></i>
+                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+            </a>
+        </div>
         <cmdb-slider
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
             :is-show.sync="processForm.show">
@@ -163,7 +169,7 @@
                 this.processForm.show = true
             },
             handleDeleteProcess (rowIndex) {
-                this.processList.splice(rowIndex)
+                this.processList.splice(rowIndex, 1)
             }
         }
     }
@@ -186,5 +192,12 @@
             cursor: pointer;
             @include inlineBlock;
         }
+    }
+    .add-process-options {
+        border: 1px solid $cmdbTableBorderColor;
+        border-top: none;
+        line-height: 42px;
+        font-size: 12px;
+        text-align: center;
     }
 </style>
