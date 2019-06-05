@@ -30,7 +30,7 @@
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox"
                                             v-model="values[property['bk_property_id']]['as_default_value']"
-                                            :disabled="hasUsed">
+                                            :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']">
                                         <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
                                     </label>
                                 </div>
@@ -50,7 +50,7 @@
                                     <component class="form-component" v-else
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="checkDisabled(property)"
+                                        :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -70,7 +70,7 @@
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="saveDisabled || !hasChange || $loading()"
+                    :disabled="saveDisabled || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -135,18 +135,6 @@
         },
         computed: {
             ...mapGetters('serviceProcess', ['hasProcessName']),
-            changedValues () {
-                const changedValues = {}
-                for (const propertyId in this.values) {
-                    if (this.values[propertyId] !== this.refrenceValues[propertyId]) {
-                        changedValues[propertyId] = this.values[propertyId]
-                    }
-                }
-                return changedValues
-            },
-            hasChange () {
-                return !!Object.keys(this.changedValues).length
-            },
             groupedProperties () {
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
@@ -186,6 +174,32 @@
         },
         methods: {
             ...mapMutations('serviceProcess', ['addLocalProcessTemplate', 'updateLocalProcessTemplate']),
+            changedValues () {
+                const changedValues = {}
+                if (!this.values['bind_ip']['value']) this.values['bind_ip']['value'] = ''
+                for (const propertyId in this.values) {
+                    if (JSON.stringify(this.values[propertyId]) !== JSON.stringify(this.refrenceValues[propertyId])) {
+                        changedValues[propertyId] = this.values[propertyId]
+                    }
+                }
+                return changedValues
+            },
+            hasChange () {
+                return !!Object.keys(this.changedValues()).length
+            },
+            filterChangedValues () {
+                const filterValues = {}
+                const changedData = this.changedValues()
+                for (const propertyId in changedData) {
+                    filterValues[propertyId] = {}
+                    Object.keys(changedData[propertyId]).forEach(key => {
+                        if (changedData[propertyId][key] !== this.refrenceValues[propertyId][key]) {
+                            filterValues[propertyId][key] = changedData[propertyId][key]
+                        }
+                    })
+                }
+                return filterValues
+            },
             checkScrollbar () {
                 const $layout = this.$el
                 this.scrollbar = $layout.scrollHeight !== $layout.offsetHeight
@@ -211,7 +225,11 @@
                             : ['bk_func_name', 'bk_process_name'].includes(key)
                     }
                 })
-                if (this.isCreatedService && this.type === 'update') this.values['sign_id'] = inst['sign_id']
+                if (this.isCreatedService && this.type === 'update') {
+                    this.values['sign_id'] = inst['sign_id']
+                } else if (this.type === 'update') {
+                    this.values['process_id'] = inst['process_id']
+                }
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -279,6 +297,10 @@
             },
             handleSave () {
                 this.$validator.validateAll().then(result => {
+                    if (!this.hasChange()) {
+                        this.handleCancel()
+                        return
+                    }
                     if (result && this.isCreatedService) {
                         if (this.type === 'create' && !this.hasProcessName(this.values)) {
                             this.values['sign_id'] = new Date().getTime()
@@ -294,7 +316,7 @@
                             })
                         }
                     } else if (result) {
-                        this.$emit('on-submit', this.values, this.type)
+                        this.$emit('on-submit', this.values, this.filterChangedValues(), this.type)
                     } else {
                         this.uncollapseGroup()
                     }
