@@ -55,13 +55,13 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	// validate module id field
 	if err = p.validateModuleID(ctx, instance.ModuleID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "module_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
 	// validate host id field
 	if err = p.validateHostID(ctx, instance.HostID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "host_id")
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
 	// make sure biz id identical with service template
@@ -149,6 +149,10 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.HostID != 0 {
 		filter[common.BKHostIDField] = option.HostID
+	}
+
+	if option.ModuleID != 0 {
+		filter[common.BKModuleIDField] = option.ModuleID
 	}
 
 	var total uint64
