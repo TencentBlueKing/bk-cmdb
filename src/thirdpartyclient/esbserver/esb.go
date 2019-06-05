@@ -22,6 +22,8 @@ import (
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 	"configcenter/src/thirdpartyclient/esbserver/gse"
 	"configcenter/src/thirdpartyclient/esbserver/nodeman"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type EsbClientInterface interface {
@@ -38,7 +40,7 @@ type esbsrv struct {
 	c         *util.Capability
 }
 
-func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.EsbConfig) (EsbClientInterface, error) {
+func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.EsbConfig, reg prometheus.Registerer) (EsbClientInterface, error) {
 	base := fmt.Sprintf("/api/c/compapi")
 
 	client, err := util.NewClient(apiMachineryConfig.TLSConfig)
@@ -54,7 +56,7 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.Esb
 		Throttle: flowcontrol,
 	}
 	esb := &esbsrv{
-		client:    rest.NewRESTClient(esbCapability, base),
+		client:    rest.NewRESTClient(esbCapability, base, reg),
 		esbConfig: esbConfig,
 	}
 	return esb, nil

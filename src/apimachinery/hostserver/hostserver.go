@@ -20,7 +20,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/paraparse"
+	params "configcenter/src/common/paraparse"
 )
 
 type HostServerClientInterface interface {
@@ -84,7 +84,7 @@ type HostServerClientInterface interface {
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {
 	base := fmt.Sprintf("/host/%s", version)
 	return &hostServer{
-		client: rest.NewRESTClient(c, base),
+		client: rest.NewRESTClient(c, base, nil),
 	}
 }
 

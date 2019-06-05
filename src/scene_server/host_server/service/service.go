@@ -81,7 +81,7 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/host/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	// restful.DefaultRequestContentType(restful.MIME_JSON)
 	// restful.DefaultResponseContentType(restful.MIME_JSON)
 

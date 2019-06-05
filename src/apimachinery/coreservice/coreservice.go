@@ -41,7 +41,7 @@ type CoreServiceClientInterface interface {
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
 	base := fmt.Sprintf("/api/%s", version)
 	return &coreService{
-		restCli: rest.NewRESTClient(c, base),
+		restCli: rest.NewRESTClient(c, base, nil),
 	}
 }
 

@@ -218,3 +218,10 @@ func NewTicker(d time.Duration) *Ticker {
 	}()
 	return t
 }
+
+// CountDuration count the duration of function f cost
+func CountDuration(f func()) time.Duration {
+	before := time.Now()
+	f()
+	return time.Since(before)
+}

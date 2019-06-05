@@ -16,6 +16,9 @@ import (
 	"strings"
 
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metrics"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type ClientInterface interface {
@@ -27,25 +30,56 @@ type ClientInterface interface {
 	Patch() *Request
 }
 
-func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
+func NewRESTClient(c *util.Capability, baseUrl string, reg prometheus.Registerer) ClientInterface {
 	if baseUrl != "/" {
 		baseUrl = strings.Trim(baseUrl, "/")
 		baseUrl = "/" + baseUrl + "/"
 	}
-
-	return &RESTClient{
+	client := &RESTClient{
 		baseUrl:    baseUrl,
 		capability: c,
 	}
+
+	if reg != nil {
+		client.requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "cmdb_apimachinary_requests_duration_seconds",
+			Help: "third party api request duration seconds.",
+		}, []string{"handler", "status_code"})
+		if err := reg.Register(client.requestDuration); err != nil {
+			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				client.requestDuration = are.ExistingCollector.(*prometheus.HistogramVec)
+			} else {
+				panic(err)
+			}
+		}
+
+		client.requestInflight = metrics.NewGauge(prometheus.GaugeOpts{
+			Name: "cmdb_apimachinary_requests_in_flight",
+			Help: "third party api request in flight.",
+		})
+		if err := reg.Register(client.requestInflight); err != nil {
+			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				client.requestInflight = are.ExistingCollector.(*metrics.Gauge)
+			} else {
+				panic(err)
+			}
+		}
+	}
+
+	return client
 }
 
 type RESTClient struct {
 	baseUrl    string
 	capability *util.Capability
+
+	requestDuration *prometheus.HistogramVec
+	requestInflight *metrics.Gauge
 }
 
 func (r *RESTClient) Verb(verb VerbType) *Request {
 	return &Request{
+		parent:     r,
 		verb:       verb,
 		baseURL:    r.baseUrl,
 		capability: r.capability,

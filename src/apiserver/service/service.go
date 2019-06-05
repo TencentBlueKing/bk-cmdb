@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/util"
 
@@ -40,21 +39,19 @@ type Service interface {
 }
 
 // NewService create a new service instance
-func NewService(metricService *metrics.Service) Service {
+func NewService() Service {
 	return &service{
-		metricService: metricService,
-		core:          core.New(nil, compatiblev2.New(nil)),
+		core: core.New(nil, compatiblev2.New(nil)),
 	}
 }
 
 type service struct {
-	enableAuth    bool
-	engine        *backbone.Engine
-	client        HTTPClient
-	core          core.Core
-	discovery     discovery.DiscoveryInterface
-	authorizer    auth.Authorizer
-	metricService *metrics.Service
+	enableAuth bool
+	engine     *backbone.Engine
+	client     HTTPClient
+	core       core.Core
+	discovery  discovery.DiscoveryInterface
+	authorizer auth.Authorizer
 }
 
 func (s *service) SetConfig(enableAuth bool, engine *backbone.Engine, httpClient HTTPClient, discovery discovery.DiscoveryInterface, authorize auth.Authorize) {
@@ -72,7 +69,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	}
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(s.metricService.RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}

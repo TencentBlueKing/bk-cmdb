@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/metrics"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 
@@ -46,8 +45,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
 	}
 
-	metricService := metrics.NewService(metrics.Config{ProcessName: types.CC_MODULE_APISERVER, ProcessInstance: svrInfo.Address()})
-	svc := service.NewService(metricService)
+	svc := service.NewService()
 
 	apiSvr := new(APIServer)
 	input := &backbone.BackboneParameter{
@@ -70,7 +68,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-	authorize, err := auth.NewAuthorize(nil, authConf)
+	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
@@ -86,7 +84,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	apiSvr.Core = engine
 
-	if err := backbone.StartServer(ctx, engine, metricService.HTTPMiddleware(ctnr)); err != nil {
+	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
 		return err
 	}
 
