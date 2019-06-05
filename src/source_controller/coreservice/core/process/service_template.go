@@ -103,7 +103,11 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	}
 
 	// update fields to local object
-	template.Name = input.Name
+	// template.Name = input.Name
+	if input.ServiceCategoryID != 0 {
+		template.ServiceCategoryID = input.ServiceCategoryID
+	}
+
 	if field, err := template.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
