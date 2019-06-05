@@ -303,14 +303,17 @@ type ListServiceInstanceOption struct {
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
 	Page              BasePage `json:"page,omitempty"`
+	// only when WithName is true, name field with be filled with `ip + process name + process port`
+	WithName bool `json:"with_name,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
-	BusinessID        int64   `json:"bk_biz_id"`
-	ProcessIDs        []int64 `json:"process_ids,omitempty"`
-	ServiceInstanceID []int64 `json:"service_instance_id,omitempty"`
-	ProcessTemplateID int64   `json:"process_template_id,omitempty"`
-	HostID            int64   `json:"host_id,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"process_ids,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateID  int64    `json:"process_template_id,omitempty"`
+	HostID             int64    `json:"host_id,omitempty"`
+	Page               BasePage `json:"page" field:"page"`
 }
 
 type MultipleServiceTemplateResult struct {

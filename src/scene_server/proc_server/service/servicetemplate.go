@@ -40,6 +40,28 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(temp)
 }
 
+func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
+	template := new(metadata.ServiceTemplate)
+	if err := ctx.DecodeInto(template); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(template.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service template, but get business id failed, err: %v", err)
+		return
+	}
+
+	temp, err := ps.CoreAPI.CoreService().Process().UpdateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template.ID, template)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update service template failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(temp)
+}
+
 func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {

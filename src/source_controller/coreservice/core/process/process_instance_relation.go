@@ -102,27 +102,29 @@ func (p *processOperation) UpdateProcessInstanceRelation(ctx core.ContextParams,
 	return relation, nil
 }
 
-func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTempalteID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, error) {
+	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{}
 	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
-	if serviceInstanceID > 0 {
-		filter[common.BKServiceInstanceIDField] = serviceInstanceID
+	if option.ServiceInstanceIDs != nil && len(*option.ServiceInstanceIDs) > 0 {
+		filter[common.BKServiceInstanceIDField] = map[string]interface{}{
+			common.BKDBIN: *option.ServiceInstanceIDs,
+		}
 	}
 
-	if processTempalteID > 0 {
-		filter[common.BKProcessTemplateIDField] = processTempalteID
+	if option.ProcessTemplateID > 0 {
+		filter[common.BKProcessTemplateIDField] = option.ProcessTemplateID
 	}
 
-	if hostID > 0 {
-		filter[common.BKProcessIDField] = hostID
+	if option.HostID > 0 {
+		filter[common.BKProcessIDField] = option.HostID
 	}
 
-	if processIDs != nil && len(processIDs) > 0 {
+	if option.ProcessIDs != nil && len(*option.ProcessIDs) > 0 {
 		processIDFilter := map[string]interface{}{
-			common.BKDBIN: processIDs,
+			common.BKDBIN: *option.ProcessIDs,
 		}
 		filter[common.BKProcIDField] = processIDFilter
 	}
@@ -135,7 +137,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, b
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Start(
-		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &relations); nil != err {
+		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &relations); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}

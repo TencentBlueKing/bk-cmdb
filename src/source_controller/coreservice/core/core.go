@@ -193,14 +193,14 @@ type ProcessOperation interface {
 	CreateServiceInstance(ctx ContextParams, template metadata.ServiceInstance) (*metadata.ServiceInstance, error)
 	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, error)
 	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, error)
-	ListServiceInstance(ctx ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleServiceInstance, error)
+	ListServiceInstance(ctx ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, error)
 	DeleteServiceInstance(ctx ContextParams, processTemplateID int64) error
 
 	// process instance relation
 	CreateProcessInstanceRelation(ctx ContextParams, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
 	GetProcessInstanceRelation(ctx ContextParams, processInstanceID int64) (*metadata.ProcessInstanceRelation, error)
 	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
-	ListProcessInstanceRelation(ctx ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTemplateID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error)
+	ListProcessInstanceRelation(ctx ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, error)
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) error
 }
 

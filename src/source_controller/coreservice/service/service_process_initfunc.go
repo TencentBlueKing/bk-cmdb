@@ -51,5 +51,5 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodGet, "/find/process/process_instance_relation/{process_instance_id}", s.GetProcessInstanceRelation, nil)
 	s.addAction(http.MethodPost, "/findmany/process/process_instance_relation", s.ListProcessInstanceRelation, nil)
 	s.addAction(http.MethodPut, "/update/process/process_instance_relation/{process_instance_id}", s.UpdateProcessInstanceRelation, nil)
-	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation/{process_instance_id}", s.DeleteProcessInstanceRelation, nil)
+	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
 }
