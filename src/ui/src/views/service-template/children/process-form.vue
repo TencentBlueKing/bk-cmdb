@@ -43,7 +43,7 @@
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
                                         v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]"
+                                        v-model.trim="values[property['bk_property_id']]['value']"
                                         @input="handleFuncNameInput(property['bk_property_id'])"
                                         @on-change="handleFuncNameChange(property['bk_property_id'])">
                                     </component>
@@ -204,18 +204,14 @@
                 }
                 const formValues = this.$tools.getInstFormValues(this.properties, inst)
                 Object.keys(formValues).forEach(key => {
-                    if (['bk_func_name', 'bk_process_name'].includes(key)) {
-                        this.values[key] = this.type === 'update' ? this.inst[key] : formValues[key]
-                    } else {
-                        this.values[key] = {
-                            value: formValues[key],
-                            as_default_value: this.type === 'update'
-                                ? this.inst[key]['as_default_value'] ? this.inst[key]['as_default_value'] : false
-                                : false
-                        }
+                    this.values[key] = {
+                        value: formValues[key],
+                        as_default_value: this.type === 'update'
+                            ? this.inst[key] ? this.inst[key]['as_default_value'] : false
+                            : ['bk_func_name', 'bk_process_name'].includes(key)
                     }
                 })
-                if (this.isCreatedService) this.values['sign_id'] = inst['sign_id']
+                if (this.isCreatedService && this.type === 'update') this.values['sign_id'] = inst['sign_id']
                 this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
@@ -274,11 +270,11 @@
                 return rules
             },
             handleFuncNameChange (id) {
-                this.autoInput = !this.values['bk_process_name']
+                this.autoInput = !this.values['bk_process_name']['value']
             },
             handleFuncNameInput (id) {
                 if (id === 'bk_func_name' && this.autoInput) {
-                    this.values['bk_process_name'] = this.values['bk_func_name']
+                    this.values['bk_process_name']['value'] = this.values['bk_func_name']['value']
                 }
             },
             handleSave () {

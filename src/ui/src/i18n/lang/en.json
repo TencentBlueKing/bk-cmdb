@@ -825,7 +825,9 @@
         "请输入一级分类": "Please enter and return to the end",
         "请输入二级分类": "Please enter",
         "一级分类": "First classification",
-        "二级分类": "Secondary classification"
+        "二级分类": "Secondary classification",
+        "确认删除分类": "Confirm delete category?",
+        "请输入分类名称": "Please enter category name"
     },
     "HostDetails": {
         "主机详情": "Host Details",
