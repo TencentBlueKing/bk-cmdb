@@ -68,7 +68,7 @@ func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, cate
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(category).
 		SubResource(subPath).
@@ -184,7 +184,7 @@ func (p *process) UpdateServiceTemplate(ctx context.Context, h http.Header, temp
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/update/process/service_template/%d", templateID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(template).
 		SubResource(subPath).
@@ -429,7 +429,7 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 	ret := new(metadata.OneServiceInstanceResult)
 	subPath := fmt.Sprintf("/update/process/service_instance/%d", instanceID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
@@ -540,7 +540,7 @@ func (p *process) UpdateProcessInstanceRelation(ctx context.Context, h http.Head
 	ret := new(metadata.OneProcessInstanceRelationResult)
 	subPath := fmt.Sprintf("/update/process/process_instance_relation/%d", instanceID)
 
-	err = p.client.Post().
+	err = p.client.Put().
 		WithContext(ctx).
 		Body(instance).
 		SubResource(subPath).
