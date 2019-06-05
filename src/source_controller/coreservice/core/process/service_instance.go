@@ -42,10 +42,14 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	instance.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
 	// validate service template id field
-	serviceTemplate, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
-	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_template_id")
+	var serviceTemplate *metadata.ServiceTemplate
+	if instance.ServiceTemplateID != 0 {
+		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+			return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "service_template_id")
+		}
+		serviceTemplate = st
 	}
 
 	// validate module id field
@@ -61,14 +65,16 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// make sure biz id identical with service template
-	serviceTemplateBizID, err := metadata.BizIDFromMetadata(serviceTemplate.Metadata)
-	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, parse biz id from service template failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
-	}
-	if bizID != serviceTemplateBizID {
-		blog.Errorf("CreateServiceInstance failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplateBizID, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+	if serviceTemplate != nil {
+		serviceTemplateBizID, err := metadata.BizIDFromMetadata(serviceTemplate.Metadata)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, parse biz id from service template failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
+			return nil, ctx.Error.Errorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
+		}
+		if bizID != serviceTemplateBizID {
+			blog.Errorf("CreateServiceInstance failed, validation failed, input bizID:%d not equal service template bizID:%d, rid: %s", bizID, serviceTemplateBizID, ctx.ReqID)
+			return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
+		}
 	}
 
 	// generate id field
