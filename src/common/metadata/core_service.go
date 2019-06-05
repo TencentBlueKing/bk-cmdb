@@ -266,7 +266,7 @@ type OneServiceCategoryResult struct {
 	Data     ServiceCategory `json:"data"`
 }
 
-type ServiceCategoryWithStatisticsResult struct {
+type OneServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategoryWithStatistics `json:"data"`
 }
@@ -276,9 +276,19 @@ type MultipleServiceCategory struct {
 	Info  []ServiceCategory `json:"info"`
 }
 
+type MultipleServiceCategoryWithStatistics struct {
+	Count int64                           `json:"count"`
+	Info  []ServiceCategoryWithStatistics `json:"info"`
+}
+
 type MultipleServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategory `json:"data"`
+}
+
+type MultipleServiceCategoryWithStatisticsResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategoryWithStatistics `json:"data"`
 }
 
 type ListServiceTemplateOption struct {
