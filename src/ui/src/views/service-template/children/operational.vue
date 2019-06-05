@@ -107,7 +107,7 @@
                 mainList: [],
                 secondaryList: [],
                 allSecondaryList: [],
-                processTemplateList: [],
+                processList: [],
                 attribute: {
                     type: null,
                     inst: {
@@ -128,9 +128,6 @@
         },
         computed: {
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
-            processList () {
-                return this.processTemplateList
-            },
             isCreatedType () {
                 return !this.$route.params['template']
             },
@@ -145,7 +142,7 @@
         async created () {
             const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
             this.$store.commit('setHeaderTitle', title)
-            this.processTemplateList = this.localProcessTemplate
+            this.processList = this.localProcessTemplate
             try {
                 await this.reload()
                 if (!this.isCreatedType) {
@@ -224,7 +221,9 @@
                         service_template_id: this.originTemplateValues['id']
                     })
                 }).then(data => {
-                    this.processTemplateList = data.info
+                    this.processList = data.info.map(template => {
+                        return template['property']
+                    })
                 }).finally(() => {
                     this.processLoading = false
                 })
@@ -240,7 +239,9 @@
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
                             service_template_id: this.originTemplateValues['id'],
-                            processes: [values]
+                            processes: [{
+                                spec: values
+                            }]
                         })
                     }).then(() => {
                         this.$bkMessage({
@@ -274,7 +275,7 @@
             },
             handleUpdateProcess (template) {
                 this.slider.show = true
-                this.slider.title = template['bk_func_name']
+                this.slider.title = template['bk_func_name']['value']
                 this.attribute.type = 'update'
                 this.attribute.inst.edit = template
             },
@@ -283,7 +284,8 @@
                     title: this.$t("ServiceManagement['确认删除模板进程']"),
                     confirmFn: () => {
                         if (this.isCreatedType) {
-                            this.deleteClocalProcessTemplate(template)
+                            this.deleteLocalProcessTemplate(template)
+                            this.processList = this.localProcessTemplate
                         } else {
                             this.deleteProcessTemplate({
                                 params: {
@@ -310,7 +312,11 @@
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
                             service_template_id: data.id,
-                            processes: this.processList
+                            processes: this.processList.map(process => {
+                                return {
+                                    spec: process
+                                }
+                            })
                         })
                     }).then(() => {
                         this.$bkMessage({

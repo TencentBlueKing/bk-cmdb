@@ -22,7 +22,6 @@
                     </div>
                 </template>
                 <template v-else>
-                    <!-- <span :key="index">{{item[header.id] | formatValue}}</span> -->
                     <span :key="index">{{item[header.id] ? item[header.id] : '--'}}</span>
                 </template>
             </template>
@@ -32,18 +31,6 @@
 
 <script>
     export default {
-        filters: {
-            formatValue (value) {
-                let showValue = ''
-                const type = typeof value
-                if (value && type === 'object') {
-                    showValue = value['value'] ? value['value'] : '--'
-                } else {
-                    showValue = value
-                }
-                return showValue
-            }
-        },
         props: {
             list: {
                 type: Array,
@@ -67,7 +54,7 @@
                 table: {
                     header: [
                         {
-                            id: 'bk_process_name',
+                            id: 'bk_func_name',
                             name: this.$t("ProcessManagement['进程名称']"),
                             sortable: false
                         }, {
@@ -106,6 +93,7 @@
             showList () {
                 let list = this.list.map(template => {
                     const result = {}
+                    // const property = template['property']
                     Object.keys(template).map(key => {
                         const type = typeof template[key]
                         if (type === 'object') {
@@ -117,7 +105,7 @@
                     result['originData'] = template
                     return result
                 })
-                list = this.$tools.flatternList(this.properties, list)
+                list = this.$tools.flattenList(this.properties, list)
                 return list
             }
         },
