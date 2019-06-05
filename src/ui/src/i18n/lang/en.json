@@ -841,5 +841,8 @@
         "批量取消": "Batch Cancel",
         "列表": "List",
         "暂无关联关系": "No Association"
+    },
+    "BusinessSynchronous": {
+        "确认并同步": "Confirm and synchronize"
     }
 }
