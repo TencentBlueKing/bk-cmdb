@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
 
@@ -185,6 +186,11 @@ type ListServiceInstancesWithHostInput struct {
 	Metadata Metadata `json:"metadata"`
 	HostID   int64    `json:"bk_host_id"`
 	WithName bool     `json:"with_name"`
+}
+
+type ListProcessInstancesOption struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceInstanceID int64    `json:"service_instance_id"`
 }
 
 type UpdateProcessTemplateInput struct {
@@ -609,4 +615,9 @@ type ProcessInstanceRelation struct {
 
 func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 	return "", nil
+}
+
+type ProcessInstance struct {
+	Property mapstr.MapStr           `json:"property"`
+	Relation ProcessInstanceRelation `json:"relation"`
 }
