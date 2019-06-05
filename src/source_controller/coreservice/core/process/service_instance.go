@@ -208,7 +208,6 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 // 可能应用场景：1. 查询服务实例时组装名称；2. 更新进程信息时根据组装名称直接更新到 `name` 字段
 // issue: https://github.com/Tencent/bk-cmdb/issues/2485
 func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instanceID int64) (string, error) {
-	instanceName := ""
 
 	// get instance
 	instance := metadata.ServiceInstance{}
@@ -239,7 +238,7 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 		}
 		return "", ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
-	instanceName += host.InnerIP
+	instanceName := host.InnerIP
 
 	// get first process instance relation
 	relation := metadata.ProcessInstanceRelation{}
@@ -269,7 +268,11 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 			return "", ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 		}
 
-		instanceName += fmt.Sprintf("-%s-%s", process.ProcessName, process.Port)
+		instanceName += fmt.Sprintf("_%s", process.ProcessName)
+
+		if len(process.Port) > 0 {
+			instanceName += fmt.Sprintf("_%s", process.Port)
+		}
 	}
 	return instanceName, nil
 }
