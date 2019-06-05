@@ -120,18 +120,18 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	return template, nil
 }
 
-func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.BasePage) (*metadata.MultipleProcessTemplate, error) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, error) {
+	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{}
 	filter[common.MetadataField] = md.ToMapStr()
 
-	if serviceTemplateID != 0 {
-		filter[common.BKServiceTemplateIDField] = serviceTemplateID
+	if option.ServiceTemplateID != 0 {
+		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
 	}
 
-	if processTemplateIDs != nil {
+	if option.ProcessTemplateIDs != nil {
 		filter[common.BKProcessTemplateIDField] = map[string][]int64{
-			common.BKDBIN: *processTemplateIDs,
+			common.BKDBIN: *option.ProcessTemplateIDs,
 		}
 	}
 
@@ -143,7 +143,7 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, bizID in
 	}
 	templates := make([]metadata.ProcessTemplate, 0)
 	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Start(
-		uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &templates); nil != err {
+		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
