@@ -18,8 +18,8 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/metadata"
 )
 
 type AdminServerClientInterface interface {
@@ -31,7 +31,7 @@ type AdminServerClientInterface interface {
 func NewAdminServerClientInterface(c *util.Capability, version string) AdminServerClientInterface {
 	base := fmt.Sprintf("/migrate/%s", version)
 	return &adminServer{
-		client: rest.NewRESTClient(c, base),
+		client: rest.NewRESTClient(c, base, nil),
 	}
 }
 

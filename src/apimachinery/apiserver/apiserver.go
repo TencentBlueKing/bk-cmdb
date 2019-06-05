@@ -50,7 +50,7 @@ type ApiServerClientInterface interface {
 func NewApiServerClientInterface(c *util.Capability, version string) ApiServerClientInterface {
 	base := fmt.Sprintf("/api/%s", version)
 	return &apiServer{
-		client: rest.NewRESTClient(c, base),
+		client: rest.NewRESTClient(c, base, nil),
 	}
 }
 

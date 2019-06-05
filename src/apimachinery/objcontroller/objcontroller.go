@@ -39,7 +39,7 @@ type ObjControllerClientInterface interface {
 func NewObjectControllerInterface(c *util.Capability, version string) ObjControllerClientInterface {
 	base := fmt.Sprintf("/object/%s", version)
 	return &objectctrl{
-		client: rest.NewRESTClient(c, base),
+		client: rest.NewRESTClient(c, base, nil),
 	}
 }
 

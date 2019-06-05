@@ -14,10 +14,8 @@ package metrics
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"strconv"
-	"sync/atomic"
 	"time"
 
 	"configcenter/src/common"
@@ -46,9 +44,7 @@ type Service struct {
 	registry        prometheus.Registerer
 	requestTotal    *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
-
-	inFlight    uint64
-	inFlightMax uint64
+	requestInfligh  *Gauge
 }
 
 // NewService returns new metrics service
@@ -75,21 +71,13 @@ func NewService(conf Config) *Service {
 	)
 	register.MustRegister(srv.requestDuration)
 
-	register.MustRegister(prometheus.NewGaugeFunc(
+	srv.requestInfligh = NewGauge(
 		prometheus.GaugeOpts{
 			Name: ns + "http_request_in_flight",
 			Help: "current number of request being served.",
 		},
-		func() float64 { return math.Float64frombits((atomic.LoadUint64(&srv.inFlight))) },
-	))
-
-	register.MustRegister(prometheus.NewGaugeFunc(
-		prometheus.GaugeOpts{
-			Name: ns + "http_request_in_flight_max",
-			Help: "max number of request being served.",
-		},
-		func() float64 { return math.Float64frombits((atomic.LoadUint64(&srv.inFlightMax))) },
-	))
+	)
+	register.MustRegister(srv.requestInfligh)
 
 	register.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	register.MustRegister(prometheus.NewGoCollector())
@@ -138,8 +126,8 @@ func (s *Service) RestfulWebService() *restful.WebService {
 // HTTPMiddleware is the http middleware for go-restful framework
 func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s.increaseInFlight()
-		defer s.decreaseInFlight()
+		s.requestInfligh.Inc()
+		defer s.requestInfligh.Dec()
 
 		if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
 			s.ServeHTTP(w, r)
@@ -174,29 +162,6 @@ func (s *Service) RestfulMiddleWare(req *restful.Request, resp *restful.Response
 		}
 	}
 	chain.ProcessFilter(req, resp)
-}
-
-func (s *Service) increaseInFlight() {
-	new := s.addInFlight(1)
-	old := atomic.LoadUint64(&s.inFlightMax)
-	if new > old {
-		atomic.CompareAndSwapUint64(&s.inFlightMax, old, new)
-	}
-}
-
-func (s *Service) decreaseInFlight() {
-	s.addInFlight(-1)
-
-}
-
-func (s *Service) addInFlight(val float64) uint64 {
-	for {
-		oldBits := atomic.LoadUint64(&s.inFlight)
-		newBits := math.Float64bits(math.Float64frombits(oldBits) + val)
-		if atomic.CompareAndSwapUint64(&s.inFlight, oldBits, newBits) {
-			return newBits
-		}
-	}
 }
 
 func (s *Service) lable(lableKVs ...string) prometheus.Labels {
