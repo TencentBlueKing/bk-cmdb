@@ -60,14 +60,7 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 
 func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
-		HostID            int64             `json:"host_id" field:"host_id"`
-		ProcessIDs        []int64           `json:"process_ids" field:"process_ids"`
-		ProcessTemplateID int64             `json:"process_template_id" field:"process_template_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListProcessInstanceRelationOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
@@ -79,7 +72,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp.BusinessID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err

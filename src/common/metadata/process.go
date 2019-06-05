@@ -80,6 +80,7 @@ type GetServiceInstanceInModuleInput struct {
 	Metadata Metadata `json:"metadata"`
 	ModuleID int64    `json:"module_id"`
 	Page     BasePage `json:"page"`
+	WithName bool     `json:"with_name"`
 }
 
 type FindServiceTemplateAndInstanceDifferenceOption struct {
@@ -183,6 +184,7 @@ type ForceSyncServiceInstanceWithTemplateInput struct {
 type ListServiceInstancesWithHostInput struct {
 	Metadata Metadata `json:"metadata"`
 	HostID   int64    `json:"host_id"`
+	WithName bool     `json:"with_name"`
 }
 
 type UpdateProcessTemplateInput struct {

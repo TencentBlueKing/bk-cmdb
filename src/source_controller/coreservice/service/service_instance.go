@@ -60,12 +60,7 @@ func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, 
 
 func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceTemplateID int64             `json:"service_template_id"`
-		HostID            int64             `json:"host_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListServiceInstanceOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceInstances failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
@@ -77,7 +72,7 @@ func (s *coreService) ListServiceInstances(params core.ContextParams, pathParams
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceInstance(params, fp.BusinessID, fp.ServiceTemplateID, fp.HostID, fp.Page)
+	result, err := s.core.ProcessOperation().ListServiceInstance(params, fp)
 	if err != nil {
 		blog.Errorf("ListServiceInstance failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
