@@ -346,9 +346,10 @@ type DeleteProcessInstanceRelationOption struct {
 }
 
 type ListProcessTemplatesOption struct {
-	BusinessID         int64   `json:"bk_biz_id"`
-	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
-	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_ids,omitempty" bson:"process_template_ids"`
+	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type OneServiceInstanceResult struct {
