@@ -2,8 +2,14 @@
     <div class="layout">
         <template v-if="instances.length">
             <div class="options">
-                <bk-button class="options-button" type="primary">
+                <bk-button class="options-button" type="primary"
+                    @click="handleCreateServiceInstance">
                     {{$t('BusinessTopology["添加服务实例"]')}}
+                </bk-button>
+                <bk-button class="options-button" type="default"
+                    v-if="withTemplate"
+                    @click="handleSyncTemplate">
+                    {{$t('BusinessTopology["同步模板"]')}}
                 </bk-button>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
@@ -30,7 +36,12 @@
                 <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
             </div>
             <div class="tables">
-                <service-instance-table v-for="n in 15" :key="n"></service-instance-table>
+                <service-instance-table
+                    v-for="(instance, index) in instances"
+                    :key="index"
+                    :instance="instance"
+                    :expanded="index === 0">
+                </service-instance-table>
             </div>
         </template>
         <service-instance-empty v-else></service-instance-empty>
@@ -51,12 +62,17 @@
             }
         },
         computed: {
+            currentNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
             currentModule () {
-                const node = this.$store.state.businessTopology.selectedNode
-                if (node && node.data.bk_obj_id === 'module') {
-                    return node.data
+                if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
+                    return this.currentNode.data
                 }
                 return null
+            },
+            withTemplate () {
+                return this.currentModule && this.currentModule.service_template_id
             },
             menuItem () {
                 return [{
@@ -98,6 +114,24 @@
                     console.error(e)
                     this.instances = []
                 }
+            },
+            handleCreateServiceInstance () {
+                this.$router.push({
+                    name: 'createServiceInstance',
+                    params: {
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    }
+                })
+            },
+            handleSyncTemplate () {
+                this.$route.push({
+                    name: 'synchronous',
+                    params: {
+                        moduleId: this.currentModule.bk_inst_id,
+                        templateId: this.currentModule.template_id
+                    }
+                })
             },
             batchEdit (disabled) {
                 if (disabled) {
