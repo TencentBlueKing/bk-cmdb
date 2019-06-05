@@ -26,6 +26,7 @@ import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
 import template from '@/views/service-template/router.config'
 import cagetory from '@/views/service-cagetory/router.config'
+import synchronous from '@/views/business-synchronous/router.config'
 
 import tree from '@/views/tree/router.config'
 
@@ -51,7 +52,8 @@ export const viewRouters = [
     ...model,
     ...permission,
     tree,
-    cagetory
+    cagetory,
+    synchronous
 ]
 
 const statusRouters = [
