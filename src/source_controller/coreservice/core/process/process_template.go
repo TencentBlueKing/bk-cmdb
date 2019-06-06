@@ -101,7 +101,7 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 	}
 
 	if field, err := input.Validate(); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		blog.Errorf("UpdateProcessTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
@@ -111,10 +111,13 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 		template.Property.Update(*input.Property)
 	}
 
+	template.Modifier = ctx.User
+	template.LastTime = time.Now()
+
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Update(ctx, filter, template); nil != err {
-		blog.Errorf("UpdateServiceTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, template, err, ctx.ReqID)
+	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Update(ctx, filter, &template); nil != err {
+		blog.Errorf("UpdateProcessTemplate failed, mongodb failed, table: %s, filter: %+v, template: %+v, err: %+v, rid: %s", common.BKTableNameProcessTemplate, filter, template, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBUpdateFailed)
 	}
 	return template, nil
@@ -158,7 +161,7 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option m
 func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, processTemplateID int64) error {
 	template, err := p.GetProcessTemplate(ctx, processTemplateID)
 	if err != nil {
-		blog.Errorf("DeleteProcessTemplate failed, GetServiceTemplate failed, templateID: %d, err: %+v, rid: %s", processTemplateID, err, ctx.ReqID)
+		blog.Errorf("DeleteProcessTemplate failed, GetProcessTemplate failed, templateID: %d, err: %+v, rid: %s", processTemplateID, err, ctx.ReqID)
 		return err
 	}
 
