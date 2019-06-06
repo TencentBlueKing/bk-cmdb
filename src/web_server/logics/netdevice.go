@@ -13,25 +13,25 @@
 package logics
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/language"
-	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
+
+	"github.com/rentiansheng/xlsx"
 )
 
 // get date from excel file to import device
 func GetImportNetDevices(
-	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File, url string) (map[int]map[string]interface{}, []string, error) {
+	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
@@ -47,17 +47,12 @@ func GetImportNetDevices(
 	return GetExcelData(sheet, fields, nil, true, 0, defLang)
 }
 
-func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []interface{}, sheet *xlsx.Sheet) error {
+func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
 	productExcelHealer(fields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
-		deviceData, ok := row.(map[string]interface{})
-		if !ok {
-			msg := fmt.Sprintf("[Export Net Device] Build NetDevice excel from data, convert to map[string]interface{} fail, data: %v", row)
-			blog.Errorf(msg)
-			return errors.New(msg)
-		}
+		deviceData := row
 
 		setExcelRowDataByIndex(deviceData, sheet, rowIndex, fields)
 		rowIndex++
@@ -67,7 +62,8 @@ func BuildNetDeviceExcelFromData(defLang language.DefaultCCLanguageIf, fields ma
 }
 
 // get net device data to export
-func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interface{}, error) {
+func (lgc *Logics) GetNetDeviceData(header http.Header, deviceIDStr string) ([]mapstr.MapStr, error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	deviceIDStrArr := strings.Split(deviceIDStr, ",")
 	deviceIDArr := []int64{}
 
@@ -76,70 +72,29 @@ func GetNetDeviceData(header http.Header, apiAddr, deviceIDStr string) ([]interf
 		deviceIDArr = append(deviceIDArr, deviceID)
 	}
 
-	deviceCond := map[string]interface{}{
-		"field": []string{},
-		"condition": []map[string]interface{}{
-			map[string]interface{}{
-				"field":    common.BKDeviceIDField,
-				"operator": common.BKDBIN,
-				"value":    deviceIDArr,
-			},
-		},
+	condItem := condition.ConditionItem{
+		Field:    common.BKDeviceIDField,
+		Operator: common.BKDBIN,
+		Value:    deviceIDArr,
 	}
-
-	url := apiAddr + fmt.Sprintf("/api/%s/collector/netcollect/device/action/search", webCommon.API_VERSION)
-	result, err := httpRequest(url, deviceCond, header)
+	searchCond := condition.CreateCondition()
+	searchCond.AddConditionItem(condItem)
+	deviceResult, err := lgc.Engine.CoreAPI.ApiServer().SearchNetCollectDevice(context.Background(), header, searchCond)
 	if nil != err {
-		blog.Errorf("[Export Net Device] http request error:%v", err)
+		blog.Errorf("search net device data inst  error:%#v , search condition:%#v", err, searchCond)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	blog.V(5).Infof("[Export Net Device] search device url:%s", url)
-	blog.V(5).Infof("[Export Net Device] search device return:%s", result)
-
-	js, err := simplejson.NewJson([]byte(result))
-	if nil != err {
-		blog.Errorf("[Export Net Device] convert http reponse string [%s] to json error:%v", result, err)
-	}
-	deviceDataResult, err := js.Map()
-	if nil != err {
-		blog.Errorf("[Export Net Device] convert http reponse json [%#+v] to map[string]interface{} error:%v", deviceDataResult, err)
+	if 0 == deviceResult.Data.Count {
+		return deviceResult.Data.Info, errors.New("no device")
 	}
 
-	deviceResult, ok := deviceDataResult["result"].(bool)
-	if !ok {
-		blog.Errorf("[Export Net Device] http reponse 'result'[%#+v] is bool", deviceDataResult["result"])
-	}
-	if !deviceResult {
-		return nil, errors.New(deviceDataResult["bk_error_msg"].(string))
-	}
-
-	deviceData, ok := deviceDataResult["data"].(map[string]interface{})
-	if !ok {
-		blog.Errorf("[Export Net Device] http reponse 'data'[%#+v] is not map[string]interface{}", deviceDataResult["data"])
-	}
-	deviceInfo, ok := deviceData["info"].([]interface{})
-	if !ok {
-		blog.Errorf("[Export Net Device] http reponse 'info'[%#+v] is not []interface{}", deviceData["info"])
-	}
-	_, ok = deviceData["count"].(json.Number)
-	if !ok {
-		blog.Errorf("[Export Net Device] http reponse 'count'[%#+v] is not a number", deviceData["count"])
-	}
-	deviceCount, err := deviceData["count"].(json.Number).Int64()
-	if nil != err {
-		blog.Errorf("[Export Net Device] http reponse 'count'[%#+v] convert to int64 error:%v", deviceData["count"], err)
-	}
-
-	if 0 == deviceCount {
-		return deviceInfo, errors.New("no device")
-	}
-
-	blog.V(5).Infof("[Export Net Device] search return device info:%s", deviceInfo)
-	return deviceInfo, nil
+	blog.V(5).Infof("[Export Net Device] search return device info:%s", deviceResult)
+	return deviceResult.Data.Info, nil
 }
 
 //BuildNetDeviceExcelTemplate  return httpcode, error
-func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, url, filename string) error {
+func BuildNetDeviceExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, filename string) error {
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
