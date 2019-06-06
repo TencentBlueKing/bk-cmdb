@@ -843,6 +843,15 @@
         "暂无关联关系": "No Association"
     },
     "BusinessSynchronous": {
-        "确认并同步": "Confirm and synchronize"
+        "确认并同步": "Confirm and synchronize",
+        "从模版中删除": "process has been removed from the template.",
+        "模板中新增进程": "New process in the template：",
+        "变更内容": "Change Content",
+        "涉及实例": "Involved Instance",
+        "属性名称": "Attribute Name",
+        "变更前": "Before Change",
+        "变更后": "After Change",
+        "找不到更新信息": "Sorry, the corresponding service template update information could not be found~",
+        "返回首页": "Home"
     }
 }

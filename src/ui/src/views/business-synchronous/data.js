@@ -43,6 +43,40 @@ export default {
                                 'template_property_value': '2379'
                             }
                         ]
+                    },
+                    {
+                        'service_instance': {
+                            'id': 122,
+                            'name': '192.168.1.2_mysql_2379',
+                            'service_template_id': 44,
+                            'module_id': 66,
+                            'host_id': 56
+                        },
+                        'changed_attributes': [
+                            {
+                                'property_id': 557,
+                                'property_name': '端口',
+                                'property_value': '2378',
+                                'template_property_value': '2379'
+                            }
+                        ]
+                    },
+                    {
+                        'service_instance': {
+                            'id': 122,
+                            'name': '192.168.1.2_mysql_2379',
+                            'service_template_id': 44,
+                            'module_id': 66,
+                            'host_id': 56
+                        },
+                        'changed_attributes': [
+                            {
+                                'property_id': 559,
+                                'property_name': 'IP',
+                                'property_value': '127.0.0.1',
+                                'template_property_value': '0.0.0.0'
+                            }
+                        ]
                     }
                 ]
             },
