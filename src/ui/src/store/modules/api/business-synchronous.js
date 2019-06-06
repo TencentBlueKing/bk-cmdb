@@ -16,48 +16,26 @@ const getters = {}
 
 const actions = {
     /**
-     * 获取服务分类
+     * 根据服务模板、模块查询进程实例与服务模板之间的差异
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    searchServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`findmany/proc/service_category`, params, config)
+    searchServiceInstanceDifferences ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`find/proc/service_instance/difference`, params, config)
     },
     /**
-     * 创建服务分类
+     * 批量更新服务实例中的进程信息，保持和服务模板一致
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    createServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`create/proc/service_category`, params, config)
-    },
-    /**
-     * 更新服务分类
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    updateServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.put(`update/proc/service_category`, params, config)
-    },
-    /**
-     * 创建服务分类
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {promises} promises 对象
-     */
-    deleteServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.delete(`delete/proc/service_category`, params, config)
+    syncServiceInstanceByTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.post(`update/proc/service_instance/with_template`, params, config)
     }
 }
 
