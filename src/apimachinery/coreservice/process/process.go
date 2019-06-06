@@ -25,7 +25,7 @@ type ProcessInterface interface {
 	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
 	GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (resp *metadata.ServiceCategory, err error)
 	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
-	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error)
+	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategoryWithStatistics, err error)
 	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) error
 
 	// service template

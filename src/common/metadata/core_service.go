@@ -266,7 +266,7 @@ type OneServiceCategoryResult struct {
 	Data     ServiceCategory `json:"data"`
 }
 
-type ServiceCategoryWithStatisticsResult struct {
+type OneServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategoryWithStatistics `json:"data"`
 }
@@ -276,9 +276,19 @@ type MultipleServiceCategory struct {
 	Info  []ServiceCategory `json:"info"`
 }
 
+type MultipleServiceCategoryWithStatistics struct {
+	Count int64                           `json:"count"`
+	Info  []ServiceCategoryWithStatistics `json:"info"`
+}
+
 type MultipleServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategory `json:"data"`
+}
+
+type MultipleServiceCategoryWithStatisticsResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategoryWithStatistics `json:"data"`
 }
 
 type ListServiceTemplateOption struct {
@@ -346,9 +356,10 @@ type DeleteProcessInstanceRelationOption struct {
 }
 
 type ListProcessTemplatesOption struct {
-	BusinessID         int64   `json:"bk_biz_id"`
-	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
-	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_ids,omitempty" bson:"process_template_ids"`
+	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type OneServiceInstanceResult struct {

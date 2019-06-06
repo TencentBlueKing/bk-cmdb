@@ -130,7 +130,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 
 	// filter with matching any sub category
 	if categoryID > 0 {
-		categories, err := p.ListServiceCategories(ctx, bizID, false)
+		categoriesWithSts, err := p.ListServiceCategories(ctx, bizID, false)
 		if err != nil {
 			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
@@ -139,7 +139,8 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 		childrenIDs = append(childrenIDs, categoryID)
 		for {
 			pre := len(childrenIDs)
-			for _, category := range categories.Info {
+			for _, categoryWithSts := range categoriesWithSts.Info {
+				category := categoryWithSts.ServiceCategory
 				if category.ParentID == 0 {
 					continue
 				}

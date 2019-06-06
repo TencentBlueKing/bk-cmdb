@@ -135,7 +135,7 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 	return category, nil
 }
 
-func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategory, error) {
+func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]mapstr.MapStr{
 		common.MetadataField: md.ToMapStr(),
@@ -147,9 +147,43 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
-	result := &metadata.MultipleServiceCategory{
-		Count: int64(len(categories)),
-		Info:  categories,
+	usageMap := map[int64]int64{}
+	if withStatistics == true {
+		categoryIDs := make([]int64, 0)
+		for _, category := range categories {
+			categoryIDs = append(categoryIDs, category.ID)
+		}
+		templateFilter := map[string]interface{}{
+			common.BKServiceCategoryIDField: map[string]interface{}{
+				common.BKDBIN: categoryIDs,
+			},
+		}
+		serviceTemplates := make([]metadata.ServiceTemplate, 0)
+		if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(templateFilter).All(ctx.Context, &serviceTemplates); nil != err {
+			blog.Errorf("ListServiceCategories failed, find reference templates failed, mongodb failed, filter: %+v, table: %s, err: %+v, rid: %s", common.BKTableNameServiceTemplate, serviceTemplates, err, ctx.ReqID)
+			return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
+		}
+		for _, tpl := range serviceTemplates {
+			count, exist := usageMap[tpl.ServiceCategoryID]
+			if exist == false {
+				usageMap[tpl.ServiceCategoryID] = 1
+				continue
+			}
+			usageMap[tpl.ServiceCategoryID] = count + 1
+		}
+	}
+
+	categoriesWithStatistics := make([]metadata.ServiceCategoryWithStatistics, 0)
+	for _, category := range categories {
+		count, _ := usageMap[category.ID]
+		categoriesWithStatistics = append(categoriesWithStatistics, metadata.ServiceCategoryWithStatistics{
+			ServiceCategory: category,
+			UsageAmount:     count,
+		})
+	}
+	result := &metadata.MultipleServiceCategoryWithStatistics{
+		Count: int64(len(categoriesWithStatistics)),
+		Info:  categoriesWithStatistics,
 	}
 	return result, nil
 }
