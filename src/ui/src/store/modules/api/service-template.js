@@ -27,15 +27,26 @@ const actions = {
         return $http.post(`findmany/proc/service_template/with_detail`, params, config)
     },
     /**
-     * 创建\编辑服务模板
+     * 创建服务模板
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
-    operationServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+    createServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
         return $http.post(`create/proc/service_template`, params, config)
+    },
+    /**
+     * 编辑服务模板
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateServiceTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.put(`update/proc/service_template`, params, config)
     },
     /**
      * 删除服务模板
