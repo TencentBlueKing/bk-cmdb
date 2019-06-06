@@ -28,5 +28,6 @@
     "1108031": "create process template failed",
     "1108032": "update process template failed",
     "1108033": "get process template failed",
+    "1108034": "get default service category failed",
     "": ""
 }

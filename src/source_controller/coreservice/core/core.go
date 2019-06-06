@@ -171,6 +171,7 @@ type ProcessOperation interface {
 	// service category
 	CreateServiceCategory(ctx ContextParams, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
 	GetServiceCategory(ctx ContextParams, categoryID int64) (*metadata.ServiceCategory, error)
+	GetDefaultServiceCategory(ctx ContextParams) (*metadata.ServiceCategory, error)
 	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
 	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, error)
 	DeleteServiceCategory(ctx ContextParams, categoryID int64) error

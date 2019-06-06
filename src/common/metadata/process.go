@@ -294,8 +294,8 @@ type ServiceCategory struct {
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
 
-	RootID          int64  `field:"root_id" json:"root_id,omitempty" bson:"root_id"`
-	ParentID        int64  `field:"parent_id" json:"parent_id,omitempty" bson:"parent_id"`
+	RootID          int64  `field:"bk_root_id" json:"bk_root_id,omitempty" bson:"bk_root_id"`
+	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 
 	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
