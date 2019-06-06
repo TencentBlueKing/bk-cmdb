@@ -38,6 +38,17 @@ const actions = {
         return $http.post(`create/proc/service_category`, params, config)
     },
     /**
+     * 更新服务分类
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateServiceCategory ({ commit, state, dispatch, rootGetters }, { params, config }) {
+        return $http.put(`update/proc/service_category`, params, config)
+    },
+    /**
      * 创建服务分类
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
