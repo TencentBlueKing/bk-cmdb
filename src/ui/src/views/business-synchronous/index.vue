@@ -179,7 +179,6 @@
                 }
             },
             hanldeInstanceDetails (instance, type) {
-                console.log(instance)
                 if (type === 'changed') {
                     this.slider.title = instance['service_instance']['name']
                     this.slider.show = true
