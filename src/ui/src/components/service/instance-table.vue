@@ -16,10 +16,10 @@
             :empty-height="58"
             :sortable="false">
             <template slot="data-empty">
-                <a href="javascript:void(0)" class="text-primary" @click="handleAddProcess">
+                <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-                </a>
+                </button>
             </template>
             <template slot="__operation__" slot-scope="{ rowIndex }">
                 <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('BusinessTopology["编辑"]')}}</a>
@@ -27,10 +27,10 @@
             </template>
         </cmdb-table>
         <div class="add-process-options" v-if="processList.length">
-            <a href="javascript:void(0)" class="text-primary" @click="handleAddProcess">
+            <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('BusinessTopology["添加进程"]')}}</span>
-            </a>
+            </button>
         </div>
         <cmdb-slider
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
@@ -199,5 +199,12 @@
         line-height: 42px;
         font-size: 12px;
         text-align: center;
+    }
+    .add-process-button {
+        line-height: 32px;
+        .bk-icon,
+        span {
+            @include inlineBlock;
+        }
     }
 </style>

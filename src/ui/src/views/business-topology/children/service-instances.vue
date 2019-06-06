@@ -1,5 +1,5 @@
 <template>
-    <div class="layout">
+    <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
         <template v-if="instances.length">
             <div class="options">
                 <bk-button class="options-button" type="primary"
@@ -40,11 +40,26 @@
                     v-for="(instance, index) in instances"
                     :key="index"
                     :instance="instance"
-                    :expanded="index === 0">
+                    :expanded="index === 0"
+                    @create-process="handleCreateProcess"
+                    @update-process="handleUpdateProcess">
                 </service-instance-table>
             </div>
         </template>
         <service-instance-empty v-else></service-instance-empty>
+        <cmdb-slider
+            :title="processForm.title"
+            :is-show.sync="processForm.show">
+            <cmdb-form slot="content" v-if="processForm.show"
+                :type="processForm.type"
+                :inst="processForm.instance"
+                :uneditable-properties="processForm.uneditableProperties"
+                :properties="processForm.properties"
+                :property-groups="processForm.propertyGroups"
+                @on-submit="handleSaveProcess"
+                @on-cancel="handleCloseProcessForm">
+            </cmdb-form>
+        </cmdb-slider>
     </div>
 </template>
 
@@ -58,7 +73,17 @@
         },
         data () {
             return {
-                instances: []
+                instances: [],
+                processForm: {
+                    type: 'create',
+                    show: false,
+                    title: '',
+                    instance: null,
+                    referenceService: null,
+                    uneditableProperties: [],
+                    properties: [],
+                    propertyGroups: []
+                }
             }
         },
         computed: {
@@ -70,6 +95,9 @@
                     return this.currentNode.data
                 }
                 return null
+            },
+            processTemplateMap () {
+                return this.$store.state.businessTopology.processTemplateMap
             },
             withTemplate () {
                 return this.currentModule && this.currentModule.service_template_id
@@ -86,7 +114,7 @@
                 }, {
                     name: this.$t('BusinessTopology["复制IP"]'),
                     handler: this.copyIp,
-                    disabled: false
+                    disabled: true
                 }]
             }
         },
@@ -97,7 +125,45 @@
                 }
             }
         },
+        created () {
+            this.getProcessProperties()
+            this.getProcessPropertyGroups()
+        },
         methods: {
+            async getProcessProperties () {
+                try {
+                    const action = 'objectModelProperty/searchObjectAttribute'
+                    this.processForm.properties = await this.$store.dispatch(action, {
+                        params: {
+                            bk_obj_id: 'process',
+                            bk_supplier_account: this.$store.getters.supplierAccount
+                        },
+                        config: {
+                            requestId: 'get_service_process_properties',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    this.processForm.properties = []
+                }
+            },
+            async getProcessPropertyGroups () {
+                try {
+                    const action = 'objectModelFieldGroup/searchGroup'
+                    this.processForm.propertyGroups = await this.$store.dispatch(action, {
+                        objId: 'process',
+                        params: {},
+                        config: {
+                            requestId: 'get_service_process_property_groups',
+                            fromCache: true
+                        }
+                    })
+                } catch (e) {
+                    this.processForm.propertyGroups = []
+                    console.error(e)
+                }
+            },
             async getServiceInstances () {
                 try {
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
@@ -114,6 +180,81 @@
                     console.error(e)
                     this.instances = []
                 }
+            },
+            handleCreateProcess (referenceService) {
+                this.processForm.referenceService = referenceService
+                this.processForm.type = 'create'
+                this.processForm.title = `${this.$t('BusinessToplogy["创建进程"]')}(${referenceService.instance.name})`
+                this.processForm.instance = {}
+                this.processForm.show = true
+            },
+            async handleUpdateProcess (processInstance, referenceService) {
+                this.processForm.referenceService = referenceService
+                this.processForm.type = 'update'
+                this.processForm.title = this.$t('BusinessToplogy["编辑进程"]')
+                this.processForm.instance = processInstance.property
+                this.processForm.show = true
+
+                const processTemplateId = processInstance.relation.process_template_id
+                if (processTemplateId) {
+                    const template = await this.getProcessTemplate(processTemplateId)
+                    const uneditableProperties = []
+                    Object.keys(template).forEach(propertyId => {
+                        const value = template[propertyId]
+                        if (value.as_default_value) {
+                            uneditableProperties.push(propertyId)
+                        }
+                    })
+                }
+            },
+            async getProcessTemplate (processTemplateId) {
+                if (this.processTemplateMap.hasOwnProperty(processTemplateId)) {
+                    return Promise.resolve(this.processTemplateMap[processTemplateId])
+                }
+                const data = await this.$store.dispatch('processTemplate/getProcessTemplate', {
+                    params: { processTemplateId },
+                    config: {
+                        requestId: 'getProcessTemplate'
+                    }
+                })
+                this.$store.commit('businessTopology/setProcessTemplate', {
+                    id: processTemplateId,
+                    template: data.property
+                })
+                return Promise.resolve(data.property)
+            },
+            async handleSaveProcess (values, changedValues) {
+                try {
+                    if (this.processForm.type === 'create') {
+                        await this.createProcess(values)
+                    } else {
+                        await this.updateProcess(changedValues)
+                    }
+                    this.processForm.referenceService.getServiceProcessList()
+                    this.processForm.show = false
+                    this.processForm.instance = null
+                    this.processForm.referenceService = null
+                    this.processForm.uneditableProperties = null
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            createProcess (values) {
+                return Promise.resolve()
+            },
+            updateProcess (values) {
+                return this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
+                    processInstanceId: this.processForm.instance.bk_process_id,
+                    params: this.$injectMetadata({
+                        properties: [values]
+                    })
+                })
+            },
+            handleCloseProcessForm () {
+                this.processForm.show = false
+                this.processForm.referenceService = null
+                this.processForm.instance = null
+                this.processForm.uneditableProperties = []
             },
             handleCreateServiceInstance () {
                 this.$router.push({

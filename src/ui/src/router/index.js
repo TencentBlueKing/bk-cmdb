@@ -29,8 +29,6 @@ import cagetory from '@/views/service-cagetory/router.config'
 import serviceInstance from '@/views/service-instance/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
 
-import tree from '@/views/tree/router.config'
-
 Vue.use(Router)
 
 export const viewRouters = [
