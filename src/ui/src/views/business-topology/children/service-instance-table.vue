@@ -5,26 +5,46 @@
                 :size="16"
                 @click.native.stop>
             </cmdb-form-bool>
-            <i class="title-icon bk-icon icon-right-shape"></i>
+            <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
+            <i class="title-icon bk-icon icon-right-shape" v-else></i>
             <span class="title-label">{{instance.name}}</span>
+            <cmdb-dot-menu class="instance-menu" @click.native.stop>
+                <ul class="menu-list">
+                    <li class="menu-item"
+                        v-for="(menu, index) in instanceMenu"
+                        :key="index">
+                        <button class="menu-button"
+                            @click="menu.handler">
+                            {{menu.name}}
+                        </button>
+                    </li>
+                </ul>
+            </cmdb-dot-menu>
         </div>
         <cmdb-table
             v-show="localExpanded"
+            :loading="$loading([requestId.processList, requestId.properties])"
             :header="header"
             :list="flattenList"
-            :height="166"
             :empty-height="42"
             :visible="localExpanded"
-            :sortable="false">
+            :sortable="false"
+            :reference-document-height="false">
+            <template slot="data-empty" v-if="!withTemplate">
+                <button class="add-process-button text-primary" @click.stop="handleAddProcess">
+                    <i class="bk-icon icon-plus"></i>
+                    <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+                </button>
+            </template>
             <template slot="__operation__" slot-scope="{ item }">
-                <a href="javascript:void(0)" class="text-primary"
+                <button class="text-primary mr10"
                     @click="handleEditProcess(item)">
                     {{$t('Common["编辑"]')}}
-                </a>
-                <a href="javascript:void(0)" class="text-primary"
+                </button>
+                <button class="text-primary"
                     @click="handleDeleteProcess(item)">
                     {{$t('Common["删除"]')}}
-                </a>
+                </button>
             </template>
         </cmdb-table>
     </div>
@@ -45,22 +65,30 @@
                 properties: [],
                 header: [],
                 list: [],
-                processForm: {
-                    show: false,
-                    instance: null,
-                    processTemplate: null
-                }
+                instanceMenu: [{
+                    name: this.$t('BusinessTopology["添加进程"]'),
+                    handler: this.handleAddProcess
+                }, {
+                    name: this.$t('BusinessTopology["克隆"]'),
+                    handler: this.handleCloneInstance
+                }, {
+                    name: this.$t('Common["删除"]'),
+                    handler: this.handleDeleteInstance
+                }]
             }
         },
         computed: {
-            processTemplateMap () {
-                return this.$store.state.businessTopology.processTemplateMap
-            },
             withTemplate () {
                 return !!this.instance.service_template_id
             },
             flattenList () {
-                return this.$tools.flattenList(this.properties, this.list)
+                return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
+            },
+            requestId () {
+                return {
+                    processList: `get_service_instance_${this.instance.id}_processes`,
+                    properties: 'get_service_process_properties'
+                }
             }
         },
         watch: {
@@ -85,15 +113,27 @@
                         bk_supplier_account: this.$store.getters.supplierAccount
                     },
                     config: {
-                        requestId: 'get_service_process_properties',
+                        requestId: this.requestId.properties,
                         fromCache: true
                     }
                 })
                 this.properties = properties
                 this.setHeader()
             },
-            getServiceProcessList () {
-                this.list = [{}, {}]
+            async getServiceProcessList () {
+                try {
+                    this.list = await this.$store.dispatch('processInstance/getServiceInstanceProcesses', {
+                        params: this.$injectMetadata({
+                            service_instance_id: this.instance.id
+                        }),
+                        config: {
+                            requestId: this.requestId.processList
+                        }
+                    })
+                } catch (e) {
+                    this.list = []
+                    console.error(e)
+                }
             },
             setHeader () {
                 const display = [
@@ -114,36 +154,18 @@
                     id: '__operation__',
                     name: this.$t('Common["操作"]')
                 })
-                if (!this.withTemplate) {
-                    header.unshift({
-                        id: 'id',
-                        type: 'checkbox'
-                    })
-                }
                 this.header = header
             },
+            handleAddProcess () {
+                this.$emit('create-process', this)
+            },
             async handleEditProcess (item) {
-                const processTemplateId = item.process_template_id
-                if (processTemplateId) {
-                    this.processForm.template = await this.getProcessTemplate(processTemplateId)
-                }
-                this.processForm.instance = item
-                this.processForm.show = true
+                const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
+                this.$emit('update-process', processInstance, this)
             },
-            async getProcessTemplate (processTemplateId) {
-                if (this.processTemplateMap.hasOwnProperty(processTemplateId)) {
-                    return Promise.resolve(this.processTemplateMap[processTemplateId])
-                }
-                const data = await this.$store.dispatch('processTemplate/getProcessTemplate', {
-                    params: { processTemplateId }
-                })
-                this.$store.commit('businessTopology/setProcessTemplate', {
-                    id: processTemplateId,
-                    template: data.template
-                })
-                return Promise.resolve(data.template)
-            },
-            handleDeleteProcess () {}
+            handleDeleteProcess () {},
+            handleCloneInstance () {},
+            handleDeleteInstance () {}
         }
     }
 </script>
@@ -168,6 +190,36 @@
             font-size: 14px;
             color: #313238;
             @include inlineBlock;
+        }
+    }
+    .add-process-button {
+        line-height: 32px;
+        .bk-icon,
+        span {
+            @include inlineBlock;
+        }
+    }
+    .menu-list {
+        min-width: 74px;
+        padding: 6px 0;
+        .menu-item {
+            .menu-button {
+                display: block;
+                width: 100%;
+                height: 32px;
+                padding: 0 13px;
+                line-height: 32px;
+                outline: 0;
+                border: none;
+                text-align: left;
+                color: #63656E;
+                font-size: 12px;
+                background-color: #fff;
+                &:hover {
+                    background-color: #E1ECFF;
+                    color: #3A84FF;
+                }
+            }
         }
     }
 </style>
