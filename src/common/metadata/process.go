@@ -72,6 +72,12 @@ type CreateServiceInstanceForServiceTemplateInput struct {
 	Instances  []ServiceInstanceDetail `json:"instances"`
 }
 
+type CreateRawProcessInstanceInput struct {
+	Metadata          Metadata                `json:"metadata"`
+	ServiceInstanceID int64                   `json:"service_instance_Id"`
+	Processes         []ProcessInstanceDetail `json:"processes"`
+}
+
 type DeleteProcessInstanceInServiceInstanceInput struct {
 	Metadata           Metadata `json:"metadata"`
 	ProcessInstanceIDs []int64  `json:"process_instance_ids"`
