@@ -197,7 +197,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							HostID:            moduleHost.HostID,
 							SupplierAccount:   ownerID,
 						}
-						blog.InfoJSON("relateion: %s", relateion)
+						blog.InfoJSON("relation: %s", relateion)
 						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relateion); err != nil {
 							return err
 						}
