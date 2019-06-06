@@ -12,7 +12,7 @@
                         name="templateName"
                         :placeholder="$t('ServiceManagement[\'请输入模版名称\']')"
                         :disabled="!isCreatedType"
-                        v-model.trim="formData.tempalteName"
+                        v-model.trim="formData.templateName"
                         v-validate="'required|singlechar'">
                     <p class="form-error">{{errors.first('templateName')}}</p>
                 </div>
@@ -122,7 +122,8 @@
                 formData: {
                     mainClassification: '',
                     secondaryClassification: '',
-                    tempalteName: ''
+                    templateName: '',
+                    templateId: ''
                 }
             }
         },
@@ -159,7 +160,10 @@
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
-            ...mapActions('serviceTemplate', ['operationServiceTemplate']),
+            ...mapActions('serviceTemplate', [
+                'createServiceTemplate',
+                'updateServiceTemplate'
+            ]),
             ...mapActions('processTemplate', [
                 'createProcessTemplate',
                 'updateProcessTemplate',
@@ -172,7 +176,8 @@
                 'clearLocalProcessTemplate'
             ]),
             initEdit () {
-                this.formData.tempalteName = this.originTemplateValues['name']
+                this.formData.templateId = this.originTemplateValues['id']
+                this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['parent_id']
                 this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
                 this.getProcessList()
@@ -222,7 +227,10 @@
                     })
                 }).then(data => {
                     this.processList = data.info.map(template => {
-                        return template['property']
+                        return {
+                            process_id: template.id,
+                            ...template['property']
+                        }
                     })
                 }).finally(() => {
                     this.processLoading = false
@@ -234,7 +242,7 @@
                     this.formData.secondaryClassification = ''
                 }
             },
-            handleSaveProcess (values, type) {
+            handleSaveProcess (values, changedValues, type) {
                 if (type === 'create') {
                     this.createProcessTemplate({
                         params: this.$injectMetadata({
@@ -244,23 +252,18 @@
                             }]
                         })
                     }).then(() => {
-                        this.$bkMessage({
-                            message: this.$t("Common['保存成功']"),
-                            theme: 'success'
-                        })
+                        this.getProcessList()
+                        this.handleCancelProcess()
                     })
                 } else {
                     this.updateProcessTemplate({
                         params: this.$injectMetadata({
-                            id: values['id'],
-                            service_template_id: this.originTemplateValues['id'],
-                            property: values
+                            process_template_id: values['process_id'],
+                            process_property: changedValues
                         })
                     }).then(() => {
-                        this.$bkMessage({
-                            message: this.$t("Common['保存成功']"),
-                            theme: 'success'
-                        })
+                        this.getProcessList()
+                        this.handleCancelProcess()
                     })
                 }
             },
@@ -290,8 +293,7 @@
                             this.deleteProcessTemplate({
                                 params: {
                                     data: this.$injectMetadata({
-                                        service_template_id: this.originTemplateValues['id'],
-                                        processes_templates: [template['id']]
+                                        process_templates: [template['process_id']]
                                     })
                                 }
                             }).then(() => {
@@ -301,31 +303,47 @@
                     }
                 })
             },
+            handleSubmitProcessList () {
+                this.createProcessTemplate({
+                    params: this.$injectMetadata({
+                        service_template_id: this.formData.templateId,
+                        processes: this.processList.map(process => {
+                            return {
+                                spec: process
+                            }
+                        })
+                    })
+                }).then(() => {
+                    this.handleCancelOperation()
+                })
+            },
             async handleSubmit () {
                 if (!await this.$validator.validateAll()) return
-                this.operationServiceTemplate({
-                    params: this.$injectMetadata({
-                        name: this.formData.tempalteName,
-                        service_category_id: this.formData.secondaryClassification
-                    })
-                }).then(data => {
-                    this.createProcessTemplate({
+                if (this.formData.templateId) {
+                    this.updateServiceTemplate({
                         params: this.$injectMetadata({
-                            service_template_id: data.id,
-                            processes: this.processList.map(process => {
-                                return {
-                                    spec: process
-                                }
-                            })
+                            id: this.formData.templateId,
+                            name: this.formData.templateName,
+                            service_category_id: this.formData.secondaryClassification
                         })
                     }).then(() => {
-                        this.$bkMessage({
-                            message: this.$t("Common['保存成功']"),
-                            theme: 'success'
-                        })
-                        this.handleCancelOperation()
+                        if (this.isCreatedType) {
+                            this.handleSubmitProcessList()
+                        } else {
+                            this.handleCancelOperation()
+                        }
                     })
-                })
+                } else {
+                    this.createServiceTemplate({
+                        params: this.$injectMetadata({
+                            name: this.formData.templateName,
+                            service_category_id: this.formData.secondaryClassification
+                        })
+                    }).then(data => {
+                        this.formData.templateId = data.id
+                        this.handleSubmitProcessList()
+                    })
+                }
             },
             handleCancelOperation () {
                 this.$router.push({ name: 'serviceTemplate' })

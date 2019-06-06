@@ -57,7 +57,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     updateProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`update/proc/proc_template/for_service_template`, params, config)
+        return $http.put(`update/proc/proc_template/for_service_template`, params, config)
     },
     /**
      * 删除服务模板中的进程模板
