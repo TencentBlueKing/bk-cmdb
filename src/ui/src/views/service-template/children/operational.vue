@@ -216,8 +216,9 @@
                         requestId: 'get_proc_services_categories'
                     }
                 })
-                this.mainList = result.info.filter(classification => !classification['parent_id'])
-                this.allSecondaryList = result.info.filter(classification => classification['parent_id'])
+                const cagetoryList = result.info.map(item => item['category'])
+                this.mainList = cagetoryList.filter(classification => !classification['parent_id'])
+                this.allSecondaryList = cagetoryList.filter(classification => classification['parent_id'])
             },
             getProcessList () {
                 this.processLoading = true

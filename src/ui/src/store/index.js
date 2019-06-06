@@ -48,6 +48,7 @@ import serviceClassification from './modules/api/service-classification.js'
 import processTemplate from './modules/api/process-template.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
+import businessSynchronous from './modules/api/business-synchronous.js'
 
 Vue.use(Vuex)
 
@@ -98,6 +99,7 @@ export default new Vuex.Store({
         serviceClassification,
         processTemplate,
         serviceInstance,
-        processInstance
+        processInstance,
+        businessSynchronous
     }
 })
