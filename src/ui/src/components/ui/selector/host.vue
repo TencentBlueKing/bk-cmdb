@@ -4,8 +4,15 @@
             <div class="host-wrapper">
                 <h2 class="title">{{$t('BusinessTopology["添加主机"]')}}</h2>
                 <div class="options">
-                    <cmdb-selector class="options-selector"></cmdb-selector>
-                    <cmdb-input class="options-filter" icon="bk-icon icon-search"></cmdb-input>
+                    <cmdb-selector class="options-selector"
+                        v-model="filter.module"
+                        :list="modules">
+                    </cmdb-selector>
+                    <cmdb-input class="options-filter" icon="bk-icon icon-search"
+                        v-model.trim="filter.ip"
+                        @icon-click="handlePageChange(1)"
+                        @enter="handlePageChange(1)">
+                    </cmdb-input>
                     <i18n class="options-count fr" path="BusinessTopology['已选择主机']">
                         <span place="count">{{checked.length}}</span>
                     </i18n>
@@ -17,12 +24,17 @@
                     :checked.sync="checked"
                     :pagination="pagination"
                     :height="286"
+                    :empty-height="42"
                     :cross-page-check="false"
+                    :sortable="false"
                     @handlePageChange="handlePageChange"
                     @handleSizeChange="handleSizeChange">
                 </cmdb-table>
                 <div class="button-wrapper">
-                    <bk-button class="button" type="primary" @click="handleConfirm">{{$t('Common["确定"]')}}</bk-button>
+                    <bk-button class="button" type="primary"
+                        :disabled="!checked.length"
+                        @click="handleConfirm">{{$t('Common["确定"]')}}
+                    </bk-button>
                     <bk-button class="button" type="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
@@ -32,6 +44,15 @@
 
 <script>
     export default {
+        props: {
+            visible: Boolean,
+            moduleInstance: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            }
+        },
         data () {
             return {
                 checked: [],
@@ -43,22 +64,48 @@
                     size: 10,
                     count: 0
                 },
-                properties: []
+                properties: [],
+
+                internalModules: [],
+                filter: {
+                    module: 'biz',
+                    ip: ''
+                }
             }
         },
         computed: {
+            modules () {
+                return [{
+                    id: 'biz',
+                    name: this.$t('BusinessTopology["业务主机"]')
+                }, {
+                    id: this.moduleInstance.bk_module_id,
+                    name: this.moduleInstance.bk_module_name
+                }].concat(this.internalModules)
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
             params () {
+                const moduleCondition = []
+                if (this.filter.module !== 'biz') {
+                    moduleCondition.push({
+                        field: 'bk_module_id',
+                        operator: '$eq',
+                        value: this.filter.module
+                    })
+                }
                 return {
-                    bk_obj_id: this.$store.getters['objectBiz/bizId'],
+                    bk_biz_id: this.business,
                     condition: ['biz', 'set', 'module', 'host'].map(id => {
                         return {
                             bk_obj_id: id,
                             fields: [],
-                            condition: []
+                            condition: id === 'module' ? moduleCondition : []
                         }
                     }),
                     ip: {
-                        data: [],
+                        data: this.filter.ip ? [this.filter.ip] : [],
                         exact: 0,
                         flag: 'bk_host_innerip|bk_host_outerip'
                     },
@@ -67,9 +114,6 @@
                         limit: this.pagination.size
                     }
                 }
-            },
-            visible () {
-                return this.$store.state.businessTopology.hostSelectorVisible
             }
         },
         watch: {
@@ -77,9 +121,13 @@
                 if (visible) {
                     (async () => {
                         await this.getProperties()
-                        this.getList()
+                        this.getInternalModule()
+                        this.handlePageChange(1)
                     })()
                 }
+            },
+            'filter.module' () {
+                this.handlePageChange(1)
             }
         },
         methods: {
@@ -104,7 +152,6 @@
             },
             async getList () {
                 try {
-                    console.log('fuck')
                     const data = await this.$store.dispatch('hostSearch/searchHost', {
                         params: this.params,
                         config: {
@@ -119,6 +166,25 @@
                     this.pagination.count = 0
                     this.list = []
                     this.checked = []
+                }
+            },
+            async getInternalModule () {
+                try {
+                    const data = await this.$store.dispatch('objectMainLineModule/getInternalTopo', {
+                        bizId: this.business,
+                        config: {
+                            requestId: `get_business_${this.business}_internal_module`,
+                            fromCache: true
+                        }
+                    })
+                    this.internalModules = data.module.map(module => {
+                        return {
+                            id: module.bk_module_id,
+                            name: module.bk_module_name
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
                 }
             },
             setHeader () {
@@ -149,11 +215,10 @@
                 this.getList()
             },
             handleConfirm () {
-                this.$store.commit('businessTopology/setSelectedHost', [...this.checked])
-                this.$store.commit('businessTopology/setHostSelectorVisible', false)
+                this.$emit('host-selected', [...this.checked], this.list.filter(item => this.checked.includes(item.bk_host_id)))
             },
             handleCancel () {
-                this.$store.commit('businessTopology/setHostSelectorVisible', false)
+                this.$emit('update:visible', false)
             }
         }
     }
@@ -178,7 +243,7 @@
     }
     .host-wrapper {
         width: 850px;
-        height: 460px;
+        max-height: 460px;
         padding: 15px 0 0;
         text-align: left;
         background-color: #fff;

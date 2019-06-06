@@ -14,26 +14,42 @@
                 <label>{{$t('BusinessTopology["模板名称"]')}}</label>
                 <cmdb-selector
                     v-model="template"
+                    v-validate.disabled="'required'"
+                    data-vv-name="template"
+                    key="template"
                     :list="templateList">
                 </cmdb-selector>
+                <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
                 <label>{{$t('BusinessTopology["模块名称"]')}}</label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
+                    v-validate.disabled="'required|singlechar'"
+                    data-vv-name="moduleName"
+                    key="moduleName"
                     :disabled="!!withTemplate">
                 </cmdb-form-singlechar>
+                <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
                 <label>{{$t('BusinessTopology["服务实例分类"]')}}</label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
+                    v-validate.disabled="'required'"
+                    data-vv-name="firstClass"
+                    key="firstClass"
                     :list="firstClassList">
                 </cmdb-selector>
                 <cmdb-selector class="service-class fr"
                     v-model="secondClass"
+                    v-validate.disabled="'required'"
+                    data-vv-name="secondClass"
+                    key="secondClass"
                     :list="secondClassList">
                 </cmdb-selector>
+                <span class="form-error" v-if="errors.has('firstClass')">{{errors.first('firstClass')}}</span>
+                <span class="form-error second-class" v-if="errors.has('secondClass')">{{errors.first('secondClass')}}</span>
             </div>
         </div>
         <div class="node-create-options">
@@ -71,7 +87,6 @@
                 firstClass: '',
                 firstClassList: [],
                 secondClass: '',
-                secondClassList: [],
                 values: {}
             }
         },
@@ -79,13 +94,106 @@
             topoPath () {
                 const nodePath = [...this.parentNode.parents, this.parentNode]
                 return nodePath.map(node => node.data.bk_inst_name).join('/')
+            },
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
+            serviceTemplateMap () {
+                return this.$store.state.businessTopology.serviceTemplateMap
+            },
+            currentTemplate () {
+                return this.templateList.find(item => item.id === this.template) || {}
+            },
+            categoryMap () {
+                return this.$store.state.businessTopology.categoryMap
+            },
+            currentCategory () {
+                return this.firstClassList.find(category => category.id === this.firstClass) || {}
+            },
+            secondClassList () {
+                return this.currentCategory.secondCategory || []
             }
         },
+        watch: {
+            withTemplate (withTemplate) {
+                if (withTemplate) {
+                    this.firstClass = ''
+                    this.secondClass = ''
+                } else {
+                    this.template = ''
+                    this.getServiceCategories()
+                }
+            },
+            template (template) {
+                if (template) {
+                    this.moduleName = this.currentTemplate.name
+                } else {
+                    this.moduleName = ''
+                }
+            }
+        },
+        created () {
+            this.getServiceTemplates()
+        },
         methods: {
+            async getServiceTemplates () {
+                if (this.serviceTemplateMap.hasOwnProperty(this.business)) {
+                    this.templateList = this.serviceTemplateMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('serviceTemplate/searchServiceTemplate', {
+                            params: this.$injectMetadata()
+                        })
+                        const templates = data.info.map(item => item.service_template)
+                        this.templateList = templates
+                        this.$store.commit('businessTopology/setServiceTemplate', {
+                            id: this.business,
+                            templates: templates
+                        })
+                    } catch (e) {
+                        console.error(e)
+                        this.templateList = []
+                    }
+                }
+            },
+            async getServiceCategories () {
+                if (this.categoryMap.hasOwnProperty(this.business)) {
+                    this.firstClassList = this.categoryMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
+                            params: this.$injectMetadata()
+                        })
+                        const categories = this.collectServiceCategories(data.info)
+                        this.firstClassList = categories
+                        this.$store.commit('businessTopology/setCategories', {
+                            id: this.business,
+                            categories: categories
+                        })
+                    } catch (e) {
+                        console.error(e)
+                        this.firstClassList = []
+                    }
+                }
+            },
+            collectServiceCategories (data) {
+                const categories = []
+                data.forEach(item => {
+                    if (!item.parent_id) {
+                        categories.push(item)
+                    }
+                })
+                categories.forEach(category => {
+                    category.secondCategory = data.filter(item => item.parent_id === category.id)
+                })
+                return categories
+            },
             handleSave () {
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
-                        this.$emit('submit', this.values)
+                        this.$emit('submit', {
+                            bk_module_name: this.moduleName
+                        })
                     }
                 })
             },
@@ -118,10 +226,11 @@
     .node-create-form {
         max-height: 400px;
         padding: 0 26px 27px;
-        @include scrollbar-y;
+        overflow: visible;
     }
     .form-item {
         margin: 15px 0 0 0;
+        position: relative;
         label {
             display: block;
             padding: 7px 0;
@@ -132,6 +241,16 @@
         .service-class {
             width: 260px;
             @include inlineBlock;
+        }
+        .form-error {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            font-size: 12px;
+            color: $cmdbDangerColor;
+            &.second-class {
+                left: 270px;
+            }
         }
     }
     .node-create-options {

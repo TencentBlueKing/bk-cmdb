@@ -27,6 +27,7 @@ import permission from '@/views/permission/router.config'
 import template from '@/views/service-template/router.config'
 import cagetory from '@/views/service-cagetory/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
+import serviceInstance from '@/views/service-instance/router.config'
 
 import tree from '@/views/tree/router.config'
 
@@ -53,7 +54,8 @@ export const viewRouters = [
     ...permission,
     tree,
     cagetory,
-    synchronous
+    synchronous,
+    ...serviceInstance
 ]
 
 const statusRouters = [

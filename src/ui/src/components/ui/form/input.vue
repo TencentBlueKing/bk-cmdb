@@ -1,6 +1,9 @@
 <template>
     <div class="cmdb-input">
-        <input :class="['cmdb-form-input', { 'has-icon': !!icon }]" type="text" @keypress.enter="handleEnter">
+        <input :class="['cmdb-form-input', { 'has-icon': !!icon }]" type="text"
+            v-model="localValue"
+            :placeholder="localPlaceholder"
+            @keypress.enter="handleEnter">
         <i :class="[icon, 'input-icon']" v-if="icon" @click="handleIconClick"></i>
     </div>
 </template>
@@ -16,11 +19,20 @@
             icon: {
                 type: String,
                 default: ''
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
             return {
                 localValue: this.value
+            }
+        },
+        computed: {
+            localPlaceholder () {
+                return this.placeholder || this.$t('BusinessTopology["请输入IP"]')
             }
         },
         watch: {

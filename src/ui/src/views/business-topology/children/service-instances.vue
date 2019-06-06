@@ -2,8 +2,14 @@
     <div class="layout">
         <template v-if="instances.length">
             <div class="options">
-                <bk-button class="options-button" type="primary">
+                <bk-button class="options-button" type="primary"
+                    @click="handleCreateServiceInstance">
                     {{$t('BusinessTopology["添加服务实例"]')}}
+                </bk-button>
+                <bk-button class="options-button" type="default"
+                    v-if="withTemplate"
+                    @click="handleSyncTemplate">
+                    {{$t('BusinessTopology["同步模板"]')}}
                 </bk-button>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
@@ -30,23 +36,25 @@
                 <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
             </div>
             <div class="tables">
-                <service-instance-table v-for="n in 15" :key="n"></service-instance-table>
+                <service-instance-table
+                    v-for="(instance, index) in instances"
+                    :key="index"
+                    :instance="instance"
+                    :expanded="index === 0">
+                </service-instance-table>
             </div>
         </template>
         <service-instance-empty v-else></service-instance-empty>
-        <service-host-selector></service-host-selector>
     </div>
 </template>
 
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
-    import serviceHostSelector from './host-selector.vue'
     export default {
         components: {
             serviceInstanceTable,
-            serviceInstanceEmpty,
-            serviceHostSelector
+            serviceInstanceEmpty
         },
         data () {
             return {
@@ -54,6 +62,18 @@
             }
         },
         computed: {
+            currentNode () {
+                return this.$store.state.businessTopology.selectedNode
+            },
+            currentModule () {
+                if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
+                    return this.currentNode.data
+                }
+                return null
+            },
+            withTemplate () {
+                return this.currentModule && this.currentModule.service_template_id
+            },
             menuItem () {
                 return [{
                     name: this.$t('BusinessTopology["批量编辑"]'),
@@ -70,7 +90,49 @@
                 }]
             }
         },
+        watch: {
+            currentModule (module) {
+                if (module) {
+                    this.getServiceInstances()
+                }
+            }
+        },
         methods: {
+            async getServiceInstances () {
+                try {
+                    const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
+                        params: this.$injectMetadata({
+                            module_id: this.currentModule.bk_inst_id
+                        }),
+                        config: {
+                            requestId: 'getModuleServiceInstances',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.instances = data.info
+                } catch (e) {
+                    console.error(e)
+                    this.instances = []
+                }
+            },
+            handleCreateServiceInstance () {
+                this.$router.push({
+                    name: 'createServiceInstance',
+                    params: {
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    }
+                })
+            },
+            handleSyncTemplate () {
+                this.$route.push({
+                    name: 'synchronous',
+                    params: {
+                        moduleId: this.currentModule.bk_inst_id,
+                        templateId: this.currentModule.template_id
+                    }
+                })
+            },
             batchEdit (disabled) {
                 if (disabled) {
                     return false

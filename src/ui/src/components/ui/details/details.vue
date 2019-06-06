@@ -15,11 +15,13 @@
                                 :key="propertyIndex"
                                 :title="getTitle(inst, property)">
                                 <span class="property-name fl">{{property['bk_property_name']}}</span>
-                                <span class="property-value clearfix fl" v-if="property.unit">
-                                    <span class="property-value-text fl">{{getValue(property)}}</span>
-                                    <span class="property-value-unit fl">{{property.unit}}</span>
-                                </span>
-                                <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                                <slot :name="property['bk_property_id']">
+                                    <span class="property-value clearfix fl" v-if="property.unit">
+                                        <span class="property-value-text fl">{{getValue(property)}}</span>
+                                        <span class="property-value-unit fl">{{property.unit}}</span>
+                                    </span>
+                                    <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                                </slot>
                             </li>
                         </ul>
                     </cmdb-collapse>
