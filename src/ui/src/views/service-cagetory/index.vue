@@ -17,7 +17,7 @@
                             v-model="mainCagetoryName"
                             name="cagetoryName"
                             v-validate="'required|namedCharacter'"
-                            @keypress.enter="handleEditCagetory(cagetoryName)">
+                            @keypress.enter="handleEditCagetory(mainCagetory['id'], mainCagetory['name'], 'main')">
                     </div>
                     <template v-else>
                         <div class="cagetory-name">
@@ -68,7 +68,7 @@
                                 v-validate="'required|namedCharacter'"
                                 v-model="childCagetoryName">
                             <span class="text-primary btn-confirm"
-                                @click.stop="handleEditCagetory(childCagetory['name'], childCagetory['parent_id'])">{{$t("Common['确定']")}}
+                                @click.stop="handleEditCagetory(childCagetory['id'], childCagetory['name'], 'child')">{{$t("Common['确定']")}}
                             </span>
                             <span class="text-primary" @click="handleCloseEditChild">{{$t("Common['取消']")}}</span>
                         </div>
@@ -79,10 +79,13 @@
                                     <i class="property-edit icon-cc-edit mr10"
                                         @click.stop="handleEditChild(childCagetory['id'], childCagetory['name'])">
                                     </i>
-                                    <i class="icon-cc-tips-close" @click.stop="handleDeleteCagetory(mainCagetory['id'])"></i>
+                                    <i class="icon-cc-tips-close"
+                                        v-if="!childCagetory['usage_amount']"
+                                        @click.stop="handleDeleteCagetory(mainCagetory['id'])">
+                                    </i>
                                 </div>
                             </div>
-                            <span>8</span>
+                            <span>{{childCagetory['usage_amount']}}</span>
                         </template>
                     </div>
                 </div>
@@ -136,8 +139,7 @@
                 cagetoryName: '',
                 mainCagetoryName: '',
                 childCagetoryName: '',
-                list: [],
-                originList: []
+                list: []
             }
         },
         computed: {
@@ -152,18 +154,24 @@
             ...mapActions('serviceClassification', [
                 'searchServiceCategory',
                 'createServiceCategory',
+                'updateServiceCategory',
                 'deleteServiceCategory'
             ]),
             getCagetoryList () {
                 this.searchServiceCategory({
                     params: this.$injectMetadata({})
                 }).then((data) => {
-                    this.originList = data.info
-                    const list = data.info.filter(cagetory => !cagetory.hasOwnProperty('parent_id'))
+                    const cagetoryList = data.info.map(item => {
+                        return {
+                            usage_amount: item['usage_amount'],
+                            ...item['category']
+                        }
+                    })
+                    const list = cagetoryList.filter(cagetory => !cagetory.hasOwnProperty('parent_id'))
                     this.list = list.map(mainCagetory => {
                         return {
                             ...mainCagetory,
-                            child_cagetory_list: data.info.filter(cagetory => cagetory['parent_id'] === mainCagetory['id'])
+                            child_cagetory_list: cagetoryList.filter(cagetory => cagetory['parent_id'] === mainCagetory['id'])
                         }
                     })
                 })
@@ -191,8 +199,27 @@
                     this.createdCagetory(name, root_id)
                 }
             },
-            handleEditCagetory (name, root_id = 0) {
-
+            async handleEditCagetory (id, name, type) {
+                if (!await this.$validator.validateAll()) {
+                    this.$bkMessage({
+                        message: this.errors.first('cagetoryName') || this.$t("ServiceCagetory['请输入分类名称']"),
+                        theme: 'error'
+                    })
+                } else if (name === this.mainCagetoryName || name === this.childCagetoryName) {
+                    this.handleCloseEditChild()
+                    this.handleCloseEditMain()
+                } else {
+                    this.updateServiceCategory({
+                        params: this.$injectMetadata({
+                            id,
+                            name: type === 'main' ? this.mainCagetoryName : this.childCagetoryName
+                        })
+                    }).then(() => {
+                        this.handleCloseEditChild()
+                        this.handleCloseEditMain()
+                        this.getCagetoryList()
+                    })
+                }
             },
             handleDeleteCagetory (id) {
                 this.$bkInfo({
