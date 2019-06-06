@@ -172,7 +172,7 @@ type ProcessOperation interface {
 	CreateServiceCategory(ctx ContextParams, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
 	GetServiceCategory(ctx ContextParams, categoryID int64) (*metadata.ServiceCategory, error)
 	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
-	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategory, error)
+	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, error)
 	DeleteServiceCategory(ctx ContextParams, categoryID int64) error
 
 	// service template
@@ -186,7 +186,7 @@ type ProcessOperation interface {
 	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
 	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, error)
 	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
-	ListProcessTemplates(ctx ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.BasePage) (*metadata.MultipleProcessTemplate, error)
+	ListProcessTemplates(ctx ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, error)
 	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) error
 
 	// service instance
