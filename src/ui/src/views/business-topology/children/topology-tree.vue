@@ -36,7 +36,7 @@
             <template v-if="createInfo.nextModelId === 'module'">
                 <create-module v-if="createInfo.visible" slot="content"
                     :parent-node="createInfo.parentNode"
-                    @sumit="handleCreateNode"
+                    @submit="handleCreateNode"
                     @cancel="handleCancelCreateNode">
                 </create-module>
             </template>
@@ -101,11 +101,20 @@
             ])
             this.treeData = data
             this.mainLine = mainLine
-            const defaultNode = this.idGenerator(data[0])
             this.$nextTick(() => {
                 this.$refs.tree.setData(data)
-                this.$refs.tree.setSelected(defaultNode, true, true)
-                this.$refs.tree.setExpanded(defaultNode)
+                const businessNodeId = this.idGenerator(data[0])
+                const queryModule = parseInt(this.$route.query.module)
+                let defaultNodeId = businessNodeId
+                if (!isNaN(queryModule)) {
+                    const nodeId = `module_${queryModule}`
+                    const node = this.$refs.tree.getNodeById(nodeId)
+                    if (node) {
+                        defaultNodeId = nodeId
+                    }
+                }
+                this.$refs.tree.setSelected(defaultNodeId, true, true)
+                this.$refs.tree.setExpanded(defaultNodeId)
             })
         },
         methods: {

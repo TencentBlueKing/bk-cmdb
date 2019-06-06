@@ -2,7 +2,11 @@ import Vue from 'vue'
 const state = {
     propertyMap: {},
     propertyGroupMap: {},
+    serviceTemplateMap: {},
+    processTemplateMap: {},
+    categoryMap: {},
     selectedNode: null,
+    selectedNodeInstance: null,
     hostSelectorVisible: false,
     selectedHost: []
 }
@@ -23,8 +27,20 @@ const mutations = {
     setPropertyGroups (state, data) {
         Vue.set(state.propertyGroupMap, data.id, data.groups)
     },
+    setServiceTemplate (state, data) {
+        Vue.set(state.serviceTemplateMap, data.id, data.templates)
+    },
+    setProcessTemplate (state, data) {
+        Vue.set(state.processTemplateMap, data.id, data.template)
+    },
+    setCategories (state, data) {
+        Vue.set(state.categoryMap, data.id, data.categories)
+    },
     setSelectedNode (state, node) {
         state.selectedNode = node
+    },
+    setSelectedNodeInstance (state, instance) {
+        state.selectedNodeInstance = instance
     },
     setHostSelectorVisible (state, visible) {
         state.hostSelectorVisible = visible
@@ -35,7 +51,11 @@ const mutations = {
     resetState (state) {
         state.propertyMap = {}
         state.propertyGroupMap = {}
+        state.serviceTemplateMap = {}
+        state.processTemplateMap = {}
+        state.categoryMap = {}
         state.selectedNode = null
+        state.selectedNodeInstance = null
         state.hostSelectorVisible = false
         state.selectedHost = []
     }
