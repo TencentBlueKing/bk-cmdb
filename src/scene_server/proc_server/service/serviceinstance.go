@@ -45,6 +45,23 @@ func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
 	ps.createServiceInstances(ctx, input)
 }
 
+func (ps *ProcServer) CreateProcessInstancesWithRaw(ctx *rest.Contexts) {
+	input := new(metadata.CreateRawProcessInstanceInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"create process instance with raw , but get business id failed, err: %v", err)
+		return
+	}
+
+	ps.createProcessInstances(ctx, input)
+}
+
 func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -124,6 +141,52 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 	}
 
 	ctx.RespEntity(serviceInstanceIDs)
+}
+
+func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) {
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+			"create process instance failed, get service instance by id failed, serviceInstanceID: %d, err: %v",
+			input.ServiceInstanceID, err)
+		return
+	}
+	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+			"create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v",
+			input.ServiceInstanceID, err)
+		return
+	}
+
+	processIDs := make([]int64, 0)
+	for _, process := range input.Processes {
+		processID, err := ps.Logic.CreateProcessInstance(ctx.Kit, &process.ProcessInfo)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+				"create process instance failed, create process failed, serviceInstanceID: %d, process: %+v, err: %v",
+				input.ServiceInstanceID, process, err)
+			return
+		}
+
+		relation := &metadata.ProcessInstanceRelation{
+			Metadata:          input.Metadata,
+			ProcessID:         processID,
+			ProcessTemplateID: common.ServiceTemplateIDNotSet,
+			ServiceInstanceID: serviceInstance.ID,
+			HostID:            serviceInstance.HostID,
+		}
+
+		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+				"create service instance relations, create process instance relation failed, serviceInstanceID: %d, relation: %+v, err: %v",
+				input.ServiceInstanceID, relation, err)
+			return
+		}
+		processIDs = append(processIDs, processID)
+	}
+
+	ctx.RespEntity(processIDs)
 }
 
 func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts) {
