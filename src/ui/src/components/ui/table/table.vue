@@ -175,6 +175,10 @@
                 type: Number,
                 default: 0
             },
+            referenceDocumentHeight: {
+                type: Boolean,
+                default: true
+            },
             width: {
                 type: Number,
                 validator (width) {
@@ -317,7 +321,9 @@
             initResize () {
                 this.throttleLayout = throttle(() => {
                     this.doLayout()
-                    this.updateWrapperMaxHeight()
+                    if (this.referenceDocumentHeight) {
+                        this.updateWrapperMaxHeight()
+                    }
                 }, 50)
                 addResizeListener(this.$el, this.throttleLayout)
             }
