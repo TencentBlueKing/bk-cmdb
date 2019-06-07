@@ -44,7 +44,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +72,10 @@ func (c *Mongo) Commit(ctx context.Context) error {
 	msg.OPCode = types.OPCommitCode
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
+	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
@@ -99,9 +100,10 @@ func (c *Mongo) Abort(ctx context.Context) error {
 	msg.OPCode = types.OPAbortCode
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
+	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err

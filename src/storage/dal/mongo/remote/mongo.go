@@ -34,7 +34,7 @@ var _ dal.DB = (*Mongo)(nil)
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       rpc.Client
+	rpc       *pool
 	getServer types.GetServerFunc
 	parent    *Mongo
 
@@ -61,7 +61,7 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 		return nil, err
 	}
 	return &Mongo{
-		rpc:               pool,
+		rpc:               NewPool(pool),
 		enableTransaction: enableTransaction,
 	}, nil
 }
@@ -171,7 +171,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}

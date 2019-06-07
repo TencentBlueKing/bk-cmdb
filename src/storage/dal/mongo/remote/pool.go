@@ -38,7 +38,7 @@ func NewPool(client rpc.Client) *pool {
 	}
 }
 
-func (p *pool) JoinOption(opt *dal.JoinOption) *client {
+func (p *pool) Option(opt *dal.JoinOption) *client {
 	return &client{
 		p:   p,
 		opt: opt,
@@ -57,6 +57,25 @@ func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 	}
 
 	return rpcClient.Call(cmd, input, result)
+}
+
+func (p *pool) Close() error {
+	for _, conn := range p.cache {
+		err := conn.Close()
+		if err != nil {
+			return err
+		}
+	}
+	err := p.conn.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *pool) Ping() error {
+	return p.conn.Ping()
 }
 
 // GetRPCByAddr get rpc client by cache

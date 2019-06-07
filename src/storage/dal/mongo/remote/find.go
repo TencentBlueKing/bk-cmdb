@@ -69,7 +69,7 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := f.rpc.Call(types.CommandRDBOperation, f.msg, &reply)
+	err := f.rpc.Option(&opt).Call(types.CommandRDBOperation, f.msg, &reply)
 	if err != nil {
 		return 0, err
 	}
