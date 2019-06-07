@@ -58,6 +58,15 @@ func (s *coreService) GetServiceCategory(params core.ContextParams, pathParams, 
 	return result, nil
 }
 
+func (s *coreService) GetDefaultServiceCategory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	result, err := s.core.ProcessOperation().GetDefaultServiceCategory(params)
+	if err != nil {
+		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}
+
 func (s *coreService) ListServiceCategories(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
 	fp := struct {
