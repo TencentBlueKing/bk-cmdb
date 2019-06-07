@@ -227,8 +227,13 @@ func (ps *ProcServer) updateProcessInstances(ctx *rest.Contexts, input *metadata
 	}
 
 	for _, process := range input.Processes {
+		processID := process.ProcessID
 		data := mapstr.NewFromStruct(process, "field")
-		err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, data)
+		data.Remove(common.BKProcessIDField)
+		data.Remove(common.MetadataField)
+		data.Remove(common.LastTimeField)
+		data.Remove(common.CreateTimeField)
+		err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, data)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			return
