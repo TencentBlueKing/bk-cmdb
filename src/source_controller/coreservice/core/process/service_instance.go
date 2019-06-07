@@ -61,7 +61,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	// validate host id field
 	if err = p.validateHostID(ctx, instance.HostID); err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
 
 	// make sure biz id identical with service template

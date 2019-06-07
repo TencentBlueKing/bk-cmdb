@@ -20,6 +20,7 @@ func (s *coreService) initProcess() {
 	// service category
 	s.addAction(http.MethodPost, "/create/process/service_category", s.CreateServiceCategory, nil)
 	s.addAction(http.MethodGet, "/find/process/service_category/{service_category_id}", s.GetServiceCategory, nil)
+	s.addAction(http.MethodGet, "/find/process/default_service_category", s.GetDefaultServiceCategory, nil)
 	s.addAction(http.MethodPost, "/findmany/process/service_category", s.ListServiceCategories, nil)
 	s.addAction(http.MethodPut, "/update/process/service_category/{service_category_id}", s.UpdateServiceCategory, nil)
 	s.addAction(http.MethodDelete, "/delete/process/service_category/{service_category_id}", s.DeleteServiceCategory, nil)

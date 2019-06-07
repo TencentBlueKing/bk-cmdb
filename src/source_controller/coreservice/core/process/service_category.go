@@ -106,6 +106,29 @@ func (p *processOperation) GetServiceCategory(ctx core.ContextParams, categoryID
 	return &category, nil
 }
 
+func (p *processOperation) GetDefaultServiceCategory(ctx core.ContextParams) (*metadata.ServiceCategory, error) {
+	category := metadata.ServiceCategory{}
+
+	filter := map[string]interface{}{
+		common.BKFieldName: common.DefaultServiceCategoryName,
+		common.BKParentIDField: map[string]interface{}{
+			common.BKDBNE: 0,
+		},
+		common.MetadataLabelBiz: map[string]interface{}{
+			common.BKDBExists: false,
+		},
+	}
+	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).One(ctx.Context, &category); nil != err {
+		blog.Errorf("GetDefaultServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, err, ctx.ReqID)
+		if p.dbProxy.IsNotFoundError(err) {
+			return nil, ctx.Error.CCError(common.CCErrCommNotFound)
+		}
+		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
+	}
+
+	return &category, nil
+}
+
 func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categoryID int64, input metadata.ServiceCategory) (*metadata.ServiceCategory, error) {
 	category, err := p.GetServiceCategory(ctx, categoryID)
 	if err != nil {
@@ -203,7 +226,7 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 
 	// category that has sub category shouldn't be removed
 	childrenFilter := map[string]interface{}{
-		"parent_id": category.ID,
+		common.BKParentIDField: category.ID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBNE: category.ID,
 		},

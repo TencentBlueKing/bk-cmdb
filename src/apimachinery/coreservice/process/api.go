@@ -64,6 +64,27 @@ func (p *process) GetServiceCategory(ctx context.Context, h http.Header, categor
 	return &ret.Data, nil
 }
 
+func (p *process) GetDefaultServiceCategory(ctx context.Context, h http.Header) (resp *metadata.ServiceCategory, err error) {
+	ret := new(metadata.OneServiceCategoryResult)
+	subPath := "/find/process/default_service_category"
+
+	err = p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 func (p *process) UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error) {
 	ret := new(metadata.OneServiceCategoryResult)
 	subPath := fmt.Sprintf("/update/process/service_category/%d", categoryID)
