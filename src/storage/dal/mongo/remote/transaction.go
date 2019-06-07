@@ -55,7 +55,6 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	clone := c.Clone().(*Mongo)
 	clone.TxnID = reply.TxnID
 	clone.RequestID = reply.RequestID
-	clone.tmAddr = reply.RemoteAddr
 	return clone, nil
 }
 
