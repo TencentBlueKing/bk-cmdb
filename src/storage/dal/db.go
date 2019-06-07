@@ -38,14 +38,7 @@ type DB interface {
 	Clone() DB
 	// Table collection 操作
 	Table(collection string) Table
-	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) (DB, error)
-	// Commit 提交事务
-	Commit(context.Context) error
-	// Abort 取消事务
-	Abort(context.Context) error
-	// TxnInfo 当前事务信息，用于事务发起者往下传递
-	TxnInfo() *types.Transaction
+
 	// NextSequence 获取新序列号(非事务)
 	NextSequence(ctx context.Context, sequenceName string) (uint64, error)
 	// Ping 健康检查
@@ -62,6 +55,18 @@ type DB interface {
 	IsNotFoundError(error) bool
 
 	Close() error
+}
+
+// Transcation db transcation interface
+type Transcation interface {
+	// Start 开启新事务
+	Start(ctx context.Context) (DB, error)
+	// Commit 提交事务
+	Commit(context.Context) error
+	// Abort 取消事务
+	Abort(context.Context) error
+	// TxnInfo 当前事务信息，用于事务发起者往下传递
+	TxnInfo() *types.Transaction
 }
 
 // Table collection operation interface
