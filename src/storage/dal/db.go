@@ -59,8 +59,8 @@ type DB interface {
 
 // Transcation db transcation interface
 type Transcation interface {
-	// Start 开启新事务
-	Start(ctx context.Context) (DB, error)
+	// StartTransaction 开启新事务
+	StartTransaction(ctx context.Context) (DB, error)
 	// Commit 提交事务
 	Commit(context.Context) error
 	// Abort 取消事务
