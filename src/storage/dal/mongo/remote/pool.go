@@ -59,6 +59,11 @@ func (c *client) Call(cmd string, input interface{}, result interface{}) error {
 	return rpcClient.Call(cmd, input, result)
 }
 
+func (p *pool) CallInfo(cmd string, input interface{}, result interface{}) (addr string, err error) {
+	addr, err = p.conn.CallInfo(cmd, input, result)
+	return
+}
+
 func (p *pool) Close() error {
 	for _, conn := range p.cache {
 		err := conn.Close()

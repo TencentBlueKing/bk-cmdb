@@ -44,7 +44,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
+	addr, err := c.rpc.CallInfo(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +55,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	clone := c.Clone().(*Mongo)
 	clone.TxnID = reply.TxnID
 	clone.RequestID = reply.RequestID
+	clone.tmAddr = addr
 	return clone, nil
 }
 
