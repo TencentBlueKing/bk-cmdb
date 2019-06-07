@@ -38,6 +38,7 @@ type Mongo struct {
 	getServer types.GetServerFunc
 	parent    *Mongo
 
+	tmAddr            string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 	enableTransaction bool
 }
 
@@ -65,8 +66,9 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 	}, nil
 }
 
+/* 不支持事务透传的版本无法使用域名配置。
 // New returns new DB
-func New(uri string, enableTransaction bool) (dal.DB, error) {
+ func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
@@ -75,7 +77,7 @@ func New(uri string, enableTransaction bool) (dal.DB, error) {
 		rpc:               rpccli,
 		enableTransaction: enableTransaction,
 	}, nil
-}
+}*/
 
 // Close replica client
 func (c *Mongo) Close() error {

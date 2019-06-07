@@ -32,6 +32,7 @@ type Transaction struct {
 	Status     TxStatus  `bson:"status"`        // 事务状态，作为定时补偿判断条件，这个字段需要加索引
 	CreateTime time.Time `bson:"create_time"`   // 创建时间，作为定时补偿判断条件和统计信息存在，这个字段需要加索引
 	LastTime   time.Time `bson:"last_time"`     // 修改时间，作为统计信息存在
+	TMAddr     string    // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 }
 
 func (t Transaction) IntoHeader(header http.Header) http.Header {
