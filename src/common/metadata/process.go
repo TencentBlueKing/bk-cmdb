@@ -78,6 +78,11 @@ type CreateRawProcessInstanceInput struct {
 	Processes         []ProcessInstanceDetail `json:"processes"`
 }
 
+type UpdateRawProcessInstanceInput struct {
+	Metadata  Metadata  `json:"metadata"`
+	Processes []Process `json:"processes"`
+}
+
 type DeleteProcessInstanceInServiceInstanceInput struct {
 	Metadata           Metadata `json:"metadata"`
 	ProcessInstanceIDs []int64  `json:"process_instance_ids"`
