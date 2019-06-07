@@ -62,6 +62,56 @@ func (ps *ProcServer) CreateProcessInstancesWithRaw(ctx *rest.Contexts) {
 	ps.createProcessInstances(ctx, input)
 }
 
+func (ps *ProcServer) UpdateProcessInstancesWithRaw(ctx *rest.Contexts) {
+	input := new(metadata.UpdateRawProcessInstanceInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process instance failed, parse business id failed, err: %+v", err)
+		return
+	}
+	processIDs := make([]int64, 0)
+	for _, process := range input.Processes {
+		processIDs = append(processIDs, process.ProcessID)
+	}
+	option := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: bizID,
+		ProcessIDs: &processIDs,
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "update process instance failed, search process instance relation failed, err: %+v", err)
+		return
+	}
+	for _, relation := range relations.Info {
+		if relation.ProcessTemplateID != 0 {
+			ctx.RespErrorCodeOnly(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden, "update process instance failed, update process instance create by template forbidden, err: %+v", err)
+			return
+		}
+	}
+
+	for _, process := range input.Processes {
+		processID := process.ProcessID
+		data := mapstr.NewFromStruct(process, "field")
+		data.Remove(common.BKProcessIDField)
+		data.Remove(common.MetadataField)
+		data.Remove(common.LastTimeField)
+		data.Remove(common.CreateTimeField)
+		err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, data)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+			return
+		}
+	}
+
+	ctx.RespEntity(processIDs)
+}
+
 func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
 	input := new(metadata.CreateServiceInstanceForServiceTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -152,7 +202,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		return
 	}
 	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
-		ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+		ctx.RespWithError(err, common.CCErrProcEditProcessInstanceCreateByTemplateForbidden,
 			"create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v",
 			input.ServiceInstanceID, err)
 		return

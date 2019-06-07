@@ -95,7 +95,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	if !result.Result {
 		blog.Errorf("rid: %s, update process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
