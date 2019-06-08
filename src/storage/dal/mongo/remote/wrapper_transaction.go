@@ -22,14 +22,15 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-// Wrapper Interface for automatic processing of encapsulated transactions
-// f parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-func (c *Mongo) Wrapper(ctx context.Context, opt dal.TxnWrapperOption, f func(header http.Header) error) error {
+// AutoRun Interface for automatic processing of encapsulated transactions
+// f func return error, abort commit, other commit transcation. transcation commit can be error.
+// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+func (c *Mongo) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(header http.Header) error) error {
 
 	rid := util.GetHTTPCCRequestID(opt.Header)
 	txn, err := c.Start(ctx)
 	if err != nil {
-		blog.Errorf("wrapper stranscation start error. err:%s, rid:%s", err.Error(), rid)
+		blog.ErrorfDepth(1, "wrapper stranscation start error. err:%s, rid:%s", err.Error(), rid)
 		return opt.CCErr.Errorf(common.CCErrCommStartTranscationFailed, err.Error())
 	}
 	header := txn.TxnInfo().IntoHeader(opt.Header)
@@ -39,14 +40,14 @@ func (c *Mongo) Wrapper(ctx context.Context, opt dal.TxnWrapperOption, f func(he
 		// Abort error. mongodb session can rollback
 		txnErr := txn.Abort(newCtx)
 		if txnErr != nil {
-			blog.Errorf("wrapper stranscation start error. err:%s, txnErr:%s, rid:%s", err.Error(), txnErr.Error(), rid)
+			blog.ErrorfDepth(1, "wrapper stranscation start error. err:%s, txnErr:%s, rid:%s", err.Error(), txnErr.Error(), rid)
 		}
 		return err
 	}
 
 	err = txn.Commit(newCtx)
 	if err != nil {
-		blog.Errorf("wrapper stranscation commit error. err:%s, rid:%s", err.Error(), rid)
+		blog.ErrorfDepth(1, "wrapper stranscation commit error. err:%s, rid:%s", err.Error(), rid)
 		return opt.CCErr.Errorf(common.CCErrCommCommitTranscationFailed, err.Error())
 	}
 	return nil
