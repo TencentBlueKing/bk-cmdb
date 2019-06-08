@@ -110,7 +110,7 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
-		//t.origindatas = nil
+		// t.origindatas = nil
 		return err
 	}
 	// delete host.
@@ -346,7 +346,7 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 // delHostModuleRelation delete single host module relation
 func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
-	// transfer the host across businees,
+	// transfer the host across business,
 	// check host belongs to the original business ID
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
