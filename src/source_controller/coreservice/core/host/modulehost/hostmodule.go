@@ -113,6 +113,85 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 	return nil, nil
 }
 
+// RemoveHostFromModule 将主机从模块中移出
+// 如果主机属于n+1个模块（n>0），操作之后，主机属于n个模块
+// 如果主机属于1个模块, 且非空闲机模块，操作之后，主机属于空闲机模块
+// 如果主机属于空闲机模块，操作失败
+// 如果主机属于故障机模块，操作失败
+// 如果主机不在参数指定的模块中，操作失败
+func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
+	hostConfigFilter := map[string]interface{}{
+		common.BKHostIDField:   input.HostID,
+		common.BKModuleIDField: input.ModuleID,
+		common.BKAppIDField:    input.ApplicationID,
+	}
+	hostConfigs := make([]metadata.ModuleHost, 0)
+	if err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
+		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFaild, err.Error())
+	}
+
+	// 如果主机不在参数指定的模块中，操作失败
+	if len(hostConfigs) == 0 {
+		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleNotExist)
+	}
+
+	moduleIDs := make([]int64, 0)
+	for _, hostConfig := range hostConfigs {
+		moduleIDs = append(moduleIDs, hostConfig.HostID)
+	}
+
+	// 检查 moduleIDs 是否有空闲机或故障机模块
+	// 如果主机属于空闲机模块，操作失败
+	// 如果主机属于故障机模块，操作失败
+	defaultModuleFilter := map[string]interface{}{
+		common.BKModuleIDField: map[string]interface{}{
+			common.BKDBIN: moduleIDs,
+		},
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBIN: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
+		},
+	}
+	defaultModuleCount, err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
+	if err != nil {
+		return nil, ctx.Error.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
+	}
+	if defaultModuleCount > 0 {
+		return nil, ctx.Error.CCError(common.CCErrHostRemoveFromDefaultModuleFailed)
+	}
+
+	targetModuleIDs := make([]int64, 0)
+	for _, moduleID := range moduleIDs {
+		if moduleID != input.ModuleID {
+			targetModuleIDs = append(targetModuleIDs, moduleID)
+		}
+	}
+	if len(targetModuleIDs) > 0 {
+		option := metadata.HostsModuleRelation{
+			ApplicationID: input.ApplicationID,
+			HostID:        []int64{input.HostID},
+			ModuleID:      targetModuleIDs,
+			IsIncrement:   false,
+		}
+		return mh.TransferHostModule(ctx, &option)
+	}
+
+	// transfer host to idle module
+	idleModuleFilter := map[string]interface{}{
+		common.BKAppIDField:   input.ApplicationID,
+		common.BKDefaultField: common.DefaultResModuleFlag,
+	}
+	idleModule := metadata.ModuleHost{}
+	if err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(idleModuleFilter).One(ctx.Context, &idleModule); err != nil {
+		return nil, ctx.Error.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
+	}
+	innerModuleOption := metadata.TransferHostToInnerModule{
+		ApplicationID: input.ApplicationID,
+		ModuleID:      idleModule.ModuleID,
+		HostID:        []int64{input.HostID},
+	}
+	return mh.TransferHostToInnerModule(ctx, &innerModuleOption)
+}
+
 // TransferHostCrossBusiness Host cross-business transfer
 func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
 	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)

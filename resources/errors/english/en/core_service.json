@@ -10,6 +10,7 @@
     "1113009": "transfer module host relation failure.",
     "1113010": "failed to sent event",
     "1113011": "forbidden release host referenced by service instance",
+    "1113012": "forbidden move out host from default module",
 
     "":""
 }
