@@ -392,3 +392,14 @@ type MultipleProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessInstanceRelation `json:"data"`
 }
+
+type BusinessDefaultSetModuleInfo struct {
+	IdleSetID     int64 `json:"idle_set_id"`
+	IdleModuleID  int64 `json:"idle_module_id"`
+	FaultModuleID int64 `json:"fault_module_id"`
+}
+
+type BusinessDefaultSetModuleInfoResult struct {
+	BaseResp `json:",inline"`
+	Data     BusinessDefaultSetModuleInfo `json:"data"`
+}

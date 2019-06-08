@@ -203,6 +203,8 @@ type ProcessOperation interface {
 	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
 	ListProcessInstanceRelation(ctx ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, error)
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) error
+
+	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, error)
 }
 
 type core struct {
