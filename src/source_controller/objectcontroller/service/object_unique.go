@@ -13,8 +13,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -25,9 +27,16 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"github.com/gin-gonic/gin/json"
 
 	"github.com/emicklei/go-restful"
 )
+
+func DecodeJSON(r io.Reader, v interface{}) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := json.NewDecoder(io.TeeReader(r, buf)).Decode(v)
+	return buf.Bytes(), err
+}
 
 // CreateObjectUnique create object's unique
 func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Response) {
@@ -39,7 +48,8 @@ func (cli *Service) CreateObjectUnique(req *restful.Request, resp *restful.Respo
 
 	objID := req.PathParameter(common.BKObjIDField)
 	var dat metadata.CreateUniqueRequest
-	if body, err := util.DecodeJSON(req.Request.Body, &dat); err != nil {
+	json.NewDecoder(req.Request.Body)
+	if body, err := DecodeJSON(req.Request.Body, &dat); err != nil {
 		blog.Errorf("[CreateObjectUnique] DecodeJSON error: %v, %s", err, body)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
@@ -123,7 +133,7 @@ func (cli *Service) UpdateObjectUnique(req *restful.Request, resp *restful.Respo
 	}
 
 	var unique metadata.UpdateUniqueRequest
-	if body, err := util.DecodeJSON(req.Request.Body, &unique); err != nil {
+	if body, err := DecodeJSON(req.Request.Body, &unique); err != nil {
 		blog.Errorf("[UpdateObjectUnique] DecodeJSON error: %v, %s", err, body)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
