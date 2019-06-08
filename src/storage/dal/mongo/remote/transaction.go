@@ -23,7 +23,7 @@ import (
 )
 
 // StartTransaction create a new transaction
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+func (c *Mongo) StartTransaction(ctx context.Context) (dal.Transcation, error) {
 	if !c.enableTransaction {
 		blog.Warnf("not enable transaction")
 		return c, nil
@@ -122,4 +122,8 @@ func (c *Mongo) TxnInfo() *types.Transaction {
 		TxnID:     c.TxnID,
 		TMAddr:    c.tmAddr,
 	}
+}
+
+func (c *Mongo) DB() dal.RDB {
+	return c
 }

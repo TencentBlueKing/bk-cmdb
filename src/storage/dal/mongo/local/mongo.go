@@ -230,7 +230,7 @@ type Idgen struct {
 }
 
 // StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+func (c *Mongo) StartTransaction(ctx context.Context) (dal.Transcation, error) {
 	return c, nil
 }
 
@@ -275,6 +275,11 @@ func (c *Mongo) DropTable(collName string) error {
 func (c *Mongo) CreateTable(collName string) error {
 	c.dbc.Refresh()
 	return c.dbc.DB(c.dbname).C(collName).Create(&mgo.CollectionInfo{})
+}
+
+// DB get rad interface
+func (c *Mongo) DB(collName string) dal.RDB {
+	return c
 }
 
 // CreateIndex 创建索引
