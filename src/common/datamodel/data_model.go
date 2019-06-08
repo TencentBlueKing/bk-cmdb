@@ -113,16 +113,10 @@ func (i *StringField) TypeOf() reflect.Type {
 	return reflect.TypeOf("")
 }
 
-type FieldValue struct {
-	Key   string
-	Value interface{}
-}
-
 type DynamicStructure struct {
 	CustomFields []CustomField
-	// FieldValues  []FieldValue
-	structValue interface{}
-	structType  reflect.Type
+	structValue  interface{}
+	structType   reflect.Type
 }
 
 func (ds *DynamicStructure) Get(key string) (interface{}, error) {
