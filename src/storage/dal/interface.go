@@ -70,9 +70,10 @@ type Transcation interface {
 	// TxnInfo 当前事务信息，用于事务发起者往下传递
 	TxnInfo() *types.Transaction
 
-	// Wrapper Interface for automatic processing of encapsulated transactions
-	// f parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
-	Wrapper(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
+	// AutoRun Interface for automatic processing of encapsulated transactions
+	// f func return error, abort commit, other commit transcation. transcation commit can be error.
+	// f func parameter http.header, the handler must be accepted and processed. Subsequent passthrough to call subfunctions and APIs
+	AutoRun(ctx context.Context, opt TxnWrapperOption, f func(header http.Header) error) error
 }
 
 // Table collection operation interface
