@@ -169,8 +169,9 @@ const (
 	CCErrCommRemoveReferencedRecordForbidden  = 1199056
 	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
 
-	CCErrCommGenerateRecordIDFailed = 1199058
-	CCErrCommPageLimitIsExceeded    = 1199059
+	CCErrCommGenerateRecordIDFailed   = 1199058
+	CCErrCommPageLimitIsExceeded      = 1199059
+	CCErrCommUnexpectedParameterField = 1199060
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -506,16 +507,18 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	CCErrProcGetServiceInstancesFailed        = 1108024
-	CCErrProcCreateServiceInstancesFailed     = 1108025
-	CCErrProcDeleteServiceInstancesFailed     = 1108026
-	CCErrProcGetProcessTemplatesFailed        = 1108027
-	CCErrProcGetProcessInstanceFailed         = 1108028
-	CCErrProcGetProcessInstanceRelationFailed = 1108029
-	CCErrProcDeleteServiceTemplateFailed      = 1108030
-	CCErrProcCreateProcessTemplateFailed      = 1108031
-	CCErrProcUpdateProcessTemplateFailed      = 1108032
-	CCErrProcGetProcessTemplateFailed         = 1108033
+	CCErrProcGetServiceInstancesFailed                    = 1108024
+	CCErrProcCreateServiceInstancesFailed                 = 1108025
+	CCErrProcDeleteServiceInstancesFailed                 = 1108026
+	CCErrProcGetProcessTemplatesFailed                    = 1108027
+	CCErrProcGetProcessInstanceFailed                     = 1108028
+	CCErrProcGetProcessInstanceRelationFailed             = 1108029
+	CCErrProcDeleteServiceTemplateFailed                  = 1108030
+	CCErrProcCreateProcessTemplateFailed                  = 1108031
+	CCErrProcUpdateProcessTemplateFailed                  = 1108032
+	CCErrProcGetProcessTemplateFailed                     = 1108033
+	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
+	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

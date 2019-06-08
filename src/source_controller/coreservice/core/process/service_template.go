@@ -54,7 +54,8 @@ func (p *processOperation) CreateServiceTemplate(ctx core.ContextParams, templat
 		blog.Errorf("CreateServiceTemplate failed, parse biz id from category failed, code: %d, err: %+v, rid: %s", common.CCErrCommInternalServerError, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParseBizIDFromMetadataInDBFailed)
 	}
-	if bizID != categoryBizID {
+	// categoryBizID 0 and 1 is default category
+	if bizID != categoryBizID && categoryBizID != 0 {
 		blog.Errorf("CreateServiceTemplate failed, validation failed, input bizID:%d not equal category bizID:%d, rid: %s", bizID, categoryBizID, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
@@ -102,7 +103,11 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	}
 
 	// update fields to local object
-	template.Name = input.Name
+	// template.Name = input.Name
+	if input.ServiceCategoryID != 0 {
+		template.ServiceCategoryID = input.ServiceCategoryID
+	}
+
 	if field, err := template.Validate(); err != nil {
 		blog.Errorf("UpdateServiceTemplate failed, validation failed, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		err := ctx.Error.Errorf(common.CCErrCommParamsInvalid, field)
@@ -121,20 +126,21 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error) {
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 	filter := map[string]interface{}{}
-	filter["metadata"] = md.ToMapStr()
+	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
 	if categoryID > 0 {
-		categories, err := p.ListServiceCategories(ctx, bizID, false)
+		categoriesWithSts, err := p.ListServiceCategories(ctx, bizID, false)
 		if err != nil {
-			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v", err)
+			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
 		}
 		childrenIDs := make([]int64, 0)
 		childrenIDs = append(childrenIDs, categoryID)
 		for {
 			pre := len(childrenIDs)
-			for _, category := range categories.Info {
+			for _, categoryWithSts := range categoriesWithSts.Info {
+				category := categoryWithSts.ServiceCategory
 				if category.ParentID == 0 {
 					continue
 				}
@@ -146,7 +152,9 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 				break
 			}
 		}
-		filter["service_category_id"] = map[string][]int64{"$in": childrenIDs}
+		filter[common.BKServiceCategoryIDField] = map[string][]int64{
+			common.BKDBIN: childrenIDs,
+		}
 	}
 
 	var total uint64
@@ -176,7 +184,9 @@ func (p *processOperation) DeleteServiceTemplate(ctx core.ContextParams, service
 	}
 
 	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{"service_template_id": template.ID}
+	usageFilter := map[string]int64{
+		common.BKServiceTemplateIDField: template.ID,
+	}
 	usageCount, err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(usageFilter).Count(ctx.Context)
 	if nil != err {
 		blog.Errorf("DeleteServiceTemplate failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, usageFilter, err, ctx.ReqID)

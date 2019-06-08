@@ -266,7 +266,7 @@ type OneServiceCategoryResult struct {
 	Data     ServiceCategory `json:"data"`
 }
 
-type ServiceCategoryWithStatisticsResult struct {
+type OneServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategoryWithStatistics `json:"data"`
 }
@@ -276,9 +276,19 @@ type MultipleServiceCategory struct {
 	Info  []ServiceCategory `json:"info"`
 }
 
+type MultipleServiceCategoryWithStatistics struct {
+	Count int64                           `json:"count"`
+	Info  []ServiceCategoryWithStatistics `json:"info"`
+}
+
 type MultipleServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategory `json:"data"`
+}
+
+type MultipleServiceCategoryWithStatisticsResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategoryWithStatistics `json:"data"`
 }
 
 type ListServiceTemplateOption struct {
@@ -303,14 +313,17 @@ type ListServiceInstanceOption struct {
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
 	Page              BasePage `json:"page,omitempty"`
+	// only when WithName is true, name field with be filled with `ip + process name + process port`
+	WithName bool `json:"with_name,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
-	BusinessID        int64   `json:"bk_biz_id"`
-	ProcessIDs        []int64 `json:"process_ids,omitempty"`
-	ServiceInstanceID []int64 `json:"service_instance_id,omitempty"`
-	ProcessTemplateID int64   `json:"process_template_id,omitempty"`
-	HostID            int64   `json:"host_id,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"process_ids,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateID  int64    `json:"process_template_id,omitempty"`
+	HostID             int64    `json:"host_id,omitempty"`
+	Page               BasePage `json:"page" field:"page"`
 }
 
 type MultipleServiceTemplateResult struct {
@@ -333,10 +346,20 @@ type MultipleProcessTemplateResult struct {
 	Data     MultipleProcessTemplate `json:"data"`
 }
 
+type DeleteProcessInstanceRelationOption struct {
+	BusinessID         *int64   `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"bk_process_id,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_id,omitempty"`
+	HostIDs            *[]int64 `json:"bk_host_id,omitempty"`
+	ModuleIDs          *[]int64 `json:"bk_module_id,omitempty"`
+}
+
 type ListProcessTemplatesOption struct {
-	BusinessID         int64   `json:"bk_biz_id"`
-	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
-	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_ids,omitempty" bson:"process_template_ids"`
+	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type OneServiceInstanceResult struct {

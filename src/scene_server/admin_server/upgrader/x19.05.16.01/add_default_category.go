@@ -22,13 +22,12 @@ import (
 )
 
 func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) (int64, error) {
-	categoryName := "Default"
 
 	firstCategory := metadata.ServiceCategory{}
 	// insert first category
 	cond := metadata.BizLabelNotExist.Clone()
-	cond.Set("name", categoryName)
-	cond.Set("parent_id", 0)
+	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
+	cond.Set(common.BKParentIDField, 0)
 	err := db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &firstCategory)
 	if db.IsNotFoundError(err) {
 		firstID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
@@ -38,7 +37,7 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 		firstCategory = metadata.ServiceCategory{
 			ID:              int64(firstID),
-			Name:            categoryName,
+			Name:            common.DefaultServiceCategoryName,
 			RootID:          int64(firstID),
 			ParentID:        0,
 			SupplierAccount: "0",
@@ -55,8 +54,8 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	// insert second category
 	secondCategory := metadata.ServiceCategory{}
 	cond = metadata.BizLabelNotExist.Clone()
-	cond.Set("name", categoryName)
-	cond.Set("parent_id", firstCategory.ID)
+	cond.Set(common.BKFieldName, common.DefaultServiceCategoryName)
+	cond.Set(common.BKParentIDField, firstCategory.ID)
 	err = db.Table(common.BKTableNameServiceCategory).Find(cond).One(ctx, &secondCategory)
 	if db.IsNotFoundError(err) {
 		secondID, err := db.NextSequence(ctx, common.BKTableNameServiceCategory)
@@ -66,7 +65,7 @@ func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 
 		secondCategory = metadata.ServiceCategory{
 			ID:              int64(secondID),
-			Name:            categoryName,
+			Name:            common.DefaultServiceCategoryName,
 			RootID:          int64(firstCategory.ID),
 			ParentID:        int64(firstCategory.ID),
 			SupplierAccount: "0",
