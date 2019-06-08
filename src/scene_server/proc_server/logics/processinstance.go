@@ -95,7 +95,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	if !result.Result {
 		blog.Errorf("rid: %s, update process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (uint64, error) {
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (int64, error) {
 	inst := metadata.CreateModelInstance{
 		Data: mapstr.NewFromStruct(proc, "field"),
 	}
@@ -154,7 +154,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (
 		return 0, errors.NewCCError(result.Code, result.ErrMsg)
 	}
 
-	return result.Data.Created.ID, nil
+	return int64(result.Data.Created.ID), nil
 }
 
 // it works to find the different attribute value between the process instance and it's bounded process template.

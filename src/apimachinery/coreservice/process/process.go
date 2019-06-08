@@ -13,7 +13,6 @@
 package process
 
 import (
-	"configcenter/src/common/condition"
 	"context"
 	"net/http"
 
@@ -26,8 +25,9 @@ type ProcessInterface interface {
 	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
 	GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (resp *metadata.ServiceCategory, err error)
 	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
-	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategory, err error)
+	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategoryWithStatistics, err error)
 	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) error
+	GetDefaultServiceCategory(ctx context.Context, h http.Header) (resp *metadata.ServiceCategory, err error)
 
 	// service template
 	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
@@ -56,7 +56,7 @@ type ProcessInterface interface {
 	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
 	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error)
-	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, condition condition.Condition) error
+	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) error
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {

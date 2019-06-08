@@ -78,6 +78,8 @@
     "process_property_auto_start": "是否自动拉起",
     "process_property_auto_time_gap": "拉起间隔",
     "process_property_bk_start_param_regex": "启动参数匹配规则",
+    "process_property_service_category_id": "服务分类",
+    "process_property_service_template_id": "服务模板",
 
     "bk_switch_property_bk_asset_id":"固资编号",
     "bk_switch_property_bk_sn":"SN",

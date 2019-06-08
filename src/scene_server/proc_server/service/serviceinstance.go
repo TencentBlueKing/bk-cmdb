@@ -17,7 +17,9 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
@@ -41,6 +43,73 @@ func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
 	}
 
 	ps.createServiceInstances(ctx, input)
+}
+
+func (ps *ProcServer) CreateProcessInstancesWithRaw(ctx *rest.Contexts) {
+	input := new(metadata.CreateRawProcessInstanceInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"create process instance with raw , but get business id failed, err: %v", err)
+		return
+	}
+
+	ps.createProcessInstances(ctx, input)
+}
+
+func (ps *ProcServer) UpdateProcessInstancesWithRaw(ctx *rest.Contexts) {
+	input := new(metadata.UpdateRawProcessInstanceInput)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update process instance failed, parse business id failed, err: %+v", err)
+		return
+	}
+	processIDs := make([]int64, 0)
+	for _, process := range input.Processes {
+		processIDs = append(processIDs, process.ProcessID)
+	}
+	option := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: bizID,
+		ProcessIDs: &processIDs,
+		Page:       metadata.BasePage{Limit: common.BKNoLimit},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "update process instance failed, search process instance relation failed, err: %+v", err)
+		return
+	}
+	for _, relation := range relations.Info {
+		if relation.ProcessTemplateID != 0 {
+			ctx.RespErrorCodeOnly(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden, "update process instance failed, update process instance create by template forbidden, err: %+v", err)
+			return
+		}
+	}
+
+	for _, process := range input.Processes {
+		processID := process.ProcessID
+		data := mapstr.NewFromStruct(process, "field")
+		data.Remove(common.BKProcessIDField)
+		data.Remove(common.MetadataField)
+		data.Remove(common.LastTimeField)
+		data.Remove(common.CreateTimeField)
+		err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, data)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+			return
+		}
+	}
+
+	ctx.RespEntity(processIDs)
 }
 
 func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
@@ -124,6 +193,52 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 	ctx.RespEntity(serviceInstanceIDs)
 }
 
+func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) {
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+			"create process instance failed, get service instance by id failed, serviceInstanceID: %d, err: %v",
+			input.ServiceInstanceID, err)
+		return
+	}
+	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		ctx.RespWithError(err, common.CCErrProcEditProcessInstanceCreateByTemplateForbidden,
+			"create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v",
+			input.ServiceInstanceID, err)
+		return
+	}
+
+	processIDs := make([]int64, 0)
+	for _, process := range input.Processes {
+		processID, err := ps.Logic.CreateProcessInstance(ctx.Kit, &process.ProcessInfo)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+				"create process instance failed, create process failed, serviceInstanceID: %d, process: %+v, err: %v",
+				input.ServiceInstanceID, process, err)
+			return
+		}
+
+		relation := &metadata.ProcessInstanceRelation{
+			Metadata:          input.Metadata,
+			ProcessID:         processID,
+			ProcessTemplateID: common.ServiceTemplateIDNotSet,
+			ServiceInstanceID: serviceInstance.ID,
+			HostID:            serviceInstance.HostID,
+		}
+
+		_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+				"create service instance relations, create process instance relation failed, serviceInstanceID: %d, relation: %+v, err: %v",
+				input.ServiceInstanceID, relation, err)
+			return
+		}
+		processIDs = append(processIDs, processID)
+	}
+
+	ctx.RespEntity(processIDs)
+}
+
 func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
@@ -138,9 +253,9 @@ func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts)
 	}
 
 	// delete process relation at the same time.
-	cond := condition.CreateCondition()
-	cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBIN, Value: input.ProcessInstanceIDs})
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+	deleteOption.ProcessIDs = &input.ProcessInstanceIDs
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
 		return
@@ -171,6 +286,7 @@ func (ps *ProcServer) GetServiceInstancesInModule(ctx *rest.Contexts) {
 		BusinessID: bizID,
 		ModuleID:   input.ModuleID,
 		Page:       input.Page,
+		WithName:   input.WithName,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -199,8 +315,8 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 
 	// Firstly, delete the service instance relation.
 	option := &metadata.ListProcessInstanceRelationOption{
-		BusinessID:        bizID,
-		ServiceInstanceID: []int64{input.ServiceInstanceID},
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &[]int64{input.ServiceInstanceID},
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -209,12 +325,9 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	cond := condition.CreateCondition()
-	cond.AddConditionItem(condition.ConditionItem{
-		Field:    common.BKServiceInstanceIDField,
-		Operator: condition.BKDBEQ,
-		Value:    input.ServiceInstanceID})
-	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+	deleteOption.ServiceInstanceIDs = &[]int64{input.ServiceInstanceID}
+	err = ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcDeleteServiceInstancesFailed,
 			"delete service instance: %d, but delete service instance relations failed.", input.ServiceInstanceID)
@@ -748,8 +861,8 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 	// step2:
 	// find all the process instances relations for the usage of getting process instances.
 	relationOption := &metadata.ListProcessInstanceRelationOption{
-		BusinessID:        bizID,
-		ServiceInstanceID: input.ServiceInstances,
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &input.ServiceInstances,
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {
@@ -821,9 +934,9 @@ func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *re
 				}
 
 				// remove process instance relation now.
-				cond := condition.CreateCondition()
-				cond.AddConditionItem(condition.ConditionItem{Field: common.BKProcessIDField, Operator: condition.BKDBEQ, Value: process.ProcessID})
-				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, cond); err != nil {
+				deleteOption := metadata.DeleteProcessInstanceRelationOption{}
+				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
+				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
 						"force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v",
 						input.ServiceTemplateID, process.ProcessID, template.ID, err)
@@ -916,6 +1029,7 @@ func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
 	option := metadata.ListServiceInstanceOption{
 		BusinessID: bizID,
 		HostID:     input.HostID,
+		WithName:   input.WithName,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
@@ -959,4 +1073,74 @@ func (ps *ProcServer) AddProcessInstanceToServiceInstance(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(instances)
+}
+
+func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
+	input := new(metadata.ListProcessInstancesOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"list process instances with host, but parse biz id failed, err: %+v", err)
+		return
+	}
+
+	// list process instance relation
+	relationOption := metadata.ListProcessInstanceRelationOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &[]int64{input.ServiceInstanceID},
+	}
+	relationsResult, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &relationOption)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list process instance relation failed, bizID: %d, serviceInstanceID: %d, err: %+v",
+			bizID, input.ServiceInstanceID, err)
+		return
+	}
+
+	processIDs := make([]int64, 0)
+	for _, relation := range relationsResult.Info {
+		processIDs = append(processIDs, relation.ProcessID)
+	}
+
+	cond := condition.CreateCondition()
+	cond.Field(common.BKProcessIDField).In(processIDs)
+	reqParam := new(metadata.QueryCondition)
+	reqParam.Condition = cond.ToMapStr()
+	processResult, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, reqParam)
+	if nil != err {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list process instance property failed, bizID: %d, processIDs: %+v, err: %+v", bizID, processIDs, err)
+		return
+	}
+
+	processIDPropertyMap := map[int64]mapstr.MapStr{}
+	for _, process := range processResult.Data.Info {
+		processIDVal, exist := process.Get(common.BKProcessIDField)
+		if exist == false {
+			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, field not exist, bizID: %d, processIDs: %+v", bizID, processIDs)
+		}
+		processID, err := util.GetInt64ByInterface(processIDVal)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrCommParseDataFailed, "list process instance failed, parse bk_process_id from process property failed, parse field to int64 failed, bizID: %d, processIDs: %+v, process: %+v, err: %+v", bizID, processIDs, process, err)
+		}
+		processIDPropertyMap[processID] = process
+	}
+
+	processInstanceList := make([]metadata.ProcessInstance, 0)
+	for _, relation := range relationsResult.Info {
+		processInstance := metadata.ProcessInstance{
+			Property: nil,
+			Relation: relation,
+		}
+		process, exist := processIDPropertyMap[relation.ProcessID]
+		if exist == true {
+			processInstance.Property = process
+		}
+		processInstanceList = append(processInstanceList, processInstance)
+	}
+
+	ctx.RespEntity(processInstanceList)
 }
