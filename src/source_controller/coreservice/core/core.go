@@ -180,7 +180,7 @@ type ProcessOperation interface {
 	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
 	GetServiceTemplate(ctx ContextParams, templateID int64) (*metadata.ServiceTemplate, error)
 	UpdateServiceTemplate(ctx ContextParams, templateID int64, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
-	ListServiceTemplates(ctx ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error)
+	ListServiceTemplates(ctx ContextParams, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, error)
 	DeleteServiceTemplate(ctx ContextParams, serviceTemplateID int64) error
 
 	// process template
