@@ -173,6 +173,8 @@ const (
 	CCErrCommPageLimitIsExceeded      = 1199059
 	CCErrCommUnexpectedParameterField = 1199060
 
+	CCErrCommParseDBFailed = 1199061
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -520,6 +522,7 @@ const (
 	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
 	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
+	CCErrProcModuleNotBindWithTemplate                    = 1108037
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
