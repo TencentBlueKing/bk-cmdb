@@ -292,9 +292,10 @@ type MultipleServiceCategoryWithStatisticsResult struct {
 }
 
 type ListServiceTemplateOption struct {
-	BusinessID        int64    `json:"bk_biz_id"`
-	ServiceCategoryID int64    `json:"service_category_id"`
-	Page              BasePage `json:"page,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ServiceCategoryID  *int64   `json:"service_category_id"`
+	ServiceTemplateIDs *[]int64 `json:"service_template_ids"`
+	Page               BasePage `json:"page,omitempty"`
 }
 
 type OneServiceTemplateResult struct {
