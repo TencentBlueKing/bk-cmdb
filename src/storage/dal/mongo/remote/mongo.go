@@ -43,7 +43,7 @@ type Mongo struct {
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
+func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db *Mongo, err error) {
 	var enableTransaction bool
 	if config.Transaction == "enable" {
 		enableTransaction = true
