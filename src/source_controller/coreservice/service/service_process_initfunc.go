@@ -53,4 +53,6 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodPost, "/findmany/process/process_instance_relation", s.ListProcessInstanceRelation, nil)
 	s.addAction(http.MethodPut, "/update/process/process_instance_relation/{process_instance_id}", s.UpdateProcessInstanceRelation, nil)
 	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
+
+	s.addAction(http.MethodGet, "/find/process/business_default_set_module_info/{bk_biz_id}", s.GetBusinessDefaultSetModuleInfo, nil)
 }

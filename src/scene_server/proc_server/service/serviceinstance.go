@@ -313,6 +313,13 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	// 1. service instance relation need to be deleted.
 	// 2. process instance belongs to this service instance should be deleted.
 
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+			"delete service instance failed, service instance not found, serviceInstanceID: %d", input.ServiceInstanceID)
+		return
+	}
+
 	// Firstly, delete the service instance relation.
 	option := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
@@ -352,6 +359,68 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
+	// check and move host to idle module if no serviceInstance on the host
+	filter := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		HostID:     serviceInstance.HostID,
+	}
+	result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get host related service instances failed, bizID: %d, serviceIntanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
+		return
+	}
+	if result.Count == 0 {
+		blog.V(2).Info("no more service instance on to host [%d], try to move host to idle module", serviceInstance.HostID)
+		defaultSetModuleInfo, err := ps.CoreAPI.CoreService().Process().GetBusinessDefaultSetModuleInfo(ctx.Kit.Ctx, ctx.Kit.Header, bizID)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrCommGetBusinessDefaultSetModuleFailed, "get business default set module failed, bizID: %d, err: %v", bizID, err)
+			return
+		}
+		deleteHostOption := metadata.DeleteOption{
+			Condition: mapstr.MapStr(map[string]interface{}{
+				common.BKHostIDField:   serviceInstance.HostID,
+				common.BKModuleIDField: serviceInstance.ModuleID,
+			}),
+		}
+		if _, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameModuleHostConfig, &deleteHostOption); err != nil {
+			ctx.RespWithError(err, common.CCErrHostDeleteFail, "remove host from module failed, bizID: %d, hostID: %d, moduleID: %d, err: %v", bizID, serviceInstance.HostID, serviceInstance.ModuleID, err)
+			return
+		}
+		hostModuleData := metadata.ModuleHost{
+			AppID:    bizID,
+			HostID:   serviceInstance.HostID,
+			ModuleID: defaultSetModuleInfo.IdleModuleID,
+			SetID:    defaultSetModuleInfo.IdleSetID,
+			OwnerID:  ctx.Kit.SupplierAccount,
+		}
+		createInput := metadata.CreateModelInstance{
+			Data: mapstr.NewFromStruct(hostModuleData, "field"),
+		}
+		if _, err := ps.CoreAPI.CoreService().Instance().CreateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameModuleHostConfig, &createInput); err != nil {
+			ctx.RespWithError(err, common.CCErrHostMoveResourcePoolFail, "move host to idle module failed, bizID: %d, hostID: %d, err: %v", bizID, serviceInstance.HostID, err)
+			return
+		}
+	} else {
+		var moduleInstanceExist bool
+		for _, instance := range result.Info {
+			if instance.ModuleID == serviceInstance.ModuleID {
+				moduleInstanceExist = true
+			}
+		}
+		if moduleInstanceExist == false {
+			// just remove host from this module
+			deleteHostOption := metadata.DeleteOption{
+				Condition: mapstr.MapStr(map[string]interface{}{
+					common.BKHostIDField:   serviceInstance.HostID,
+					common.BKModuleIDField: serviceInstance.ModuleID,
+				}),
+			}
+			if _, err := ps.CoreAPI.CoreService().Instance().DeleteInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameModuleHostConfig, &deleteHostOption); err != nil {
+				ctx.RespWithError(err, common.CCErrHostMoveResourcePoolFail, "move host to idle module failed, bizID: %d, hostID: %d, err: %v", bizID, serviceInstance.HostID, err)
+				return
+			}
+		}
+	}
 	ctx.RespEntity(nil)
 }
 

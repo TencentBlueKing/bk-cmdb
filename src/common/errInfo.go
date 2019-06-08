@@ -173,7 +173,8 @@ const (
 	CCErrCommPageLimitIsExceeded      = 1199059
 	CCErrCommUnexpectedParameterField = 1199060
 
-	CCErrCommParseDBFailed = 1199061
+	CCErrCommParseDBFailed                     = 1199061
+	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
