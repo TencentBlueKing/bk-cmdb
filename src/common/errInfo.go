@@ -519,6 +519,7 @@ const (
 	CCErrProcGetProcessTemplateFailed                     = 1108033
 	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
+	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
