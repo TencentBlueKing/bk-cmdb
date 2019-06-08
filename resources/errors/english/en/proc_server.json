@@ -31,5 +31,6 @@
     "1108034": "get default service category failed",
     "1108035": "create or update process instance under service instance create by template forbidden",
     "1108036": "service category and template not conincide",
+    "1108037": "module doesn't bind a service template yet",
     "": ""
 }
