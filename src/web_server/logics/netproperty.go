@@ -13,25 +13,25 @@
 package logics
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/common/util"
+
+	"github.com/rentiansheng/xlsx"
 )
 
 func GetImportNetProperty(
-	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File, url string) (map[int]map[string]interface{}, []string, error) {
+	header http.Header, defLang language.DefaultCCLanguageIf, f *xlsx.File) (map[int]map[string]interface{}, []string, error) {
 
 	if 0 == len(f.Sheets) {
 		return nil, nil, errors.New(defLang.Language("web_excel_content_empty"))
@@ -47,17 +47,12 @@ func GetImportNetProperty(
 	return GetExcelData(sheet, fields, nil, true, 0, defLang)
 }
 
-func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []interface{}, sheet *xlsx.Sheet) error {
+func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields map[string]Property, data []mapstr.MapStr, sheet *xlsx.Sheet) error {
 	productExcelHealer(fields, nil, sheet, defLang)
 
 	rowIndex := common.HostAddMethodExcelIndexOffset
 	for _, row := range data {
-		propertyData, ok := row.(map[string]interface{})
-		if !ok {
-			msg := fmt.Sprintf("[Export Net Property] Build NetProperty excel from data, convert to map[string]interface{} fail, data: %v", row)
-			blog.Errorf(msg)
-			return errors.New(msg)
-		}
+		propertyData := row
 
 		setExcelRowDataByIndex(propertyData, sheet, rowIndex, fields)
 		rowIndex++
@@ -67,7 +62,8 @@ func BuildNetPropertyExcelFromData(defLang language.DefaultCCLanguageIf, fields 
 }
 
 // get net property data to export
-func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([]interface{}, error) {
+func (lgc *Logics) GetNetPropertyData(header http.Header, netPropertyIDStr string) ([]mapstr.MapStr, error) {
+	defErr := lgc.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(header))
 	netPropertyIDStrArr := strings.Split(netPropertyIDStr, ",")
 	netPropertyIDArr := []int64{}
 
@@ -76,70 +72,30 @@ func GetNetPropertyData(header http.Header, apiAddr, netPropertyIDStr string) ([
 		netPropertyIDArr = append(netPropertyIDArr, netPropertyID)
 	}
 
-	netPropertyCond := map[string]interface{}{
-		"field": []string{},
-		"condition": []map[string]interface{}{
-			map[string]interface{}{
-				"field":    common.BKNetcollectPropertyIDField,
-				"operator": common.BKDBIN,
-				"value":    netPropertyIDArr,
-			},
-		},
+	condItem := condition.ConditionItem{
+		Field:    common.BKNetcollectPropertyIDField,
+		Operator: common.BKDBIN,
+		Value:    netPropertyIDArr,
 	}
+	searchCond := condition.CreateCondition()
+	searchCond.AddConditionItem(condItem)
 
-	url := apiAddr + fmt.Sprintf("/api/%s/collector/netcollect/property/action/search", webCommon.API_VERSION)
-	result, err := httpRequest(url, netPropertyCond, header)
+	propertyResult, err := lgc.Engine.CoreAPI.ApiServer().SearchNetCollectDevice(context.Background(), header, searchCond)
 	if nil != err {
-		blog.Errorf("[Export Net Property] http request error:%v", err)
+		blog.Errorf("search net property data inst  error:%#v , search condition:%#v", err, searchCond)
+		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
 	}
 
-	blog.V(5).Infof("[Export Net Property] search netProperty url:%s", url)
-	blog.V(5).Infof("[Export Net Property] search netProperty return:%s", result)
-
-	js, err := simplejson.NewJson([]byte(result))
-	if nil != err {
-		blog.Errorf("[Export Net Property] convert http reponse string [%s] to json error:%v", result, err)
-	}
-	netPropertyDataResult, err := js.Map()
-	if nil != err {
-		blog.Errorf("[Export Net Property] convert http reponse json [%#+v] to map[string]interface{} error:%v", netPropertyDataResult, err)
+	if 0 == propertyResult.Data.Count {
+		return propertyResult.Data.Info, errors.New("no device")
 	}
 
-	netPropertyResult, ok := netPropertyDataResult["result"].(bool)
-	if !ok {
-		blog.Errorf("[Export Net Property] http reponse 'result'[%#+v] is bool", netPropertyDataResult["result"])
-	}
-	if !netPropertyResult {
-		return nil, errors.New(netPropertyDataResult["bk_error_msg"].(string))
-	}
-
-	netPropertyData, ok := netPropertyDataResult["data"].(map[string]interface{})
-	if !ok {
-		blog.Errorf("[Export Net Property] http reponse 'data'[%#+v] is not map[string]interface{}", netPropertyDataResult["data"])
-	}
-	netPropertyInfo, ok := netPropertyData["info"].([]interface{})
-	if !ok {
-		blog.Errorf("[Export Net Property] http reponse 'info'[%#+v] is not []interface{}", netPropertyData["info"])
-	}
-	_, ok = netPropertyData["count"].(json.Number)
-	if !ok {
-		blog.Errorf("[Export Net Property] http reponse 'count'[%#+v] is not a number", netPropertyData["count"])
-	}
-	netPropertyCount, err := netPropertyData["count"].(json.Number).Int64()
-	if nil != err {
-		blog.Errorf("[Export Net Property] http reponse 'count'[%#+v] convert to int64 error:%v", netPropertyData["count"], err)
-	}
-
-	if 0 == netPropertyCount {
-		return netPropertyInfo, errors.New("no netProperty")
-	}
-
-	blog.V(5).Infof("[Export Net Property] search return netProperty info:%s", netPropertyInfo)
-	return netPropertyInfo, nil
+	blog.V(5).Infof("[Export Net Device Property] search return device info:%s", propertyResult)
+	return propertyResult.Data.Info, nil
 }
 
 //BuildNetPropertyExcelTemplate  return httpcode, error
-func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, url, filename string) error {
+func BuildNetPropertyExcelTemplate(header http.Header, defLang language.DefaultCCLanguageIf, filename string) error {
 	var file *xlsx.File
 	file = xlsx.NewFile()
 
