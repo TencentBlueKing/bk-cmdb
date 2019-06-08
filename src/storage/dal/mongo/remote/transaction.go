@@ -22,8 +22,8 @@ import (
 	"configcenter/src/storage/types"
 )
 
-// StartTransaction create a new transaction
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.Transcation, error) {
+// Start create a new transaction
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 	if !c.enableTransaction {
 		blog.Warnf("not enable transaction")
 		return c, nil

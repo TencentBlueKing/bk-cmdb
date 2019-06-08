@@ -15,7 +15,9 @@ package dal
 import (
 	"context"
 	"errors"
+	"net/http"
 
+	ccErr "configcenter/src/common/errors"
 	"configcenter/src/storage/mongodb"
 	"configcenter/src/storage/types"
 )
@@ -59,8 +61,8 @@ type DB interface {
 
 // Transcation db transcation interface
 type Transcation interface {
-	// StartTransaction 开启新事务
-	StartTransaction(ctx context.Context) (Transcation, error)
+	// Start 开启新事务
+	Start(ctx context.Context) (Transcation, error)
 	// Commit 提交事务
 	Commit(context.Context) error
 	// Abort 取消事务
@@ -105,6 +107,11 @@ type JoinOption struct {
 	Processor string // 处理进程号，结构为"IP:PORT-PID"用于识别事务session被存于那个TM多活实例
 
 	TMAddr string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
+}
+
+type TxnWrapperOption struct {
+	Header http.Header
+	CCErr  ccErr.DefaultCCErrorIf
 }
 
 // Find find operation interface

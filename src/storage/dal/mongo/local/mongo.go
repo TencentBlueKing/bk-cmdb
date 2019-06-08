@@ -229,8 +229,8 @@ type Idgen struct {
 	SequenceID uint64 `bson:"SequenceID"`
 }
 
-// StartTransaction 开启新事务
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.Transcation, error) {
+// Start 开启新事务
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 	return c, nil
 }
 
@@ -277,7 +277,7 @@ func (c *Mongo) CreateTable(collName string) error {
 	return c.dbc.DB(c.dbname).C(collName).Create(&mgo.CollectionInfo{})
 }
 
-// DB get rad interface
+// DB get dal interface
 func (c *Mongo) DB(collName string) dal.RDB {
 	return c
 }
