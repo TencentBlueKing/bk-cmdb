@@ -19,16 +19,19 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
-
-	"github.com/stretchr/testify/require"
 )
 
 func MBenchmarkRemoteCUD(b *testing.B) {
-	db, err := New("192.168.100.130:60008", true)
+	config := mongo.Config{
+		Transaction: "enable",
+	}
+	db, err := NewWithDiscover(getServerFunc, config)
 	require.NoError(b, err)
 
 	header := http.Header{}
@@ -43,7 +46,7 @@ func MBenchmarkRemoteCUD(b *testing.B) {
 	defer db.Table(tablename).Delete(orgctx, map[string]interface{}{})
 
 	for i := 0; i < b.N; i++ {
-		tx, err := db.StartTransaction(orgctx)
+		tx, err := db.Start(orgctx)
 		require.NoError(b, err)
 		header = tx.TxnInfo().IntoHeader(header)
 		ctx := util.GetDBContext(context.Background(), header)
@@ -52,16 +55,16 @@ func MBenchmarkRemoteCUD(b *testing.B) {
 		require.NotEmpty(b, opt.RequestID)
 		require.NotEmpty(b, opt.TxnID)
 
-		err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
+		err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
 		require.NoError(b, err)
 
-		err = tx.Table(tablename).Update(ctx, map[string]interface{}{"name": "a"}, map[string]interface{}{"name": "b"})
+		err = db.Table(tablename).Update(ctx, map[string]interface{}{"name": "a"}, map[string]interface{}{"name": "b"})
 		require.NoError(b, err)
 
-		err = tx.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
+		err = db.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
 		require.NoError(b, err)
 
-		err = tx.Commit(ctx)
+		err = db.Commit(ctx)
 		require.NoError(b, err)
 	}
 
@@ -96,7 +99,7 @@ func BenchmarkRemoteCUDParallel(b *testing.B) {
 		bb := fmt.Sprintf("b-%d", ii)
 
 		for pb.Next() {
-			tx, err := db.StartTransaction(orgctx)
+			tx, err := db.Start(orgctx)
 			require.NoError(b, err)
 			header = tx.TxnInfo().IntoHeader(header)
 			ctx := util.GetDBContext(context.Background(), header)
@@ -105,16 +108,16 @@ func BenchmarkRemoteCUDParallel(b *testing.B) {
 			require.NotEmpty(b, opt.RequestID)
 			require.NotEmpty(b, opt.TxnID)
 
-			err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": aa})
+			err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": aa})
 			require.NoError(b, err)
 
-			err = tx.Table(tablename).Update(ctx, map[string]interface{}{"name": aa}, map[string]interface{}{"name": bb})
+			err = db.Table(tablename).Update(ctx, map[string]interface{}{"name": aa}, map[string]interface{}{"name": bb})
 			require.NoError(b, err)
 
-			err = tx.Table(tablename).Delete(ctx, map[string]interface{}{"name": bb})
+			err = db.Table(tablename).Delete(ctx, map[string]interface{}{"name": bb})
 			require.NoError(b, err)
 
-			err = tx.Commit(ctx)
+			err = db.Commit(ctx)
 			require.NoError(b, err)
 		}
 	})

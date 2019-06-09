@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/rpc"
 	"configcenter/src/storage/tmserver/core"
-	"configcenter/src/storage/tmserver/core/transaction"
+	"configcenter/src/storage/tmserver/core/session"
 	"configcenter/src/storage/types"
 )
 
@@ -25,12 +25,12 @@ func init() {
 }
 
 type commitTransaction struct {
-	txn *transaction.Manager
+	txn *session.Manager
 }
 
 var _ core.SetTransaction = (*commitTransaction)(nil)
 
-func (d *commitTransaction) SetTxn(txn *transaction.Manager) {
+func (d *commitTransaction) SetTxn(txn *session.Manager) {
 	d.txn = txn
 }
 

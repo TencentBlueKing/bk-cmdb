@@ -41,6 +41,7 @@ func (t Transaction) IntoHeader(header http.Header) http.Header {
 		tar.Set(key, header.Get(key))
 	}
 	tar.Set(common.BKHTTPCCTransactionID, t.TxnID)
+	tar.Set(common.BKHTTPCCTxnTMServerAddr, t.TMAddr)
 	return tar
 }
 

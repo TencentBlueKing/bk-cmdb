@@ -13,6 +13,7 @@
 package remote
 
 import (
+	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
@@ -85,6 +86,9 @@ func (p *pool) Ping() error {
 
 // GetRPCByAddr get rpc client by cache
 func (c *client) GetRPCByAddr(addr string) (rpc.Client, error) {
+	if !strings.HasPrefix(addr, "://") {
+		addr = "http://" + addr
+	}
 	rpc, ok := c.getRPCByAddr(addr)
 	if ok {
 		return rpc, nil

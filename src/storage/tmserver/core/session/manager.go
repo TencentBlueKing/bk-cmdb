@@ -10,13 +10,15 @@
  * limitations under the License.
  */
 
-package transaction
+package session
 
 import (
 	"context"
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/rs/xid"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,8 +28,6 @@ import (
 	"configcenter/src/storage/mongodb/options/findopt"
 	"configcenter/src/storage/tmserver/app/options"
 	"configcenter/src/storage/types"
-
-	"github.com/rs/xid"
 )
 
 type Manager struct {
@@ -35,6 +35,7 @@ type Manager struct {
 	processor    string
 	txnLifeLimit time.Duration // second
 	cache        map[string]*Session
+	session      *Session
 	db           mongodb.Client
 
 	eventChan   chan *types.Transaction
@@ -45,7 +46,7 @@ type Manager struct {
 	pubsubMutex  sync.Mutex
 }
 
-func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, listen string) *Manager {
+func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, listen string) (*Manager, error) {
 	tm := &Manager{
 		enable:       opt.IsTransactionEnable(),
 		processor:    listen,
@@ -58,7 +59,17 @@ func New(ctx context.Context, opt options.TransactionConfig, db mongodb.Client, 
 
 		ctx: ctx,
 	}
-	return tm
+	dbRawSession := tm.db.Session().Create()
+	err := dbRawSession.Open()
+	if err != nil {
+		return nil, err
+	}
+
+	tm.session = &Session{
+		Session: dbRawSession,
+	}
+
+	return tm, nil
 }
 
 func (tm *Manager) Subscribe(ch chan<- *types.Transaction) {
@@ -181,9 +192,13 @@ func (tm *Manager) reconcilePersistence() {
 
 func (tm *Manager) GetSession(txnID string) *Session {
 	tm.sessionMutex.Lock()
-	session := tm.cache[txnID]
-	tm.sessionMutex.Unlock()
-	return session
+	defer tm.sessionMutex.Unlock()
+
+	if tm.enable && txnID != "" {
+		return tm.cache[txnID]
+	} else {
+		return tm.session
+	}
 }
 
 func (tm *Manager) storeSession(txnID string, session *Session) {
@@ -205,7 +220,6 @@ func (tm *Manager) CreateTransaction(requestID string) (*Session, error) {
 		Status:     types.TxStatusOnProgress,
 		CreateTime: time.Now(),
 		LastTime:   time.Now(),
-		TxnID:      tm.newTxnID(),
 	}
 
 	if !tm.enable {
@@ -213,6 +227,9 @@ func (tm *Manager) CreateTransaction(requestID string) (*Session, error) {
 			Txninst: &txn,
 		}, nil
 	}
+	// start transaction return txnID
+	txn.TxnID = tm.newTxnID()
+
 	session := tm.db.Session().Create()
 	err := session.Open()
 	defer func() {
@@ -250,6 +267,10 @@ func (tm *Manager) newTxnID() string {
 }
 
 func (tm *Manager) Commit(txnID string) error {
+	if !tm.enable || txnID == "" {
+		// not start transaction, return
+		return nil
+	}
 	session := tm.GetSession(txnID)
 	if session == nil {
 		return errors.New("session not found")
@@ -282,6 +303,10 @@ func (tm *Manager) Commit(txnID string) error {
 }
 
 func (tm *Manager) Abort(txnID string) error {
+	if !tm.enable || txnID == "" {
+		// not start transaction, return
+		return nil
+	}
 	session := tm.GetSession(txnID)
 	if session == nil {
 		return errors.New("session not found")
