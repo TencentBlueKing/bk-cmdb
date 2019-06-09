@@ -30,8 +30,17 @@
             :visible="localExpanded"
             :sortable="false"
             :reference-document-height="false">
-            <template slot="data-empty" v-if="!withTemplate">
-                <button class="add-process-button text-primary" @click.stop="handleAddProcess">
+            <template slot="data-empty">
+                <template v-if="withTemplate">
+                    <i18n path="BusinessTopolgy['暂无模板进程']">
+                        <button class="add-process-button text-primary" place="link"
+                            @click.stop="handleAddProcessToTemplate">
+                            {{$t('BusinessTopology["模板添加"]')}}
+                        </button>
+                    </i18n>
+                </template>
+                <button class="add-process-button text-primary" v-else
+                    @click.stop="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
                     <span>{{$t('BusinessTopology["添加进程"]')}}</span>
                 </button>
@@ -41,12 +50,18 @@
                     @click="handleEditProcess(item)">
                     {{$t('Common["编辑"]')}}
                 </button>
-                <button class="text-primary"
+                <button class="text-primary" v-if="!withTemplate"
                     @click="handleDeleteProcess(item)">
                     {{$t('Common["删除"]')}}
                 </button>
             </template>
         </cmdb-table>
+        <div class="add-process-options" v-if="!withTemplate && localExpanded && list.length">
+            <button class="add-process-button text-primary" @click="handleAddProcess">
+                <i class="bk-icon icon-plus"></i>
+                <span>{{$t('BusinessTopology["添加进程"]')}}</span>
+            </button>
+        </div>
     </div>
 </template>
 
@@ -165,7 +180,27 @@
             },
             handleDeleteProcess () {},
             handleCloneInstance () {},
-            handleDeleteInstance () {}
+            handleDeleteInstance () {
+                this.$bkInfo({
+                    title: this.$t('BusinessTopology["确认删除实例"]'),
+                    content: this.$tc('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    confirmFn: async () => {
+                        try {
+                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                                config: {
+                                    data: this.$injectMetadata({
+                                        id: this.instance.id
+                                    })
+                                }
+                            })
+                            this.$emit('delete-instance', this.instance.id)
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
+            },
+            handleAddProcessToTemplate () {}
         }
     }
 </script>
@@ -191,6 +226,13 @@
             color: #313238;
             @include inlineBlock;
         }
+    }
+    .add-process-options {
+        border: 1px solid $cmdbTableBorderColor;
+        border-top: none;
+        line-height: 42px;
+        font-size: 12px;
+        text-align: center;
     }
     .add-process-button {
         line-height: 32px;

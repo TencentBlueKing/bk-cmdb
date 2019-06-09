@@ -185,6 +185,7 @@
                         'bk_biz_id': this.business,
                         'bk_parent_id': parentNode.data.bk_inst_id
                     }
+                    console.log(formData)
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {

@@ -115,7 +115,7 @@
             getServiceInstanceDifferences () {
                 this.searchServiceInstanceDifferences({
                     params: this.$injectMateData({
-                        module_id: '',
+                        bk_module_id: '',
                         service_template_id: ''
                     })
                 })

@@ -179,12 +179,12 @@
             collectServiceCategories (data) {
                 const categories = []
                 data.forEach(item => {
-                    if (!item.parent_id) {
-                        categories.push(item)
+                    if (!item.category.bk_parent_id) {
+                        categories.push(item.category)
                     }
                 })
                 categories.forEach(category => {
-                    category.secondCategory = data.filter(item => item.parent_id === category.id)
+                    category.secondCategory = data.filter(item => item.category.bk_parent_id === category.id).map(item => item.category)
                 })
                 return categories
             },
@@ -192,7 +192,9 @@
                 this.$validator.validateAll().then(isValid => {
                     if (isValid) {
                         this.$emit('submit', {
-                            bk_module_name: this.moduleName
+                            bk_module_name: this.moduleName,
+                            service_category_id: this.withTemplate ? 0 : this.secondClass,
+                            service_template_id: this.withTemplate ? this.template : 2
                         })
                     }
                 })
