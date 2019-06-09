@@ -58,7 +58,7 @@
             withTemplate () {
                 const instance = this.$store.state.businessTopology.selectedNodeInstance
                 if (this.moduleNode && instance) {
-                    return !!instance.template_id
+                    return instance.service_template_id !== 2
                 }
                 return false
             }
@@ -68,15 +68,25 @@
                 this.visible = true
             },
             async handleSelectHost (checked) {
-                await this.$store.dispatch('hostRelation/transferHostModule', {
-                    params: {
-                        bk_biz_id: this.business,
-                        bk_host_id: checked,
-                        bk_module_id: [this.moduleNode.data.bk_inst_id],
-                        is_increment: true
-                    }
-                })
-                this.visible = false
+                try {
+                    const data = await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                        params: this.$injectMetadata({
+                            name: this.moduleInstance.bk_module_name,
+                            bk_module_id: this.moduleInstance.bk_module_id,
+                            service_template_id: this.moduleInstance.service_template_id,
+                            instances: checked.map(hostId => {
+                                return {
+                                    bk_host_id: hostId,
+                                    processes: []
+                                }
+                            })
+                        })
+                    })
+                    this.visible = false
+                    this.$emit('create-instance-success', data)
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleCreateServiceInstance () {
                 this.$router.push({

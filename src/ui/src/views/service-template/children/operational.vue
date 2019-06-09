@@ -178,7 +178,7 @@
             initEdit () {
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
-                this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['parent_id']
+                this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
                 this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
                 this.getProcessList()
             },
@@ -217,8 +217,8 @@
                     }
                 })
                 const cagetoryList = result.info.map(item => item['category'])
-                this.mainList = cagetoryList.filter(classification => !classification['parent_id'])
-                this.allSecondaryList = cagetoryList.filter(classification => classification['parent_id'])
+                this.mainList = cagetoryList.filter(classification => !classification['bk_parent_id'])
+                this.allSecondaryList = cagetoryList.filter(classification => classification['bk_parent_id'])
             },
             getProcessList () {
                 this.processLoading = true
@@ -238,7 +238,7 @@
                 })
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }

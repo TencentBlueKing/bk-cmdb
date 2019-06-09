@@ -44,7 +44,7 @@
                                 v-validate="'required|namedCharacter'"
                                 v-model="cagetoryName">
                             <span class="text-primary btn-confirm"
-                                @click.stop="handleAddCagetory(cagetoryName, mainCagetory['root_id'])">{{$t("Common['确定']")}}
+                                @click.stop="handleAddCagetory(cagetoryName, mainCagetory['bk_root_id'])">{{$t("Common['确定']")}}
                             </span>
                             <span class="text-primary" @click="handleCloseAddChild">{{$t("Common['取消']")}}</span>
                         </div>
@@ -167,11 +167,11 @@
                             ...item['category']
                         }
                     })
-                    const list = cagetoryList.filter(cagetory => !cagetory.hasOwnProperty('parent_id'))
+                    const list = cagetoryList.filter(cagetory => !cagetory.hasOwnProperty('bk_parent_id'))
                     this.list = list.map(mainCagetory => {
                         return {
                             ...mainCagetory,
-                            child_cagetory_list: cagetoryList.filter(cagetory => cagetory['parent_id'] === mainCagetory['id'])
+                            child_cagetory_list: cagetoryList.filter(cagetory => cagetory['bk_parent_id'] === mainCagetory['id'])
                         }
                     })
                 })
@@ -179,8 +179,8 @@
             createdCagetory (name, rootId) {
                 this.createServiceCategory({
                     params: this.$injectMetadata({
-                        root_id: rootId,
-                        parent_id: rootId,
+                        bk_root_id: rootId,
+                        bk_parent_id: rootId,
                         name
                     })
                 }).then(() => {
@@ -189,14 +189,14 @@
                     this.getCagetoryList()
                 })
             },
-            async handleAddCagetory (name, root_id = 0) {
+            async handleAddCagetory (name, bk_root_id = 0) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
                         message: this.errors.first('cagetoryName') || this.$t("ServiceCagetory['请输入分类名称']"),
                         theme: 'error'
                     })
                 } else {
-                    this.createdCagetory(name, root_id)
+                    this.createdCagetory(name, bk_root_id)
                 }
             },
             async handleEditCagetory (id, name, type) {

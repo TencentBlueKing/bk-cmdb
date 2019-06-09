@@ -106,10 +106,10 @@
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                         params: this.$injectMetadata({
                             name: this.moduleInstance.bk_module_name,
-                            module_id: this.moduleId,
+                            bk_module_id: this.moduleId,
                             instances: serviceInstanceTables.map(table => {
                                 return {
-                                    host_id: table.id,
+                                    bk_host_id: table.id,
                                     processes: table.processList.map(item => {
                                         return {
                                             process_info: item
