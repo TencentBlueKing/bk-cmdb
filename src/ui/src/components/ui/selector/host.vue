@@ -51,6 +51,12 @@
                 default () {
                     return {}
                 }
+            },
+            exclude: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
@@ -87,12 +93,24 @@
                 return this.$store.getters['objectBiz/bizId']
             },
             params () {
-                const moduleCondition = []
+                const conditionMap = {
+                    biz: [],
+                    set: [],
+                    module: [],
+                    host: []
+                }
                 if (this.filter.module !== 'biz') {
-                    moduleCondition.push({
+                    conditionMap.module.push({
                         field: 'bk_module_id',
                         operator: '$eq',
                         value: this.filter.module
+                    })
+                }
+                if (this.exclude.length) {
+                    conditionMap.host.push({
+                        field: 'bk_host_id',
+                        operator: '$nin',
+                        value: this.exclude
                     })
                 }
                 return {
@@ -101,7 +119,7 @@
                         return {
                             bk_obj_id: id,
                             fields: [],
-                            condition: id === 'module' ? moduleCondition : []
+                            condition: conditionMap[id]
                         }
                     }),
                     ip: {

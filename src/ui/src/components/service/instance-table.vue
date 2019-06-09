@@ -23,10 +23,12 @@
             </template>
             <template slot="__operation__" slot-scope="{ rowIndex }">
                 <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('BusinessTopology["编辑"]')}}</a>
-                <a href="javascript:void(0)" class="text-primary" @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}</a>
+                <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
+                    @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}
+                </a>
             </template>
         </cmdb-table>
-        <div class="add-process-options" v-if="processList.length">
+        <div class="add-process-options" v-if="!sourceProcesses.length && processList.length">
             <button class="add-process-button text-primary" @click="handleAddProcess">
                 <i class="bk-icon icon-plus"></i>
                 <span>{{$t('BusinessTopology["添加进程"]')}}</span>
@@ -40,6 +42,7 @@
                 :inst="processForm.instance"
                 :properties="processProperties"
                 :property-groups="processPropertyGroups"
+                :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleCancelCreateProcess">
             </cmdb-form>
@@ -63,17 +66,30 @@
             name: {
                 type: String,
                 default: ''
+            },
+            sourceProcesses: {
+                type: Array,
+                default () {
+                    return []
+                }
+            },
+            templates: {
+                type: Array,
+                default () {
+                    return []
+                }
             }
         },
         data () {
             return {
                 localExpanded: this.expanded,
-                processList: [],
+                processList: this.sourceProcesses,
                 processProperties: [],
                 processPropertyGroups: [],
                 processForm: {
                     show: false,
                     type: 'create',
+                    rowIndex: null,
                     instance: {}
                 }
             }
@@ -105,6 +121,18 @@
             },
             processFlattenList () {
                 return this.$tools.flattenList(this.processProperties, this.processList)
+            },
+            immutableProperties () {
+                const properties = []
+                if (this.processForm.rowIndex !== null) {
+                    const template = this.templates[this.processForm.rowIndex]
+                    Object.keys(template.property).forEach(key => {
+                        if (template.property[key].as_default_value) {
+                            properties.push(key)
+                        }
+                    })
+                }
+                return properties
             }
         },
         created () {
@@ -158,13 +186,15 @@
                 } else {
                     Object.assign(this.processForm.instance, values)
                 }
-                this.processForm.show = false
+                this.handleCancelCreateProcess()
             },
             handleCancelCreateProcess () {
                 this.processForm.show = false
+                this.processForm.rowIndex = null
             },
             handleEditProcess (rowIndex) {
                 this.processForm.instance = this.processList[rowIndex]
+                this.processForm.rowIndex = rowIndex
                 this.processForm.type = 'update'
                 this.processForm.show = true
             },
