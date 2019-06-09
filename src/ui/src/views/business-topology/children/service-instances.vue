@@ -26,11 +26,13 @@
                     </ul>
                 </bk-dropdown-menu>
                 <cmdb-form-bool class="options-checkbox"
-                    :size="16">
+                    :size="16"
+                    @change="handleCheckALL">
                     <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
                 </cmdb-form-bool>
                 <cmdb-form-bool class="options-checkbox"
-                    :size="16">
+                    :size="16"
+                    @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
                 <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
@@ -38,6 +40,7 @@
             <div class="tables">
                 <service-instance-table
                     v-for="(instance, index) in instances"
+                    ref="serviceInstanceTable"
                     :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
@@ -212,6 +215,7 @@
                             uneditableProperties.push(propertyId)
                         }
                     })
+                    this.processForm.uneditableProperties = uneditableProperties
                 }
             },
             async getProcessTemplate (processTemplateId) {
@@ -292,6 +296,14 @@
             },
             handleCreateInstanceSuccess () {
                 this.getServiceInstances()
+            },
+            handleCheckALL () {
+                // 全选
+            },
+            handleExpandAll (expanded) {
+                this.$refs.serviceInstanceTable.forEach(table => {
+                    table.localExpanded = expanded
+                })
             },
             batchEdit (disabled) {
                 if (disabled) {

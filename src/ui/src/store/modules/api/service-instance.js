@@ -12,6 +12,9 @@ const actions = {
     },
     deleteServiceInstance (context, { serviceInstanceId, config }) {
         return $http.delete('delete/proc/service_instance', config)
+    },
+    removeServiceTemplate (context, { config }) {
+        return $http.delete('delete/proc/template_binding_on_module', config)
     }
 }
 

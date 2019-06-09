@@ -79,22 +79,31 @@
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
-                list: [],
-                instanceMenu: [{
-                    name: this.$t('BusinessTopology["添加进程"]'),
-                    handler: this.handleAddProcess
-                }, {
-                    name: this.$t('BusinessTopology["克隆"]'),
-                    handler: this.handleCloneInstance
-                }, {
-                    name: this.$t('Common["删除"]'),
-                    handler: this.handleDeleteInstance
-                }]
+                list: []
             }
         },
         computed: {
             withTemplate () {
                 return !!this.instance.service_template_id
+            },
+            instanceMenu () {
+                const menu = [{
+                    name: this.$t('Common["删除"]'),
+                    handler: this.handleDeleteInstance
+                }]
+                if (!this.withTemplate) {
+                    menu.unshift({
+                        name: this.$t('BusinessTopology["添加进程"]'),
+                        handler: this.handleAddProcess
+                    }, {
+                        name: this.$t('BusinessTopology["克隆"]'),
+                        handler: this.handleCloneInstance
+                    })
+                }
+                return menu
+            },
+            module () {
+                return this.$store.state.businessTopology.selectedNodeInstance
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list.map(data => data.property))
@@ -179,7 +188,17 @@
                 this.$emit('update-process', processInstance, this)
             },
             handleDeleteProcess () {},
-            handleCloneInstance () {},
+            handleCloneInstance () {
+                this.$router.push({
+                    name: 'cloneServiceInstance',
+                    params: {
+                        instanceId: this.instance.id,
+                        hostId: this.instance.bk_host_id,
+                        setId: this.module.bk_set_id,
+                        moduleId: this.module.bk_module_id
+                    }
+                })
+            },
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),

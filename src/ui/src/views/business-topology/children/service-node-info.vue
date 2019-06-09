@@ -6,7 +6,8 @@
                 'getModelPropertyGroups',
                 'getNodeInstance',
                 'updateNodeInstance',
-                'deleteNodeInstance'
+                'deleteNodeInstance',
+                'removeServiceTemplate'
             ])
         }"
     >
@@ -18,6 +19,10 @@
             :inst="flattenedInstance"
             :show-options="modelId !== 'biz'"
             @on-edit="handleEdit">
+            <span class="property-value fl" slot="__template_name__">
+                {{flattenedInstance.__template_name__}}
+                <bk-button v-if="withTemplate" @click="handleRemoveTemplate">{{$t('BusinessTopology["解除模板"]')}}</bk-button>
+            </span>
         </cmdb-details>
         <cmdb-form class="topology-details" v-else-if="type === 'update'"
             :properties="properties"
@@ -54,6 +59,9 @@
             propertyGroupMap () {
                 return this.$store.state.businessTopology.propertyGroupMap
             },
+            categoryMap () {
+                return this.$store.state.businessTopology.categoryMap
+            },
             selectedNode () {
                 return this.$store.state.businessTopology.selectedNode
             },
@@ -62,6 +70,9 @@
                     return this.selectedNode.data.bk_obj_id
                 }
                 return null
+            },
+            withTemplate () {
+                return this.instance.service_template_id && this.instance.service_template_id !== 2
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -237,7 +248,55 @@
                         cancelPrevious: true
                     }
                 })
-                return data.info[0]
+                const instance = data.info[0]
+                const serviceInfo = await this.getServiceInfo(instance)
+                return {
+                    ...instance,
+                    ...serviceInfo
+                }
+            },
+            async getServiceInfo (instance) {
+                const serviceInfo = {}
+                if (instance.service_template_id !== 2) {
+                    serviceInfo.__template_name__ = instance.bk_module_name
+                }
+                const categories = await this.getServiceCategories()
+                const firstCategory = categories.find(category => category.secondCategory.some(second => second.id === instance.service_category_id)) || {}
+                const secondCategory = (firstCategory.secondCategory || []).find(second => second.id === instance.service_category_id) || {}
+                serviceInfo.__service_category__ = `${firstCategory.name || '--'} / ${secondCategory.name || '--'}`
+                return serviceInfo
+            },
+            async getServiceCategories () {
+                if (this.categoryMap.hasOwnProperty(this.business)) {
+                    return this.categoryMap[this.business]
+                } else {
+                    try {
+                        const data = await this.$store.dispatch('serviceClassification/searchServiceCategory', {
+                            params: this.$injectMetadata()
+                        })
+                        const categories = this.collectServiceCategories(data.info)
+                        this.$store.commit('businessTopology/setCategories', {
+                            id: this.business,
+                            categories: categories
+                        })
+                        return categories
+                    } catch (e) {
+                        console.error(e)
+                        return []
+                    }
+                }
+            },
+            collectServiceCategories (data) {
+                const categories = []
+                data.forEach(item => {
+                    if (!item.category.bk_parent_id) {
+                        categories.push(item.category)
+                    }
+                })
+                categories.forEach(category => {
+                    category.secondCategory = data.filter(item => item.category.bk_parent_id === category.id).map(item => item.category)
+                })
+                return categories
             },
             async getCustomInstance () {
                 const data = await this.$store.dispatch('objectCommonInst/searchInst', {
@@ -370,6 +429,24 @@
                     config: {
                         requestId: 'deleteNodeInstance',
                         data: this.$injectMetadata()
+                    }
+                })
+            },
+            handleRemoveTemplate () {
+                this.$bkInfo({
+                    title: this.$t('BusinessTopology["确认解除模板"]'),
+                    content: this.$t('BusinessTopology["解除模板影响"]'),
+                    confirmFn: async () => {
+                        await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
+                            config: {
+                                requestId: 'removeServiceTemplate',
+                                data: this.$injectMetadata({
+                                    bk_module_id: this.instance.bk_module_id
+                                })
+                            }
+                        })
+                        this.instance.service_template_id = null
+                        this.instance.__template_name__ = '--'
                     }
                 })
             }

@@ -18,7 +18,6 @@
                     :id="host.bk_host_id"
                     :name="host.bk_host_innerip"
                     :source-processes="sourceProcesses"
-                    :templates="templates"
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
@@ -33,7 +32,8 @@
         </div>
         <host-selector
             :visible.sync="hostSelectorVisible"
-            :module-instance="moduleInstance"
+            :module-instance="module"
+            :exclude="[hostId]"
             @host-selected="handleSelectHost">
         </host-selector>
     </div>
@@ -43,96 +43,46 @@
     import hostSelector from '@/components/ui/selector/host.vue'
     import serviceInstanceTable from '@/components/service/instance-table.vue'
     export default {
-        name: 'create-service-instance',
+        name: 'clone-to-other',
         components: {
             hostSelector,
             serviceInstanceTable
         },
+        props: {
+            module: {
+                type: Object,
+                default () {
+                    return {}
+                }
+            },
+            sourceProcesses: {
+                type: Array,
+                default () {
+                    return {}
+                }
+            }
+        },
         data () {
             return {
                 hostSelectorVisible: false,
-                moduleInstance: {},
-                hosts: [],
-                templates: []
+                hosts: []
             }
         },
         computed: {
             business () {
                 return this.$store.getters['objectBiz/bizId']
             },
+            hostId () {
+                return parseInt(this.$route.params.hostId)
+            },
             moduleId () {
                 return parseInt(this.$route.params.moduleId)
             },
             setId () {
                 return parseInt(this.$route.params.setId)
-            },
-            withTemplate () {
-                const templateId = this.moduleInstance.service_template_id
-                return templateId && templateId !== 2
-            },
-            sourceProcesses () {
-                return this.templates.map(template => {
-                    const value = {}
-                    Object.keys(template.property).forEach(key => {
-                        value[key] = template.property[key].value
-                    })
-                    return value
-                })
             }
-        },
-        watch: {
-            withTemplate (withTemplate) {
-                if (withTemplate) {
-                    this.getTemplate()
-                }
-            }
-        },
-        created () {
-            this.getModuleInstance()
         },
         methods: {
-            async getModuleInstance () {
-                try {
-                    const data = await this.$store.dispatch('objectModule/searchModule', {
-                        bizId: this.business,
-                        setId: this.setId,
-                        params: {
-                            page: { start: 0, limit: 1 },
-                            fields: [],
-                            condition: {
-                                bk_module_id: this.moduleId,
-                                bk_supplier_account: this.$store.getters.supplierAccount
-                            }
-                        },
-                        config: {
-                            requestId: 'getModuleInstance'
-                        }
-                    })
-                    if (!data.count) {
-                        this.$router.replace({ name: '404' })
-                    } else {
-                        this.moduleInstance = data.info[0]
-                    }
-                } catch (e) {
-                    console.error(e)
-                }
-            },
-            async getTemplate () {
-                try {
-                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
-                        params: this.$injectMetadata({
-                            service_template_id: this.moduleInstance.service_template_id
-                        }),
-                        config: {
-                            requestId: 'getBatchProcessTemplate',
-                            cancelPrevious: true
-                        }
-                    })
-                    this.templates = data.info
-                } catch (e) {
-                    console.error(e)
-                }
-            },
             handleSelectHost (checked, hosts) {
                 this.hosts.push(...hosts)
                 this.hostSelectorVisible = false
@@ -145,7 +95,7 @@
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                         params: this.$injectMetadata({
-                            name: this.moduleInstance.bk_module_name,
+                            name: this.module.bk_module_name,
                             bk_module_id: this.moduleId,
                             instances: serviceInstanceTables.map(table => {
                                 return {
@@ -178,14 +128,14 @@
 
 <style lang="scss" scoped>
     .create-layout {
-        height: 100%;
-        padding: 32px 23px 0;
+        margin: 35px 0 0 0;
         font-size: 14px;
         color: #63656E;
-        background-color: #FAFBFD;
     }
     .create-label{
         display: block;
+        width: 100px;
+        text-align: right;
         position: relative;
         line-height: 32px;
         &:after {
