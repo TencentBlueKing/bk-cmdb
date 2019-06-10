@@ -71,12 +71,20 @@ export default class TreeNode {
         return false
     }
 
+    get hasCheckbox () {
+        const showCheckbox = this.tree.showCheckbox
+        if (typeof showCheckbox === 'function') {
+            return showCheckbox(this.data)
+        }
+        return showCheckbox
+    }
+
     get collapseIcon () {
         return this.icon.collapse
     }
 
     get selected () {
-        return this.tree.selected === this.id
+        return this.tree.selectable && this.tree.selected === this.id
     }
 
     get expandIcon () {

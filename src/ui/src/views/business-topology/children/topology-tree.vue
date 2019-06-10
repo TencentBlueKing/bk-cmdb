@@ -113,7 +113,7 @@
                         defaultNodeId = nodeId
                     }
                 }
-                this.$refs.tree.setSelected(defaultNodeId, true, true)
+                this.$refs.tree.setSelected(defaultNodeId, { emitEvent: true })
                 this.$refs.tree.setExpanded(defaultNodeId)
             })
         },
