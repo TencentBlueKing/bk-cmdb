@@ -290,10 +290,7 @@
                     name: 'synchronous',
                     params: {
                         moduleId: this.currentModule.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: 'xxxxxxxxxxxx'
+                        templateId: this.currentModule.service_template_id
                     }
                 })
             },
