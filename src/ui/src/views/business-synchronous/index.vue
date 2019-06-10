@@ -97,7 +97,7 @@
 </template>
 
 <script>
-    import { mapActions } from 'vuex'
+    import { mapGetters, mapActions } from 'vuex'
     import instanceDetails from './children/details.vue'
     import imitationData from './data'
     export default {
@@ -118,10 +118,12 @@
                 },
                 noFindData: false,
                 showContentId: null,
-                readNum: 1
+                readNum: 1,
+                modelProperties: []
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount', 'featureTipsParams']),
             list () {
                 const formatList = []
                 Object.keys(imitationData.data).forEach(key => {
@@ -155,14 +157,32 @@
         created () {
             this.showContentId = this.list[0]['process_template_id']
             this.$set(this.list[0], 'has_read', true)
-            console.log(this.list)
+            this.getModaelProperty()
+            // console.log(this.list)
         },
         methods: {
+            ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('businessSynchronous', [
                 'searchServiceInstanceDifferences',
                 'syncServiceInstanceByTemplate'
             ]),
             ...mapActions('processInstance', ['getServiceInstanceProcesses']),
+            async getModaelProperty () {
+                this.modelProperties = await this.searchObjectAttribute({
+                    params: this.$injectMetadata({
+                        bk_obj_id: 'process',
+                        bk_supplier_account: this.supplierAccount
+                    }),
+                    config: {
+                        requestId: `post_searchObjectAttribute_process`,
+                        fromCache: false
+                    }
+                })
+                console.log(this.modelProperties)
+            },
+            propertiesGroup () {
+
+            },
             getServiceInstanceDifferences () {
                 this.searchServiceInstanceDifferences({
                     params: this.$injectMetadata({
@@ -186,8 +206,13 @@
                 } else {
                     this.getServiceInstanceProcesses({
                         params: this.$injectMetadata({
-                            service_instance_id: 75
+                            service_instance_id: 67
                         })
+                    }).then(data => {
+                        console.log(data[0])
+                        const showProperty = data[0]['property']
+                        console.log(showProperty)
+                        this.propertiesGroup(showProperty)
                     })
                 }
             },

@@ -128,6 +128,7 @@
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
             isCreatedType () {
                 return !this.$route.params['template']
