@@ -133,6 +133,7 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	// service template
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_template", Handler: ps.CreateServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/service_template", Handler: ps.UpdateServiceTemplate})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/proc/service_template/{service_template_id}", Handler: ps.GetServiceTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template", Handler: ps.ListServiceTemplates})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_template/with_detail", Handler: ps.ListServiceTemplatesWithDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_template", Handler: ps.DeleteServiceTemplate})
