@@ -44,7 +44,7 @@ type ProcCtrlClientInterface interface {
 func NewProcCtrlClientInterface(c *util.Capability, version string) ProcCtrlClientInterface {
 	base := fmt.Sprintf("/process/%s", version)
 	return &procctrl{
-		client: rest.NewRESTClient(c, base, nil),
+		client: rest.NewRESTClient(c, base),
 	}
 }
 

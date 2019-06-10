@@ -35,7 +35,7 @@ func NewEventServerClientInterface(c *util.Capability, version string) EventServ
 	base := fmt.Sprintf("/event/%s", version)
 
 	return &eventServer{
-		client: rest.NewRESTClient(c, base, nil),
+		client: rest.NewRESTClient(c, base),
 	}
 }
 

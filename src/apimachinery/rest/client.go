@@ -30,7 +30,7 @@ type ClientInterface interface {
 	Patch() *Request
 }
 
-func NewRESTClient(c *util.Capability, baseUrl string, reg prometheus.Registerer) ClientInterface {
+func NewRESTClient(c *util.Capability, baseUrl string) ClientInterface {
 	if baseUrl != "/" {
 		baseUrl = strings.Trim(baseUrl, "/")
 		baseUrl = "/" + baseUrl + "/"
@@ -40,12 +40,12 @@ func NewRESTClient(c *util.Capability, baseUrl string, reg prometheus.Registerer
 		capability: c,
 	}
 
-	if reg != nil {
+	if c.Reg != nil {
 		client.requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name: "cmdb_apimachinary_requests_duration_seconds",
-			Help: "third party api request duration seconds.",
+			Name: "cmdb_apimachinary_requests_duration_millisecond",
+			Help: "third party api request duration millisecond.",
 		}, []string{"handler", "status_code"})
-		if err := reg.Register(client.requestDuration); err != nil {
+		if err := c.Reg.Register(client.requestDuration); err != nil {
 			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 				client.requestDuration = are.ExistingCollector.(*prometheus.HistogramVec)
 			} else {
@@ -57,7 +57,7 @@ func NewRESTClient(c *util.Capability, baseUrl string, reg prometheus.Registerer
 			Name: "cmdb_apimachinary_requests_in_flight",
 			Help: "third party api request in flight.",
 		})
-		if err := reg.Register(client.requestInflight); err != nil {
+		if err := c.Reg.Register(client.requestInflight); err != nil {
 			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 				client.requestInflight = are.ExistingCollector.(*metrics.Gauge)
 			} else {

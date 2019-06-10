@@ -123,6 +123,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Reg
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
+		Reg: reg,
 	}
 
 	header := http.Header{}
@@ -134,7 +135,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Reg
 	return &AuthCenter{
 		Config: cfg,
 		authClient: &authClient{
-			client:      rest.NewRESTClient(c, "", reg),
+			client:      rest.NewRESTClient(c, ""),
 			Config:      cfg,
 			basicHeader: header,
 		},

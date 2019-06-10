@@ -80,7 +80,7 @@ func (h *health) HealthCheck(moduleName string) (healthy bool, err error) {
 	}
 
 	resp := new(metric.HealthResponse)
-	client := rest.NewRESTClient(h.capability, "/", nil)
+	client := rest.NewRESTClient(h.capability, "/")
 	err = client.Get().
 		WithContext(context.Background()).
 		SubResource("/healthz").
