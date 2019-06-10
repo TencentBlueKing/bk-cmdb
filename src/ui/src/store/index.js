@@ -8,6 +8,7 @@ import index from './modules/view/index.js'
 import hostDetails from './modules/view/host-details.js'
 import serviceProcess from './modules/view/service-process.js'
 import businessTopology from './modules/view/business-topology.js'
+import businessSync from './modules/view/business-sync.js'
 
 import auth from './modules/api/auth.js'
 import menu from './modules/menu.js'
@@ -59,6 +60,7 @@ export default new Vuex.Store({
         hostDetails,
         serviceProcess,
         businessTopology,
+        businessSync,
         
         auth,
         menu,
