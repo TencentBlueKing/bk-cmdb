@@ -60,11 +60,7 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 
 func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceCategoryID int64             `json:"service_category_id" field:"service_category_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListServiceTemplateOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
@@ -76,7 +72,7 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp.BusinessID, fp.ServiceCategoryID, fp.Page)
+	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err

@@ -83,7 +83,7 @@ func (ps *ProcServer) ListServiceTemplates(ctx *rest.Contexts) {
 	option := metadata.ListServiceTemplateOption{
 		BusinessID:        bizID,
 		Page:              input.Page,
-		ServiceCategoryID: input.ServiceCategoryID,
+		ServiceCategoryID: &input.ServiceCategoryID,
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {
@@ -115,7 +115,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 	option := metadata.ListServiceTemplateOption{
 		BusinessID:        bizID,
 		Page:              input.Page,
-		ServiceCategoryID: input.ServiceCategoryID,
+		ServiceCategoryID: &input.ServiceCategoryID,
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().ListServiceTemplates(ctx.Kit.Ctx, ctx.Kit.Header, &option)
 	if err != nil {

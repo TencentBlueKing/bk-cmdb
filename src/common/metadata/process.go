@@ -204,6 +204,11 @@ type ListProcessInstancesOption struct {
 	ServiceInstanceID int64    `json:"service_instance_id"`
 }
 
+type RemoveTemplateBindingOnModuleOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
+}
+
 type UpdateProcessTemplateInput struct {
 	Metadata          Metadata         `json:"metadata"`
 	ProcessTemplateID int64            `json:"process_template_id"`

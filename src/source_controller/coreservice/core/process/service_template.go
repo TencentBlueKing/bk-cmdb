@@ -123,20 +123,20 @@ func (p *processOperation) UpdateServiceTemplate(ctx core.ContextParams, templat
 	return template, nil
 }
 
-func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, error) {
+	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{}
 	filter[common.MetadataField] = md.ToMapStr()
 
 	// filter with matching any sub category
-	if categoryID > 0 {
-		categoriesWithSts, err := p.ListServiceCategories(ctx, bizID, false)
+	if option.ServiceCategoryID != nil && *option.ServiceCategoryID > 0 {
+		categoriesWithSts, err := p.ListServiceCategories(ctx, option.BusinessID, false)
 		if err != nil {
 			blog.Errorf("ListServiceTemplates failed, ListServiceCategories failed, err: %+v, rid: %s", err, ctx.ReqID)
 			return nil, err
 		}
 		childrenIDs := make([]int64, 0)
-		childrenIDs = append(childrenIDs, categoryID)
+		childrenIDs = append(childrenIDs, *option.ServiceCategoryID)
 		for {
 			pre := len(childrenIDs)
 			for _, categoryWithSts := range categoriesWithSts.Info {
@@ -157,6 +157,12 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 		}
 	}
 
+	if option.ServiceTemplateIDs != nil {
+		filter[common.BKServiceTemplateIDField] = map[string][]int64{
+			common.BKDBIN: *option.ServiceTemplateIDs,
+		}
+	}
+
 	var total uint64
 	var err error
 	if total, err = p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Count(ctx.Context); nil != err {
@@ -164,7 +170,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, bizID in
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 	templates := make([]metadata.ServiceTemplate, 0)
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(limit.Start)).Limit(uint64(limit.Limit)).All(ctx.Context, &templates); nil != err {
+	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}

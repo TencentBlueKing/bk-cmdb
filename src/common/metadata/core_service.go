@@ -292,9 +292,10 @@ type MultipleServiceCategoryWithStatisticsResult struct {
 }
 
 type ListServiceTemplateOption struct {
-	BusinessID        int64    `json:"bk_biz_id"`
-	ServiceCategoryID int64    `json:"service_category_id"`
-	Page              BasePage `json:"page,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ServiceCategoryID  *int64   `json:"service_category_id"`
+	ServiceTemplateIDs *[]int64 `json:"service_template_ids"`
+	Page               BasePage `json:"page,omitempty"`
 }
 
 type OneServiceTemplateResult struct {
@@ -390,4 +391,15 @@ type MultipleProcessInstanceRelation struct {
 type MultipleProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessInstanceRelation `json:"data"`
+}
+
+type BusinessDefaultSetModuleInfo struct {
+	IdleSetID     int64 `json:"idle_set_id"`
+	IdleModuleID  int64 `json:"idle_module_id"`
+	FaultModuleID int64 `json:"fault_module_id"`
+}
+
+type BusinessDefaultSetModuleInfoResult struct {
+	BaseResp `json:",inline"`
+	Data     BusinessDefaultSetModuleInfo `json:"data"`
 }

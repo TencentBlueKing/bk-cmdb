@@ -173,6 +173,9 @@ const (
 	CCErrCommPageLimitIsExceeded      = 1199059
 	CCErrCommUnexpectedParameterField = 1199060
 
+	CCErrCommParseDBFailed                     = 1199061
+	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
@@ -519,6 +522,8 @@ const (
 	CCErrProcGetProcessTemplateFailed                     = 1108033
 	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
+	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
+	CCErrProcModuleNotBindWithTemplate                    = 1108037
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -658,6 +663,8 @@ const (
 
 	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
 	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
+
+	CCErrHostRemoveFromDefaultModuleFailed = 1113012
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
