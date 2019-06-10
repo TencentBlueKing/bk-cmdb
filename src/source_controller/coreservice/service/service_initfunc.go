@@ -129,6 +129,7 @@ func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/read/operation/inst/count", s.SearchInstCount, nil)
 	s.addAction(http.MethodPost, "/read/operation/common/aggregate", s.CommonAggregate, nil)
 	s.addAction(http.MethodDelete, "/delete/operation/chart/%v", s.DeleteOperationChart, nil)
+	s.addAction(http.MethodDelete, "/delete/operation/chart", s.DeleteOperationChart, nil)
 	s.addAction(http.MethodPost, "/create/operation/chart", s.CreateOperationChart, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart", s.SearchOperationChart, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)

@@ -27,9 +27,8 @@ type ChartConfig struct {
 }
 
 type ChartOption struct {
-	ObjID     string `json:"bk_obj_id"`
-	ChartType string `json:"chart_type"`
-	Field     string `json:"field"`
+	ChartType string `json:"chart_type" bson:"chart_type"`
+	Field     string `json:"field" bson:"field"`
 }
 
 type ChartPosition struct {
@@ -93,4 +92,14 @@ type ChartData struct {
 	ReportType string      `json:"report_type"`
 	Data       interface{} `json:"data"`
 	OwnerID    string      `json:"bk_supplier_account"`
+}
+
+type SearchChartResponse struct {
+	BaseResp `json:",inline"`
+	Data     SearchChartConfig `json:"data"`
+}
+
+type SearchChartConfig struct {
+	Count uint64        `json:"count"`
+	Info  []ChartConfig `json:"info"`
 }

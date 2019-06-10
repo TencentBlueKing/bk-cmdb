@@ -17,6 +17,10 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+<<<<<<< HEAD
+=======
+	"time"
+>>>>>>> c7685d399... fix: operation crud bugs
 )
 
 func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -31,7 +35,7 @@ func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, que
 }
 
 func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	condition := metadata.ChartOption{}
+	condition := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(condition); err != nil {
 		return nil, err
 	}
@@ -45,6 +49,16 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 }
 
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+<<<<<<< HEAD
+=======
+	opt := mapstr.MapStr{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		return nil, err
+	}
+	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, opt); err != nil {
+		return nil, err
+	}
+>>>>>>> c7685d399... fix: operation crud bugs
 
 	return nil, nil
 }
@@ -55,7 +69,13 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 }
 
 func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+<<<<<<< HEAD
 	result, err := s.core.StatisticOperation().SearchOperationChart(params, data)
+=======
+	opt := mapstr.MapStr{}
+
+	result, err := s.core.StatisticOperation().SearchOperationChart(params, opt)
+>>>>>>> c7685d399... fix: operation crud bugs
 	if err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err

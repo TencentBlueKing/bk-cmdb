@@ -69,8 +69,14 @@ func (s *Service) SetConfig(cfg options.Config, engin *backbone.Engine, err erro
 		s.Language = language
 	}
 
+<<<<<<< HEAD
 	return nil
 }
+=======
+	o.newOperationService(api)
+	container := restful.NewContainer()
+	container.Add(api)
+>>>>>>> c7685d399... fix: operation crud bugs
 
 // WebService the web service
 func (s *Service) WebService() *restful.WebService {
@@ -78,6 +84,7 @@ func (s *Service) WebService() *restful.WebService {
 	// init service actions
 	s.initService()
 
+<<<<<<< HEAD
 	ws := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
@@ -102,6 +109,23 @@ func (s *Service) WebService() *restful.WebService {
 	}
 
 	return ws
+=======
+func (o *OperationServer) newOperationService(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  o.Engine.CCErr,
+		Language: o.Engine.Language,
+	})
+
+	// service category
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart", Handler: o.DeleteStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: o.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
+
+	utility.AddToRestfulWebService(web)
+>>>>>>> c7685d399... fix: operation crud bugs
 }
 
 func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
