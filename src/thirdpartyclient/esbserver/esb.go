@@ -54,9 +54,11 @@ func NewEsb(apiMachineryConfig *util.APIMachineryConfig, config chan esbutil.Esb
 		Client:   client,
 		Discover: esbConfig,
 		Throttle: flowcontrol,
+		Reg:      reg,
 	}
+
 	esb := &esbsrv{
-		client:    rest.NewRESTClient(esbCapability, base, reg),
+		client:    rest.NewRESTClient(esbCapability, base),
 		esbConfig: esbConfig,
 	}
 	return esb, nil

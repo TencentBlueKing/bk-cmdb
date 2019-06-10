@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
 	"github.com/mssola/user_agent"
@@ -64,7 +65,7 @@ func NewService(conf Config) *Service {
 
 	srv.requestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: ns + "http_request_duration_seconds",
+			Name: ns + "http_request_duration_millisecond",
 			Help: "Histogram of latencies for HTTP requests.",
 		},
 		[]string{LableHandler},
@@ -142,7 +143,7 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		if uri == "" {
 			uri = r.RequestURI
 		}
-		duration := time.Since(before).Seconds()
+		duration := util.ToMillisecond(time.Since(before))
 
 		s.requestDuration.With(s.lable(LableHandler, uri)).Observe(duration)
 		s.requestTotal.With(s.lable(

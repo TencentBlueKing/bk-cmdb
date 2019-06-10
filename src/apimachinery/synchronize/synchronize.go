@@ -75,5 +75,5 @@ func (s *synchronizeSrv) getSrvClent(flag string) rest.ClientInterface {
 		Throttle: flowcontrol,
 	}
 
-	return rest.NewRESTClient(capability, "/synchronize/v3", nil)
+	return rest.NewRESTClient(capability, "/synchronize/v3")
 }

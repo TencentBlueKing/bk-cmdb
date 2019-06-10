@@ -225,3 +225,9 @@ func CountDuration(f func()) time.Duration {
 	f()
 	return time.Since(before)
 }
+
+func ToMillisecond(d time.Duration) float64 {
+	sec := d / time.Millisecond
+	nsec := d % time.Millisecond
+	return float64(sec) + float64(nsec)/1e6
+}

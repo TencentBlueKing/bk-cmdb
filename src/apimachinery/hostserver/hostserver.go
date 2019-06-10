@@ -84,7 +84,7 @@ type HostServerClientInterface interface {
 func NewHostServerClientInterface(c *util.Capability, version string) HostServerClientInterface {
 	base := fmt.Sprintf("/host/%s", version)
 	return &hostServer{
-		client: rest.NewRESTClient(c, base, nil),
+		client: rest.NewRESTClient(c, base),
 	}
 }
 

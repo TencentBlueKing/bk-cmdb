@@ -35,7 +35,7 @@ type TopoServerClientInterface interface {
 func NewTopoServerClient(c *util.Capability, version string) TopoServerClientInterface {
 	base := fmt.Sprintf("/topo/%s", version)
 	return &topoServer{
-		restCli: rest.NewRESTClient(c, base, nil),
+		restCli: rest.NewRESTClient(c, base),
 	}
 }
 

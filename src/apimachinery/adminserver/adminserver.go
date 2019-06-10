@@ -31,7 +31,7 @@ type AdminServerClientInterface interface {
 func NewAdminServerClientInterface(c *util.Capability, version string) AdminServerClientInterface {
 	base := fmt.Sprintf("/migrate/%s", version)
 	return &adminServer{
-		client: rest.NewRESTClient(c, base, nil),
+		client: rest.NewRESTClient(c, base),
 	}
 }
 
