@@ -1,10 +1,8 @@
 import Meta from '@/router/meta'
 
-const path = '/synchronous/module/:moduleId/template/:templateId'
-
 export default {
     name: 'synchronous',
-    path: path,
+    path: '/synchronous/module/:moduleId/set/:setId',
     component: () => import('./index.vue'),
     meta: new Meta({})
 }

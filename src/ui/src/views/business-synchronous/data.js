@@ -37,7 +37,7 @@ export default {
                         },
                         'changed_attributes': [
                             {
-                                'property_id': 557,
+                                'property_id': 57,
                                 'property_name': '端口',
                                 'property_value': '2378',
                                 'template_property_value': '2379'
@@ -46,7 +46,7 @@ export default {
                     },
                     {
                         'service_instance': {
-                            'id': 122,
+                            'id': 123,
                             'name': '192.168.1.2_mysql_2379',
                             'service_template_id': 44,
                             'module_id': 66,
@@ -54,7 +54,7 @@ export default {
                         },
                         'changed_attributes': [
                             {
-                                'property_id': 557,
+                                'property_id': 57,
                                 'property_name': '端口',
                                 'property_value': '2378',
                                 'template_property_value': '2379'
@@ -63,7 +63,7 @@ export default {
                     },
                     {
                         'service_instance': {
-                            'id': 122,
+                            'id': 124,
                             'name': '192.168.1.2_mysql_2379',
                             'service_template_id': 44,
                             'module_id': 66,
@@ -71,7 +71,7 @@ export default {
                         },
                         'changed_attributes': [
                             {
-                                'property_id': 559,
+                                'property_id': 56,
                                 'property_name': 'IP',
                                 'property_value': '127.0.0.1',
                                 'template_property_value': '0.0.0.0'
@@ -87,7 +87,7 @@ export default {
                 'service_instances': [
                     {
                         'service_instance': {
-                            'id': 122,
+                            'id': 125,
                             'name': '192.168.1.2_mysql_2379',
                             'service_template_id': 44,
                             'module_id': 66,
@@ -95,10 +95,16 @@ export default {
                         },
                         'changed_attributes': [
                             {
-                                'property_id': 557,
+                                'property_id': 57,
                                 'property_name': '端口',
                                 'property_value': '2378',
                                 'template_property_value': '2379'
+                            },
+                            {
+                                'property_id': 56,
+                                'property_name': 'IP',
+                                'property_value': '127.0.0.1',
+                                'template_property_value': '0.0.0.0'
                             }
                         ]
                     }
@@ -113,7 +119,7 @@ export default {
                 'service_instances': [
                     {
                         'service_instance': {
-                            'id': 122,
+                            'id': 126,
                             'name': '192.168.1.2_mysql_2379',
                             'service_template_id': 44,
                             'module_id': 66,
@@ -131,7 +137,7 @@ export default {
                 'service_instances': [
                     {
                         'service_instance': {
-                            'id': 122,
+                            'id': 127,
                             'name': '192.168.1.2_mysql_2379',
                             'service_template_id': 44,
                             'module_id': 66,
