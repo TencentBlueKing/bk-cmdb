@@ -40,15 +40,8 @@ import (
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"configcenter/src/source_controller/coreservice/core/process"
-=======
 	"configcenter/src/source_controller/coreservice/core/operation"
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
-=======
-	"configcenter/src/source_controller/coreservice/core/operation"
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
@@ -128,15 +121,8 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		mainline.New(db),
 		host.New(db, cache, s),
 		auditlog.New(db),
-<<<<<<< HEAD
-<<<<<<< HEAD
 		process.New(db, s),
-=======
 		operation.New(db),
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
-=======
-		operation.New(db),
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
 	)
 	return nil
 }

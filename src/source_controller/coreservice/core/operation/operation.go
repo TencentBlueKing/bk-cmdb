@@ -62,9 +62,9 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Int
 	return bizHostCount, nil
 }
 
-func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam metadata.ChartOption) (interface{}, error) {
+func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Option.Field)
 
 	switch inputParam.ObjID {
 	case common.BKInnerObjIDHost:

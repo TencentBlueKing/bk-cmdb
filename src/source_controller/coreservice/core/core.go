@@ -159,8 +159,12 @@ type AuditOperation interface {
 // Core core interfaces methods
 type StatisticOperation interface {
 	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
-	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
+	CommonAggregate(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
+	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 }
 
 // Core core itnerfaces methods
@@ -226,14 +230,7 @@ type core struct {
 	topo            TopoOperation
 	host            HostOperation
 	audit           AuditOperation
-<<<<<<< HEAD
 	process         ProcessOperation
-}
-
-// New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
-=======
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
 	operation       StatisticOperation
 }
 
@@ -247,10 +244,6 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
-<<<<<<< HEAD
-		process:         process,
-=======
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
 		operation:       operation,
 	}
 }
@@ -283,12 +276,10 @@ func (m *core) AuditOperation() AuditOperation {
 	return m.audit
 }
 
-<<<<<<< HEAD
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
 }
-=======
->>>>>>> 3a1b6ccd5... feature: 运营统计报表
+
 func (m *core) StatisticOperation() StatisticOperation {
 	return m.operation
 }
