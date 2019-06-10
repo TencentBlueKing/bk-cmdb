@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 )
 
 func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
@@ -34,6 +35,21 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 	temp, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(temp)
+}
+
+func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
+	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
+	templateID, err := util.GetInt64ByInterface(templateIDStr)
+	if err != nil {
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return
 	}
 
