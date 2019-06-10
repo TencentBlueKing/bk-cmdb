@@ -64,8 +64,8 @@ func (s *operation) ModelInstAggregate(ctx context.Context, h http.Header, data 
 	return
 }
 
-func (s *operation) CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (s *operation) CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error) {
+	resp = new(metadata.CoreUint64Response)
 	subPath := "/create/operation/chart"
 
 	err = s.client.Post().

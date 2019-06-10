@@ -20,7 +20,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -56,8 +56,8 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 		}()
 		generateHttpHeaderRID(req, resp)
 
-		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
-		for _, url := range whilteListSuffix {
+		whiteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
+		for _, url := range whiteListSuffix {
 			if strings.HasSuffix(req.Request.URL.Path, url) {
 				fchain.ProcessFilter(req, resp)
 				return

@@ -31,7 +31,7 @@ type Logics struct {
 	ownerID string
 }
 
-// NewLogics get core handle
+// NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
