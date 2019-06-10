@@ -35,30 +35,28 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 		return nil, err
 	}
 
-	// 需要改一下chartConfig结构，objID放外面
-	for _, chart := range chartConfig {
-		matched := false
-		for _, info := range chartPosition.Position["host"] {
-			if chart.ConfigID == info.ConfigId {
-				chart.ChartPosition = info
-				matched = true
-				continue
-			}
-		}
+	if len(chartConfig) == 0 || len(chartPosition) == 0 {
+		return nil, nil
+	}
 
-		if matched {
-			continue
-		}
-
-		for _, info := range chartPosition.Position["inst"] {
+	chartsInfo := make(map[string][]interface{})
+	for _, info := range chartPosition[0].Position["host"] {
+		for _, chart := range chartConfig {
 			if chart.ConfigID == info.ConfigId {
-				chart.ChartPosition = info
-				continue
+				chartsInfo["host"] = append(chartsInfo["host"], chart)
 			}
 		}
 	}
 
-	return chartConfig, nil
+	for _, info := range chartPosition[0].Position["inst"] {
+		for _, chart := range chartConfig {
+			if chart.ConfigID == info.ConfigId {
+				chartsInfo["inst"] = append(chartsInfo["inst"], chart)
+			}
+		}
+	}
+
+	return chartsInfo, nil
 }
 
 func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
@@ -92,10 +90,11 @@ func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputPara
 	return nil, nil
 }
 
-func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id uint64) (interface{}, error) {
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	opt["config_id"] = id
-	blog.Debug("opt: %v", opt)
+	condition := mapstr.MapStr{}
+	condition["$in"] = inputParam["id"]
+	opt["config_id"] = condition
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
 		return nil, err

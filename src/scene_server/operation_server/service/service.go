@@ -88,7 +88,7 @@ func (o *OperationServer) WebService() *restful.Container {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	o.newProcessService(api)
+	o.newOperationService(api)
 	container := restful.NewContainer()
 	container.Add(api)
 
@@ -99,7 +99,7 @@ func (o *OperationServer) WebService() *restful.Container {
 	return container
 }
 
-func (o *OperationServer) newProcessService(web *restful.WebService) {
+func (o *OperationServer) newOperationService(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  o.Engine.CCErr,
 		Language: o.Engine.Language,
@@ -107,9 +107,9 @@ func (o *OperationServer) newProcessService(web *restful.WebService) {
 
 	// service category
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateStatisticChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart/{id}", Handler: o.DeleteStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart", Handler: o.DeleteStatisticChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateStatisticChart})
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchStatisticCharts})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchStatisticChart})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: o.SearchChartData})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
 

@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -53,8 +54,12 @@ func (o *OperationServer) CreateStatisticChart(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) DeleteStatisticChart(ctx *rest.Contexts) {
-	id := ctx.Request.PathParameter("id")
-	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, id)
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationDeleteStatisticFail, "search chart info fail, err: %v, id: %v", err)
 		return
@@ -63,16 +68,17 @@ func (o *OperationServer) DeleteStatisticChart(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (o *OperationServer) SearchStatisticCharts(ctx *rest.Contexts) {
-
+func (o *OperationServer) SearchStatisticChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
+
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationSearchStatisticsFail, "search chart info fail, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(result)
+	blog.Debug("result: %v", result)
+	ctx.RespEntity(result.Data)
 }
 
 func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
@@ -88,26 +94,38 @@ func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(result.Data)
 }
 
 func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
-	// todo 判断模型是否存在，不存在返回模型不存在
-
-	innerChart := []string{
-		"host_change_biz_chart", "model_inst_chart", "model_inst_change_chart",
-		"biz_module_host_chart", "model_and_inst_count",
-	}
-
 	inputData := new(metadata.ChartConfig)
 	if err := ctx.DecodeInto(inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	// 判断模型是否存在，不存在返回nil
+	cond := make(map[string]interface{}, 0)
+	cond[common.BKObjIDField] = inputData.ObjID
+	query := metadata.QueryCondition{Condition: cond}
+	models, err := o.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, &query)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err)
+		return
+	}
+	if models.Data.Count <= 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	innerChart := []string{
+		"host_change_biz_chart", "model_inst_chart", "model_inst_change_chart",
+		"biz_module_host_chart", "model_and_inst_count",
+	}
+
 	srvData := o.newSrvComm(ctx.Kit.Header)
 	if !util.InStrArr(innerChart, inputData.ReportType) {
-		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, inputData.Option)
+		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, inputData)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err, inputData.Name)
 			return
@@ -126,7 +144,13 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) UpdateChartPosition(ctx *rest.Contexts) {
-	result, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, ctx.Request.Request.Body)
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	result, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		blog.Errorf("update chart position fail, err: %v", err)
 		return
