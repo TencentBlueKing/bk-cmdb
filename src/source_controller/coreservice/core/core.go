@@ -156,11 +156,11 @@ type AuditOperation interface {
 
 type StatisticOperation interface {
 	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
-	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
+	CommonAggregate(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
 	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
-	DeleteOperationChart(ctx ContextParams, id uint64) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 	UpdateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 }
 

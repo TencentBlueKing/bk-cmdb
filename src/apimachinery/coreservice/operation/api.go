@@ -36,7 +36,7 @@ func (s *operation) AggregateBizHost(ctx context.Context, h http.Header, data in
 	return
 }
 
-func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartOption) (resp *metadata.Response, err error) {
+func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data *metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "read/operation/common/aggregate"
 
@@ -78,13 +78,13 @@ func (s *operation) CreateOperationChart(ctx context.Context, h http.Header, dat
 	return
 }
 
-func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id string) (resp *metadata.Response, err error) {
+func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("delete/operation/chart/%v", id)
+	subPath := fmt.Sprintf("delete/operation/chart")
 
 	err = s.client.Delete().
 		WithContext(ctx).
-		Body(nil).
+		Body(data).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().
@@ -92,8 +92,8 @@ func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id 
 	return
 }
 
-func (s *operation) SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartConfig, err error) {
-	resp = new(metadata.SearchChartConfig)
+func (s *operation) SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartResponse, err error) {
+	resp = new(metadata.SearchChartResponse)
 	subPath := "/search/operation/chart"
 
 	err = s.client.Post().

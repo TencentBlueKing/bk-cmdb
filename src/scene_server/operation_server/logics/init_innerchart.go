@@ -25,7 +25,7 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 		return
 	}
 
-	if result.Count > 0 {
+	if result.Data.Count > 0 {
 		return
 	}
 
@@ -45,6 +45,11 @@ var (
 	HostOsChart = metadata.ChartConfig{
 		ReportType: "host_os_chart",
 		Name:       "按操作系统类型统计",
+		ObjID:      "host",
+		Option: metadata.ChartOption{
+			ChartType: "pie",
+			Field:     "bk_os_type",
+		},
 	}
 
 	HostBizChart = metadata.ChartConfig{

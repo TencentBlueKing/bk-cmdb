@@ -18,18 +18,17 @@ import (
 )
 
 type ChartConfig struct {
-	ConfigID      uint64 `json:"config_id" bson:"config_id"`
-	Metadata      `field:"metadata" json:"metadata" bson:"metadata"`
-	ReportType    string      `json:"report_type" bson:"report_type"`
-	Name          string      `json:"name" bson:"name"`
-	Option        ChartOption `json:"option" bson:"option"`
-	ChartPosition Info        `json:"chart_position" bson:"chart_position"`
-	CreateTime    time.Time   `json:"create_time" bson:"create_time"`
-	OwnerID       string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ConfigID   uint64 `json:"config_id" bson:"config_id"`
+	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
+	ReportType string      `json:"report_type" bson:"report_type"`
+	Name       string      `json:"name" bson:"name"`
+	Option     ChartOption `json:"option" bson:"option"`
+	CreateTime time.Time   `json:"create_time" bson:"create_time"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 type ChartOption struct {
-	ObjID     string `json:"bk_obj_id" bson:"bk_obj_id"`
 	ChartType string `json:"chart_type" bson:"chart_type"`
 	Field     string `json:"field" bson:"field"`
 }
@@ -95,6 +94,11 @@ type ChartData struct {
 	ReportType string      `json:"report_type"`
 	Data       interface{} `json:"data"`
 	OwnerID    string      `json:"bk_supplier_account"`
+}
+
+type SearchChartResponse struct {
+	BaseResp `json:",inline"`
+	Data     SearchChartConfig `json:"data"`
 }
 
 type SearchChartConfig struct {
