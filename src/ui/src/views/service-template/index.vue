@@ -194,7 +194,7 @@
                 this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['bk_root_id'] === id)
                 this.filter.secondaryClassification = ''
             },
             operationTemplate (item) {

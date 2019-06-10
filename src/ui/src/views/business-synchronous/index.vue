@@ -4,11 +4,15 @@
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
                 <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button type="primary" @click="handleGoHome">{{$t("BusinessSynchronous['返回首页']")}}</bk-button>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("BusinessSynchronous['返回首页']")}}</bk-button>
             </div>
         </template>
         <template v-else>
-            <p class="tips">请确认以下模版更新信息：</p>
+            <p class="tips">
+                {{$t("BusinessSynchronous['请确认']")}}
+                <span>{{treePath}}</span>
+                {{$t("BusinessSynchronous['模版更新信息']")}}
+            </p>
             <div class="info-tab">
                 <div class="tab-head">
                     <div class="tab-nav">
@@ -78,10 +82,11 @@
                 <bk-button
                     class="mr10"
                     :disabled="readNum !== list.length"
-                    type="primary">
+                    type="primary"
+                    @click="handleSubmitSync">
                     {{$t("BusinessSynchronous['确认并同步']")}}
                 </bk-button>
-                <bk-button>{{$t("Common['取消']")}}</bk-button>
+                <bk-button @click="handleGoBackModule">{{$t("Common['取消']")}}</bk-button>
             </div>
         </template>
 
@@ -97,9 +102,9 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapGetters, mapActions, mapMutations } from 'vuex'
     import instanceDetails from './children/details.vue'
-    import imitationData from './data'
+    // import imitationData from './data'
     export default {
         components: {
             instanceDetails
@@ -111,23 +116,39 @@
         },
         data () {
             return {
+                noFindData: true,
+                showContentId: null,
+                readNum: 1,
+                serviceTemplateId: '',
+                differenData: {},
+                modelProperties: [],
+                changedData: {
+                    instanceDetails: {},
+                    type: 'changed',
+                    current: {}
+                },
                 slider: {
                     show: false,
                     title: '',
                     details: {}
-                },
-                noFindData: false,
-                showContentId: null,
-                readNum: 1,
-                modelProperties: []
+                }
             }
         },
         computed: {
             ...mapGetters(['supplierAccount', 'featureTipsParams']),
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
+            routerParams () {
+                return this.$route.params
+            },
+            treePath () {
+                return this.$route.query.path
+            },
             list () {
                 const formatList = []
-                Object.keys(imitationData.data).forEach(key => {
-                    formatList.push(...imitationData.data[key].map(info => {
+                Object.keys(this.differenData).forEach(key => {
+                    formatList.push(...this.differenData[key].map(info => {
                         return {
                             operational_type: key,
                             has_read: false,
@@ -152,15 +173,35 @@
                     attributesSet[process['process_template_id']] = attributes
                 })
                 return attributesSet
+            },
+            instanceIds () {
+                const ids = []
+                this.list.forEach(item => {
+                    item['service_instances'].forEach(instance => {
+                        ids.push(instance['service_instance']['id'])
+                    })
+                })
+                return ids
+            },
+            instanceMap () {
+                return this.$store.state.businessSync.instanceMap
             }
         },
-        created () {
-            this.showContentId = this.list[0]['process_template_id']
-            this.$set(this.list[0], 'has_read', true)
+        async created () {
             this.getModaelProperty()
-            // console.log(this.list)
+            await this.getModuleInstance()
+            if (!this.noFindData) {
+                await this.getServiceInstanceDifferences()
+                if (this.list.length) {
+                    this.showContentId = this.list[0]['process_template_id']
+                    this.$set(this.list[0], 'has_read', true)
+                } else {
+                    this.noFindData = true
+                }
+            }
         },
         methods: {
+            ...mapMutations('businessSynchronous', ['setInstance']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
             ...mapActions('businessSynchronous', [
                 'searchServiceInstanceDifferences',
@@ -178,18 +219,79 @@
                         fromCache: false
                     }
                 })
-                console.log(this.modelProperties)
             },
-            propertiesGroup () {
-
+            async getModuleInstance () {
+                const data = await this.$store.dispatch('objectModule/searchModule', {
+                    bizId: this.business,
+                    setId: Number(this.routerParams.setId),
+                    params: {
+                        page: { start: 0, limit: 1 },
+                        fields: [],
+                        condition: {
+                            bk_module_id: Number(this.routerParams.moduleId),
+                            bk_supplier_account: this.supplierAccount
+                        }
+                    },
+                    config: {
+                        requestId: 'getNodeInstance',
+                        cancelPrevious: true
+                    }
+                })
+                this.noFindData = !data.info.length
+                if (data.info.length) {
+                    const instance = data.info[0]
+                    this.serviceTemplateId = instance['service_template_id']
+                }
             },
-            getServiceInstanceDifferences () {
-                this.searchServiceInstanceDifferences({
+            async getServiceInstanceDifferences () {
+                this.differenData = await this.searchServiceInstanceDifferences({
                     params: this.$injectMetadata({
-                        module_id: '',
-                        service_template_id: ''
+                        bk_module_id: Number(this.routerParams.moduleId),
+                        service_template_id: this.serviceTemplateId
                     })
                 })
+            },
+            propertiesGroup () {
+                const instance = this.changedData.instanceDetails
+                return Object.keys(instance).filter(propertyKey => this.modelProperties.find(property => property['bk_property_id'] === propertyKey))
+                    .map(key => {
+                        const property = this.modelProperties.find(property => property['bk_property_id'] === key)
+                        let propertyValue = ''
+                        if (['enum'].includes(property['bk_property_type'])) {
+                            propertyValue = property['option'].find(option => option['id'] === instance[key])['name']
+                        } else if (['bool'].includes(property['bk_property_type'])) {
+                            propertyValue = instance[key] ? '是' : '否'
+                        } else {
+                            propertyValue = instance[key]
+                        }
+                        return {
+                            id: property['id'],
+                            property_id: property['bk_property_id'],
+                            property_name: property['bk_property_name'],
+                            property_value: this.changedData.type === 'added' ? '--' : propertyValue,
+                            template_property_value: this.getAfterValueByType(propertyValue, property['id'])
+                        }
+                    })
+            },
+            getAfterValueByType (value, propertyId) {
+                if (this.changedData.type === 'changed') {
+                    const current = this.changedData.current.find(property => property['property_id'] === propertyId)
+                    return current ? current['template_property_value'] : ''
+                } else if (this.changedData.type === 'added') {
+                    return value
+                } else {
+                    return this.$t("BusinessSynchronous['该进程已删除']")
+                }
+            },
+            filterShowList () {
+                const list = this.propertiesGroup()
+                if (this.changedData.type === 'changed') {
+                    return list.filter(property => this.changedData.current.find(current => property['id'] === current['property_id']))
+                } else if (this.changedData.type === 'added') {
+                    return list.filter(property => property['template_property_value'])
+                } else {
+                    return list.filter(property => property['property_value'])
+                }
             },
             handleContentView (id, index) {
                 this.showContentId = id
@@ -198,26 +300,50 @@
                     this.readNum++
                 }
             },
-            hanldeInstanceDetails (instance, type) {
-                if (type === 'changed') {
-                    this.slider.title = instance['service_instance']['name']
-                    this.slider.show = true
-                    this.slider.details = instance['changed_attributes']
+            async hanldeInstanceDetails (instance, type) {
+                const instanceId = instance['service_instance']['id']
+                if (this.instanceMap.hasOwnProperty(instanceId)) {
+                    this.changedData.instanceDetails = this.instanceMap[instanceId]
                 } else {
-                    this.getServiceInstanceProcesses({
-                        params: this.$injectMetadata({
-                            service_instance_id: 67
+                    try {
+                        const result = await this.getServiceInstanceProcesses({
+                            params: this.$injectMetadata({
+                                service_instance_id: 48
+                            })
                         })
-                    }).then(data => {
-                        console.log(data[0])
-                        const showProperty = data[0]['property']
-                        console.log(showProperty)
-                        this.propertiesGroup(showProperty)
-                    })
+                        this.changedData.instanceDetails = result[0]['property']
+                        this.$store.commit('businessSync/setInstance', {
+                            id: instanceId,
+                            instanceProperty: result[0]['property']
+                        })
+                    } catch (e) {
+                        console.error(e)
+                    }
                 }
+                this.slider.title = instance['service_instance']['name']
+                this.changedData.current = instance['changed_attributes']
+                this.changedData.type = type
+                this.slider.show = true
+                this.slider.details = this.filterShowList()
             },
-            handleGoHome () {
-                this.$router.push({ name: 'index' })
+            handleSubmitSync () {
+                this.syncServiceInstanceByTemplate({
+                    params: this.$injectMetadata({
+                        service_template_id: this.serviceTemplateId,
+                        module_id: Number(this.routerParams.moduleId),
+                        service_instances: this.instanceIds
+                    })
+                }).then(() => {
+                    this.handleGoBackModule()
+                })
+            },
+            handleGoBackModule () {
+                this.$router.push({
+                    name: 'topology',
+                    query: {
+                        module: Number(this.routerParams.moduleId)
+                    }
+                })
             }
         }
     }
@@ -244,6 +370,9 @@
         }
         .tips {
             padding-bottom: 20px;
+            span {
+                font-weight: bold;
+            }
         }
         .info-tab {
             @include space-between;

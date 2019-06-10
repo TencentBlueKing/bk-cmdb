@@ -26,11 +26,13 @@
                     </ul>
                 </bk-dropdown-menu>
                 <cmdb-form-bool class="options-checkbox"
-                    :size="16">
+                    :size="16"
+                    @change="handleCheckALL">
                     <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
                 </cmdb-form-bool>
                 <cmdb-form-bool class="options-checkbox"
-                    :size="16">
+                    :size="16"
+                    @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
                 <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
@@ -38,15 +40,19 @@
             <div class="tables">
                 <service-instance-table
                     v-for="(instance, index) in instances"
-                    :key="index"
+                    ref="serviceInstanceTable"
+                    :key="instance.id"
                     :instance="instance"
                     :expanded="index === 0"
                     @create-process="handleCreateProcess"
-                    @update-process="handleUpdateProcess">
+                    @update-process="handleUpdateProcess"
+                    @delete-instance="handleDeleteInstance">
                 </service-instance-table>
             </div>
         </template>
-        <service-instance-empty v-else></service-instance-empty>
+        <service-instance-empty v-else
+            @create-instance-success="handleCreateInstanceSuccess">
+        </service-instance-empty>
         <cmdb-slider
             :title="processForm.title"
             :is-show.sync="processForm.show">
@@ -87,6 +93,9 @@
             }
         },
         computed: {
+            business () {
+                return this.$store.getters['objectBiz/bizId']
+            },
             currentNode () {
                 return this.$store.state.businessTopology.selectedNode
             },
@@ -100,7 +109,7 @@
                 return this.$store.state.businessTopology.processTemplateMap
             },
             withTemplate () {
-                return this.currentModule && this.currentModule.service_template_id
+                return this.currentModule && this.currentModule.service_template_id !== 2
             },
             menuItem () {
                 return [{
@@ -168,7 +177,8 @@
                 try {
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
-                            module_id: this.currentModule.bk_inst_id
+                            bk_module_id: this.currentModule.bk_inst_id,
+                            with_name: true
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
@@ -205,6 +215,7 @@
                             uneditableProperties.push(propertyId)
                         }
                     })
+                    this.processForm.uneditableProperties = uneditableProperties
                 }
             },
             async getProcessTemplate (processTemplateId) {
@@ -223,6 +234,9 @@
                 })
                 return Promise.resolve(data.property)
             },
+            handleDeleteInstance (id) {
+                this.instances = this.instances.filter(instance => instance.id !== id)
+            },
             async handleSaveProcess (values, changedValues) {
                 try {
                     if (this.processForm.type === 'create') {
@@ -240,14 +254,20 @@
                 }
             },
             createProcess (values) {
-                return Promise.resolve()
+                return this.$store.dispatch('processInstance/createServiceInstanceProcess', {
+                    params: this.$injectMetadata({
+                        service_instance_id: this.processForm.referenceService.instance.id,
+                        processes: [{
+                            process_info: values
+                        }]
+                    })
+                })
             },
             updateProcess (values) {
                 return this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
+                    business: this.business,
                     processInstanceId: this.processForm.instance.bk_process_id,
-                    params: this.$injectMetadata({
-                        properties: [values]
-                    })
+                    params: values
                 })
             },
             handleCloseProcessForm () {
@@ -266,12 +286,23 @@
                 })
             },
             handleSyncTemplate () {
-                this.$route.push({
+                this.$router.push({
                     name: 'synchronous',
                     params: {
                         moduleId: this.currentModule.bk_inst_id,
-                        templateId: this.currentModule.template_id
+                        templateId: this.currentModule.service_template_id
                     }
+                })
+            },
+            handleCreateInstanceSuccess () {
+                this.getServiceInstances()
+            },
+            handleCheckALL () {
+                // 全选
+            },
+            handleExpandAll (expanded) {
+                this.$refs.serviceInstanceTable.forEach(table => {
+                    table.localExpanded = expanded
                 })
             },
             batchEdit (disabled) {
