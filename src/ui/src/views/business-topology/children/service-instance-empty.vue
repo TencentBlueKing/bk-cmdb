@@ -5,7 +5,7 @@
             <p class="empty-text">Agent模版尚未定义进程，无法创建服务</p>
             <p class="empty-tips">您可以先跳转模版添加进程或直接添加主机，后续再添加模版进程</p>
             <div class="empty-options">
-                <bk-button class="empty-button" type="primary">跳转模板添加进程</bk-button>
+                <bk-button class="empty-button" type="primary" @click="goToTemplate">跳转模板添加进程</bk-button>
                 <bk-button class="empty-button" type="default" @click="handleAddHost">添加主机</bk-button>
             </div>
         </div>
@@ -34,7 +34,8 @@
         },
         data () {
             return {
-                visible: false
+                visible: false,
+                templates: []
             }
         },
         computed: {
@@ -56,27 +57,73 @@
                 return {}
             },
             withTemplate () {
-                const instance = this.$store.state.businessTopology.selectedNodeInstance
-                if (this.moduleNode && instance) {
-                    return !!instance.template_id
+                return this.moduleNode && this.moduleInstance.service_template_id && this.moduleInstance.service_template_id !== 2
+            }
+        },
+        watch: {
+            withTemplate (withTemplate) {
+                if (withTemplate) {
+                    this.getTemplate()
                 }
-                return false
+            }
+        },
+        created () {
+            if (this.withTemplate) {
+                this.getTemplate()
             }
         },
         methods: {
+            async getTemplate () {
+                try {
+                    const data = await this.$store.dispatch('processTemplate/getBatchProcessTemplate', {
+                        params: this.$injectMetadata({
+                            service_template_id: this.moduleInstance.service_template_id
+                        }),
+                        config: {
+                            requestId: 'getBatchProcessTemplate',
+                            cancelPrevious: true
+                        }
+                    })
+                    this.templates = data.info
+                } catch (e) {
+                    console.error(e)
+                }
+            },
+            goToTemplate () {
+                // todo 路由跳转
+            },
             handleAddHost () {
                 this.visible = true
             },
             async handleSelectHost (checked) {
-                await this.$store.dispatch('hostRelation/transferHostModule', {
-                    params: {
-                        bk_biz_id: this.business,
-                        bk_host_id: checked,
-                        bk_module_id: [this.moduleNode.data.bk_inst_id],
-                        is_increment: true
-                    }
-                })
-                this.visible = false
+                try {
+                    const data = await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                        params: this.$injectMetadata({
+                            name: this.moduleInstance.bk_module_name,
+                            bk_module_id: this.moduleInstance.bk_module_id,
+                            service_template_id: this.moduleInstance.service_template_id,
+                            instances: checked.map(hostId => {
+                                return {
+                                    bk_host_id: hostId,
+                                    processes: this.templates.map(template => {
+                                        const processInfo = {}
+                                        Object.keys(template.property).forEach(key => {
+                                            processInfo[key] = template.property[key].value
+                                        })
+                                        return {
+                                            process_template_id: template.id,
+                                            process_info: processInfo
+                                        }
+                                    })
+                                }
+                            })
+                        })
+                    })
+                    this.visible = false
+                    this.$emit('create-instance-success', data)
+                } catch (e) {
+                    console.error(e)
+                }
             },
             handleCreateServiceInstance () {
                 this.$router.push({
