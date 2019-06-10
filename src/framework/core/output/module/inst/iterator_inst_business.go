@@ -14,7 +14,7 @@ package inst
 
 import (
 	"configcenter/src/framework/common"
-	//"configcenter/src/framework/core/log"
+	//"configcenter/src/framework/logics/log"
 	"io"
 
 	"configcenter/src/framework/core/output/module/client"

@@ -63,7 +63,7 @@ func (s *coreService) SetConfig(engin *backbone.Engine, db mongodb.Client, txnCf
 	s.rpc.Handle(types.CommandRDBOperation, s.DBOperation)
 	s.rpc.HandleStream(types.CommandWatchTransactionOperation, s.WatchTransaction)
 
-	// create a new core instance
+	// create a new logics instance
 	txn := transaction.New(
 		core.ContextParams{
 			Context:  context.Background(),

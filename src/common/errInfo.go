@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy         = -1
+	CCSystemUnknownError = -2
+	CCSuccess            = 0
+	CCSuccessStr         = "success"
 
 	// common error code 1199XXX
 
@@ -161,8 +162,18 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
 
-	CCErrCommGetMultipleObject      = 1199052
-	CCErrCommAuthCenterIsNotEnabled = 1199053
+	CCErrCommGetMultipleObject                = 1199052
+	CCErrCommAuthCenterIsNotEnabled           = 1199053
+	CCErrCommOperateBuiltInItemForbidden      = 1199054
+	CCErrCommRemoveRecordHasChildrenForbidden = 1199055
+	CCErrCommRemoveReferencedRecordForbidden  = 1199056
+	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
+
+	CCErrCommGenerateRecordIDFailed = 1199058
+	CCErrCommPageLimitIsExceeded    = 1199059
+
+	// unknown or unrecognized error
+	CCErrorUnknownOrUnrecognizedError = 1199998
 
 	// CCErrCommInternalServerError %s Internal Server Error
 	CCErrCommInternalServerError = 1199999
@@ -382,7 +393,7 @@ const (
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
 
-	// objectcontroller 1102XXX
+	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
 	CCErrObjectPropertyGroupInsertFailed = 1102000
@@ -430,7 +441,7 @@ const (
 	CCErrCommMigrateFailed        = 1105000
 	CCErrCommInitAuthcenterFailed = 1105001
 
-	// hostcontroller 1106XXX
+	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
 	CCErrHostCreateInst                  = 1106002
 	CCErrHostGetSnapshot                 = 1106003
@@ -455,7 +466,7 @@ const (
 	CCErrCloudConfirmHistoryAddFail      = 1106022
 	CCErrCloudSyncHistorySearchFail      = 1106023
 
-	// proccontroller 1107XXX
+	// process controller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
 	CCErrProcCreateProc2Module   = 1107002
 	CCErrProcSelectProc2Module   = 1107003
@@ -470,15 +481,15 @@ const (
 	CCErrProcCreateProc2Template = 1107012
 	CCErrProcSelectProc2Template = 1107013
 
-	// procserver 1108XXX
+	// process server 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
 	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFaile         = 1108005
-	CCErrProcSearchProcessFaile         = 1108006
-	CCErrProcDeleteProcessFaile         = 1108007
-	CCErrProcCreateProcessFaile         = 1108008
+	CCErrProcUpdateProcessFailed        = 1108005
+	CCErrProcSearchProcessFailed        = 1108006
+	CCErrProcDeleteProcessFailed        = 1108007
+	CCErrProcCreateProcessFailed        = 1108008
 	CCErrProcFieldValidFaile            = 1108009
 	CCErrProcGetByApplicationIDFail     = 1108010
 	CCErrProcGetByIP                    = 1108011
@@ -495,11 +506,22 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	// auditlog 1109XXX
+	CCErrProcGetServiceInstancesFailed        = 1108024
+	CCErrProcCreateServiceInstancesFailed     = 1108025
+	CCErrProcDeleteServiceInstancesFailed     = 1108026
+	CCErrProcGetProcessTemplatesFailed        = 1108027
+	CCErrProcGetProcessInstanceFailed         = 1108028
+	CCErrProcGetProcessInstanceRelationFailed = 1108029
+	CCErrProcDeleteServiceTemplateFailed      = 1108030
+	CCErrProcCreateProcessTemplateFailed      = 1108031
+	CCErrProcUpdateProcessTemplateFailed      = 1108032
+	CCErrProcGetProcessTemplateFailed         = 1108033
+
+	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
 	CCErrAuditTakeSnapshotFaile = 1109001
 
-	//hostserver
+	// host server
 	CCErrHostGetFail              = 1110001
 	CCErrHostUpdateFail           = 1110002
 	CCErrHostUpdateFieldFail      = 1110003
@@ -617,7 +639,6 @@ const (
 	CCErrOperationGetChartDataFail        = 1114005
 	CCErrOperationDeleteStatisticFail     = 1114006
 	CCErrOperationChartAlreadyExist       = 1114007
-	CCErrOperationGetModelInstCountFail   = 1114008
 
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
@@ -641,7 +662,10 @@ const (
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
 
-	// synchronize data coreservice  11139xx
+	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
+	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
+
+	// synchronize data logics service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
@@ -649,7 +673,7 @@ const (
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
-	// CCErrAPIServerV2DirectErr  disply error
+	// CCErrAPIServerV2DirectErr  display error
 	CCErrAPIServerV2DirectErr = 1170002
 
 	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len

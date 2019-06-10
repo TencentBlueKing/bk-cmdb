@@ -26,9 +26,10 @@ type ServerOption struct {
 }
 
 type Config struct {
-	Mongo mongo.Config
-	Redis redis.Config
-	Auth  authcenter.AuthConfig
+	ConfigMap map[string]string
+	Mongo     mongo.Config
+	Redis     redis.Config
+	Auth      authcenter.AuthConfig
 }
 
 func NewServerOption() *ServerOption {

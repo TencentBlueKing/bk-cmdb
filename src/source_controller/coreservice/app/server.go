@@ -31,7 +31,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
-// CoreServer the core server
+// CoreServer the logics server
 type CoreServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
@@ -91,7 +91,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 
 	coreSvr.Core = engine

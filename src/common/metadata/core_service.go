@@ -213,7 +213,7 @@ type TopoInstance struct {
 	InstanceID       int64
 	ParentInstanceID int64
 	Detail           map[string]interface{}
-	Default        int64
+	Default          int64
 }
 
 // Key generate a unique key for instance(as instances's of different object type maybe conflict)
@@ -259,4 +259,121 @@ func (h *HostModuleRelationRequest) Empty() bool {
 type DeleteHostRequest struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostIDArr     []int64 `json:"bk_host_ids"`
+}
+
+type OneServiceCategoryResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceCategory `json:"data"`
+}
+
+type ServiceCategoryWithStatisticsResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceCategoryWithStatistics `json:"data"`
+}
+
+type MultipleServiceCategory struct {
+	Count int64             `json:"count"`
+	Info  []ServiceCategory `json:"info"`
+}
+
+type MultipleServiceCategoryResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategory `json:"data"`
+}
+
+type ListServiceTemplateOption struct {
+	BusinessID        int64    `json:"bk_biz_id"`
+	ServiceCategoryID int64    `json:"service_category_id"`
+	Page              BasePage `json:"page,omitempty"`
+}
+
+type OneServiceTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplate `json:"data"`
+}
+
+type MultipleServiceTemplate struct {
+	Count uint64            `json:"count"`
+	Info  []ServiceTemplate `json:"info"`
+}
+
+type ListServiceInstanceOption struct {
+	BusinessID        int64    `json:"bk_biz_id"`
+	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
+	HostID            int64    `json:"host_id,omitempty"`
+	ModuleID          int64    `json:"module_id,omitempty"`
+	Page              BasePage `json:"page,omitempty"`
+}
+
+type ListProcessInstanceRelationOption struct {
+	BusinessID        int64   `json:"bk_biz_id"`
+	ProcessIDs        []int64 `json:"process_ids,omitempty"`
+	ServiceInstanceID []int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateID int64   `json:"process_template_id,omitempty"`
+	HostID            int64   `json:"host_id,omitempty"`
+}
+
+type MultipleServiceTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceTemplate `json:"data"`
+}
+
+type OneProcessTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     ProcessTemplate `json:"data"`
+}
+
+type MultipleProcessTemplate struct {
+	Count uint64            `json:"count"`
+	Info  []ProcessTemplate `json:"info"`
+}
+
+type MultipleProcessTemplateResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleProcessTemplate `json:"data"`
+}
+
+type DeleteProcessInstanceRelationOption struct {
+	BusinessID         *int64   `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"bk_process_id,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_id,omitempty"`
+	HostIDs            *[]int64 `json:"bk_host_id,omitempty"`
+	ModuleIDs          *[]int64 `json:"bk_module_id,omitempty"`
+}
+
+type ListProcessTemplatesOption struct {
+	BusinessID         int64   `json:"bk_biz_id"`
+	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
+	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+}
+
+type OneServiceInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceInstance `json:"data"`
+}
+
+type MultipleServiceInstance struct {
+	Count uint64            `json:"count"`
+	Info  []ServiceInstance `json:"info"`
+}
+
+type MultipleServiceInstanceResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceInstance `json:"data"`
+}
+
+type OneProcessInstanceRelationResult struct {
+	BaseResp `json:",inline"`
+	Data     ProcessInstanceRelation `json:"data"`
+}
+
+type MultipleProcessInstanceRelation struct {
+	Count uint64                    `json:"count"`
+	Info  []ProcessInstanceRelation `json:"info"`
+}
+
+type MultipleProcessInstanceRelationResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleProcessInstanceRelation `json:"data"`
 }

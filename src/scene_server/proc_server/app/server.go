@@ -27,13 +27,13 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/proc_server/app/options"
-	"configcenter/src/scene_server/proc_server/proc_service/service"
+	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/scene_server/proc_server/service"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-//Run ccapi server
 func Run(ctx context.Context, op *options.ServerOption) error {
 
 	svrInfo, err := newServerInfo(op)
@@ -65,7 +65,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 	}
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
 	if err != nil {
@@ -91,7 +91,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
+	procSvr.Logic = &logics.Logic{
+		Engine: procSvr.Engine,
+	}
 	go procSvr.InitFunc()
+
 	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err
 	}

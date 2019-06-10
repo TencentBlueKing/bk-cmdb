@@ -167,9 +167,17 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 
 }
 
+type MetadataWrapper struct {
+	Metadata Metadata `json:"metadata"`
+}
+
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
+}
+
+func (md *Metadata) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{"label": md.Label.ToMapStr()}
 }
 
 func (label Label) Set(key, value string) {
@@ -179,6 +187,14 @@ func (label Label) Set(key, value string) {
 func (label Label) Get(key string) (exist bool, value string) {
 	value, exist = label[key]
 	return
+}
+
+func (label Label) ToMapStr() mapstr.MapStr {
+	result := make(map[string]interface{})
+	for key, value := range label {
+		result[key] = value
+	}
+	return result
 }
 
 // isTrue is used to check if the label key is a true value or not.

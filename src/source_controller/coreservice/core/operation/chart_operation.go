@@ -29,7 +29,7 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 		return nil, err
 	}
 
-	chartPosition := metadata.ChartPosition{}
+	chartPosition := make([]metadata.ChartPosition, 0)
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
@@ -61,19 +61,18 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 	return chartConfig, nil
 }
 
-func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
 	objID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	inputParam.ConfigID = objID
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
-		return nil, err
+		return 0, err
 	}
 
-	blog.Debug("objID: %v", objID)
 	return objID, nil
 }
 

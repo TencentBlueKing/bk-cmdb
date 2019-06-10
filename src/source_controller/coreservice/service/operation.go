@@ -70,12 +70,12 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 	ownerID := util.GetOwnerID(params.Header)
 	chartConfig.CreateTime = time.Now()
 	chartConfig.OwnerID = ownerID
-	blog.Debug("chartInfo---1： %v", chartConfig)
 	result, err := s.core.StatisticOperation().CreateOperationChart(params, chartConfig)
 	if err != nil {
 		blog.Errorf("save chart config fail, err: %v", err)
 		return nil, err
 	}
+	blog.Debug("result: %v", result)
 	return result, nil
 }
 

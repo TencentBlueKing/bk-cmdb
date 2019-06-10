@@ -13,7 +13,7 @@ type OperationClientInterface interface {
 	AggregateBizHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.AggregateIntResponse, err error)
 	CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartOption) (resp *metadata.Response, err error)
 	SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error)
 	SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartConfig, err error)
 	DeleteOperationChart(ctx context.Context, h http.Header, id string) (resp *metadata.Response, err error)
 	UpdateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)

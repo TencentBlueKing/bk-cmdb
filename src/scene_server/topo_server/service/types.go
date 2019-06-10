@@ -20,7 +20,7 @@ import (
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
-// LogicFunc the core core function definition
+// LogicFunc the logics logics function definition
 type LogicFunc func(params types.ContextParams, parthParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key

@@ -116,6 +116,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostCrossBusiness, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
 	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHost, nil)
+	s.addAction(http.MethodPost, "/read/host/indentifier", s.Identifier, nil)
 
 }
 
@@ -148,4 +149,5 @@ func (s *coreService) initService() {
 	s.host()
 	s.audit()
 	s.initOperation()
+	s.initProcess()
 }
