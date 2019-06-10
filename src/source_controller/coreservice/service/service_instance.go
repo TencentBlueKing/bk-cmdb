@@ -128,3 +128,23 @@ func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParam
 
 	return nil, nil
 }
+
+func (s *coreService) GetBusinessDefaultSetModuleInfo(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	bizIDStr := pathParams(common.BKAppIDField)
+	if len(bizIDStr) == 0 {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, path parameter `%s` empty, rid: %s", common.BKAppIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKAppIDField, bizIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
+
+	defaultSetModuleInfo, err := s.core.ProcessOperation().GetBusinessDefaultSetModuleInfo(params, bizID)
+	if err != nil {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, bizID: %d, err: %+v, rid: %s", bizID, err, params.ReqID)
+		return nil, err
+	}
+	return defaultSetModuleInfo, nil
+}

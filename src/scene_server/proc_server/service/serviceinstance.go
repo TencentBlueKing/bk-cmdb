@@ -313,6 +313,13 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 	// 1. service instance relation need to be deleted.
 	// 2. process instance belongs to this service instance should be deleted.
 
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, input.ServiceInstanceID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+			"delete service instance failed, service instance not found, serviceInstanceID: %d", input.ServiceInstanceID)
+		return
+	}
+
 	// Firstly, delete the service instance relation.
 	option := &metadata.ListProcessInstanceRelationOption{
 		BusinessID:         bizID,
@@ -352,6 +359,35 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		return
 	}
 
+	// check and move host from module if no serviceInstance on it
+	filter := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		HostID:     serviceInstance.HostID,
+	}
+	result, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, filter)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get host related service instances failed, bizID: %d, serviceIntanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
+		return
+	}
+
+	var moduleHasServiceInstance bool
+	for _, instance := range result.Info {
+		if instance.ModuleID == serviceInstance.ModuleID {
+			moduleHasServiceInstance = true
+		}
+	}
+	if moduleHasServiceInstance == false {
+		// just remove host from this module
+		removeHostFromModuleOption := metadata.RemoveHostsFromModuleOption{
+			ApplicationID: bizID,
+			HostID:        serviceInstance.HostID,
+			ModuleID:      serviceInstance.ModuleID,
+		}
+		if _, err := ps.CoreAPI.CoreService().Host().RemoveHostFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
+			ctx.RespWithError(err, common.CCErrHostMoveResourcePoolFail, "remove host from module failed, option: %+v, err: %v", removeHostFromModuleOption, err)
+			return
+		}
+	}
 	ctx.RespEntity(nil)
 }
 
@@ -1143,4 +1179,60 @@ func (ps *ProcServer) ListProcessInstances(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(processInstanceList)
+}
+
+func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
+	input := new(metadata.RemoveTemplateBindingOnModuleOption)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"remove template binding on module failed, parse business id failed, err: %+v", err)
+		return
+	}
+	queryCondition := metadata.QueryCondition{
+		Condition: mapstr.New(),
+	}
+	queryCondition.Condition.Set(common.BKModuleIDField, input.ModuleID)
+	queryCondition.Condition.Set(common.BKAppIDField, bizID)
+	result, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &queryCondition)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
+			"remove template binding on module failed, get module failed, err: %+v", err)
+		return
+	}
+	if result.Data.Count == 0 || len(result.Data.Info) == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrCommNotFound, "remove template binding on module failed, get module result in not found, filter: %+v", queryCondition)
+		return
+	}
+	moduleSimple := struct {
+		ServiceTemplateID int64 `field:"service_template_id" bson:"service_template_id" json:"service_template_id"`
+		ServiceCategoryID int64 `field:"service_category_id" bson:"service_category_id" json:"service_category_id"`
+	}{}
+	if err := result.Data.Info[0].ToStructByTag(&moduleSimple, "field"); err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommParseDBFailed, "remove template binding on module failed, parse module info from db failed, module: %+v, err: %+v", result.Data.Info, err)
+		return
+	}
+
+	if moduleSimple.ServiceTemplateID == 0 {
+		ctx.RespErrorCodeOnly(common.CCErrProcModuleNotBindWithTemplate, "remove template binding on module failed, module doesn't bind with template yet, module: %+v, err: %+v", result.Data.Info, err)
+		return
+	}
+
+	data := mapstr.New()
+	data.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	updateOption := metadata.UpdateOption{
+		Data:      data,
+		Condition: queryCondition.Condition,
+	}
+	updateResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &updateOption)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "remove template binding on module failed, reset service_template_id attribute failed, module: %+v, err: %+v", result.Data.Info, err)
+		return
+	}
+	ctx.RespEntity(updateResult)
 }
