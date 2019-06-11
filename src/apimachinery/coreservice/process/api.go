@@ -468,11 +468,12 @@ func (p *process) UpdateServiceInstance(ctx context.Context, h http.Header, inst
 	return &ret.Data, nil
 }
 
-func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, instanceID int64) error {
+func (p *process) DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) error {
 	ret := new(metadata.OneServiceInstanceResult)
-	subPath := fmt.Sprintf("/delete/process/service_instance/%d", instanceID)
+	subPath := "/delete/process/service_instance"
 
 	err := p.client.Delete().
+		Body(option).
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).

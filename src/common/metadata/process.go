@@ -102,8 +102,8 @@ type FindServiceTemplateAndInstanceDifferenceOption struct {
 }
 
 type DeleteServiceInstanceOption struct {
-	Metadata          Metadata `json:"metadata" field:"metadata" bson:"metadata"`
-	ServiceInstanceID int64    `json:"id" field:"id" bson:"id"`
+	Metadata           Metadata `json:"metadata"`
+	ServiceInstanceIDs []int64  `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type FindServiceAndProcessInstanceOption struct {
@@ -390,6 +390,87 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 		}
 	}
 	return "", nil
+}
+
+func isTrue(asDefaultValue *bool) bool {
+	if asDefaultValue != nil {
+		return *asDefaultValue
+	}
+	return false
+}
+
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Process {
+	now := time.Now()
+	processInstance := &Process{
+		LastTime:        now,
+		CreateTime:      now,
+		BusinessID:      bizID,
+		Metadata:        NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		SupplierAccount: supplierAccount,
+	}
+
+	property := pt.Property
+	if isTrue(property.ProcessName.AsDefaultValue) == true {
+		processInstance.ProcessName = *property.ProcessName.Value
+	}
+	if isTrue(property.ProcNum.AsDefaultValue) == true {
+		processInstance.ProcNum = *property.ProcNum.Value
+	}
+	if isTrue(property.StopCmd.AsDefaultValue) == true {
+		processInstance.StopCmd = *property.StopCmd.Value
+	}
+	if isTrue(property.RestartCmd.AsDefaultValue) == true {
+		processInstance.RestartCmd = *property.RestartCmd.Value
+	}
+	if isTrue(property.ForceStopCmd.AsDefaultValue) == true {
+		processInstance.ForceStopCmd = *property.ForceStopCmd.Value
+	}
+	if isTrue(property.FuncName.AsDefaultValue) == true {
+		processInstance.FuncName = *property.FuncName.Value
+	}
+	if isTrue(property.WorkPath.AsDefaultValue) == true {
+		processInstance.WorkPath = *property.WorkPath.Value
+	}
+	if isTrue(property.BindIP.AsDefaultValue) == true {
+		processInstance.BindIP = *property.BindIP.Value
+	}
+	if isTrue(property.Priority.AsDefaultValue) == true {
+		processInstance.Priority = *property.Priority.Value
+	}
+	if isTrue(property.ReloadCmd.AsDefaultValue) == true {
+		processInstance.ReloadCmd = *property.ReloadCmd.Value
+	}
+	if isTrue(property.Port.AsDefaultValue) == true {
+		processInstance.Port = *property.Port.Value
+	}
+	if isTrue(property.PidFile.AsDefaultValue) == true {
+		processInstance.PidFile = *property.PidFile.Value
+	}
+	if isTrue(property.AutoStart.AsDefaultValue) == true {
+		processInstance.AutoStart = *property.AutoStart.Value
+	}
+	if isTrue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
+		processInstance.AutoTimeGap = *property.AutoTimeGapSeconds.Value
+	}
+	if isTrue(property.StartCmd.AsDefaultValue) == true {
+		processInstance.StartCmd = *property.StartCmd.Value
+	}
+	if isTrue(property.FuncID.AsDefaultValue) == true {
+		processInstance.FuncID = *property.FuncID.Value
+	}
+	if isTrue(property.User.AsDefaultValue) == true {
+		processInstance.User = *property.User.Value
+	}
+	if isTrue(property.TimeoutSeconds.AsDefaultValue) == true {
+		processInstance.TimeoutSeconds = *property.TimeoutSeconds.Value
+	}
+	if isTrue(property.Protocol.AsDefaultValue) == true {
+		processInstance.Protocol = *property.Protocol.Value
+	}
+	if isTrue(property.Description.AsDefaultValue) == true {
+		processInstance.Description = *property.Description.Value
+	}
+	return processInstance
 }
 
 type ProcessProperty struct {

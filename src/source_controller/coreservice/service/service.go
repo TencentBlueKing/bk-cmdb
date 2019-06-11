@@ -118,9 +118,9 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		association.New(db, s),
 		datasynchronize.New(db, s),
 		mainline.New(db),
-		host.New(db, cache),
+		host.New(db, cache, s),
 		auditlog.New(db),
-		process.New(db),
+		process.New(db, s),
 	)
 	return nil
 }
