@@ -33,7 +33,11 @@
                 }
             },
             lazy: Boolean,
-            showCheckbox: Boolean,
+            selectable: {
+                type: Boolean,
+                default: true
+            },
+            showCheckbox: [Boolean, Function],
             showLinkLine: {
                 type: Boolean,
                 default: true
@@ -65,7 +69,8 @@
                 type: [String, Number],
                 default: null
             },
-            beforeSelect: Function
+            beforeSelect: Function,
+            beforeCheck: Function
         },
         data () {
             return {
@@ -152,7 +157,6 @@
                 })
             },
             removeNode (nodeId) {
-                debugger
                 const ids = Array.isArray(nodeId) ? nodeId : [nodeId]
                 const nodes = []
                 ids.forEach(id => {
@@ -175,65 +179,83 @@
                     node.index = minChangedIndex + index
                 })
             },
-            async setSelected (nodeId, selected = true, byEvent = false) {
-                if (!selected) {
-                    this.selected = null
-                    this.$emit('select-change', null)
+            async setSelected (nodeId, options = {}) {
+                if (!this.selectable || nodeId === this.selected) {
                     return false
                 }
-                if (nodeId === this.selected) {
-                    return false
+                const mergeOptions = {
+                    emitEvent: false,
+                    beforeSelect: true,
+                    ...options
                 }
                 const node = this.getNodeById(nodeId)
-                if (byEvent) {
-                    if (typeof this.beforeSelect === 'function') {
-                        const confirmSelect = await this.beforeSelect(node)
-                        if (confirmSelect) {
-                            this.selected = nodeId
-                        } else {
-                            return false
-                        }
-                    } else {
-                        this.selected = nodeId
-                    }
-                    this.$emit('select-change', node)
-                } else {
-                    this.selected = nodeId
-                }
-            },
-            async setChecked (nodeId, checked = true, byEvent = false) {
-                const node = this.getNodeById(nodeId)
-                if (!node) {
-                    throw new Error('Unexpected node id, set checked failed.')
-                }
-                const index = this.checked.indexOf(nodeId)
-                if ((checked && index > -1) || (!checked && index < 0)) {
-                    return false
-                }
-                if (byEvent && typeof this.beforeCheck === 'function') {
-                    const confirmCheck = await this.beforeCheck(node)
-                    if (!confirmCheck) {
+                if (mergeOptions.beforeSelect && typeof this.beforeSelect === 'function') {
+                    const response = await this.beforeSelect(node)
+                    if (!response) {
                         return false
                     }
                 }
-                node.checked = checked
-                if (checked) {
-                    this.checked.push(nodeId)
-                } else {
-                    this.checked.splice(index, 1)
-                }
-                if (byEvent) {
-                    this.$emit('check-change', this.checked, node)
+                this.selected = nodeId
+                if (mergeOptions.emitEvent) {
+                    this.$emit('select-change', node)
                 }
             },
-            setExpanded (nodeId, expanded = true, byEvent = false) {
+            async removeChecked (options = {}) {
+                const mergeOptions = {
+                    emitEvent: true,
+                    ...options
+                }
+                this.checked.forEach(id => {
+                    const node = this.getNodeById(id)
+                    node.checked = false
+                })
+                this.checked = []
+                if (mergeOptions.emitEvent) {
+                    this.$emit('check-change', [], [])
+                }
+            },
+            async setChecked (nodeId, options = {}) {
+                const ids = Array.isArray(nodeId) ? nodeId : [nodeId]
+                if (ids.length) {
+                    const mergeOptions = {
+                        emitEvent: false,
+                        beforeCheck: true,
+                        checked: true,
+                        ...options
+                    }
+                    const nodes = ids.map(id => this.getNodeById(id))
+                    if (mergeOptions.beforeCheck && typeof this.beforeCheck === 'function') {
+                        const response = await this.beforeCheck(nodes.length > 1 ? nodes : nodes[0], mergeOptions.checked)
+                        if (!response) {
+                            return false
+                        }
+                    }
+                    nodes.forEach(node => {
+                        node.checked = mergeOptions.checked
+                    })
+                    if (mergeOptions.checked) {
+                        this.checked = [...new Set([...this.checked, ...ids])]
+                    } else {
+                        this.checked = this.checked.filter(id => !ids.includes(id))
+                    }
+                    if (mergeOptions.emitEvent) {
+                        this.$emit('check-change', this.checked, this.checked.map(id => this.getNodeById(id)))
+                    }
+                }
+            },
+            setExpanded (nodeId, options = {}) {
+                const mergeOptions = {
+                    expanded: true,
+                    emitEvent: false,
+                    ...options
+                }
                 const node = this.getNodeById(nodeId)
                 if (!node) {
                     throw new Error('Unexpected node id, set expanded failed.')
                 }
-                node.expanded = expanded
-                if (byEvent) {
-                    this.$emit('expand-change', expanded, node)
+                node.expanded = mergeOptions.expanded
+                if (mergeOptions.emitEvent) {
+                    this.$emit('expand-change', mergeOptions.expanded, node)
                 }
             },
             calulateLine () {

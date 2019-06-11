@@ -11,16 +11,20 @@
             'has-link-line': $parent.showLinkLine
         }"
         :style="style"
-        @click="$parent.setSelected(node.id, true, true)">
+        @click="handleNodeClick">
         <div class="node-options fl">
             <i v-if="!node.isLeaf"
                 :class="['node-folder-icon', node.expanded ? node.expandIcon : node.collapseIcon]"
-                @click.stop="$parent.setExpanded(node.id, !node.expanded, true)">
+                @click.stop="handleNodeExpand">
             </i>
-            <input type="checkbox" class="node-checkbox"
-                v-if="$parent.showCheckbox"
-                :checked="node.checked"
-                @click.prevent.stop="$parent.setChecked(node.id, !node.checked, true)">
+            <span class="node-checkbox"
+                v-if="node.hasCheckbox"
+                :class="{
+                    'is-checked': node.checked,
+                    'is-indeterminate': node.indeterminate
+                }"
+                @click.stop="handleNodeCheck">
+            </span>
             <i v-if="node.nodeIcon"
                 :class="['node-icon', node.nodeIcon]">
             </i>
@@ -60,6 +64,26 @@
             this.node.vNode = this
         },
         methods: {
+            handleNodeCheck () {
+                this.$parent.setChecked(this.node.id, {
+                    checked: !this.node.checked,
+                    emitEvent: true,
+                    beforeCheck: true
+                })
+            },
+            handleNodeExpand () {
+                this.$parent.setExpanded(this.node.id, {
+                    expanded: !this.node.expanded,
+                    emitEvent: true
+                })
+            },
+            handleNodeClick () {
+                this.$parent.$emit('node-click', this.node)
+                this.$parent.setSelected(this.node.id, {
+                    emitEvent: true,
+                    beforeSelect: true
+                })
+            },
             calulateLine () {
                 const {
                     children,
@@ -127,24 +151,54 @@
         .node-options {
             height: 100%;
             .node-folder-icon {
+                @include inlineBlock;
                 position: relative;
                 font-size: 16px;
                 z-index: 2;
-                @include inlineBlock;
             }
             .node-checkbox {
-                margin: 0 6px 0 0;
                 @include inlineBlock;
+                position: relative;
+                width: 16px;
+                height: 16px;
+                margin: 0 6px 0 0;
+                border: 1px solid #979ba5;
+                border-radius: 2px;
+                &.is-checked {
+                    border-color: #3a84ff;
+                    background-color: #3a84ff;
+                    background-clip: border-box;
+                    &:after {
+                        content: "";
+                        position: absolute;
+                        top: 1px;
+                        left: 4px;
+                        width: 4px;
+                        height: 8px;
+                        border: 2px solid #fff;
+                        border-left: 0;
+                        border-top: 0;
+                        transform-origin: center;
+                        transform: rotate(45deg) scaleY(1);
+                    }
+                    &.is-disabled {
+                        background-color: #dcdee5;
+                    }
+                }
+                &.is-disabled {
+                    border-color: #dcdee5;
+                    cursor: pointer;
+                }
             }
             .node-icon {
+                @include inlineBlock;
                 margin: 0 6px;
                 font-size: 18px;
-                @include inlineBlock;
             }
         }
         .node-content {
-            font-size: 14px;
             @include ellipsis;
+            font-size: 14px;
         }
     }
 </style>
