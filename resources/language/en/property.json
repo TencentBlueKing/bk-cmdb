@@ -82,6 +82,8 @@
     "process_property_auto_start": "autostart",
     "process_property_auto_time_gap": "autostart period",
     "process_property_bk_start_param_regex": "Startup parameter REGEX",
+    "process_property_service_category_id": "Service Category",
+    "process_property_service_template_id": "Service Template",
 
     "bk_switch_property_bk_asset_id":"asset id",
     "bk_switch_property_bk_sn":"SN",

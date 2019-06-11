@@ -36,6 +36,11 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x19.05.16.01] createServiceTemplateTables error  %s", err.Error())
 		return err
 	}
+	err = addModuleProperty(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] addModuleProperty error  %s", err.Error())
+		return err
+	}
 	err = upgradeServiceTemplate(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x19.05.16.01] upgradeServiceTemplate error  %s", err.Error())

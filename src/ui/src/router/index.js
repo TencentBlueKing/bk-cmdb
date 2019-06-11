@@ -216,10 +216,12 @@ router.beforeEach((to, from, next) => {
                 next()
             }
         } catch (e) {
-            console.log(e)
-            if (e instanceof StatusError) {
+            if (e.__CANCEL__) {
+                next()
+            } else if (e instanceof StatusError) {
                 next({ name: e.name })
             } else {
+                console.error(e)
                 next({ name: 'error' })
             }
             setLoading(false)

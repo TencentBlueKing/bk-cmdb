@@ -19,6 +19,11 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
+	"configcenter/src/framework/core/errors"
+	"github.com/tidwall/gjson"
 )
 
 func (ps *parseStream) processRelated() *parseStream {
@@ -27,8 +32,13 @@ func (ps *parseStream) processRelated() *parseStream {
 	}
 
 	ps.process().
-		processTemplate().
-		processTemplateBound()
+		ServiceInstance().
+		ServiceTemplate().
+		ServiceCategory().
+		processTemplate()
+		// remove process template and process template bound related api
+		// processTemplate()
+		// processTemplateBound()
 
 	return ps
 }
@@ -356,6 +366,8 @@ var (
 	previewProcessConfigRegexp         = regexp.MustCompile(`^/api/v3/proc/template/[^\s/]+/[0-9]+/[0-9]+/?$`)
 )
 
+// Deprecated: unused apis
+
 func (ps *parseStream) processTemplate() *parseStream {
 	if ps.shouldReturn() {
 		return ps
@@ -665,6 +677,507 @@ func (ps *parseStream) processTemplateBound() *parseStream {
 			},
 		}
 
+		return ps
+	}
+
+	return ps
+}
+
+const (
+	createServiceInstanceWithTempPattern          = "/process/v3/create/proc/service_instance/with_template"
+	createServiceInstanceWithRawPattern           = "/process/v3/create/proc/service_instance/with_raw"
+	findServiceInstancePattern                    = "/process/v3/find/proc/service_instance"
+	deleteServiceInstancePattern                  = "/process/v3/delete/proc/service_instance"
+	findServiceInstanceDifferencePattern          = "/process/v3/find/proc/service_instance/difference"
+	syncServiceInstanceAccordingToServiceTemplate = "/process/v3/update/proc/service_instance/with_template"
+	listServiceInstanceWithHostPattern            = "/process/v3/findmany/proc/service_instance/with_host"
+)
+
+var deleteProcessInstanceInServiceInstanceRegexp = regexp.MustCompile(`/process/v3/delete/proc/service_instance/[0-9]+/process/?$`)
+
+func (ps *parseStream) ServiceInstance() *parseStream {
+	if ps.hitPattern(createServiceInstanceWithTempPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Create,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(syncServiceInstanceAccordingToServiceTemplate, http.MethodPut) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ids := gjson.GetBytes(ps.RequestCtx.Body, "service_instances").Array()
+		for _, id := range ids {
+			serviceInstanceID := id.Int()
+			if serviceInstanceID <= 0 {
+				ps.err = errors.New("invalid service instance id")
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Update,
+				},
+				BusinessID: bizID,
+			})
+
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(listServiceInstanceWithHostPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Find,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(createServiceInstanceWithRawPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Create,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(findServiceInstancePattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Find,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(findServiceInstanceDifferencePattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Find,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(deleteServiceInstancePattern, http.MethodDelete) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		instanceID := gjson.GetBytes(ps.RequestCtx.Body, "id").Int()
+		if instanceID <= 0 {
+			ps.err = errors.New("invalid service instance id")
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessServiceInstance,
+					Action:     meta.Delete,
+					InstanceID: instanceID,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(deleteProcessInstanceInServiceInstanceRegexp, http.MethodDelete) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceInstance,
+					Action: meta.Delete,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	return ps
+}
+
+const (
+	findmanyServiceCategoryPattern = "/process/v3/findmany/proc/service_category"
+	createServiceCategoryPattern   = "/process/v3/create/proc/service_category"
+	deleteServiceCategoryPattern   = "/process/v3/delete/proc/service_category"
+)
+
+func (ps *parseStream) ServiceCategory() *parseStream {
+	if ps.hitPattern(findmanyServiceCategoryPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceCategory,
+					Action: meta.FindMany,
+				},
+				BusinessID: bizID,
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(createServiceCategoryPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceCategory,
+					Action: meta.Create,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(deleteServiceCategoryPattern, http.MethodDelete) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+		categoryID := gjson.GetBytes(ps.RequestCtx.Body, "id").Int()
+		if categoryID <= 0 {
+			ps.err = errors.New("invalid category id")
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessServiceCategory,
+					Action:     meta.Delete,
+					InstanceID: categoryID,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+const (
+	createServiceTemplatePattern     = "/process/v3/create/proc/service_template"
+	listServiceTemplatePattern       = "/process/v3/findmany/proc/service_template"
+	listServiceTemplateDetailPattern = "/process/v3/findmany/proc/service_template/with_detail"
+	deleteServiceTemplatePattern     = "/process/v3/delete/proc/service_template"
+)
+
+func (ps *parseStream) ServiceTemplate() *parseStream {
+	if ps.hitPattern(createServiceTemplatePattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceTemplate,
+					Action: meta.Create,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(listServiceTemplatePattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceTemplate,
+					Action: meta.FindMany,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(listServiceTemplateDetailPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessServiceTemplate,
+					Action: meta.FindMany,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(deleteServiceTemplatePattern, http.MethodDelete) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		templateID := gjson.GetBytes(ps.RequestCtx.Body, common.BKServiceTemplateIDField).Int()
+		if templateID <= 0 {
+			ps.err = errors.New("invalid service template ")
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessServiceTemplate,
+					Action:     meta.Delete,
+					InstanceID: templateID,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+const (
+	createProcessTemplateBatchPattern = "/process/v3/createmany/proc/proc_template/for_service_template"
+	updateProcessTemplatePattern      = "/process/v3/update/proc/proc_template/for_service_template"
+	deleteProcessTemplateBatchPattern = "/process/v3/deletemany/proc/proc_template/for_service_template"
+	findProcessTemplateBatchPattern   = "/process/v3/findmany/proc/proc_template"
+)
+
+var findProcessTemplateRegexp = regexp.MustCompile(`/process/v3/find/proc/proc_template/id/[0-9]+/?$`)
+
+func (ps *parseStream) ProcessTemplate() *parseStream {
+	if ps.hitPattern(createProcessTemplateBatchPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessTemplate,
+					Action: meta.Create,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(updateProcessTemplatePattern, http.MethodPut) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+		procTemplateID := gjson.GetBytes(ps.RequestCtx.Body, common.BKProcessTemplateIDField).Int()
+		if procTemplateID <= 0 {
+			ps.err = errors.New("invalid process template id")
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessTemplate,
+					Action:     meta.Update,
+					InstanceID: procTemplateID,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(deleteProcessTemplateBatchPattern, http.MethodDelete) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.ProcessTemplate,
+					Action: meta.Delete,
+				},
+				BusinessID: bizID,
+			},
+		}
+		return ps
+	}
+
+	if ps.hitPattern(findProcessTemplateBatchPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		procTemplateIDs := gjson.GetBytes(ps.RequestCtx.Body, "process_template_ids").Array()
+		for _, id := range procTemplateIDs {
+			procTemplateID := id.Int()
+			if procTemplateID <= 0 {
+				ps.err = errors.New("invalid process template id")
+				return ps
+			}
+
+			ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessTemplate,
+					Action:     meta.Find,
+					InstanceID: procTemplateID,
+				},
+				BusinessID: bizID,
+			})
+		}
+
+		return ps
+	}
+
+	if ps.hitRegexp(findProcessTemplateRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
+		}
+
+		procTemplateID := gjson.GetBytes(ps.RequestCtx.Body, "id").Int()
+		if procTemplateID <= 0 {
+			ps.err = errors.New("invalid process template id")
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:       meta.ProcessTemplate,
+					Action:     meta.Find,
+					InstanceID: procTemplateID,
+				},
+				BusinessID: bizID,
+			},
+		}
 		return ps
 	}
 
