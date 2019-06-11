@@ -199,6 +199,7 @@ func (tm *Manager) GetSession(txnID string) *Session {
 	} else {
 		return tm.session
 	}
+	return nil
 }
 
 func (tm *Manager) storeSession(txnID string, session *Session) {
