@@ -908,5 +908,21 @@
         "模版更新信息": "template update information:",
         "同步模板": "Sync Template",
         "最新数据": "The current template is the latest version, no need to update ~"
+    },
+    "Operation": {
+        "编辑": "Edit",
+        "主机统计": "Host statistics",
+        "统计报表": "Statistical report forms",
+        "实例": "Example",
+        "图表类型": "Chart type",
+        "图表选择": "Chart selection",
+        "图表宽度": "Chart width",
+        "图表名称": "Chart name",
+        "统计维度": "Statistical dimension",
+        "图表展示": "Chart presentation",
+        "统计对象": "Statistical object",
+        "饼图": "Pie chart",
+        "柱状图": "Histogram",
+        "实例统计": "Case statistics"
     }
 }
