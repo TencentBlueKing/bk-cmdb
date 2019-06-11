@@ -79,6 +79,18 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				return err
 			}
 
+			// set module template
+			moduleFilter := map[string]interface{}{
+				common.BKModuleIDField: modules[0].ModuleID,
+			}
+			moduleUpdateData := map[string]interface{}{
+				common.BKServiceCategoryIDField: categoryID,
+				common.BKServiceTemplateIDField: svcTemplateID,
+			}
+			if err = db.Table(common.BKTableNameBaseModule).Update(ctx, moduleFilter, moduleUpdateData); err != nil {
+				return err
+			}
+
 			// build process template
 			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
 			processMappingInModule := []metadata.ProcessModule{}
@@ -185,7 +197,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							HostID:            moduleHost.HostID,
 							SupplierAccount:   ownerID,
 						}
-						blog.InfoJSON("relateion: %s", relateion)
+						blog.InfoJSON("relation: %s", relateion)
 						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relateion); err != nil {
 							return err
 						}
@@ -194,6 +206,20 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			}
 			blog.Info("done \n")
 		}
+	}
+
+	// 填充默认值：service_template_id, service_category_id
+	notSetFilter := map[string]interface{}{
+		common.BKServiceCategoryIDField: map[string]interface{}{
+			common.BKDBExists: false,
+		},
+	}
+	defaultData := map[string]interface{}{
+		common.BKServiceCategoryIDField: categoryID,
+		common.BKServiceTemplateIDField: 0,
+	}
+	if err = db.Table(common.BKTableNameBaseModule).Update(ctx, notSetFilter, defaultData); err != nil {
+		return err
 	}
 
 	return db.Table(common.BKTableNameBaseProcess).Delete(ctx, mapstr.MapStr{"old_flag": true})

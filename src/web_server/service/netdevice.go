@@ -10,9 +10,10 @@
  * limitations under the License.
  */
 
-package controllers
+package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -21,34 +22,25 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/web_server/application/logics"
 	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/web_server/logics"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
 )
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPCreate, "/netdevice/import", nil, ImportNetDevice})
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectPost, "/netdevice/export", nil, ExportNetDevice})
-	wactions.RegisterNewAction(wactions.Action{
-		common.HTTPSelectGet, "/netcollect/importtemplate/netdevice", nil, BuildDownLoadNetDeviceExcelTemplate})
-}
-
-func ImportNetDevice(c *gin.Context) {
-	cc := api.NewAPIResource()
+func (s *Service) ImportNetDevice(c *gin.Context) {
+	header := c.Request.Header
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	logics.SetProxyHeader(c)
 
 	// open uploaded file
@@ -59,24 +51,12 @@ func ImportNetDevice(c *gin.Context) {
 		return
 	}
 
-	// get data from uploaded file
-	apiSite, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	if nil != err {
-		blog.Errorf("[Import Net Device] get api site error:%s", err.Error())
-		c.String(http.StatusInternalServerError, string(errMsg))
-		return
-	}
-
-	netDevice, err, errMsg := getNetDevicesFromFile(c.Request.Header, defLang, defErr, file, apiSite)
+	netDevice, err, errMsg := getNetDevicesFromFile(c.Request.Header, defLang, defErr, file)
 	if nil != err {
 		blog.Errorf("[Import Net Device] http request id:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		c.String(http.StatusInternalServerError, string(errMsg))
 		return
 	}
-
-	// http request get device
-	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/device/action/batch", webCommon.API_VERSION)
-	blog.V(5).Infof("[Import Net Device] add device url: %v", url)
 
 	data := make([]interface{}, 0)
 	lineNumbers := []int{}
@@ -84,46 +64,35 @@ func ImportNetDevice(c *gin.Context) {
 		data = append(data, value)
 		lineNumbers = append(lineNumbers, line)
 	}
-	params := map[string]interface{}{"Data": data}
+	params := mapstr.MapStr{"Data": data}
 
-	blog.V(5).Infof("[Import Net Device] import device content: %v", params)
-
-	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.V(5).Infof("[Import Net Device] import device result: %v", reply)
-
+	deviceResult, err := s.Engine.CoreAPI.ApiServer().SearchNetCollectDeviceBatch(context.Background(), header, params)
 	if nil != err {
-		c.String(http.StatusInternalServerError, err.Error())
+		blog.Errorf("search net device data batch  error:%#v , search condition:%#v", err, params)
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
 		return
 	}
 
 	// rebuild response body
-	reply, err = rebuildDeviceReponseBody(reply, lineNumbers)
+	resultStr, err := rebuildDeviceReponseBody(deviceResult.Data.Info, lineNumbers)
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetDeviceResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetDeviceResultFail).Error(), nil))
 		return
 	}
 
-	c.String(http.StatusOK, reply)
+	c.String(http.StatusOK, resultStr)
 }
 
-func ExportNetDevice(c *gin.Context) {
-	cc := api.NewAPIResource()
+func (s *Service) ExportNetDevice(c *gin.Context) {
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	logics.SetProxyHeader(c)
 
-	apiSite, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	if nil != err {
-		blog.Errorf("[Export Net Device] get api site error:%s", err.Error())
-		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetNetDeviceFail,
-			defErr.Errorf(common.CCErrWebGetNetDeviceFail, err.Error()).Error(), nil))
-		return
-	}
-
 	deviceIDstr := c.PostForm(common.BKDeviceIDField)
-	deviceInfo, err := logics.GetNetDeviceData(c.Request.Header, apiSite, deviceIDstr)
+	deviceInfo, err := s.Logics.GetNetDeviceData(c.Request.Header, deviceIDstr)
 	if nil != err {
 		blog.Errorf("[Export Net Device] get device data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
@@ -184,13 +153,11 @@ func ExportNetDevice(c *gin.Context) {
 	}
 }
 
-func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
+func (s *Service) BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
-	cc := api.NewAPIResource()
-
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	dir := webCommon.ResourcePath + "/template/"
 	if _, err := os.Stat(dir); nil != err {
@@ -205,8 +172,7 @@ func BuildDownLoadNetDeviceExcelTemplate(c *gin.Context) {
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, common.BKNetDevice, time.Now().UnixNano(), rand.Uint32())
 
-	apiSite := cc.APIAddr()
-	if err := logics.BuildNetDeviceExcelTemplate(c.Request.Header, defLang, apiSite, file); nil != err {
+	if err := logics.BuildNetDeviceExcelTemplate(c.Request.Header, defLang, file); nil != err {
 		blog.Errorf("Build NetDevice Excel Template fail, error:%s", err.Error())
 		reply := getReturnStr(common.CCErrCommExcelTemplateFailed,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetDevice).Error(),
@@ -259,10 +225,10 @@ func openDeviceUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf) (fil
 }
 
 func getNetDevicesFromFile(
-	header http.Header, defLang lang.DefaultCCLanguageIf, defErr errors.DefaultCCErrorIf, file *xlsx.File, apiSite string) (
+	header http.Header, defLang lang.DefaultCCLanguageIf, defErr errors.DefaultCCErrorIf, file *xlsx.File) (
 	netDevice map[int]map[string]interface{}, err error, errMsg string) {
 
-	netDevice, errMsgs, err := logics.GetImportNetDevices(header, defLang, file, apiSite)
+	netDevice, errMsgs, err := logics.GetImportNetDevices(header, defLang, file)
 	if nil != err {
 		blog.Errorf("[Import Net Device] http request id:%s, error:%s", util.GetHTTPCCRequestID(header), err.Error())
 		errMsg = getReturnStr(common.CCErrWebFileContentFail,
@@ -285,29 +251,14 @@ func getNetDevicesFromFile(
 	return netDevice, nil, ""
 }
 
-func rebuildDeviceReponseBody(reply string, lineNumbers []int) (string, error) {
+func rebuildDeviceReponseBody(addDeviceResult []mapstr.MapStr, lineNumbers []int) (string, error) {
 	replyBody := new(meta.Response)
-	if err := json.Unmarshal([]byte(reply), replyBody); nil != err {
-		blog.Errorf("[Import Net Device] unmarshal response body err: %v", err)
-		return "", err
-	}
-
-	addDeviceResult, ok := replyBody.Data.([]interface{})
-	if !ok {
-		blog.Errorf("[Import Net Device] 'Data' field of response body convert to []interface{} fail, replyBody.Data %#+v", replyBody.Data)
-		return "", fmt.Errorf("convert response body fail")
-	}
 
 	var (
 		errRow  []string
 		succRow []string
 	)
-	for i, value := range addDeviceResult {
-		data, ok := value.(map[string]interface{})
-		if !ok {
-			blog.Errorf("[Import Net Device] traverse replyBody.Data convert to map[string]interface{} fail, data %#+v", data)
-			return "", fmt.Errorf("convert response body fail")
-		}
+	for i, data := range addDeviceResult {
 
 		result, ok := data["result"].(bool)
 		if !ok {

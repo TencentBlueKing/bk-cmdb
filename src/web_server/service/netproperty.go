@@ -10,9 +10,10 @@
  * limitations under the License.
  */
 
-package controllers
+package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -21,33 +22,26 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/rentiansheng/xlsx"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/core/cc/api"
-	"configcenter/src/common/core/cc/wactions"
 	"configcenter/src/common/errors"
 	lang "configcenter/src/common/language"
+	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/types"
 	"configcenter/src/common/util"
-	"configcenter/src/web_server/application/logics"
+
 	webCommon "configcenter/src/web_server/common"
+	"configcenter/src/web_server/logics"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rentiansheng/xlsx"
 )
 
-func init() {
-	wactions.RegisterNewAction(wactions.Action{common.HTTPCreate, "/netproperty/import", nil, ImportNetProperty})
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectPost, "/netproperty/export", nil, ExportNetProperty})
-	wactions.RegisterNewAction(wactions.Action{common.HTTPSelectGet, "/netcollect/importtemplate/netproperty", nil, BuildDownLoadNetPropertyExcelTemplate})
-}
-
-func ImportNetProperty(c *gin.Context) {
-	cc := api.NewAPIResource()
+func (s *Service) ImportNetProperty(c *gin.Context) {
+	header := c.Request.Header
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	logics.SetProxyHeader(c)
 
 	// open uploaded file
@@ -58,25 +52,12 @@ func ImportNetProperty(c *gin.Context) {
 		return
 	}
 
-	// get data from uploaded file
-	apiSite, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	if nil != err {
-		blog.Errorf("[Import Net Property] get api site error:%s", err.Error())
-		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetPropertyResultFail,
-			defErr.Errorf(common.CCErrWebGetAddNetPropertyResultFail, err.Error()).Error(), nil))
-		return
-	}
-
-	netProperty, err, errMsg := getNetPropertysFromFile(c.Request.Header, defLang, defErr, file, apiSite)
+	netProperty, err, errMsg := getNetPropertysFromFile(c.Request.Header, defLang, defErr, file)
 	if nil != err {
 		blog.Errorf("[Import Net Property] http request id:%s, error:%s", util.GetHTTPCCRequestID(c.Request.Header), err.Error())
 		c.String(http.StatusInternalServerError, string(errMsg))
 		return
 	}
-
-	// http request get property
-	url := apiSite + fmt.Sprintf("/api/%s/collector/netcollect/property/action/batch", webCommon.API_VERSION)
-	blog.V(5).Infof("[Import Net Property] add net property url: %v", url)
 
 	data := make([]interface{}, 0)
 	lineNumbers := []int{}
@@ -84,46 +65,35 @@ func ImportNetProperty(c *gin.Context) {
 		data = append(data, value)
 		lineNumbers = append(lineNumbers, line)
 	}
-	params := map[string]interface{}{"Data": data}
+	params := mapstr.MapStr{"Data": data}
 
-	blog.V(5).Infof("[Import Net Property] add net property content: %v", params)
-
-	reply, err := httpRequest(url, params, c.Request.Header)
-	blog.V(5).Infof("[Import Net Property] add net property result: %v", reply)
-
+	propertyResult, err := s.Engine.CoreAPI.ApiServer().SearchNetDevicePropertyBatch(context.Background(), header, params)
 	if nil != err {
-		c.String(http.StatusInternalServerError, err.Error())
+		blog.Errorf("search net device property data  batch  error:%#v , search condition:%#v", err, params)
+		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Error(common.CCErrCommHTTPDoRequestFailed).Error(), nil)
+		c.String(http.StatusOK, string(msg))
 		return
 	}
 
 	// rebuild response body
-	reply, err = rebuildNetPropertyReponseBody(reply, lineNumbers)
+	resultStr, err := rebuildNetPropertyReponseBody(propertyResult.Data.Info, lineNumbers)
 	if nil != err {
 		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetAddNetPropertyResultFail,
 			defErr.Errorf(common.CCErrWebGetAddNetPropertyResultFail).Error(), nil))
 		return
 	}
 
-	c.String(http.StatusOK, reply)
+	c.String(http.StatusOK, resultStr)
 }
 
-func ExportNetProperty(c *gin.Context) {
-	cc := api.NewAPIResource()
+func (s *Service) ExportNetProperty(c *gin.Context) {
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	logics.SetProxyHeader(c)
 
-	apiSite, err := cc.AddrSrv.GetServer(types.CC_MODULE_APISERVER)
-	if nil != err {
-		blog.Errorf("[Export Net Property] get api site error:%s", err.Error())
-		c.String(http.StatusInternalServerError, getReturnStr(common.CCErrWebGetNetPropertyFail,
-			defErr.Errorf(common.CCErrWebGetNetPropertyFail, err.Error()).Error(), nil))
-		return
-	}
-
 	netPropertyIDstr := c.PostForm(common.BKNetcollectPropertyIDField)
-	netPropertyInfo, err := logics.GetNetPropertyData(c.Request.Header, apiSite, netPropertyIDstr)
+	netPropertyInfo, err := s.Logics.GetNetPropertyData(c.Request.Header, netPropertyIDstr)
 	if nil != err {
 		blog.Errorf("[Export Net Property] get property data error:%s", err.Error())
 		msg := getReturnStr(common.CCErrWebGetHostFail, defErr.Errorf(common.CCErrWebGetHostFail, err.Error()).Error(), nil)
@@ -184,13 +154,11 @@ func ExportNetProperty(c *gin.Context) {
 	}
 }
 
-func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
+func (s *Service) BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 	logics.SetProxyHeader(c)
-	cc := api.NewAPIResource()
-
 	language := logics.GetLanguageByHTTPRequest(c)
-	defLang := cc.Lang.CreateDefaultCCLanguageIf(language)
-	defErr := cc.Error.CreateDefaultCCErrorIf(language)
+	defLang := s.Language.CreateDefaultCCLanguageIf(language)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
 	dir := webCommon.ResourcePath + "/template/"
 	if _, err := os.Stat(dir); nil != err {
@@ -205,8 +173,7 @@ func BuildDownLoadNetPropertyExcelTemplate(c *gin.Context) {
 
 	file := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, common.BKNetProperty, time.Now().UnixNano(), rand.Uint32())
 
-	apiSite := cc.APIAddr()
-	if err := logics.BuildNetPropertyExcelTemplate(c.Request.Header, defLang, apiSite, file); nil != err {
+	if err := logics.BuildNetPropertyExcelTemplate(c.Request.Header, defLang, file); nil != err {
 		blog.Errorf("Build Net Property Excel Template, error:%s", err.Error())
 		msg := getReturnStr(common.CCErrCommExcelTemplateFailed,
 			defErr.Errorf(common.CCErrCommExcelTemplateFailed, common.BKNetProperty).Error(),
@@ -258,10 +225,10 @@ func openNetPropertyUploadedFile(c *gin.Context, defErr errors.DefaultCCErrorIf)
 }
 
 func getNetPropertysFromFile(
-	header http.Header, defLang lang.DefaultCCLanguageIf, defErr errors.DefaultCCErrorIf, file *xlsx.File, apiSite string) (
+	header http.Header, defLang lang.DefaultCCLanguageIf, defErr errors.DefaultCCErrorIf, file *xlsx.File) (
 	netProperty map[int]map[string]interface{}, err error, errMsg string) {
 
-	netProperty, errMsgs, err := logics.GetImportNetProperty(header, defLang, file, apiSite)
+	netProperty, errMsgs, err := logics.GetImportNetProperty(header, defLang, file)
 	if nil != err {
 		blog.Errorf("[Import Net Propert] http request id:%s, error:%s", util.GetHTTPCCRequestID(header), err.Error())
 		errMsg = getReturnStr(common.CCErrWebFileContentFail,
@@ -283,29 +250,14 @@ func getNetPropertysFromFile(
 	return netProperty, nil, ""
 }
 
-func rebuildNetPropertyReponseBody(reply string, lineNumbers []int) (string, error) {
+func rebuildNetPropertyReponseBody(addPropertyResult []mapstr.MapStr, lineNumbers []int) (string, error) {
 	replyBody := new(meta.Response)
-	if err := json.Unmarshal([]byte(reply), replyBody); nil != err {
-		blog.Errorf("[Import Net Property] unmarshal response body err: %v", err)
-		return "", err
-	}
-
-	addPropertyResult, ok := replyBody.Data.([]interface{})
-	if !ok {
-		blog.Errorf("[Import Net Property] 'Data' field of response body convert to []interface{} fail, replyBody.Data %#+v", replyBody.Data)
-		return "", fmt.Errorf("convert response body fail")
-	}
 
 	var (
 		errRow  []string
 		succRow []string
 	)
-	for i, value := range addPropertyResult {
-		data, ok := value.(map[string]interface{})
-		if !ok {
-			blog.Errorf("[Import Net Property] traverse replyBody.Data convert to map[string]interface{} fail, data %#+v", data)
-			return "", fmt.Errorf("convert response body fail")
-		}
+	for i, data := range addPropertyResult {
 
 		result, ok := data["result"].(bool)
 		if !ok {
