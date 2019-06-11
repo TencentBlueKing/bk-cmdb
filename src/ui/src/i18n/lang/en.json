@@ -843,6 +843,7 @@
         "暂无关联关系": "No Association"
     },
     "BusinessSynchronous": {
+        "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
         "确认并同步": "Confirm and synchronize",
         "从模版中删除": "process has been removed from the template.",
         "模板中新增进程": "New process in the template：",

@@ -4,10 +4,14 @@
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
                 <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("BusinessSynchronous['返回']")}}</bk-button>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
         <template v-else>
+            <feature-tips
+                :show-tips="showFeatureTips"
+                :desc="$t('BusinessSynchronous[\'功能提示\']')">
+            </feature-tips>
             <p class="tips">
                 {{$t("BusinessSynchronous['请确认']")}}
                 <span>{{treePath}}</span>
@@ -104,10 +108,11 @@
 <script>
     import { mapGetters, mapActions, mapMutations } from 'vuex'
     import instanceDetails from './children/details.vue'
-    // import imitationData from './data'
+    import featureTips from '@/components/feature-tips/index'
     export default {
         components: {
-            instanceDetails
+            instanceDetails,
+            featureTips
         },
         filters: {
             badge (value) {
@@ -116,6 +121,7 @@
         },
         data () {
             return {
+                showFeatureTips: true,
                 viewsTitle: '',
                 noFindData: true,
                 showContentId: null,
@@ -192,10 +198,10 @@
             this.getModaelProperty()
             await this.getModuleInstance()
             if (this.list.length) {
-                this.$store.commit('setHeaderTitle', `${this.$t("businessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                this.noFindData = false
+                this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
                 this.showContentId = this.list[0]['process_template_id']
                 this.$set(this.list[0], 'has_read', true)
-                this.noFindData = false
             } else {
                 this.$store.commit('setHeaderTitle', '')
                 this.noFindData = true
@@ -357,6 +363,7 @@
     .synchronous-wrapper {
         position: relative;
         color: #63656e;
+        padding-top: 10px;
         .no-content {
             position: absolute;
             top: 50%;
