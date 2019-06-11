@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -147,4 +148,12 @@ func (s *coreService) GetBusinessDefaultSetModuleInfo(params core.ContextParams,
 		return nil, err
 	}
 	return defaultSetModuleInfo, nil
+}
+
+func (s *coreService) AutoCreateServiceInstanceModuleHost(params core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
+	serviceInstance, err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(params, hostID, moduleID)
+	if err != nil {
+		return nil, err
+	}
+	return serviceInstance, nil
 }

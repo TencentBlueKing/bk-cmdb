@@ -28,16 +28,22 @@ import (
 )
 
 type ModuleHost struct {
-	dbProxy dal.RDB
-	eventC  eventclient.Client
-	cache   *redis.Client
+	dbProxy    dal.RDB
+	eventC     eventclient.Client
+	cache      *redis.Client
+	dependence OperationDependence
 }
 
-func New(db dal.RDB, cache *redis.Client, ec eventclient.Client) *ModuleHost {
+type OperationDependence interface {
+	AutoCreateServiceInstanceModuleHost(ctx core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+}
+
+func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence) *ModuleHost {
 	return &ModuleHost{
-		dbProxy: db,
-		cache:   cache,
-		eventC:  ec,
+		dbProxy:    db,
+		cache:      cache,
+		eventC:     ec,
+		dependence: dependence,
 	}
 }
 
@@ -164,7 +170,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 	for _, hostID := range input.HostID {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
-			blog.ErrorJSON("TrasferHostModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
+			blog.ErrorJSON("TransferHostModule  Transfer module host relation error. err:%s, input:%s, hostID:%s, rid:%s", err.Error(), input, hostID, ctx.ReqID)
 			exceptionArr = append(exceptionArr, metadata.ExceptionResult{
 				Message:     err.Error(),
 				Code:        int64(err.GetCode()),
@@ -260,11 +266,25 @@ func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metada
 
 // TransferHostCrossBusiness Host cross-business transfer
 func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
-	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
+	// check whether there is service instance bound to hosts
+	serviceInstanceFilter := map[string]interface{}{
+		common.BKHostIDField: map[string]interface{}{
+			common.BKDBIN: input.HostIDArr,
+		},
+	}
+	serviceInstanceCount, err := mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
+	if err != nil {
+		blog.Errorf("TransferHostCrossBusiness failed, query host related service instances failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.ReqID)
+		return nil, ctx.Error.Error(common.CCErrCommDBSelectFailed)
+	}
+	if serviceInstanceCount > 0 {
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
+	}
 
+	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
 	transfer.SetCrossBusiness(ctx, input.SrcApplicationID)
 
-	err := transfer.ValidParameter(ctx)
+	err = transfer.ValidParameter(ctx)
 	if err != nil {
 		blog.ErrorJSON("TransferHostCrossBusiness ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
