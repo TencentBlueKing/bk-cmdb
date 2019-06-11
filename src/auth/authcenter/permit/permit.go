@@ -72,6 +72,14 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 	// topology instance resource types.
 	case rsc.Type == meta.ModelModule || rsc.Type == meta.ModelSet || rsc.Type == meta.ModelInstanceTopology || rsc.Type == meta.MainlineInstanceTopology:
 		return true
+	case rsc.Type == meta.ProcessServiceInstance && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ProcessServiceTemplate && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ProcessServiceCategory && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ProcessTemplate && IsReadAction(rsc.Action):
+		return true
 
 	default:
 		return false

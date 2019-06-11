@@ -19,6 +19,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/emicklei/go-restful"
+
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -31,8 +33,6 @@ import (
 	"configcenter/src/scene_server/host_server/app/options"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -90,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	hostSrv.Core = engine
 	hostSrv.Service = service
 
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
@@ -105,7 +105,7 @@ type HostServer struct {
 	Service *hostsvc.Service
 }
 
-func (h *HostServer) WebService() *restful.WebService {
+func (h *HostServer) WebService() *restful.Container {
 	return h.Service.WebService()
 }
 

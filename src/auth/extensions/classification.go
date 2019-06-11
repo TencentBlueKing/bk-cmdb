@@ -32,6 +32,8 @@ import (
  */
 
 func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, header http.Header, businessID int64) ([]metadata.Classification, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	condCheckModel := mongo.NewCondition()
 	if businessID != 0 {
 		_, metaCond := condCheckModel.Embed(metadata.BKMetadata)
@@ -48,7 +50,7 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, query)
 	if err != nil {
-		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v", businessID, err)
+		blog.Errorf("get module:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get module by businessID:%d failed, err: %+v", businessID, err)
 	}
 
@@ -65,6 +67,8 @@ func (am *AuthManager) CollectClassificationByBusinessIDs(ctx context.Context, h
 }
 
 func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Context, header http.Header, classificationIDs ...string) ([]metadata.Classification, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	classificationIDs = util.StrArrayUnique(classificationIDs)
 
@@ -73,7 +77,7 @@ func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Con
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, &cond)
 	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
+		blog.V(3).Infof("get classification by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
 	}
 	classifications := make([]metadata.Classification, 0)
@@ -89,6 +93,8 @@ func (am *AuthManager) collectClassificationsByClassificationIDs(ctx context.Con
 }
 
 func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, header http.Header, ids ...int64) ([]metadata.Classification, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.IntArrayUnique(ids)
 
@@ -97,7 +103,7 @@ func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, heade
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameObjClassifiction, &cond)
 	if err != nil {
-		blog.V(3).Infof("get classification by id failed, err: %+v", err)
+		blog.V(3).Infof("get classification by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get classification by id failed, err: %+v", err)
 	}
 	classifications := make([]metadata.Classification, 0)
@@ -105,7 +111,7 @@ func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, heade
 		classification := metadata.Classification{}
 		_, err = classification.Parse(cls)
 		if err != nil {
-			blog.Errorf("collectClassificationsByRawIDs %+v failed, parse classification %+v failed, err: %+v ", ids, cls, err)
+			blog.Errorf("collectClassificationsByRawIDs %+v failed, parse classification %+v failed, err: %+v, rid: %s", ids, cls, err, rid)
 			return nil, fmt.Errorf("parse classification from db data failed, err: %+v", err)
 		}
 		classifications = append(classifications, classification)
@@ -113,7 +119,9 @@ func (am *AuthManager) collectClassificationsByRawIDs(ctx context.Context, heade
 	return classifications, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromClassifications(classifications ...metadata.Classification) (int64, error) {
+func (am *AuthManager) extractBusinessIDFromClassifications(ctx context.Context, classifications ...metadata.Classification) (int64, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	var businessID int64
 	var err error
 	businessIDs := make([]int64, 0)
@@ -127,7 +135,7 @@ func (am *AuthManager) extractBusinessIDFromClassifications(classifications ...m
 	}
 	businessIDs = util.IntArrayUnique(businessIDs)
 	if len(businessIDs) > 1 {
-		blog.Errorf("extractBusinessIDFromClassifications failed, get multiple business from classifications, business: %+v", businessIDs)
+		blog.Errorf("extractBusinessIDFromClassifications failed, get multiple business from classifications, business: %+v, rid: %s", businessIDs, rid)
 		return 0, fmt.Errorf("get multiple business from classifictions, business: %+v", businessIDs)
 	}
 	return businessID, nil
@@ -153,17 +161,19 @@ func (am *AuthManager) MakeResourcesByClassifications(header http.Header, action
 }
 
 func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classifications ...metadata.Classification) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if am.Enabled() == false {
 		return nil
 	}
 
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, classifications: %+v", classifications)
+		blog.V(4).Infof("skip authorization for reading, classifications: %+v, rid: %s", classifications, rid)
 		return nil
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
+	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
 	if err != nil {
 		return fmt.Errorf("authorize classifications failed, extract business id from classification failed, err: %+v", err)
 	}
@@ -184,7 +194,7 @@ func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, heade
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
+	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
 	if err != nil {
 		return fmt.Errorf("authorize classifications failed, extract business id from classification failed, err: %+v", err)
 	}
@@ -243,7 +253,7 @@ func (am *AuthManager) RegisterClassification(ctx context.Context, header http.H
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
+	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
 	if err != nil {
 		return fmt.Errorf("register classifications failed, extract business id from classification failed, err: %+v", err)
 	}
@@ -264,7 +274,7 @@ func (am *AuthManager) DeregisterClassification(ctx context.Context, header http
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(classifications...)
+	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
 	if err != nil {
 		return fmt.Errorf("deregister classifications failed, extract business id from classification failed, err: %+v", err)
 	}

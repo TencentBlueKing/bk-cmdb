@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -33,7 +31,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
-// CoreServer the core server
+// CoreServer the logics server
 type CoreServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
@@ -60,7 +58,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	coreService := coresvr.New()
 	coreSvr.Service = coreService
 
-	webhandler := restful.NewContainer().Add(coreService.WebService())
+	webhandler := coreService.WebService()
 	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 
 	input := &backbone.BackboneParameter{
@@ -93,7 +91,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
 
 	coreSvr.Core = engine

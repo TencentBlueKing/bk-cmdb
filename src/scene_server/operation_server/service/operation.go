@@ -15,100 +15,153 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/operation_server/core"
 )
 
-func (s *Service) CreateStatisticChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (o *OperationServer) CreateStatisticChart(ctx *rest.Contexts) {
 	chartInfo := new(metadata.ChartConfig)
-	if err := data.MarshalJSONInto(chartInfo); err != nil {
-		blog.Errorf("create statistical chart fail, err: %v", err)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	if err := ctx.DecodeInto(chartInfo); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
 	// 自定义报表
 	if chartInfo.ReportType == common.OperationCustom {
-		result, err := s.Engine.CoreAPI.CoreService().Operation().CreateOperationChart(params.Context, params.Header, chartInfo)
+		result, err := o.Engine.CoreAPI.CoreService().Operation().CreateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, chartInfo)
 		if err != nil {
-			blog.Errorf("new add statistic fail, err: %v", err)
-			return nil, params.Error.Error(common.CCErrOperationNewAddStatisticFail)
+			ctx.RespErrorCodeOnly(common.CCErrOperationNewAddStatisticFail, "new add statistic fail, err: %v", err)
+			return
 		}
 
-		return result, nil
+		blog.Debug("count: %v", result.Data)
+		ctx.RespEntity(result.Data)
+		return
 	}
 
+	blog.Debug("create inner chart")
 	// 内置报表
-	resp, err := s.Core.CreateInnerChart(params, chartInfo)
+	srvData := o.newSrvComm(ctx.Kit.Header)
+	resp, err := srvData.lgc.CreateInnerChart(ctx.Kit, chartInfo)
 	if err != nil {
-		blog.Errorf("new add statistic fail, err: %v", err)
-		return nil, params.Error.Error(common.CCErrOperationNewAddStatisticFail)
+		ctx.RespErrorCodeOnly(common.CCErrOperationNewAddStatisticFail, "new add statistic fail, err: %v", err)
+		return
 	}
 
-	return resp, nil
+	ctx.RespEntity(resp)
 }
 
-func (s *Service) DeleteStatisticChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(params.Context, params.Header, pathParams("id"))
+func (o *OperationServer) DeleteStatisticChart(ctx *rest.Contexts) {
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
-		blog.Errorf("search chart info fail, err: %v, id: %v", err, pathParams)
-		return nil, err
+		ctx.RespErrorCodeOnly(common.CCErrOperationDeleteStatisticFail, "search chart info fail, err: %v, id: %v", err)
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(nil)
 }
 
-func (s *Service) SearchStatisticCharts(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
+func (o *OperationServer) SearchStatisticChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
-	result, err := s.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(params.Context, params.Header, opt)
+
+	blog.Debug("here")
+	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
-		blog.Errorf("search operation field info fail, err: %v", err)
-		return nil, params.Error.Error(common.CCErrOperationSearchStatisticsFail)
+		ctx.RespErrorCodeOnly(common.CCErrOperationSearchStatisticsFail, "search chart info fail, err: %v", err)
+		return
 	}
 
-	return result, nil
+	blog.Debug("result: %v", result)
+	ctx.RespEntity(result.Data)
 }
 
-func (s *Service) UpdateStatisticChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	chartInfo := new(metadata.ChartConfig)
-	if err := data.MarshalJSONInto(chartInfo); err != nil {
-		blog.Errorf("create statistical chart fail, err: %v", err)
-		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	result, err := s.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(params.Context, params.Header, chartInfo)
+	result, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
-		blog.Errorf("update statistic info fail, err: %v", err)
-		return nil, params.Error.Error(common.CCErrOperationUpdateStatisticsFail)
+		ctx.RespErrorCodeOnly(common.CCErrOperationSearchStatisticsFail, "update statistic info fail, err: %v", err)
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result.Data)
 }
 
-func (s *Service) SearchChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	innerChart := []string{"host_change_biz_chart", "model_inst_chart", "model_inst_change_chart"}
-
-	inputData := metadata.ChartConfig{}
-	if err := data.MarshalJSONInto(&inputData); nil != err {
-		return nil, err
+func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
+	inputParams := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&inputParams); err != nil {
+		ctx.RespAutoError(err)
+		return
 	}
 
-	if !util.InStrArr(innerChart, inputData.ReportType) {
-		result, err := s.Core.CommonStatisticFunc(params, inputData.Option)
+	chart, err := o.CoreAPI.CoreService().Operation().SearchChartByID(ctx.Kit.Ctx, ctx.Kit.Header, inputParams)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
+		return
+	}
+
+	// 判断模型是否存在，不存在返回nil
+	cond := make(map[string]interface{}, 0)
+	cond[common.BKObjIDField] = chart.Data.ObjID
+	query := metadata.QueryCondition{Condition: cond}
+	models, err := o.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, &query)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
+		return
+	}
+	if models.Data.Count <= 0 {
+		ctx.RespEntity(nil)
+		return
+	}
+
+	innerChart := []string{
+		"host_change_biz_chart", "model_inst_chart", "model_inst_change_chart",
+		"biz_module_host_chart", "model_and_inst_count",
+	}
+
+	srvData := o.newSrvComm(ctx.Kit.Header)
+	if !util.InStrArr(innerChart, chart.Data.ReportType) {
+		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, chart.Data)
 		if err != nil {
-			blog.Errorf("search chart data fail, err: %v, chart name: %v", err, inputData.Name)
-			return nil, err
+			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
+			return
 		}
-		return result, nil
+		ctx.RespEntity(result)
+		return
 	}
 
-	result, err := s.Engine.CoreAPI.CoreService().Operation().SearchOperationChartData(params.Context, params.Header, inputData.ReportType)
+	result, err := srvData.lgc.GetInnerChartData(ctx.Kit, chart.Data)
 	if err != nil {
-		blog.Errorf("search chart data fail, err: %v, chart name: %v", err, inputData.Name)
-		return nil, err
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
+		return
 	}
 
-	return result, nil
+	ctx.RespEntity(result)
+}
+
+func (o *OperationServer) UpdateChartPosition(ctx *rest.Contexts) {
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	if err != nil {
+		blog.Errorf("update chart position fail, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(nil)
 }

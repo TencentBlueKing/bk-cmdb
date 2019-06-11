@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -41,7 +40,7 @@ type Logics struct {
 	ccLang       language.DefaultCCLanguageIf
 }
 
-// NewLogics get logic handle
+// NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, esbServ esbserver.EsbClientInterface, procHostInst *ProcHostInstConfig) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
@@ -91,21 +90,12 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 	return newLgc
 }
 
-//InitFunc The method that needs to be executed when the service starts.
-func (lgc *Logics) InitFunc(ctx context.Context) {
-	//init resource
-	chnOpLock.Do(func() { lgc.bgHandle(ctx) })
-	// timed tigger refresh  host
-	go lgc.timedTriggerRefreshHostInstance(ctx)
-
-}
-
 // SetCache  set the cache object
 func (lgc *Logics) SetCache(db *redis.Client) {
 	lgc.cache = db
 }
 
-//ProcHostInstConfig refresh process host instance number need config
+// ProcHostInstConfig refresh process host instance number need config
 type ProcHostInstConfig struct {
 	MaxEventCount                int
 	MaxRefreshModuleCount        int

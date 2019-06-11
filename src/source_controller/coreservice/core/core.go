@@ -139,6 +139,7 @@ type HostOperation interface {
 	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 }
 
 // AssociationOperation association methods
@@ -155,11 +156,15 @@ type AuditOperation interface {
 
 type StatisticOperation interface {
 	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
-	CommonAggregate(ctx ContextParams, inputParam metadata.ChartOption) (interface{}, error)
+	CommonAggregate(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
+	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 }
 
-// Core core itnerfaces methods
+// Core logics interfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
@@ -169,6 +174,45 @@ type Core interface {
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
 	StatisticOperation() StatisticOperation
+	ProcessOperation() ProcessOperation
+}
+
+// ProcessOperation methods
+type ProcessOperation interface {
+	// service category
+	CreateServiceCategory(ctx ContextParams, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
+	GetServiceCategory(ctx ContextParams, categoryID int64) (*metadata.ServiceCategory, error)
+	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, error)
+	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategory, error)
+	DeleteServiceCategory(ctx ContextParams, categoryID int64) error
+
+	// service template
+	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
+	GetServiceTemplate(ctx ContextParams, templateID int64) (*metadata.ServiceTemplate, error)
+	UpdateServiceTemplate(ctx ContextParams, templateID int64, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
+	ListServiceTemplates(ctx ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error)
+	DeleteServiceTemplate(ctx ContextParams, serviceTemplateID int64) error
+
+	// process template
+	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
+	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, error)
+	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, error)
+	ListProcessTemplates(ctx ContextParams, bizID int64, serviceTemplateID int64, processTemplateIDs *[]int64, limit metadata.BasePage) (*metadata.MultipleProcessTemplate, error)
+	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) error
+
+	// service instance
+	CreateServiceInstance(ctx ContextParams, template metadata.ServiceInstance) (*metadata.ServiceInstance, error)
+	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, error)
+	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, error)
+	ListServiceInstance(ctx ContextParams, bizID int64, serviceTemplateID int64, hostID int64, limit metadata.BasePage) (*metadata.MultipleServiceInstance, error)
+	DeleteServiceInstance(ctx ContextParams, processTemplateID int64) error
+
+	// process instance relation
+	CreateProcessInstanceRelation(ctx ContextParams, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
+	GetProcessInstanceRelation(ctx ContextParams, processInstanceID int64) (*metadata.ProcessInstanceRelation, error)
+	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
+	ListProcessInstanceRelation(ctx ContextParams, bizID int64, serviceInstanceID int64, hostID int64, processTemplateID int64, processIDs []int64, limit metadata.BasePage) (*metadata.MultipleProcessInstanceRelation, error)
+	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) error
 }
 
 type core struct {
@@ -180,10 +224,11 @@ type core struct {
 	host            HostOperation
 	audit           AuditOperation
 	operation       StatisticOperation
+	process         ProcessOperation
 }
 
-// New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, operation StatisticOperation) Core {
+// New create logics
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -193,6 +238,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		host:            host,
 		audit:           audit,
 		operation:       operation,
+		process:         process,
 	}
 }
 
@@ -226,4 +272,8 @@ func (m *core) AuditOperation() AuditOperation {
 
 func (m *core) StatisticOperation() StatisticOperation {
 	return m.operation
+}
+
+func (m *core) ProcessOperation() ProcessOperation {
+	return m.process
 }
