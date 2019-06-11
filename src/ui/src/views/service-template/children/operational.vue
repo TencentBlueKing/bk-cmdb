@@ -225,7 +225,11 @@
                     if (!res.result) {
                         this.$router.replace({ name: '404' })
                     } else {
-                        return res.data
+                        return {
+                            service_instance_count: res.data.service_instance_count,
+                            process_instance_count: res.data.process_instance_count,
+                            ...res.data.template
+                        }
                     }
                 })
             },
