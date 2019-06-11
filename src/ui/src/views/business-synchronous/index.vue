@@ -4,7 +4,7 @@
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
                 <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("BusinessSynchronous['返回首页']")}}</bk-button>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("BusinessSynchronous['返回']")}}</bk-button>
             </div>
         </template>
         <template v-else>
@@ -116,6 +116,7 @@
         },
         data () {
             return {
+                viewsTitle: '',
                 noFindData: true,
                 showContentId: null,
                 readNum: 1,
@@ -190,14 +191,14 @@
         async created () {
             this.getModaelProperty()
             await this.getModuleInstance()
-            if (!this.noFindData) {
-                await this.getServiceInstanceDifferences()
-                if (this.list.length) {
-                    this.showContentId = this.list[0]['process_template_id']
-                    this.$set(this.list[0], 'has_read', true)
-                } else {
-                    this.noFindData = true
-                }
+            if (this.list.length) {
+                this.$store.commit('setHeaderTitle', `${this.$t("businessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                this.showContentId = this.list[0]['process_template_id']
+                this.$set(this.list[0], 'has_read', true)
+                this.noFindData = false
+            } else {
+                this.$store.commit('setHeaderTitle', '')
+                this.noFindData = true
             }
         },
         methods: {
@@ -237,10 +238,13 @@
                         cancelPrevious: true
                     }
                 })
-                this.noFindData = !data.info.length
                 if (data.info.length) {
                     const instance = data.info[0]
                     this.serviceTemplateId = instance['service_template_id']
+                    this.viewsTitle = instance['bk_module_name']
+                    await this.getServiceInstanceDifferences()
+                } else {
+                    this.noFindData = true
                 }
             },
             async getServiceInstanceDifferences () {

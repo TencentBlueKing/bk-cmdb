@@ -852,9 +852,9 @@
         "变更前": "Before Change",
         "变更后": "After Change",
         "找不到更新信息": "Sorry, the corresponding service template update information could not be found~",
-        "返回首页": "Home",
         "该进程已删除": "The process has been deleted",
         "请确认": "Please confirm the",
-        "模版更新信息": "template update information:"
+        "模版更新信息": "template update information:",
+        "同步模板": "Sync Template"
     }
 }
