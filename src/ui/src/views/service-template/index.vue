@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
+            <bk-button class="fl mr10" type="primary" @click="operationTemplate(-1)">{{$t("Common['新建']")}}</bk-button>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
@@ -52,7 +52,7 @@
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <button class="text-primary mr10"
-                    @click.stop="operationTemplate(item)">
+                    @click.stop="operationTemplate(item['id'])">
                     {{$t('Common["编辑"]')}}
                 </button>
                 <span class="text-primary"
@@ -197,14 +197,14 @@
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['bk_root_id'] === id)
                 this.filter.secondaryClassification = ''
             },
-            operationTemplate (item) {
+            operationTemplate (id) {
                 this.$store.commit('setHeaderStatus', {
                     back: true
                 })
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
-                        template: item
+                        templateId: id
                     }
                 })
             },
