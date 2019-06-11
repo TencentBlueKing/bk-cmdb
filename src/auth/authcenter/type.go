@@ -153,6 +153,7 @@ type ResourceType struct {
 	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
 	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
+	Share                bool           `json:"is_share"`
 	Actions              []Action       `json:"actions"`
 }
 
