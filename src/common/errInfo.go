@@ -664,8 +664,10 @@ const (
 	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
 	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
 
-	CCErrHostRemoveFromDefaultModuleFailed                = 1113012
-	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod = 1113013
+	CCErrHostRemoveFromDefaultModuleFailed                                    = 1113012
+	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
+	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
+	CCErrCoreServiceModuleNotFound                                            = 1113015
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
