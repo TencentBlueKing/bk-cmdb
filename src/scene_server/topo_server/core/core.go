@@ -59,7 +59,7 @@ type core struct {
 	unique         operation.UniqueOperationInterface
 }
 
-// New create a core manager
+// New create a logics manager
 func New(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) Core {
 
 	// health

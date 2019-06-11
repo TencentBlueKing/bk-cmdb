@@ -28,7 +28,7 @@ func (ih *IAMHandler) HandleHostSync(task *meta.WorkRequest) error {
 	businessSimplify := task.Data.(extensions.BusinessSimplify)
 	header := utils.NewAPIHeaderByBusiness(&businessSimplify)
 
-	// step1 get instances by business from core service
+	// step1 get instances by business from logics service
 	bizID := businessSimplify.BKAppIDField
 	hosts, err := ih.authManager.CollectHostByBusinessID(context.Background(), *header, bizID)
 	if err != nil {

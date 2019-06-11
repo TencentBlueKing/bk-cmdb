@@ -12,41 +12,46 @@
 
 package metadata
 
-import "configcenter/src/common/mapstr"
+import (
+	"configcenter/src/common/mapstr"
+	"time"
+)
 
 type ChartConfig struct {
-	Metadata      `field:"metadata" json:"metadata" bson:"metadata"`
-	ReportType    string        `json:"report_type"`
-	Name          string        `json:"name"`
-	Option        interface{}   `json:"options"`
-	ChartPosition ChartPosition `json:"chart_position"`
+	ConfigID   uint64 `json:"config_id" bson:"config_id"`
+	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
+	ReportType string      `json:"report_type" bson:"report_type"`
+	Name       string      `json:"name" bson:"name"`
+	Option     ChartOption `json:"option" bson:"option"`
+	CreateTime time.Time   `json:"create_time" bson:"create_time"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
 }
 
 type ChartOption struct {
-	ObjID     string `json:"bk_obj_id"`
-	ChartType string `json:"chart_type"`
-	Field     string `json:"field"`
+	ChartType string `json:"chart_type" bson:"chart_type"`
+	Field     string `json:"field" bson:"field"`
 }
 
 type ChartPosition struct {
-	BizID    int64        `json:"bk_biz_id"`
-	Position PositionInfo `json:"position"`
-	OwnerID  string       `json:"bk_supplier_account"`
+	BizID    int64        `json:"bk_biz_id" bson:"bk_biz_id"`
+	Position PositionInfo `json:"position" bson:"position"`
+	OwnerID  string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
-type PositionInfo map[string]Info
+type PositionInfo map[string][]Info
 
 type Info struct {
-	ConfigId int64  `json:"config_id"`
-	Width    string `json:"width"`
+	ConfigId uint64 `json:"config_id" bson:"config_id"`
+	Width    string `json:"width" bson:"width"`
 }
 
 type ModelInstChange map[string]*InstChangeCount
 
 type InstChangeCount struct {
-	Create int64 `json:"create"`
-	Update int64 `json:"update"`
-	Delete int64 `json:"delete"`
+	Create int64 `json:"create" bson:"create"`
+	Update int64 `json:"update" bson:"update"`
+	Delete int64 `json:"delete" bson:"delete"`
 }
 
 type AggregateIntResponse struct {
@@ -89,4 +94,19 @@ type ChartData struct {
 	ReportType string      `json:"report_type"`
 	Data       interface{} `json:"data"`
 	OwnerID    string      `json:"bk_supplier_account"`
+}
+
+type SearchChartResponse struct {
+	BaseResp `json:",inline"`
+	Data     SearchChartConfig `json:"data"`
+}
+
+type SearchChartByID struct {
+	BaseResp `json:",inline"`
+	Data     ChartConfig `json:"data"`
+}
+
+type SearchChartConfig struct {
+	Count uint64                   `json:"count"`
+	Info  map[string][]ChartConfig `json:"info"`
 }

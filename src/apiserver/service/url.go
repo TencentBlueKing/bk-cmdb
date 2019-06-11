@@ -13,7 +13,10 @@
 package service
 
 import (
+	"configcenter/src/common/blog"
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -214,6 +217,10 @@ func (u *URLPath) WithEvent(req *restful.Request) (isHit bool) {
 	return false
 }
 
+const verbs = "create|createmany|update|updatemany|delete|deletemany|find|findmany"
+
+var procUrlRegexp = regexp.MustCompile(fmt.Sprintf("^/api/v3/(%s)/proc/.*$", verbs))
+
 // WithProc transform the proc's url
 func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	procRoot := "/process/v3"
@@ -222,7 +229,8 @@ func (u *URLPath) WithProc(req *restful.Request) (isHit bool) {
 	switch {
 	case strings.HasPrefix(string(*u), rootPath+"/proc/"):
 		from, to, isHit = rootPath+"/proc", procRoot, true
-
+	case procUrlRegexp.MatchString(string(*u)):
+		from, to, isHit = rootPath, procRoot, true
 	default:
 		isHit = false
 	}
@@ -256,17 +264,20 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
-	statisticsRoot := "/operation/v3"
-	from, to := rootPath, statisticsRoot
+	operationRoot := "/operation/v3"
+	from, to := rootPath, operationRoot
 
+	blog.Debug("here----------------------")
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
-		from, to, isHit = rootPath+"/operation", statisticsRoot, true
+	case strings.Contains(string(*u), "/operation/"):
+		from, to, isHit = rootPath, operationRoot, true
 
 	default:
 		isHit = false
 	}
 
+	blog.Debug("isHit: %v", isHit)
+	blog.Debug("to: %v. from: %v", to, from)
 	if isHit {
 		u.revise(req, from, to)
 		return true
@@ -277,4 +288,5 @@ func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 func (u URLPath) revise(req *restful.Request, from, to string) {
 	req.Request.RequestURI = to + req.Request.RequestURI[len(from):]
 	req.Request.URL.Path = to + req.Request.URL.Path[len(from):]
+	blog.Debug("path:%v,  uri: %v", req.Request.URL.Path, req.Request.RequestURI)
 }

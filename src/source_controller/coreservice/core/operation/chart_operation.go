@@ -22,12 +22,94 @@ import (
 
 func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	chartConfig := metadata.ChartConfig{}
+	chartConfig := make([]metadata.ChartConfig, 0)
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(ctx, &chartConfig); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
 	}
 
-	return chartConfig, nil
+	chartPosition := make([]metadata.ChartPosition, 0)
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	if len(chartConfig) == 0 || len(chartPosition) == 0 {
+		return nil, nil
+	}
+
+	chartsInfo := make(map[string][]interface{})
+	for _, info := range chartPosition[0].Position["host"] {
+		for _, chart := range chartConfig {
+			if chart.ConfigID == info.ConfigId {
+				chartsInfo["host"] = append(chartsInfo["host"], chart)
+			}
+		}
+	}
+
+	for _, info := range chartPosition[0].Position["inst"] {
+		for _, chart := range chartConfig {
+			if chart.ConfigID == info.ConfigId {
+				chartsInfo["inst"] = append(chartsInfo["inst"], chart)
+			}
+		}
+	}
+
+	return chartsInfo, nil
+}
+
+func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
+	objID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
+	if err != nil {
+		return 0, err
+	}
+	inputParam.ConfigID = objID
+
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
+		blog.Errorf("create chart fail, err: %v", err)
+		return 0, err
+	}
+
+	return objID, nil
+}
+
+func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
+	opt := mapstr.MapStr{}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Delete(ctx, opt); err != nil {
+		blog.Errorf("delete chart position info fail, err: %v", err)
+		return nil, err
+	}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Insert(ctx, inputParam); err != nil {
+		blog.Errorf("update chart position fail, err: %v", err)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	condition := mapstr.MapStr{}
+	condition["$in"] = inputParam["id"]
+	opt["config_id"] = condition
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
+		blog.Errorf("create chart fail, err: %v", err)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	opt["config_id"] = inputParam["config_id"]
+	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
+		blog.Errorf("update chart config fail,id: %v err: %v", inputParam["config_id"], err)
+		return nil, err
+	}
+
+	return nil, nil
 }

@@ -27,13 +27,13 @@ import (
 
 type Logics struct {
 	*backbone.Engine
-	header  http.Header
-	rid     string
-	ccErr   errors.DefaultCCErrorIf
-	ccLang  language.DefaultCCLanguageIf
-	user    string
-	ownerID string
-	cache   *redis.Client
+	header      http.Header
+	rid         string
+	ccErr       errors.DefaultCCErrorIf
+	ccLang      language.DefaultCCLanguageIf
+	user        string
+	ownerID     string
+	cache       *redis.Client
 	AuthManager *extensions.AuthManager
 }
 
@@ -68,18 +68,18 @@ func (lgc *Logics) NewFromHeader(header http.Header) *Logics {
 	return newLgc
 }
 
-// NewLogics get logic handle
+// NewLogics get logics handle
 func NewLogics(b *backbone.Engine, header http.Header, cache *redis.Client, authManager *extensions.AuthManager) *Logics {
 	lang := util.GetLanguage(header)
 	return &Logics{
-		Engine:  b,
-		header:  header,
-		rid:     util.GetHTTPCCRequestID(header),
-		ccErr:   b.CCErr.CreateDefaultCCErrorIf(lang),
-		ccLang:  b.Language.CreateDefaultCCLanguageIf(lang),
-		user:    util.GetUser(header),
-		ownerID: util.GetOwnerID(header),
-		cache:   cache,
+		Engine:      b,
+		header:      header,
+		rid:         util.GetHTTPCCRequestID(header),
+		ccErr:       b.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:      b.Language.CreateDefaultCCLanguageIf(lang),
+		user:        util.GetUser(header),
+		ownerID:     util.GetOwnerID(header),
+		cache:       cache,
 		AuthManager: authManager,
 	}
 }

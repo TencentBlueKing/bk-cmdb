@@ -18,7 +18,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-// LogicFunc the core core function definition
+// LogicFunc the logics logics function definition
 type LogicFunc func(params core.ContextParams, parthParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error)
 
 // ParamsGetter get param by key

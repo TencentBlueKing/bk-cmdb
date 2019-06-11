@@ -16,10 +16,6 @@ import (
 	"net/http"
 )
 
-func (s *coreService) initHealth() {
-	s.addAction(http.MethodGet, "/healthz", s.Health, nil)
-}
-
 func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
 	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
@@ -120,6 +116,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostCrossBusiness, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
 	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHost, nil)
+	s.addAction(http.MethodPost, "/read/host/indentifier", s.Identifier, nil)
 
 }
 
@@ -131,14 +128,16 @@ func (s *coreService) audit() {
 func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/read/operation/inst/count", s.SearchInstCount, nil)
 	s.addAction(http.MethodPost, "/read/operation/common/aggregate", s.CommonAggregate, nil)
-	s.addAction(http.MethodDelete, "/delete/operation/chart/%v", s.DeleteOperationChart, nil)
+	s.addAction(http.MethodDelete, "/delete/operation/chart", s.DeleteOperationChart, nil)
 	s.addAction(http.MethodPost, "/create/operation/chart", s.CreateOperationChart, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart", s.SearchOperationChart, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)
+	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateOperationChartPosition, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/data", s.SearchOperationChartData, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/byID", s.SearchChartByID, nil)
 }
 
 func (s *coreService) initService() {
-	s.initHealth()
 	s.initModelClassification()
 	s.initModel()
 	s.initAssociationKind()
@@ -151,4 +150,5 @@ func (s *coreService) initService() {
 	s.host()
 	s.audit()
 	s.initOperation()
+	s.initProcess()
 }

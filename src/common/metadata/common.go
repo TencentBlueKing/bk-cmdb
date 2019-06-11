@@ -75,6 +75,11 @@ type Uint64Response struct {
 	Count    uint64 `json:"count"`
 }
 
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
+}
+
 type MapArrayResponse struct {
 	BaseResp `json:",inline"`
 	Data     []mapstr.MapStr `json:"data"`

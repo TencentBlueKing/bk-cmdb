@@ -35,7 +35,7 @@ func TestCreateModelInst(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().CreateInstance(nil, nil, "", &metadata.CreateModelInstance{})
 	rtn, err := mockAPI.CoreService().Instance().CreateInstance(nil, nil, "", &metadata.CreateModelInstance{})
 	if err != nil {
-		t.Errorf("get  core service create  instance result failed, err: %v", err)
+		t.Errorf("get  logics service create  instance result failed, err: %v", err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func TestCreateManyModelInstance(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().CreateManyInstance(nil, nil, "", &metadata.CreateManyModelInstance{})
 	rtn, err := mockAPI.CoreService().Instance().CreateManyInstance(nil, nil, "", &metadata.CreateManyModelInstance{})
 	if err != nil {
-		t.Errorf("get  core service create many instance result failed, err: %v", err)
+		t.Errorf("get  logics service create many instance result failed, err: %v", err)
 		return
 	}
 
@@ -89,7 +89,7 @@ func TestSetManyModelInstace(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().SetManyInstance(nil, nil, "", &metadata.SetManyModelInstance{})
 	rtn, err := mockAPI.CoreService().Instance().SetManyInstance(nil, nil, "", &metadata.SetManyModelInstance{})
 	if err != nil {
-		t.Errorf("get  core service set many model instance result failed, err: %v", err)
+		t.Errorf("get  logics service set many model instance result failed, err: %v", err)
 		return
 	}
 
@@ -116,7 +116,7 @@ func TestUpdateModelInstance(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().UpdateInstance(nil, nil, "", &metadata.UpdateOption{})
 	rtn, err := mockAPI.CoreService().Instance().UpdateInstance(nil, nil, "", &metadata.UpdateOption{})
 	if err != nil {
-		t.Errorf("get  core service update model many result failed, err: %v", err)
+		t.Errorf("get  logics service update model many result failed, err: %v", err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func TestReadModelInstance(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().ReadInstance(nil, nil, "", &metadata.QueryCondition{})
 	rtn, err := mockAPI.CoreService().Instance().ReadInstance(nil, nil, "", &metadata.QueryCondition{})
 	if err != nil {
-		t.Errorf("get  core service read model instance result failed, err: %v", err)
+		t.Errorf("get  logics service read model instance result failed, err: %v", err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func TestDeleteModelInstance(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().DeleteInstance(nil, nil, "", &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Instance().DeleteInstance(nil, nil, "", &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model instance result failed, err: %v", err)
+		t.Errorf("get  logics service delete model instance result failed, err: %v", err)
 		return
 	}
 
@@ -197,7 +197,7 @@ func TestDeleteModelInstanceCascade(t *testing.T) {
 	mockAPI.MockDo(resp).CoreService().Instance().DeleteInstanceCascade(nil, nil, "", &metadata.DeleteOption{})
 	rtn, err := mockAPI.CoreService().Instance().DeleteInstanceCascade(nil, nil, "", &metadata.DeleteOption{})
 	if err != nil {
-		t.Errorf("get  core service delete model instance cascade result failed, err: %v", err)
+		t.Errorf("get  logics service delete model instance cascade result failed, err: %v", err)
 		return
 	}
 

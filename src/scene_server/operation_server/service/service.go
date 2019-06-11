@@ -9,245 +9,168 @@
  * either express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/http/httpserver"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
+	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/operation_server/app/options"
-	"configcenter/src/scene_server/operation_server/core"
-
+	"configcenter/src/scene_server/operation_server/logics"
+	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"context"
 	"github.com/emicklei/go-restful"
+	"net/http"
 )
 
-type Service struct {
-	Engine      *backbone.Engine
-	Config      options.Config
-	Core        *core.Operation
-	AuthManager *extensions.AuthManager
-	Error       errors.CCErrorIf
-	Language    language.CCLanguageIf
-	actions     []action
+type srvComm struct {
+	header        http.Header
+	rid           string
+	ccErr         errors.DefaultCCErrorIf
+	ccLang        language.DefaultCCLanguageIf
+	ctx           context.Context
+	ctxCancelFunc context.CancelFunc
+	user          string
+	ownerID       string
+	lgc           *logics.Logics
 }
 
-type ServiceInterface interface {
-	WebService() *restful.WebService
-	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
+type OperationServer struct {
+	*backbone.Engine
+	EsbConfigChn chan esbutil.EsbConfig
+	Config       *options.Config
+	EsbServ      esbserver.EsbClientInterface
+	ConfigMap    map[string]string
+	AuthManager  *extensions.AuthManager
+	Logic        *logics.Logic
 }
 
-func New() ServiceInterface {
-	return &Service{}
-}
+func (o *OperationServer) newSrvComm(header http.Header) *srvComm {
+	rid := util.GetHTTPCCRequestID(header)
+	lang := util.GetLanguage(header)
+	ctx, cancel := o.Engine.CCCtx.WithCancel()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
 
-func (s *Service) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
-
-	s.Config = cfg
-	s.Engine = engin
-
-	if nil != err {
-		s.Error = err
+	return &srvComm{
+		header:        header,
+		rid:           util.GetHTTPCCRequestID(header),
+		ccErr:         o.CCErr.CreateDefaultCCErrorIf(lang),
+		ccLang:        o.Language.CreateDefaultCCLanguageIf(lang),
+		ctx:           ctx,
+		ctxCancelFunc: cancel,
+		user:          util.GetUser(header),
+		ownerID:       util.GetOwnerID(header),
+		lgc:           logics.NewLogics(o.Engine, header, o.EsbServ, o.AuthManager),
 	}
-
-	if nil != language {
-		s.Language = language
-	}
-
-	return nil
 }
 
-// WebService the web service
-func (s *Service) WebService() *restful.WebService {
+func (o *OperationServer) WebService() *restful.Container {
 
-	// init service actions
-	s.initService()
-
-	ws := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
-		return s.Error
+		return o.Engine.CCErr
 	}
-	ws.Path("/operation/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
-	innerActions := s.Actions()
+	api := new(restful.WebService)
+	api.Path("/operation/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	restful.DefaultRequestContentType(restful.MIME_JSON)
+	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	for _, actionItem := range innerActions {
-		switch actionItem.Verb {
-		case http.MethodPost:
-			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
-		case http.MethodDelete:
-			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
-		case http.MethodPut:
-			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
-		case http.MethodGet:
-			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
-		default:
-			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
+	o.newOperationService(api)
+	container := restful.NewContainer()
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(o.Healthz))
+	container.Add(healthzAPI)
+
+	return container
+}
+
+func (o *OperationServer) newOperationService(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  o.Engine.CCErr,
+		Language: o.Engine.Language,
+	})
+
+	// service category
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/operation/chart", Handler: o.CreateStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/operation/chart", Handler: o.DeleteStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart", Handler: o.UpdateStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/search/operation/chart", Handler: o.SearchStatisticChart})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/search/operation/chart/data", Handler: o.SearchChartData})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/update/operation/chart/position", Handler: o.UpdateChartPosition})
+
+	utility.AddToRestfulWebService(web)
+}
+
+func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) {
+	meta := metric.HealthMeta{IsHealthy: true}
+
+	// zk health status
+	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+	if err := o.Engine.Ping(); err != nil {
+		zkItem.IsHealthy = false
+		zkItem.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, zkItem)
+
+	// coreservice
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
+	if _, err := o.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+		coreSrv.IsHealthy = false
+		coreSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, coreSrv)
+
+	for _, item := range meta.Items {
+		if item.IsHealthy == false {
+			meta.IsHealthy = false
+			meta.Message = "operation server is unhealthy"
+			break
 		}
 	}
 
-	return ws
-}
-
-func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
-
-	rsp := metadata.Response{
-		BaseResp: metadata.SuccessBaseResp,
-		Data:     nil,
+	info := metric.HealthInfo{
+		Module:     types.CC_MODULE_OPERATION,
+		HealthMeta: meta,
+		AtTime:     metadata.Now(),
 	}
 
-	if common.CCSuccess != errcode {
-		rsp.Code = errcode
-		rsp.Result = false
-		rsp.ErrMsg = fmt.Sprintf("%v", info)
-	} else {
-		rsp.ErrMsg = common.CCSuccessStr
-		rsp.Data = info
+	answer := metric.HealthResponse{
+		Code:    common.CCSuccess,
+		Data:    info,
+		OK:      meta.IsHealthy,
+		Result:  meta.IsHealthy,
+		Message: meta.Message,
 	}
-
-	data, err := json.Marshal(rsp)
-	return string(data), err
-}
-
-func (s *Service) createCompleteAPIRspStr(errcode int, errmsg string, info interface{}) (string, error) {
-
-	rsp := metadata.Response{
-		BaseResp: metadata.SuccessBaseResp,
-		Data:     nil,
-	}
-
-	if common.CCSuccess != errcode {
-		rsp.Code = errcode
-		rsp.Result = false
-		rsp.ErrMsg = errmsg
-	} else {
-		rsp.ErrMsg = common.CCSuccessStr
-	}
-	rsp.Data = info
-	data, err := json.Marshal(rsp)
-	return string(data), err
-}
-
-func (s *Service) sendResponse(resp *restful.Response, errorCode int, dataMsg interface{}) {
 	resp.Header().Set("Content-Type", "application/json")
-	if rsp, rspErr := s.createAPIRspStr(errorCode, dataMsg); nil == rspErr {
-		io.WriteString(resp, rsp)
-	} else {
-		blog.Errorf("failed to send response , error info is %s", rspErr.Error())
-	}
+	resp.WriteEntity(answer)
 }
 
-func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, errMsg string, info interface{}) {
-	resp.Header().Set("Content-Type", "application/json")
-	rsp, rspErr := s.createCompleteAPIRspStr(errorCode, errMsg, info)
-	if nil == rspErr {
-		io.WriteString(resp, rsp)
-		return
+func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
+	var err error
+
+	cfg := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	o.Config = &options.Config{
+		Mongo: cfg,
 	}
-	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
+	o.Config.ConfigMap = current.ConfigMap
 
-}
-
-func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
-	actionObject := action{
-		Method:                     method,
-		Path:                       path,
-		HandlerFunc:                handlerFunc,
-		HandlerParseOriginDataFunc: handlerParseOriginDataFunc,
+	o.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
-	s.actions = append(s.actions, actionObject)
-}
-
-// Actions return the all actions
-func (s *Service) Actions() []*httpserver.Action {
-
-	var httpactions []*httpserver.Action
-	for _, a := range s.actions {
-
-		func(act action) {
-
-			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
-
-				ownerID := util.GetOwnerID(req.Request.Header)
-				user := util.GetUser(req.Request.Header)
-
-				// get the language
-				language := util.GetLanguage(req.Request.Header)
-
-				defLang := s.Language.CreateDefaultCCLanguageIf(language)
-
-				// get the error info by the language
-				defErr := s.Error.CreateDefaultCCErrorIf(language)
-
-				value, err := ioutil.ReadAll(req.Request.Body)
-				if err != nil {
-					blog.Errorf("read http request body failed, error:%s", err.Error())
-					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
-					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
-					return
-				}
-
-				mData := mapstr.MapStr{}
-				if nil == act.HandlerParseOriginDataFunc {
-					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
-						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
-						return
-					}
-				} else {
-					mData, err = act.HandlerParseOriginDataFunc(value)
-					if nil != err {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
-						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
-						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
-						return
-					}
-				}
-
-				data, dataErr := act.HandlerFunc(core.ContextParams{
-					Context:         util.GetDBContext(context.Background(), req.Request.Header),
-					Error:           defErr,
-					Lang:            defLang,
-					Header:          req.Request.Header,
-					SupplierAccount: ownerID,
-					ReqID:           util.GetHTTPCCRequestID(req.Request.Header),
-					User:            user,
-				},
-					req.PathParameter,
-					req.QueryParameter,
-					mData)
-
-				if nil != dataErr {
-					switch e := dataErr.(type) {
-					default:
-						s.sendCompleteResponse(resp, common.CCSystemBusy, dataErr.Error(), data)
-					case errors.CCErrorCoder:
-						s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
-					}
-					return
-				}
-
-				s.sendResponse(resp, common.CCSuccess, data)
-
-			}})
-		}(a)
-
-	}
-	return httpactions
 }

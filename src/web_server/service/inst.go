@@ -110,7 +110,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		fmt.Println("return msg: ", msg)
-		c.String(http.StatusInternalServerError, msg)
+		c.String(http.StatusForbidden, msg)
 		return
 	}
 
@@ -152,7 +152,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			return
 		}
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	c.File(dirFileName)
 	os.Remove(dirFileName)
 }

@@ -29,8 +29,10 @@ import (
 )
 
 // GetHostLayers get resource layers id by hostID(layers is a data structure for call iam)
-func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHeader *http.Header, hostIDArr *[]int64) (
+func GetHostLayers(ctx context.Context, coreService coreservice.CoreServiceClientInterface, requestHeader *http.Header, hostIDArr *[]int64) (
 	bkBizID int64, batchLayers [][]meta.Item, err error) {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
 	batchLayers = make([][]meta.Item, 0)
 
 	cond := condition.CreateCondition()
@@ -46,7 +48,7 @@ func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHe
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		return
 	}
-	blog.V(5).Infof("get host module config: %+v", result.Data.Info)
+	blog.V(5).Infof("get host module config: %+v, rid: %s", result.Data.Info, rid)
 	if len(result.Data.Info) == 0 {
 		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid",
 			hostIDArr)
@@ -58,8 +60,7 @@ func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHe
 		return
 	}
 
-	bizTopoTreeRoot, err := coreService.Mainline().SearchMainlineInstanceTopo(
-		context.Background(), *requestHeader, bkBizID, true)
+	bizTopoTreeRoot, err := coreService.Mainline().SearchMainlineInstanceTopo(ctx, *requestHeader, bkBizID, true)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		return
@@ -70,14 +71,14 @@ func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHe
 		err = fmt.Errorf("json encode bizTopoTreeRootJSON failed: %+v", err)
 		return
 	}
-	blog.V(5).Infof("bizTopoTreeRoot: %s", bizTopoTreeRootJSON)
+	blog.V(5).Infof("bizTopoTreeRoot: %s, rid: %s", bizTopoTreeRootJSON, rid)
 
 	dataInfo, err := json.Marshal(result.Data.Info)
 	if err != nil {
 		err = fmt.Errorf("json encode dataInfo failed: %+v", err)
 		return
 	}
-	blog.V(5).Infof("dataInfo: %s", dataInfo)
+	blog.V(5).Infof("dataInfo: %s, rid: %s", dataInfo, rid)
 
 	hostIDs := make([]int64, 0)
 	for _, item := range result.Data.Info {
@@ -108,7 +109,7 @@ func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHe
 			err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDArr, err)
 		}
 		path := bizTopoTreeRoot.TraversalFindModule(moduleID)
-		blog.V(9).Infof("traversal find module: %d result: %+v", moduleID, path)
+		blog.V(9).Infof("traversal find module: %d result: %+v, rid: %s", moduleID, path, rid)
 
 		hostID, err := util.GetInt64ByInterface(item[common.BKHostIDField])
 		if err != nil {
@@ -140,16 +141,16 @@ func GetHostLayers(coreService coreservice.CoreServiceClientInterface, requestHe
 			layers = append(layers, item)
 		}
 		layers = append(layers, hostLayer)
-		blog.V(9).Infof("layers from traversal find module:%d result: %+v", moduleID, layers)
+		blog.V(9).Infof("layers from traversal find module:%d result: %+v, rid: %s", moduleID, layers, rid)
 		batchLayers = append(batchLayers, layers)
 	}
 	batchLayersStr, err := json.Marshal(batchLayers)
 	if err != nil {
-		blog.Errorf("json encode GetHostLayers failed, err: %+v", err)
+		blog.Errorf("json encode GetHostLayers failed, err: %+v, rid: %s", err, rid)
 		err = fmt.Errorf("json encode GetHostLayers failed, err: %+v", err)
 		return
 	}
-	blog.V(5).Infof("batchLayersStr: %s", batchLayersStr)
+	blog.V(5).Infof("batchLayersStr: %s, rid: %s", batchLayersStr, rid)
 
 	return
 }
@@ -183,6 +184,8 @@ func getInnerIPByHostIDs(coreService coreservice.CoreServiceClientInterface, rHe
 }
 
 func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]HostSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(businessID)
 	query := &metadata.QueryCondition{
@@ -192,7 +195,7 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 	}
 	hosts, err := am.clientSet.CoreService().Instance().ReadInstance(context.Background(), header, common.BKTableNameModuleHostConfig, query)
 	if err != nil {
-		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v", businessID, err)
+		blog.Errorf("get host:%+v by businessID:%d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get host by businessID:%d failed, err: %+v", businessID, err)
 	}
 
@@ -205,17 +208,19 @@ func (am *AuthManager) CollectHostByBusinessID(ctx context.Context, header http.
 		}
 		hostID, err := util.GetInt64ByInterface(hostIDVal)
 		if err != nil {
-			blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v", host, err)
+			blog.V(2).Infof("synchronize task skip host:%+v, as parse hostID field failed, err: %+v, rid: %s", host, err, rid)
 			continue
 		}
 		hostIDs = append(hostIDs, hostID)
 	}
 
-	blog.V(4).Infof("list hosts by business:%d result: %+v", businessID, hostIDs)
+	blog.V(4).Infof("list hosts by business:%d result: %+v, rid: %s", businessID, hostIDs, rid)
 	return am.collectHostByHostIDs(ctx, header, hostIDs...)
 }
 
 func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) ([]HostSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	hostIDs := make([]int64, 0)
 	hosts := make([]HostSimplify, 0)
 	for _, cls := range rawData {
@@ -240,7 +245,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
 		return nil, err
 	}
-	blog.V(5).Infof("get host module config: %+v", hostModuleResult.Data.Info)
+	blog.V(5).Infof("get host module config: %+v, rid: %s", hostModuleResult.Data.Info, rid)
 	if len(rawData) == 0 {
 		err = fmt.Errorf("get host:%+v layer failed, get host module config by host id not found, maybe hostID invalid", hostIDs)
 		return nil, err
@@ -254,7 +259,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		}
 		hostModuleMap[host.BKHostIDField] = host
 	}
-	blog.V(9).Infof("hostModuleMap: %+v", hostModuleMap)
+	blog.V(9).Infof("hostModuleMap: %+v, rid: %s", hostModuleMap, rid)
 	for idx, host := range hosts {
 		hostModule, exist := hostModuleMap[host.BKHostIDField]
 		if exist == false {
@@ -264,11 +269,13 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		hosts[idx].BKSetIDField = hostModule.BKSetIDField
 		hosts[idx].BKModuleIDField = hostModule.BKModuleIDField
 	}
-	blog.V(9).Infof("hosts: %+v", hosts)
+	blog.V(9).Infof("hosts: %+v, rid: %s", hosts, rid)
 	return hosts, nil
 }
 
 func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	hostIDs = util.IntArrayUnique(hostIDs)
 
@@ -277,7 +284,7 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
 	if err != nil {
-		blog.V(3).Infof("get hosts by id failed, err: %+v", err)
+		blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
 	}
 
@@ -299,6 +306,8 @@ func (am *AuthManager) extractBusinessIDFromHosts(ctx context.Context, header ht
 }
 
 func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	businessIDs := make([]int64, 0)
 	for _, host := range hosts {
 		businessIDs = append(businessIDs, host.BKAppIDField)
@@ -312,7 +321,7 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 		}
 		bizIDCorrectMap[businessID] = bizID
 	}
-	
+
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, host := range hosts {
 		resource := meta.ResourceAttribute{
@@ -327,12 +336,14 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 		}
 		resources = append(resources, resource)
 	}
-	
-	blog.V(9).Infof("host resources for iam: %+v", resources)
+
+	blog.V(9).Infof("host resources for iam: %+v, rid: %s", resources, rid)
 	return resources, nil
 }
 
-func (am *AuthManager) makeHostsResourcesGroupByBusiness(header http.Header, action meta.Action, hosts ...HostSimplify) map[int64][]meta.ResourceAttribute {
+func (am *AuthManager) makeHostsResourcesGroupByBusiness(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) map[int64][]meta.ResourceAttribute {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	result := map[int64][]meta.ResourceAttribute{}
 	for _, host := range hosts {
 		bizID := host.BKAppIDField
@@ -353,7 +364,7 @@ func (am *AuthManager) makeHostsResourcesGroupByBusiness(header http.Header, act
 
 		result[bizID] = append(result[bizID], resource)
 	}
-	blog.V(9).Infof("host resources group by business for iam: %+v", result)
+	blog.V(9).Infof("host resources group by business for iam: %+v, rid: %s", result, rid)
 	return result
 }
 
@@ -363,7 +374,7 @@ func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, 
 	}
 
 	// make auth resources
-	bizResourcesMap := am.makeHostsResourcesGroupByBusiness(header, action, hosts...)
+	bizResourcesMap := am.makeHostsResourcesGroupByBusiness(ctx, header, action, hosts...)
 
 	for bizID, resources := range bizResourcesMap {
 		err := am.authorize(ctx, header, bizID, resources...)
@@ -392,12 +403,14 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 }
 
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if am.Enabled() == false {
 		return nil
 	}
 
 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, hosts: %+v", hostIDs)
+		blog.V(4).Infof("skip authorization for reading, hosts: %+v, rid: %s", hostIDs, rid)
 		return nil
 	}
 
@@ -406,25 +419,27 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	}
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
-		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
+		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v, rid: %s", err, rid)
 	}
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
 }
 
 func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) ([]meta.ResourceAttribute, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	if len(hostIDs) == 0 {
 		return nil, nil
 	}
 
 	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
-		return nil, fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v", err)
+		return nil, fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v, rid: %s", err, rid)
 	}
 
 	// make auth resources
 	resources, err := am.MakeResourcesByHosts(ctx, header, action, hosts...)
 	if err != nil {
-		return nil , fmt.Errorf("make resource failed, err: %+v", err)
+		return nil, fmt.Errorf("make resource failed, err: %+v", err)
 	}
 
 	realResources, err := am.Authorize.DryRunRegisterResource(context.Background(), resources...)
@@ -432,7 +447,7 @@ func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header htt
 		blog.Errorf("dry dun register failed, err: %+v", err)
 		return nil, err
 	}
-	blog.InfoJSON("realResources is: %s", realResources)
+	blog.V(5).Infof("realResources is: %s, rid: %s", realResources, rid)
 	return resources, nil
 }
 

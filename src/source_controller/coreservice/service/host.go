@@ -88,3 +88,19 @@ func (s *coreService) DeleteHost(params core.ContextParams, pathParams, queryPar
 	}
 	return nil, nil
 }
+
+func (s *coreService) Identifier(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := &metadata.SearchHostIdentifierParam{}
+	if err := data.MarshalJSONInto(inputData); nil != err {
+		blog.Errorf("Identifier MarshalJSONInto error, err:%s,input:%#v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	hostIdentifierArr, err := s.core.HostOperation().Identifier(params, inputData)
+
+	if err != nil {
+		blog.InfoJSON("Identifier host identifier handle error. err:%s, input:%s, rid:%s", err.Error(), inputData, params.ReqID)
+		return nil, err
+	}
+
+	return metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)}, nil
+}

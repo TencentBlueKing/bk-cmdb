@@ -30,6 +30,16 @@ func (cli *ccDefaultErrorHelper) New(errorCode int, msg string) error {
 	}
 }
 
+func NewCCError(errorCode int, msg string) error {
+	err := &ccError{
+		code: errorCode,
+		callback: func() string {
+			return msg
+		},
+	}
+	return err
+}
+
 // Error returns an error for specific language
 func (cli *ccDefaultErrorHelper) Error(errCode int) error {
 	return cli.errorStr(cli.language, errCode)

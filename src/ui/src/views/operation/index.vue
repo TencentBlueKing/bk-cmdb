@@ -300,7 +300,8 @@
                 'getStaticDimeObj'
             ]),
             async getChartList () {
-                // const res = await this.getCountedCharts({})
+                const res = await this.getCountedCharts({})
+                console.log(res)
                 // this.charData = res.data.info
                 // this.getChartData()
                 // this.charData.forEach(item => {
@@ -366,6 +367,7 @@
             },
             async getChartData (id) {
                 const res = await this.getCountedCharts({ id })
+                console.log(res)
                 return res
             },
             async getStaList () {

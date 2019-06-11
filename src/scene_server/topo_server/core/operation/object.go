@@ -124,14 +124,17 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 			metaAttr := metadata.Attribute{}
 			targetAttr, err := metaAttr.Parse(attr)
-			targetAttr.OwnerID = params.SupplierAccount
-			targetAttr.ObjectID = objID
 			if nil != err {
 				blog.Errorf("create object batch, but got invalid object attribute, object id: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
 				hasError = true
 				continue
+			}
+			targetAttr.OwnerID = params.SupplierAccount
+			targetAttr.ObjectID = objID
+			if params.MetaData != nil {
+				targetAttr.Metadata = *params.MetaData
 			}
 
 			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
@@ -165,12 +168,16 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			} else {
 
 				newGrp := o.modelFactory.CreateGroup(params)
-				newGrp.SetGroup(metadata.Group{
+				g := metadata.Group{
 					GroupName: targetAttr.PropertyGroupName,
 					GroupID:   model.NewGroupID(false),
 					ObjectID:  objID,
 					OwnerID:   params.SupplierAccount,
-				})
+				}
+				if params.MetaData != nil {
+					g.Metadata = *params.MetaData
+				}
+				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
 				if nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
@@ -792,8 +799,14 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
+	bizID, err := metadata.BizIDFromMetadata(object.Metadata)
+	if err != nil {
+		blog.Error("update object: %s, but parse business id failed, err: %v", object.ObjectID, err)
+		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
+	}
+
 	// auth update register info
-	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, id); err != nil {
+	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, bizID, id); err != nil {
 		blog.Errorf("update object %s success, but update to auth failed, err: %v", object.ObjectName, err)
 		return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}
