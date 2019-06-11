@@ -1,6 +1,6 @@
 import Meta from '@/router/meta'
 
-const path = '/synchronous/module/:moduleId/template/:templateId'
+const path = '/synchronous/set/:setId/module/:moduleId'
 
 export default {
     name: 'synchronous',

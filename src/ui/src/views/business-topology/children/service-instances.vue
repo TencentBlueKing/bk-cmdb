@@ -289,8 +289,11 @@
                 this.$router.push({
                     name: 'synchronous',
                     params: {
-                        moduleId: this.currentModule.bk_inst_id,
-                        templateId: this.currentModule.service_template_id
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
                     }
                 })
             },

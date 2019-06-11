@@ -53,8 +53,7 @@ export const viewRouters = [
     ...permission,
     cagetory,
     synchronous,
-    ...serviceInstance,
-    synchronous
+    ...serviceInstance
 ]
 
 const statusRouters = [
