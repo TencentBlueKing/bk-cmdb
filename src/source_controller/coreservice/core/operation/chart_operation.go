@@ -45,6 +45,12 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 			if chart.ConfigID == info.ConfigId {
 				chartsInfo["host"] = append(chartsInfo["host"], chart)
 			}
+			if chart.ReportType == common.BizModuleHostChart {
+				chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+			}
+			if chart.ReportType == common.ModelAndInstCount {
+				chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+			}
 		}
 	}
 
@@ -94,7 +100,7 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputPar
 	opt := mapstr.MapStr{}
 	condition := mapstr.MapStr{}
 	condition["$in"] = inputParam["id"]
-	opt["config_id"] = condition
+	opt[common.OperationConfigID] = condition
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
 		return nil, err
@@ -105,9 +111,9 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputPar
 
 func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	opt["config_id"] = inputParam["config_id"]
+	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
-		blog.Errorf("update chart config fail,id: %v err: %v", inputParam["config_id"], err)
+		blog.Errorf("update chart config fail,id: %v err: %v", inputParam[common.OperationConfigID], err)
 		return nil, err
 	}
 
