@@ -187,30 +187,32 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 	return result, nil
 }
 
-func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, serviceInstanceID int64) errors.CCErrorCoder {
-	instance, err := p.GetServiceInstance(ctx, serviceInstanceID)
-	if err != nil {
-		blog.Errorf("DeleteServiceInstance failed, GetServiceInstance failed, instanceID: %d, err: %+v, rid: %s", serviceInstanceID, err, ctx.ReqID)
-		return err
-	}
+func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder {
+	for _, serviceInstanceID := range serviceInstanceIDs {
+		instance, err := p.GetServiceInstance(ctx, serviceInstanceID)
+		if err != nil {
+			blog.Errorf("DeleteServiceInstance failed, GetServiceInstance failed, instanceID: %d, err: %+v, rid: %s", serviceInstanceID, err, ctx.ReqID)
+			return err
+		}
 
-	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{common.BKServiceInstanceIDField: instance.ID}
-	usageCount, e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
-	if nil != e {
-		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, usageFilter, e, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	if usageCount > 0 {
-		blog.Errorf("DeleteServiceInstance failed, forbidden delete service instance be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
-		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
-		return err
-	}
+		// service template that referenced by process template shouldn't be removed
+		usageFilter := map[string]int64{common.BKServiceInstanceIDField: instance.ID}
+		usageCount, e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
+		if nil != e {
+			blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, usageFilter, e, ctx.ReqID)
+			return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+		}
+		if usageCount > 0 {
+			blog.Errorf("DeleteServiceInstance failed, forbidden delete service instance be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+			err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
+			return err
+		}
 
-	serviceInstanceFilter := map[string]int64{common.BKFieldID: instance.ID}
-	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Delete(ctx, serviceInstanceFilter); nil != err {
-		blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, serviceInstanceFilter, err, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+		serviceInstanceFilter := map[string]int64{common.BKFieldID: instance.ID}
+		if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Delete(ctx, serviceInstanceFilter); nil != err {
+			blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, serviceInstanceFilter, err, ctx.ReqID)
+			return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+		}
 	}
 	return nil
 }
