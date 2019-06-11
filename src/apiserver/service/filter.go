@@ -89,7 +89,7 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 		servers, err = s.discovery.DataCollect().GetServers()
 
 	case OperationType:
-		servers, err = s.discovery.DataCollect().GetServers()
+		servers, err = s.discovery.OperationServer().GetServers()
 	}
 
 	if err != nil {
