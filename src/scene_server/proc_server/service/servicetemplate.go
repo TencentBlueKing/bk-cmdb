@@ -46,6 +46,7 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	templateID, err := util.GetInt64ByInterface(templateIDStr)
 	if err != nil {
 		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+		return
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {

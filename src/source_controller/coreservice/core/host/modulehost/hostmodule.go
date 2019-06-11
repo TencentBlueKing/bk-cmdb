@@ -85,9 +85,9 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 }
 
 // TransferHostModule transfer host to use add module
-// 目标模块不能未空闲机模块
+// 目标模块不能为空闲机模块
 func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	// 确保目标模块不能未空闲机模块
+	// 确保目标模块不能为空闲机模块
 	defaultModuleFilter := map[string]interface{}{
 		common.BKDefaultField: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
 	}
