@@ -108,6 +108,7 @@
                 secondaryList: [],
                 allSecondaryList: [],
                 processList: [],
+                originTemplateValues: {},
                 attribute: {
                     type: null,
                     inst: {
@@ -131,10 +132,10 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
             isCreatedType () {
-                return !this.$route.params['template']
+                return this.$route.params['templateId'] === -1
             },
-            originTemplateValues () {
-                return this.$route.params['template']
+            templateId () {
+                return this.$route.params['templateId']
             },
             hasUsed () {
                 const used = this.isCreatedType ? false : Boolean(this.originTemplateValues['service_instance_count'])
@@ -142,13 +143,15 @@
             }
         },
         async created () {
-            const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
-            this.$store.commit('setHeaderTitle', title)
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
                 if (!this.isCreatedType) {
+                    await this.getSingleServiceTemplate()
+                    this.$store.commit('setHeaderTitle', this.originTemplateValues['name'])
                     this.initEdit()
+                } else {
+                    this.$store.commit('setHeaderTitle', this.$t("ServiceManagement['新建服务模版']"))
                 }
             } catch (e) {
                 console.log(e)
@@ -163,7 +166,8 @@
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             ...mapActions('serviceTemplate', [
                 'createServiceTemplate',
-                'updateServiceTemplate'
+                'updateServiceTemplate',
+                'findServiceTemplate'
             ]),
             ...mapActions('processTemplate', [
                 'createProcessTemplate',
@@ -208,6 +212,11 @@
                 }).then(groups => {
                     this.propertyGroups = groups
                     return groups
+                })
+            },
+            async getSingleServiceTemplate () {
+                this.originTemplateValues = await this.findServiceTemplate({
+                    id: this.templateId
                 })
             },
             async getServiceClassification () {
