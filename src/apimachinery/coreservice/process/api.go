@@ -622,3 +622,25 @@ func (p *process) ListProcessInstanceRelation(ctx context.Context, h http.Header
 
 	return &ret.Data, nil
 }
+
+func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (info metadata.BusinessDefaultSetModuleInfo, err error) {
+	ret := new(metadata.BusinessDefaultSetModuleInfoResult)
+	subPath := "/find/process/business_default_set_module_info"
+
+	emptyInfo := metadata.BusinessDefaultSetModuleInfo{}
+	err = p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return emptyInfo, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return emptyInfo, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return ret.Data, nil
+}

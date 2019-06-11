@@ -56,6 +56,8 @@
     "1199058": "generate record id failed",
     "1199059": "page limit is exceeded",
     "1199060": "unexpected parameter field: `%s`",
+    "1199061": "parse db data failed",
+    "1199062": "get business default set and module info failed",
 
     "1199998": "Unknown or unrecognized error",
     "1199999":"'%s' Internal Server Error",
