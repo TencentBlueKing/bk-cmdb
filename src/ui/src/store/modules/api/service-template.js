@@ -68,7 +68,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     findServiceTemplate ({ commit, state, dispatch, rootGetters }, { id, config }) {
-        return $http.get(`find/proc/service_template/${id}`)
+        return $http.get(`find/proc/service_template/${id}`, config)
     }
 }
 
