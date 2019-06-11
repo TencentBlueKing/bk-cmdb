@@ -43,6 +43,7 @@
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
+                                <span class="desc-item" v-html="`${$t('Index[\'模型ID\']')}${getModelIdText(source)}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -124,6 +125,8 @@
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
                 const notZhCn = this.query.queryString.replace(/\w\.?/g, '').length === 0
+                const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
+                const queryString = this.query.queryString.length === 1 ? this.query.queryString.replace(singleSpecial, '') : this.query.queryString
                 return {
                     page: {
                         start: this.pagination.start,
@@ -131,7 +134,7 @@
                     },
                     bk_obj_id: this.query.objId,
                     bk_biz_id: this.bizId ? this.bizId.toString() : '',
-                    query_string: notZhCn ? `*${this.query.queryString}*` : this.query.queryString,
+                    query_string: notZhCn ? `*${queryString}*` : queryString,
                     filter: ['model']
                 }
             },
@@ -340,6 +343,10 @@
                         }
                     })
                 }
+            },
+            getModelIdText (source) {
+                const objId = source.hasOwnProperty('bk_obj_id.keyword') ? source['bk_obj_id.keyword'] : source['bk_obj_id']
+                return objId
             },
             getShowPropertyText (property, source, thisProperty) {
                 const cloneSource = this.$tools.clone(source)
