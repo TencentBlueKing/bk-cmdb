@@ -429,11 +429,10 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 }
 
 func (a *authClient) GetAuthorizedScopes(ctx context.Context, body *ListAuthorizedResources) ([]string, error) {
-	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz)
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
-		SubResource(url).
+		SubResourcef("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz).
 		WithContext(ctx).
 		WithHeaders(a.basicHeader).
 		Body(body).
