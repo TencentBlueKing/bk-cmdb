@@ -55,7 +55,7 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 		blog.ErrorJSON("TransferHostToInnerModule validation module error. module ID not default. input:%s, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceModuleNotDefaultModuleErr, input.ModuleID, input.ApplicationID)
 	}
-	if err := transfer.DoTransferToInnerCheck(ctx); err != nil {
+	if err := transfer.DoTransferToInnerCheck(ctx, input.HostID); err != nil {
 		blog.ErrorJSON("TransferHostToInnerModule failed. DoTransferToInnerCheck failed. err: %+v, rid:%s", err, ctx.ReqID)
 		return nil, err
 	}
@@ -85,16 +85,82 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 }
 
 // TransferHostModule transfer host to use add module
+// 目标模块不能为空闲机模块
 func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+	// 确保目标模块不能为空闲机模块
+	defaultModuleFilter := map[string]interface{}{
+		common.BKDefaultField: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
+	}
+	defaultModuleCount, err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
+	if err != nil {
+		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	if defaultModuleCount > 0 {
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceTransferToDefaultModuleUseWrongMethod)
+	}
+
+	var exceptionArr []metadata.ExceptionResult
+
+	// 检查主机从哪个模块移除，并且确认主机可以从该模块移除
+	if input.IsIncrement == false {
+		hostConfigFilter := map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: input.HostID,
+			},
+		}
+		hostModuleConfigs := make([]metadata.ModuleHost, 0)
+		if err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostModuleConfigs); err != nil {
+			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		}
+		hostModuleMap := make(map[int64][]int64)
+		for _, hostConfig := range hostModuleConfigs {
+			if _, exist := hostModuleMap[hostConfig.HostID]; exist == false {
+				hostModuleMap[hostConfig.HostID] = make([]int64, 0)
+			}
+			hostModuleMap[hostConfig.HostID] = append(hostModuleMap[hostConfig.HostID], hostConfig.ModuleID)
+		}
+
+		for hostID, originalModuleIDs := range hostModuleMap {
+			removedModuleIDs := make([]int64, 0)
+			for _, moduleID := range originalModuleIDs {
+				if util.InArray(moduleID, input.ModuleID) == false {
+					removedModuleIDs = append(removedModuleIDs, moduleID)
+				}
+			}
+			if len(removedModuleIDs) == 0 {
+				continue
+			}
+			serviceInstanceFilter := map[string]interface{}{
+				common.BKHostIDField: hostID,
+				common.BKModuleIDField: map[string]interface{}{
+					common.BKDBIN: removedModuleIDs,
+				},
+			}
+			instanceCount, err := mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
+			if err != nil {
+				return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+			}
+			if instanceCount > 0 {
+				err := ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
+				exceptionArr = append(exceptionArr, metadata.ExceptionResult{
+					Message:     err.Error(),
+					Code:        int64(err.GetCode()),
+					OriginIndex: hostID,
+				})
+			}
+		}
+	}
+	if len(exceptionArr) > 0 {
+		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
+	}
 
 	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, input.ModuleID, input.IsIncrement)
 
-	err := transfer.ValidParameter(ctx)
+	err = transfer.ValidParameter(ctx)
 	if err != nil {
 		blog.ErrorJSON("TransferHostModule ValidParameter error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
 		return nil, err
 	}
-	var exceptionArr []metadata.ExceptionResult
 	for _, hostID := range input.HostID {
 		err := transfer.Transfer(ctx, hostID)
 		if err != nil {
