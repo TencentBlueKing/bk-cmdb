@@ -25,6 +25,8 @@ import (
 )
 
 type transferHostModule struct {
+	dependent OperationDependence
+
 	// depend parametere
 	mh          *ModuleHost
 	moduleIDArr []int64
@@ -57,6 +59,7 @@ func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
 		isIncr:      isIncr,
+		dependent:   mh.dependence,
 	}
 }
 
@@ -122,9 +125,14 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 		return nil
 
 	}
-	// transfer host module cofnig
+	// transfer host module config
 	curDatas, err = t.AddHostModuleRelation(ctx, hostID)
 	if err != nil {
+		return err
+	}
+
+	// auto create service instance if necessary
+	if err := t.autoCreateServiceInstance(ctx, hostID); err != nil {
 		return err
 	}
 
@@ -420,7 +428,7 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 			blog.ErrorJSON("add  host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
-		//  map[moduleID]bool
+		// map[moduleID]bool
 		existModuleIDMap := make(map[int64]bool, 0)
 		for _, item := range relationArr {
 			existModuleIDMap[item.ModuleID] = true
@@ -455,6 +463,16 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return insertDataArr, nil
+}
+
+func (t *transferHostModule) autoCreateServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+	for _, moduleID := range t.moduleIDArr {
+		_, err := t.dependent.AutoCreateServiceInstanceModuleHost(ctx, hostID, moduleID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // getInnerModuleIDArr get default module
