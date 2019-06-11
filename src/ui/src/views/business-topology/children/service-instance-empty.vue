@@ -90,7 +90,12 @@
                 }
             },
             goToTemplate () {
-                // todo 路由跳转
+                this.$router.push({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.moduleInstance.service_template_id
+                    }
+                })
             },
             handleAddHost () {
                 this.visible = true

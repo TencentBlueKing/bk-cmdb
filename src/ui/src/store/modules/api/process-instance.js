@@ -9,6 +9,9 @@ const actions = {
     },
     createServiceInstanceProcess (context, { params, config }) {
         return $http.post('create/proc/process_instance/with_raw', params, config)
+    },
+    deleteServiceInstanceProcess (context, { serviceInstanceId, config }) {
+        return $http.delete(`delete/proc/service_instance/${serviceInstanceId}/process`, config)
     }
 }
 

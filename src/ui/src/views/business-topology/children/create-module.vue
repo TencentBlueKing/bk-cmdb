@@ -193,7 +193,7 @@
                     if (isValid) {
                         this.$emit('submit', {
                             bk_module_name: this.moduleName,
-                            service_category_id: this.withTemplate ? 0 : this.secondClass,
+                            service_category_id: this.withTemplate ? this.currentTemplate.service_category_id : this.secondClass,
                             service_template_id: this.withTemplate ? this.template : 2
                         })
                     }

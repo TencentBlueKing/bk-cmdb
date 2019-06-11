@@ -35,7 +35,10 @@
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
-                <cmdb-form-singlechar class="options-search fr"></cmdb-form-singlechar>
+                <cmdb-form-singlechar class="options-search fr"
+                    :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
+                    v-model="filter">
+                </cmdb-form-singlechar>
             </div>
             <div class="tables">
                 <service-instance-table
@@ -46,7 +49,8 @@
                     :expanded="index === 0"
                     @create-process="handleCreateProcess"
                     @update-process="handleUpdateProcess"
-                    @delete-instance="handleDeleteInstance">
+                    @delete-instance="handleDeleteInstance"
+                    @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
         </template>
@@ -72,6 +76,7 @@
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
+    import Throttle from 'lodash.throttle'
     export default {
         components: {
             serviceInstanceTable,
@@ -79,6 +84,9 @@
         },
         data () {
             return {
+                checked: [],
+                filter: '',
+                throttleFilter: null,
                 instances: [],
                 processForm: {
                     type: 'create',
@@ -101,7 +109,7 @@
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
-                    return this.currentNode.data
+                    return this.$store.state.businessTopology.selectedNodeInstance
                 }
                 return null
             },
@@ -113,30 +121,43 @@
             },
             menuItem () {
                 return [{
-                    name: this.$t('BusinessTopology["批量编辑"]'),
-                    handler: this.batchEdit,
-                    disabled: true
-                }, {
                     name: this.$t('BusinessTopology["批量删除"]'),
                     handler: this.batchDelete,
-                    disabled: true
+                    disabled: !this.checked.length
                 }, {
                     name: this.$t('BusinessTopology["复制IP"]'),
                     handler: this.copyIp,
-                    disabled: true
+                    disabled: !this.checked.length
                 }]
             }
         },
         watch: {
-            currentModule (module) {
-                if (module) {
+            currentNode (node) {
+                if (node.data.bk_obj_id === 'module') {
+                    this.filter = ''
                     this.getServiceInstances()
                 }
+            },
+            filter () {
+                this.throttleFilter()
             }
         },
         created () {
             this.getProcessProperties()
             this.getProcessPropertyGroups()
+            this.throttleFilter = Throttle(() => {
+                this.$refs.serviceInstanceTable.forEach(vm => {
+                    if (this.filter) {
+                        const ip = vm.instance.name.split('_')[0]
+                        vm.show = ip.indexOf(this.filter) !== -1
+                    } else {
+                        vm.show = true
+                    }
+                })
+            }, 300, {
+                leading: false,
+                trailing: true
+            })
         },
         methods: {
             async getProcessProperties () {
@@ -177,7 +198,7 @@
                 try {
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
-                            bk_module_id: this.currentModule.bk_inst_id,
+                            bk_module_id: this.currentNode.data.bk_inst_id,
                             with_name: true
                         }),
                         config: {
@@ -191,17 +212,24 @@
                     this.instances = []
                 }
             },
+            handleCheckChange (checked, instance) {
+                if (checked) {
+                    this.checked.push(instance)
+                } else {
+                    this.checked = this.checked.filter(target => target.id !== instance.id)
+                }
+            },
             handleCreateProcess (referenceService) {
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'create'
-                this.processForm.title = `${this.$t('BusinessToplogy["创建进程"]')}(${referenceService.instance.name})`
+                this.processForm.title = `${this.$t('BusinessTopology["添加进程"]')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
             },
             async handleUpdateProcess (processInstance, referenceService) {
                 this.processForm.referenceService = referenceService
                 this.processForm.type = 'update'
-                this.processForm.title = this.$t('BusinessToplogy["编辑进程"]')
+                this.processForm.title = this.$t('BusinessTopology["编辑进程"]')
                 this.processForm.instance = processInstance.property
                 this.processForm.show = true
 
@@ -300,10 +328,14 @@
             handleCreateInstanceSuccess () {
                 this.getServiceInstances()
             },
-            handleCheckALL () {
-                // 全选
+            handleCheckALL (checked) {
+                this.filter = ''
+                this.$refs.serviceInstanceTable.forEach(table => {
+                    table.checked = checked
+                })
             },
             handleExpandAll (expanded) {
+                this.filter = ''
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
                 })
@@ -317,8 +349,35 @@
                 if (disabled) {
                     return false
                 }
+                this.$bkInfo({
+                    title: this.$t('BusinessTopology["确认删除实例"]'),
+                    content: this.$tc('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    confirmFn: async () => {
+                        try {
+                            const serviceInstanceIds = this.checked.map(instance => instance.id)
+                            await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
+                                config: {
+                                    data: this.$injectMetadata({
+                                        service_instance_ids: serviceInstanceIds
+                                    }),
+                                    requestId: 'batchDeleteServiceInstance'
+                                }
+                            })
+                            this.instances = this.instances.filter(instance => !serviceInstanceIds.includes(instance.id))
+                            this.checked = []
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                })
             },
-            copyIp () {}
+            copyIp () {
+                this.$copyText(this.checked.map(instance => instance.name.split('_')[0]).join('\n')).then(() => {
+                    this.$success(this.$t('Common["复制成功"]'))
+                }, () => {
+                    this.$error(this.$t('Common["复制失败"]'))
+                })
+            }
         }
     }
 </script>
