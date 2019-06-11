@@ -18,6 +18,6 @@ export default [{
     })
 }, {
     name: 'operationalTemplate',
-    path: '/service/operational',
+    path: '/service/operational/template/:templateId',
     component: () => import('./children/operational.vue')
 }]

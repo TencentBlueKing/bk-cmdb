@@ -108,6 +108,8 @@
                 secondaryList: [],
                 allSecondaryList: [],
                 processList: [],
+                originTemplateValues: {},
+                hasUsed: false,
                 attribute: {
                     type: null,
                     inst: {
@@ -128,21 +130,17 @@
             }
         },
         computed: {
+            ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
             isCreatedType () {
-                return !this.$route.params['template']
+                return this.$route.params['templateId'] === -1
             },
-            originTemplateValues () {
-                return this.$route.params['template']
-            },
-            hasUsed () {
-                const used = this.isCreatedType ? false : Boolean(this.originTemplateValues['service_instance_count'])
-                return used
+            templateId () {
+                return this.$route.params['templateId']
             }
         },
         async created () {
-            const title = this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : this.originTemplateValues['name']
-            this.$store.commit('setHeaderTitle', title)
+            this.$store.commit('setHeaderTitle', this.isCreatedType ? this.$t("ServiceManagement['新建服务模版']") : '')
             this.processList = this.localProcessTemplate
             try {
                 await this.reload()
@@ -162,7 +160,8 @@
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             ...mapActions('serviceTemplate', [
                 'createServiceTemplate',
-                'updateServiceTemplate'
+                'updateServiceTemplate',
+                'findServiceTemplate'
             ]),
             ...mapActions('processTemplate', [
                 'createProcessTemplate',
@@ -176,13 +175,18 @@
                 'clearLocalProcessTemplate'
             ]),
             initEdit () {
+                this.$store.commit('setHeaderTitle', this.originTemplateValues['name'])
                 this.formData.templateId = this.originTemplateValues['id']
                 this.formData.templateName = this.originTemplateValues['name']
                 this.formData.mainClassification = this.allSecondaryList.filter(classification => classification['id'] === this.originTemplateValues['service_category_id'])[0]['bk_parent_id']
                 this.formData.secondaryClassification = this.originTemplateValues['service_category_id']
+                this.hasUsed = this.isCreatedType ? false : Boolean(this.originTemplateValues['service_instance_count'])
                 this.getProcessList()
             },
             async reload () {
+                if (!this.isCreatedType) {
+                    this.getSingleServiceTemplate()
+                }
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'process',
@@ -207,6 +211,22 @@
                 }).then(groups => {
                     this.propertyGroups = groups
                     return groups
+                })
+            },
+            async getSingleServiceTemplate () {
+                this.originTemplateValues = await this.findServiceTemplate({
+                    id: this.templateId,
+                    config: {
+                        globalError: false,
+                        cancelPrevious: true,
+                        transformData: false
+                    }
+                }).then(res => {
+                    if (!res.result) {
+                        this.$router.replace({ name: '404' })
+                    } else {
+                        return res.data
+                    }
                 })
             },
             async getServiceClassification () {

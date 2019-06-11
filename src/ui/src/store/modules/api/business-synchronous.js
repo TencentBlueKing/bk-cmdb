@@ -35,7 +35,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     syncServiceInstanceByTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`update/proc/service_instance/with_template`, params, config)
+        return $http.put(`update/proc/service_instance/with_template`, params, config)
     }
 }
 
