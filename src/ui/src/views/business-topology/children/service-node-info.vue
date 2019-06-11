@@ -21,7 +21,11 @@
             @on-edit="handleEdit">
             <span class="property-value fl" slot="__template_name__">
                 {{flattenedInstance.__template_name__}}
-                <bk-button v-if="withTemplate" @click="handleRemoveTemplate">{{$t('BusinessTopology["解除模板"]')}}</bk-button>
+                <bk-button class="unbind-button"
+                    v-if="withTemplate"
+                    @click="handleRemoveTemplate">
+                    {{$t('BusinessTopology["解除模板"]')}}
+                </bk-button>
             </span>
         </cmdb-details>
         <cmdb-form class="topology-details" v-else-if="type === 'update'"
@@ -453,3 +457,19 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .property-value {
+        height: 16px;
+        line-height: 16px;
+        overflow: visible;
+    }
+    .unbind-button {
+        height: 26px;
+        padding: 0 4px;
+        margin: -5px 0 0 6px;
+        line-height: 24px;
+        font-size: 12px;
+        color: #63656E;
+    }
+</style>
