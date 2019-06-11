@@ -53,6 +53,8 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 		}
 
+		// check query string
+		checkQueryString(query)
 		// get query and search types
 		queryEs, types := getEsQueryAndSearchTypes(query)
 
@@ -105,6 +107,16 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 }
 
+func checkQueryString(query *Query) {
+	// if query string is single string in SpecialChar, make it to null string
+	for i := range common.SpecialChar {
+		if query.QueryString == common.SpecialChar[i] {
+			query.QueryString = ""
+			break
+		}
+	}
+}
+
 func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
 	//	"should": [
@@ -134,6 +146,11 @@ func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 		qBool.Should(qBizTerm)
 	}
 
+	// ignore bk_supplier_account
+	qSupplierMatch := elastic.NewMatchQuery(common.BkSupplierAccount, query.QueryString)
+	qBool.MustNot(qSupplierMatch)
+
+	// if set bk_obj_id
 	qString := elastic.NewQueryStringQuery(query.QueryString)
 	if query.BkObjId == "" {
 		// get search types from filter
