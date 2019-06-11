@@ -47,7 +47,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
 	return info, nil
 }
 
-func (lgc *Logics) GetInnerChartData(kit *rest.Kit, chartInfo *metadata.ChartConfig) (interface{}, error) {
+func (lgc *Logics) GetInnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
 	switch chartInfo.ReportType {
 	case "biz_module_host_chart":
 		data, err := lgc.GetBizModuleHostCount(kit)
@@ -118,7 +118,7 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	return result.Data, nil
 }
 
-func (lgc *Logics) CommonStatisticFunc(kit *rest.Kit, option *metadata.ChartConfig) (interface{}, error) {
+func (lgc *Logics) CommonStatisticFunc(kit *rest.Kit, option metadata.ChartConfig) (interface{}, error) {
 	result, err := lgc.CoreAPI.CoreService().Operation().CommonAggregate(kit.Ctx, kit.Header, option)
 	if err != nil {
 		blog.Errorf("search data fail, err: %v", err)

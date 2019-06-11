@@ -1,25 +1,15 @@
 package logics
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/util"
-	"context"
-	"net/http"
-
 	"configcenter/src/common/metadata"
+	"context"
 )
 
 func (lgc *Logics) InitInnerChart(ctx context.Context) {
-	header := make(http.Header, 0)
-	if "" == util.GetOwnerID(header) {
-		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
-		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
-	}
-
 	opt := mapstr.MapStr{}
-	result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChart(ctx, header, opt)
+	result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChart(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return
@@ -30,11 +20,13 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 	}
 
 	for _, chart := range InnerCharts {
-		_, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(ctx, header, chart)
+		_, err := lgc.CoreAPI.CoreService().Operation().CreateOperationChart(ctx, lgc.header, chart)
 		if err != nil {
 			blog.Errorf("init inner chart fail, err: %v", err)
 		}
 	}
+
+	//todo 初始化图表位置信息
 }
 
 var (

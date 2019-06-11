@@ -82,13 +82,13 @@ func (o *OperationServer) SearchStatisticChart(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
-	chartInfo := new(metadata.ChartConfig)
-	if err := ctx.DecodeInto(chartInfo); err != nil {
+	opt := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&opt); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	result, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, chartInfo)
+	result, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationSearchStatisticsFail, "update statistic info fail, err: %v", err)
 		return
@@ -98,19 +98,25 @@ func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
-	inputData := new(metadata.ChartConfig)
-	if err := ctx.DecodeInto(inputData); err != nil {
+	inputParams := mapstr.MapStr{}
+	if err := ctx.DecodeInto(&inputParams); err != nil {
 		ctx.RespAutoError(err)
+		return
+	}
+
+	chart, err := o.CoreAPI.CoreService().Operation().SearchChartByID(ctx.Kit.Ctx, ctx.Kit.Header, inputParams)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 		return
 	}
 
 	// 判断模型是否存在，不存在返回nil
 	cond := make(map[string]interface{}, 0)
-	cond[common.BKObjIDField] = inputData.ObjID
+	cond[common.BKObjIDField] = chart.Data.ObjID
 	query := metadata.QueryCondition{Condition: cond}
 	models, err := o.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, &query)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 		return
 	}
 	if models.Data.Count <= 0 {
@@ -124,8 +130,8 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 	}
 
 	srvData := o.newSrvComm(ctx.Kit.Header)
-	if !util.InStrArr(innerChart, inputData.ReportType) {
-		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, inputData)
+	if !util.InStrArr(innerChart, chart.Data.ReportType) {
+		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, chart.Data)
 		if err != nil {
 			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err, inputData.Name)
 			return
@@ -134,7 +140,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := srvData.lgc.GetInnerChartData(ctx.Kit, inputData)
+	result, err := srvData.lgc.GetInnerChartData(ctx.Kit, chart.Data)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err, inputData.Name)
 		return
@@ -150,11 +156,11 @@ func (o *OperationServer) UpdateChartPosition(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	_, err := o.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		blog.Errorf("update chart position fail, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(result)
+	ctx.RespEntity(nil)
 }

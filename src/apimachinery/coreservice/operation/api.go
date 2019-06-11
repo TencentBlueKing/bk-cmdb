@@ -36,7 +36,7 @@ func (s *operation) AggregateBizHost(ctx context.Context, h http.Header, data in
 	return
 }
 
-func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data *metadata.ChartConfig) (resp *metadata.Response, err error) {
+func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "read/operation/common/aggregate"
 
@@ -137,6 +137,20 @@ func (s *operation) SearchOperationChartData(ctx context.Context, h http.Header,
 func (s *operation) UpdateOperationChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/operation/chart/position"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (s *operation) SearchChartByID(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartByID, err error) {
+	resp = new(metadata.SearchChartByID)
+	subPath := "/search/operation/chart/byID"
 
 	err = s.client.Post().
 		WithContext(ctx).

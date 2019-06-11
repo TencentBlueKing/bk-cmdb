@@ -103,12 +103,11 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputPar
 	return nil, nil
 }
 
-func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	opt["config_id"] = inputParam.ConfigID
-	blog.Debug("input: %v", inputParam)
+	opt["config_id"] = inputParam["config_id"]
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
-		blog.Errorf("update chart config fail,id: %v err: %v", inputParam.ConfigID, err)
+		blog.Errorf("update chart config fail,id: %v err: %v", inputParam["config_id"], err)
 		return nil, err
 	}
 
