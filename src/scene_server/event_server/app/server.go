@@ -90,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
 		}
 
-		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
+		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}

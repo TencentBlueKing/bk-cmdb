@@ -88,14 +88,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		if process.Config.AuthCenter.Enable {
 			blog.Info("enable auth center access.")
-			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
+			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter, engine.Metric().Registry())
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
 			}
 			process.Service.SetAuthcenter(authcli)
 
 			if process.Config.AuthCenter.EnableSync {
-				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI, engine.Metric().Registry())
 				authSynchronizer.Run()
 				blog.Info("enable auth center and enable auth sync function.")
 			}

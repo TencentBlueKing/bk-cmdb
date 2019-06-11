@@ -153,3 +153,10 @@ func (s *ServerInfo) Address() string {
 	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }
+
+func (s *ServerInfo) Instance() string {
+	if s == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", s.IP, s.Port)
+}
