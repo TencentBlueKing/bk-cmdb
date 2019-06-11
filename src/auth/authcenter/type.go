@@ -213,6 +213,11 @@ type ListAuthorizedResourcesResult struct {
 	Data []AuthorizedResource `json:"data"`
 }
 
+type ListAuthorizedScopeResult struct {
+	BaseResponse
+	Data []string `json:"data"`
+}
+
 type AuthorizedResource struct {
 	ActionID     ActionID         `json:"action_id"`
 	ResourceType ResourceTypeID   `json:"resource_type"`
