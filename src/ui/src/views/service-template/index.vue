@@ -148,8 +148,6 @@
                 console.log(e)
             }
         },
-        mounted () {
-        },
         methods: {
             ...mapActions('serviceTemplate', ['searchServiceTemplate', 'deleteServiceTemplate']),
             ...mapActions('serviceClassification', ['searchServiceCategory']),
@@ -180,21 +178,22 @@
                 })
             },
             async getServiceClassification () {
-                this.classificationList = await this.searchServiceCategory({
+                const res = await this.searchServiceCategory({
                     params: this.$injectMetadata(),
                     config: {
                         requestId: 'get_proc_services_categories'
                     }
                 })
-                this.mainList = this.classificationList.info.filter(classification => !classification['parent_id'])
-                this.allSecondaryList = this.classificationList.info.filter(classification => classification['parent_id'])
+                this.classificationList = res.info.map(item => item['category'])
+                this.mainList = this.classificationList.filter(classification => !classification['bk_parent_id'])
+                this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
             },
             searchByTemplateName () {
                 const filterList = this.table.allList.filter(template => template['name'] === this.filter.templateName)
                 this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['parent_id'] === id && classification['bk_root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
                 this.filter.secondaryClassification = ''
             },
             operationTemplate (id) {
