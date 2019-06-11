@@ -17,21 +17,13 @@ import (
 	"errors"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/types"
 )
 
 // Start create a new transaction
 func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
-	if !c.enableTransaction {
-		blog.Warnf("not enable transaction")
-		return c, nil
-	}
-	if c.TxnID != "" {
-		blog.Warnf("transaction started")
-		return nil, dal.ErrTransactionStated
-	}
+
 	// build msg
 	msg := types.OPStartTransactionOperation{}
 	msg.OPCode = types.OPStartTransactionCode
@@ -61,14 +53,6 @@ func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 
 // Commit 提交事务
 func (c *Mongo) Commit(ctx context.Context) error {
-	if !c.enableTransaction {
-		blog.Warnf("not enable transaction")
-		return nil
-	}
-	if c.TxnID == "" {
-		blog.Warnf("TxnID is empty")
-		return dal.ErrTransactionNotFound
-	}
 	msg := types.OPCommitOperation{}
 	msg.OPCode = types.OPCommitCode
 	msg.RequestID = c.RequestID
@@ -89,14 +73,6 @@ func (c *Mongo) Commit(ctx context.Context) error {
 
 // Abort 取消事务
 func (c *Mongo) Abort(ctx context.Context) error {
-	if !c.enableTransaction {
-		blog.Warnf("not enable transaction")
-		return nil
-	}
-	if c.TxnID == "" {
-		blog.Warnf("TxnID is empty")
-		return dal.ErrTransactionNotFound
-	}
 	msg := types.OPAbortOperation{}
 	msg.OPCode = types.OPAbortCode
 	msg.RequestID = c.RequestID
