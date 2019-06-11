@@ -1,6 +1,7 @@
 package logics
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -31,11 +32,11 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 
 var (
 	BizModuleHostChart = metadata.ChartConfig{
-		ReportType: "biz_module_host_chart",
+		ReportType: common.BizModuleHostChart,
 	}
 
 	HostOsChart = metadata.ChartConfig{
-		ReportType: "host_os_chart",
+		ReportType: common.HostOSChart,
 		Name:       "按操作系统类型统计",
 		ObjID:      "host",
 		Option: metadata.ChartOption{
@@ -45,42 +46,42 @@ var (
 	}
 
 	HostBizChart = metadata.ChartConfig{
-		ReportType: "host_biz_chart",
+		ReportType: common.HostBizChart,
 		Name:       "按业务统计",
 	}
 
 	HostCloudChart = metadata.ChartConfig{
-		ReportType: "host_cloud_chart",
+		ReportType: common.HostCloudChart,
 		Name:       "按云区域统计",
 	}
 
 	HostChangeBizChart = metadata.ChartConfig{
-		ReportType: "host_change_biz_chart",
+		ReportType: common.HostChangeBizChart,
 		Name:       "主机数量变化趋势",
 	}
 
 	ModelAndInstCountChart = metadata.ChartConfig{
-		ReportType: "model_and_inst_count",
+		ReportType: common.ModelAndInstCount,
 	}
 
 	ModelInstChart = metadata.ChartConfig{
-		ReportType: "model_inst_chart",
+		ReportType: common.ModelInstChart,
 		Name:       "实例数量统计",
 	}
 
 	ModelInstChangeChart = metadata.ChartConfig{
-		ReportType: "model_inst_change_chart",
+		ReportType: common.ModelInstChangeChart,
 		Name:       "实例变更统计",
 	}
 
 	InnerCharts = map[string]metadata.ChartConfig{
-		"biz_module_host_chart":   BizModuleHostChart,
-		"host_os_chart":           HostOsChart,
-		"host_biz_chart":          HostBizChart,
-		"host_cloud_chart":        HostCloudChart,
-		"host_change_biz_chart":   HostChangeBizChart,
-		"model_inst_chart":        ModelInstChart,
-		"model_inst_change_chart": ModelInstChangeChart,
-		"model_and_inst_count":    ModelAndInstCountChart,
+		common.BizModuleHostChart:   BizModuleHostChart,
+		common.HostOSChart:          HostOsChart,
+		common.HostBizChart:         HostBizChart,
+		common.HostCloudChart:       HostCloudChart,
+		common.HostChangeBizChart:   HostChangeBizChart,
+		common.ModelInstChart:       ModelInstChart,
+		common.ModelInstChangeChart: ModelInstChangeChart,
+		common.ModelAndInstCount:    ModelAndInstCountChart,
 	}
 )

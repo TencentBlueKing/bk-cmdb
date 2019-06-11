@@ -21,7 +21,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (o *OperationServer) CreateStatisticChart(ctx *rest.Contexts) {
+func (o *OperationServer) CreateOperationChart(ctx *rest.Contexts) {
 	chartInfo := new(metadata.ChartConfig)
 	if err := ctx.DecodeInto(chartInfo); err != nil {
 		ctx.RespAutoError(err)
@@ -53,7 +53,7 @@ func (o *OperationServer) CreateStatisticChart(ctx *rest.Contexts) {
 	ctx.RespEntity(resp)
 }
 
-func (o *OperationServer) DeleteStatisticChart(ctx *rest.Contexts) {
+func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
 	opt := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&opt); err != nil {
 		ctx.RespAutoError(err)
@@ -68,7 +68,7 @@ func (o *OperationServer) DeleteStatisticChart(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-func (o *OperationServer) SearchStatisticChart(ctx *rest.Contexts) {
+func (o *OperationServer) SearchOperationChart(ctx *rest.Contexts) {
 	opt := make(map[string]interface{})
 
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
@@ -81,7 +81,7 @@ func (o *OperationServer) SearchStatisticChart(ctx *rest.Contexts) {
 	ctx.RespEntity(result.Data)
 }
 
-func (o *OperationServer) UpdateStatisticChart(ctx *rest.Contexts) {
+func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 	opt := mapstr.MapStr{}
 	if err := ctx.DecodeInto(&opt); err != nil {
 		ctx.RespAutoError(err)
@@ -125,15 +125,15 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 	}
 
 	innerChart := []string{
-		"host_change_biz_chart", "model_inst_chart", "model_inst_change_chart",
-		"biz_module_host_chart", "model_and_inst_count",
+		common.HostChangeBizChart, common.ModelInstChart, common.ModelInstChangeChart,
+		common.BizModuleHostChart, common.ModelAndInstCount,
 	}
 
 	srvData := o.newSrvComm(ctx.Kit.Header)
 	if !util.InStrArr(innerChart, chart.Data.ReportType) {
 		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, chart.Data)
 		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err, inputData.Name)
+			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 			return
 		}
 		ctx.RespEntity(result)
@@ -142,7 +142,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 
 	result, err := srvData.lgc.GetInnerChartData(ctx.Kit, chart.Data)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v, chart name: %v", err, inputData.Name)
+		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 		return
 	}
 

@@ -263,12 +263,12 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
-	statisticsRoot := "/operation/v3"
-	from, to := rootPath, statisticsRoot
+	operationRoot := "/operation/v3"
+	from, to := rootPath, operationRoot
 
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
-		from, to, isHit = rootPath+"/operation", statisticsRoot, true
+	case strings.Contains(string(*u), "/operation/"):
+		from, to, isHit = rootPath+"/operation", operationRoot, true
 
 	default:
 		isHit = false
