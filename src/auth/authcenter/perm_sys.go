@@ -169,7 +169,7 @@ var expectSystemResourceType = []ResourceType{
 			},
 			{
 				ActionID:          Delete,
-				ActionName:        "编辑",
+				ActionName:        "删除",
 				IsRelatedResource: true,
 			},
 			{
@@ -191,21 +191,8 @@ var expectSystemResourceType = []ResourceType{
 				IsRelatedResource: false,
 			},
 			{
-				ActionID:          AdminEntrance,
-				ActionName:        "管理页面入口",
-				IsRelatedResource: false,
-			},
-		},
-	},
-	{
-		ResourceTypeID:       SysAuditLog,
-		ResourceTypeName:     "操作审计",
-		ParentResourceTypeID: "",
-		Share:                true,
-		Actions: []Action{
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
+				ActionID:          ModelTopologyView,
+				ActionName:        "模型拓扑视图",
 				IsRelatedResource: false,
 			},
 		},
