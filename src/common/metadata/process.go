@@ -102,8 +102,8 @@ type FindServiceTemplateAndInstanceDifferenceOption struct {
 }
 
 type DeleteServiceInstanceOption struct {
-	Metadata          Metadata `json:"metadata" field:"metadata" bson:"metadata"`
-	ServiceInstanceID int64    `json:"id" field:"id" bson:"id"`
+	Metadata           Metadata `json:"metadata"`
+	ServiceInstanceIDs []int64  `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type FindServiceAndProcessInstanceOption struct {
