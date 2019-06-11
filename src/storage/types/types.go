@@ -193,6 +193,7 @@ func decodeBsonArray(inArr, outArr interface{}) error {
 
 const (
 	CommandRDBOperation              = "RDB"
+	CommandMigrateOperation          = "DBMigrate"
 	CommandWatchTransactionOperation = "WatchTransaction"
 )
 
