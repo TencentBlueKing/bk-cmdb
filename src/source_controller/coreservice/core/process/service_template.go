@@ -159,7 +159,7 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option m
 	}
 
 	if option.ServiceTemplateIDs != nil {
-		filter[common.BKServiceTemplateIDField] = map[string][]int64{
+		filter[common.BKFieldID] = map[string][]int64{
 			common.BKDBIN: *option.ServiceTemplateIDs,
 		}
 	}
