@@ -31,6 +31,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -52,6 +53,7 @@ var expectSystemResourceType = []ResourceType{
 	{
 		ResourceTypeID:   SysModel,
 		ResourceTypeName: "模型",
+		Share:            true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -74,6 +76,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysInstance,
 		ResourceTypeName:     "实例",
 		ParentResourceTypeID: SysModel,
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -101,6 +104,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysAssociationType,
 		ResourceTypeName:     "关联类型",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -123,6 +127,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysBusinessInstance,
 		ResourceTypeName:     "业务",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -150,6 +155,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysEventPushing,
 		ResourceTypeName:     "事件推送",
 		ParentResourceTypeID: "",
+		Share:                false,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -177,6 +183,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysSystemBase,
 		ResourceTypeName:     "系统基础",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          ModelTopologyOperation,
@@ -194,6 +201,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysAuditLog,
 		ResourceTypeName:     "操作审计",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Get,
@@ -206,6 +214,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysHostInstance,
 		ResourceTypeName:     "主机（资源池）",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,

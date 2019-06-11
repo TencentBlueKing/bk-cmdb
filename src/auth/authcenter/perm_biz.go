@@ -17,6 +17,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -38,6 +39,7 @@ var expectBizResourceType = []ResourceType{
 	{
 		ResourceTypeID:   BizModel,
 		ResourceTypeName: "模型",
+		Share:            true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -60,6 +62,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizInstance,
 		ResourceTypeName:     "实例",
 		ParentResourceTypeID: BizModel,
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -87,6 +90,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizCustomQuery,
 		ResourceTypeName:     "动态分组",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -114,6 +118,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizProcessInstance,
 		ResourceTypeName:     "进程",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -173,6 +178,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizHostInstance,
 		ResourceTypeName:     "业务主机",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -195,6 +201,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizAuditLog,
 		ResourceTypeName:     "操作审计",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Get,
