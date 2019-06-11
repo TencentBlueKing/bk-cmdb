@@ -33,14 +33,14 @@
             </div>
             <div class="modules-layout">
                 <ul class="module-list">
-                    <!-- <li class="module-item clearfix"
+                    <li class="module-item clearfix"
                         v-for="(node, index) in selectedModules" :key="index">
                         <div class="module-info fl">
-                            <span class="module-info-name">{{node.name}}</span>
+                            <span class="module-info-name">{{node.data.bk_inst_name}}</span>
                             <span class="module-info-path">{{getModulePath(node)}}</span>
                         </div>
                         <i class="bk-icon icon-close fr" @click="removeSelectedModule(node)"></i>
-                    </li> -->
+                    </li>
                 </ul>
             </div>
         </div>
@@ -295,7 +295,7 @@
                 if (data.bk_inst_id === 'source') {
                     return this.$t('Common["主机资源池"]')
                 }
-                return node.parents.map(parent => parent.name).join('-')
+                return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
             handleTransfer () {
                 const toSource = this.selectedModules.some(node => node.data.bk_inst_id === 'source')
