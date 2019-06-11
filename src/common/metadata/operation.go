@@ -101,7 +101,12 @@ type SearchChartResponse struct {
 	Data     SearchChartConfig `json:"data"`
 }
 
+type SearchChartByID struct {
+	BaseResp `json:",inline"`
+	Data     ChartConfig `json:"data"`
+}
+
 type SearchChartConfig struct {
-	Count uint64        `json:"count"`
-	Info  []ChartConfig `json:"info"`
+	Count uint64                   `json:"count"`
+	Info  map[string][]ChartConfig `json:"info"`
 }

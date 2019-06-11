@@ -161,7 +161,7 @@ type StatisticOperation interface {
 	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
 	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
-	UpdateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 }
 
 // Core logics interfaces methods
