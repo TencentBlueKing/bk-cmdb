@@ -21,6 +21,7 @@ var _ mongodb.Session = (*session)(nil)
 type session struct {
 	*transaction
 	mongocli *client
+	*database
 }
 
 func newSession(mongocli *client) *session {
@@ -37,6 +38,7 @@ func (s *session) Open() error {
 	}
 
 	s.transaction = newSessionTransaction(s.mongocli, session)
+	s.database = s.mongocli.innerDB
 	return nil
 }
 
