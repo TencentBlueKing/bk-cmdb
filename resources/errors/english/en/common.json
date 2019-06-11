@@ -12,7 +12,7 @@
     "1199010": "'%s' unassigned",
     "1199011": "'%s' the parameter is invalid or does not exist",
     "1199013": "Failed to read Data field data",
-    "1199014": "duplicated instances exist, fields [%s] duplicated",
+    "1199014": "duplicated instances exist, %s duplicated",
     "1199015": "Data out of bounds",
 	"1199016": "Field regular check failed",
     "1199017": "Failed to query data",
