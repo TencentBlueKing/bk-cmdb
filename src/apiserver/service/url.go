@@ -18,7 +18,7 @@ import (
 	"regexp"
 	"strings"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 )
 
 // URLPath url path filter
@@ -263,12 +263,12 @@ func (u *URLPath) WithDataCollect(req *restful.Request) (isHit bool) {
 
 // WithOperation transform OperationStatistic's url
 func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
-	operationRoot := "/operation/v3"
-	from, to := rootPath, operationRoot
+	statisticsRoot := "/operation/v3"
+	from, to := rootPath, statisticsRoot
 
 	switch {
 	case strings.Contains(string(*u), "/operation/"):
-		from, to, isHit = rootPath+"/operation", operationRoot, true
+		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:
 		isHit = false

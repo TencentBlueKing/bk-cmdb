@@ -9,6 +9,7 @@ import (
 )
 
 func (lgc *Logics) InitInnerChart(ctx context.Context) {
+	blog.Debug("init inner charts")
 	opt := mapstr.MapStr{}
 	result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChart(ctx, lgc.header, opt)
 	if err != nil {
