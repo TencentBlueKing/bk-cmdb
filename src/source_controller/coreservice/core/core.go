@@ -136,6 +136,7 @@ type TopoOperation interface {
 type HostOperation interface {
 	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
 	TransferHostModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	RemoveHostFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
 	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
@@ -180,7 +181,7 @@ type ProcessOperation interface {
 	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
 	GetServiceTemplate(ctx ContextParams, templateID int64) (*metadata.ServiceTemplate, error)
 	UpdateServiceTemplate(ctx ContextParams, templateID int64, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, error)
-	ListServiceTemplates(ctx ContextParams, bizID int64, categoryID int64, limit metadata.BasePage) (*metadata.MultipleServiceTemplate, error)
+	ListServiceTemplates(ctx ContextParams, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, error)
 	DeleteServiceTemplate(ctx ContextParams, serviceTemplateID int64) error
 
 	// process template
@@ -203,6 +204,8 @@ type ProcessOperation interface {
 	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, error)
 	ListProcessInstanceRelation(ctx ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, error)
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) error
+
+	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, error)
 }
 
 type core struct {

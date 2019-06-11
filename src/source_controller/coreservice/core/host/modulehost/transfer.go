@@ -110,7 +110,7 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
-		//t.origindatas = nil
+		// t.origindatas = nil
 		return err
 	}
 	// delete host.
@@ -346,7 +346,7 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 // delHostModuleRelation delete single host module relation
 func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
-	// transfer the host across businees,
+	// transfer the host across business,
 	// check host belongs to the original business ID
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
@@ -521,21 +521,18 @@ func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error
 }
 
 // DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams) error {
-	innerModuleIDArr, err := t.GetInnerModuleIDArr(ctx)
-	if err != nil {
-		return err
-	}
-	if len(innerModuleIDArr) == 0 {
+func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs []int64) error {
+	if len(hostIDs) == 0 {
 		return nil
 	}
 
-	// check 1: 不能有服务实例/进程实例
+	// check: 不能有服务实例/进程实例绑定主机实例
 	filter := map[string]interface{}{
-		common.BKHostIDField: map[string][]int64{"$in": innerModuleIDArr},
+		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
 	}
 	var count uint64
-	if count, err = t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context); nil != err {
+	count, err := t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context)
+	if err != nil {
 		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}

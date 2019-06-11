@@ -286,3 +286,56 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 	}
 	return instanceName, nil
 }
+
+// GetDefaultModuleIDs get business's default module id, default module type specified by DefaultResModuleFlag
+// be careful: it doesn't ensure business have all default module or set
+func (p *processOperation) GetBusinessDefaultSetModuleInfo(ctx core.ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, error) {
+	defaultSetModuleInfo := metadata.BusinessDefaultSetModuleInfo{}
+
+	// find and fill default module
+	defaultModuleCond := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBIN: []int64{int64(common.DefaultResModuleFlag), int64(common.DefaultFaultModuleFlag)},
+		},
+	}
+	modules := make([]struct {
+		ModuleID   int64 `bson:"bk_module_id"`
+		ModuleFlag int   `bson:"default"`
+	}, 0)
+	err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleCond).Fields(common.BKModuleIDField, common.BKDefaultField).All(ctx, &modules)
+	if nil != err {
+		blog.Errorf("get default module failed, err: %+v, filter: %+v, rid: %s", err, defaultModuleCond, ctx.ReqID)
+		return defaultSetModuleInfo, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
+	}
+
+	for _, module := range modules {
+		if module.ModuleFlag == common.DefaultResModuleFlag {
+			defaultSetModuleInfo.IdleModuleID = module.ModuleID
+		}
+		if module.ModuleFlag == common.DefaultFaultModuleFlag {
+			defaultSetModuleInfo.FaultModuleID = module.ModuleID
+		}
+	}
+
+	// find and fill default set
+	defaultSetCond := map[string]interface{}{
+		common.BKAppIDField: bizID,
+		common.BKDefaultField: map[string]interface{}{
+			common.BKDBIN: []int64{int64(common.DefaultResSetFlag)},
+		},
+	}
+	sets := make([]struct {
+		SetID int64 `bson:"bk_set_id"`
+	}, 0)
+	err = p.dbProxy.Table(common.BKTableNameBaseSet).Find(defaultSetCond).Fields(common.BKSetIDField).All(ctx, &sets)
+	if nil != err {
+		blog.Errorf("get default set failed, err: %+v, filter: %+v, rid: %s", err, defaultSetCond, ctx.ReqID)
+		return defaultSetModuleInfo, ctx.Error.Errorf(common.CCErrCommDBSelectFailed)
+	}
+	for _, set := range sets {
+		defaultSetModuleInfo.IdleSetID = set.SetID
+	}
+
+	return defaultSetModuleInfo, nil
+}
