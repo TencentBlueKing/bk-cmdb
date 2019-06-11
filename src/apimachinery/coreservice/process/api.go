@@ -180,6 +180,27 @@ func (p *process) CreateServiceTemplate(ctx context.Context, h http.Header, temp
 	return &ret.Data, nil
 }
 
+func (p *process) GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplateDetail, err error) {
+	ret := new(metadata.OneServiceTemplateDetailResult)
+	subPath := fmt.Sprintf("/find/process/service_template/%d/detail", templateID)
+
+	err = p.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, err
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return &ret.Data, nil
+}
+
 func (p *process) GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error) {
 	ret := new(metadata.OneServiceTemplateResult)
 	subPath := fmt.Sprintf("/find/process/service_template/%d", templateID)
