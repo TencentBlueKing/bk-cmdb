@@ -40,23 +40,29 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 	}
 
 	chartsInfo := make(map[string][]interface{})
+	chartsInfo["host"] = make([]interface{}, 0)
+	chartsInfo["inst"] = make([]interface{}, 0)
+	chartsInfo["nav"] = make([]interface{}, 0)
 	for _, info := range chartPosition[0].Position["host"] {
 		for _, chart := range chartConfig {
-			if chart.ConfigID == info.ConfigId {
+			if chart.ConfigID == info {
 				chartsInfo["host"] = append(chartsInfo["host"], chart)
 			}
-			if chart.ReportType == common.BizModuleHostChart {
-				chartsInfo["nav"] = append(chartsInfo["nav"], chart)
-			}
-			if chart.ReportType == common.ModelAndInstCount {
-				chartsInfo["nav"] = append(chartsInfo["nav"], chart)
-			}
+		}
+	}
+
+	for _, chart := range chartConfig {
+		if chart.ReportType == common.BizModuleHostChart {
+			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+		}
+		if chart.ReportType == common.ModelAndInstCount {
+			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
 		}
 	}
 
 	for _, info := range chartPosition[0].Position["inst"] {
 		for _, chart := range chartConfig {
-			if chart.ConfigID == info.ConfigId {
+			if chart.ConfigID == info {
 				chartsInfo["inst"] = append(chartsInfo["inst"], chart)
 			}
 		}

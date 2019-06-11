@@ -26,6 +26,7 @@ type ChartConfig struct {
 	CreateTime time.Time   `json:"create_time" bson:"create_time"`
 	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	ObjID      string      `json:"bk_obj_id" bson:"bk_obj_id"`
+	Width      string      `json:"width" bson:"width"`
 }
 
 type ChartOption struct {
@@ -34,16 +35,9 @@ type ChartOption struct {
 }
 
 type ChartPosition struct {
-	BizID    int64        `json:"bk_biz_id" bson:"bk_biz_id"`
-	Position PositionInfo `json:"position" bson:"position"`
-	OwnerID  string       `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type PositionInfo map[string][]Info
-
-type Info struct {
-	ConfigId uint64 `json:"config_id" bson:"config_id"`
-	Width    string `json:"width" bson:"width"`
+	BizID    int64               `json:"bk_biz_id" bson:"bk_biz_id"`
+	Position map[string][]uint64 `json:"position" bson:"position"`
+	OwnerID  string              `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type ModelInstChange map[string]*InstChangeCount
