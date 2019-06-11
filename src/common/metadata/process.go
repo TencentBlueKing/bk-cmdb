@@ -334,6 +334,12 @@ type ServiceCategoryWithStatistics struct {
 	UsageAmount     int64           `field:"usage_amount" json:"usage_amount" bson:"usage_amount"`
 }
 
+type ServiceTemplateDetail struct {
+	Template             ServiceTemplate `field:"template" json:"template" bson:"template"`
+	ServiceInstanceCount int64           `field:"service_instance_count" json:"service_instance_count" bson:"service_instance_count"`
+	ProcessInstanceCount int64           `field:"process_instance_count" json:"process_instance_count" bson:"process_instance_count"`
+}
+
 type ServiceTemplate struct {
 	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
 
