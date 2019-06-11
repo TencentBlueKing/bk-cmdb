@@ -349,8 +349,8 @@
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
                 const text = []
                 originalValues.forEach(value => {
-                    const flatternedText = this.$tools.getPropertyText(headerProperty, value)
-                    flatternedText ? text.push(flatternedText) : void (0)
+                    const flattenedText = this.$tools.getPropertyText(headerProperty, value)
+                    flattenedText ? text.push(flattenedText) : void (0)
                 })
                 return text.join(',') || '--'
             },

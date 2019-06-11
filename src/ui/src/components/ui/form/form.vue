@@ -149,7 +149,7 @@
                 if (this.type === 'create') {
                     return !property['bk_isapi']
                 }
-                return property.editable && !property['bk_isapi']
+                return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
             },
             checkDisabled (property) {
                 if (this.type === 'create') {
