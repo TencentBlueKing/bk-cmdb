@@ -876,6 +876,19 @@
         "其他主机": "Other host"
     },
     "BusinessSynchronous": {
-        "确认并同步": "Confirm and synchronize"
+        "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
+        "确认并同步": "Confirm and synchronize",
+        "从模版中删除": "process has been removed from the template.",
+        "模板中新增进程": "New process in the template：",
+        "变更内容": "Change Content",
+        "涉及实例": "Involved Instance",
+        "属性名称": "Attribute Name",
+        "变更前": "Before Change",
+        "变更后": "After Change",
+        "找不到更新信息": "Sorry, the corresponding service template update information could not be found~",
+        "该进程已删除": "The process has been deleted",
+        "请确认": "Please confirm the",
+        "模版更新信息": "template update information:",
+        "同步模板": "Sync Template"
     }
 }
