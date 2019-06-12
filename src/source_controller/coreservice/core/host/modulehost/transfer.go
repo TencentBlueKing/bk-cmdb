@@ -467,9 +467,8 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 
 func (t *transferHostModule) autoCreateServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	for _, moduleID := range t.moduleIDArr {
-		_, err := t.dependent.AutoCreateServiceInstanceModuleHost(ctx, hostID, moduleID)
-		if err != nil {
-			return err
+		if _, err := t.dependent.AutoCreateServiceInstanceModuleHost(ctx, hostID, moduleID); err != nil {
+			blog.Warnf("autoCreateServiceInstance failed, hostID: %d, moduleID: %d, rid: %s", hostID, moduleID, ctx.ReqID)
 		}
 	}
 	return nil
