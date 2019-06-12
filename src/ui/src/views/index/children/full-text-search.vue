@@ -3,14 +3,17 @@
         <div class="full-text-sticky-layout" ref="topSticky">
             <div class="search-bar">
                 <input id="fullTextSearch"
+                    ref="searchInput"
                     autocomplete="off"
                     class="search-keywords"
                     type="text"
                     maxlength="40"
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
                     v-model.trim="query.queryString"
+                    @input="searchTriggerType = 'input'"
                     @keypress.enter="handleSearch">
-                <label class="bk-icon icon-search" for="fullTextSearch"></label>
+                <label class="bk-icon icon-search" for="fullTextSearch" v-if="!query.queryString"></label>
+                <i class="bk-icon icon-close-circle-shape" v-else @click="query.queryString = ''"></i>
             </div>
             <div class="classify" v-show="hasData">
                 <span class="classify-item"
@@ -40,7 +43,8 @@
                             <div class="results-title"
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
-                            <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]">
+                            <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
+                                <span class="desc-item" v-html="`${$t('Index[\'模型ID\']')}${source['bk_obj_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -53,7 +57,7 @@
                             <div class="results-title"
                                 v-html="`${modelClassifyName['host']} - ${source.bk_host_innerip.toString()}`"
                                 @click="jumpPage(source)"></div>
-                            <div class="results-desc" v-if="propertyMap['host']">
+                            <div class="results-desc" v-if="propertyMap['host']" @click="jumpPage(source)">
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap['host']"
                                     :key="childIndex"
@@ -91,10 +95,10 @@
         },
         data () {
             return {
-                reg: /(?<=keywords=).*/,
                 scrollTop: null,
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
+                searchTriggerType: 'input',
                 query: {
                     queryString: '',
                     objId: ''
@@ -114,7 +118,8 @@
                 modelClassify: [],
                 modelClassifyName: {},
                 propertyMap: {},
-                debounceTimer: null
+                debounceTimer: null,
+                beforeSearchString: ''
             }
         },
         computed: {
@@ -122,7 +127,9 @@
             ...mapGetters('objectBiz', ['bizId']),
             ...mapGetters('objectModelClassify', ['models', 'getModelById']),
             params () {
-                const notZhCn = this.query.queryString.replace(/\w/g, '').length === 0
+                const notZhCn = this.query.queryString.replace(/\w\.?/g, '').length === 0
+                const singleSpecial = /[!"#$%&'()\*,-\./:;<=>?@\[\\\]^_`{}\|~]{1}/
+                const queryString = this.query.queryString.length === 1 ? this.query.queryString.replace(singleSpecial, '') : this.query.queryString
                 return {
                     page: {
                         start: this.pagination.start,
@@ -130,7 +137,7 @@
                     },
                     bk_obj_id: this.query.objId,
                     bk_biz_id: this.bizId ? this.bizId.toString() : '',
-                    query_string: notZhCn ? `*${this.query.queryString}*` : this.query.queryString,
+                    query_string: notZhCn ? `*${queryString}*` : queryString,
                     filter: ['model']
                 }
             },
@@ -147,15 +154,18 @@
                 }
             },
             'query.queryString' (queryString) {
-                this.showNoData = false
-                this.hasData = false
-                window.location.hash = this.hash.replace(this.reg, this.query.queryString)
-                this.query.objId = ''
+                window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
+                let delay = 0
+                if (this.searchTriggerType === 'click') {
+                    this.query.objId = this.query.objId
+                } else {
+                    this.query.objId = ''
+                    delay = 600
+                }
                 if (queryString) {
-                    this.propertyMap = {}
                     this.pagination.start = 0
                     this.pagination.current = 1
-                    this.handleSearch(600)
+                    this.handleSearch(delay)
                 }
             }
         },
@@ -164,10 +174,13 @@
                 back: true
             })
             this.$store.commit('setHeaderTitle', this.$t('Common["搜索结果"]'))
-            this.query.queryString = this.reg.exec(this.hash)[0]
+            this.query.queryString = this.$route.query.keywords
         },
         mounted () {
             this.initScrollListener(this.$refs.topSticky)
+            this.$nextTick(() => {
+                this.$refs.searchInput.focus()
+            })
         },
         destroyed () {
             removeMainScrollListener(this.scrollTop)
@@ -187,16 +200,17 @@
                 return !this.$tools.getMetadataBiz(model)
             },
             toggleClassify (index, model) {
-                if (index === this.currentClassify) return
+                if (index === this.currentClassify || this.searching) return
+                this.searchTriggerType = 'click'
                 this.currentClassify = index
                 this.query.objId = model
-                this.pagination.start = 0
-                this.pagination.current = 1
-                this.handleSearch()
-                // Object.keys(this.modelClassifyName).forEach(key => {
-                //     this.modelClassifyName[key] = this.modelClassifyName[key].replace(/(\<\/?em\>)/g, '')
-                // })
-                // model && (this.modelClassifyName[model] = `<em>${this.modelClassifyName[model]}</em>`)
+                if (this.query.queryString) {
+                    this.pagination.start = 0
+                    this.pagination.current = 1
+                    this.handleSearch()
+                } else {
+                    this.query.queryString = this.beforeSearchString
+                }
             },
             async getPublicModelProperties (objId) {
                 this.propertyMap = await this.batchSearchObjectAttribute({
@@ -238,25 +252,24 @@
                             requestId: this.requestId,
                             cancelPrevious: true
                         }
-                    }).then(data => {
-                        this.searching = false
+                    }).then(async data => {
                         this.pagination.total = data.total
                         const hitsData = data.hits
                         const modelData = data.aggregations
-                        if (hitsData && modelData) {
+                        if (data.total) {
                             if (!this.query.objId) {
                                 this.currentClassify = -1
                                 this.modelClassify = modelData.map(item => {
                                     return {
                                         ...this.getModelById(item.key),
-                                        count: item.count
+                                        count: item.count > 999 ? '999+' : item.count
                                     }
-                                })
+                                }).sort((prev, next) => next.count - prev.count)
                                 this.modelClassify.forEach(model => {
                                     this.modelClassifyName[model['bk_obj_id']] = model['bk_obj_name']
                                 })
-                                this.processArray(modelData)
-                                this.allSearchCount = data.total
+                                await this.processArray(modelData)
+                                this.allSearchCount = data.total > 999 ? '999+' : data.total
                                 this.hasData = data.total
                             }
                             this.searchData = hitsData.map(hits => {
@@ -270,29 +283,37 @@
                                 }
                                 return hit
                             })
+                            this.beforeSearchString = this.query.queryString
+                        } else {
+                            this.hasData = false
                         }
+                        this.searching = false
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
                         })
+                    }).catch((e) => {
+                        if (!e.hasOwnProperty('message')) {
+                            this.searching = false
+                            this.hasData = false
+                        }
                     }).finally(() => {
                         this.showNoData = true
                     })
                 }, wait)
             },
             async processArray (data) {
+                this.propertyMap = {}
                 const publicObj = data.filter(aggregation => this.isPublicModel(aggregation.key)).map(model => model.key)
                 const privateObj = data.filter(aggregation => !this.isPublicModel(aggregation.key)).map(model => model.key)
-                const getPublicAttribute = publicObj.filter(model => !this.propertyMap[model])
-                const getPrivateAttribute = privateObj.filter(model => !this.propertyMap[model])
-                if (getPublicAttribute.length) {
+                if (publicObj.length) {
                     const objId = {
-                        '$in': getPublicAttribute
+                        '$in': publicObj
                     }
                     await this.getPublicModelProperties(objId)
                 }
-                if (getPrivateAttribute.length) {
-                    for (let i = 0; i < getPrivateAttribute.length; i++) {
-                        await this.getProperties(getPrivateAttribute[i])
+                if (privateObj.length) {
+                    for (let i = 0; i < privateObj.length; i++) {
+                        await this.getProperties(privateObj[i])
                     }
                 }
             },
@@ -312,8 +333,15 @@
                         }
                     })
                 } else if (source['hitsType'] === 'object') {
+                    const model = this.getModelById(source['bk_obj_id'])
                     const isPauserd = this.getModelById(source['bk_obj_id'])['bk_ispaused']
-                    if (isPauserd) {
+                    if (model['bk_classification_id'] === 'bk_biz_topo') {
+                        this.$bkMessage({
+                            message: this.$t("Index['主线模型无法查看']"),
+                            theme: 'warning'
+                        })
+                        return
+                    } else if (isPauserd) {
                         this.$bkMessage({
                             message: this.$t("Index['该模型已停用']"),
                             theme: 'warning'
@@ -323,8 +351,10 @@
                     this.$router.push({
                         name: 'generalModel',
                         params: {
-                            objId: source['bk_obj_id'],
-                            source: source
+                            objId: source['bk_obj_id']
+                        },
+                        query: {
+                            instId: source['bk_inst_id'].toString().replace(/(\<\/?em\>)/g, '')
                         }
                     })
                 }
@@ -384,11 +414,20 @@
                 padding: 0 56px 0 16px;
                 font-size: 14px;
             }
-            .icon-search {
+            .bk-icon {
                 position: absolute;
                 right: 20px;
                 top: 13px;
                 font-size: 18px;
+                &.icon-close-circle-shape {
+                    font-size: 16px;
+                    right: 10px;
+                    color: #c4c6cc;
+                    cursor: pointer;
+                    &:hover {
+                        color: #979ba5;
+                    }
+                }
             }
         }
         .classify {
@@ -423,14 +462,15 @@
                 color: $cmdbTextColor;
                 .results-item {
                     width: 60%;
-                    padding-bottom: 14px;
+                    padding-bottom: 35px;
+                    color: #63656e;
                     em {
                         color: #3a84ff !important;
                         font-style: normal !important;
                     }
                     .results-title {
                         display: inline-block;
-                        font-size: 16px;
+                        font-size: 18px;
                         font-weight: bold;
                         margin-bottom: 4px;
                         cursor: pointer;
@@ -440,11 +480,15 @@
                         }
                     }
                     .results-desc {
-                        font-size: 12px;
+                        font-size: 14px;
                         .desc-item {
                             display: inline-block;
                             padding-right: 16px;
                             padding-bottom: 6px;
+                        }
+                        &:hover {
+                            color: #313238;
+                            cursor: pointer;
                         }
                     }
                 }
