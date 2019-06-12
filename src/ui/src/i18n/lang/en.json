@@ -822,12 +822,14 @@
     },
     "ServiceCagetory": {
         "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion.",
-        "请输入一级分类": "Please enter and return to the end",
+        "请输入一级分类": "Please enter",
         "请输入二级分类": "Please enter",
         "一级分类": "First classification",
         "二级分类": "Secondary classification",
         "确认删除分类": "Confirm delete category?",
-        "请输入分类名称": "Please enter category name"
+        "请输入分类名称": "Please enter category name",
+        "添加二级分类": "Add Secondary Cagetory",
+        "二级分类删除提示": "This category cannot be deleted because there is service instance"
     },
     "HostDetails": {
         "主机详情": "Host Details",
