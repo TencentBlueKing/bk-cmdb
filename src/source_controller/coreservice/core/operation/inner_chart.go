@@ -73,7 +73,7 @@ func (m *operationManager) SearchModelInst(ctx core.ContextParams) {
 	}
 
 	condition := metadata.ChartData{
-		ReportType: "model_inst_chart",
+		ReportType: common.ModelInstChart,
 		Data:       modelInstNumber,
 		OwnerID:    "0",
 	}
@@ -138,13 +138,13 @@ func (m *operationManager) SearchModelInstChange(ctx core.ContextParams) {
 	}
 
 	condition := metadata.ChartData{
-		ReportType: "model_inst_change_chart",
+		ReportType: common.ModelInstChangeChart,
 		Data:       modelInstChange,
 		OwnerID:    "0",
 	}
 
 	opt := mapstr.MapStr{}
-	opt["report_type"] = "model_inst_change_chart"
+	opt[common.OperationReportType] = common.ModelInstChangeChart
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(ctx, opt); err != nil {
 		blog.Errorf("delete model instance change data fail, err: %v", err)
 		return
@@ -171,7 +171,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	}
 
 	condition := mapstr.MapStr{}
-	condition["report_type"] = "host_change_biz_chart"
+	condition[common.OperationReportType] = common.HostChangeBizChart
 	bizHostChange := metadata.HostChangeChartData{}
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &bizHostChange); err != nil {
 		blog.Errorf("get host change data fail, err: %v", err)

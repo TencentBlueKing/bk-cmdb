@@ -148,9 +148,9 @@ func (s *operation) UpdateOperationChartPosition(ctx context.Context, h http.Hea
 	return
 }
 
-func (s *operation) SearchChartByID(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartByID, err error) {
-	resp = new(metadata.SearchChartByID)
-	subPath := "/search/operation/chart/byID"
+func (s *operation) SearchChartCommon(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartCommon, err error) {
+	resp = new(metadata.SearchChartCommon)
+	subPath := "/search/operation/chart/common"
 
 	err = s.client.Post().
 		WithContext(ctx).

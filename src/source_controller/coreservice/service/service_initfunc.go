@@ -134,7 +134,7 @@ func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateOperationChartPosition, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart/data", s.SearchOperationChartData, nil)
-	s.addAction(http.MethodPost, "/search/operation/chart/byID", s.SearchChartByID, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/common", s.SearchChartCommon, nil)
 }
 
 func (s *coreService) initService() {

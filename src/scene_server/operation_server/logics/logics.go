@@ -47,29 +47,6 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
 	return info, nil
 }
 
-func (lgc *Logics) GetInnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
-	switch chartInfo.ReportType {
-	case "biz_module_host_chart":
-		data, err := lgc.GetBizModuleHostCount(kit)
-		if err != nil {
-			return nil, err
-		}
-		return data, nil
-	case "model_and_inst_count":
-		data, err := lgc.GetModelAndInstCount(kit)
-		if err != nil {
-			return nil, err
-		}
-		return data, nil
-	default:
-		result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChartData(kit.Ctx, kit.Header, chartInfo.ReportType)
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
-	}
-}
-
 func (lgc *Logics) BizHostCount(kit *rest.Kit) (interface{}, error) {
 	cond := &metadata.QueryCondition{}
 	bizInfo, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
