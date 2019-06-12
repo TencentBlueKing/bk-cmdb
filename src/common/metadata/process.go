@@ -480,24 +480,24 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 }
 
 type ProcessProperty struct {
-	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty" validate:"max=10000,min=1"`
 	StopCmd            PropertyString      `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
 	RestartCmd         PropertyString      `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
 	ForceStopCmd       PropertyString      `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
+	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty" validate:"required"`
 	WorkPath           PropertyString      `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
 	BindIP             PropertyBindIP      `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
-	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty"`
+	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty" validate:"max=10000,min=1"`
 	ReloadCmd          PropertyString      `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
-	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty"`
+	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty" validate:"required"`
 	Port               PropertyPort        `field:"port" json:"port,omitempty" bson:"port,omitempty"`
 	PidFile            PropertyString      `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
 	AutoStart          PropertyBool        `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
-	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
+	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty" validate:"max=10000,min=1"`
 	StartCmd           PropertyString      `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
 	FuncID             PropertyInt64String `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
 	User               PropertyString      `field:"user" json:"user,omitempty" bson:"user,omitempty"`
-	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
+	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty" validate:"max=10000,min=1"`
 	Protocol           PropertyProtocol    `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
 	Description        PropertyString      `field:"description" json:"description,omitempty" bson:"description,omitempty"`
 	StartParamRegex    PropertyString      `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
@@ -528,6 +528,33 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 			tag := field.Tag.Get("json")
 			fieldName := strings.Split(tag, ",")[0]
 			return fieldName, err
+		}
+	}
+
+	if pt.ProcessName.Value == nil {
+		return "bk_process_name", fmt.Errorf("field [%s] is required", "bk_process_name")
+	}
+	if pt.FuncName.Value == nil {
+		return "bk_func_name", fmt.Errorf("field [%s] is required", "bk_func_name")
+	}
+	if pt.AutoTimeGapSeconds.Value != nil {
+		if *pt.AutoTimeGapSeconds.Value < 1 || *pt.AutoTimeGapSeconds.Value > 10000 {
+			return "auto_time_gap", fmt.Errorf("field %s value must in range [1, 10000]", "auto_time_gap")
+		}
+	}
+	if pt.TimeoutSeconds.Value != nil {
+		if *pt.TimeoutSeconds.Value < 1 || *pt.TimeoutSeconds.Value > 10000 {
+			return "timeout", fmt.Errorf("field %s value must in range [1, 10000]", "timeout")
+		}
+	}
+	if pt.ProcNum.Value != nil {
+		if *pt.ProcNum.Value < 1 || *pt.ProcNum.Value > 10000 {
+			return "proc_num", fmt.Errorf("field %s value must in range [1, 10000]", "proc_num")
+		}
+	}
+	if pt.Priority.Value != nil {
+		if *pt.Priority.Value < 1 || *pt.Priority.Value > 10000 {
+			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
 		}
 	}
 	return "", nil
@@ -633,6 +660,9 @@ type PropertyPort struct {
 
 func (ti *PropertyPort) Validate() error {
 	if ti.Value != nil {
+		if len(*ti.Value) == 0 {
+			return nil
+		}
 		if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
 			return fmt.Errorf("port format invalid")
 		}
