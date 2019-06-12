@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -57,6 +58,8 @@ const (
 )
 
 type Request struct {
+	parent *RESTClient
+
 	capability *util.Capability
 
 	verb    VerbType
@@ -69,6 +72,8 @@ type Request struct {
 	baseURL string
 	// sub path of the url, will be append to baseURL
 	subPath string
+	// sub path format args
+	subPathArgs []interface{}
 
 	// request timeout value
 	timeout time.Duration
@@ -122,6 +127,11 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 func (r *Request) WithTimeout(d time.Duration) *Request {
 	r.timeout = d
 	return r
+}
+
+func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
+	r.subPathArgs = args
+	return r.SubResource(subPath)
 }
 
 func (r *Request) SubResource(subPath string) *Request {
@@ -182,7 +192,11 @@ func (r *Request) WrapURL() *url.URL {
 		*finalUrl = *u
 	}
 
-	finalUrl.Path = finalUrl.Path + r.subPath
+	if len(r.subPathArgs) > 0 {
+		finalUrl.Path = finalUrl.Path + fmt.Sprintf(r.subPath, r.subPathArgs)
+	} else {
+		finalUrl.Path = finalUrl.Path + r.subPath
+	}
 
 	query := url.Values{}
 	for key, values := range r.params {
@@ -201,6 +215,21 @@ func (r *Request) WrapURL() *url.URL {
 
 func (r *Request) Do() *Result {
 	result := new(Result)
+
+	if r.parent.requestInflight != nil {
+		r.parent.requestInflight.Inc()
+		defer r.parent.requestInflight.Dec()
+	}
+	if r.parent.requestDuration != nil {
+		before := time.Now()
+		defer r.parent.requestDuration.WithLabelValues(r.subPath, strconv.Itoa(result.StatusCode)).Observe(commonUtil.ToMillisecond(time.Since(before)))
+	}
+
+	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
+	if rid == "" {
+		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+	}
+
 	if r.err != nil {
 		result.Err = r.err
 		return result
@@ -258,7 +287,7 @@ func (r *Request) Do() *Result {
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					if r.peek {
-						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					}
 					return result
 				}
@@ -280,13 +309,13 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					return result
 				}
 				body = data
 			}
 			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
-				cost, string(r.verb), url, r.body, resp.Status, body, commonUtil.GetHTTPCCRequestID(r.headers))
+				cost, string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
 			result.Status = resp.Status

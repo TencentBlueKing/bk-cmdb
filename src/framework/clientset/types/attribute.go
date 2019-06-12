@@ -13,8 +13,9 @@
 package types
 
 import (
-	"configcenter/src/framework/core/types"
 	"time"
+
+	"configcenter/src/framework/core/types"
 )
 
 type AttributeType string
@@ -46,7 +47,7 @@ type Attribute struct {
 	Editable      bool          `json:"editable,omitempty"`
 	Unit          string        `json:"unit,omitempty"`
 	IsSystem      bool          `json:"is_system,omitempty"`
-	CreatedAt     time.Time     `json:"creaet_time,omitempty"`
+	CreatedAt     time.Time     `json:"create_time,omitempty"`
 	IsAPI         bool          `json:"bk_isapi,omitempty"`
 	PropertyID    string        `json:"bk_property_id,omitempty"`
 	PropertyGroup string        `json:"bk_property_group,omitempty"`

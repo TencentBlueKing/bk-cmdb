@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -198,7 +197,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 
 	}
 
-	if err := audit.SaveAudit(ctx, strconv.FormatInt(conf.ApplicationID, 10), lgc.user, "move host to resource pool"); err != nil {
+	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "move host to resource pool"); err != nil {
 		blog.Errorf("move host to resource pool, but save audit log failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
@@ -289,7 +288,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return nil, err
 	}
 	if len(errHostID) > 0 {
-		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , input:%+v, rid:%s", err, conf, lgc.rid)
+		blog.Errorf("move host to resource pool, notExistAppModuleHost error, has host not belong to idle module , input:%+v, rid:%s", conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrHostNotBelongIDLEModuleErr, util.Int64Join(errHostID, ","))
 	}
 
@@ -300,7 +299,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return nil, err
 	}
 	if moduleID == 0 {
-		blog.Errorf("assign host to app, but get module id failed, %s not found: %v,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), lgc.rid)
+		blog.Errorf("assign host to app, but get module id failed, %s not found,input:%+v,params:%+v,rid:%s", common.DefaultResModuleName, conf, mConds.MapStr(), lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrHostModuleNotExist, common.DefaultResModuleName)
 	}
 
@@ -324,8 +323,8 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 		return result.Data, lgc.ccErr.New(result.Code, result.ErrMsg)
 	}
 
-	if err := audit.SaveAudit(ctx, strconv.FormatInt(conf.ApplicationID, 10), lgc.user, "assign host to app"); err != nil {
-		blog.Errorf("assign host to app, but save audit failed, err: %v", err)
+	if err := audit.SaveAudit(ctx, conf.ApplicationID, lgc.user, "assign host to app"); err != nil {
+		blog.Errorf("assign host to app, but save audit failed, err: %v, rid:%s", err, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
 

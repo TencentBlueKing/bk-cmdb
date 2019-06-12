@@ -21,8 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -36,20 +34,25 @@ import (
 	"configcenter/src/source_controller/coreservice/app/options"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/core/association"
+	"configcenter/src/source_controller/coreservice/core/auditlog"
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 // CoreServiceInterface the topo service methods used to init
 type CoreServiceInterface interface {
-	WebService() *restful.WebService
+	WebService() *restful.Container
 	SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
 }
 
@@ -66,6 +69,8 @@ type coreService struct {
 	actions  []action
 	cfg      options.Config
 	core     core.Core
+	db       dal.RDB
+	cahce    *redis.Client
 }
 
 func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error {
@@ -103,41 +108,61 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		return cacheRrr
 	}
 
+	s.db = db
+	s.cahce = cache
+
 	// connect the remote mongodb
-	s.core = core.New(model.New(db, s), instances.New(db, s), association.New(db, s), datasynchronize.New(db, s), mainline.New(db), host.New(db, cache))
+	s.core = core.New(
+		model.New(db, s),
+		instances.New(db, s, cache),
+		association.New(db, s),
+		datasynchronize.New(db, s),
+		mainline.New(db),
+		host.New(db, cache, s),
+		auditlog.New(db),
+		process.New(db, s),
+	)
 	return nil
 }
 
 // WebService the web service
-func (s *coreService) WebService() *restful.WebService {
+func (s *coreService) WebService() *restful.Container {
 
+	container := restful.NewContainer()
+	container.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 	// init service actions
 	s.initService()
 
-	ws := new(restful.WebService)
+	api := new(restful.WebService)
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
-	ws.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Filter(s.engin.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
 	for _, actionItem := range innerActions {
 		switch actionItem.Verb {
 		case http.MethodPost:
-			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
+			api.Route(api.POST(actionItem.Path).To(actionItem.Handler))
 		case http.MethodDelete:
-			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
+			api.Route(api.DELETE(actionItem.Path).To(actionItem.Handler))
 		case http.MethodPut:
-			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
+			api.Route(api.PUT(actionItem.Path).To(actionItem.Handler))
 		case http.MethodGet:
-			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
+			api.Route(api.GET(actionItem.Path).To(actionItem.Handler))
 		default:
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
 
-	return ws
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(s.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *coreService) createAPIRspStr(errcode int, info interface{}) (string, error) {
@@ -218,6 +243,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 		func(act action) {
 
 			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
 
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
@@ -232,7 +258,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 
 				value, err := ioutil.ReadAll(req.Request.Body)
 				if err != nil {
-					blog.Errorf("read http request body failed, error:%s", err.Error())
+					blog.Errorf("read http request body failed, err: %+v, rid: %s", err, rid)
 					errStr := defErr.Error(common.CCErrCommHTTPReadBodyFailed)
 					s.sendResponse(resp, common.CCErrCommHTTPReadBodyFailed, errStr)
 					return
@@ -241,7 +267,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				mData := mapstr.MapStr{}
 				if nil == act.HandlerParseOriginDataFunc {
 					if err := json.Unmarshal(value, &mData); nil != err && 0 != len(value) {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -249,7 +275,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 				} else {
 					mData, err = act.HandlerParseOriginDataFunc(value)
 					if nil != err {
-						blog.Errorf("failed to unmarshal the data, error %s", err.Error())
+						blog.Errorf("failed to unmarshal the data, err: %+v, rid: %s", err, rid)
 						errStr := defErr.Error(common.CCErrCommJSONUnmarshalFailed)
 						s.sendResponse(resp, common.CCErrCommJSONUnmarshalFailed, errStr)
 						return
@@ -262,7 +288,7 @@ func (s *coreService) Actions() []*httpserver.Action {
 					Lang:            defLang,
 					Header:          req.Request.Header,
 					SupplierAccount: ownerID,
-					ReqID:           util.GetHTTPCCRequestID(req.Request.Header),
+					ReqID:           rid,
 					User:            user,
 				},
 					req.PathParameter,

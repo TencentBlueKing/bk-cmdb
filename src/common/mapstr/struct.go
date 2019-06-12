@@ -79,7 +79,7 @@ func setMapStrByStruct(targetType reflect.Type, targetValue reflect.Value, value
 			innerValue := dealPointer(fieldValue, tags[0], tagName)
 			values.Set(tags[0], innerValue)
 		default:
-			blog.Infof("[mapstr] invalide kind: %v for field %v", structField.Type.Kind(), tags[0])
+			blog.Infof("[mapstr] invalid kind: %v for field %v", structField.Type.Kind(), tags[0])
 		}
 
 	}
@@ -231,8 +231,10 @@ func setMapToReflectValue(structField reflect.StructField, returnVal, inputVal r
 			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
 		case string:
 			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
+		case []interface{}:
+			retVal.SetMapIndex(key, reflect.ValueOf(rawVal))
 		default:
-			return retVal, fmt.Errorf("not support data type. field name: %v", structField.Name)
+			return retVal, fmt.Errorf("not support data type. field name: %v, type: %#v", structField.Name, value)
 		}
 	}
 

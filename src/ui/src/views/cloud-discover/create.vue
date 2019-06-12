@@ -1,7 +1,7 @@
 <template>
     <div class="create-wrapper">
         <div class="create-box">
-            <ul class="create-form" v-model="taskMap">
+            <ul class="create-form">
                 <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
@@ -199,8 +199,7 @@
                     return
                 }
                 const params = this.taskMap
-                let res = null
-                res = await this.addCloudTask({ params: params, config: { requestId: 'savePush' } })
+                await this.addCloudTask({ params: params, config: { requestId: 'savePush' } })
                 this.$emit('saveSuccess')
                 this.$success(this.$t('Inst["创建成功"]'))
             },

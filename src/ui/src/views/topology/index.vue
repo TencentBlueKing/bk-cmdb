@@ -73,7 +73,7 @@
                         :show-options="!isAdminView"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
-                        :inst="tree.flatternedSelectedNodeInst"
+                        :inst="tree.flattenedSelectedNodeInst"
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
@@ -132,7 +132,7 @@
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
-                    flatternedSelectedNodeInst: {},
+                    flattenedSelectedNodeInst: {},
                     internalModule: [],
                     create: {
                         showDialog: false,
@@ -281,7 +281,6 @@
             },
             getCommonProperties (objId) {
                 if (this.properties.hasOwnProperty(objId)) {
-                    this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
@@ -294,7 +293,6 @@
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
-                    this.tab.properties = properties
                     return properties
                 })
             },
@@ -361,7 +359,7 @@
                 }
                 promise.then(data => {
                     this.tree.selectedNodeInst = data.info[0]
-                    this.tree.flatternedSelectedNodeInst = this.$tools.flatternItem(this.tab.properties, data.info[0])
+                    this.tree.flattenedSelectedNodeInst = this.$tools.flattenItem(this.tab.properties, data.info[0])
                 })
             },
             getMainlineModel () {
@@ -504,18 +502,19 @@
                 const selectedNode = this.tree.selectedNode
                 if (this.showAttributePanel && active === 'attribute') {
                     if (this.tab.type === 'details') {
-                        await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        const [, properties] = await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        this.tab.properties = properties
                         await this.getNodeInst()
                     } else {
                         const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                         await this.getNodeObjPropertyInfo(model['bk_next_obj'])
                         this.tree.selectedNodeInst = {}
-                        this.tree.flatternedSelectedNodeInst = {}
+                        this.tree.flattenedSelectedNodeInst = {}
                     }
                 } else {
                     this.tab.type = 'details'
                     this.tree.selectedNodeInst = {}
-                    this.tree.flatternedSelectedNodeInst = {}
+                    this.tree.flattenedSelectedNodeInst = {}
                     if (active === 'hosts') {
                         this.handleRefresh()
                     }
@@ -644,9 +643,9 @@
                         ...this.tree.selectedNodeInst,
                         ...value
                     }
-                    this.tree.flatternedSelectedNodeInst = {
-                        ...this.tree.flatternedSelectedNodeInst,
-                        ...this.$tools.flatternItem(this.tab.properties, value)
+                    this.tree.flattenedSelectedNodeInst = {
+                        ...this.tree.flattenedSelectedNodeInst,
+                        ...this.$tools.flattenItem(this.tab.properties, value)
                     }
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'修改成功\']'))

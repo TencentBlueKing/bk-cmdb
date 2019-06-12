@@ -13,6 +13,7 @@
 package core
 
 import (
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
@@ -136,9 +137,11 @@ type TopoOperation interface {
 type HostOperation interface {
 	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
 	TransferHostModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	RemoveHostFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
 	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 }
 
 // AssociationOperation association methods
@@ -148,7 +151,12 @@ type AssociationOperation interface {
 	InstanceAssociation
 }
 
-// Core core itnerfaces methods
+type AuditOperation interface {
+	CreateAuditLog(ctx ContextParams, logs ...metadata.SaveAuditLogParams) error
+	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
+}
+
+// Core core interfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
@@ -156,6 +164,50 @@ type Core interface {
 	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
 	HostOperation() HostOperation
+	AuditOperation() AuditOperation
+	ProcessOperation() ProcessOperation
+}
+
+// ProcessOperation methods
+type ProcessOperation interface {
+	// service category
+	CreateServiceCategory(ctx ContextParams, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	GetServiceCategory(ctx ContextParams, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	GetDefaultServiceCategory(ctx ContextParams) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	UpdateServiceCategory(ctx ContextParams, categoryID int64, category metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	ListServiceCategories(ctx ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder)
+	DeleteServiceCategory(ctx ContextParams, categoryID int64) errors.CCErrorCoder
+
+	// service template
+	CreateServiceTemplate(ctx ContextParams, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	GetServiceTemplate(ctx ContextParams, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	UpdateServiceTemplate(ctx ContextParams, templateID int64, template metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	ListServiceTemplates(ctx ContextParams, option metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder)
+	DeleteServiceTemplate(ctx ContextParams, serviceTemplateID int64) errors.CCErrorCoder
+
+	// process template
+	CreateProcessTemplate(ctx ContextParams, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	GetProcessTemplate(ctx ContextParams, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx ContextParams, templateID int64, template metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	ListProcessTemplates(ctx ContextParams, option metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
+	DeleteProcessTemplate(ctx ContextParams, processTemplateID int64) errors.CCErrorCoder
+
+	// service instance
+	CreateServiceInstance(ctx ContextParams, template metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	GetServiceInstance(ctx ContextParams, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	UpdateServiceInstance(ctx ContextParams, instanceID int64, instance metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	ListServiceInstance(ctx ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
+	DeleteServiceInstance(ctx ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder
+	AutoCreateServiceInstanceModuleHost(ctx ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+
+	// process instance relation
+	CreateProcessInstanceRelation(ctx ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	GetProcessInstanceRelation(ctx ContextParams, processInstanceID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	UpdateProcessInstanceRelation(ctx ContextParams, processInstanceID int64, relation metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	ListProcessInstanceRelation(ctx ContextParams, option metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
+	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
+
+	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
 }
 
 type core struct {
@@ -165,10 +217,12 @@ type core struct {
 	dataSynchronize DataSynchronizeOperation
 	topo            TopoOperation
 	host            HostOperation
+	audit           AuditOperation
+	process         ProcessOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -176,6 +230,8 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		dataSynchronize: dataSynchronize,
 		topo:            topo,
 		host:            host,
+		audit:           audit,
+		process:         process,
 	}
 }
 
@@ -201,4 +257,12 @@ func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
 
 func (m *core) HostOperation() HostOperation {
 	return m.host
+}
+
+func (m *core) AuditOperation() AuditOperation {
+	return m.audit
+}
+
+func (m *core) ProcessOperation() ProcessOperation {
+	return m.process
 }

@@ -21,13 +21,13 @@ export function getFullName (names) {
     return fullNames.join(',')
 }
 
-export function flatternList (properties, list) {
+export function flattenList (properties, list) {
     if (!list.length) return list
-    const flatternedList = clone(list)
-    flatternedList.forEach((item, index) => {
-        flatternedList[index] = flatternItem(properties, item)
+    const flattenedList = clone(list)
+    flattenedList.forEach((item, index) => {
+        flattenedList[index] = flattenItem(properties, item)
     })
-    return flatternedList
+    return flattenedList
 }
 
 /**
@@ -36,12 +36,12 @@ export function flatternList (properties, list) {
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternItem (properties, item) {
-    const flatternedItem = clone(item)
+export function flattenItem (properties, item) {
+    const flattenedItem = clone(item)
     properties.forEach(property => {
-        flatternedItem[property['bk_property_id']] = getPropertyText(property, flatternedItem)
+        flattenedItem[property['bk_property_id']] = getPropertyText(property, flattenedItem)
     })
-    return flatternedItem
+    return flattenedItem
 }
 
 /**
@@ -89,13 +89,13 @@ export function getPropertyText (property, item) {
  * @param {Array} list - 模型实例列表
  * @return {Array} 拍平后的模型实例列表
  */
-export function flatternHostList (properties, list) {
+export function flattenHostList (properties, list) {
     if (!list.length) return list
-    const flatternedList = clone(list)
-    flatternedList.forEach((item, index) => {
-        flatternedList[index] = flatternHostItem(properties, item)
+    const flattenedList = clone(list)
+    flattenedList.forEach((item, index) => {
+        flattenedList[index] = flattenHostItem(properties, item)
     })
-    return flatternedList
+    return flattenedList
 }
 
 /**
@@ -104,8 +104,8 @@ export function flatternHostList (properties, list) {
  * @param {Object} item - 模型实例
  * @return {Object} 拍平后的模型实例
  */
-export function flatternHostItem (properties, item) {
-    const flatternedItem = clone(item)
+export function flattenHostItem (properties, item) {
+    const flattenedItem = clone(item)
     for (const objId in properties) {
         properties[objId].forEach(property => {
             const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
@@ -114,7 +114,7 @@ export function flatternHostItem (properties, item) {
             })
         })
     }
-    return flatternedItem
+    return flattenedItem
 }
 
 /**
@@ -278,6 +278,37 @@ export function getMetadataBiz (object = {}) {
     return biz
 }
 
+export function getValidateRules (property) {
+    const rules = {}
+    const {
+        bk_property_type: propertyType,
+        option,
+        isrequired
+    } = property
+    if (isrequired) {
+        rules.required = true
+    }
+    if (option) {
+        if (propertyType === 'int') {
+            if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
+                rules['min_value'] = option.min
+            }
+            if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
+                rules['max_value'] = option.max
+            }
+        } else if (['singlechar', 'longchar'].includes(propertyType)) {
+            rules['regex'] = option
+        }
+    }
+    if (['singlechar', 'longchar'].includes(propertyType)) {
+        rules[propertyType] = true
+    }
+    if (propertyType === 'float') {
+        rules['float'] = true
+    }
+    return rules
+}
+
 export default {
     getProperty,
     getPropertyText,
@@ -286,12 +317,13 @@ export default {
     getDefaultHeaderProperties,
     getCustomHeaderProperties,
     getHeaderProperties,
-    flatternList,
-    flatternItem,
-    flatternHostList,
-    flatternHostItem,
+    flattenList,
+    flattenItem,
+    flattenHostList,
+    flattenHostItem,
     formatTime,
     clone,
     getInstFormValues,
-    getMetadataBiz
+    getMetadataBiz,
+    getValidateRules
 }

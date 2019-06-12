@@ -125,5 +125,6 @@
         color: rgba(116, 120, 131, 0.5);
         border-top: 1px solid rgba(116, 120, 131, 0.2);
         background-color: #f5f6fa;
+        z-index: 2;
     }
 </style>

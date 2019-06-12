@@ -609,7 +609,7 @@
             bottom: 100%;
             margin: 0 0 1px 0;
         }
-        .suggestion-item{
+        .suggestion-item {
             padding: 0 10px;
             height: 32px;
             line-height: 32px;
@@ -629,6 +629,7 @@
         background-color: #fff;
         box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
         font-size: 14px;
+        white-space: nowrap;
         z-index: 9999;
     }
 </style>

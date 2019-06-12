@@ -38,12 +38,14 @@
             ...mapGetters('objectModelClassify', ['models']),
             basic () {
                 return [{
+                    id: 'business',
                     bk_obj_icon: 'icon-cc-business',
                     bk_obj_name: this.$t('Common["业务"]'),
                     router: {
                         name: 'business'
                     }
                 }, {
+                    id: 'resource',
                     bk_obj_icon: 'icon-cc-host-free-pool',
                     bk_obj_name: this.$t('Nav["主机"]'),
                     router: {
@@ -54,10 +56,15 @@
             recentlyModels () {
                 const usercustomData = this.usercustom.recently_models || []
                 const recentlyModels = []
+                const basicModels = ['resource', 'business']
                 usercustomData.forEach(id => {
-                    const model = this.models.find(model => model.id === id)
-                    if (model) {
-                        recentlyModels.push(model)
+                    if (basicModels.includes(id)) {
+                        recentlyModels.push(this.basic.find(model => model.id === id))
+                    } else {
+                        const model = this.models.find(model => model.id === id)
+                        if (model && !model.bk_ispaused) {
+                            recentlyModels.push(model)
+                        }
                     }
                 })
                 return recentlyModels
@@ -69,7 +76,14 @@
                 })
             },
             displayModels () {
-                return [...this.recentlyModels, ...this.basic, ...this.avaliableModels].slice(0, 5)
+                const displayModels = []
+                const allModels = [...this.recentlyModels, ...this.basic, ...this.avaliableModels]
+                allModels.forEach(model => {
+                    if (!displayModels.some(target => target.id === model.id)) {
+                        displayModels.push(model)
+                    }
+                })
+                return displayModels.slice(0, 5)
             }
         },
         methods: {

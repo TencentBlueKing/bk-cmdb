@@ -110,7 +110,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		fmt.Println("return msg: ", msg)
-		c.String(http.StatusInternalServerError, msg)
+		c.String(http.StatusForbidden, msg)
 		return
 	}
 

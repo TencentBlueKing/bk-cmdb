@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -148,27 +149,13 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 	if exist == false {
 		return 0, fmt.Errorf("invalid input, metadata field not exist")
 	}
-	metadata, ok := rawMetadata.(map[string]interface{})
-	if ok == false {
-		return 0, fmt.Errorf("invalid input, not mapstr struct")
+	js, _ := json.Marshal(rawMetadata)
+	meta := new(Metadata)
+	if err := json.Unmarshal(js, meta); err != nil {
+		return 0, err
 	}
 
-	return ParseBizIDFromMetadata(metadata)
-}
-
-func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
-	if metadata == nil {
-		return 0, fmt.Errorf("metadata is nil")
-	}
-	rawLabel, existed := metadata[BKLabel]
-	if existed == false {
-		return 0, nil
-	}
-	label, ok := rawLabel.(map[string]interface{})
-	if !ok {
-		return 0, fmt.Errorf("invalid label field format, not mapstr struct")
-	}
-	rawBizID, existed := label[LabelBusinessID]
+	rawBizID, existed := meta.Label[LabelBusinessID]
 	if !existed {
 		return 0, nil
 	}
@@ -177,11 +164,20 @@ func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
 		return 0, fmt.Errorf("invalid biz id value, parse int failed, id: %+v, err: %+v", rawBizID, err)
 	}
 	return bizID, nil
+
+}
+
+type MetadataWrapper struct {
+	Metadata Metadata `json:"metadata"`
 }
 
 // Metadata  used to define the metadata for the resources
 type Metadata struct {
 	Label Label `field:"label" json:"label" bson:"label"`
+}
+
+func (md *Metadata) ToMapStr() mapstr.MapStr {
+	return mapstr.MapStr{"label": md.Label.ToMapStr()}
 }
 
 func (label Label) Set(key, value string) {
@@ -191,6 +187,14 @@ func (label Label) Set(key, value string) {
 func (label Label) Get(key string) (exist bool, value string) {
 	value, exist = label[key]
 	return
+}
+
+func (label Label) ToMapStr() mapstr.MapStr {
+	result := make(map[string]interface{})
+	for key, value := range label {
+		result[key] = value
+	}
+	return result
 }
 
 // isTrue is used to check if the label key is a true value or not.
