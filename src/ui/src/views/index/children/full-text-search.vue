@@ -10,6 +10,7 @@
                     maxlength="40"
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
                     v-model.trim="query.queryString"
+                    @input="searchTriggerType = 'input'"
                     @keypress.enter="handleSearch">
                 <label class="bk-icon icon-search" for="fullTextSearch" v-if="!query.queryString"></label>
                 <i class="bk-icon icon-close-circle-shape" v-else @click="query.queryString = ''"></i>
@@ -43,7 +44,7 @@
                                 v-html="`${modelClassifyName[source['bk_obj_id']]} - ${source.bk_inst_name.toString()}`"
                                 @click="jumpPage(source)"></div>
                             <div class="results-desc" v-if="propertyMap[source['bk_obj_id']]" @click="jumpPage(source)">
-                                <span class="desc-item" v-html="`${$t('Index[\'模型ID\']')}${getModelIdText(source)}`"> </span>
+                                <span class="desc-item" v-html="`${$t('Index[\'模型ID\']')}${source['bk_obj_id']}`"> </span>
                                 <span class="desc-item"
                                     v-for="(property, childIndex) in propertyMap[source['bk_obj_id']]"
                                     :key="childIndex"
@@ -97,6 +98,7 @@
                 scrollTop: null,
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
+                searchTriggerType: 'input',
                 query: {
                     queryString: '',
                     objId: ''
@@ -116,7 +118,8 @@
                 modelClassify: [],
                 modelClassifyName: {},
                 propertyMap: {},
-                debounceTimer: null
+                debounceTimer: null,
+                beforeSearchString: ''
             }
         },
         computed: {
@@ -152,11 +155,17 @@
             },
             'query.queryString' (queryString) {
                 window.location.hash = this.hash.substring(0, this.hash.search(/=/) + 1) + this.query.queryString
-                this.query.objId = ''
+                let delay = 0
+                if (this.searchTriggerType === 'click') {
+                    this.query.objId = this.query.objId
+                } else {
+                    this.query.objId = ''
+                    delay = 600
+                }
                 if (queryString) {
                     this.pagination.start = 0
                     this.pagination.current = 1
-                    this.handleSearch(600)
+                    this.handleSearch(delay)
                 }
             }
         },
@@ -191,13 +200,17 @@
                 return !this.$tools.getMetadataBiz(model)
             },
             toggleClassify (index, model) {
-                if (index === this.currentClassify) return
-                this.searching = true
+                if (index === this.currentClassify || this.searching) return
+                this.searchTriggerType = 'click'
                 this.currentClassify = index
                 this.query.objId = model
-                this.pagination.start = 0
-                this.pagination.current = 1
-                this.handleSearch()
+                if (this.query.queryString) {
+                    this.pagination.start = 0
+                    this.pagination.current = 1
+                    this.handleSearch()
+                } else {
+                    this.query.queryString = this.beforeSearchString
+                }
             },
             async getPublicModelProperties (objId) {
                 this.propertyMap = await this.batchSearchObjectAttribute({
@@ -240,7 +253,6 @@
                             cancelPrevious: true
                         }
                     }).then(async data => {
-                        this.propertyMap = {}
                         this.pagination.total = data.total
                         const hitsData = data.hits
                         const modelData = data.aggregations
@@ -271,34 +283,37 @@
                                 }
                                 return hit
                             })
+                            this.beforeSearchString = this.query.queryString
                         } else {
                             this.hasData = false
                         }
+                        this.searching = false
                         this.$nextTick(() => {
                             this.initScrollListener(this.$refs.topSticky)
                         })
-                    }).catch(() => {
-                        this.hasData = false
+                    }).catch((e) => {
+                        if (!e.hasOwnProperty('message')) {
+                            this.searching = false
+                            this.hasData = false
+                        }
                     }).finally(() => {
-                        this.searching = false
                         this.showNoData = true
                     })
                 }, wait)
             },
             async processArray (data) {
+                this.propertyMap = {}
                 const publicObj = data.filter(aggregation => this.isPublicModel(aggregation.key)).map(model => model.key)
                 const privateObj = data.filter(aggregation => !this.isPublicModel(aggregation.key)).map(model => model.key)
-                const getPublicAttribute = publicObj.filter(model => !this.propertyMap[model])
-                const getPrivateAttribute = privateObj.filter(model => !this.propertyMap[model])
-                if (getPublicAttribute.length) {
+                if (publicObj.length) {
                     const objId = {
-                        '$in': getPublicAttribute
+                        '$in': publicObj
                     }
                     await this.getPublicModelProperties(objId)
                 }
-                if (getPrivateAttribute.length) {
-                    for (let i = 0; i < getPrivateAttribute.length; i++) {
-                        await this.getProperties(getPrivateAttribute[i])
+                if (privateObj.length) {
+                    for (let i = 0; i < privateObj.length; i++) {
+                        await this.getProperties(privateObj[i])
                     }
                 }
             },
@@ -343,10 +358,6 @@
                         }
                     })
                 }
-            },
-            getModelIdText (source) {
-                const objId = source.hasOwnProperty('bk_obj_id.keyword') ? source['bk_obj_id.keyword'] : source['bk_obj_id']
-                return objId
             },
             getShowPropertyText (property, source, thisProperty) {
                 const cloneSource = this.$tools.clone(source)
