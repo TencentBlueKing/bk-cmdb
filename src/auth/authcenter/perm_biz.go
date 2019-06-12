@@ -128,55 +128,41 @@ var expectBizResourceType = []ResourceType{
 			{
 				ActionID:          Edit,
 				ActionName:        "编辑",
-				IsRelatedResource: true,
+				IsRelatedResource: false,
 			},
 			{
 				ActionID:          Delete,
 				ActionName:        "删除",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          BindModule,
-				ActionName:        "绑定到模块",
-				IsRelatedResource: true,
+				IsRelatedResource: false,
 			},
 		},
 	},
-	// { 二期要用，注释掉留这
-	// 	ResourceTypeID:       BizTopoInstance,
-	// 	ResourceTypeName:     "拓扑",
-	// 	ParentResourceTypeID: "",
-	// 	Actions: []Action{
-	// 		{
-	// 			ActionID:          Create,
-	// 			ActionName:        "新建",
-	// 			IsRelatedResource: false,
-	// 		},
-	// 		{
-	// 			ActionID:          Edit,
-	// 			ActionName:        "编辑",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 		{
-	// 			ActionID:          Delete,
-	// 			ActionName:        "删除",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 		{
-	// 			ActionID:          Get,
-	// 			ActionName:        "查询",
-	// 			IsRelatedResource: true,
-	// 		},
-	// 	},
-	// },
+	{
+		ResourceTypeID:       BizTopo,
+		ResourceTypeName:     "拓扑",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: false,
+			},
+		},
+	},
 	{
 		ResourceTypeID:       BizHostInstance,
-		ResourceTypeName:     "业务主机",
+		ResourceTypeName:     "主机",
 		ParentResourceTypeID: "",
 		Share:                true,
 		Actions: []Action{
@@ -192,7 +178,7 @@ var expectBizResourceType = []ResourceType{
 			},
 			{
 				ActionID:          Delete,
-				ActionName:        "删除",
+				ActionName:        "删除/归还",
 				IsRelatedResource: true,
 			},
 		},

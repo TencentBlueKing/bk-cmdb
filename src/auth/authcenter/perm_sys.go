@@ -187,12 +187,12 @@ var expectSystemResourceType = []ResourceType{
 		Actions: []Action{
 			{
 				ActionID:          ModelTopologyOperation,
-				ActionName:        "拓扑层级管理",
+				ActionName:        "编辑业务层级",
 				IsRelatedResource: false,
 			},
 			{
 				ActionID:          ModelTopologyView,
-				ActionName:        "模型拓扑视图",
+				ActionName:        "编辑模型拓扑视图",
 				IsRelatedResource: false,
 			},
 		},
@@ -217,6 +217,19 @@ var expectSystemResourceType = []ResourceType{
 				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
 			},
 		},
 	},
