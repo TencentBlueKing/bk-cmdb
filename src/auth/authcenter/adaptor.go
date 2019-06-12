@@ -61,7 +61,7 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology, meta.MainlineInstanceTopology:
-		iamResourceType = BizTopoInstance
+		iamResourceType = BizTopo
 
 	case meta.MainlineModel, meta.ModelTopology:
 		iamResourceType = SysSystemBase
@@ -148,7 +148,7 @@ const (
 	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
+	BizTopo            ResourceTypeID = "bizTopo"
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
@@ -326,7 +326,7 @@ var (
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BizTopoInstance,
+		Type:    BizTopo,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
