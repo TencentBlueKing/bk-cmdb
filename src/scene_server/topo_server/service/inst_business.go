@@ -95,7 +95,7 @@ func (s *Service) UpdateBusiness(params types.ContextParams, pathParams, queryPa
 
 	err = s.Core.BusinessOperation().UpdateBusiness(params, data, obj, bizID)
 	if err != nil {
-		return nil, fmt.Errorf("update business failed, err: %+v", err)
+		return nil, err
 	}
 
 	// auth: update registered business to iam

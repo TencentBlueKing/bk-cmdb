@@ -41,7 +41,7 @@ func (valid *validator) validTime(val interface{}, key string) error {
 	result := util.IsTime(valStr)
 	if !result {
 		blog.Error("params   not valid")
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -65,7 +65,7 @@ func (valid *validator) validDate(val interface{}, key string) error {
 	result := util.IsDate(valStr)
 	if !result {
 		blog.Error("params  is not valid")
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 	// validate type
 	valStr, ok := val.(string)
 	if !ok {
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 
 	option, ok := valid.propertys[key]
@@ -96,7 +96,7 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 	enumOption, err := ParseEnumOption(option.Option)
 	if err != nil {
 		blog.Warnf("ParseEnumOption failed: %v", err)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	match := false
 	for _, k := range enumOption {
@@ -108,7 +108,7 @@ func (valid *validator) validEnum(val interface{}, key string) error {
 	if !match {
 		blog.V(3).Infof("params %s not valid, option %#v, raw option %#v, value: %#v", key, enumOption, option, val)
 		blog.Errorf("params %s not valid , enum value: %#v", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -215,7 +215,7 @@ func (valid *validator) validInt(val interface{}, key string) error {
 	}
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%#v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -257,7 +257,7 @@ func (valid *validator) validFloat(val interface{}, key string) error {
 	}
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%#v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -315,7 +315,7 @@ func (valid *validator) validChar(val interface{}, key string) error {
 	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Error("params in need")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 		}
 		return nil
 	}
@@ -323,12 +323,12 @@ func (valid *validator) validChar(val interface{}, key string) error {
 	case string:
 		if len(value) > common.FieldTypeSingleLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
+			return valid.errif.CCErrorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
 				blog.Error("params can not be empty")
-				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+				return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
 		}
@@ -341,11 +341,11 @@ func (valid *validator) validChar(val interface{}, key string) error {
 			strReg, err := regexp.Compile(option)
 			if nil != err {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
 			}
 			if !strReg.MatchString(value) {
 				blog.Errorf(`params "%s" not match regexp "%s"`, val, option)
-				return valid.errif.Error(common.CCErrFieldRegValidFailed)
+				return valid.errif.CCError(common.CCErrFieldRegValidFailed)
 			}
 		}
 	default:

@@ -69,7 +69,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 	}
 
 	ws := &restful.WebService{}
-	ws.Path(rootPath).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
+	ws.Path(rootPath).Filter(s.engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFun)).Produces(restful.MIME_JSON)
 	if s.authorizer.Enabled() == true {
 		ws.Filter(s.authFilter(getErrFun))
 	}
@@ -82,7 +82,7 @@ func (s *service) WebServices(auth authcenter.AuthConfig) []*restful.WebService 
 
 	allWebServices := make([]*restful.WebService, 0)
 	allWebServices = append(allWebServices, ws, s.core.CompatibleV2Operation().WebService())
-
+	allWebServices = append(allWebServices, s.V3Healthz())
 	return allWebServices
 }
 

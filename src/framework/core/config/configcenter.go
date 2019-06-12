@@ -16,6 +16,7 @@ import (
 	"context"
 	"sync"
 
+	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/confregdiscover"
 	"configcenter/src/common/types"
 	"configcenter/src/framework/core/log"
@@ -31,10 +32,14 @@ type ConfCenter struct {
 }
 
 // NewConfCenter create a ConfCenter object
-func NewConfCenter(serv string) *ConfCenter {
+func NewConfCenter(client *zk.ZkClient) *ConfCenter {
+	ctx, cancel := client.WithCancel()
+
 	return &ConfCenter{
 		ctx:          nil,
-		confRegDiscv: confregdiscover.NewConfRegDiscover(serv),
+		rootCtx:      ctx,
+		cancel:       cancel,
+		confRegDiscv: confregdiscover.NewConfRegDiscover(client),
 	}
 }
 
@@ -45,14 +50,6 @@ func (cc *ConfCenter) Ping() error {
 
 // Start the configure center module service
 func (cc *ConfCenter) Start() error {
-	// create root context
-	cc.rootCtx, cc.cancel = context.WithCancel(context.Background())
-
-	// start configure register and discover service
-	if err := cc.confRegDiscv.Start(); err != nil {
-		log.Errorf("fail to start config register and discover service. err:%s", err.Error())
-		return err
-	}
 
 	// here: discover itselft configure
 	confPath := types.CC_SERVCONF_BASEPATH + "/" + types.CC_MODULE_OBJECTCONTROLLER
@@ -71,15 +68,6 @@ func (cc *ConfCenter) Start() error {
 			return nil
 		}
 	}
-}
-
-// Stop the configure center
-func (cc *ConfCenter) Stop() error {
-	cc.cancel()
-
-	cc.confRegDiscv.Stop()
-
-	return nil
 }
 
 // GetConfigureCtx fetch the configure

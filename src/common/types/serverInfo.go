@@ -26,7 +26,7 @@ const (
 
 // cc modules
 const (
-	CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
+	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
 	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
 	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
 	CC_MODULE_PROCCONTROLLER   = "proccontroller"
@@ -47,7 +47,7 @@ const (
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	CC_MODULE_AUDITCONTROLLER:  true,
+	// CC_MODULE_AUDITCONTROLLER:  true,
 	CC_MODULE_HOSTCONTROLLER:   true,
 	CC_MODULE_OBJECTCONTROLLER: true,
 	CC_MODULE_PROCCONTROLLER:   true,
@@ -152,4 +152,11 @@ func (s *ServerInfo) Address() string {
 		return ""
 	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
+}
+
+func (s *ServerInfo) Instance() string {
+	if s == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", s.IP, s.Port)
 }

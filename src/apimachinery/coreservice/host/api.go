@@ -49,6 +49,26 @@ func (h *host) TransferHostModule(ctx context.Context, header http.Header, input
 	return
 }
 
+// RemoveHostFromModule 将主机从模块中移出
+// 如果主机属于n+1个模块（n>0），操作之后，主机属于n个模块
+// 如果主机属于1个模块, 且非空闲机模块，操作之后，主机属于空闲机模块
+// 如果主机属于空闲机模块，操作失败
+// 如果主机属于故障机模块，操作失败
+// 如果主机不在参数指定的模块中，操作失败
+func (h *host) RemoveHostFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/update/host/host_module_relations"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
 // TransferHostCrossBusiness  transfer host to other bussiness module
 func (h *host) TransferHostCrossBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
@@ -85,6 +105,21 @@ func (h *host) DeleteHost(ctx context.Context, header http.Header, input *metada
 	subPath := "/delete/host"
 
 	err = h.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+// FindIdentifier  query host identifier
+func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *metadata.SearchHostIdentifierParam) (resp *metadata.SearchHostIdentifierResult, err error) {
+	resp = new(metadata.SearchHostIdentifierResult)
+	subPath := "/read/host/indentifier"
+
+	err = h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).

@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -68,7 +66,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(coreService.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, coreService.WebService()); err != nil {
 		return err
 	}
 	select {

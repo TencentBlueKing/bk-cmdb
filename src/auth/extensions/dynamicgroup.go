@@ -30,12 +30,14 @@ import (
  */
 
 func (am *AuthManager) CollectDynamicGroupByBusinessID(ctx context.Context, header http.Header, businessID int64) ([]DynamicGroupSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).Eq(businessID).ToMapStr(),
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameUserAPI, &cond)
 	if err != nil {
-		blog.V(3).Infof("get user api by business %d failed, err: %+v", businessID, err)
+		blog.V(3).Infof("get user api by business %d failed, err: %+v, rid: %s", businessID, err, rid)
 		return nil, fmt.Errorf("get user api by business %d failed, err: %+v", businessID, err)
 	}
 	dynamicGroups := make([]DynamicGroupSimplify, 0)
@@ -51,6 +53,8 @@ func (am *AuthManager) CollectDynamicGroupByBusinessID(ctx context.Context, head
 }
 
 func (am *AuthManager) collectDynamicGroupByIDs(ctx context.Context, header http.Header, ids ...string) ([]DynamicGroupSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	ids = util.StrArrayUnique(ids)
 
@@ -59,7 +63,7 @@ func (am *AuthManager) collectDynamicGroupByIDs(ctx context.Context, header http
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKTableNameUserAPI, &cond)
 	if err != nil {
-		blog.Errorf("get user api by id %+v failed, err: %+v", ids, err)
+		blog.Errorf("get user api by id %+v failed, err: %+v, rid: %s", ids, err, rid)
 		return nil, fmt.Errorf("get user api by id failed, err: %+v", err)
 	}
 	dynamicGroups := make([]DynamicGroupSimplify, 0)
@@ -67,7 +71,7 @@ func (am *AuthManager) collectDynamicGroupByIDs(ctx context.Context, header http
 		dynamicGroup := DynamicGroupSimplify{}
 		_, err = dynamicGroup.Parse(item)
 		if err != nil {
-			blog.Errorf("collectDynamicGroupByIDs by id %+v failed, parse user api %+v failed, err: %+v ", ids, item, err)
+			blog.Errorf("collectDynamicGroupByIDs by id %+v failed, parse user api %+v failed, err: %+v, rid: %s", ids, item, err, rid)
 			return nil, fmt.Errorf("parse user api from db data failed, err: %+v", err)
 		}
 		dynamicGroups = append(dynamicGroups, dynamicGroup)

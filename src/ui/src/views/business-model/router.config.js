@@ -15,7 +15,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'businessModel',
-            i18n: 'Nav["业务模型"]',
+            i18n: 'Nav["业务层级"]',
             path: path,
             order: 3,
             parent: NAV_MODEL_MANAGEMENT
