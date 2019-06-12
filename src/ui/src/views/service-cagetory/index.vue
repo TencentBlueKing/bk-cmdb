@@ -10,14 +10,19 @@
             <div class="cagetory-item" v-for="(mainCagetory, index) in list" :key="index">
                 <div class="cagetory-title" :style="{ 'background-color': mainCagetory['editStatus'] ? '#f0f1f5' : '' }">
                     <div class="main-edit"
-                        v-if="editMainStatus === mainCagetory['id']"
-                        v-click-outside="handleCloseEditMain">
-                        <input type="text" ref="editInput"
+                        :style="{ width: editMainStatus === mainCagetory['id'] ? '100%' : 'auto' }"
+                        v-if="editMainStatus === mainCagetory['id']">
+                        <cagetory-input
+                            ref="editInput"
+                            :input-ref="'cagetoryInput'"
+                            :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
                             :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
-                            v-model="mainCagetoryName"
                             name="cagetoryName"
                             v-validate="'required|namedCharacter'"
-                            @keypress.enter="handleEditCagetory(mainCagetory['id'], mainCagetory['name'], 'main')">
+                            v-model="mainCagetoryName"
+                            @on-confirm="handleEditCagetory(mainCagetory['id'], mainCagetory['name'], 'main')"
+                            @on-cancel="handleCloseEditMain">
+                        </cagetory-input>
                     </div>
                     <template v-else>
                         <div class="cagetory-name">
@@ -26,8 +31,8 @@
                         </div>
                         <cmdb-dot-menu class="dot-menu">
                             <div class="menu-operational">
-                                <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("Common['添加']")}}</i>
-                                <i style="cursor: not-allowed;" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">{{$t("Common['删除']")}}</i>
+                                <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("ServiceCagetory['添加二级分类']")}}</i>
+                                <i class="not-allowed" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">{{$t("Common['删除']")}}</i>
                                 <i v-else @click.stop="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
@@ -35,43 +40,32 @@
                 </div>
                 <div class="child-cagetory">
                     <div class="child-item child-edit" v-if="addChildStatus === mainCagetory['id']">
-                        <div class="edit-box clearfix" v-click-outside="handleCloseAddChild">
-                            <input type="text"
-                                ref="editInput"
-                                class="bk-form-input"
-                                :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
-                                name="cagetoryName"
-                                v-validate="'required|namedCharacter'"
-                                v-model="cagetoryName">
-                            <span class="text-primary btn-confirm"
-                                @click.stop="handleAddCagetory(cagetoryName, mainCagetory['bk_root_id'])">{{$t("Common['确定']")}}
-                            </span>
-                            <span class="text-primary" @click="handleCloseAddChild">{{$t("Common['取消']")}}</span>
-                        </div>
+                        <cagetory-input
+                            ref="editInput"
+                            :input-ref="'cagetoryInput'"
+                            :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
+                            :edit-id="mainCagetory['bk_root_id']"
+                            name="cagetoryName"
+                            v-validate="'required|namedCharacter'"
+                            v-model="cagetoryName"
+                            @on-confirm="handleAddCagetory"
+                            @on-cancel="handleCloseAddChild">
+                        </cagetory-input>
                     </div>
-                    <div class="child-item" v-if="!mainCagetory['child_cagetory_list'].length && editChildStatus !== mainCagetory['id']">
-                        <div class="child-title" style="color: #dcdee5 !important; background-color: transparent !important;">
-                            <span>{{$t("ServiceCagetory['二级分类']")}}</span>
-                        </div>
-                    </div>
-                    <div :class="['child-item', editChildStatus === childCagetory['id'] ? 'child-edit' : '']" v-else
+                    <div :class="['child-item', editChildStatus === childCagetory['id'] ? 'child-edit' : '']"
                         v-for="(childCagetory, childIndex) in mainCagetory['child_cagetory_list']"
                         :key="childIndex">
-                        <div class="edit-box clearfix"
+                        <cagetory-input
                             v-if="editChildStatus === childCagetory['id']"
-                            v-click-outside="handleCloseEditChild">
-                            <input type="text"
-                                ref="editInput"
-                                class="bk-form-input"
-                                :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
-                                name="cagetoryName"
-                                v-validate="'required|namedCharacter'"
-                                v-model="childCagetoryName">
-                            <span class="text-primary btn-confirm"
-                                @click.stop="handleEditCagetory(childCagetory['id'], childCagetory['name'], 'child')">{{$t("Common['确定']")}}
-                            </span>
-                            <span class="text-primary" @click="handleCloseEditChild">{{$t("Common['取消']")}}</span>
-                        </div>
+                            ref="editInput"
+                            :input-ref="'cagetoryInput'"
+                            :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
+                            name="cagetoryName"
+                            v-validate="'required|namedCharacter'"
+                            v-model="childCagetoryName"
+                            @on-confirm="handleEditCagetory(childCagetory['id'], childCagetory['name'], 'child')"
+                            @on-cancel="handleCloseEditChild">
+                        </cagetory-input>
                         <template v-else>
                             <div class="child-title">
                                 <span>{{childCagetory['name']}}</span>
@@ -81,7 +75,11 @@
                                     </i>
                                     <i class="icon-cc-tips-close"
                                         v-if="!childCagetory['usage_amount']"
-                                        @click.stop="handleDeleteCagetory(mainCagetory['id'])">
+                                        @click.stop="handleDeleteCagetory(childCagetory['id'])">
+                                    </i>
+                                    <i class="icon-cc-tips-close" v-else
+                                        style="color: #c4c6cc; cursor: not-allowed;"
+                                        v-bktooltips="tooltips">
                                     </i>
                                 </div>
                             </div>
@@ -90,31 +88,23 @@
                     </div>
                 </div>
             </div>
-            <div class="cagetory-item add-item">
-                <div class="cagetory-title" :style="{ 'background-color': showAddMianCagetory ? '#f0f1f5' : '' }">
-                    <div class="main-edit" v-if="showAddMianCagetory">
-                        <input type="text"
+            <div class="cagetory-item add-item" :style="{ 'border-style': showAddMianCagetory ? 'solid' : 'dashed' }">
+                <div class="cagetory-title" :style="{ 'border-bottom-style': showAddMianCagetory ? 'solid' : 'dashed' }">
+                    <div class="main-edit" style="width: 100%;" v-if="showAddMianCagetory">
+                        <cagetory-input
                             ref="addCagetoryInput"
-                            name="cagetoryName"
+                            :input-ref="'cagetoryInput'"
+                            :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
                             :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
-                            v-model="cagetoryName"
+                            name="cagetoryName"
                             v-validate="'required|namedCharacter'"
-                            v-click-outside="handleCloseAddBox"
-                            @keypress.enter="handleAddCagetory(cagetoryName)">
-                    </div>
-                    <template v-else>
-                        <div class="cagetory-name">
-                            <span>{{$t("ServiceCagetory['一级分类']")}}</span>
-                        </div>
-                    </template>
-                </div>
-                <div class="child-cagetory">
-                    <div class="child-item">
-                        <div class="child-title">
-                            <span>{{$t("ServiceCagetory['二级分类']")}}</span>
-                        </div>
+                            v-model="cagetoryName"
+                            @on-confirm="handleAddCagetory"
+                            @on-cancel="handleCloseAddBox">
+                        </cagetory-input>
                     </div>
                 </div>
+                <div class="child-cagetory"></div>
                 <span class="add-box" v-if="!showAddMianCagetory" @click="handleAddBox"></span>
             </div>
         </div>
@@ -124,12 +114,18 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
+    import cagetoryInput from './children/cagetory-input'
     export default {
         components: {
-            featureTips
+            featureTips,
+            cagetoryInput
         },
         data () {
             return {
+                tooltips: {
+                    content: this.$t("ServiceCagetory['二级分类删除提示']"),
+                    arrowsSize: 5
+                },
                 showFeatureTips: false,
                 showAddMianCagetory: false,
                 showAddChildCagetory: false,
@@ -240,8 +236,11 @@
             handleEditMain (id, name) {
                 this.editMainStatus = id
                 this.mainCagetoryName = name
+                this.handleCloseEditChild()
+                this.handleCloseAddChild()
+                this.handleCloseAddBox()
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].focus()
+                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
                 })
             },
             handleCloseEditMain () {
@@ -250,8 +249,11 @@
             handleEditChild (id, name) {
                 this.editChildStatus = id
                 this.childCagetoryName = name
+                this.handleCloseAddChild()
+                this.handleCloseEditMain()
+                this.handleCloseAddBox()
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].focus()
+                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
                 })
             },
             handleCloseEditChild () {
@@ -260,7 +262,7 @@
             handleAddBox () {
                 this.showAddMianCagetory = true
                 this.$nextTick(() => {
-                    this.$refs.addCagetoryInput.focus()
+                    this.$refs.addCagetoryInput.$refs.cagetoryInput.focus()
                 })
             },
             handleCloseAddBox () {
@@ -270,7 +272,7 @@
             handleShowAddChild (id) {
                 this.addChildStatus = id
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].focus()
+                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
                 })
             },
             handleCloseAddChild () {
@@ -283,13 +285,15 @@
 
 <style lang="scss" scoped>
     .cagetory-wrapper {
+        min-width: 1442px;
         .cagetory-list {
             display: flex;
-            flex-wrap: wrap;
+            flex-flow: row wrap;
         }
         .cagetory-item {
             position: relative;
-            width: 320px;
+            min-width: 320px;
+            flex: 0 0 22%;
             border: 1px solid #dcdee5;
             margin-right: 30px;
             margin-bottom: 20px;
@@ -337,9 +341,6 @@
             border-bottom: 1px solid #dcdee5;
             &:hover {
                 background-color: #f0f1f5;
-                .icon-cc-edit {
-                    display: inline !important;
-                }
             }
             .main-edit {
                 display: flex;
@@ -355,13 +356,6 @@
                     outline: none;
                     font-weight: normal;
                 }
-                &::before {
-                    content: '';
-                    display: block;
-                    width: 2px;
-                    height: 20px;
-                    background-color: #63656e;
-                }
             }
             .cagetory-name {
                 @include ellipsis;
@@ -371,6 +365,9 @@
                     display: none;
                     cursor: pointer;
                     color: #3a84ff;
+                }
+                &:hover .icon-cc-edit {
+                    display: inline !important;
                 }
             }
             .dot-menu {
@@ -390,32 +387,6 @@
                 z-index: 10;
                 line-height: 32px;
                 &.child-edit {
-                    .bk-form-input {
-                        float: left;
-                        font-size: 12px;
-                        width: 170px;
-                        height: 32px;
-                        margin-right: 4px;
-                    }
-                    .edit-box .text-primary {
-                        display: inline-block;
-                        line-height: normal;
-                        font-size: 12px;
-                        &.btn-confirm {
-                            position: relative;
-                            margin-right: 6px;
-                            &::after {
-                                content: '';
-                                position: absolute;
-                                top: 2px;
-                                right: -6px;
-                                display: inline-block;
-                                width: 1px;
-                                height: 14px;
-                                background-color: #dcdee5;
-                            }
-                        }
-                    }
                     &:first-child::after {
                         height: 32px;
                     }
@@ -456,6 +427,7 @@
                     @include ellipsis;
                     @include space-between;
                     color: #63656e;
+                    font-size: 14px;
                     flex: 1;
                     padding-right: 20px;
                     padding-left: 16px;
@@ -477,23 +449,38 @@
                         cursor: pointer;
                     }
                 }
+                .edit-box {
+                    width: 100%;
+                }
             }
         }
     }
     .menu-operational {
-        width: 68px;
         padding: 6px 0;
-        font-size: 12px;
-        text-align: center;
         line-height: 32px;
-        color: #c4c6cc;
+        color: #63656e;
         i {
             display: block;
             font-style: normal;
+            padding: 0 8px;
             cursor: pointer;
             &:hover {
                 color: #3a84ff;
                 background-color: #e1ecff;
+            }
+            &.not-allowed {
+                color: #c4c6cc;
+                background-color: transparent;
+                cursor: not-allowed;
+            }
+        }
+    }
+    @media screen and (min-width: 1920px){
+        .cagetory-wrapper {
+            min-width: 1650px;
+            .cagetory-item {
+                min-width: auto;
+                flex: 0 0 18%;
             }
         }
     }
