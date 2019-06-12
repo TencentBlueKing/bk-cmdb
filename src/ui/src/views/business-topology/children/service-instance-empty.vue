@@ -57,7 +57,7 @@
                 return {}
             },
             withTemplate () {
-                return this.moduleNode && this.moduleInstance.service_template_id && this.moduleInstance.service_template_id !== 2
+                return this.moduleNode && this.moduleInstance.service_template_id
             }
         },
         watch: {
