@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy         = -1
+	CCSystemUnknownError = -2
+	CCSuccess            = 0
+	CCSuccessStr         = "success"
 
 	// common error code 1199XXX
 
@@ -160,8 +161,26 @@ const (
 	CCErrCommRegistResourceToIAMFailed   = 1199049
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
-	
-	CCErrCommGetMultipleObject = 1199052
+
+	CCErrCommGetMultipleObject                = 1199052
+	CCErrCommAuthCenterIsNotEnabled           = 1199053
+	CCErrCommOperateBuiltInItemForbidden      = 1199054
+	CCErrCommRemoveRecordHasChildrenForbidden = 1199055
+	CCErrCommRemoveReferencedRecordForbidden  = 1199056
+	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
+
+	CCErrCommGenerateRecordIDFailed   = 1199058
+	CCErrCommPageLimitIsExceeded      = 1199059
+	CCErrCommUnexpectedParameterField = 1199060
+
+	CCErrCommParseDBFailed                     = 1199061
+	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
+
+	// unknown or unrecognized error
+	CCErrorUnknownOrUnrecognizedError = 1199998
+
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
 
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
@@ -325,38 +344,39 @@ const (
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 
-	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
-	CCErrTopoAppDeleteFailed                       = 1001031
-	CCErrTopoAppUpdateFailed                       = 1001032
-	CCErrTopoAppSearchFailed                       = 1001033
-	CCErrTopoAppCreateFailed                       = 1001034
-	CCErrTopoForbiddenToDeleteModelFailed          = 1001035
-	CCErrTopoMainlineCreatFailed                   = 1001037
-	CCErrTopoMainlineDeleteFailed                  = 1001038
-	CCErrTopoMainlineSelectFailed                  = 1001039
-	CCErrTopoTopoSelectFailed                      = 1001040
-	CCErrTopoUserGroupCreateFailed                 = 1001041
-	CCErrTopoUserGroupDeleteFailed                 = 1001042
-	CCErrTopoUserGroupUpdateFailed                 = 1001043
-	CCErrTopoUserGroupSelectFailed                 = 1001044
-	CCErrTopoUserGroupPrivilegeUpdateFailed        = 1001045
-	CCErrTopoUserGroupPrivilegeSelectFailed        = 1001046
-	CCErrTopoUserPrivilegeSelectFailed             = 1001047
-	CCErrTopoRolePrivilegeCreateFailed             = 1001048
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
-	CCErrHostNotAllowedToMutiBiz                   = 1001050
-	CCErrTopoGraphicsSearchFailed                  = 1001051
-	CCErrTopoGraphicsUpdateFailed                  = 1001052
-	CCErrTopoObjectUniqueCreateFailed              = 1001060
-	CCErrTopoObjectUniqueUpdateFailed              = 1001061
-	CCErrTopoObjectUniqueDeleteFailed              = 1001062
-	CCErrTopoObjectUniqueSearchFailed              = 1001063
-	CCErrTopoObjectPropertyNotFound                = 1001064
-	CCErrTopoObjectPropertyUsedByUnique            = 1001065
-	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
-	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
+	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
+	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
+	CCErrTopoAppDeleteFailed                                  = 1001031
+	CCErrTopoAppUpdateFailed                                  = 1001032
+	CCErrTopoAppSearchFailed                                  = 1001033
+	CCErrTopoAppCreateFailed                                  = 1001034
+	CCErrTopoForbiddenToDeleteModelFailed                     = 1001035
+	CCErrTopoMainlineCreatFailed                              = 1001037
+	CCErrTopoMainlineDeleteFailed                             = 1001038
+	CCErrTopoMainlineSelectFailed                             = 1001039
+	CCErrTopoTopoSelectFailed                                 = 1001040
+	CCErrTopoUserGroupCreateFailed                            = 1001041
+	CCErrTopoUserGroupDeleteFailed                            = 1001042
+	CCErrTopoUserGroupUpdateFailed                            = 1001043
+	CCErrTopoUserGroupSelectFailed                            = 1001044
+	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1001045
+	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1001046
+	CCErrTopoUserPrivilegeSelectFailed                        = 1001047
+	CCErrTopoRolePrivilegeCreateFailed                        = 1001048
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1001049
+	CCErrHostNotAllowedToMutiBiz                              = 1001050
+	CCErrTopoGraphicsSearchFailed                             = 1001051
+	CCErrTopoGraphicsUpdateFailed                             = 1001052
+	CCErrTopoObjectUniqueCreateFailed                         = 1001060
+	CCErrTopoObjectUniqueUpdateFailed                         = 1001061
+	CCErrTopoObjectUniqueDeleteFailed                         = 1001062
+	CCErrTopoObjectUniqueSearchFailed                         = 1001063
+	CCErrTopoObjectPropertyNotFound                           = 1001064
+	CCErrTopoObjectPropertyUsedByUnique                       = 1001065
+	CCErrTopoObjectUniqueKeyKindInvalid                       = 1001066
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1001067
+	CCErrTopoObjectUniqueCanNotHasMutiMustCheck               = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1001069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
@@ -380,7 +400,7 @@ const (
 	// full text find err
 	CCErrorTopoFullTextFindErr = 1101085
 
-	// objectcontroller 1102XXX
+	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
 	CCErrObjectPropertyGroupInsertFailed = 1102000
@@ -428,7 +448,7 @@ const (
 	CCErrCommMigrateFailed        = 1105000
 	CCErrCommInitAuthcenterFailed = 1105001
 
-	// hostcontroller 1106XXX
+	// host controller 1106XXX
 	CCErrHostSelectInst                  = 1106000
 	CCErrHostCreateInst                  = 1106002
 	CCErrHostGetSnapshot                 = 1106003
@@ -453,7 +473,7 @@ const (
 	CCErrCloudConfirmHistoryAddFail      = 1106022
 	CCErrCloudSyncHistorySearchFail      = 1106023
 
-	// proccontroller 1107XXX
+	// process controller 1107XXX
 	CCErrProcDeleteProc2Module   = 1107001
 	CCErrProcCreateProc2Module   = 1107002
 	CCErrProcSelectProc2Module   = 1107003
@@ -468,15 +488,15 @@ const (
 	CCErrProcCreateProc2Template = 1107012
 	CCErrProcSelectProc2Template = 1107013
 
-	// procserver 1108XXX
+	// process server 1108XXX
 	CCErrProcSearchDetailFaile          = 1108001
 	CCErrProcBindToMoudleFaile          = 1108002
 	CCErrProcUnBindToMoudleFaile        = 1108003
 	CCErrProcSelectBindToMoudleFaile    = 1108004
-	CCErrProcUpdateProcessFaile         = 1108005
-	CCErrProcSearchProcessFaile         = 1108006
-	CCErrProcDeleteProcessFaile         = 1108007
-	CCErrProcCreateProcessFaile         = 1108008
+	CCErrProcUpdateProcessFailed        = 1108005
+	CCErrProcSearchProcessFailed        = 1108006
+	CCErrProcDeleteProcessFailed        = 1108007
+	CCErrProcCreateProcessFailed        = 1108008
 	CCErrProcFieldValidFaile            = 1108009
 	CCErrProcGetByApplicationIDFail     = 1108010
 	CCErrProcGetByIP                    = 1108011
@@ -493,11 +513,26 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	// auditlog 1109XXX
+	CCErrProcGetServiceInstancesFailed                    = 1108024
+	CCErrProcCreateServiceInstancesFailed                 = 1108025
+	CCErrProcDeleteServiceInstancesFailed                 = 1108026
+	CCErrProcGetProcessTemplatesFailed                    = 1108027
+	CCErrProcGetProcessInstanceFailed                     = 1108028
+	CCErrProcGetProcessInstanceRelationFailed             = 1108029
+	CCErrProcDeleteServiceTemplateFailed                  = 1108030
+	CCErrProcCreateProcessTemplateFailed                  = 1108031
+	CCErrProcUpdateProcessTemplateFailed                  = 1108032
+	CCErrProcGetProcessTemplateFailed                     = 1108033
+	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
+	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
+	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
+	CCErrProcModuleNotBindWithTemplate                    = 1108037
+
+	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
 	CCErrAuditTakeSnapshotFaile = 1109001
 
-	//hostserver
+	// host server
 	CCErrHostGetFail              = 1110001
 	CCErrHostUpdateFail           = 1110002
 	CCErrHostUpdateFieldFail      = 1110003
@@ -568,6 +603,7 @@ const (
 	CCErrHostNotBelongIDLEModuleErr = 1110056
 	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
+	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001
@@ -628,7 +664,15 @@ const (
 	// CCErrCoreServiceEventPushEventFailed failed to sent event
 	CCErrCoreServiceEventPushEventFailed = 1113010
 
-	// synchronize data coreservice  11139xx
+	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
+	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
+
+	CCErrHostRemoveFromDefaultModuleFailed                                    = 1113012
+	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
+	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
+	CCErrCoreServiceModuleNotFound                                            = 1113015
+
+	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901
@@ -636,7 +680,7 @@ const (
 	// CCErrApiServerV2AppNameLenErr app name must be 1-32 len
 	CCErrAPIServerV2APPNameLenErr = 1170001
 
-	// CCErrAPIServerV2DirectErr  disply error
+	// CCErrAPIServerV2DirectErr  display error
 	CCErrAPIServerV2DirectErr = 1170002
 
 	// CCErrAPIServerV2SetNameLenErr  set name must be < 24 len

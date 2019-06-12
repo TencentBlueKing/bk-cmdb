@@ -3,7 +3,7 @@
         'is-sticky': sticky
     }">
         <div class="sticky-layout" ref="stickyLayout">
-            <the-search></the-search>
+            <search-input></search-input>
             <the-recently></the-recently>
         </div>
         <div ref="stickyProxy" v-show="sticky"></div>
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-    import theSearch from './children/search'
+    import searchInput from './children/search-input'
     import theRecently from './children/recently'
     import theClassify from './children/classify'
     import theMap from './children/map'
@@ -30,7 +30,7 @@
     export default {
         name: 'cmdb-index',
         components: {
-            theSearch,
+            searchInput,
             theRecently,
             theClassify,
             theMap,
@@ -118,5 +118,6 @@
         color: rgba(116, 120, 131, 0.5);
         border-top: 1px solid rgba(116, 120, 131, 0.2);
         background-color: #f5f6fa;
+        z-index: 2;
     }
 </style>

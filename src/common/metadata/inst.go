@@ -25,9 +25,10 @@ type SetInst struct {
 	SetEnv    string `bson:"bk_set_env"`
 }
 type ModuleInst struct {
-	BizID      int64  `bson:"bk_biz_id"`
-	ModuleID   int64  `bson:"bk_module_id"`
-	ModuleName string `bson:"bk_module_name"`
+	BizID           int64  `bson:"bk_biz_id"`
+	ModuleID        int64  `bson:"bk_module_id"`
+	ModuleName      string `bson:"bk_module_name"`
+	SupplierAccount string `bson:"bk_supplier_account"`
 }
 type BizInst struct {
 	BizID           int64  `bson:"bk_biz_id"`
@@ -107,6 +108,11 @@ type SearchIdentifierParam struct {
 	Page BasePage
 }
 
+// SearchHostIdentifierParam 查询主机身份的条件
+type SearchHostIdentifierParam struct {
+	HostIDs []int64 `json:"host_ids"`
+}
+
 type IPParam struct {
 	Data    []string `json:"data"`
 	CloudID *int64   `json:"bk_cloud_id"`
@@ -114,8 +120,11 @@ type IPParam struct {
 
 type SearchHostIdentifierResult struct {
 	BaseResp `json:",inline"`
-	Data     struct {
-		Count int              `json:"count"`
-		Info  []HostIdentifier `json:"info"`
-	} `json:"data"`
+	Data     SearchHostIdentifierData `json:"data"`
+}
+
+// SearchHostIdentifierData host identifier detail
+type SearchHostIdentifierData struct {
+	Count int              `json:"count"`
+	Info  []HostIdentifier `json:"info"`
 }

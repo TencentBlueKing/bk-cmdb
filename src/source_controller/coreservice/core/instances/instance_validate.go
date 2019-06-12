@@ -39,10 +39,42 @@ var createIgnoreKeys = []string{
 	common.BKSupplierIDField,
 	common.BKInstIDField,
 	common.BKDataStatusField,
+	common.CreateTimeField,
+	common.LastTimeField,
+	common.BKProcIDField,
+}
+
+func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, error) {
+	switch objID {
+	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc:
+		biz, exist := instanceData[common.BKAppIDField]
+		if exist == false {
+			return 0, nil
+		}
+		bizID, err := util.GetInt64ByInterface(biz)
+		if err != nil {
+			return 0, err
+		}
+		return bizID, nil
+	case common.BKInnerObjIDPlat:
+		return 0, nil
+	default:
+		if _, exist := instanceData[common.MetadataField]; exist == false {
+			return 0, nil
+		}
+		return metadata.ParseBizIDFromData(instanceData)
+	}
+	return 0, nil
 }
 
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
-	valid, err := NewValidator(ctx, m.dependent, objID)
+	bizID, err := FetchBizIDFromInstance(objID, instanceData)
+	if err != nil {
+		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+
+	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
 		blog.Errorf("init validator failed %s", err.Error())
 		return err
@@ -76,7 +108,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		property, ok := valid.propertys[key]
 		if !ok {
 			blog.Errorf("field [%s] is not a valid property for model [%s]", key, objID)
-			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {
@@ -111,7 +143,18 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
-	valid, err := NewValidator(ctx, m.dependent, objID)
+	originData, err := m.getInstDataByID(ctx, objID, instID, m)
+	if err != nil {
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return err
+	}
+	bizID, err := FetchBizIDFromInstance(objID, originData)
+	if err != nil {
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+
+	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
@@ -126,8 +169,8 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("params is not valid, the key is %s", key)
-			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
+			blog.Errorf("parameter field `%s` is unexpected, rid: %s", key, ctx.ReqID)
+			return valid.errif.Errorf(common.CCErrCommUnexpectedParameterField, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

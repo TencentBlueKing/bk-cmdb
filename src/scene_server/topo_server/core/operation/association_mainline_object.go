@@ -59,7 +59,6 @@ func (a *association) DeleteMainlineAssociaton(params types.ContextParams, objID
 			blog.Errorf("[operation-asst] failed to update the association, error info is %s", err.Error())
 			return err
 		}
-
 	}
 
 	// delete this object related association.

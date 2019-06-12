@@ -42,6 +42,7 @@
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
         },
         mounted () {
+            this.$store.commit('setFeatureTipsParams')
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
         },
         beforeDestroy () {

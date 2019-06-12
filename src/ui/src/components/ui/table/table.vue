@@ -7,7 +7,7 @@
         :style="{ height: wrapperHeight, width: wrapperWidth }">
         <div class="table-layout">
             <cmdb-table-selector ref="headSelector" class="head-selector"
-                v-if="hasCheckbox && (pagination.count > pagination.size)"
+                v-if="hasCheckbox && crossPageCheck && (pagination.count > pagination.size)"
                 :layout="layout"
                 :total="pagination.count"
                 :selected-count="checked.length"
@@ -119,6 +119,10 @@
                 type: Boolean,
                 default: true
             },
+            crossPageCheck: {
+                type: Boolean,
+                default: true
+            },
             valueKey: {
                 type: String,
                 default: 'id'
@@ -170,6 +174,10 @@
             wrapperMinusHeight: {
                 type: Number,
                 default: 0
+            },
+            referenceDocumentHeight: {
+                type: Boolean,
+                default: true
             },
             width: {
                 type: Number,
@@ -313,7 +321,9 @@
             initResize () {
                 this.throttleLayout = throttle(() => {
                     this.doLayout()
-                    this.updateWrapperMaxHeight()
+                    if (this.referenceDocumentHeight) {
+                        this.updateWrapperMaxHeight()
+                    }
                 }, 50)
                 addResizeListener(this.$el, this.throttleLayout)
             }

@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -106,7 +104,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
+	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}
@@ -132,7 +130,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		Config:      server.Config,
 	}
 
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(server.Service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, server.Service.WebService()); err != nil {
 		return err
 	}
 	select {

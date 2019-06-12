@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-float">
         <input class="cmdb-form-input form-float-input" type="text"
-            :placeholder="$t('Form[\'请输入浮点数\']')"
+            :placeholder="placeholder || $t('Form[\'请输入浮点数\']')"
             :value="value"
             :disabled="disabled"
             @blur="handleInput($event)"
@@ -22,6 +22,10 @@
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {
