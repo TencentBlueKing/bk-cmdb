@@ -33,8 +33,6 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/rpc"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -92,7 +90,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 			return fmt.Errorf("connect subcli redis server failed %s", err.Error())
 		}
 
-		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth)
+		authcli, err := authcenter.NewAuthCenter(nil, process.Config.Auth, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new authcenter failed: %v, config: %+v", err, process.Config.Auth)
 		}
@@ -109,7 +107,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		return err
 	}
 	select {

@@ -80,6 +80,12 @@ type HostsModuleRelation struct {
 	IsIncrement   bool    `json:"is_increment"`
 }
 
+type RemoveHostsFromModuleOption struct {
+	ApplicationID int64 `json:"bk_biz_id"`
+	HostID        int64 `json:"bk_host_id"`
+	ModuleID      int64 `json:"bk_module_id"`
+}
+
 type HostToAppModule struct {
 	Ips         []string `json:"ips"`
 	HostName    []string `json:"bk_host_name"`
@@ -247,7 +253,6 @@ type TaskInfo struct {
 	Args        CloudTaskInfo
 	Method      string
 	NextTrigger int64
-	ManagerChn  chan bool
 }
 
 type CloudSyncRedisPendingStart struct {

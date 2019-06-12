@@ -24,9 +24,8 @@ import (
 	"configcenter/src/source_controller/coreservice/service"
 	"configcenter/src/storage/dal/mongo"
 
-	"github.com/stretchr/testify/require"
-
 	restful "github.com/emicklei/go-restful"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultHeader = func() http.Header {

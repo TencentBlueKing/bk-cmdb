@@ -443,7 +443,7 @@
             },
             getTableData () {
                 this.getInstList().then(data => {
-                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     this.setAllHostList(data.info)
                     return data
@@ -504,9 +504,9 @@
                 }
                 return params
             },
-            async handleEdit (flatternItem) {
+            async handleEdit (flattenItem) {
                 const list = await this.getInstList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_inst_id'] === flatternItem['bk_inst_id'])
+                const inst = list.info.find(item => item['bk_inst_id'] === flattenItem['bk_inst_id'])
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
             },
@@ -547,7 +547,7 @@
                             instId: originalValues['bk_inst_id'],
                             params: this.$injectMetadata({}, { inject: !this.isPublicModel })
                         }).then(item => {
-                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, item)
+                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, item)
                         })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
@@ -684,16 +684,8 @@
                 })
             },
             setRencentlyData () {
-                const usercustomData = this.usercustom.recently_models || []
-                const isExist = usercustomData.some(id => id === this.model.id)
-                let newUsercustomData = [...usercustomData]
-                if (isExist) {
-                    newUsercustomData = newUsercustomData.filter(id => id !== this.model.id)
-                }
-                newUsercustomData.unshift(this.model.id)
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    recently_models: newUsercustomData
-                })
+                const modelId = this.model.id
+                this.$store.dispatch('userCustom/setRencentlyData', { id: modelId })
             }
         }
     }

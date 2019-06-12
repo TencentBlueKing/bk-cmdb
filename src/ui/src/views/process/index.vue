@@ -1,5 +1,12 @@
 <template>
-    <div class="process-wrapper">
+    <div class="process-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'process'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ProcessManagement[\'进程管理提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%885%EF%BC%89%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="process-filter clearfix">
             <bk-button class="process-btn"
                 type="default"
@@ -83,15 +90,18 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
+    import featureTips from '@/components/feature-tips/index'
     import vModule from './module'
     import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
-            vModule
+            vModule,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
                 OPERATION,
                 objectUnique: [],
                 properties: [],
@@ -128,7 +138,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'featureTipsParams']),
             ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
@@ -148,6 +158,7 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
+            this.showFeatureTips = this.featureTipsParams['process']
             this.reload()
         },
         methods: {
@@ -241,9 +252,9 @@
                 })
                 this.table.header = header
             },
-            async handleEdit (flatternItem) {
+            async handleEdit (flattenItem) {
                 const list = await this.getProcessList({ fromCache: true })
-                const inst = list.info.find(item => item['bk_process_id'] === flatternItem['bk_process_id'])
+                const inst = list.info.find(item => item['bk_process_id'] === flattenItem['bk_process_id'])
                 this.attribute.inst.edit = inst
                 this.attribute.type = 'update'
             },
@@ -280,7 +291,7 @@
                             bizId: this.bizId,
                             processId: originalValues['bk_process_id']
                         }).then(process => {
-                            this.attribute.inst.details = this.$tools.flatternItem(this.properties, process)
+                            this.attribute.inst.details = this.$tools.flattenItem(this.properties, process)
                         })
                         this.handleCancel()
                         this.$success(this.$t("Common['修改成功']"))
@@ -325,7 +336,7 @@
             },
             getTableData () {
                 this.getProcessList().then(data => {
-                    this.table.list = this.$tools.flatternList(this.properties, data.info)
+                    this.table.list = this.$tools.flattenList(this.properties, data.info)
                     this.table.pagination.count = data.count
                     return data
                 })

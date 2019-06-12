@@ -20,8 +20,6 @@ import (
 	"sync"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -75,14 +73,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		esbChan := make(chan esbutil.EsbConfig, 1)
 		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan)
+		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
 
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, instance, esb)
 
-		err = datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
+		err = datacollection.NewDataCollection(ctx, process.Config, process.Core, engine.Metric().Registry()).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}
@@ -90,7 +88,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	blog.InfoJSON("process started with info %s", svrInfo)
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		return err
 	}
 	<-ctx.Done()
