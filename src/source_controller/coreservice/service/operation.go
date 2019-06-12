@@ -35,7 +35,8 @@ func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, que
 
 func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	condition := metadata.ChartConfig{}
-	if err := data.MarshalJSONInto(condition); err != nil {
+	if err := data.MarshalJSONInto(&condition); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
 		return nil, err
 	}
 
@@ -50,6 +51,7 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
 	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal request data fail, err: %v", err)
 		return nil, err
 	}
 	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, opt); err != nil {
@@ -171,4 +173,22 @@ func (s *coreService) SearchChartCommon(params core.ContextParams, pathParams, q
 		Count: count,
 		Info:  nil,
 	}, err
+}
+
+func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	s.core.StatisticOperation().TimerFreshData(params)
+
+	return nil, nil
+}
+
+func (s *coreService) SearchCloudMapping(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+
+	respData := new(metadata.CloudMapping)
+	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(params.Context, respData); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	return respData, nil
 }

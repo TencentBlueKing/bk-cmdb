@@ -75,9 +75,9 @@ type UpdateID struct {
 }
 
 type HostChangeChartData struct {
-	ReportType string                   `json:"report_type"`
-	Data       map[string]mapstr.MapStr `json:"data"`
-	OwnerID    string                   `json:"bk_supplier_account"`
+	ReportType string                   `json:"report_type" bson:"report_type"`
+	Data       map[string]mapstr.MapStr `json:"data" bson:"data"`
+	OwnerID    string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type ChartData struct {
@@ -104,4 +104,12 @@ type CommonSearchChart struct {
 type SearchChartConfig struct {
 	Count uint64                   `json:"count"`
 	Info  map[string][]ChartConfig `json:"info"`
+}
+
+type CloudMapping struct {
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"lsat_time"`
+	CloudName  string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
+	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }

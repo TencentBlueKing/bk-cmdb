@@ -65,6 +65,15 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 	commonCount := make([]metadata.StringIDCount, 0)
 	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
+	if inputParam.ReportType == common.HostCloudChart {
+		data, err := m.HostCloudChartData(ctx, inputParam)
+		if err != nil {
+			blog.Error("search host cloud chart data fail, err: %v", err)
+			return nil, err
+		}
+		return data, nil
+	}
+
 	switch inputParam.ObjID {
 	case common.BKInnerObjIDHost:
 		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
@@ -86,4 +95,36 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 
 	return nil, nil
+}
+
+func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	commonCount := make([]metadata.IntIDCount, 0)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
+
+	pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+	if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		return nil, err
+	}
+
+	opt := mapstr.MapStr{}
+	cloudMapping := make([]metadata.CloudMapping, 0)
+	if err := m.dbProxy.Table(common.BKTableNameBasePlat).Find(opt).All(ctx, &cloudMapping); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	respData := make([]mapstr.MapStr, 0)
+	info := mapstr.MapStr{}
+	for _, data := range commonCount {
+		for _, cloud := range cloudMapping {
+			if data.Id == cloud.CloudID {
+				info["id"] = cloud.CloudName
+				info["count"] = data.Count
+				respData = append(respData, info)
+			}
+		}
+	}
+
+	return respData, nil
 }
