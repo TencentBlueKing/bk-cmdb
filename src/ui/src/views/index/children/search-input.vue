@@ -27,7 +27,10 @@
                     back: true
                 })
                 this.$router.push({
-                    path: `/index/search?keywords=${this.queryString}`
+                    path: '/index/search',
+                    query: {
+                        keywords: this.queryString
+                    }
                 })
             }
         }

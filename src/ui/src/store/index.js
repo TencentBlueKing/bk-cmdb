@@ -103,8 +103,7 @@ export default new Vuex.Store({
         processTemplate,
         businessSynchronous,
         serviceInstance,
-        processInstance
-        netDiscovery,
+        processInstance,
         fullTextSearch
     }
 })

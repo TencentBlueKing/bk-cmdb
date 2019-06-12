@@ -56,6 +56,8 @@ export const viewRouters = [
     ...serviceInstance
 ]
 
+const indexName = index[0].name
+
 const statusRouters = [
     {
         name: '403',
@@ -84,7 +86,7 @@ const redirectRouters = [{
 }, {
     path: '/',
     redirect: {
-        name: index.name
+        name: indexName
     }
 }]
 
@@ -192,7 +194,7 @@ router.beforeEach((to, from, next) => {
                 await preload(router.app)
             }
             if (!isShouldShow(to)) {
-                next({ name: index.name })
+                next({ name: indexName })
             } else {
                 setLoading(true)
                 setMenuState(to)

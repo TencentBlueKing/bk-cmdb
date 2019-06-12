@@ -266,6 +266,9 @@
                 this.filter.value = ''
                 this.filter.type = (this.$tools.getProperty(this.properties, id) || {})['bk_property_type']
             },
+            'filter.value' () {
+                this.$route.query.instId = null
+            },
             'slider.show' (show) {
                 if (!show) {
                     this.tab.active = 'attribute'
@@ -314,9 +317,6 @@
                         this.setTableHeader(),
                         this.setFilterOptions()
                     ])
-                    if (this.$route.params.source) {
-                        this.filter.value = this.$route.params.source[this.filter.id].toString().replace(/(\<\/?em\>)/g, '')
-                    }
                     this.getTableData()
                 } catch (e) {
                     // ignore
@@ -501,6 +501,12 @@
                             value: filterValue
                         })
                     }
+                } else if (this.$route.query.instId) {
+                    params.condition[this.objId].push({
+                        field: 'bk_inst_id',
+                        operator: '$in',
+                        value: [Number(this.$route.query.instId)]
+                    })
                 }
                 return params
             },
