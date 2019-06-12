@@ -117,7 +117,7 @@
                 return this.$store.state.businessTopology.processTemplateMap
             },
             withTemplate () {
-                return this.currentModule && this.currentModule.service_template_id !== 2
+                return this.currentModule && this.currentModule.service_template_id
             },
             menuItem () {
                 return [{

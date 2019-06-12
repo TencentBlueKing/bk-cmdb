@@ -67,8 +67,7 @@
                 return parseInt(this.$route.params.setId)
             },
             withTemplate () {
-                const templateId = this.moduleInstance.service_template_id
-                return templateId && templateId !== 2
+                return this.moduleInstance.service_template_id
             },
             sourceProcesses () {
                 return this.templates.map(template => {

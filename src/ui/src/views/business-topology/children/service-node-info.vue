@@ -76,7 +76,7 @@
                 return null
             },
             withTemplate () {
-                return this.instance.service_template_id && this.instance.service_template_id !== 2
+                return this.instance.service_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -261,7 +261,7 @@
             },
             async getServiceInfo (instance) {
                 const serviceInfo = {}
-                if (instance.service_template_id !== 2) {
+                if (instance.service_template_id) {
                     serviceInfo.__template_name__ = instance.bk_module_name
                 }
                 const categories = await this.getServiceCategories()
@@ -398,7 +398,9 @@
                             const tree = this.selectedNode.tree
                             const parentId = this.selectedNode.parent.id
                             const nodeId = this.selectedNode.id
-                            tree.setSelected(parentId, true, true)
+                            tree.setSelected(parentId, {
+                                emitEvent: true
+                            })
                             tree.removeNode(nodeId)
                             this.$success(this.$t('Common[\'删除成功\']'))
                         } catch (e) {
