@@ -272,8 +272,8 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.WorkPath.Value = &inst.WorkPath
 		template.WorkPath.AsDefaultValue = &True
 	}
-	if inst.BindIP != "" {
-		template.BindIP.Value = &inst.BindIP
+	if inst.BindIP != nil {
+		template.BindIP.Value = inst.BindIP
 		template.BindIP.AsDefaultValue = &True
 	}
 	if inst.Priority > 0 {
