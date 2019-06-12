@@ -276,32 +276,32 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
-	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
-	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
-	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
-	ForceStopCmd    string         `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd"`
-	ProcessID       int64          `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id"`
-	FuncName        string         `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name"`
-	WorkPath        string         `field:"work_path" json:"work_path,omitempty" bson:"work_path"`
-	BindIP          SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip"`
-	Priority        int64          `field:"priority" json:"priority,omitempty" bson:"priority"`
-	ReloadCmd       string         `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd"`
-	ProcessName     string         `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name"`
-	Port            string         `field:"port" json:"port,omitempty" bson:"port"`
-	PidFile         string         `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file"`
-	AutoStart       bool           `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start"`
-	AutoTimeGap     int64          `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap"`
-	LastTime        time.Time      `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	CreateTime      time.Time      `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	BusinessID      int64          `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	StartCmd        string         `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd"`
-	FuncID          string         `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id"`
-	User            string         `field:"user" json:"user,omitempty" bson:"user"`
-	TimeoutSeconds  int64          `field:"timeout" json:"timeout,omitempty" bson:"timeout"`
-	Protocol        ProtocolType   `field:"protocol" json:"protocol,omitempty" bson:"protocol"`
-	Description     string         `field:"description" json:"description,omitempty" bson:"description"`
-	SupplierAccount string         `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Metadata        Metadata        `field:"metadata" json:"metadata" bson:"metadata"`
+	ProcNum         int64           `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
+	StopCmd         string          `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
+	RestartCmd      string          `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
+	ForceStopCmd    string          `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd"`
+	ProcessID       int64           `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id"`
+	FuncName        string          `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name"`
+	WorkPath        string          `field:"work_path" json:"work_path,omitempty" bson:"work_path"`
+	BindIP          *SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip"`
+	Priority        int64           `field:"priority" json:"priority,omitempty" bson:"priority"`
+	ReloadCmd       string          `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd"`
+	ProcessName     string          `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name"`
+	Port            string          `field:"port" json:"port,omitempty" bson:"port"`
+	PidFile         string          `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file"`
+	AutoStart       bool            `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start"`
+	AutoTimeGap     int64           `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap"`
+	LastTime        time.Time       `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
+	CreateTime      time.Time       `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
+	BusinessID      int64           `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	StartCmd        string          `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd"`
+	FuncID          string          `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id"`
+	User            string          `field:"user" json:"user,omitempty" bson:"user"`
+	TimeoutSeconds  int64           `field:"timeout" json:"timeout,omitempty" bson:"timeout"`
+	Protocol        ProtocolType    `field:"protocol" json:"protocol,omitempty" bson:"protocol"`
+	Description     string          `field:"description" json:"description,omitempty" bson:"description"`
+	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
 type ServiceCategory struct {
@@ -437,8 +437,9 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	if isTrue(property.WorkPath.AsDefaultValue) == true {
 		processInstance.WorkPath = *property.WorkPath.Value
 	}
+	processInstance.BindIP = nil
 	if isTrue(property.BindIP.AsDefaultValue) == true {
-		processInstance.BindIP = *property.BindIP.Value
+		processInstance.BindIP = property.BindIP.Value
 	}
 	if isTrue(property.Priority.AsDefaultValue) == true {
 		processInstance.Priority = *property.Priority.Value
@@ -624,6 +625,12 @@ type PropertyInt64String struct {
 
 func (ti *PropertyInt64String) Validate() error {
 	if ti.Value != nil {
+		// 兼容前端
+		if *ti.Value == "" {
+			ti.Value = nil
+			return nil
+		}
+
 		if _, err := strconv.ParseInt(*ti.Value, 10, 64); err != nil {
 			return err
 		}

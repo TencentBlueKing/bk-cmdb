@@ -54,9 +54,15 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// validate module id field
-	if err = p.validateModuleID(ctx, instance.ModuleID); err != nil {
+	module, err := p.validateModuleID(ctx, instance.ModuleID)
+	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	if module.ServiceTemplateID != instance.ServiceTemplateID {
+		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide)
 	}
 
 	// validate host id field
@@ -430,10 +436,10 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 		return nil, ccErr
 	}
 	for _, processTemplate := range listProcTplResult.Info {
-		process := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
-		process, ccErr = p.dependence.CreateProcessInstance(ctx, process)
+		processData := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
+		process, ccErr := p.dependence.CreateProcessInstance(ctx, processData)
 		if ccErr != nil {
-			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instance failed, process: %+v, err: %+v, rid: %s", process, ccErr, ctx.ReqID)
+			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, ctx.ReqID)
 			return nil, ccErr
 		}
 		relation := &metadata.ProcessInstanceRelation{

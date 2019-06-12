@@ -14,6 +14,7 @@
     "1113013": "transfer host to default module use the wrong method",
     "1113015": "host not found",
     "1113017": "service caetgory name [%s] duplicated",
+    "1113018": "module and service instance template not coincide",
 
     "":""
 }
