@@ -124,7 +124,6 @@
             ...mapGetters(['featureTipsParams'])
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
             this.showFeatureTips = this.featureTipsParams['eventpush']
         },

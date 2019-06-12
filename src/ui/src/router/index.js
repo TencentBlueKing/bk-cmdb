@@ -143,6 +143,19 @@ const setMenuState = to => {
     }
 }
 
+const setTitle = to => {
+    const { i18nTitle, title } = to.meta
+    let headerTitle
+    if (!i18nTitle && !title) {
+        return false
+    } else if (i18nTitle) {
+        headerTitle = router.app.$t(i18nTitle)
+    } else if (title) {
+        headerTitle = title
+    }
+    router.app.$store.commit('setHeaderTitle', headerTitle)
+}
+
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -196,6 +209,7 @@ router.beforeEach((to, from, next) => {
             } else {
                 setLoading(true)
                 setMenuState(to)
+                setTitle(to)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

@@ -356,6 +356,8 @@
                 })
             },
             updateModuleInstance (value) {
+                delete value.__template_name__
+                delete value.__service_category__
                 return this.$store.dispatch('objectModule/updateModule', {
                     bizId: this.business,
                     setId: this.selectedNode.parent.data.bk_inst_id,
@@ -439,9 +441,14 @@
                 })
             },
             handleRemoveTemplate () {
+                const content = this.$createElement('div', {
+                    domProps: {
+                        innerHTML: this.$t('BusinessTopology["解除模板影响"]')
+                    }
+                })
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认解除模板"]'),
-                    content: this.$t('BusinessTopology["解除模板影响"]'),
+                    content: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {

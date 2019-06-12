@@ -22,10 +22,10 @@
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('BusinessTopology["模块名称"]')}}</label>
+                <label>{{$t('BusinessTopology["模块名称"]')}}<font color="red">*</font></label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
-                    v-validate.disabled="'required|singlechar'"
+                    v-validate="'required|singlechar'"
                     data-vv-name="moduleName"
                     key="moduleName"
                     :disabled="!!withTemplate">
@@ -33,7 +33,7 @@
                 <span class="form-error" v-if="errors.has('moduleName')">{{errors.first('moduleName')}}</span>
             </div>
             <div class="form-item clearfix" v-if="!withTemplate">
-                <label>{{$t('BusinessTopology["服务实例分类"]')}}</label>
+                <label>{{$t('BusinessTopology["服务实例分类"]')}}<font color="red">*</font></label>
                 <cmdb-selector class="service-class fl"
                     v-model="firstClass"
                     v-validate.disabled="'required'"
@@ -260,5 +260,8 @@
         border-top: 1px solid $cmdbBorderColor;
         text-align: right;
         background-color: #fafbfd;
+    }
+    font {
+        padding: 0 2px;
     }
 </style>

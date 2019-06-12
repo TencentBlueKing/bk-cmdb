@@ -640,6 +640,9 @@
                     name: 'history',
                     params: {
                         objId: this.objId
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
