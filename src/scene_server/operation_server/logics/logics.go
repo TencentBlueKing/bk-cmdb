@@ -6,6 +6,8 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"context"
+	"time"
 )
 
 func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) (mapstr.MapStr, error) {
@@ -95,12 +97,43 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 	return result.Data, nil
 }
 
-func (lgc *Logics) CommonStatisticFunc(kit *rest.Kit, option metadata.ChartConfig) (interface{}, error) {
-	result, err := lgc.CoreAPI.CoreService().Operation().CommonAggregate(kit.Ctx, kit.Header, option)
+func (lgc *Logics) TimerFreshData(ctx context.Context) {
+	opt := mapstr.MapStr{}
+
+	_, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
 	if err != nil {
-		blog.Errorf("search data fail, err: %v", err)
-		return nil, err
+		blog.Error("start collect chart data timer fail, err: %v", err)
 	}
 
-	return result, nil
+	timer := time.NewTicker(time.Duration(12) * time.Hour)
+	for range timer.C {
+		_, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
+		if err != nil {
+			blog.Error("start collect chart data timer fail, err: %v", err)
+		}
+	}
+}
+
+func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {
+	switch chartInfo.ReportType {
+	case common.BizModuleHostChart:
+		data, err := lgc.GetBizModuleHostCount(kit)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	case common.ModelAndInstCount:
+		data, err := lgc.GetModelAndInstCount(kit)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	default:
+		result, err := lgc.CoreAPI.CoreService().Operation().SearchOperationChartData(kit.Ctx, kit.Header, chartInfo.ReportType)
+		if err != nil {
+			blog.Error("search chart data fail, chart name: %v, err: %v", chartInfo.Name, err)
+			return nil, err
+		}
+		return result.Data, nil
+	}
 }

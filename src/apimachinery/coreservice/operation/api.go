@@ -161,3 +161,17 @@ func (s *operation) SearchChartCommon(ctx context.Context, h http.Header, data i
 		Into(resp)
 	return
 }
+
+func (s *operation) TimerFreshData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+	resp = new(metadata.Response)
+	subPath := "/start/operation/chart/timer"
+
+	err = s.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}

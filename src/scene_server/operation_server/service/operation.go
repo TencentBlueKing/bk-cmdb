@@ -138,19 +138,19 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
-	switch chart.Data.Info.ReportType {
-	case common.BizModuleHostChart:
-		data, err := srvData.lgc.GetBizModuleHostCount(ctx.Kit)
+	innerChart := []string{
+		common.BizModuleHostChart,
+		common.ModelAndInstCount,
+		common.HostBizChart,
+		common.HostChangeBizChart,
+		common.ModelInstChart,
+		common.ModelInstChangeChart,
+	}
+
+	if util.InStrArr(innerChart, chart.Data.Info.ReportType) {
+		data, err := srvData.lgc.InnerChartData(ctx.Kit, chart.Data.Info)
 		if err != nil {
-			ctx.RespEntity(nil)
-			return
-		}
-		ctx.RespEntity(data)
-		return
-	case common.ModelAndInstCount:
-		data, err := srvData.lgc.GetModelAndInstCount(ctx.Kit)
-		if err != nil {
-			ctx.RespEntity(nil)
+			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 			return
 		}
 		ctx.RespEntity(data)
@@ -171,28 +171,11 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
-	innerChart := []string{
-		common.HostChangeBizChart,
-		common.ModelInstChart,
-		common.ModelInstChangeChart,
-	}
-
-	if !util.InStrArr(innerChart, chart.Data.Info.ReportType) {
-		result, err := srvData.lgc.CommonStatisticFunc(ctx.Kit, chart.Data.Info)
-		if err != nil {
-			ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
-			return
-		}
-		ctx.RespEntity(result)
-		return
-	}
-
-	result, err := o.CoreAPI.CoreService().Operation().SearchOperationChartData(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info.ReportType)
+	result, err := o.CoreAPI.CoreService().Operation().CommonAggregate(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
 		return
 	}
-
 	ctx.RespEntity(result.Data)
 }
 

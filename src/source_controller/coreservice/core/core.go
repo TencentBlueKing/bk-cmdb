@@ -163,6 +163,7 @@ type StatisticOperation interface {
 	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 	SearchOperationChartData(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	TimerFreshData(params ContextParams)
 }
 
 // Core logics interfaces methods

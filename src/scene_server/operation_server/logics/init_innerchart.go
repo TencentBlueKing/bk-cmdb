@@ -59,13 +59,18 @@ var (
 	HostBizChart = metadata.ChartConfig{
 		ReportType: common.HostBizChart,
 		Name:       "按业务统计",
+		ObjID:      "host",
 		Width:      "50",
+		ChartType:  "bar",
 	}
 
 	HostCloudChart = metadata.ChartConfig{
 		ReportType: common.HostCloudChart,
 		Name:       "按云区域统计",
-		Width:      "50",
+		Width:      "100",
+		ObjID:      "host",
+		ChartType:  "bar",
+		Field:      common.BKCloudIDField,
 	}
 
 	HostChangeBizChart = metadata.ChartConfig{
@@ -82,12 +87,14 @@ var (
 		ReportType: common.ModelInstChart,
 		Name:       "实例数量统计",
 		Width:      "50",
+		ChartType:  "bar",
 	}
 
 	ModelInstChangeChart = metadata.ChartConfig{
 		ReportType: common.ModelInstChangeChart,
 		Name:       "实例变更统计",
 		Width:      "50",
+		ChartType:  "bar",
 	}
 
 	InnerCharts = map[string]metadata.ChartConfig{

@@ -135,6 +135,7 @@ func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateOperationChartPosition, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart/data", s.SearchOperationChartData, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart/common", s.SearchChartCommon, nil)
+	s.addAction(http.MethodPost, "/start/operation/chart/timer", s.TimerFreshData, nil)
 }
 
 func (s *coreService) initService() {

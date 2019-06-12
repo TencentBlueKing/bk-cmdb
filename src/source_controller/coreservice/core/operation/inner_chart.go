@@ -22,19 +22,10 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-var (
-	FreshDataInterval int64 = 12
-)
-
-func (m *operationManager) TimerFreshData(params core.ContextParams, data interface{}) {
-	timer := time.NewTicker(time.Duration(FreshDataInterval) * time.Hour)
-	go func() {
-		for range timer.C {
-			m.SearchModelInst(params)
-			m.SearchModelInstChange(params)
-			m.BizHostCountChange(params)
-		}
-	}()
+func (m *operationManager) TimerFreshData(params core.ContextParams) {
+	m.SearchModelInst(params)
+	m.SearchModelInstChange(params)
+	m.BizHostCountChange(params)
 }
 
 func (m *operationManager) SearchModelInst(ctx core.ContextParams) {
@@ -72,12 +63,19 @@ func (m *operationManager) SearchModelInst(ctx core.ContextParams) {
 		}
 	}
 
-	condition := metadata.ChartData{
+	data := metadata.ChartData{
 		ReportType: common.ModelInstChart,
 		Data:       modelInstNumber,
 		OwnerID:    "0",
 	}
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, condition); err != nil {
+	condition := mapstr.MapStr{}
+	condition[common.OperationReportType] = common.ModelInstChart
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Delete(ctx, condition); err != nil {
+		blog.Errorf("delete model instance change data fail, err: %v", err)
+		return
+	}
+
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, data); err != nil {
 		blog.Errorf("insert model instance change data fail, err: %v", err)
 		return
 	}
@@ -172,12 +170,13 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 
 	condition := mapstr.MapStr{}
 	condition[common.OperationReportType] = common.HostChangeBizChart
-	bizHostChange := metadata.HostChangeChartData{}
+	bizHostChange := make([]metadata.HostChangeChartData, 0)
 	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).All(ctx, &bizHostChange); err != nil {
 		blog.Errorf("get host change data fail, err: %v", err)
 		return
 	}
 
+	firstBizHostChange := metadata.HostChangeChartData{}
 	now := time.Now().String()
 	for _, info := range data {
 		for _, biz := range bizInfo {
@@ -194,19 +193,37 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 			}
 
 			if info.Id == bizID {
-				_, ok := bizHostChange.Data[bizName]
-				if ok {
-					bizHostChange.Data[bizName][now] = info.Count
+				if len(bizHostChange) > 0 {
+					_, ok := bizHostChange[0].Data[bizName]
+					if ok {
+						bizHostChange[0].Data[bizName][now] = info.Count
+					} else {
+						bizHostChange[0].Data[bizName] = mapstr.MapStr{}
+						bizHostChange[0].Data[bizName][now] = info.Count
+					}
 				} else {
-					bizHostChange.Data[bizName] = mapstr.MapStr{}
-					bizHostChange.Data[bizName][now] = info.Count
+					_, ok := firstBizHostChange.Data[bizName]
+					if ok {
+						firstBizHostChange.Data[bizName][now] = info.Count
+					} else {
+						firstBizHostChange.Data[bizName] = mapstr.MapStr{}
+						firstBizHostChange.Data[bizName][now] = info.Count
+					}
 				}
 			}
 		}
 	}
 
-	if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange); err != nil {
-		blog.Errorf("update biz host change fail, err: %v", err)
-		return
+	if len(bizHostChange) > 0 {
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange); err != nil {
+			blog.Errorf("update biz host change fail, err: %v", err)
+			return
+		}
+	} else {
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, firstBizHostChange); err != nil {
+			blog.Errorf("update biz host change fail, err: %v", err)
+			return
+		}
 	}
+
 }
