@@ -25,35 +25,34 @@ import (
 func (s *coreService) CreateServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	template := metadata.ServiceTemplate{}
 	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
-		blog.Errorf("CreateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("CreateServiceTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().CreateServiceTemplate(params, template)
 	if err != nil {
-		blog.Errorf("CreateServiceCategory failed, err: %+v", err)
+		blog.Errorf("CreateServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
 }
 
 func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceTemplateIDField := "service_template_id"
-	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
+	serviceTemplateIDStr := pathParams(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
-		blog.Errorf("GetServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("GetServiceTemplate failed, path parameter `%s` empty, rid: %s", common.BKServiceTemplateIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("GetServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("GetServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceTemplateIDField, serviceTemplateIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	result, err := s.core.ProcessOperation().GetServiceTemplate(params, serviceTemplateID)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, err: %+v", err)
+		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
@@ -61,53 +60,48 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 
 func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceCategoryID int64             `json:"service_category_id" field:"service_category_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListServiceTemplateOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
-		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d", fp.BusinessID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, "bk_biz_id")
+		blog.Errorf("ListServiceTemplates failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp.BusinessID, fp.ServiceCategoryID, fp.Page)
+	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp)
 	if err != nil {
-		blog.Errorf("ListServiceTemplates failed, err: %+v", err)
+		blog.Errorf("ListServiceTemplates failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 	return result, nil
 }
 
 func (s *coreService) UpdateServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceTemplateIDField := "service_template_id"
-	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
+	serviceTemplateIDStr := pathParams(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
-		blog.Errorf("UpdateServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("UpdateServiceTemplate failed, path parameter `%s` empty, rid: %s", common.BKServiceTemplateIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("UpdateServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceTemplateIDField, serviceTemplateIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	template := metadata.ServiceTemplate{}
 	if err := mapstr.DecodeFromMapStr(&template, data); err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, decode request body failed, body: %+v, err: %v", data, err)
+		blog.Errorf("UpdateServiceTemplate failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	result, err := s.core.ProcessOperation().UpdateServiceTemplate(params, serviceTemplateID, template)
 	if err != nil {
-		blog.Errorf("UpdateServiceTemplate failed, err: %+v", err)
+		blog.Errorf("UpdateServiceTemplate failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 
@@ -115,21 +109,20 @@ func (s *coreService) UpdateServiceTemplate(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteServiceTemplate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceTemplateIDField := "service_template_id"
-	serviceTemplateIDStr := pathParams(serviceTemplateIDField)
+	serviceTemplateIDStr := pathParams(common.BKServiceTemplateIDField)
 	if len(serviceTemplateIDStr) == 0 {
-		blog.Errorf("DeleteServiceTemplate failed, path parameter `%s` empty", serviceTemplateIDField)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("DeleteServiceTemplate failed, path parameter `%s` empty, rid: %s", common.BKServiceTemplateIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v", serviceTemplateIDField, serviceTemplateIDStr, err)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, serviceTemplateIDField)
+		blog.Errorf("DeleteServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceTemplateIDField, serviceTemplateIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 	}
 
 	if err := s.core.ProcessOperation().DeleteServiceTemplate(params, serviceTemplateID); err != nil {
-		blog.Errorf("DeleteServiceTemplate failed, err: %+v", err)
+		blog.Errorf("DeleteServiceTemplate failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
 	}
 

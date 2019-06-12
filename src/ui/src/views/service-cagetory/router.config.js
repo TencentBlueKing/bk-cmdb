@@ -14,6 +14,7 @@ export default {
             path: path,
             order: 1,
             parent: NAV_SERVICE_MANAGEMENT
-        }
+        },
+        i18nTitle: 'Nav["服务分类"]'
     })
 }

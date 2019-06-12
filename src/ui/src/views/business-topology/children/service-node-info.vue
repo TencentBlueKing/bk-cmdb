@@ -21,7 +21,11 @@
             @on-edit="handleEdit">
             <span class="property-value fl" slot="__template_name__">
                 {{flattenedInstance.__template_name__}}
-                <bk-button v-if="withTemplate" @click="handleRemoveTemplate">{{$t('BusinessTopology["解除模板"]')}}</bk-button>
+                <bk-button class="unbind-button"
+                    v-if="withTemplate"
+                    @click="handleRemoveTemplate">
+                    {{$t('BusinessTopology["解除模板"]')}}
+                </bk-button>
             </span>
         </cmdb-details>
         <cmdb-form class="topology-details" v-else-if="type === 'update'"
@@ -72,7 +76,7 @@
                 return null
             },
             withTemplate () {
-                return this.instance.service_template_id && this.instance.service_template_id !== 2
+                return this.instance.service_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -257,7 +261,7 @@
             },
             async getServiceInfo (instance) {
                 const serviceInfo = {}
-                if (instance.service_template_id !== 2) {
+                if (instance.service_template_id) {
                     serviceInfo.__template_name__ = instance.bk_module_name
                 }
                 const categories = await this.getServiceCategories()
@@ -352,6 +356,8 @@
                 })
             },
             updateModuleInstance (value) {
+                delete value.__template_name__
+                delete value.__service_category__
                 return this.$store.dispatch('objectModule/updateModule', {
                     bizId: this.business,
                     setId: this.selectedNode.parent.data.bk_inst_id,
@@ -394,7 +400,9 @@
                             const tree = this.selectedNode.tree
                             const parentId = this.selectedNode.parent.id
                             const nodeId = this.selectedNode.id
-                            tree.setSelected(parentId, true, true)
+                            tree.setSelected(parentId, {
+                                emitEvent: true
+                            })
                             tree.removeNode(nodeId)
                             this.$success(this.$t('Common[\'删除成功\']'))
                         } catch (e) {
@@ -433,9 +441,14 @@
                 })
             },
             handleRemoveTemplate () {
+                const content = this.$createElement('div', {
+                    domProps: {
+                        innerHTML: this.$t('BusinessTopology["解除模板影响"]')
+                    }
+                })
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认解除模板"]'),
-                    content: this.$t('BusinessTopology["解除模板影响"]'),
+                    content: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {
@@ -453,3 +466,19 @@
         }
     }
 </script>
+
+<style lang="scss" scoped>
+    .property-value {
+        height: 16px;
+        line-height: 16px;
+        overflow: visible;
+    }
+    .unbind-button {
+        height: 26px;
+        padding: 0 4px;
+        margin: -5px 0 0 6px;
+        line-height: 24px;
+        font-size: 12px;
+        color: #63656E;
+    }
+</style>

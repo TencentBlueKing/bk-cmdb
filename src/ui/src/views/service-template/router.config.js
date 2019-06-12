@@ -14,7 +14,8 @@ export default [{
             path: path,
             order: 2,
             parent: NAV_SERVICE_MANAGEMENT
-        }
+        },
+        i18nTitle: "Nav['服务模板']"
     })
 }, {
     name: 'operationalTemplate',

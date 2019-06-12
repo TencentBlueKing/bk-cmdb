@@ -10,8 +10,8 @@ const actions = {
     createProcServiceInstanceByTemplate (context, { params, config }) {
         return $http.post('create/proc/service_instance/with_template', params, config)
     },
-    deleteServiceInstance (context, { serviceInstanceId, config }) {
-        return $http.delete('delete/proc/service_instance', config)
+    deleteServiceInstance (context, { config }) {
+        return $http.delete('deletemany/proc/service_instance', config)
     },
     removeServiceTemplate (context, { config }) {
         return $http.delete('delete/proc/template_binding_on_module', config)

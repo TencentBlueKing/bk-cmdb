@@ -139,7 +139,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t("Nav['服务模板']"))
             this.showFeatureTips = this.featureTipsParams['serviceTemplate']
             try {
                 await this.getServiceClassification()
@@ -197,13 +196,13 @@
                 this.filter.secondaryClassification = ''
             },
             operationTemplate (id) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
                         templateId: id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },

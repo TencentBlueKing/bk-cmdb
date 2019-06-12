@@ -57,7 +57,7 @@
                 return {}
             },
             withTemplate () {
-                return this.moduleNode && this.moduleInstance.service_template_id && this.moduleInstance.service_template_id !== 2
+                return this.moduleNode && this.moduleInstance.service_template_id
             }
         },
         watch: {
@@ -90,7 +90,15 @@
                 }
             },
             goToTemplate () {
-                // todo 路由跳转
+                this.$router.push({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.moduleInstance.service_template_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             },
             handleAddHost () {
                 this.visible = true
@@ -131,6 +139,9 @@
                     params: {
                         moduleId: this.moduleNode.data.bk_inst_id,
                         setId: this.moduleNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             }
@@ -180,6 +191,11 @@
             font-size: 19px;
             color: #3A84FF;
             cursor: pointer;
+            &:hover {
+                font-weight: bold;
+                border-style: solid;
+                box-shadow: 0 0 2px #3A84FF;
+            }
         }
     }
 </style>

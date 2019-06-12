@@ -28,7 +28,8 @@ export default [{
         },
         auth: {
             view: SYSTEM_MANAGEMENT
-        }
+        },
+        i18nTitle: 'Nav["业务权限管理"]'
     })
 }, {
     name: 'systemPermission',
@@ -45,6 +46,7 @@ export default [{
         },
         auth: {
             view: SYSTEM_MANAGEMENT
-        }
+        },
+        i18nTitle: 'Nav["系统权限管理"]'
     })
 }]

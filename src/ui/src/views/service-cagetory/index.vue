@@ -142,7 +142,6 @@
             ...mapGetters(['featureTipsParams'])
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["服务分类"]'))
             this.showFeatureTips = this.featureTipsParams['cagetory']
             this.getCagetoryList()
         },
