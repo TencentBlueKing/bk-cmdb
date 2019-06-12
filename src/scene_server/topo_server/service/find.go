@@ -99,8 +99,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 				}
 			}
 		}
-		// test data
-		//searchResults := testData
+
 		return searchResults, nil
 	}
 
@@ -119,21 +118,6 @@ func checkQueryString(query *Query) {
 
 func getEsQueryAndSearchTypes(query *Query) (elastic.Query, []string) {
 	qBool := elastic.NewBoolQuery()
-	//	"should": [
-	//		{
-	//			"bool": {
-	//				"must_not": [
-	//					{
-	//						"regexp": { "metadata.label.bk_biz_id": "[0-9]*" }
-	//					}
-	//				]
-	//			}
-	//		},
-	//		{
-	//			"term": { "metadata.label.bk_biz_id": "2" }
-	//		}
-	//  ],
-	//	"minimum_should_match" : 1
 
 	// if set bk_biz_id
 	qBool.MinimumNumberShouldMatch(1)
