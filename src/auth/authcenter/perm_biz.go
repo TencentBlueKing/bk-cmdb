@@ -187,7 +187,7 @@ var expectBizResourceType = []ResourceType{
 		ResourceTypeID:       BizAuditLog,
 		ResourceTypeName:     "操作审计",
 		ParentResourceTypeID: "",
-		Share:                true,
+		Share:                false,
 		Actions: []Action{
 			{
 				ActionID:          Get,
