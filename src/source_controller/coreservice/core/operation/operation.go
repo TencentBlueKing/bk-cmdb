@@ -32,7 +32,6 @@ type operationManager struct {
 
 type M bson.M
 
-// New create a new instance manager instance
 func New(dbProxy dal.RDB) core.StatisticOperation {
 	return &operationManager{
 		dbProxy: dbProxy,
@@ -64,7 +63,7 @@ func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.Int
 
 func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%v", inputParam.Option.Field)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
 	switch inputParam.ObjID {
 	case common.BKInnerObjIDHost:
@@ -82,4 +81,9 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 	}
 
 	return commonCount, nil
+}
+
+func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+
+	return nil, nil
 }

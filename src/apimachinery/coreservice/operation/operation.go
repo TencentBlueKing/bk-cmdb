@@ -19,7 +19,7 @@ type OperationClientInterface interface {
 	UpdateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	SearchOperationChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	UpdateOperationChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	SearchChartByID(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartByID, err error)
+	SearchChartCommon(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartCommon, err error)
 }
 
 func NewOperationClientInterface(client rest.ClientInterface) OperationClientInterface {

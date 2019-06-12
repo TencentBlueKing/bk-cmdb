@@ -27,7 +27,6 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 			blog.Errorf("init inner chart fail, err: %v", err)
 			return
 		}
-		blog.Debug(InnerCharts[chart].ReportType)
 		configID = append(configID, result.Data)
 	}
 
@@ -37,7 +36,6 @@ func (lgc *Logics) InitInnerChart(ctx context.Context) {
 	position.Position["inst"] = configID[6:]
 	position.OwnerID = "0"
 
-	blog.Debug("position: %v", position)
 	if _, err := lgc.CoreAPI.CoreService().Operation().UpdateOperationChartPosition(ctx, lgc.header, position); err != nil {
 		blog.Error("init inner chart position fail, err: %v", err)
 		return
@@ -54,10 +52,8 @@ var (
 		Name:       "按操作系统类型统计",
 		ObjID:      "host",
 		Width:      "50",
-		Option: metadata.ChartOption{
-			ChartType: "pie",
-			Field:     "bk_os_type",
-		},
+		ChartType:  "pie",
+		Field:      "bk_os_type",
 	}
 
 	HostBizChart = metadata.ChartConfig{
