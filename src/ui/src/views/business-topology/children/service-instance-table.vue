@@ -1,8 +1,9 @@
 <template>
-    <div class="table-layout">
+    <div class="table-layout" v-show="show">
         <div class="table-title" @click="localExpanded = !localExpanded">
             <cmdb-form-bool class="title-checkbox"
                 :size="16"
+                v-model="checked"
                 @click.native.stop>
             </cmdb-form-bool>
             <i class="title-icon bk-icon icon-down-shape" v-if="localExpanded"></i>
@@ -23,7 +24,7 @@
         </div>
         <cmdb-table
             v-show="localExpanded"
-            :loading="$loading([requestId.processList, requestId.properties])"
+            :loading="$loading(Object.values(requestId))"
             :header="header"
             :list="flattenList"
             :empty-height="42"
@@ -32,7 +33,7 @@
             :reference-document-height="false">
             <template slot="data-empty">
                 <template v-if="withTemplate">
-                    <i18n path="BusinessTopolgy['暂无模板进程']">
+                    <i18n path="BusinessTopology['暂无模板进程']">
                         <button class="add-process-button text-primary" place="link"
                             @click.stop="handleAddProcessToTemplate">
                             {{$t('BusinessTopology["模板添加"]')}}
@@ -76,6 +77,8 @@
         },
         data () {
             return {
+                show: true,
+                checked: false,
                 localExpanded: this.expanded,
                 properties: [],
                 header: [],
@@ -111,7 +114,8 @@
             requestId () {
                 return {
                     processList: `get_service_instance_${this.instance.id}_processes`,
-                    properties: 'get_service_process_properties'
+                    properties: 'get_service_process_properties',
+                    deleteProcess: 'delete_service_process'
                 }
             }
         },
@@ -120,6 +124,9 @@
                 if (expanded) {
                     this.getServiceProcessList()
                 }
+            },
+            checked (checked) {
+                this.$emit('check-change', checked, this.instance)
             }
         },
         async created () {
@@ -187,7 +194,21 @@
                 const processInstance = this.list.find(data => data.relation.bk_process_id === item.bk_process_id)
                 this.$emit('update-process', processInstance, this)
             },
-            handleDeleteProcess () {},
+            async handleDeleteProcess (item) {
+                try {
+                    await this.$store.dispatch('processInstance/deleteServiceInstanceProcess', {
+                        serviceInstanceId: this.instance.id,
+                        config: {
+                            data: this.$injectMetadata({
+                                process_instance_ids: [item.bk_process_id]
+                            })
+                        }
+                    })
+                    this.getServiceProcessList()
+                } catch (e) {
+                    console.error(e)
+                }
+            },
             handleCloneInstance () {
                 this.$router.push({
                     name: 'cloneServiceInstance',
@@ -196,20 +217,24 @@
                         hostId: this.instance.bk_host_id,
                         setId: this.module.bk_set_id,
                         moduleId: this.module.bk_module_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$tc('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    content: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
                                 config: {
                                     data: this.$injectMetadata({
-                                        id: this.instance.id
-                                    })
+                                        service_instance_ids: [this.instance.id]
+                                    }),
+                                    requestId: this.requestId.deleteProcess
                                 }
                             })
                             this.$emit('delete-instance', this.instance.id)
@@ -219,7 +244,17 @@
                     }
                 })
             },
-            handleAddProcessToTemplate () {}
+            handleAddProcessToTemplate () {
+                this.$router.push({
+                    name: 'operationalTemplate',
+                    params: {
+                        templateId: this.instance.service_template_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
+            }
         }
     }
 </script>

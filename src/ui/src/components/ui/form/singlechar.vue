@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-singlechar">
         <input class="cmdb-form-input form-singlechar-input" type="text"
-            :placeholder="$t('Form[\'请输入短字符\']')"
+            :placeholder="localPlaceholder"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
@@ -25,6 +25,15 @@
             maxlength: {
                 type: Number,
                 default: 256
+            },
+            placeholder: {
+                type: String,
+                default: ''
+            }
+        },
+        computed: {
+            localPlaceholder () {
+                return this.placeholder || this.$t('Form["请输入短字符"]')
             }
         },
         methods: {

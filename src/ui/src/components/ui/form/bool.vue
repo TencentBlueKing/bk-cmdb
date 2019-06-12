@@ -64,10 +64,6 @@
         watch: {
             checked (checked) {
                 this.localChecked = checked
-            },
-            localChecked (localChecked) {
-                this.$emit('change', localChecked, this)
-                this.$emit('on-change', localChecked, this)
             }
         },
         created () {
@@ -84,7 +80,13 @@
                 if (this.disabled) {
                     return false
                 }
-                this.localChecked = this.localChecked ? this.falseValue : this.trueValue
+                if (this.indeterminate) {
+                    this.localChecked = this.trueValue
+                } else {
+                    this.localChecked = this.localChecked === this.trueValue ? this.falseValue : this.trueValue
+                }
+                this.$emit('change', this.localChecked, this)
+                this.$emit('on-change', this.localChecked, this)
                 this.$emit('click')
             }
         }

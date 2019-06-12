@@ -1,3 +1,4 @@
+import Vue from 'vue'
 let tableIdSeed = 0
 
 class TableLayout {
@@ -16,9 +17,10 @@ class TableLayout {
     }
 
     checkScrollY () {
-        const $bodyWrapper = this.table.$refs.bodyLayout
-        const $body = this.table.$refs.body.$el
-        this.scrollY = $body.offsetHeight > $bodyWrapper.offsetHeight
+        if (!this.table.ready) return
+        const { bodyLayout, body } = this.table.$refs
+        if (!bodyLayout || !body) return Vue.nextTick(() => this.checkScrollY())
+        this.scrollY = body.offsetHeight > bodyLayout.offsetHeight
     }
 
     update () {

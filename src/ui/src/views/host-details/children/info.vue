@@ -13,7 +13,7 @@
                     :key="index"
                     :class="`${column}-list`"
                     :style="{
-                        height: getListHeight(topologyList[column])
+                        height: getListHeight(topologyList[column]) + 'px'
                     }">
                     <li class="topology-item"
                         v-for="(path, columnIndex) in topologyList[column]"
@@ -82,23 +82,15 @@
                 return this.$store.getters['objectModelClassify/getModelById']('host')
             }
         },
-        watch: {
-            info (info) {
-                this.$store.commit('setHeaderTitle', `${this.$t('HostDetails["主机详情"]')}(${info.host.bk_host_innerip})`)
-            }
-        },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
-        },
         methods: {
             viewAll () {
                 this.showAll = !this.showAll
+                this.$emit('info-toggle', this.getListHeight(this.topologyList.left) + 51)
             },
             getListHeight (items) {
                 const itemHeight = 21
                 const itemMargin = 9
-                return (this.showAll ? items.length : 1) * (itemHeight + itemMargin) + 'px'
+                return (this.showAll ? items.length : 1) * (itemHeight + itemMargin)
             }
         }
     }

@@ -28,7 +28,7 @@ import (
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
-func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
+func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	config := new(metadata.HostsModuleRelation)
@@ -273,12 +273,12 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// auth: check authorization
 	if existNewAddHost == true {
 		/*
-		// 检查注册到资源池的权限
-		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
-			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
-			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-			return
-		}
+			// 检查注册到资源池的权限
+			if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
+				blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+				resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+				return
+			}
 		*/
 		// 检查转移主机到目标业务的权限
 		// auth: check target business update priority

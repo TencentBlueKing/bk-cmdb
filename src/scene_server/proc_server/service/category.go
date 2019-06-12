@@ -37,7 +37,7 @@ func (ps *ProcServer) GetServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(list))
+	ctx.RespEntity(list)
 }
 
 func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
@@ -59,7 +59,29 @@ func (ps *ProcServer) CreateServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(category))
+	ctx.RespEntity(category)
+}
+
+func (ps *ProcServer) UpdateServiceCategory(ctx *rest.Contexts) {
+	input := new(metadata.ServiceCategory)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	if err != nil {
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "update service category, but get business id failed, err: %v", err)
+		return
+	}
+
+	category, err := ps.CoreAPI.CoreService().Process().UpdateServiceCategory(ctx.Kit.Ctx, ctx.Kit.Header, input.ID, input)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "update service category failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(category)
 }
 
 func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
@@ -81,5 +103,5 @@ func (ps *ProcServer) DeleteServiceCategory(ctx *rest.Contexts) {
 		return
 	}
 
-	ctx.RespEntity(metadata.NewSuccessResp(nil))
+	ctx.RespEntity(nil)
 }

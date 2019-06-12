@@ -348,10 +348,10 @@
                 })
             },
             handleGoBackModule () {
-                this.$router.push({
+                this.$router.replace({
                     name: 'topology',
                     query: {
-                        module: Number(this.routerParams.moduleId)
+                        module: this.routerParams.moduleId
                     }
                 })
             }

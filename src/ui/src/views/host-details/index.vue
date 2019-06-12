@@ -1,7 +1,14 @@
 <template>
     <div class="details-layout">
-        <cmdb-host-info></cmdb-host-info>
-        <bk-tab class="details-tab" :active-name.sync="active">
+        <cmdb-host-info
+            ref="info"
+            @info-toggle="setInfoHeight">
+        </cmdb-host-info>
+        <bk-tab class="details-tab"
+            :active-name.sync="active"
+            :style="{
+                '--infoHeight': infoHeight
+            }">
             <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
                 <cmdb-host-property></cmdb-host-property>
             </bk-tabpanel>
@@ -35,7 +42,8 @@
         },
         data () {
             return {
-                active: 'property'
+                active: 'property',
+                infoHeight: '81px'
             }
         },
         computed: {
@@ -60,11 +68,15 @@
             },
             business () {
                 this.getData()
+            },
+            active (active) {
+                if (active !== 'association') {
+                    this.$store.commit('hostDetails/toggleExpandAll', false)
+                    this.$store.commit('hostDetails/setExpandIndeterminate', true)
+                }
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
             this.getData()
         },
         methods: {
@@ -130,6 +142,9 @@
                     console.error(e)
                     this.$store.commit('hostDetails/setHostPropertyGroups', [])
                 }
+            },
+            setInfoHeight (height) {
+                this.infoHeight = height + 'px'
             }
         }
     }
@@ -140,7 +155,8 @@
         padding: 0;
         height: 100%;
         .details-tab {
-            height: calc(100% - 81px) !important;
+            height: calc(100% - var(--infoHeight)) !important;
+            min-height: 400px;
         }
     }
 </style>

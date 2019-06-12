@@ -19,6 +19,8 @@ export default class Meta {
         }, data.auth)
 
         return {
+            title: '',
+            i18nTitle: '',
             ...data,
             menu,
             auth

@@ -229,7 +229,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
             this.scrollHandler = event => {
                 this.scrollTop = event.target.scrollTop
             }
@@ -357,13 +356,13 @@
             },
             modelClick (model) {
                 this.$store.commit('objectModel/setActiveModel', model)
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             }
