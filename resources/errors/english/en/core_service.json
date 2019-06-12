@@ -13,6 +13,7 @@
     "1113012": "forbidden move out host from default module",
     "1113013": "transfer host to default module use the wrong method",
     "1113015": "host not found",
+    "1113017": "service caetgory name [%s] duplicated",
 
     "":""
 }

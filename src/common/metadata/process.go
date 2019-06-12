@@ -690,9 +690,11 @@ type ServiceInstance struct {
 }
 
 func (si *ServiceInstance) Validate() (field string, err error) {
-	if len(si.Name) == 0 {
-		return "name", errors.New("name can't be empty")
-	}
+	/*
+		if len(si.Name) == 0 {
+			return "name", errors.New("name can't be empty")
+		}
+	*/
 
 	if len(si.Name) > common.NameFieldMaxLength {
 		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), common.NameFieldMaxLength)
