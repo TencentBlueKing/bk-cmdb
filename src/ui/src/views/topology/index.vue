@@ -214,7 +214,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务拓扑"]'))
             try {
                 await Promise.all([
                     // this.getBusiness(),

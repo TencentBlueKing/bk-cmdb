@@ -199,13 +199,20 @@
                 }
                 this.processForm.show = false
             },
-            doClone () {
-                return this.$store.dispatch('processInstance/createServiceInstanceProcess', {
-                    params: this.$injectMetadata({
-                        service_instance_id: parseInt(this.$route.params.instanceId),
-                        processes: this.getCloneProcessValues()
+            async doClone () {
+                try {
+                    await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
+                        params: this.$injectMetadata({
+                            service_instance_id: parseInt(this.$route.params.instanceId),
+                            processes: this.getCloneProcessValues()
+                        })
                     })
-                })
+                    this.$router.replace({
+                        path: this.$route.query.from
+                    })
+                } catch (e) {
+                    console.error(e)
+                }
             },
             getCloneProcessValues () {
                 return this.cloneProcesses.map(process => {

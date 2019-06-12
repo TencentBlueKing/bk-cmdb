@@ -35,7 +35,8 @@ export default [{
         },
         auth: {
             operation: Object.values(OPERATION)
-        }
+        },
+        i18Title: 'Nav["模型"]'
     })
 }, {
     name: 'modelDetails',

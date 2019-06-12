@@ -22,9 +22,9 @@
                 </button>
             </template>
             <template slot="__operation__" slot-scope="{ rowIndex }">
-                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('BusinessTopology["编辑"]')}}</a>
+                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('Common["编辑"]')}}</a>
                 <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
-                    @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}
+                    @click="handleDeleteProcess(rowIndex)">{{$t('Common["删除"]')}}
                 </a>
             </template>
         </cmdb-table>
@@ -83,7 +83,7 @@
         data () {
             return {
                 localExpanded: this.expanded,
-                processList: this.sourceProcesses,
+                processList: this.$tools.clone(this.sourceProcesses),
                 processProperties: [],
                 processPropertyGroups: [],
                 processForm: {
@@ -124,7 +124,7 @@
             },
             immutableProperties () {
                 const properties = []
-                if (this.processForm.rowIndex !== null) {
+                if (this.processForm.rowIndex !== null && this.templates.length) {
                     const template = this.templates[this.processForm.rowIndex]
                     Object.keys(template.property).forEach(key => {
                         if (template.property[key].as_default_value) {

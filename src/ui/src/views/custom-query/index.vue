@@ -127,7 +127,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
             this.showFeatureTips = this.featureTipsParams['customQuery']
             this.getUserAPIList()
         },

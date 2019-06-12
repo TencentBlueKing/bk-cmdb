@@ -265,12 +265,12 @@
             handleDeleteInstance (id) {
                 this.instances = this.instances.filter(instance => instance.id !== id)
             },
-            async handleSaveProcess (values, changedValues) {
+            async handleSaveProcess (values, changedValues, instance) {
                 try {
                     if (this.processForm.type === 'create') {
                         await this.createProcess(values)
                     } else {
-                        await this.updateProcess(changedValues)
+                        await this.updateProcess(values, instance)
                     }
                     this.processForm.referenceService.getServiceProcessList()
                     this.processForm.show = false
@@ -291,11 +291,11 @@
                     })
                 })
             },
-            updateProcess (values) {
+            updateProcess (values, instance) {
                 return this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
-                    business: this.business,
-                    processInstanceId: this.processForm.instance.bk_process_id,
-                    params: values
+                    params: this.$injectMetadata({
+                        processes: [{ ...instance, ...values }]
+                    })
                 })
             },
             handleCloseProcessForm () {
@@ -310,6 +310,9 @@
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
                         setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
@@ -321,7 +324,8 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
+                        from: this.$route.fullPath
                     }
                 })
             },
@@ -351,7 +355,7 @@
                 }
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$tc('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    content: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)

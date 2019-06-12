@@ -371,7 +371,7 @@
                 }
             },
             handleCancelOperation () {
-                this.$router.push({ name: 'serviceTemplate' })
+                this.$router.replace({ name: 'serviceTemplate' })
             }
         }
     }
