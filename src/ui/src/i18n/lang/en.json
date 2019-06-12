@@ -124,11 +124,10 @@
         "点击下方按钮申请": "You don't have any business permission yet, you can click 'Apply for business permission' to get permission.",
         "申请业务权限": "Apply for business permission",
         "申请创建业务": "Apply to create business",
-        "请选择时间": "Please select time",
         "搜索结果": "Search results",
         "请输入搜索内容": "Enter search content",
         "共计N条": "A total of {N}",
-        "每页显示条数": "{num} data per page"
+        "每页显示条数": "{num} data per page",
         "请选择时间": "Please select time",
         "更多详情": "More details",
         "更多": "Show All",
@@ -188,7 +187,9 @@
         "暂无使用记录": "No record",
         "搜不到相关内容": "Sorry, I can't find the relevant content, try another word~",
         "全部结果": "all",
-        "该模型已停用": "The model has been disabled"
+        "该模型已停用": "The model has been disabled",
+        "主线模型无法查看": "Mainline model connot be viewed",
+        "模型ID": "Model ID:"
     },
     "OperationAudit": {
         "操作审计": "Operation Audit",
