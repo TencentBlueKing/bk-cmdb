@@ -16,10 +16,6 @@ import (
 	"net/http"
 )
 
-func (s *coreService) initHealth() {
-	s.addAction(http.MethodGet, "/healthz", s.Health, nil)
-}
-
 func (s *coreService) initModelClassification() {
 	s.addAction(http.MethodPost, "/create/model/classification", s.CreateOneModelClassification, nil)
 	s.addAction(http.MethodPost, "/createmany/model/classification", s.CreateManyModelClassification, nil)
@@ -120,11 +116,16 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostCrossBusiness, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
 	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHost, nil)
+	s.addAction(http.MethodPost, "/read/host/indentifier", s.Identifier, nil)
 
 }
 
+func (s *coreService) audit() {
+	s.addAction(http.MethodPost, "/create/auditlog", s.CreateAuditLog, nil)
+	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
+}
+
 func (s *coreService) initService() {
-	s.initHealth()
 	s.initModelClassification()
 	s.initModel()
 	s.initAssociationKind()
@@ -135,4 +136,6 @@ func (s *coreService) initService() {
 	s.initDataSynchronize()
 	s.initMainline()
 	s.host()
+	s.audit()
+	s.initProcess()
 }

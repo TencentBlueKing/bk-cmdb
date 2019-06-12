@@ -117,14 +117,14 @@
                 title: '',
                 info: { ...DEFAULT_INFO },
                 constraintList: [{
-                    id: '1:1',
-                    name: '1-1'
+                    id: 'n:n',
+                    name: 'N-N'
                 }, {
                     id: '1:n',
                     name: '1-N'
                 }, {
-                    id: 'n:n',
-                    name: 'N-N'
+                    id: '1:1',
+                    name: '1-1'
                 }]
             }
         },

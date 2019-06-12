@@ -50,6 +50,10 @@ func (writer GlogWriter) Printf(format string, v ...interface{}) {
 	glog.InfoDepthf(1, format, v...)
 }
 
+func (writer GlogWriter) Println(v ...interface{}) {
+	glog.InfoDepth(1, v...)
+}
+
 var once sync.Once
 
 // InitLogs initializes logs the way we want for blog.
@@ -83,8 +87,9 @@ var (
 	Warn  = glog.Warningf
 	Warnf = glog.Warningf
 
-	Error  = glog.Errorf
-	Errorf = glog.Errorf
+	Error       = glog.Errorf
+	Errorf      = glog.Errorf
+	ErrorfDepth = glog.ErrorDepth
 
 	Fatal  = glog.Fatal
 	Fatalf = glog.Fatalf

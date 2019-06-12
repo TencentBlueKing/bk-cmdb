@@ -187,7 +187,7 @@ func (valid *ValidMap) validChar(val interface{}, key string) error {
 		}
 	default:
 		blog.Error("params should be  string")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedString, key)
 	}
 
 	return nil
@@ -198,7 +198,7 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Error("params in need")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -208,12 +208,12 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 	case string:
 		if len(value) > common.FieldTypeLongLenChar {
 			blog.Errorf("params over length %d", common.FieldTypeSingleLenChar)
-			return valid.errif.Errorf(common.CCErrCommOverLimit, key)
+			return valid.errif.CCErrorf(common.CCErrCommOverLimit, key)
 		}
 		if 0 == len(value) {
 			if valid.require[key] {
 				blog.Error("params can not be empty")
-				return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+				return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 			}
 			return nil
 		}
@@ -235,7 +235,7 @@ func (valid *ValidMap) validLongChar(val interface{}, key string) error {
 		}
 	default:
 		blog.Error("params should be  string")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedString, key)
 	}
 
 	return nil
@@ -246,7 +246,7 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -256,7 +256,7 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 	value, err := util.GetInt64ByInterface(val)
 	if nil != err {
 		blog.Errorf("params %s:%#v not int", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedInt, key)
 	}
 
 	property, ok := valid.propertys[key]
@@ -278,7 +278,7 @@ func (valid *ValidMap) validInt(val interface{}, key string) error {
 	}
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%#v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -288,7 +288,7 @@ func (valid *ValidMap) validForeignKey(val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -297,7 +297,7 @@ func (valid *ValidMap) validForeignKey(val interface{}, key string) error {
 	_, ok := util.GetTypeSensitiveUInt64(val)
 	if !ok {
 		blog.Errorf("params %s:%#v not int", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedInt, key)
 	}
 
 	return nil
@@ -308,7 +308,7 @@ func (valid *ValidMap) validTimeZone(val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -319,11 +319,11 @@ func (valid *ValidMap) validTimeZone(val interface{}, key string) error {
 		isMatch := util.IsTimeZone(value)
 		if false == isMatch {
 			blog.Error("params should be  timezone")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedTimeZone, key)
 		}
 	default:
 		blog.Error("params should be  timezone")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedTimeZone, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedTimeZone, key)
 	}
 	return nil
 }
@@ -333,7 +333,7 @@ func (valid *ValidMap) validUser(val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -343,7 +343,7 @@ func (valid *ValidMap) validUser(val interface{}, key string) error {
 	case string:
 	default:
 		blog.Error("params should be string")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedString, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedString, key)
 	}
 	return nil
 }
@@ -353,7 +353,7 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 	if nil == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil
@@ -363,7 +363,7 @@ func (valid *ValidMap) validBool(val interface{}, key string) error {
 	case bool:
 	default:
 		blog.Error("params should be  bool")
-		return valid.errif.Errorf(common.CCErrCommParamsNeedBool, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedBool, key)
 	}
 	return nil
 }
@@ -373,7 +373,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 	if nil == val || "" == val {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 		}
 		return nil
 	}
@@ -381,7 +381,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 	value, err := util.GetFloat64ByInterface(val)
 	if nil != err {
 		blog.Error("params should be float, but found [%#v]", val)
-		return valid.errif.Errorf(common.CCErrCommParamsNeedFloat, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsNeedFloat, key)
 	}
 
 	property, ok := valid.propertys[key]
@@ -403,7 +403,7 @@ func (valid *ValidMap) validFloat(val interface{}, key string) error {
 	}
 	if value > maxValue || value < minValue {
 		blog.Errorf("params %s:%v not valid", key, val)
-		return valid.errif.Errorf(common.CCErrCommParamsInvalid, key)
+		return valid.errif.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	return nil
 }
@@ -414,7 +414,7 @@ func (valid *ValidMap) validEnum(val interface{}, key string) error {
 	if nil == val || val == "" {
 		if valid.require[key] {
 			blog.Error("params can not be null")
-			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
+			return valid.errif.CCErrorf(common.CCErrCommParamsNeedSet, key)
 
 		}
 		return nil

@@ -117,7 +117,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	logConentsMap := make(map[int64]auditoplog.AuditLogExt, 0)
+	logConentsMap := make(map[int64]meta.SaveAuditLogParams, 0)
 	for _, hostID := range iHostIDArr {
 		logger := srvData.lgc.NewHostLog(srvData.ctx, srvData.ownerID)
 		if err := logger.WithPrevious(srvData.ctx, strconv.FormatInt(hostID, 10), hostFields); err != nil {
@@ -126,7 +126,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 
-		logConentsMap[hostID] = *logger.AuditLog(srvData.ctx, hostID)
+		logConentsMap[hostID] = logger.AuditLog(srvData.ctx, hostID)
 	}
 
 	input := &meta.DeleteHostRequest{
@@ -144,13 +144,15 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 	for _, ex := range delResult.Data {
 		delete(logConentsMap, ex.OriginIndex)
 	}
-	var logConents []auditoplog.AuditLogExt
+	var logConents []meta.SaveAuditLogParams
 	for _, item := range logConentsMap {
+		item.Model = common.BKInnerObjIDHost
+		item.OpDesc = "delete host"
+		item.OpType = auditoplog.AuditOpTypeDel
 		logConents = append(logConents, item)
 	}
 	if len(logConents) > 0 {
-		addHostLogs := common.KvMap{common.BKContentField: logConents, common.BKOpDescField: "delete host", common.BKOpTypeField: auditoplog.AuditOpTypeDel}
-		auditResult, err := s.CoreAPI.AuditController().AddHostLogs(srvData.ctx, srvData.ownerID, strconv.FormatInt(appID, 10), srvData.user, srvData.header, addHostLogs)
+		auditResult, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logConents...)
 		if err != nil || (err == nil && !auditResult.Result) {
 			blog.Errorf("delete host in batch, but add host audit log failed, err: %v, result err: %v,rid:%s", err, auditResult.ErrMsg, srvData.rid)
 			resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrAuditSaveLogFaile)})
@@ -512,7 +514,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	logPreConents := make(map[int64]auditoplog.AuditLogExt, 0)
+	logPreConents := make(map[int64]meta.SaveAuditLogParams, 0)
 	hostIDs := make([]int64, 0)
 	for _, id := range strings.Split(hostIDStr, ",") {
 		hostID, err := strconv.ParseInt(id, 10, 64)
@@ -550,7 +552,7 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			return
 		}
 
-		logPreConents[hostID] = *audit.AuditLog(srvData.ctx, hostID)
+		logPreConents[hostID] = audit.AuditLog(srvData.ctx, hostID)
 	}
 
 	opt := &meta.UpdateOption{
@@ -576,12 +578,12 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	appID := "0"
-	if len(hostModuleConfig) != 0 {
-		appID = strconv.FormatInt(hostModuleConfig[0].AppID, 10)
+	var appID int64
+	if len(hostModuleConfig) > 0 {
+		appID = hostModuleConfig[0].AppID
 	}
 
-	logLastConents := make([]auditoplog.AuditLogExt, 0)
+	logLastConents := make([]meta.SaveAuditLogParams, 0)
 	for _, hostID := range hostIDs {
 
 		audit := srvData.lgc.NewHostLog(srvData.ctx, common.BKDefaultOwnerID)
@@ -600,12 +602,22 @@ func (s *Service) UpdateHostBatch(req *restful.Request, resp *restful.Response) 
 			}
 		}
 
-		logLastConents = append(logLastConents, auditoplog.AuditLogExt{ID: hostID, Content: logContent, ExtKey: preLogContent.ExtKey})
+		logLastConents = append(logLastConents,
+			meta.SaveAuditLogParams{
+				ID:      hostID,
+				Model:   common.BKInnerObjIDHost,
+				Content: logContent,
+				OpDesc:  "update host",
+				OpType:  auditoplog.AuditOpTypeModify,
+				ExtKey:  preLogContent.ExtKey,
+				BizID:   appID,
+			},
+		)
+
 	}
-	log := common.KvMap{common.BKContentField: logLastConents, common.BKOpDescField: "update host", common.BKOpTypeField: auditoplog.AuditOpTypeModify}
-	aResult, err := s.CoreAPI.AuditController().AddHostLogs(srvData.ctx, srvData.ownerID, appID, srvData.user, srvData.header, log)
-	if err != nil || (err == nil && !aResult.Result) {
-		blog.Errorf("update host batch, but add host[%v] audit failed, err: %v, %v,rid:%s", hostIDs, err, aResult.ErrMsg, srvData.rid)
+	auditresp, err := s.CoreAPI.CoreService().Audit().SaveAuditLog(srvData.ctx, srvData.header, logLastConents...)
+	if err != nil || (err == nil && !auditresp.Result) {
+		blog.Errorf("update host batch, but add host[%v] audit failed, err: %v, %v,rid:%s", hostIDs, err, auditresp.ErrMsg, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostDetailFail)})
 		return
 	}
@@ -626,7 +638,7 @@ func (s *Service) NewHostSyncAppTopo(req *restful.Request, resp *restful.Respons
 
 	if hostList.HostInfo == nil {
 		blog.Errorf("add host, but host info is nil.input:%+v,rid:%s", hostList, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommParamsNeedSet)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedSet, "host_info")})
 		return
 	}
 	if 0 == len(hostList.ModuleID) {
@@ -891,7 +903,7 @@ func (s *Service) MoveSetHost2IdleModule(req *restful.Request, resp *restful.Res
 
 	}
 
-	audit.SaveAudit(srvData.ctx, strconv.FormatInt(data.ApplicationID, 10), srvData.user, "host to empty module")
+	audit.SaveAudit(srvData.ctx, data.ApplicationID, srvData.user, "host to empty module")
 
 	// register host to iam
 	// auth: check authorization

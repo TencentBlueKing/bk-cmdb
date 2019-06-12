@@ -16,9 +16,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-
-	"github.com/emicklei/go-restful"
 
 	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -26,10 +23,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/emicklei/go-restful"
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
-func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
+func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	config := new(metadata.HostsModuleRelation)
@@ -86,7 +85,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(config.ApplicationID, 10), srvData.user, ""); err != nil {
+	if err := audit.SaveAudit(srvData.ctx, config.ApplicationID, srvData.user, ""); err != nil {
 		blog.Errorf("host module relation, save audit log failed, err: %v,input:%+v,rid:%s", err, config, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: err})
 		return
@@ -274,12 +273,12 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// auth: check authorization
 	if existNewAddHost == true {
 		/*
-		// 检查注册到资源池的权限
-		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
-			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
-			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-			return
-		}
+			// 检查注册到资源池的权限
+			if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
+				blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+				resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+				return
+			}
 		*/
 		// 检查转移主机到目标业务的权限
 		// auth: check target business update priority
@@ -483,7 +482,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		return
 	}
 
-	if err := audit.SaveAudit(srvData.ctx, strconv.FormatInt(conf.ApplicationID, 10), srvData.user, "host to "+moduleNameLogKey+" module"); err != nil {
+	if err := audit.SaveAudit(srvData.ctx, conf.ApplicationID, srvData.user, "host to "+moduleNameLogKey+" module"); err != nil {
 		blog.Errorf("move host to module %s, save audit log failed, err: %v,input:%+v,rid:%s", moduleName, err, conf, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")})
 		return

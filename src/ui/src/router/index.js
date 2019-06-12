@@ -11,18 +11,24 @@ import index from '@/views/index/router.config'
 import audit from '@/views/audit/router.config'
 import business from '@/views/business/router.config'
 import businessModel from '@/views/business-model/router.config'
+import businessTopology from '@/views/business-topology/router.config'
 import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
+import hostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
 import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
-import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
+import template from '@/views/service-template/router.config'
+import cagetory from '@/views/service-cagetory/router.config'
+
+import serviceInstance from '@/views/service-instance/router.config'
+import synchronous from '@/views/business-synchronous/router.config'
 
 Vue.use(Router)
 
@@ -30,19 +36,24 @@ export const viewRouters = [
     ...index,
     audit,
     businessModel,
+    businessTopology,
     customQuery,
     eventpush,
     history,
     hosts,
+    ...hostDetails,
     modelAssociation,
     modelTopology,
     process,
     resource,
-    topology,
+    ...template,
     ...generalModel,
     ...business,
     ...model,
-    ...permission
+    ...permission,
+    cagetory,
+    synchronous,
+    ...serviceInstance
 ]
 
 const statusRouters = [
@@ -205,10 +216,12 @@ router.beforeEach((to, from, next) => {
                 next()
             }
         } catch (e) {
-            console.log(e)
-            if (e instanceof StatusError) {
+            if (e.__CANCEL__) {
+                next()
+            } else if (e instanceof StatusError) {
                 next({ name: e.name })
             } else {
+                console.error(e)
                 next({ name: 'error' })
             }
             setLoading(false)

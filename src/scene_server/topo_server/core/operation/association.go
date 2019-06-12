@@ -14,7 +14,6 @@ package operation
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"configcenter/src/apimachinery"
@@ -233,6 +232,7 @@ func (a *association) CreateCommonAssociation(params types.ContextParams, data *
 		return nil, params.Err.New(rspAsst.Code, rspAsst.ErrMsg)
 	}
 
+	data.ID = int64(rspAsst.Data.Created.ID)
 	return data, nil
 }
 
@@ -751,6 +751,24 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 		if len(inst.Data) >= 1 {
 			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToOneAssociation)
 		}
+	case metadata.OneToManyMapping:
+		cond = condition.CreateCondition()
+		cond.Field(common.AssociationObjAsstIDField).Eq(request.ObjectAsstID)
+		cond.Field(common.BKAsstInstIDField).Eq(request.AsstInstID)
+
+		inst, err := a.SearchInst(params, &metadata.SearchAssociationInstRequest{Condition: cond.ToMapStr()})
+		if err != nil {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %v", cond, err)
+			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !inst.Result {
+			blog.Errorf("create association instance, but check instance with cond[%v] failed, err: %s", cond, resp.ErrMsg)
+			return nil, params.Err.New(resp.Code, resp.ErrMsg)
+		}
+		if len(inst.Data) >= 1 {
+			return nil, params.Err.Error(common.CCErrorTopoCreateMultipleInstancesForOneToManyAssociation)
+		}
 
 	default:
 		// after all the check, new association instance can be created.
@@ -777,22 +795,25 @@ func (a *association) CreateInst(params types.ContextParams, request *metadata.C
 	resp.Data.ID = instanceAssociationID
 
 	// record audit log
-	auditLog := auditoplog.AuditLogAssociation{
-		ID: instanceAssociationID,
+	auditlog := metadata.SaveAuditLogParams{
+		ID:    instanceAssociationID,
+		Model: "instance_association",
 		Content: metadata.Content{
 			CurData: input,
 			Headers: InstanceAssociationAuditHeaders,
 		},
+		OpDesc: "create instance association",
+		OpType: auditoplog.AuditOpTypeAdd,
+		BizID:  bizID,
 	}
-	log := map[string]interface{}{
-		common.BKContentField: auditLog,
-		common.BKOpDescField:  "create instance association",
-		common.BKOpTypeField:  auditoplog.AuditOpTypeAdd,
-	}
-	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
+	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
 		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
+	}
+	if !auditresp.Result {
+		blog.Errorf("CreateInst success, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
 	}
 
 	return resp, err
@@ -826,13 +847,6 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		return nil, params.Err.Error(common.CCErrCommNotFound)
 	}
 	instanceAssociation := data.Data.Info[0]
-	auditLog := auditoplog.AuditLogAssociation{
-		ID: assoID,
-		Content: metadata.Content{
-			PreData: instanceAssociation,
-			Headers: InstanceAssociationAuditHeaders,
-		},
-	}
 
 	input := metadata.DeleteOption{
 		Condition: condition.CreateCondition().Field(common.BKFieldID).Eq(assoID).ToMapStr(),
@@ -842,15 +856,26 @@ func (a *association) DeleteInst(params types.ContextParams, assoID int64) (resp
 		BaseResp: rsp.BaseResp,
 	}
 
-	log := map[string]interface{}{
-		common.BKContentField: auditLog,
-		common.BKOpDescField:  "delete instance association",
-		common.BKOpTypeField:  auditoplog.AuditOpTypeAdd,
+	auditlog := metadata.SaveAuditLogParams{
+		ID:    assoID,
+		Model: "instance_association",
+		Content: metadata.Content{
+			PreData: instanceAssociation,
+			Headers: InstanceAssociationAuditHeaders,
+		},
+		OpDesc: "delete instance association",
+		OpType: auditoplog.AuditOpTypeDel,
+		BizID:  bizID,
 	}
-	_, err = a.clientSet.AuditController().AddAssociationLog(params.Context, params.SupplierAccount, strconv.FormatInt(bizID, 10), params.User, params.Header, log)
+	auditresp, err := a.clientSet.CoreService().Audit().SaveAuditLog(params.Context, params.Header, auditlog)
 	if err != nil {
-		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", rsp, err, params.ReqID)
+		blog.Errorf("DeleteInst finished, but save audit log failed, delete inst response: %+v, err: %v, rid: %s", auditresp, err, params.ReqID)
 		return nil, params.Err.Error(common.CCErrAuditSaveLogFaile)
 	}
+	if !auditresp.Result {
+		blog.Errorf("DeleteInst finished, but save audit log failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(auditresp.Code, auditresp.ErrMsg)
+	}
+
 	return resp, err
 }
