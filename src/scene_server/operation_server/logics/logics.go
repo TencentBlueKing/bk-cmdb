@@ -49,39 +49,6 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
 	return info, nil
 }
 
-func (lgc *Logics) BizHostCount(kit *rest.Kit) (interface{}, error) {
-	cond := &metadata.QueryCondition{}
-	bizInfo, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
-	if err != nil {
-		blog.Errorf("search biz info failed, err: %v", err)
-		return nil, err
-	}
-
-	opt := mapstr.MapStr{}
-	result, err := lgc.CoreAPI.CoreService().Operation().AggregateBizHost(kit.Ctx, kit.Header, opt)
-	if err != nil {
-		blog.Errorf("search biz's host count fail, err: %v", err)
-		return nil, err
-	}
-
-	bizHost := mapstr.MapStr{}
-
-	for _, info := range bizInfo.Data.Info {
-		for _, data := range result.Data {
-			if info[common.BKAppIDField] == data.Id {
-				bizName, err := info.String(common.BKAppNameField)
-				if err != nil {
-					blog.Errorf("interface convert to string fail, err: %v", err)
-					continue
-				}
-				bizHost[bizName] = data.Count
-			}
-		}
-	}
-
-	return bizHost, nil
-}
-
 func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConfig) (interface{}, error) {
 	opt, ok := InnerCharts[chartInfo.ReportType]
 	if !ok {

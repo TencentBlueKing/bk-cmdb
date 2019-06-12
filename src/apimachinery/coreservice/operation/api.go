@@ -22,20 +22,6 @@ func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data int
 	return
 }
 
-func (s *operation) AggregateBizHost(ctx context.Context, h http.Header, data interface{}) (resp *metadata.AggregateIntResponse, err error) {
-	resp = new(metadata.AggregateIntResponse)
-	subPath := "read/operation/biz/host"
-
-	err = s.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (s *operation) CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "read/operation/common/aggregate"

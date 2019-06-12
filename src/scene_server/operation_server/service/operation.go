@@ -141,7 +141,6 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 	innerChart := []string{
 		common.BizModuleHostChart,
 		common.ModelAndInstCount,
-		common.HostBizChart,
 		common.HostChangeBizChart,
 		common.ModelInstChart,
 		common.ModelInstChangeChart,
