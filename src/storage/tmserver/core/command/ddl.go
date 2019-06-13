@@ -96,7 +96,7 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 						keys[key] = 1
 					}
 				}
-				reply.Docs = append(reply.Docs, types.Document{
+				reply.Docs = append(executereply.Docs, types.Document{
 					"name": dbIndex.Name,
 					"keys": keys,
 				})
@@ -105,7 +105,7 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 	case types.OPDDLDropIndexCommand:
 		execErr = targetCol.DropIndex(msg.Index.Name)
 	default:
-		execErr = errors.New("db execute " + msg.OPCode + "not support")
+		execErr = fmt.Errorf("db data definition language execute operate type %s not support", msg.OPCode)
 	}
 
 	//err := targetCol.Find(ctx, msg.Selector, &opt, &reply.Docs)
