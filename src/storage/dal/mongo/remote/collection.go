@@ -258,7 +258,6 @@ func (c *Collection) DropColumn(ctx context.Context, field string) error {
 		return errors.New(reply.Message)
 	}
 	return nil
-	return dal.ErrNotImplemented
 }
 
 // AggregateOne 聚合查询

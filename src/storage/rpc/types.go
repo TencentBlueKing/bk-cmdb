@@ -19,9 +19,9 @@ import (
 	"errors"
 	"sync"
 
-	"configcenter/src/common/util"
-
 	"github.com/mongodb/mongo-go-driver/bson"
+
+	"configcenter/src/common/util"
 )
 
 // Errors define

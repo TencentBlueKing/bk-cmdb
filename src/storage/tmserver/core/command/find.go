@@ -44,7 +44,7 @@ func (d *find) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRe
 		reply.Message = err.Error()
 		return reply, err
 	}
-	blog.V(4).Infof("[MONGO OPERATION] %+v", &msg)
+	blog.V(4).Infof("[MONGO OPERATION] db find operate. info: %#v", &msg)
 
 	opt := findopt.Many{}
 	opt.Skip = int64(msg.Start)
