@@ -89,10 +89,11 @@ type DeleteProcessInstanceInServiceInstanceInput struct {
 }
 
 type GetServiceInstanceInModuleInput struct {
-	Metadata Metadata `json:"metadata"`
-	ModuleID int64    `json:"bk_module_id"`
-	Page     BasePage `json:"page"`
-	WithName bool     `json:"with_name"`
+	Metadata  Metadata `json:"metadata"`
+	ModuleID  int64    `json:"bk_module_id"`
+	Page      BasePage `json:"page"`
+	SearchKey *string  `json:"search_key,omitempty"`
+	WithName  bool     `json:"with_name"`
 }
 
 type FindServiceTemplateAndInstanceDifferenceOption struct {
@@ -824,8 +825,9 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64 `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
 
 	// the module that this service belongs to.
 	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
