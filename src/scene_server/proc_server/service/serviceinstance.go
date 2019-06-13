@@ -239,7 +239,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	ctx.RespEntity(processIDs)
 }
 
-func (ps *ProcServer) DeleteProcessInstanceInServiceInstance(ctx *rest.Contexts) {
+func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 	input := new(metadata.DeleteProcessInstanceInServiceInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -603,7 +603,7 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 // changed: the process instance's property values are not same with the process template it belongs.
 // add: a new process template is added, compared to the service instance belongs to this service template.
 // deleted: a process is already deleted, compared to the service instance belongs to this service template.
-func (ps *ProcServer) FindDifferencesBetweenProcessTemplateAndInstancesInServiceInstance(ctx *rest.Contexts) {
+func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	input := new(metadata.FindServiceTemplateAndInstanceDifferenceOption)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -867,7 +867,7 @@ func (ps *ProcServer) FindDifferencesBetweenProcessTemplateAndInstancesInService
 // 2. update a process
 // 3. removed a process
 
-func (ps *ProcServer) ForceSyncServiceInstanceAccordingToServiceTemplate(ctx *rest.Contexts) {
+func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	input := new(metadata.ForceSyncServiceInstanceWithTemplateInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
