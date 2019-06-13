@@ -426,3 +426,35 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	return nil
 }
+
+func updateProcessNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	processNameFilter := map[string]interface{}{
+		common.BKPropertyIDField: "bk_process_name",
+	}
+	processNameIndex := map[string]interface{}{
+		"$set": map[string]interface{}{
+			common.BKPropertyIndexField: -2,
+		},
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, processNameFilter, processNameIndex); err != nil {
+		blog.Errorf("[upgrade v19.05.16.01] updatePropertyIndex bk_process_name index failed, err: %+v", err)
+		return err
+	}
+	return nil
+}
+
+func updateFuncNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	funcNameFilter := map[string]interface{}{
+		common.BKPropertyIDField: "bk_func_name",
+	}
+	funcNameIndex := map[string]interface{}{
+		"$set": map[string]interface{}{
+			common.BKPropertyIndexField: -3,
+		},
+	}
+	if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, funcNameFilter, funcNameIndex); err != nil {
+		blog.Errorf("[upgrade v19.05.16.01] updateFuncNamePropertyIndex bk_func_name index failed, err: %+v", err)
+		return err
+	}
+	return nil
+}
