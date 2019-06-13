@@ -238,8 +238,8 @@ func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessP
 		}
 	}
 
-	if t.BindIP.Value != nil {
-		if *t.BindIP.Value != i.BindIP {
+	if t.BindIP.Value != nil && i.BindIP != nil {
+		if *t.BindIP.Value != *i.BindIP {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bind_ip"].ID,
 				PropertyID:            "bind_ip",
@@ -465,8 +465,8 @@ func (lgc *Logic) CheckProcessTemplateAndInstanceIsDifferent(t *metadata.Process
 		}
 	}
 
-	if t.BindIP.Value != nil {
-		if *t.BindIP.Value != i.BindIP {
+	if t.BindIP.Value != nil && i.BindIP != nil {
+		if *t.BindIP.Value != *i.BindIP {
 			process["bind_ip"] = *t.BindIP.Value
 			changed = true
 
@@ -608,7 +608,7 @@ func (lgc *Logic) NewProcessInstanceFromProcessTemplate(t *metadata.ProcessPrope
 	}
 
 	if t.BindIP.Value != nil {
-		p.BindIP = *t.BindIP.Value
+		p.BindIP = t.BindIP.Value
 	}
 
 	if t.Priority.Value != nil {
