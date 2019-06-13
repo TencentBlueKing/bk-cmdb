@@ -303,6 +303,11 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
+type OneServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplateDetail `json:"data"`
+}
+
 type MultipleServiceTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`

@@ -63,7 +63,7 @@ func (p *processOperation) CreateServiceCategory(ctx core.ContextParams, categor
 	}
 	if count > 0 {
 		blog.Errorf("CreateServiceCategory failed, category name duplicated, already exist %d, rid: %s", count, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrorTopoMutipleObjectInstanceName, category.Name)
+		return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceServiceCategoryNameDuplicated, category.Name)
 	}
 
 	// generate id field

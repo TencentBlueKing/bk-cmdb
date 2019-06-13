@@ -13,25 +13,25 @@
 package app
 
 import (
-    "context"
-    "fmt"
-    "os"
-    "time"
+	"context"
+	"fmt"
+	"os"
+	"time"
 
-    "configcenter/src/auth"
-    "configcenter/src/auth/authcenter"
-    "configcenter/src/auth/extensions"
-    "configcenter/src/common"
-    "configcenter/src/common/backbone"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/types"
-    "configcenter/src/common/version"
-    "configcenter/src/scene_server/proc_server/app/options"
-    "configcenter/src/scene_server/proc_server/logics"
-    "configcenter/src/scene_server/proc_server/service"
-    "configcenter/src/storage/dal/redis"
-    "configcenter/src/thirdpartyclient/esbserver"
-    "configcenter/src/thirdpartyclient/esbserver/esbutil"
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
+	"configcenter/src/common"
+	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
+	"configcenter/src/common/version"
+	"configcenter/src/scene_server/proc_server/app/options"
+	"configcenter/src/scene_server/proc_server/logics"
+	"configcenter/src/scene_server/proc_server/service"
+	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -72,7 +72,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authorize, err := auth.NewAuthorize(nil, authConf)
+	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
@@ -83,7 +83,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("new redis client failed, err: %s", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn)
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), procSvr.EsbConfigChn, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
