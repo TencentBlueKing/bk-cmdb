@@ -27,7 +27,7 @@
                     <template v-else>
                         <div class="cagetory-name">
                             <span>{{mainCagetory['name']}}</span>
-                            <i class="property-edit icon-cc-edit" @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])"></i>
+                            <i class="property-edit icon-cc-edit-shape" @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])"></i>
                         </div>
                         <cmdb-dot-menu class="dot-menu">
                             <div class="menu-operational">
@@ -70,7 +70,7 @@
                             <div class="child-title">
                                 <span>{{childCagetory['name']}}</span>
                                 <div class="child-edit" v-if="!childCagetory['is_built_in']">
-                                    <i class="property-edit icon-cc-edit mr10"
+                                    <i class="property-edit icon-cc-edit-shape mr10"
                                         @click.stop="handleEditChild(childCagetory['id'], childCagetory['name'])">
                                     </i>
                                     <i class="icon-cc-tips-close"
@@ -179,6 +179,10 @@
                         name
                     })
                 }).then(() => {
+                    this.$bkMessage({
+                        message: this.$t("Common['保存成功']"),
+                        theme: 'success'
+                    })
                     this.showAddMianCagetory = false
                     this.handleCloseAddChild()
                     this.getCagetoryList()
@@ -210,6 +214,10 @@
                             name: type === 'main' ? this.mainCagetoryName : this.childCagetoryName
                         })
                     }).then(() => {
+                        this.$bkMessage({
+                            message: this.$t("Common['保存成功']"),
+                            theme: 'success'
+                        })
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
                         this.getCagetoryList()
@@ -227,8 +235,13 @@
                             config: {
                                 requestId: 'delete_proc_services_category'
                             }
+                        }).then(() => {
+                            this.$bkMessage({
+                                message: this.$t("Common['删除成功']"),
+                                theme: 'success'
+                            })
+                            this.getCagetoryList()
                         })
-                        this.getCagetoryList()
                     }
                 })
             },
@@ -360,12 +373,12 @@
                 @include ellipsis;
                 flex: 1;
                 padding-right: 20px;
-                .icon-cc-edit {
+                .icon-cc-edit-shape {
                     display: none;
                     cursor: pointer;
                     color: #3a84ff;
                 }
-                &:hover .icon-cc-edit {
+                &:hover .icon-cc-edit-shape {
                     display: inline !important;
                 }
             }
