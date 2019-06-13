@@ -326,8 +326,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -373,8 +373,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -458,8 +458,8 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -468,7 +468,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		for _, model := range models {
 			var instID int64
-			if model.ObjectID == asst.ObjectID {
+			if model.ObjectID == asst[0].ObjectID {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int()
 			} else {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
@@ -573,11 +573,19 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			modelType = meta.ModelInstanceTopology
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.Create,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},

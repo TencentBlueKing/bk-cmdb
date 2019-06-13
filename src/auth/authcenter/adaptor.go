@@ -61,7 +61,7 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		}
 
 	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology, meta.MainlineInstanceTopology:
-		iamResourceType = BizTopoInstance
+		iamResourceType = BizTopo
 
 	case meta.MainlineModel, meta.ModelTopology:
 		iamResourceType = SysSystemBase
@@ -148,7 +148,7 @@ const (
 	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
+	BizTopo            ResourceTypeID = "bizTopo"
 	BizModelGroup      ResourceTypeID = "bizModelGroup"
 	BizModel           ResourceTypeID = "bizModel"
 	BizInstance        ResourceTypeID = "bizInstance"
@@ -229,9 +229,8 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	if r.Basic.Type == meta.Process {
 		if r.Action == meta.BoundModuleToProcess || r.Action == meta.UnboundModuleToProcess {
-			return BindModule, nil
+			return Edit, nil
 		}
-
 	}
 
 	if r.Basic.Type == meta.HostInstance {
@@ -240,11 +239,11 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		if r.Action == meta.AddHostToResourcePool {
-			return Create, nil
+			return Edit, nil
 		}
 
 		if r.Action == meta.MoveResPoolHostToBizIdleModule {
-			return Create, nil
+			return Edit, nil
 		}
 	}
 
@@ -263,7 +262,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveResPoolHostToBizIdleModule:
 		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return AssignHostsToBusiness, nil
+			return Edit, nil
 		}
 
 	case meta.MoveHostToBizFaultModule,
@@ -280,9 +279,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	case meta.AddHostToResourcePool:
 		// add hosts to resource pool
 		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return Create, nil
+			return Edit, nil
 		}
-		return ModuleTransfer, nil
+		return Edit, nil
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
@@ -326,7 +325,7 @@ var (
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BizTopoInstance,
+		Type:    BizTopo,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 

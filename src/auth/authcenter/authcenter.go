@@ -435,26 +435,22 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 		Exact:    true,
 	}
 
-	var appList []AuthorizedResource
+	var appList []string
 	var err error
 	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedResources(ctx, info)
+		appList, err = ac.authClient.GetAuthorizedScopes(ctx, info)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	businessIDs := make([]int64, 0)
-	for _, apps := range appList {
-		for _, appRsc := range apps.ResourceIDs {
-			for _, app := range appRsc {
-				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
-				if err != nil {
-					return businessIDs, err
-				}
-				businessIDs = append(businessIDs, id)
-			}
+	for _, app := range appList {
+		id, err := strconv.ParseInt(app, 10, 64)
+		if err != nil {
+			return businessIDs, err
 		}
+		businessIDs = append(businessIDs, id)
 	}
 
 	return businessIDs, nil
