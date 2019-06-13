@@ -52,7 +52,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 	return processes, nil
 }
 
-func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, error) {
+func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, errors.CCErrorCoder) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
 	}
@@ -62,20 +62,23 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
 		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, err)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !ret.Result {
 		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, ret.ErrMsg)
-		return nil, kit.CCError.New(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 
 	}
 
 	process := new(metadata.Process)
-	if len(ret.Data.Info) != 0 {
-		if err := ret.Data.Info[0].ToStructByTag(process, "field"); err != nil {
-			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+	if len(ret.Data.Info) == 0 {
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
+		blog.Errorf("GetProcessInstanceWithID fai", err)
+		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	return process, nil
@@ -151,7 +154,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (
 
 	if !result.Result {
 		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
-		return 0, errors.NewCCError(result.Code, result.ErrMsg)
+		return 0, NewCCError(result.Code, result.ErrMsg)
 	}
 
 	return int64(result.Data.Created.ID), nil
