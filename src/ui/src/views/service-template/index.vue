@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" type="primary" @click="operationTemplate(-1)">{{$t("Common['新建']")}}</bk-button>
+            <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
@@ -43,6 +43,7 @@
             :list="table.list"
             :pagination.sync="table.pagination"
             :default-sort="table.defaultSort"
+            :sortable="false"
             :wrapper-minus-height="210"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
@@ -90,32 +91,25 @@
                     header: [
                         {
                             id: 'name',
-                            name: this.$t("ServiceManagement['模板名称']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['模板名称']")
                         }, {
                             id: 'service_category',
-                            name: this.$t("ServiceManagement['服务分类']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['服务分类']")
                         }, {
                             id: 'process_template_count',
-                            name: this.$t("ServiceManagement['进程数量']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['进程数量']")
                         }, {
                             id: 'service_instance_count',
-                            name: this.$t("ServiceManagement['应用数量']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['应用数量']")
                         }, {
                             id: 'modifier',
-                            name: this.$t("ServiceManagement['修改人']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['修改人']")
                         }, {
                             id: 'last_time',
-                            name: this.$t("ServiceManagement['修改时间']"),
-                            sortable: false
+                            name: this.$t("ServiceManagement['修改时间']")
                         }, {
                             id: 'operation',
-                            name: this.$t('Common["操作"]'),
-                            sortable: false
+                            name: this.$t('Common["操作"]')
                         }
                     ],
                     height: 600,

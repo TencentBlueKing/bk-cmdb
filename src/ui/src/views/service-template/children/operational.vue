@@ -60,6 +60,7 @@
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>
                 </div>
                 <process-table
+                    v-if="processList.length"
                     :loading="processLoading"
                     :properties="properties"
                     @on-edit="handleUpdateProcess"
@@ -133,7 +134,7 @@
             ...mapGetters(['supplierAccount']),
             ...mapGetters('serviceProcess', ['localProcessTemplate']),
             isCreatedType () {
-                return this.$route.params['templateId'] === -1
+                return !this.$route.params['templateId']
             },
             templateId () {
                 return this.$route.params['templateId']
@@ -419,7 +420,7 @@
                 }
                 .create-tips {
                     color: #979Ba5;
-                    font-size: 12px;
+                    font-size: 14px;
                     padding-left: 10px;
                 }
             }
