@@ -45,7 +45,6 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 		return
 	}
 
-	blog.Debug("--------------------------------------models: %v", modelInfo)
 	modelInstNumber := make([]mapstr.MapStr, 0)
 	for _, countInfo := range modelInstCount {
 		for _, model := range modelInfo {
@@ -150,14 +149,14 @@ func (m *operationManager) ModelInstChange(ctx core.ContextParams) {
 }
 
 func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
-	data, err := m.SearchBizHost(ctx)
+	bizHost, err := m.SearchBizHost(ctx)
 	if err != nil {
 		blog.Errorf("search biz host count fail, err: %v", err)
 		return
 	}
 
 	opt := mapstr.MapStr{}
-	bizInfo := make([]mapstr.MapStr, 0)
+	bizInfo := make([]metadata.BizInst, 0)
 	if err := m.dbProxy.Table(common.BKTableNameBaseApp).Find(opt).All(ctx, &bizInfo); err != nil {
 		blog.Errorf("search biz info fail ,err: %v", err)
 		return
@@ -173,36 +172,40 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 
 	firstBizHostChange := metadata.HostChangeChartData{}
 	now := time.Now().String()
-	for _, info := range data {
+	for _, info := range bizHost {
 		for _, biz := range bizInfo {
-			bizID, err := biz.Int64(common.BKAppIDField)
-			if err != nil {
-				blog.Errorf("biz id interface convert to int64 fail, err: %v", err)
-				continue
-			}
-
-			bizName, err := biz.String(common.BKAppNameField)
-			if err != nil {
-				blog.Errorf("biz name interface convert to string fail, err: %v", err)
-				continue
-			}
-
-			if info.Id == bizID {
+			if info.Id == biz.BizID {
 				if len(bizHostChange) > 0 {
-					_, ok := bizHostChange[0].Data[bizName]
+					bizHostChange[0].ReportType = common.HostChangeBizChart
+					bizHostChange[0].OwnerID = "0"
+					_, ok := bizHostChange[0].Data[biz.BizName]
 					if ok {
-						bizHostChange[0].Data[bizName][now] = info.Count
+						bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
+							Date:  now,
+							Count: info.Count,
+						})
 					} else {
-						bizHostChange[0].Data[bizName] = mapstr.MapStr{}
-						bizHostChange[0].Data[bizName][now] = info.Count
+						bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
+						bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
+							Date:  now,
+							Count: info.Count,
+						})
 					}
 				} else {
-					_, ok := firstBizHostChange.Data[bizName]
+					firstBizHostChange.OwnerID = "0"
+					firstBizHostChange.ReportType = common.HostChangeBizChart
+					_, ok := firstBizHostChange.Data[biz.BizName]
 					if ok {
-						firstBizHostChange.Data[bizName][now] = info.Count
+						firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+							Date:  now,
+							Count: info.Count,
+						})
 					} else {
-						firstBizHostChange.Data[bizName] = mapstr.MapStr{}
-						firstBizHostChange.Data[bizName][now] = info.Count
+						firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
+						firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+							Date:  now,
+							Count: info.Count,
+						})
 					}
 				}
 			}
@@ -215,7 +218,7 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 			return
 		}
 	} else {
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, firstBizHostChange); err != nil {
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Insert(ctx, firstBizHostChange); err != nil {
 			blog.Errorf("update biz host change fail, err: %v", err)
 			return
 		}

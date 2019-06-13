@@ -13,7 +13,6 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
 	"time"
 )
 
@@ -75,9 +74,14 @@ type UpdateID struct {
 }
 
 type HostChangeChartData struct {
-	ReportType string                   `json:"report_type" bson:"report_type"`
-	Data       map[string]mapstr.MapStr `json:"data" bson:"data"`
-	OwnerID    string                   `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ReportType string                    `json:"report_type" bson:"report_type"`
+	Data       map[string][]BizHostChart `json:"data" bson:"data"`
+	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type BizHostChart struct {
+	Date  string `json:"date" bson:"date"`
+	Count int64  `json:"count" bson:"count"`
 }
 
 type ChartData struct {
