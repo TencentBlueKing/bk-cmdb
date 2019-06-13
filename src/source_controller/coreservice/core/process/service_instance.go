@@ -66,10 +66,12 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// validate host id field
-	if err = p.validateHostID(ctx, instance.HostID); err != nil {
+	innerIP, err := p.validateHostID(ctx, instance.HostID)
+	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
+	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
 	if serviceTemplate != nil {
@@ -177,6 +179,12 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.ModuleID != 0 {
 		filter[common.BKModuleIDField] = option.ModuleID
+	}
+
+	if option.SearchKey != nil {
+		filter[common.BKHostInnerIPField] = map[string]interface{}{
+			"$regex": fmt.Sprintf(".*%s.*", *option.SearchKey),
+		}
 	}
 
 	var total uint64
