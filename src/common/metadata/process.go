@@ -302,6 +302,7 @@ type Process struct {
 	Protocol        ProtocolType    `field:"protocol" json:"protocol,omitempty" bson:"protocol"`
 	Description     string          `field:"description" json:"description,omitempty" bson:"description"`
 	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	StartParamRegex string          `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
 }
 
 type ServiceCategory struct {
@@ -398,7 +399,7 @@ func (pt *ProcessTemplate) Validate() (field string, err error) {
 	return "", nil
 }
 
-func isTrue(asDefaultValue *bool) bool {
+func IsAsDefaultValue(asDefaultValue *bool) bool {
 	if asDefaultValue != nil {
 		return *asDefaultValue
 	}
@@ -416,68 +417,178 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	}
 
 	property := pt.Property
-	if isTrue(property.ProcessName.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == true {
 		processInstance.ProcessName = *property.ProcessName.Value
 	}
-	if isTrue(property.ProcNum.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == true {
 		processInstance.ProcNum = *property.ProcNum.Value
 	}
-	if isTrue(property.StopCmd.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == true {
 		processInstance.StopCmd = *property.StopCmd.Value
 	}
-	if isTrue(property.RestartCmd.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == true {
 		processInstance.RestartCmd = *property.RestartCmd.Value
 	}
-	if isTrue(property.ForceStopCmd.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == true {
 		processInstance.ForceStopCmd = *property.ForceStopCmd.Value
 	}
-	if isTrue(property.FuncName.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == true {
 		processInstance.FuncName = *property.FuncName.Value
 	}
-	if isTrue(property.WorkPath.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == true {
 		processInstance.WorkPath = *property.WorkPath.Value
 	}
 	processInstance.BindIP = nil
-	if isTrue(property.BindIP.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == true {
 		processInstance.BindIP = property.BindIP.Value
 	}
-	if isTrue(property.Priority.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) == true {
 		processInstance.Priority = *property.Priority.Value
 	}
-	if isTrue(property.ReloadCmd.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == true {
 		processInstance.ReloadCmd = *property.ReloadCmd.Value
 	}
-	if isTrue(property.Port.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.Port.AsDefaultValue) == true {
 		processInstance.Port = *property.Port.Value
 	}
-	if isTrue(property.PidFile.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == true {
 		processInstance.PidFile = *property.PidFile.Value
 	}
-	if isTrue(property.AutoStart.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == true {
 		processInstance.AutoStart = *property.AutoStart.Value
 	}
-	if isTrue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
 		processInstance.AutoTimeGap = *property.AutoTimeGapSeconds.Value
 	}
-	if isTrue(property.StartCmd.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == true {
 		processInstance.StartCmd = *property.StartCmd.Value
 	}
-	if isTrue(property.FuncID.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == true {
 		processInstance.FuncID = *property.FuncID.Value
 	}
-	if isTrue(property.User.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.User.AsDefaultValue) == true {
 		processInstance.User = *property.User.Value
 	}
-	if isTrue(property.TimeoutSeconds.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == true {
 		processInstance.TimeoutSeconds = *property.TimeoutSeconds.Value
 	}
-	if isTrue(property.Protocol.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == true {
 		processInstance.Protocol = *property.Protocol.Value
 	}
-	if isTrue(property.Description.AsDefaultValue) == true {
+	if IsAsDefaultValue(property.Description.AsDefaultValue) == true {
 		processInstance.Description = *property.Description.Value
 	}
 	return processInstance
+}
+
+// InstanceUpdate is used for update instance's value
+func (pt *ProcessTemplate) InstanceUpdate(process *Process) {
+	property := pt.Property
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) {
+		if property.FuncName.Value != nil {
+			process.FuncName = *property.FuncName.Value
+		}
+	}
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) {
+		if property.ProcessName.Value != nil {
+			process.ProcessName = *property.ProcessName.Value
+		}
+	}
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) {
+		if property.FuncID.Value != nil {
+			process.FuncID = *property.FuncID.Value
+		}
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) {
+		if property.StartParamRegex.Value != nil {
+			process.StartParamRegex = *property.StartParamRegex.Value
+		}
+	}
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) {
+		if property.AutoTimeGapSeconds.Value != nil {
+			process.AutoTimeGap = *property.AutoTimeGapSeconds.Value
+		}
+	}
+	if IsAsDefaultValue(property.User.AsDefaultValue) {
+		if property.User.Value != nil {
+			process.User = *property.User.Value
+		}
+	}
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) {
+		if property.StopCmd.Value != nil {
+			process.StopCmd = *property.StopCmd.Value
+		}
+	}
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) {
+		if property.ProcNum.Value != nil {
+			process.ProcNum = *property.ProcNum.Value
+		}
+	}
+	if IsAsDefaultValue(property.Port.AsDefaultValue) {
+		if property.Port.Value != nil {
+			process.Port = *property.Port.Value
+		}
+	}
+	if IsAsDefaultValue(property.Description.AsDefaultValue) {
+		if property.Description.Value != nil {
+			process.Description = *property.Description.Value
+		}
+	}
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) {
+		if property.Protocol.Value != nil {
+			process.Protocol = *property.Protocol.Value
+		}
+	}
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) {
+		if property.TimeoutSeconds.Value != nil {
+			process.TimeoutSeconds = *property.TimeoutSeconds.Value
+		}
+	}
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) {
+		if property.AutoStart.Value != nil {
+			process.AutoStart = *property.AutoStart.Value
+		}
+	}
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) {
+		if property.PidFile.Value != nil {
+			process.PidFile = *property.PidFile.Value
+		}
+	}
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) {
+		if property.ReloadCmd.Value != nil {
+			process.ReloadCmd = *property.ReloadCmd.Value
+		}
+	}
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) {
+		if property.RestartCmd.Value != nil {
+			process.RestartCmd = *property.RestartCmd.Value
+		}
+	}
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) {
+		if property.ForceStopCmd.Value != nil {
+			process.ForceStopCmd = *property.ForceStopCmd.Value
+		}
+	}
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) {
+		if property.WorkPath.Value != nil {
+			process.WorkPath = *property.WorkPath.Value
+		}
+	}
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
+		if property.BindIP.Value != nil {
+			process.BindIP = property.BindIP.Value
+		}
+	}
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
+		if property.Priority.Value != nil {
+			process.Priority = *property.Priority.Value
+		}
+	}
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
+		if property.StartCmd.Value != nil {
+			process.StartCmd = *property.StartCmd.Value
+		}
+	}
 }
 
 type ProcessProperty struct {
