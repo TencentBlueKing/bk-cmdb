@@ -81,9 +81,9 @@ type HostChangeChartData struct {
 }
 
 type ChartData struct {
-	ReportType string      `json:"report_type"`
-	Data       interface{} `json:"data"`
-	OwnerID    string      `json:"bk_supplier_account"`
+	ReportType string      `json:"report_type" bson:"report_type"`
+	Data       interface{} `json:"data" data:"data"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type SearchChartResponse struct {
@@ -112,4 +112,13 @@ type CloudMapping struct {
 	CloudName  string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
 	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
 	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
+}
+
+type AttributesOptions []AttributesOption
+
+type AttributesOption struct {
+	Id        string `json:"id" bson:"id"`
+	Name      string `json:"name" bson:"name"`
+	Type      string `json:"type" bson:"type"`
+	IsDefault string `json:"is_default" bson:"is_default"`
 }

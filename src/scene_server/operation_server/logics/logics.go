@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) (mapstr.MapStr, error) {
+func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]mapstr.MapStr, error) {
 	cond := metadata.QueryCondition{}
-	info := mapstr.MapStr{}
+	data := make([]mapstr.MapStr, 0)
 	target := [3]string{common.BKInnerObjIDApp, common.BKInnerObjIDModule, common.BKInnerObjIDHost}
 
 	for _, obj := range target {
@@ -21,13 +21,16 @@ func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) (mapstr.MapStr, error) {
 			blog.Errorf("search %v amount failed, err: %v", obj, err)
 			return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 		}
-		info[obj] = result.Data.Count
+		info := mapstr.MapStr{}
+		info["id"] = obj
+		info["count"] = result.Data.Count
+		data = append(data, info)
 	}
 
-	return info, nil
+	return data, nil
 }
 
-func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
+func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]mapstr.MapStr, error) {
 	cond := &metadata.QueryCondition{}
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
@@ -35,8 +38,8 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
 		return nil, err
 	}
 
-	info := mapstr.MapStr{}
-	info["model"] = result.Data.Count
+	info := make([]mapstr.MapStr, 0)
+	info = append(info, mapstr.MapStr{"id": "model", "count": result.Data.Count})
 
 	opt := make(map[string]interface{})
 	resp, err := lgc.CoreAPI.CoreService().Operation().SearchInstCount(kit.Ctx, kit.Header, opt)
@@ -44,7 +47,7 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) (mapstr.MapStr, error) {
 		blog.Errorf("get instance number fail, err: %v", err)
 		return nil, err
 	}
-	info["inst"] = resp.Data
+	info = append(info, mapstr.MapStr{"id": "inst", "count": resp.Data})
 
 	return info, nil
 }

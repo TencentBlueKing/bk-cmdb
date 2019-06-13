@@ -45,7 +45,7 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 		return
 	}
 
-	modelInstNumber := mapstr.MapStr{}
+	modelInstNumber := make([]mapstr.MapStr, 0)
 	for _, countInfo := range modelInstCount {
 		for _, model := range modelInfo {
 			objID, err := model.String(common.BKObjIDField)
@@ -59,7 +59,10 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 					blog.Errorf("interface convert to string fail, err: %v", err)
 					continue
 				}
-				modelInstNumber[objName] = countInfo.Count
+				info := mapstr.MapStr{}
+				info["id"] = objName
+				info["count"] = countInfo.Count
+				modelInstNumber = append(modelInstNumber, info)
 			}
 		}
 	}
@@ -289,7 +292,6 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 	}
 
 	respData := make([]metadata.StringIDCount, 0)
-	info := metadata.StringIDCount{}
 
 	for _, biz := range bizInfo {
 		id, err := biz.Int64(common.BKAppIDField)
@@ -304,6 +306,7 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		}
 		for _, host := range bizHost {
 			if host.Id == id {
+				info := metadata.StringIDCount{}
 				info.Id = name
 				info.Count = host.Count
 				respData = append(respData, info)
