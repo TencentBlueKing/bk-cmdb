@@ -428,6 +428,26 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
+func (a *authClient) GetAuthorizedScopes(ctx context.Context, body *ListAuthorizedResources) ([]string, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz)
+	resp := ListAuthorizedScopeResult{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(a.basicHeader).
+		Body(body).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", err)
+	}
+	if !resp.Result {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", resp.ErrorString())
+	}
+
+	return resp.Data, nil
+}
+
 func (a *authClient) ListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) (result []meta.BackendResource, err error) {
 	util.CopyHeader(a.basicHeader, header)
 
