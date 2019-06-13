@@ -14,7 +14,8 @@
             :header="header"
             :list="processFlattenList"
             :empty-height="58"
-            :sortable="false">
+            :sortable="false"
+            :reference-document-height="false">
             <template slot="data-empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>

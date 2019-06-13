@@ -219,7 +219,8 @@
                         moduleId: this.module.bk_module_id
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: this.$route.fullPath,
+                        title: this.instance.name
                     }
                 })
             },

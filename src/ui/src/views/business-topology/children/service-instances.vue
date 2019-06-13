@@ -2,14 +2,15 @@
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
         <template v-if="instances.length">
             <div class="options">
+                <cmdb-form-bool class="options-checkall"
+                    :size="16"
+                    :checked="isCheckAll"
+                    :title="$t('Common[\'全选本页\']')"
+                    @change="handleCheckALL">
+                </cmdb-form-bool>
                 <bk-button class="options-button" type="primary"
                     @click="handleCreateServiceInstance">
                     {{$t('BusinessTopology["添加服务实例"]')}}
-                </bk-button>
-                <bk-button class="options-button" type="default"
-                    v-if="withTemplate"
-                    @click="handleSyncTemplate">
-                    {{$t('BusinessTopology["同步模板"]')}}
                 </bk-button>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
@@ -25,20 +26,19 @@
                         </li>
                     </ul>
                 </bk-dropdown-menu>
-                <cmdb-form-bool class="options-checkbox"
-                    :size="16"
-                    @change="handleCheckALL">
-                    <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-bool class="options-checkbox"
-                    :size="16"
-                    @change="handleExpandAll">
-                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-singlechar class="options-search fr"
-                    :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
-                    v-model="filter">
-                </cmdb-form-singlechar>
+                <div class="options-right fr">
+                    <cmdb-form-bool class="options-checkbox"
+                        :size="16"
+                        :checked="isExpandAll"
+                        @change="handleExpandAll">
+                        <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                    </cmdb-form-bool>
+                    <cmdb-form-singlechar class="options-search"
+                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
+                        v-model="filter">
+                        <i class="bk-icon icon-search" @click.stop="throttleFilter"></i>
+                    </cmdb-form-singlechar>
+                </div>
             </div>
             <div class="tables">
                 <service-instance-table
@@ -53,6 +53,16 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
+            <bk-paging class="pagination"
+                v-if="pagination.totalPage > 1"
+                pagination-able
+                location="left"
+                :cur-page="pagination.current"
+                :total-page="pagination.totalPage"
+                :pagination-count="pagination.size"
+                @page-change="handlePageChange"
+                @pagination-change="handleSizeChange">
+            </bk-paging>
         </template>
         <service-instance-empty v-else
             @create-instance-success="handleCreateInstanceSuccess">
@@ -85,9 +95,16 @@
         data () {
             return {
                 checked: [],
+                isCheckAll: false,
+                isExpandAll: false,
                 filter: '',
                 throttleFilter: null,
                 instances: [],
+                pagination: {
+                    current: 1,
+                    totalPage: 0,
+                    size: 10
+                },
                 processForm: {
                     type: 'create',
                     show: false,
@@ -116,9 +133,6 @@
             processTemplateMap () {
                 return this.$store.state.businessTopology.processTemplateMap
             },
-            withTemplate () {
-                return this.currentModule && this.currentModule.service_template_id
-            },
             menuItem () {
                 return [{
                     name: this.$t('BusinessTopology["批量删除"]'),
@@ -133,7 +147,7 @@
         },
         watch: {
             currentNode (node) {
-                if (node.data.bk_obj_id === 'module') {
+                if (node && node.data.bk_obj_id === 'module') {
                     this.filter = ''
                     this.getServiceInstances()
                 }
@@ -146,14 +160,7 @@
             this.getProcessProperties()
             this.getProcessPropertyGroups()
             this.throttleFilter = Throttle(() => {
-                this.$refs.serviceInstanceTable.forEach(vm => {
-                    if (this.filter) {
-                        const ip = vm.instance.name.split('_')[0]
-                        vm.show = ip.indexOf(this.filter) !== -1
-                    } else {
-                        vm.show = true
-                    }
-                })
+                this.handlePageChange(1)
             }, 300, {
                 leading: false,
                 trailing: true
@@ -199,18 +206,35 @@
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
-                            with_name: true
+                            with_name: true,
+                            page: {
+                                start: (this.pagination.current - 1) * this.pagination.size,
+                                limit: this.pagination.size
+                            }
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
                             cancelPrevious: true
                         }
                     })
+                    this.checked = []
+                    this.isCheckAll = false
+                    this.isExpandAll = false
                     this.instances = data.info
+                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
                 } catch (e) {
                     console.error(e)
                     this.instances = []
                 }
+            },
+            handlePageChange (page) {
+                this.pagination.current = page
+                this.getServiceInstances()
+            },
+            handleSizeChange (size) {
+                this.pagination.current = 1
+                this.pagination.size = size
+                this.getServiceInstances()
             },
             handleCheckChange (checked, instance) {
                 if (checked) {
@@ -272,7 +296,8 @@
                     } else {
                         await this.updateProcess(values, instance)
                     }
-                    this.processForm.referenceService.getServiceProcessList()
+                    await this.processForm.referenceService.getServiceProcessList()
+                    this.updateServiceInstanceName()
                     this.processForm.show = false
                     this.processForm.instance = null
                     this.processForm.referenceService = null
@@ -280,6 +305,18 @@
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            updateServiceInstanceName () {
+                const serviceInstance = this.processForm.referenceService
+                const processes = serviceInstance.list
+                const instance = this.instances.find(instance => instance === serviceInstance.instance) || {}
+                const name = (instance.name || '').split('_').slice(0, 1)
+                if (processes.length) {
+                    const process = processes[0].property
+                    name.push(process.bk_process_name)
+                    name.push(process.port)
+                }
+                instance.name = name.join('_')
             },
             createProcess (values) {
                 return this.$store.dispatch('processInstance/createServiceInstanceProcess', {
@@ -316,30 +353,19 @@
                     }
                 })
             },
-            handleSyncTemplate () {
-                this.$router.push({
-                    name: 'synchronous',
-                    params: {
-                        moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
-                    },
-                    query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
-                        from: this.$route.fullPath
-                    }
-                })
-            },
             handleCreateInstanceSuccess () {
                 this.getServiceInstances()
             },
             handleCheckALL (checked) {
                 this.filter = ''
+                this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
                 this.filter = ''
+                this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
                 })
@@ -393,21 +419,44 @@
     .options-button {
         height: 32px;
         padding: 0 8px;
-        margin: 0 6px 0 0;
+        margin: 0 0 0 6px;
         line-height: 30px;
     }
+    .options-checkall {
+        width: 32px;
+        height: 32px;
+        line-height: 30px;
+        padding: 0 7px;
+        text-align: center;
+        border: 1px solid #C4C6CC;
+        border-radius: 2px;
+    }
+    .options-right {
+        text-align: right;
+        white-space: nowrap;
+    }
     .options-checkbox {
-        margin: 0 19px 0 10px;
+        margin: 0 15px 0 0;
         .checkbox-label {
-            padding: 0 0 0 9px;
-            line-height: 1.5;
+            padding: 0 0 0 4px;
         }
     }
     .options-search {
+        @include inlineBlock;
+        position: relative;
+        width: 240px;
+        .icon-search {
+            position: absolute;
+            top: 9px;
+            right: 9px;
+            font-size: 14px;
+            cursor: pointer;
+        }
         /deep/ {
             .cmdb-form-input {
                 height: 32px;
                 line-height: 30px;
+                padding-right: 32px;
             }
         }
     }
@@ -443,7 +492,10 @@
         }
     }
     .tables {
-        height: calc(100% - 42px);
+        max-height: calc(100% - 120px);
         @include scrollbar-y;
+    }
+    .pagination {
+        padding: 10px 0 0 0;
     }
 </style>
