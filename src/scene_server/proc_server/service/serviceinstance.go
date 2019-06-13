@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"strconv"
 )
 
 func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
@@ -63,7 +64,7 @@ func (ps *ProcServer) CreateProcessInstancesWithRaw(ctx *rest.Contexts) {
 	ps.createProcessInstancesRaw(ctx, input)
 }
 
-func (ps *ProcServer) UpdateProcessInstancesWithRaw(ctx *rest.Contexts) {
+func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	input := new(metadata.UpdateRawProcessInstanceInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
@@ -93,31 +94,52 @@ func (ps *ProcServer) UpdateProcessInstancesWithRaw(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "update process instance failed, search process instance relation failed, err: %+v", err)
 		return
 	}
+
+	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 	for _, relation := range relations.Info {
-		if relation.ProcessTemplateID != 0 {
-			ctx.RespErrorCodeOnly(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden, "update process instance failed, update process instance create by template forbidden, err: %+v", err)
+		if _, exist := processTemplateMap[relation.ProcessTemplateID]; exist == true {
+			continue
+		}
+		processTemplate, err := ps.CoreAPI.CoreService().Process().GetProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, relation.ProcessTemplateID)
+		if err != nil {
+			ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "update process instance failed, search process instance relation failed, err: %+v", err)
 			return
 		}
+		processTemplateMap[relation.ProcessTemplateID] = processTemplate
 	}
 
-	process2ServiceInstanceMap := make(map[int64]int64)
+	process2ServiceInstanceMap := make(map[int64]*metadata.ProcessInstanceRelation)
 	for _, relation := range relations.Info {
-		process2ServiceInstanceMap[relation.ProcessID] = relation.ServiceInstanceID
+		process2ServiceInstanceMap[relation.ProcessID] = &relation
 	}
 
+	var processTemplate *metadata.ProcessTemplate
 	for _, process := range input.Processes {
-		serviceInstanceID, exist := process2ServiceInstanceMap[process.ProcessID]
+		relation, exist := process2ServiceInstanceMap[process.ProcessID]
 		if exist == false {
 			err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessIDField)
 			ctx.RespWithError(err, common.CCErrCommParamsInvalid, "update process instance failed, process related service instance not found, process: %+v, err: %v", process, err)
 			return
 		}
-		if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
-			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process instance failed, serviceInstanceID: %d, process: %+v, err: %v", serviceInstanceID, process, err)
-			return
+		if relation.ProcessTemplateID == 0 {
+			serviceInstanceID := relation.ServiceInstanceID
+			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
+				ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process instance failed, serviceInstanceID: %d, process: %+v, err: %v", serviceInstanceID, process, err)
+				return
+			}
+		} else {
+			processTemplate, exist = processTemplateMap[relation.ProcessTemplateID]
+			if exist == false {
+				err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
+				ctx.RespWithError(err, common.CCErrCommNotFound, "update process instance failed, process related template not found, relation: %+v, err: %v", relation, err)
+				return
+			}
+			processTemplate.InstanceUpdate(&process)
 		}
 
 		processID := process.ProcessID
+		process.BusinessID = bizID
+		process.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 		data := mapstr.NewFromStruct(process, "field")
 		data.Remove(common.BKProcessIDField)
 		data.Remove(common.MetadataField)

@@ -154,7 +154,7 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (
 
 	if !result.Result {
 		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
-		return 0, NewCCError(result.Code, result.ErrMsg)
+		return 0, errors.New(result.Code, result.ErrMsg)
 	}
 
 	return int64(result.Data.Created.ID), nil
