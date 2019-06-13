@@ -57,7 +57,7 @@
                     {{$t('Common["编辑"]')}}
                 </button>
                 <span class="text-primary"
-                    style="color: #c4c6cc !important;"
+                    style="color: #c4c6cc !important; cursor: not-allowed;"
                     v-if="item['service_instance_count']"
                     v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
                     {{$t('Common["删除"]')}}

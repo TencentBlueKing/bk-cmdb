@@ -88,6 +88,31 @@
                 </process-form>
             </template>
         </cmdb-slider>
+        <bk-dialog
+            :is-show.sync="createdSucess.show"
+            :width="490"
+            :close-icon="false"
+            :has-footer="false"
+            :has-header="false"
+            :title="createdSucess.title"
+            :content="createdSucess.content">
+            <div class="created-success" slot="content">
+                <div class="content">
+                    <i class="bk-icon icon-check-1"></i>
+                    <p>{{$t("ServiceManagement['服务模板创建成功']")}}</p>
+                    <span>{{$tc("ServiceManagement['创建成功前往服务拓扑']", createdSucess.name, { name: createdSucess.name })}}</span>
+                </div>
+                <div class="btn-box">
+                    <bk-button
+                        type="primary"
+                        class="mr10"
+                        @click="handleGoInstance">
+                        {{$t("ServiceManagement['创建服务实例']")}}
+                    </bk-button>
+                    <bk-button @click="handleCancelOperation">{{$t("ServiceManagement['返回列表']")}}</bk-button>
+                </div>
+            </div>
+        </bk-dialog>
     </div>
 </template>
 
@@ -111,6 +136,10 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
+                createdSucess: {
+                    show: false,
+                    name: ''
+                },
                 attribute: {
                     type: null,
                     inst: {
@@ -340,11 +369,11 @@
                         })
                     })
                 }).then(() => {
-                    this.$bkMessage({
-                        message: this.$t("Common['保存成功']"),
-                        theme: 'success'
-                    })
-                    this.handleCancelOperation()
+                    if (this.isCreatedType) {
+                        this.createdSucess.show = true
+                    } else {
+                        this.handleCancelOperation()
+                    }
                 })
             },
             async handleSubmit () {
@@ -379,6 +408,9 @@
                     })
                 }
             },
+            handleGoInstance () {
+                this.$router.replace({ name: 'topology' })
+            },
             handleCancelOperation () {
                 this.$router.replace({ name: 'serviceTemplate' })
             }
@@ -388,6 +420,29 @@
 
 <style lang="scss" scoped>
     .create-template-wrapper {
+        .created-success {
+            font-size: 14px;
+            text-align: center;
+            color: #444444;
+            .bk-icon {
+                width: 60px;
+                height: 60px;
+                line-height: 60px;
+                font-size: 30px;
+                font-weight: bold;
+                color: #ffffff;
+                border-radius: 50%;
+                background-color: #2dcb56;
+                margin-top: 12px;
+            }
+            p {
+                font-size: 24px;
+                padding: 14px 0 24px;
+            }
+            .btn-box {
+                padding: 32px 0 36px;
+            }
+        }
         .info-group {
             h3 {
                 color: #63656e;
