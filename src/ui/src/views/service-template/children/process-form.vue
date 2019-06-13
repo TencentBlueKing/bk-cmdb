@@ -25,8 +25,7 @@
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i> -->
-                                    <label class=""
-                                        :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                    <label :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox"
                                             v-model="values[property['bk_property_id']]['as_default_value']"
@@ -38,7 +37,7 @@
                                     <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="type === 'update'"
+                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -139,13 +138,6 @@
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                     filterProperties.map(property => {
-                        if (property['bk_property_id'] === 'bk_process_name') {
-                            property['isrequired'] = true
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程别名']")
-                        }
-                        if (property['bk_property_id'] === 'bk_func_name') {
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程名称']")
-                        }
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
