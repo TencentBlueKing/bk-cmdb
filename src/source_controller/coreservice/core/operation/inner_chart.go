@@ -45,11 +45,11 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 		return
 	}
 
-	modelInstNumber := make([]metadata.StringIDCount, 0)
+	modelInstNumber := make([]metadata.BizHostChart, 0)
 	for _, countInfo := range modelInstCount {
 		for _, model := range modelInfo {
 			if countInfo.Id == model.ObjectID {
-				info := metadata.StringIDCount{}
+				info := metadata.BizHostChart{}
 				info.Id = model.ObjectName
 				info.Count = countInfo.Count
 				modelInstNumber = append(modelInstNumber, info)
