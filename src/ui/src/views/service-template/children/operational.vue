@@ -403,6 +403,7 @@
                             service_category_id: this.formData.secondaryClassification
                         })
                     }).then(data => {
+                        this.createdSucess.name = data.name
                         this.formData.templateId = data.id
                         this.handleSubmitProcessList()
                     })
