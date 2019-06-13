@@ -14,8 +14,7 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item"
-                                :style="{ float: property['bk_property_id'] === 'bk_process_name' ? 'right !important' : 'left !important' }"
+                            <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
@@ -337,7 +336,7 @@
         margin: 10px 20px 0;
     }
     .form-groups{
-        padding-left: 20px;
+        padding: 0 20px;
     }
     .property-group{
         padding: 20px 0 10px 0;
@@ -357,8 +356,13 @@
         .property-item{
             width: 50%;
             margin: 12px 0 0;
-            padding: 0 54px 0 0;
             font-size: 12px;
+            &:nth-child(odd) {
+                padding-right: 30px;
+            }
+            &:nth-child(even) {
+                padding-left: 30px;
+            }
             .property-name{
                 display: block;
                 margin: 6px 0 9px;
@@ -370,7 +374,7 @@
                 position: relative;
                 display: inline-block;
                 max-width: calc(100% - 20px);
-                padding: 0 10px 0 0;
+                padding: 0 14px 0 0;
                 vertical-align: middle;
                 font-size: 14px;
                 @include ellipsis;
