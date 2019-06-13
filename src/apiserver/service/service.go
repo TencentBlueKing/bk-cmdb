@@ -135,13 +135,14 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 		// check if authorize is nil or not, which means to check if the authorize instance has
 		// already been initialized or not. if not, api server should not be used.
 		if nil == s.authorizer {
-			blog.Error("authorize instance has not been initialized, rid: %s", rid)
+			blog.Errorf("authorize instance has not been initialized, rid: %s", rid)
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrCommCheckAuthorizeFailed,
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
 			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
+			return
 		}
 
 		blog.V(7).Infof("auth filter parse attribute result: %s, rid: %s", attribute, rid)
