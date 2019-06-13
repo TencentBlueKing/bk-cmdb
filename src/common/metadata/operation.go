@@ -80,7 +80,7 @@ type HostChangeChartData struct {
 }
 
 type BizHostChart struct {
-	Date  string `json:"date" bson:"date"`
+	Id    string `json:"id" bson:"id"`
 	Count int64  `json:"count" bson:"count"`
 }
 

@@ -174,46 +174,46 @@ func (m *operationManager) BizHostCountChange(ctx core.ContextParams) {
 	now := time.Now().String()
 	for _, info := range bizHost {
 		for _, biz := range bizInfo {
-			if info.Id == biz.BizID {
-				if len(bizHostChange) > 0 {
-					bizHostChange[0].ReportType = common.HostChangeBizChart
-					bizHostChange[0].OwnerID = "0"
-					_, ok := bizHostChange[0].Data[biz.BizName]
-					if ok {
-						bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
-							Date:  now,
-							Count: info.Count,
-						})
-					} else {
-						bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
-						bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
-							Date:  now,
-							Count: info.Count,
-						})
-					}
+			if info.Id != biz.BizID {
+				continue
+			}
+			if len(bizHostChange) > 0 {
+				_, ok := bizHostChange[0].Data[biz.BizName]
+				if ok {
+					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
+						Id:    now,
+						Count: info.Count,
+					})
 				} else {
-					firstBizHostChange.OwnerID = "0"
-					firstBizHostChange.ReportType = common.HostChangeBizChart
-					_, ok := firstBizHostChange.Data[biz.BizName]
-					if ok {
-						firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-							Date:  now,
-							Count: info.Count,
-						})
-					} else {
-						firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
-						firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
-							Date:  now,
-							Count: info.Count,
-						})
-					}
+					bizHostChange[0].Data = map[string][]metadata.BizHostChart{}
+					bizHostChange[0].Data[biz.BizName] = append(bizHostChange[0].Data[biz.BizName], metadata.BizHostChart{
+						Id:    now,
+						Count: info.Count,
+					})
+				}
+			} else {
+				firstBizHostChange.OwnerID = "0"
+				firstBizHostChange.ReportType = common.HostChangeBizChart
+				_, ok := firstBizHostChange.Data[biz.BizName]
+				if ok {
+					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+						Id:    now,
+						Count: info.Count,
+					})
+				} else {
+					firstBizHostChange.Data = map[string][]metadata.BizHostChart{}
+					firstBizHostChange.Data[biz.BizName] = append(firstBizHostChange.Data[biz.BizName], metadata.BizHostChart{
+						Id:    now,
+						Count: info.Count,
+					})
 				}
 			}
 		}
 	}
 
 	if len(bizHostChange) > 0 {
-		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange); err != nil {
+		blog.Debug("update info : %v", bizHostChange[0])
+		if err := m.dbProxy.Table(common.BKTableNameChartData).Update(ctx, condition, bizHostChange[0]); err != nil {
 			blog.Errorf("update biz host change fail, err: %v", err)
 			return
 		}
