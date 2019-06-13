@@ -803,7 +803,11 @@
         "请选择一级分类": "Please select first classification",
         "请选择二级分类": "Please select secondary classification",
         "进程名称已存在": "Process name already exists.",
-        "确认删除模板进程": "Confirm delete template process?"
+        "确认删除模板进程": "Confirm delete template process?",
+        "服务模板创建成功": "The service template was created successfully.",
+        "创建成功前往服务拓扑": "The {name} is created successfully. You can go to the service topology to create a service instance.",
+        "创建服务实例": "Create service instance",
+        "返回列表": "Back to list"
     },
     "ServiceCagetory": {
         "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion.",

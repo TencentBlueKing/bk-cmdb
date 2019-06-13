@@ -203,16 +203,14 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', '')
             this.getModaelProperty()
             await this.getModuleInstance()
             if (this.list.length) {
-                this.noFindData = false
                 this.isLatsetData = false
-                this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
                 this.showContentId = this.list[0]['process_template_id']
                 this.$set(this.list[0], 'has_read', true)
             } else {
-                this.$store.commit('setHeaderTitle', '')
                 this.isLatsetData = true
             }
         },
@@ -254,6 +252,7 @@
                     }
                 })
                 if (data.info.length) {
+                    this.noFindData = false
                     const instance = data.info[0]
                     this.serviceTemplateId = instance['service_template_id']
                     this.viewsTitle = instance['bk_module_name']
@@ -268,6 +267,11 @@
                         bk_module_id: Number(this.routerParams.moduleId),
                         service_template_id: this.serviceTemplateId
                     })
+                }).then(() => {
+                    this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                }).catch(error => {
+                    console.error(error)
+                    this.noFindData = true
                 })
             },
             propertiesGroup () {
