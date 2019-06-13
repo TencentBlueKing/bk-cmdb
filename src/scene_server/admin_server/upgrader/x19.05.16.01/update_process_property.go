@@ -454,3 +454,14 @@ func updateFuncNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader
 	}
 	return nil
 }
+
+func deleteProcessUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	filter := map[string]interface{}{
+		common.BKObjIDField: common.BKInnerObjIDProc,
+	}
+	if err := db.Table(common.BKTableNameObjUnique).Delete(ctx, filter); err != nil {
+		blog.Errorf("[upgrade v19.05.16.01] deleteProcessUnique failed, err: %+v", err)
+		return err
+	}
+	return nil
+}
