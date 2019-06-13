@@ -85,9 +85,18 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 	}
 }
 
-func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 
-	return nil, nil
+	condition := mapstr.MapStr{}
+	condition[common.OperationReportType] = inputParam.ReportType
+
+	chartData := metadata.ChartData{}
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(ctx, &chartData); err != nil {
+		blog.Errorf("search chart data fail, chart name: %v err: %v", inputParam.Name, err)
+		return nil, err
+	}
+
+	return chartData.Data, nil
 }
 
 func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
