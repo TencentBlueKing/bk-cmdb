@@ -627,10 +627,14 @@ func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.
 			// find the process instance now.
 			processInstance, err := ps.Logic.GetProcessInstanceWithID(ctx.Kit, r.ProcessID)
 			if err != nil {
-				ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-					"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get process instance: %d failed, err: %v",
-					input.ServiceTemplateID, bizID, input.ModuleID, r.ProcessID, err)
-				return
+				if err.GetCode() == common.CCErrCommNotFound {
+					processInstance = new(metadata.Process)
+				} else {
+					ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+						"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get process instance: %d failed, err: %v",
+						input.ServiceTemplateID, bizID, input.ModuleID, r.ProcessID, err)
+					return
+				}
 			}
 
 			// let's check if the process instance bounded process template is still exist in it's service template
@@ -726,7 +730,12 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 	// step 1:
 	// find process object's attribute
-	attrResult, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, new(metadata.QueryCondition))
+	cond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr(map[string]interface{}{
+			common.BKObjIDField: common.BKInnerObjIDProc,
+		}),
+	}
+	attrResult, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, cond)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
 			"find difference between service template: %d and process instances, bizID: %d, but get process attributes failed, err: %v",
@@ -840,9 +849,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			// now, we need to check if the process instance's has been changed compared with it's process template
 			process, err := ps.Logic.GetProcessInstanceWithID(ctx.Kit, relation.ProcessID)
 			if err != nil {
-				ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-					"get difference between with process template and process instance in a service instance, but get process instance: %d failed, %v", err)
-				return
+				if err.GetCode() == common.CCErrCommNotFound {
+					process = new(metadata.Process)
+				} else {
+					ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+						"get difference between with process template and process instance in a service instance, but get process instance: %d failed, %v", err)
+					return
+				}
 			}
 
 			diff := ps.Logic.GetDifferenceInProcessTemplateAndInstance(pt.Property, process, attributeMap)
@@ -892,9 +905,13 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			if !gotName {
 				process, err := ps.Logic.GetProcessInstanceWithID(ctx.Kit, record.ProcessID)
 				if err != nil {
-					ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-						"get difference between with process template and process instance in a service instance, but get process instance: %d failed, %v", err)
-					return
+					if err.GetCode() == common.CCErrCommNotFound {
+						process = new(metadata.Process)
+					} else {
+						ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
+							"get difference between with process template and process instance in a service instance, but get process instance: %d failed, %v", err)
+						return
+					}
 				}
 				processName = process.ProcessName
 				gotName = true
