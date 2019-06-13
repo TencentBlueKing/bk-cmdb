@@ -63,7 +63,7 @@
         data () {
             return {
                 checked: [],
-                cloneProcesses: this.sourceProcesses,
+                cloneProcesses: this.$tools.clone(this.sourceProcesses),
                 properties: [],
                 propertyGroups: [],
                 propertyUnique: [],
