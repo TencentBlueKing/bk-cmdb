@@ -183,7 +183,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysSystemBase,
 		ResourceTypeName:     "系统基础",
 		ParentResourceTypeID: "",
-		Share:                true,
+		Share:                false,
 		Actions: []Action{
 			{
 				ActionID:          ModelTopologyOperation,
