@@ -23,6 +23,8 @@ import (
 	"configcenter/src/storage/types"
 )
 
+// DDL(Data Definition Language)，是用于描述数据库中要存储的现实世界实体的语言。
+
 func init() {
 	core.GCommands.SetCommand(types.OPDDLCode, &ddl{})
 }
@@ -46,7 +48,7 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 		reply.Message = err.Error()
 		return reply, err
 	}
-	blog.V(4).Infof("[MONGO OPERATION] %+v, rid:%s", &msg, msg.RequestID)
+	blog.V(4).Infof("[MONGO OPERATION] execute ddl operater. msg:%#v, rid:%s", msg, msg.RequestID)
 
 	var db mongodb.Database
 	var targetCol mongodb.CollectionInterface
@@ -72,7 +74,6 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 		execErr = db.CreateEmptyCollection(msg.Collection)
 	case types.OPDDLCreateIndexCommand:
 		// new version mongodb driver, name not support name
-		// 
 		if msg.Index.Name == "" {
 			var name string
 			for key, val := range msg.Index.Keys {
@@ -103,6 +104,8 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 		}
 	case types.OPDDLDropIndexCommand:
 		execErr = targetCol.DropIndex(msg.Index.Name)
+	default:
+		execErr = errors.New("db execute " + msg.OPCode + "not support")
 	}
 
 	//err := targetCol.Find(ctx, msg.Selector, &opt, &reply.Docs)
