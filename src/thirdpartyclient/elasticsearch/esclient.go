@@ -1,9 +1,13 @@
 package elasticsearch
 
 import (
+	"context"
+	"net/http"
+	"strings"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"context"
+
 	"github.com/olivere/elastic"
 )
 
@@ -18,10 +22,28 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.
-	client, err := elastic.NewClient(elastic.SetURL(esurl))
-	if err != nil {
-		blog.Errorf("create new es client error, err: %v", err)
-		return nil, err
+	httpClient := &http.Client{}
+	client := &elastic.Client{}
+	var err error
+	if strings.HasPrefix(esurl, "https://") {
+		// if use https tls or else, config httpClient first
+		client, err = elastic.NewClient(
+			elastic.SetHttpClient(httpClient),
+			elastic.SetURL(esurl),
+			elastic.SetScheme("https"),
+			elastic.SetSniff(false))
+		if err != nil {
+			blog.Errorf("create new https es client error, err: %v", err)
+			return nil, err
+		}
+	} else {
+		client, err = elastic.NewClient(
+			elastic.SetHttpClient(httpClient),
+			elastic.SetURL(esurl))
+		if err != nil {
+			blog.Errorf("create new http es client error, err: %v", err)
+			return nil, err
+		}
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number

@@ -31,7 +31,7 @@
 * [关联类型](association_type.md)
 * [模型关联](model_association.md)
 * [实例关联](instance_association.md)
-* [搜索](find.md)
+* [搜索](full_text_find.md)
 
 #### 调用指引
 * api请求调用请使用cmdb_apiserver的地址

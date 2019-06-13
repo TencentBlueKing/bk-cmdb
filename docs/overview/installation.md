@@ -76,7 +76,7 @@
 
 详细手册请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/reference/method/db.createUser/)
 
-### 6. 部署Elasticsearch (用于全文检索)
+### 6. 部署Elasticsearch (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 
 官方下载 [ElasticSearch](https://www.elastic.co/cn/downloads/past-releases)
 搜索5.x的版本下载，推荐下载5.0.2, 5.6.16
@@ -89,7 +89,7 @@
 
 如果想部署高可能可扩展的ES，可参考官方文档[ES-guild](https://www.elastic.co/guide/index.html)
 
-### 7. 部署mongo-connector (用于全文检索)
+### 7. 部署mongo-connector (用于全文检索, 可选, 控制开关见第9步的full_text_search)
 
 官方仓库 [Mongo-connector](https://github.com/yougov/mongo-connector)
 推荐使用pip安装：
@@ -267,12 +267,14 @@ drwxrwxr-x 3 1004 1004 4.0K Mar 29 14:45 cmdb_hostcontroller
 |--blueking_cmdb_url|该值表示部署完成后,输入到浏览器中访问的cmdb 网址, 格式: http://xx.xxx.com:80, 用户自定义填写;在没有配置 DNS 解析的情况下, 填写服务器的 IP:PORT。端口为当前cmdb_webserver监听的端口。|是|无|
 |--blueking_paas_url|蓝鲸PAAS 平台的地址，对于独立部署的CC版本可以不配置|否|无|
 |--listen_port|cmdb_webserver服务监听的端口，默认是8083|是|8083|
+|--full_text_search|全文检索功能开关(取值：off/on)，默认是off，开启是on|否|off|
 |--es_url|elasticsearch服务监听url，默认是http://127.0.0.1:9200|否|http://127.0.0.1:9200|
 
 **注:init.py 执行成功后会自动生成cmdb各服务进程所需要的配置。**
 
 **示例(示例中的参数需要用真实的值替换)：**
 
+如果部署了用于全文检索的第6和第7步，如要开启全文检索功能把full_text_search的值置为on
 ``` shell
 python init.py --discovery 127.0.0.1:2181 --database cmdb --redis_ip 127.0.0.1 --redis_port 6379 --redis_pass cc --mongo_ip 127.0.0.1 --mongo_port 27017 --mongo_user cc --mongo_pass cc --blueking_cmdb_url http://127.0.0.1:8083 --listen_port 8083 --full_text_search on --es_url http://127.0.0.1:9200
 ```
