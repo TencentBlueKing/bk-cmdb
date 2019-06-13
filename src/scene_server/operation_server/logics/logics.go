@@ -75,7 +75,7 @@ func (lgc *Logics) TimerFreshData(ctx context.Context) {
 		blog.Error("start collect chart data timer fail, err: %v", err)
 	}
 
-	timer := time.NewTicker(time.Duration(12) * time.Hour)
+	timer := time.NewTicker(time.Duration(24) * time.Hour)
 	for range timer.C {
 		_, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
 		if err != nil {
