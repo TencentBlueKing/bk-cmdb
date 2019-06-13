@@ -23,7 +23,6 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 
@@ -99,20 +98,6 @@ func ParseUserInfo(requestHeader *http.Header) (*meta.UserInfo, error) {
 	return userInfo, nil
 }
 
-func ParseAPIVersion(req *restful.Request) (string, error) {
-	elements, err := urlParse(req.Request.URL.Path)
-	if err != nil {
-		blog.Errorf("parse api version failed, %+v", err)
-		return "", fmt.Errorf("parse api version failed, %+v", err)
-	}
-	version := elements[1]
-	if version != "v3" {
-		blog.Errorf("parse api version failed, unsupported api version: %s", version)
-		return "", fmt.Errorf("parse api version failed, unsupported api version: %s", version)
-	}
-	return version, nil
-}
-
 // url example: /api/v3/create/model
 var urlRegex = regexp.MustCompile(`^/api/([^/]+)(/[^/]+)+/?$`)
 
@@ -122,31 +107,4 @@ func urlParse(url string) (elements []string, err error) {
 	}
 
 	return strings.Split(url, "/")[1:], nil
-}
-
-func filterAction(action string) (meta.Action, error) {
-	switch action {
-	case "find":
-		return meta.Find, nil
-	case "findMany":
-		return meta.FindMany, nil
-
-	case "create":
-		return meta.Create, nil
-	case "createMany":
-		return meta.CreateMany, nil
-
-	case "update":
-		return meta.Update, nil
-	case "updateMany":
-		return meta.UpdateMany, nil
-
-	case "delete":
-		return meta.Delete, nil
-	case "deleteMany":
-		return meta.DeleteMany, nil
-
-	default:
-		return meta.Unknown, fmt.Errorf("unsupported action %s", action)
-	}
 }
