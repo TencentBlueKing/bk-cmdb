@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 
@@ -73,18 +74,59 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 			blog.Errorf("model's instance count aggregate fail, err: %v", err)
 			return nil, err
 		}
+		return commonCount, nil
 	default:
-		pipeline := []M{{"$match": M{"_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
-		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
-			blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		data, err := m.CommonModelStatistic(ctx, inputParam)
+		if err != nil {
+			blog.Error("search host cloud chart data fail, err: %v", err)
 			return nil, err
 		}
+		return data, nil
 	}
-
-	return commonCount, nil
 }
 
 func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 
 	return nil, nil
+}
+
+func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	commonCount := make([]metadata.StringIDCount, 0)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
+
+	attribute := metadata.Attribute{}
+	opt := mapstr.MapStr{}
+	opt[common.BKObjIDField] = inputParam.ObjID
+	opt[common.BKPropertyIDField] = inputParam.Field
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(ctx, &attribute); err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		return nil, err
+	}
+
+	pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
+	if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		return nil, err
+	}
+
+	option, err := instances.ParseEnumOption(attribute.Option)
+	if err != nil {
+		blog.Errorf("parse enum option fail, err:%v", err)
+		return nil, err
+	}
+
+	respData := make([]mapstr.MapStr, 0)
+	for _, count := range commonCount {
+		for _, opt := range option {
+			if count.Id == opt.ID {
+				info := mapstr.MapStr{}
+				info["id"] = opt.Name
+				//info["name"] = opt.Name
+				info["count"] = count.Count
+				respData = append(respData, info)
+			}
+		}
+	}
+
+	return respData, nil
 }
