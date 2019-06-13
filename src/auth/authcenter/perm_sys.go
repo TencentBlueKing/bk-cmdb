@@ -31,6 +31,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysModelGroup,
 		ResourceTypeName:     "模型分组",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -52,6 +53,7 @@ var expectSystemResourceType = []ResourceType{
 	{
 		ResourceTypeID:   SysModel,
 		ResourceTypeName: "模型",
+		Share:            true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -74,6 +76,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysInstance,
 		ResourceTypeName:     "实例",
 		ParentResourceTypeID: SysModel,
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -101,6 +104,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysAssociationType,
 		ResourceTypeName:     "关联类型",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -123,6 +127,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysBusinessInstance,
 		ResourceTypeName:     "业务",
 		ParentResourceTypeID: "",
+		Share:                true,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -150,62 +155,7 @@ var expectSystemResourceType = []ResourceType{
 		ResourceTypeID:       SysEventPushing,
 		ResourceTypeName:     "事件推送",
 		ParentResourceTypeID: "",
-		Actions: []Action{
-			{
-				ActionID:          Create,
-				ActionName:        "新建",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          Edit,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Delete,
-				ActionName:        "编辑",
-				IsRelatedResource: true,
-			},
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: true,
-			},
-		},
-	},
-	{
-		ResourceTypeID:       SysSystemBase,
-		ResourceTypeName:     "系统基础",
-		ParentResourceTypeID: "",
-		Actions: []Action{
-			{
-				ActionID:          ModelTopologyOperation,
-				ActionName:        "拓扑层级管理",
-				IsRelatedResource: false,
-			},
-			{
-				ActionID:          AdminEntrance,
-				ActionName:        "管理页面入口",
-				IsRelatedResource: false,
-			},
-		},
-	},
-	{
-		ResourceTypeID:       SysAuditLog,
-		ResourceTypeName:     "操作审计",
-		ParentResourceTypeID: "",
-		Actions: []Action{
-			{
-				ActionID:          Get,
-				ActionName:        "查询",
-				IsRelatedResource: false,
-			},
-		},
-	},
-	{
-		ResourceTypeID:       SysHostInstance,
-		ResourceTypeName:     "主机（资源池）",
-		ParentResourceTypeID: "",
+		Share:                false,
 		Actions: []Action{
 			{
 				ActionID:          Create,
@@ -221,6 +171,65 @@ var expectSystemResourceType = []ResourceType{
 				ActionID:          Delete,
 				ActionName:        "删除",
 				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: true,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysSystemBase,
+		ResourceTypeName:     "系统基础",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          ModelTopologyOperation,
+				ActionName:        "编辑业务层级",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          ModelTopologyView,
+				ActionName:        "编辑模型拓扑视图",
+				IsRelatedResource: false,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysHostInstance,
+		ResourceTypeName:     "主机（资源池）",
+		ParentResourceTypeID: "",
+		Share:                true,
+		Actions: []Action{
+			{
+				ActionID:          Create,
+				ActionName:        "新建",
+				IsRelatedResource: false,
+			},
+			{
+				ActionID:          Edit,
+				ActionName:        "编辑",
+				IsRelatedResource: true,
+			},
+			{
+				ActionID:          Delete,
+				ActionName:        "删除",
+				IsRelatedResource: true,
+			},
+		},
+	},
+	{
+		ResourceTypeID:       SysAuditLog,
+		ResourceTypeName:     "操作审计",
+		ParentResourceTypeID: "",
+		Share:                false,
+		Actions: []Action{
+			{
+				ActionID:          Get,
+				ActionName:        "查询",
+				IsRelatedResource: false,
 			},
 		},
 	},
