@@ -96,7 +96,7 @@ func (m *ddl) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPRep
 						keys[key] = 1
 					}
 				}
-				reply.Docs = append(executereply.Docs, types.Document{
+				reply.Docs = append(reply.Docs, types.Document{
 					"name": dbIndex.Name,
 					"keys": keys,
 				})
