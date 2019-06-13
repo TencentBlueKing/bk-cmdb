@@ -88,6 +88,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["添加服务实例"]')}【${this.$route.query.title}】`)
             this.getModuleInstance()
         },
         methods: {

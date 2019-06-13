@@ -349,7 +349,8 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: this.$route.fullPath,
+                        title: this.currentNode.name
                     }
                 })
             },
