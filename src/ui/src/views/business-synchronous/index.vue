@@ -7,6 +7,13 @@
                 <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
+        <template v-else-if="isLatsetData">
+            <div class="no-content">
+                <img src="../../assets/images/latset-data.png" alt="no-content">
+                <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+            </div>
+        </template>
         <template v-else>
             <feature-tips
                 :show-tips="showFeatureTips"
@@ -124,6 +131,7 @@
                 showFeatureTips: true,
                 viewsTitle: '',
                 noFindData: true,
+                isLatsetData: true,
                 showContentId: null,
                 readNum: 1,
                 serviceTemplateId: '',
@@ -199,12 +207,13 @@
             await this.getModuleInstance()
             if (this.list.length) {
                 this.noFindData = false
+                this.isLatsetData = false
                 this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
                 this.showContentId = this.list[0]['process_template_id']
                 this.$set(this.list[0], 'has_read', true)
             } else {
                 this.$store.commit('setHeaderTitle', '')
-                this.noFindData = true
+                this.isLatsetData = true
             }
         },
         methods: {
