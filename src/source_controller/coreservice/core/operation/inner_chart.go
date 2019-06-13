@@ -39,28 +39,19 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 	}
 
 	opt := mapstr.MapStr{}
-	modelInfo := make([]mapstr.MapStr, 0)
-	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).All(ctx, &modelInfo); err != nil {
+	modelInfo := make([]metadata.Object, 0)
+	if err := m.dbProxy.Table(common.BKTableNameObjDes).Find(opt).All(ctx, &modelInfo); err != nil {
 		blog.Errorf("search model info fail ,err: %v", err)
 		return
 	}
 
+	blog.Debug("--------------------------------------models: %v", modelInfo)
 	modelInstNumber := make([]mapstr.MapStr, 0)
 	for _, countInfo := range modelInstCount {
 		for _, model := range modelInfo {
-			objID, err := model.String(common.BKObjIDField)
-			if err != nil {
-				blog.Errorf("model objID interface convert to string fail, err: %v", err)
-				continue
-			}
-			if countInfo.Id == objID {
-				objName, err := model.String(common.BKObjNameField)
-				if err != nil {
-					blog.Errorf("interface convert to string fail, err: %v", err)
-					continue
-				}
+			if countInfo.Id == model.ObjectID {
 				info := mapstr.MapStr{}
-				info["id"] = objName
+				info["id"] = model.ObjectName
 				info["count"] = countInfo.Count
 				modelInstNumber = append(modelInstNumber, info)
 			}
