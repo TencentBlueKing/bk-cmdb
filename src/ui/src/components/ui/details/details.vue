@@ -145,8 +145,8 @@
         }
     }
     .group-name{
-        font-size: 14px;
-        line-height: 14px;
+        font-size: 16px;
+        line-height: 16px;
         color: #333948;
         overflow: visible;
         .group-toggle {
@@ -168,8 +168,8 @@
             width: 50%;
             max-width: 400px;
             margin: 12px 0 0;
-            font-size: 12px;
-            line-height: 16px;
+            font-size: 14px;
+            line-height: 26px;
             .property-name{
                 position: relative;
                 width: 35%;

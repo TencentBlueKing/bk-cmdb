@@ -522,7 +522,7 @@
     .unbind-button {
         height: 26px;
         padding: 0 4px;
-        margin: -5px 0 0 6px;
+        margin: 0 0 0 6px;
         line-height: 24px;
         font-size: 12px;
         color: #63656E;

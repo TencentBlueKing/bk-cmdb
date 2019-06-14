@@ -21,6 +21,7 @@ export default class Meta {
         return {
             title: '',
             i18nTitle: '',
+            resetMenu: true,
             ...data,
             menu,
             auth

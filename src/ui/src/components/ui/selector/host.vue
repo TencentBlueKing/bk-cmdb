@@ -252,7 +252,7 @@
         left: 0;
         text-align: center;
         background-color: rgba(0, 0, 0, .6);
-        z-index: 9999;
+        z-index: 1000;
         &:before {
             content: "";
             width: 0;
