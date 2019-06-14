@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"strings"
 
@@ -15,7 +16,7 @@ type EsSrv struct {
 	Client *elastic.Client
 }
 
-func NewEsClient(esurl string) (*elastic.Client, error) {
+func NewEsClient(esurl string, tlsConfig *tls.Config) (*elastic.Client, error) {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
@@ -27,6 +28,10 @@ func NewEsClient(esurl string) (*elastic.Client, error) {
 	var err error
 	if strings.HasPrefix(esurl, "https://") {
 		// if use https tls or else, config httpClient first
+		tr := &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+		httpClient.Transport = tr
 		client, err = elastic.NewClient(
 			elastic.SetHttpClient(httpClient),
 			elastic.SetURL(esurl),

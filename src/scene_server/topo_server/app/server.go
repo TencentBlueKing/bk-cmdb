@@ -111,7 +111,8 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	essrv := new(elasticsearch.EsSrv)
 	if server.Config.FullTextSearch == "on" {
-		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl)
+		// if use https, config tls.Config{xxx}, and instead NewEsClient param nil
+		esclient, err := elasticsearch.NewEsClient(server.Config.EsUrl, nil)
 		if err != nil {
 			blog.Errorf("failed to create elasticsearch client, err:%s", err.Error())
 		}
