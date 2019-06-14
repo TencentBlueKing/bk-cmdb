@@ -32,7 +32,7 @@ const actions = {
     },
 
     /**
-     * 获取所有正在统计的图表数据
+     * 获取所有正在统计的图表的对应数据
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
@@ -65,6 +65,54 @@ const actions = {
      */
     getStaticObj ({ commit, state, dispatch }, { params, config }) {
         return $http.post(`objects`, params, config)
+    },
+
+    /**
+     * 新增统计图表
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    newStatisticalCharts ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`create/operation/chart`, params, config)
+    },
+
+    /**
+     * 编辑统计图表
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateStatisticalCharts ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`update/operation/chart`, params, config)
+    },
+
+    /**
+     * 删除统计图表
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    deleteOperationChart ({ commit, state, dispatch }, { id, config }) {
+        return $http.delete(`delete/operation/chart/${id}`, config)
+    },
+
+    /**
+     * 更新图表位置
+     * @param {Function} commit store commit mutation hander
+     * @param {Object} state store state
+     * @param {String} dispatch store dispatch action hander
+     * @param {Object} params 参数
+     * @return {promises} promises 对象
+     */
+    updateChartPosition ({ commit, state, dispatch }, { params, config }) {
+        return $http.post(`/update/operation/chart/position`, params, config)
     }
 }
 
