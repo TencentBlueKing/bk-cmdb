@@ -64,6 +64,8 @@ type Site struct {
 	CheckUrl        string
 	// available value: internal, iam
 	AuthScheme string
+	// available value: off, on
+	FullTextSearch string
 }
 
 type Config struct {
