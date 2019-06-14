@@ -266,7 +266,7 @@
     }
     .table-title {
         height: 40px;
-        padding: 0 16px;
+        padding: 0 11px;
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;
