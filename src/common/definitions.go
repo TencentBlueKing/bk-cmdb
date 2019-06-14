@@ -360,6 +360,8 @@ const (
 	// BKPropertyNameField the property name field
 	BKPropertyNameField = "bk_property_name"
 
+	BKPropertyIndexField = "bk_property_index"
+
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
 
@@ -468,6 +470,8 @@ const (
 
 	// BKFuncName the function name
 	BKFuncName = "bk_func_name"
+
+	BKStartParamRegex = "bk_start_param_regex"
 
 	// BKBindIP the bind ip
 	BKBindIP = "bind_ip"
