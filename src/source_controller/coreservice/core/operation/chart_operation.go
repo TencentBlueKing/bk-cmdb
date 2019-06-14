@@ -102,11 +102,9 @@ func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputPara
 	return nil, nil
 }
 
-func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id uint64) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	condition := mapstr.MapStr{}
-	condition["$in"] = inputParam["id"]
-	opt[common.OperationConfigID] = condition
+	opt[common.OperationConfigID] = id
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
 		return nil, err

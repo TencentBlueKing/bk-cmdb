@@ -49,12 +49,8 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 }
 
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	opt := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&opt); err != nil {
-		blog.Errorf("marshal request data fail, err: %v", err)
-		return nil, err
-	}
-	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, opt); err != nil {
+	id := pathParams("id")
+	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, id); err != nil {
 		return nil, err
 	}
 
