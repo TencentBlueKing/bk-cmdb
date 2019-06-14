@@ -671,6 +671,8 @@ const (
 	CCErrCoreServiceInstanceAlreadyExist                                      = 1113016
 	CCErrCoreServiceServiceCategoryNameDuplicated                             = 1113017
 	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
+	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
+	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
