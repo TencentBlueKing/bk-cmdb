@@ -80,6 +80,11 @@ type HostChangeChartData struct {
 }
 
 type BizHostChart struct {
+	Id    time.Time `json:"id" bson:"id"`
+	Count int64     `json:"count" bson:"count"`
+}
+
+type IDStringCountInn64 struct {
 	Id    string `json:"id" bson:"id"`
 	Count int64  `json:"count" bson:"count"`
 }
