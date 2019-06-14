@@ -343,7 +343,6 @@
                     }
                     Plotly.newPlot(myDiv, data, layout, options)
                 })
-                console.log(this.hostData.disList)
             },
             goDraws () {
                 this.drawCharts(this.hostData.disList)
