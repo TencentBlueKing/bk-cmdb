@@ -794,7 +794,11 @@
         "统计对象": "Statistical object",
         "饼图": "Pie chart",
         "柱状图": "Histogram",
-        "实例统计": "Case statistics"
+        "实例统计": "Case statistics",
+        "该图表暂无数据": "The chart has no data for the time being.",
+        "编辑模式": "Editorial Model",
+        "退出编辑模式": "Exit editing mode",
+        "是否确认删除": "Whether to confirm deletion?"
     },
     "HostDetails": {
         "主机详情": "Host Details",
