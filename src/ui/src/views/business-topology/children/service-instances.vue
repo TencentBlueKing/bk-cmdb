@@ -1,6 +1,6 @@
 <template>
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
-        <template v-if="instances.length">
+        <template v-if="instances.length || inSearch">
             <div class="options">
                 <cmdb-form-bool class="options-checkall"
                     :size="16"
@@ -36,7 +36,7 @@
                     <cmdb-form-singlechar class="options-search"
                         :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
                         v-model="filter">
-                        <i class="bk-icon icon-search" @click.stop="throttleFilter"></i>
+                        <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
                     </cmdb-form-singlechar>
                 </div>
             </div>
@@ -63,6 +63,12 @@
                 @page-change="handlePageChange"
                 @pagination-change="handleSizeChange">
             </bk-paging>
+            <div class="filter-empty" v-if="!instances.length">
+                <div class="filter-empty-content">
+                    <i class="bk-icon icon-empty"></i>
+                    <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
+                </div>
+            </div>
         </template>
         <service-instance-empty v-else
             @create-instance-success="handleCreateInstanceSuccess">
@@ -71,6 +77,7 @@
             :title="processForm.title"
             :is-show.sync="processForm.show">
             <cmdb-form slot="content" v-if="processForm.show"
+                ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
                 :uneditable-properties="processForm.uneditableProperties"
@@ -86,7 +93,6 @@
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
-    import Throttle from 'lodash.throttle'
     export default {
         components: {
             serviceInstanceTable,
@@ -98,7 +104,7 @@
                 isCheckAll: false,
                 isExpandAll: false,
                 filter: '',
-                throttleFilter: null,
+                inSearch: false,
                 instances: [],
                 pagination: {
                     current: 1,
@@ -113,7 +119,8 @@
                     referenceService: null,
                     uneditableProperties: [],
                     properties: [],
-                    propertyGroups: []
+                    propertyGroups: [],
+                    unwatch: null
                 }
             }
         },
@@ -151,20 +158,11 @@
                     this.filter = ''
                     this.getServiceInstances()
                 }
-            },
-            filter () {
-                this.throttleFilter()
             }
         },
         created () {
             this.getProcessProperties()
             this.getProcessPropertyGroups()
-            this.throttleFilter = Throttle(() => {
-                this.handlePageChange(1)
-            }, 300, {
-                leading: false,
-                trailing: true
-            })
         },
         methods: {
             async getProcessProperties () {
@@ -228,6 +226,10 @@
                     this.instances = []
                 }
             },
+            handleSearch () {
+                this.inSearch = true
+                this.handlePageChange(1)
+            },
             handlePageChange (page) {
                 this.pagination.current = page
                 this.getServiceInstances()
@@ -250,6 +252,16 @@
                 this.processForm.title = `${this.$t('BusinessTopology["添加进程"]')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             async handleUpdateProcess (processInstance, referenceService) {
                 this.processForm.referenceService = referenceService
@@ -292,6 +304,7 @@
             },
             async handleSaveProcess (values, changedValues, instance) {
                 try {
+                    this.processForm.unwatch && this.processForm.unwatch()
                     if (this.processForm.type === 'create') {
                         await this.createProcess(values)
                     } else {
@@ -499,5 +512,21 @@
     }
     .pagination {
         padding: 10px 0 0 0;
+    }
+    .filter-empty {
+        width: 100%;
+        height: calc(100% - 130px);
+        display: table;
+        .filter-empty-content {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            .icon-empty {
+                display: block;
+                margin: 0 0 10px 0;
+                font-size: 65px;
+                color: #c3cdd7;
+            }
+        }
     }
 </style>
