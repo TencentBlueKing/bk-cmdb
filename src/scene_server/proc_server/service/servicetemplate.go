@@ -57,6 +57,23 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 	ctx.RespEntity(temp)
 }
 
+// GetServiceTemplateDetail return more info than GetServiceTemplate
+func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
+	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
+	templateID, err := util.GetInt64ByInterface(templateIDStr)
+	if err != nil {
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+		return
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(temp)
+}
+
 func (ps *ProcServer) UpdateServiceTemplate(ctx *rest.Contexts) {
 	template := new(metadata.ServiceTemplate)
 	if err := ctx.DecodeInto(template); err != nil {

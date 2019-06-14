@@ -28,6 +28,8 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
 	commonutil "configcenter/src/common/util"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -102,7 +104,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 }
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*AuthCenter, error) {
 	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !cfg.Enable {
 		return new(AuthCenter), nil
@@ -121,6 +123,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
+		Reg: reg,
 	}
 
 	header := http.Header{}
@@ -435,26 +438,22 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 		Exact:    true,
 	}
 
-	var appList []AuthorizedResource
+	var appList []string
 	var err error
 	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedResources(ctx, info)
+		appList, err = ac.authClient.GetAuthorizedScopes(ctx, info)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	businessIDs := make([]int64, 0)
-	for _, apps := range appList {
-		for _, appRsc := range apps.ResourceIDs {
-			for _, app := range appRsc {
-				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
-				if err != nil {
-					return businessIDs, err
-				}
-				businessIDs = append(businessIDs, id)
-			}
+	for _, app := range appList {
+		id, err := strconv.ParseInt(app, 10, 64)
+		if err != nil {
+			return businessIDs, err
 		}
+		businessIDs = append(businessIDs, id)
 	}
 
 	return businessIDs, nil

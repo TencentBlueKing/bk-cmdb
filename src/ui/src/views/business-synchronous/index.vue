@@ -7,6 +7,13 @@
                 <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
+        <template v-else-if="isLatsetData">
+            <div class="no-content">
+                <img src="../../assets/images/latset-data.png" alt="no-content">
+                <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+            </div>
+        </template>
         <template v-else>
             <feature-tips
                 :show-tips="showFeatureTips"
@@ -124,6 +131,7 @@
                 showFeatureTips: true,
                 viewsTitle: '',
                 noFindData: true,
+                isLatsetData: true,
                 showContentId: null,
                 readNum: 1,
                 serviceTemplateId: '',
@@ -195,16 +203,15 @@
             }
         },
         async created () {
+            this.$store.commit('setHeaderTitle', '')
             this.getModaelProperty()
             await this.getModuleInstance()
             if (this.list.length) {
-                this.noFindData = false
-                this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                this.isLatsetData = false
                 this.showContentId = this.list[0]['process_template_id']
                 this.$set(this.list[0], 'has_read', true)
             } else {
-                this.$store.commit('setHeaderTitle', '')
-                this.noFindData = true
+                this.isLatsetData = true
             }
         },
         methods: {
@@ -245,6 +252,7 @@
                     }
                 })
                 if (data.info.length) {
+                    this.noFindData = false
                     const instance = data.info[0]
                     this.serviceTemplateId = instance['service_template_id']
                     this.viewsTitle = instance['bk_module_name']
@@ -259,6 +267,11 @@
                         bk_module_id: Number(this.routerParams.moduleId),
                         service_template_id: this.serviceTemplateId
                     })
+                }).then(() => {
+                    this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                }).catch(error => {
+                    console.error(error)
+                    this.noFindData = true
                 })
             },
             propertiesGroup () {

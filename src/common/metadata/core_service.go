@@ -303,6 +303,11 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
+type OneServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplateDetail `json:"data"`
+}
+
 type MultipleServiceTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
@@ -313,6 +318,7 @@ type ListServiceInstanceOption struct {
 	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
+	SearchKey         *string  `json:"search_key,omitempty"`
 	Page              BasePage `json:"page,omitempty"`
 	// only when WithName is true, name field with be filled with `ip + process name + process port`
 	WithName bool `json:"with_name,omitempty"`

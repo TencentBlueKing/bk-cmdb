@@ -54,16 +54,24 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// validate module id field
-	if err = p.validateModuleID(ctx, instance.ModuleID); err != nil {
+	module, err := p.validateModuleID(ctx, instance.ModuleID)
+	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
+	if module.ServiceTemplateID != instance.ServiceTemplateID {
+		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide)
+	}
+
 	// validate host id field
-	if err = p.validateHostID(ctx, instance.HostID); err != nil {
+	innerIP, err := p.validateHostID(ctx, instance.HostID)
+	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
+	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
 	if serviceTemplate != nil {
@@ -91,6 +99,23 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	instance.CreateTime = time.Now()
 	instance.LastTime = time.Now()
 	instance.SupplierAccount = ctx.SupplierAccount
+
+	// check unique `template_id + module_id + host_id`
+	if instance.ServiceTemplateID != 0 {
+		serviceInstanceFilter := map[string]interface{}{
+			common.BKModuleIDField:          instance.ModuleID,
+			common.BKHostIDField:            instance.HostID,
+			common.BKServiceTemplateIDField: instance.ServiceTemplateID,
+		}
+		count, err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, list service instance failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.ReqID)
+			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+		}
+		if count > 0 {
+			return nil, ctx.Error.CCError(common.CCErrCoreServiceInstanceAlreadyExist)
+		}
+	}
 
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Insert(ctx.Context, &instance); nil != err {
 		blog.Errorf("CreateServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instance, err, ctx.ReqID)
@@ -154,6 +179,12 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.ModuleID != 0 {
 		filter[common.BKModuleIDField] = option.ModuleID
+	}
+
+	if option.SearchKey != nil {
+		filter[common.BKHostInnerIPField] = map[string]interface{}{
+			"$regex": fmt.Sprintf(".*%s.*", *option.SearchKey),
+		}
 	}
 
 	var total uint64
@@ -356,19 +387,20 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 		ServiceTemplateID int64  `bson:"service_template_id"`
 		ServiceCategoryID int64  `bson:"service_category_id"`
 	}{}
-	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).One(ctx.Context, &module); err != nil {
+	var err error
+	if err = p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).One(ctx.Context, &module); err != nil {
 		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get module failed, err: %+v, rid: %s", err, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	if module.ServiceTemplateID == 0 {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, ServiceTemplateID is 0, rid: %s", ctx.ReqID)
-		return nil, ctx.Error.CCError(common.CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance)
+		blog.Warnf("AutoCreateServiceInstanceModuleHost failed, ServiceTemplateID is 0, rid: %s", ctx.ReqID)
+		return nil, nil
 	}
 
 	bizMetadata := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(module.BizID, 10))
 	now := time.Now()
-	serviceInstance := &metadata.ServiceInstance{
+	serviceInstanceData := &metadata.ServiceInstance{
 		Metadata:          bizMetadata,
 		ServiceTemplateID: module.ServiceTemplateID,
 		HostID:            hostID,
@@ -379,11 +411,24 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 		LastTime:          now,
 		SupplierAccount:   ctx.SupplierAccount,
 	}
-	var err errors.CCErrorCoder
-	serviceInstance, err = p.CreateServiceInstance(ctx, *serviceInstance)
-	if err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create service instance failed, serviceInstance: %+v, err: %+v, rid: %s", serviceInstance, err, ctx.ReqID)
-		return nil, err
+	var ccErr errors.CCErrorCoder
+	serviceInstance, ccErr := p.CreateServiceInstance(ctx, *serviceInstanceData)
+	if ccErr != nil {
+		if ccErr.GetCode() == common.CCErrCoreServiceInstanceAlreadyExist {
+			serviceInstanceFilter := map[string]interface{}{
+				common.BKModuleIDField:          serviceInstanceData.ModuleID,
+				common.BKHostIDField:            serviceInstanceData.HostID,
+				common.BKServiceTemplateIDField: serviceInstanceData.ServiceTemplateID,
+			}
+			serviceInstance = &metadata.ServiceInstance{}
+			if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).One(ctx.Context, serviceInstance); err != nil {
+				blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get exist service instance failed, serviceInstanceData: %+v, err: %+v, rid: %s", serviceInstanceData, ccErr, ctx.ReqID)
+				return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+			}
+		} else {
+			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create service instance failed, serviceInstance: %+v, err: %+v, rid: %s", serviceInstance, ccErr, ctx.ReqID)
+			return nil, ccErr
+		}
 	}
 
 	listProcessTemplateOption := metadata.ListProcessTemplatesOption{
@@ -393,17 +438,17 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 			Limit: common.BKNoLimit,
 		},
 	}
-	listProcTplResult, err := p.ListProcessTemplates(ctx, listProcessTemplateOption)
-	if err != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, err, ctx.ReqID)
-		return nil, err
+	listProcTplResult, ccErr := p.ListProcessTemplates(ctx, listProcessTemplateOption)
+	if ccErr != nil {
+		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, ccErr, ctx.ReqID)
+		return nil, ccErr
 	}
 	for _, processTemplate := range listProcTplResult.Info {
-		process := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
-		process, err = p.dependence.CreateProcessInstance(ctx, process)
-		if err != nil {
-			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instance failed, process: %+v, err: %+v, rid: %s", process, err, ctx.ReqID)
-			return nil, err
+		processData := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
+		process, ccErr := p.dependence.CreateProcessInstance(ctx, processData)
+		if ccErr != nil {
+			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, ctx.ReqID)
+			return nil, ccErr
 		}
 		relation := &metadata.ProcessInstanceRelation{
 			Metadata:          bizMetadata,
@@ -413,10 +458,10 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 			HostID:            hostID,
 			SupplierAccount:   ctx.SupplierAccount,
 		}
-		relation, err = p.CreateProcessInstanceRelation(ctx, relation)
-		if err != nil {
-			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process relation failed, relation: %+v, err: %+v, rid: %s", relation, err, ctx.ReqID)
-			return nil, err
+		relation, ccErr = p.CreateProcessInstanceRelation(ctx, relation)
+		if ccErr != nil {
+			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process relation failed, relation: %+v, err: %+v, rid: %s", relation, ccErr, ctx.ReqID)
+			return nil, ccErr
 		}
 	}
 	return serviceInstance, nil
