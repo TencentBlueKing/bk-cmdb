@@ -186,8 +186,14 @@ func (p *processOperation) ListProcessTemplates(ctx core.ContextParams, option m
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	templates := make([]metadata.ProcessTemplate, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Start(
-		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &templates); nil != err {
+
+	// ex: "-id,name"
+	sort := "-id"
+	if len(option.Page.Sort) > 0 {
+		sort = option.Page.Sort
+	}
+
+	if err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListProcessTemplates failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameProcessTemplate, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
