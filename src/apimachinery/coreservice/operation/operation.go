@@ -14,7 +14,7 @@ type OperationClientInterface interface {
 	SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error)
 	SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartResponse, err error)
-	DeleteOperationChart(ctx context.Context, h http.Header, data uint64) (resp *metadata.Response, err error)
+	DeleteOperationChart(ctx context.Context, h http.Header, data string) (resp *metadata.Response, err error)
 	UpdateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	SearchOperationChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	UpdateOperationChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
