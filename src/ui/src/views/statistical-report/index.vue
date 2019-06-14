@@ -1,11 +1,10 @@
 <template>
     <div>
         <div class="operation-top">
-            <span class="operation-edit" v-if="!editModel" @click="editModel = !editModel">{{$t('Operation["编辑"]')}}</span>
-            <div class="operation-edit" v-if="editModel">
-                <span @click="editPage()">{{$t('Common["保存"]')}}</span>
-                <span @click="editCancel()">{{$t('Common["取消"]')}}</span>
-            </div>
+            <span class="operation-edit" v-if="!editModel" @click="editModel = true">
+                {{$t('Operation["编辑模式"]')}}</span>
+            <span class="operation-edit" v-if="editModel" @click="editCancel()">
+                {{$t('Operation["退出编辑模式"]')}}</span>
             <span class="operation-title">{{$t('Operation["主机统计"]')}}</span>
         </div>
         <div class="operate-menus">
@@ -15,7 +14,7 @@
                 </div>
                 <div class="item-right">
                     <span>{{$t('Common["业务"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：6</span>
+                    <span>{{$t('Index["数量"]')}}：{{ navData.biz }}</span>
                 </div>
             </div>
             <div class="menu-items">
@@ -24,7 +23,7 @@
                 </div>
                 <div class="item-right">
                     <span>{{$t('Hosts["模块"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：23</span>
+                    <span>{{$t('Index["数量"]')}}：{{ navData.module }}</span>
                 </div>
             </div>
             <div class="menu-items">
@@ -33,23 +32,30 @@
                 </div>
                 <div class="item-right">
                     <span>{{$t('Nav["主机"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：44</span>
+                    <span>{{$t('Index["数量"]')}}：{{ navData.host }}</span>
                 </div>
             </div>
         </div>
-        <div v-for="(item, key) in disCharts"
+        <div v-for="(item, key) in hostData.disList"
             :key="item.report_type + item.config_id"
-            :style="{ width: item.position.width + '%' }"
+            :style="{ width: item.width + '%' }"
             class="operation-layout">
             <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+            <div v-if="item.noData" class="null-data">
+                <span>该图表暂无数据</span>
+            </div>
             <div class="charts-options" v-if="editModel">
-                <i class="bk-icon icon-arrows-down-shape" @click="moveChart('host', 'down', key)" disabled></i>
-                <i class="bk-icon icon-arrows-up-shape" @click="moveChart('host', 'up', key)"></i>
-                <i class="bk-icon icon-edit" @click="editCharts('host', item)"></i>
-                <i class="icon icon-cc-tips-close" @click="deleteChart('host', key)"></i>
+                <i class="bk-icon icon-arrows-down-shape"
+                    @click="moveChart('host', 'down', key, hostData.disList)" disabled></i>
+                <i class="bk-icon icon-arrows-up-shape"
+                    @click="moveChart('host', 'up', key, hostData.disList)"></i>
+                <i class="bk-icon icon-edit"
+                    @click="openNew('edit', 'host', item, key)"></i>
+                <i class="icon icon-cc-tips-close"
+                    @click="deleteChart('host', key, hostData.disList, item.config_id)"></i>
             </div>
         </div>
-        <div class="operation-add" v-if="editModel" @click="openNew('host')">
+        <div class="operation-add" v-if="editModel" @click="openNew('add', 'host')">
             <i class="bk-icon icon-plus"></i>
         </div>
         <div class="operation-top">
@@ -62,7 +68,7 @@
                 </div>
                 <div class="item-right">
                     <span>{{$t('Nav["模型"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：6</span>
+                    <span>{{$t('Index["数量"]')}}：{{ navData.model }}</span>
                 </div>
             </div>
             <div class="menu-items">
@@ -71,218 +77,73 @@
                 </div>
                 <div class="item-right">
                     <span>{{$t('Operation["实例"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：23</span>
+                    <span>{{$t('Index["数量"]')}}：{{ navData.inst }}</span>
                 </div>
             </div>
         </div>
-        <!--<div v-for="item in charData"-->
-        <!--:key="item.report_type + item.config_id"-->
-        <!--:style="{ width: item.position.width + '%' }"-->
-        <!--class="operation-layout">-->
-        <!--<div class="operation-charts" :id="item.report_type + item.config_id"></div>-->
-        <!--</div>-->
-        <!--<div class="operation-add" v-if="editModel" @click="isShow = !isShow">-->
-        <!--<i class="bk-icon icon-plus"></i>-->
-        <!--</div>-->
-        <div class="operation-add" v-if="editModel" @click="openNew('inst')">
+        <div v-for="(item, key) in instData.disList"
+            :key="item.report_type + item.config_id"
+            :style="{ width: item.width + '%' }"
+            class="operation-layout">
+            <div class="operation-charts" :id="item.report_type + item.config_id"></div>
+            <div v-if="item.noData" class="null-data">
+                <span>该图表暂无数据</span>
+            </div>
+            <div class="charts-options" v-if="editModel">
+                <i class="bk-icon icon-arrows-down-shape"
+                    @click="moveChart('inst', 'down', key, instData.disList)" disabled></i>
+                <i class="bk-icon icon-arrows-up-shape"
+                    @click="moveChart('inst', 'up', key, instData.disList)"></i>
+                <i class="bk-icon icon-edit" @click="openNew('edit', 'inst', item, key)"></i>
+                <i class="icon icon-cc-tips-close"
+                    @click="deleteChart('inst', key, instData.disList, item.config_id)"></i>
+            </div>
+        </div>
+        <div class="operation-add" v-if="editModel" @click="openNew('add', 'inst')">
             <i class="bk-icon icon-plus"></i>
         </div>
-        <bk-dialog
-            :is-show.sync="isShow"
-            :quick-close="false"
-            :close-icon="false"
-            :has-header="false"
-            :has-footer="false"
-            :width="600"
-            :padding="0"
-            @cancel="isShow = !isShow">
-            <div slot="content" class="dialog-content">
-                <div class="model-header">
-                    <p class="title">新增</p>
-                    <i class="modal-close icon icon-cc-tips-close" @click="cancel()"></i>
-                </div>
-                <div class="content clearfix">
-                    <div class="content-item">
-                        <label class="label-text">
-                            {{$t('Operation["图表类型"]')}}：
-                        </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
-                            <input type="radio" name="required" :value="true" v-model="newChart.type">
-                            <span class="cmdb-radio-text">{{$t('ModelManagement["自定义"]')}}</span>
-                        </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
-                            <input type="radio" name="required" :value="false" v-model="newChart.type">
-                            <span class="cmdb-radio-text">{{$t('ModelManagement["内置"]')}}</span>
-                        </label>
-                    </div>
-                    <div v-if="newChart.type">
-                        <div class="content-item">
-                            <label class="label-text">
-                                {{$t('Operation["图表名称"]')}}：
-                            </label>
-                            <label class="cmdb-form-item">
-                                <cmdb-form-bool-input v-model="newChart.name">
-                                </cmdb-form-bool-input>
-                            </label>
-                        </div>
-                        <div class="content-item" v-if="newChart.newType === 'inst'">
-                            <label class="label-text">
-                                {{$t('Operation["统计对象"]')}}：
-                            </label>
-                            <span class="cmdb-form-item">
-                                <bk-selector
-                                    setting-key="bk_obj_id"
-                                    display-key="bk_obj_name"
-                                    :list="staList"
-                                    :selected.sync="newChart.static"
-                                >
-                                </bk-selector>
-                            </span>
-                        </div>
-                        <div class="content-item">
-                            <label class="label-text">
-                                {{$t('Operation["统计维度"]')}}：
-                            </label>
-                            <span class="cmdb-form-item">
-                                <bk-selector
-                                    setting-key="bk_property_id"
-                                    display-key="bk_property_name"
-                                    :list="filterList"
-                                    :selected.sync="newChart.dim"
-                                >
-                                </bk-selector>
-                            </span>
-                        </div>
-                        <div class="content-item">
-                            <label class="label-text">
-                                {{$t('Operation["图表展示"]')}}：
-                            </label>
-                            <label class="cmdb-form-radio cmdb-radio-small">
-                                <input type="radio" name="present" value="pie" v-model="newChart.present">
-                                <span class="cmdb-radio-text">{{$t('Operation["饼图"]')}}</span>
-                            </label>
-                            <label class="cmdb-form-radio cmdb-radio-small">
-                                <input type="radio" name="present" value="Hist" v-model="newChart.present">
-                                <span class="cmdb-radio-text">{{$t('Operation["柱状图"]')}}</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div v-else>
-                        <div class="content-item">
-                            <label class="label-text">
-                                {{$t('Operation["图表选择"]')}}：
-                            </label>
-                            <span class="cmdb-form-item">
-                                <bk-selector
-                                    setting-key="repType"
-                                    display-key="name"
-                                    :list="seList.disList"
-                                    :selected.sync="newChart.present"
-                                >
-                                </bk-selector>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="content-item">
-                        <label class="label-text">
-                            {{$t('Operation["图表宽度"]')}}：
-                        </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
-                            <input type="radio" name="width" value="50" v-model="newChart.width">
-                            <span class="cmdb-radio-text">50%</span>
-                        </label>
-                        <label class="cmdb-form-radio cmdb-radio-small">
-                            <input type="radio" name="width" value="100" v-model="newChart.width">
-                            <span class="cmdb-radio-text">100%</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="footer">
-                    <bk-button type="primary" @click="confirm">{{$t("Common['保存']")}}</bk-button>
-                    <bk-button type="default" @click="cancel">{{$t("Common['取消']")}}</bk-button>
-                </div>
-            </div>
-        </bk-dialog>
+        <v-detail v-if="isShow"
+            :open-type="editType.openType"
+            :chart-data="newChart"
+            @transData="saveData"
+            @closeChart="cancelData">
+        </v-detail>
     </div>
 </template>
 
 <script>
     import Plotly from 'plotly.js'
     import { mapActions } from 'vuex'
+    import vDetail from './chart-detail'
 
     export default {
         name: 'index',
+        components: {
+            vDetail
+        },
         data () {
             return {
-                businessList: [],
-                charData: [],
-                disCharts: [],
                 editModel: false,
                 isShow: false,
-                list: [
-                    {
-                        id: 1,
-                        name: 'haha1'
-                    },
-                    {
-                        id: 2,
-                        name: 'haha2'
-                    },
-                    {
-                        id: 3,
-                        name: 'haha3'
-                    }
-                ],
-                seList: {
-                    host: [
-                        {
-                            name: '按操作系统类型统计',
-                            repType: 'host_os_chart'
-                        },
-                        {
-                            name: '按业务统计',
-                            repType: 'host_biz_chart'
-                        },
-                        {
-                            name: '按云区域统计',
-                            repType: 'host_cloud_chart'
-                        },
-                        {
-                            name: '主机数量变化趋势',
-                            repType: 'host_change_biz_chart'
-                        }
-                    ],
-                    inst: [
-                        {
-                            name: '实例数量统计',
-                            repType: 'model_inst_chart'
-                        },
-                        {
-                            name: '实例变更统计',
-                            repType: 'model_inst_change_chart'
-                        }
-                    ],
+                newChart: {},
+                editType: {
+                    openType: 'add',
+                    hostType: 'host',
+                    index: ''
+                },
+                hostData: {
                     disList: []
                 },
-                newChart: {
-                    type: true,
-                    name: '',
-                    static: '',
-                    dim: '',
-                    present: '',
-                    choose: '',
-                    width: 50,
-                    newType: 'host'
+                instData: {
+                    disList: []
                 },
-                staList: [],
-                demList: []
-            }
-        },
-        computed: {
-            filterList () {
-                return this.demList.filter(item => {
-                    return item.bk_property_type === 'enum'
-                })
+                navData: {
+                    biz: '',
+                    host: '',
+                    module: '',
+                    inst: '',
+                    model: ''
+                }
             }
         },
         created () {
@@ -290,16 +151,17 @@
             this.getChartList()
         },
         mounted () {
-            this.drawCharts()
+            // this.drawCharts()
         },
         methods: {
             ...mapActions('operationChart', [
                 'getCountedCharts',
                 'getCountedChartsData',
-                'getStaticObj',
-                'getStaticDimeObj'
+                'deleteOperationChart',
+                'updateChartPosition'
             ]),
             async getChartList () {
+<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
                 // const res = await this.getCountedCharts({})
                 // this.charData = res.data.info
                 // this.getChartData()
@@ -320,47 +182,66 @@
                     'position': {
                         'width': '50',
                         'index': 3
+=======
+                const res = await this.getCountedCharts({})
+                this.hostData.disList = res.info.host
+                this.instData.disList = res.info.inst
+                res.info.nav.forEach(item => {
+                    this.getNavData(item, 'nav')
+                })
+                this.hostData.disList.forEach((item, key) => {
+                    this.getNavData(item, 'host', key, this.hostData.disList.length)
+                })
+                this.instData.disList.forEach((item, key) => {
+                    this.getNavData(item, 'inst', key, this.instData.disList.length)
+                })
+            },
+            async getNavData (item, type, key, length) {
+                const res = await this.getCountedChartsData({
+                    params: {
+                        config_id: item.config_id
+>>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
                     },
-                    'data': {
-                        'windows': 10,
-                        'linux': 20
+                    config: {
+                        globalError: false
                     }
-                }, {
-                    'report_type': 'custom',
-                    'name': '主机222',
-                    'config_id': 2,
-                    'chart_id': 'custom1',
-                    'option': {
-                        'bk_obj_id': 'host',
-                        'chart_type': 'pie',
-                        'field': 'bk_os_type'
-                    },
-                    'position': {
-                        'width': '50',
-                        'index': 1
-                    },
-                    'data': {
-                        'windows': 10,
-                        'linux': 20
+                })
+                if (type === 'nav') {
+                    res.forEach(items => {
+                        this.navData[items.id] = items.count
+                    })
+                } else {
+                    if (JSON.stringify(res) === '{}' || JSON.stringify(res) === '[]') {
+                        item.hasData = false
+                        item.data = {
+                            data: [{
+                                labels: [],
+                                type: item.chart_type,
+                                values: [],
+                                x: [],
+                                y: []
+                            }]
+                        }
+                    } else {
+                        item.hasData = true
+                        item.data = await this.dataDeal(item, res)
                     }
-                }, {
-                    'report_type': 'custom',
-                    'name': '主机3333',
-                    'config_id': 3,
-                    'chart_id': 'custom1',
-                    'option': {
-                        'bk_obj_id': 'host',
-                        'chart_type': 'pie',
-                        'field': 'bk_os_type'
-                    },
-                    'position': {
-                        'width': '100',
-                        'index': 2
-                    },
-                    'data': {
-                        'windows': 10,
-                        'linux': 20
+                    if (type === 'host') {
+                        this.hostData.disList[key] = item
+                        if (length === (key + 1)) {
+                            setTimeout(() => {
+                                this.drawCharts(this.hostData.disList)
+                            }, 100)
+                        }
+                    } else {
+                        this.instData.disList[key] = item
+                        if (length === (key + 1)) {
+                            setTimeout(() => {
+                                this.drawCharts(this.instData.disList)
+                            }, 100)
+                        }
                     }
+<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
                 }]
                 this.disCharts = this.$tools.clone(this.charData)
             },
@@ -370,25 +251,94 @@
             },
             async getStaList () {
                 this.staList = await this.getStaticObj({})
+=======
+                }
+>>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
             },
-            async getDemList (id) {
-                this.demList = await this.getStaticDimeObj({
-                    'bk_obj_id': id,
-                    'bk_supplier_account': '0'
-                })
+            dataDeal (data, res) {
+                const returnData = {
+                    data: []
+                }
+                if (res && Array.isArray(res)) {
+                    const content = {
+                        labels: [],
+                        values: [],
+                        x: [],
+                        y: [],
+                        type: data.chart_type
+                    }
+                    res.forEach(item => {
+                        if (data.chart_type === 'pie') {
+                            content.labels.push(item.id)
+                            content.values.push(item.count)
+                        } else {
+                            content.x.push(item.id)
+                            content.y.push(item.count)
+                        }
+                    })
+                    returnData.data.push(content)
+                } else if (res && !Array.isArray(res)) {
+                    const barModel = {
+                        chart: {
+                            delete: {
+                                name: 'delete',
+                                type: 'bar',
+                                y: []
+                            },
+                            update: {
+                                name: 'update',
+                                type: 'bar',
+                                y: []
+                            },
+                            create: {
+                                name: 'create',
+                                type: 'bar',
+                                y: []
+                            }
+                        },
+                        x: [],
+                        isX: false
+                    }
+                    for (const item in res) {
+                        const content = {
+                            name: item,
+                            x: [],
+                            y: []
+                        }
+                        if (Array.isArray(res[item])) {
+                            res[item].forEach(child => {
+                                const time = this.$tools.formatTime(child.id, 'YYYY-MM-DD')
+                                content.x.push(time + '_')
+                                content.y.push(child.count)
+                                content.mode = 'line'
+                            })
+                            returnData.data.push(content)
+                        } else {
+                            barModel.x.push(item)
+                            barModel.isX = true
+                            for (const chartItem in barModel.chart) {
+                                barModel.chart[chartItem].y.push(res[item][chartItem])
+                            }
+                        }
+                    }
+                    if (barModel.isX) {
+                        for (const chartItem in barModel.chart) {
+                            barModel.chart[chartItem].x = barModel.x
+                            returnData.data.push(barModel.chart[chartItem])
+                        }
+                    }
+                }
+                return returnData
             },
-            drawCharts () {
-                this.disCharts.forEach(item => {
+            drawCharts (charList) {
+                charList.forEach(item => {
                     const myDiv = document.getElementById(item.report_type + item.config_id)
-                    const data = [{
-                        values: [19, 26, 55],
-                        labels: ['Residential', 'Non-Residential', 'Utility'],
-                        type: 'pie'
-                    }]
+                    const data = item.data.data
+                    if (!item.hasData) this.$set(item, 'noData', true)
                     const layout = {
                         height: 400,
-                        width: item.position.width === '50' ? 500 : 1000,
-                        title: item.name
+                        title: item.name,
+                        barmode: 'stack'
                     }
                     const options = {
                         displaylogo: false,
@@ -396,18 +346,11 @@
                     }
                     Plotly.newPlot(myDiv, data, layout, options)
                 })
+                console.log(this.hostData.disList)
             },
-            editPage () {
-                this.$bkInfo({
-                    title: this.$tc('Cloud["确认保存更改?"]'),
-                    confirmFn: () => {
-                        this.editModel = !this.editModel
-                        if (this.charData === this.disCharts) {
-                            this.charData = this.$tools.clone(this.disCharts)
-                            this.drawCharts()
-                        }
-                    }
-                })
+            goDraws () {
+                this.drawCharts(this.hostData.disList)
+                this.drawCharts(this.instData.disList)
             },
 <<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
             mutipChart () {
@@ -426,12 +369,12 @@
                     type: 'bar'
 =======
             editCancel () {
-                this.disCharts = this.$tools.clone(this.charData)
-                this.editModel = !this.editModel
+                this.editModel = false
                 setTimeout(() => {
-                    this.drawCharts()
+                    this.goDraws()
                 }, 100)
             },
+<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
             openNew (type) {
                 this.newChart = {
                     type: true,
@@ -454,30 +397,89 @@
                 }
             },
             moveChart (type, dire, key) {
+=======
+            moveChart (type, dire, key, list) {
+>>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
                 if (dire === 'up' && key !== 0) {
-                    this.disCharts[key] = this.disCharts.splice(key - 1, 1, this.disCharts[key])[0]
-                } else if (dire === 'down' && key !== this.disCharts.length - 1) {
-                    this.disCharts[key + 1] = this.disCharts.splice(key, 1, this.disCharts[key + 1])[0]
+                    list[key] = list.splice(key - 1, 1, list[key])[0]
+                } else if (dire === 'down' && key !== list.length - 1) {
+                    list[key + 1] = list.splice(key, 1, list[key + 1])[0]
                 }
+                if (type === 'host') this.hostData.disList = list
+                else this.instData.disList = list
+                this.updatePosition()
             },
-            editCharts (type, data) {
-                this.isShow = !this.isShow
-                this.newChart = data
-                if (type === 'host') this.seList.disList = this.$tools.clone(this.seList.host)
-                else this.seList.disList = this.$tools.clone(this.seList.inst)
+            deleteChart (type, key, list, id) {
+                this.$bkInfo({
+                    title: this.$tc('Operation["是否确认删除"]'),
+                    confirmFn: () => {
+                        list.splice(key, 1)
+                        if (type === 'host') this.hostData.disList = list
+                        else this.instData.disList = list
+                        this.deleteOperationChart({
+                            id: id
+                        })
+                        this.updatePosition()
+                    }
+                })
             },
-            deleteChart (type, key) {
-                this.disCharts.splice(key, 1)
+            async openNew (type, host, data, key) {
+                this.editType.hostType = host
+                this.editType.key = key
+                if (type === 'edit') this.newChart = data
+                else {
+                    this.newChart = {
+                        report_type: 'custom',
+                        name: '',
+                        config_id: null,
+                        bk_obj_id: host,
+                        chart_type: 'pie',
+                        field: '',
+                        width: '50'
+                    }
+                }
+                this.editType.openType = type
+                this.isShow = true
             },
-            confirm () {
-                this.isShow = !this.isShow
+            async saveData (data) {
+                let editList = []
+                if (this.editType.hostType === 'host') editList = this.hostData.disList
+                else editList = this.instData.disList
+                if (this.editType.openType === 'add') {
+                    editList.push(data)
+                } else {
+                    editList[this.editType.key] = data
+                }
+                this.isShow = false
+                await this.getNavData(data, this.editType.hostType,
+                                      this.editType.openType === 'add' ? (editList.length - 1) : this.editType.key,
+                                      editList.length)
+                this.updatePosition()
+                this.newChart = {}
             },
-            cancel () {
-                this.isShow = !this.isShow
+            cancelData () {
+                this.isShow = false
+                this.newChart = {}
             },
-            selDem (data) {
-                console.log(data)
-                this.getDemList(data)
+            updatePosition () {
+                const data = {
+                    'host': [],
+                    'inst': []
+                }
+                this.hostData.disList.forEach(item => {
+                    data.host.push(item.config_id)
+                })
+                this.instData.disList.forEach(item => {
+                    data.inst.push(item.config_id)
+                })
+                this.updateChartPosition({
+                    params: {
+                        position: data
+                    }
+                })
+                setTimeout(() => {
+                    this.goDraws()
+                }, 100)
             }
         }
     }
@@ -524,11 +526,10 @@
                 .item-left{
                     background: $cmdbMainBtnColor;
                 }
-             }
+            }
             &:last-child{
                  border-left: none;
-             }
-
+            }
              .item-left{
                  width: 60px;
                  height: 60px;
@@ -556,11 +557,11 @@
                         font-weight: bold;
                         font-size: 20px;
                         margin-top: 5px;
-                      }
-                      &:last-child{
+                     }
+                     &:last-child{
                         margin-top: 5px;
                         font-size: 12px;
-                       }
+                     }
                  }
              }
         }
@@ -572,7 +573,7 @@
                 .item-left{
                     background: #f33c13;
                 }
-             }
+            }
         }
     }
     .operation-layout{
@@ -581,7 +582,9 @@
         position: relative;
     }
     .operation-charts{
+        width: 100%;
         border: 1px solid #eee;
+        display: table;
         box-shadow: 1px 2px 4px 0 rgba(51, 60, 72, 0.06);
     }
     .charts-options{
@@ -593,6 +596,21 @@
             cursor: pointer;
             font-weight: bold;
             margin-left: 3px;
+        }
+    }
+    .null-data {
+        position: absolute;
+        top: 30%;
+        width: 100%;
+        span {
+            margin: 0 auto;
+            display: block;
+            height: 120px;
+            width: 200px;
+            line-height: 120px;
+            text-align: center;
+            color: #fff;
+            background: $cmdbWarningColor;
         }
     }
     .operation-add{
@@ -608,54 +626,6 @@
         i{
             font-weight: bold;
             vertical-align: baseline;
-        }
-    }
-    .dialog-content {
-        position: relative;
-        .model-header{
-            padding: 10px;
-            background: #eee;
-            .modal-close{
-                position: absolute;
-                right: 5px;
-                top: 5px;
-                color: $cmdbMainBtnColor;
-                cursor: pointer;
-            }
-            .title {
-                font-size: 16px;
-                color: #333948;
-                line-height: 1;
-                text-align: center;
-            }
-        }
-        .content{
-            padding: 10px 20px;
-            .content-item{
-                padding: 10px;
-                .label-text {
-                    width: 150px;
-                    margin-right: 20px;
-                }
-                .cmdb-form-radio {
-                    width: 114px;
-                    vertical-align: top;
-                }
-                .cmdb-form-item {
-                    display: inline-block;
-                    margin-right: 10px;
-                    width: 319px;
-                    vertical-align: middle;
-                }
-            }
-        }
-    }
-    .footer {
-        padding: 10px 24px;
-        font-size: 0;
-        text-align: center;
-        button {
-            margin-right: 10px;
         }
     }
 </style>
