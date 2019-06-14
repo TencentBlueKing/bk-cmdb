@@ -23,6 +23,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/scene_server/admin_server/synchronizer/handler"
 	"configcenter/src/scene_server/admin_server/synchronizer/meta"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // AuthSynchronizer stores all related resource
@@ -33,11 +35,13 @@ type AuthSynchronizer struct {
 	Workers     *[]Worker
 	WorkerQueue chan meta.WorkRequest
 	Producer    *Producer
+
+	reg prometheus.Registerer
 }
 
 // NewSynchronizer new a synchronizer object
-func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface) *AuthSynchronizer {
-	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, clientSet: clientSet}
+func NewSynchronizer(ctx context.Context, authConfig *authcenter.AuthConfig, clientSet apimachinery.ClientSetInterface, reg prometheus.Registerer) *AuthSynchronizer {
+	return &AuthSynchronizer{ctx: ctx, AuthConfig: *authConfig, clientSet: clientSet, reg: reg}
 }
 
 // Run do start synchronize
@@ -54,7 +58,7 @@ func (d *AuthSynchronizer) Run() error {
 
 	// make fake handler
 	blog.Infof("new auth client with config: %+v", d.AuthConfig)
-	authorize, err := auth.NewAuthorize(nil, d.AuthConfig)
+	authorize, err := auth.NewAuthorize(nil, d.AuthConfig, d.reg)
 	if err != nil {
 		blog.Errorf("new auth client failed, err: %+v", err)
 		return fmt.Errorf("new auth client failed, err: %+v", err)

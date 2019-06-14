@@ -59,6 +59,10 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 	}
 
+	if err := p.UniqueValidate(ctx, &template); err != nil {
+		return nil, err
+	}
+
 	// generate id field
 	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
 	if nil != err {
@@ -78,6 +82,38 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return &template, nil
+}
+
+func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *metadata.ProcessTemplate) errors.CCErrorCoder {
+	// process name unique
+	processNameFilter := map[string]interface{}{
+		common.BKServiceTemplateIDField:  template.ServiceTemplateID,
+		"property.bk_process_name.value": template.Property.ProcessName,
+	}
+	count, err := p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(processNameFilter).Count(ctx.Context)
+	if err != nil {
+		blog.Errorf("CreateProcessTemplate failed, check process_name unique failed, err: %+v, rid: %s", err, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated)
+	}
+
+	// func name unique
+	funcNameFilter := map[string]interface{}{
+		common.BKServiceTemplateIDField:       template.ServiceTemplateID,
+		"property.bk_func_name.value":         *template.Property.ProcessName.Value,
+		"property.bk_start_param_regex.value": template.Property.StartParamRegex.Value,
+	}
+	count, err = p.dbProxy.Table(common.BKTableNameProcessTemplate).Find(funcNameFilter).Count(ctx.Context)
+	if err != nil {
+		blog.Errorf("CreateProcessTemplate failed, check func_name unique failed, err: %+v, rid: %s", err, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+	if count > 0 {
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceFuncNameDuplicated)
+	}
+	return nil
 }
 
 func (p *processOperation) GetProcessTemplate(ctx core.ContextParams, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder) {
@@ -114,6 +150,10 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 
 	template.Modifier = ctx.User
 	template.LastTime = time.Now()
+
+	if err := p.UniqueValidate(ctx, template); err != nil {
+		return nil, err
+	}
 
 	// do update
 	filter := map[string]int64{common.BKFieldID: templateID}

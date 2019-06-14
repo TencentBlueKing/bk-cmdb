@@ -32,6 +32,7 @@ type ProcessInterface interface {
 	// service template
 	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error)
+	GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplateDetail, err error)
 	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
 	ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error)
 	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error

@@ -668,6 +668,11 @@ const (
 	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
 	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
 	CCErrCoreServiceModuleNotFound                                            = 1113015
+	CCErrCoreServiceInstanceAlreadyExist                                      = 1113016
+	CCErrCoreServiceServiceCategoryNameDuplicated                             = 1113017
+	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
+	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
+	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

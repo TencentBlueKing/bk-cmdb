@@ -99,12 +99,14 @@ const mutations = {
         window.location = '/'
     },
     setFeatureTipsParams (state, tab) {
+        const local = window.localStorage.getItem('featureTipsParams')
         if (tab) {
             state.featureTipsParams[tab] = false
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
-        } else if (window.localStorage.getItem('featureTipsParams')) {
+        } else if (local) {
             state.featureTipsParams = {
-                ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
+                ...state.featureTipsParams,
+                ...JSON.parse(local)
             }
         } else {
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))

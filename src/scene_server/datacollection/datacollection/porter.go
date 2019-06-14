@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/xid"
 	"gopkg.in/redis.v5"
 )
@@ -37,8 +38,8 @@ type chanCollector struct {
 // 14kB * 10000 = 140M
 const cacheSize = 10000
 
-func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string) *chanPorter {
-	return &chanPorter{
+func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Client, channels []string, mockmesg string, registry prometheus.Registerer) *chanPorter {
+	porter := &chanPorter{
 		analyzer:        analyzer,
 		name:            name,
 		pid:             xid.New().String(),
@@ -51,9 +52,79 @@ func BuildChanPorter(name string, analyzer Analyzer, redisCli, snapCli *redis.Cl
 		analyzeCounterC: make(chan int, runtime.NumCPU()),
 		runed:           util.NewBool(false),
 	}
+
+	ns := "cmdb_collector_" + name + "_"
+
+	registry.MustRegister(prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: ns + "is_master",
+			Help: "describe whether this process is master.",
+		},
+		func() float64 { return float64(*porter.isMaster) },
+	))
+
+	registry.MustRegister(prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: ns + "analyze_queue",
+			Help: "current number of analyze queue.",
+		},
+		func() float64 { return float64(len(porter.analyzeC)) },
+	))
+
+	registry.MustRegister(prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: ns + "slave_queue",
+			Help: "current number of slave queue.",
+		},
+		func() float64 { return float64(len(porter.slaveC)) },
+	))
+
+	porter.analyseDuration = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name: ns + "analyze_duration",
+			Help: "analyze duration of each message.",
+		},
+	)
+	registry.MustRegister(porter.analyseDuration)
+
+	porter.receiveTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: ns + "receive_total",
+			Help: "number of received message.",
+		},
+	)
+	registry.MustRegister(porter.receiveTotal)
+
+	porter.pushTotal = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: ns + "push_total",
+			Help: "number of pushed message.",
+		},
+	)
+	registry.MustRegister(porter.pushTotal)
+
+	porter.analyzeTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: ns + "analyze_total",
+			Help: "number of analyzed message.",
+		},
+		[]string{LableStatus},
+	)
+	registry.MustRegister(porter.analyzeTotal)
+
+	return porter
 }
 
+const (
+	LableStatus = "status"
+)
+
 type chanPorter struct {
+	analyseDuration prometheus.Histogram
+	receiveTotal    prometheus.Counter
+	pushTotal       prometheus.Counter
+	analyzeTotal    *prometheus.CounterVec
+
 	// 分析器
 	analyzer Analyzer
 
@@ -143,9 +214,14 @@ func (p *chanPorter) analyze() {
 	var err error
 
 	for mesg = range p.analyzeC {
+		before := time.Now()
 		if err = p.analyzer.Analyze(mesg); err != nil {
 			blog.Errorf("[datacollect][%s] analyze message failed: %v, raw mesg: %s", p.name, err, mesg)
+			p.analyzeTotal.WithLabelValues("failed").Inc()
+		} else {
+			p.analyzeTotal.WithLabelValues("success").Inc()
 		}
+		p.analyseDuration.Observe(time.Since(before).Seconds())
 		p.analyzeCounterC <- 1
 	}
 }
@@ -240,6 +316,8 @@ func (p *chanPorter) subscribeLoop() error {
 			continue
 		}
 
+		p.receiveTotal.Inc()
+
 		// 当mesgC满时表明已达到本进程的处理速度上限，此时我们推送该消息到slavequeue让其他进程协助处理
 		select {
 		case p.analyzeC <- msg.Payload:
@@ -252,6 +330,7 @@ func (p *chanPorter) subscribeLoop() error {
 		}
 
 		cnt++
+
 		p.lastMesgTs = time.Now()
 		if time.Since(ts) > time.Minute*10 {
 			blog.Infof("[datacollect][%s] receive rate: %d message in last %v", p.name, cnt, time.Now().Sub(ts))
@@ -394,6 +473,7 @@ func (p *chanPorter) push() {
 	var err error
 	key := slavequeueKey(p.name)
 	for mesg = range p.slaveC {
+		p.pushTotal.Inc()
 		if err = p.redisCli.LPush(key, mesg).Err(); err != nil {
 			blog.Errorf("[datacollect][%s] push message to redis failed: %v", p.name, err)
 		}
