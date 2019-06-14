@@ -8,7 +8,7 @@
             <span class="operation-title">{{$t('Operation["主机统计"]')}}</span>
         </div>
         <div class="operate-menus">
-            <div class="menu-items">
+            <div class="menu-items" @click="goRouter('business')">
                 <div class="item-left">
                     <i class="icon icon-cc-business"></i>
                 </div>
@@ -17,7 +17,7 @@
                     <span>{{$t('Index["数量"]')}}：{{ navData.biz }}</span>
                 </div>
             </div>
-            <div class="menu-items">
+            <div class="menu-items" @click="goRouter('topology')">
                 <div class="item-left">
                     <i class="icon icon-cc-host"></i>
                 </div>
@@ -26,7 +26,7 @@
                     <span>{{$t('Index["数量"]')}}：{{ navData.module }}</span>
                 </div>
             </div>
-            <div class="menu-items">
+            <div class="menu-items" @click="goRouter('resource')">
                 <div class="item-left">
                     <i class="icon icon-cc-host"></i>
                 </div>
@@ -62,7 +62,7 @@
             <span class="operation-title">{{$t('Operation["实例统计"]')}}</span>
         </div>
         <div class="operate-menus operate-menus-bottom">
-            <div class="menu-items">
+            <div class="menu-items" @click="goRouter('model')">
                 <div class="item-left">
                     <i class="menu-icon icon-cc-nav-model"></i>
                 </div>
@@ -71,7 +71,7 @@
                     <span>{{$t('Index["数量"]')}}：{{ navData.model }}</span>
                 </div>
             </div>
-            <div class="menu-items">
+            <div class="menu-items" @click="goRouter('index')">
                 <div class="item-left">
                     <i class="bk-cc-icon icon-cc-business"></i>
                 </div>
@@ -149,9 +149,6 @@
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Operation["统计报表"]'))
             this.getChartList()
-        },
-        mounted () {
-            // this.drawCharts()
         },
         methods: {
             ...mapActions('operationChart', [
@@ -480,6 +477,9 @@
                 setTimeout(() => {
                     this.goDraws()
                 }, 100)
+            },
+            goRouter (route) {
+                this.$router.push(route)
             }
         }
     }
@@ -519,6 +519,7 @@
             width: 25%;
             border: 1px solid #eee;
             float: left;
+            cursor: pointer;
             padding: 15px 20px;
             box-shadow: 1px 2px 4px 0 rgba(51, 60, 72, 0.06);
             &:first-child{
