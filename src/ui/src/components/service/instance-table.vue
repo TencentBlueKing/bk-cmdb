@@ -39,6 +39,7 @@
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
             :is-show.sync="processForm.show">
             <cmdb-form slot="content"
+                ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
                 :properties="processProperties"
@@ -91,7 +92,8 @@
                     show: false,
                     type: 'create',
                     rowIndex: null,
-                    instance: {}
+                    instance: {},
+                    unwatch: null
                 }
             }
         },
@@ -180,8 +182,19 @@
                 this.processForm.instance = {}
                 this.processForm.type = 'create'
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             handleSaveProcess (values) {
+                this.processForm.unwatch && this.processForm.unwatch()
                 if (this.processForm.type === 'create') {
                     this.processList.push(values)
                 } else {
