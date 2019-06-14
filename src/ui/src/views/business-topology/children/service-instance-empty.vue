@@ -144,7 +144,8 @@
                             setId: this.moduleNode.parent.data.bk_inst_id
                         },
                         query: {
-                            from: this.$route.fullPath
+                            from: this.$route.fullPath,
+                            title: this.moduleNode.name
                         }
                     })
                 }
@@ -164,7 +165,7 @@
             @include inlineBlock;
         }
         .empty-content {
-            margin: -60px 0 0 0;
+            margin: -120px 0 0 0;
             @include inlineBlock;
         }
         .empty-text {
