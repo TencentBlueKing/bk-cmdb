@@ -13,7 +13,8 @@ export default {
             i18n: 'Nav["服务分类"]',
             path: path,
             order: 1,
-            parent: NAV_SERVICE_MANAGEMENT
+            parent: NAV_SERVICE_MANAGEMENT,
+            adminView: false
         },
         i18nTitle: 'Nav["服务分类"]'
     })
