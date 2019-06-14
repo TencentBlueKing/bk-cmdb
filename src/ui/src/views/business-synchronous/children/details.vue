@@ -26,11 +26,11 @@
                         name: this.$t("BusinessSynchronous['属性名称']"),
                         sortable: false
                     }, {
-                        id: 'property_value',
+                        id: 'before_value',
                         name: this.$t("BusinessSynchronous['变更前']"),
                         sortable: false
                     }, {
-                        id: 'template_property_value',
+                        id: 'show_value',
                         name: this.$t("BusinessSynchronous['变更后']"),
                         sortable: false
                     }
