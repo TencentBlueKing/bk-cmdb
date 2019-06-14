@@ -185,6 +185,7 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
 	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
+	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type ForceSyncServiceInstanceWithTemplateInput struct {
@@ -391,11 +392,12 @@ type ProcessTemplate struct {
 }
 
 func (pt *ProcessTemplate) Validate() (field string, err error) {
-	if pt.Property != nil {
-		field, err = pt.Property.Validate()
-		if err != nil {
-			return field, err
-		}
+	if pt.Property == nil {
+		return "property", errors.New("property field shouldn't be nil")
+	}
+	field, err = pt.Property.Validate()
+	if err != nil {
+		return field, err
 	}
 	return "", nil
 }
