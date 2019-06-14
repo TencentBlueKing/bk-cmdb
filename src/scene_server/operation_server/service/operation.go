@@ -101,6 +101,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 	filterCondition[common.BKObjIDField] = opt[common.BKObjIDField]
 	filterCondition[common.OperationReportType] = opt[common.OperationReportType]
 	filterCondition["field"] = opt["field"]
+	filterCondition["width"] = opt["width"]
 	exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateStatisticsFail, "new add statistic fail, err: %v", err)
