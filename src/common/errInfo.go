@@ -397,6 +397,9 @@ const (
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
 
+	// full text find err
+	CCErrorTopoFullTextFindErr = 1101085
+
 	// object controller 1102XXX
 
 	// CCErrObjectPropertyGroupInsertFailed failed to save the property group
