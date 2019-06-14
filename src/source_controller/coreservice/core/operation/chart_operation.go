@@ -102,7 +102,7 @@ func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputPara
 	return nil, nil
 }
 
-func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id uint64) (interface{}, error) {
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id int64) (interface{}, error) {
 	opt := mapstr.MapStr{}
 	opt[common.OperationConfigID] = id
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {

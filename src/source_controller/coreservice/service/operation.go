@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"strconv"
 	"time"
 )
 
@@ -50,7 +51,11 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	id := pathParams("id")
-	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, id); err != nil {
+	int64ID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		blog.Errorf("delete chart fail, string convert to int64 fail, err: %v", err)
+	}
+	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, int64ID); err != nil {
 		return nil, err
 	}
 
