@@ -267,11 +267,19 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	for _, relation := range relations.Info {
 		existProcessIDs = append(existProcessIDs, relation.ProcessID)
 	}
-
+	otherProcessIDs := existProcessIDs
+	if processInfo.ProcessID != 0 {
+		otherProcessIDs := make([]int64, 0)
+		for _, processID := range existProcessIDs {
+			if processID != processInfo.ProcessID {
+				otherProcessIDs = append(otherProcessIDs, processID)
+			}
+		}
+	}
 	// process name unique
 	processNameFilter := map[string]interface{}{
 		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: existProcessIDs,
+			common.BKDBIN: otherProcessIDs,
 		},
 		common.BKProcessNameField: processInfo.ProcessName,
 	}
@@ -291,7 +299,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	// func name unique
 	funcNameFilter := map[string]interface{}{
 		common.BKProcessIDField: map[string]interface{}{
-			common.BKDBIN: existProcessIDs,
+			common.BKDBIN: otherProcessIDs,
 		},
 		common.BKStartParamRegex: processInfo.ProcessName,
 		common.BKFuncName:        processInfo.FuncName,
@@ -328,6 +336,7 @@ func (ps *ProcServer) createProcessInstancesRaw(ctx *rest.Contexts, input *metad
 
 	processIDs := make([]int64, 0)
 	for _, process := range input.Processes {
+		process.ProcessInfo.ProcessID = 0
 		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &process.ProcessInfo); err != nil {
 			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
 				"create process instance failed, serviceInstanceID: %d, process: %+v, err: %v",
