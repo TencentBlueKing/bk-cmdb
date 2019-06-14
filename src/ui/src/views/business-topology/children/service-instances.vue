@@ -36,6 +36,10 @@
                     <cmdb-form-singlechar class="options-search"
                         :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
                         v-model="filter">
+                        <i class="bk-icon icon-close"
+                            v-show="filter.length"
+                            @click="handleClearFilter">
+                        </i>
                         <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
                     </cmdb-form-singlechar>
                 </div>
@@ -230,6 +234,10 @@
                 this.inSearch = true
                 this.handlePageChange(1)
             },
+            handleClearFilter () {
+                this.filter = ''
+                this.handleSearch()
+            },
             handlePageChange (page) {
                 this.pagination.current = page
                 this.getServiceInstances()
@@ -315,7 +323,7 @@
                     this.processForm.show = false
                     this.processForm.instance = null
                     this.processForm.referenceService = null
-                    this.processForm.uneditableProperties = null
+                    this.processForm.uneditableProperties = []
                 } catch (e) {
                     console.error(e)
                 }
@@ -438,10 +446,10 @@
         line-height: 30px;
     }
     .options-checkall {
-        width: 32px;
+        width: 36px;
         height: 32px;
         line-height: 30px;
-        padding: 0 7px;
+        padding: 0 9px;
         text-align: center;
         border: 1px solid #C4C6CC;
         border-radius: 2px;
@@ -467,11 +475,33 @@
             font-size: 14px;
             cursor: pointer;
         }
+        .icon-close {
+            position: absolute;
+            top: 8px;
+            right: 30px;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            background-color: #ddd;
+            color: #fff;
+            font-size: 12px;
+            transition: backgroundColor .2s linear;
+            cursor: pointer;
+            &:before {
+                display: block;
+                transform: scale(.7);
+            }
+            &:hover {
+                background-color: #ccc;
+            }
+        }
         /deep/ {
             .cmdb-form-input {
                 height: 32px;
                 line-height: 30px;
-                padding-right: 32px;
+                padding-right: 50px;
             }
         }
     }
