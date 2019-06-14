@@ -120,7 +120,12 @@ func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams
 }
 
 func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.core.StatisticOperation().UpdateChartPosition(params, data)
+	opt := metadata.ChartPosition{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal chart position fail, err: %v", err)
+		return nil, err
+	}
+	result, err := s.core.StatisticOperation().UpdateChartPosition(params, opt)
 	if err != nil {
 		return nil, err
 	}
