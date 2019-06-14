@@ -210,7 +210,8 @@
                             page: {
                                 start: (this.pagination.current - 1) * this.pagination.size,
                                 limit: this.pagination.size
-                            }
+                            },
+                            search_key: this.filter
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
