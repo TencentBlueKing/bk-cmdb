@@ -160,7 +160,7 @@ type StatisticOperation interface {
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
 	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
-	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, id uint64) (interface{}, error)
 	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
 	SearchOperationChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	TimerFreshData(params ContextParams)

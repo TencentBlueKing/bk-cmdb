@@ -64,13 +64,13 @@ func (s *operation) CreateOperationChart(ctx context.Context, h http.Header, dat
 	return
 }
 
-func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id uint64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("delete/operation/chart")
+	subPath := fmt.Sprintf("delete/operation/chart/%v", id)
 
 	err = s.client.Delete().
 		WithContext(ctx).
-		Body(data).
+		Body(nil).
 		SubResource(subPath).
 		WithHeaders(h).
 		Do().

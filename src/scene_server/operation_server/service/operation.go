@@ -67,12 +67,8 @@ func (o *OperationServer) CreateOperationChart(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
-	opt := mapstr.MapStr{}
-	if err := ctx.DecodeInto(&opt); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
+	id := ctx.Request.PathParameter("id")
+	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, id)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationDeleteStatisticFail, "search chart info fail, err: %v, id: %v", err)
 		return
