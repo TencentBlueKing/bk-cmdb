@@ -15,6 +15,8 @@
     "1113015": "host not found",
     "1113017": "service caetgory name [%s] duplicated",
     "1113018": "module and service instance template not coincide",
+    "1113019": "process name unique validation failed",
+    "1113020": "process name and start parameter match rule unique validation failed",
 
     "":""
 }
