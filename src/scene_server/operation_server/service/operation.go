@@ -180,7 +180,7 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 }
 
 func (o *OperationServer) UpdateChartPosition(ctx *rest.Contexts) {
-	opt := mapstr.MapStr{}
+	opt := metadata.ChartPosition{}
 	if err := ctx.DecodeInto(&opt); err != nil {
 		ctx.RespAutoError(err)
 		return
