@@ -161,7 +161,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["资源确认"]'))
             this.getTableData()
         },
         methods: {
@@ -198,7 +197,12 @@
                 pagination.count = res.count
             },
             confirmHistory () {
-                this.$router.push({ name: 'confirmHistory' })
+                this.$router.push({
+                    name: 'confirmHistory',
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             },
             handleSizeChange (size) {
                 this.table.pagination.size = size
@@ -246,7 +250,15 @@
                 this.table.checked = this.table.list.map(inst => inst['bk_resource_id'])
             },
             handleAdd () {
-                this.$router.push({ name: 'cloudDiscover', params: { type: 'create' } })
+                this.$router.push({
+                    name: 'cloudDiscover',
+                    params: {
+                        type: 'create'
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             }
         }
     }

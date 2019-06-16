@@ -100,7 +100,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["确认记录"]'))
             this.initDateRange()
             this.getTableData()
         },

@@ -36,6 +36,7 @@ export default {
         auth: {
             operation: Object.values(OPERATION)
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: 'Nav["进程管理"]'
     })
 }

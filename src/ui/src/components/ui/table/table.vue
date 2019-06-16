@@ -196,6 +196,7 @@
                 table: this
             })
             return {
+                ready: false,
                 layout,
                 wrapperMaxHeight: 0,
                 throttleLayout: null
@@ -282,6 +283,7 @@
         mounted () {
             this.bindEvents()
             this.doLayout()
+            this.ready = true
         },
         beforeDestroy () {
             if (this.throttleLayout) {
@@ -294,6 +296,7 @@
                 size: 10,
                 sizeSetting: [10, 20, 50, 100]
             })
+            this.ready = false
         },
         methods: {
             bindEvents () {
