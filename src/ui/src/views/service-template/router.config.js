@@ -13,11 +13,13 @@ export default [{
             i18n: 'Nav["服务模板"]',
             path: path,
             order: 2,
-            parent: NAV_SERVICE_MANAGEMENT
-        }
+            parent: NAV_SERVICE_MANAGEMENT,
+            adminView: false
+        },
+        i18nTitle: "Nav['服务模板']"
     })
 }, {
     name: 'operationalTemplate',
-    path: '/service/operational/template/:templateId',
+    path: '/service/operational/template/:templateId?',
     component: () => import('./children/operational.vue')
 }]

@@ -10,6 +10,7 @@
                     </cmdb-selector>
                     <cmdb-input class="options-filter" icon="bk-icon icon-search"
                         v-model.trim="filter.ip"
+                        :placeholder="$t('BusinessTopology[\'请输入IP\']')"
                         @icon-click="handlePageChange(1)"
                         @enter="handlePageChange(1)">
                     </cmdb-input>
@@ -251,7 +252,7 @@
         left: 0;
         text-align: center;
         background-color: rgba(0, 0, 0, .6);
-        z-index: 9999;
+        z-index: 1500;
         &:before {
             content: "";
             width: 0;

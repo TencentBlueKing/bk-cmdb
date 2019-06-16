@@ -174,7 +174,8 @@
                         exact: 0,
                         inner: true,
                         outer: true,
-                        assigned: true
+                        assigned: true,
+                        from: this.$route.fullPath
                     }
                 })
             },

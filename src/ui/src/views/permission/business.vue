@@ -83,7 +83,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务权限管理"]'))
             this.getBusinessRoles()
         },
         methods: {

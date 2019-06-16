@@ -20,7 +20,6 @@ import hostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
-import process from '@/views/process/router.config'
 import resource from '@/views/resource/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
@@ -44,7 +43,6 @@ export const viewRouters = [
     ...hostDetails,
     modelAssociation,
     modelTopology,
-    process,
     resource,
     ...template,
     ...generalModel,
@@ -130,6 +128,9 @@ const cancelRequest = () => {
 const setLoading = loading => router.app.$store.commit('setGlobalLoading', loading)
 
 const setMenuState = to => {
+    if (!to.meta.resetMenu) {
+        return false
+    }
     const isStatusRoute = statusRouters.some(route => route.name === to.name)
     if (isStatusRoute) {
         return false
@@ -141,6 +142,19 @@ const setMenuState = to => {
     if (parentId) {
         router.app.$store.commit('menu/setOpenMenu', parentId)
     }
+}
+
+const setTitle = to => {
+    const { i18nTitle, title } = to.meta
+    let headerTitle
+    if (!i18nTitle && !title) {
+        return false
+    } else if (i18nTitle) {
+        headerTitle = router.app.$t(i18nTitle)
+    } else if (title) {
+        headerTitle = title
+    }
+    router.app.$store.commit('setHeaderTitle', headerTitle)
 }
 
 const checkAuthDynamicMeta = (to, from) => {
@@ -196,6 +210,7 @@ router.beforeEach((to, from, next) => {
             } else {
                 setLoading(true)
                 setMenuState(to)
+                setTitle(to)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

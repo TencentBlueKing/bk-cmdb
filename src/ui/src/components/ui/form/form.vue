@@ -20,18 +20,20 @@
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i>
                                 </div>
-                                <div class="property-value">
-                                    <component class="form-component"
-                                        :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="checkDisabled(property)"
-                                        :options="property.option || []"
-                                        :data-vv-name="property['bk_property_id']"
-                                        :data-vv-as="property['bk_property_name']"
-                                        v-validate="getValidateRules(property)"
-                                        v-model.trim="values[property['bk_property_id']]">
-                                    </component>
-                                    <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                <div class="property-value clearfix">
+                                    <slot :name="property.bk_property_id">
+                                        <component class="form-component"
+                                            :is="`cmdb-form-${property['bk_property_type']}`"
+                                            :class="{ error: errors.has(property['bk_property_id']) }"
+                                            :disabled="checkDisabled(property)"
+                                            :options="property.option || []"
+                                            :data-vv-name="property['bk_property_id']"
+                                            :data-vv-as="property['bk_property_name']"
+                                            v-validate="getValidateRules(property)"
+                                            v-model.trim="values[property['bk_property_id']]">
+                                        </component>
+                                        <span class="form-error">{{errors.first(property['bk_property_id'])}}</span>
+                                    </slot>
                                 </div>
                             </li>
                         </ul>
@@ -197,7 +199,7 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (result) {
-                        this.$emit('on-submit', this.values, this.changedValues, this.inst, this.type)
+                        this.$emit('on-submit', { ...this.values }, { ...this.changedValues }, this.inst, this.type)
                     } else {
                         this.uncollapseGroup()
                     }

@@ -7,12 +7,19 @@
                 <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
+        <template v-else-if="isLatsetData">
+            <div class="no-content">
+                <img src="../../assets/images/latset-data.png" alt="no-content">
+                <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
+                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+            </div>
+        </template>
         <template v-else>
             <feature-tips
                 :show-tips="showFeatureTips"
                 :desc="$t('BusinessSynchronous[\'功能提示\']')">
             </feature-tips>
-            <p class="tips">
+            <p class="tips" :style="{ 'padding-top': showFeatureTips ? '24px' : '0' }">
                 {{$t("BusinessSynchronous['请确认']")}}
                 <span>{{treePath}}</span>
                 {{$t("BusinessSynchronous['模版更新信息']")}}
@@ -60,7 +67,7 @@
                                 <div class="info-item fl"
                                     v-for="(attribute, attributeIndex) in properties[process['process_template_id']]"
                                     :key="attributeIndex">
-                                    {{`${attribute['property_name']}：${attribute['template_property_value']}`}}
+                                    {{`${attribute['property_name']}：${attribute['show_value']}`}}
                                 </div>
                             </div>
                         </div>
@@ -73,7 +80,7 @@
                                 <div class="instances-item"
                                     v-for="(instance, instanceIndex) in process['service_instances']"
                                     :key="instanceIndex"
-                                    @click="hanldeInstanceDetails(instance, process['operational_type'])">
+                                    @click="hanldeInstanceDetails(instance, process['operational_type'], process['process_template_id'])">
                                     <h6>{{instance['service_instance']['name']}}</h6>
                                     <span v-if="process['operational_type'] === 'changed'">（{{instance['changed_attributes'].length}}）</span>
                                 </div>
@@ -124,6 +131,7 @@
                 showFeatureTips: true,
                 viewsTitle: '',
                 noFindData: true,
+                isLatsetData: true,
                 showContentId: null,
                 readNum: 1,
                 serviceTemplateId: '',
@@ -173,6 +181,14 @@
                     process['service_instances'].map(instance => {
                         instance['changed_attributes'].forEach(attribute => {
                             if (!attributes.filter(item => item['property_id'] === attribute['property_id']).length) {
+                                const property = this.modelProperties.find(property => property['bk_property_id'] === attribute['property_id'])
+                                if (['enum'].includes(property['bk_property_type'])) {
+                                    attribute['show_value'] = property['option'].find(option => option['id'] === attribute['template_property_value']['value'])['name']
+                                } else if (['bool'].includes(property['bk_property_type'])) {
+                                    attribute['show_value'] = attribute['template_property_value']['value'] ? '是' : '否'
+                                } else {
+                                    attribute['show_value'] = attribute['template_property_value']['value']
+                                }
                                 attributes.push(attribute)
                             }
                         })
@@ -195,26 +211,26 @@
             }
         },
         async created () {
-            this.getModaelProperty()
+            this.$store.commit('setHeaderTitle', '')
+            await this.getModaelProperty()
             await this.getModuleInstance()
             if (this.list.length) {
-                this.noFindData = false
-                this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                this.isLatsetData = false
                 this.showContentId = this.list[0]['process_template_id']
                 this.$set(this.list[0], 'has_read', true)
             } else {
-                this.$store.commit('setHeaderTitle', '')
-                this.noFindData = true
+                this.isLatsetData = true
             }
         },
         methods: {
             ...mapMutations('businessSynchronous', ['setInstance']),
             ...mapActions('objectModelProperty', ['searchObjectAttribute']),
+            ...mapActions('processInstance', ['getServiceInstanceProcesses']),
+            ...mapActions('processTemplate', ['getBatchProcessTemplate']),
             ...mapActions('businessSynchronous', [
                 'searchServiceInstanceDifferences',
                 'syncServiceInstanceByTemplate'
             ]),
-            ...mapActions('processInstance', ['getServiceInstanceProcesses']),
             async getModaelProperty () {
                 this.modelProperties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -245,6 +261,7 @@
                     }
                 })
                 if (data.info.length) {
+                    this.noFindData = false
                     const instance = data.info[0]
                     this.serviceTemplateId = instance['service_template_id']
                     this.viewsTitle = instance['bk_module_name']
@@ -254,12 +271,18 @@
                 }
             },
             async getServiceInstanceDifferences () {
-                this.differenData = await this.searchServiceInstanceDifferences({
-                    params: this.$injectMetadata({
-                        bk_module_id: Number(this.routerParams.moduleId),
-                        service_template_id: this.serviceTemplateId
+                try {
+                    this.differenData = await this.searchServiceInstanceDifferences({
+                        params: this.$injectMetadata({
+                            bk_module_id: Number(this.routerParams.moduleId),
+                            service_template_id: this.serviceTemplateId
+                        })
                     })
-                })
+                    this.$store.commit('setHeaderTitle', `${this.$t("BusinessSynchronous['同步模板']")}【${this.viewsTitle}】`)
+                } catch (error) {
+                    console.error(error)
+                    this.noFindData = true
+                }
             },
             propertiesGroup () {
                 const instance = this.changedData.instanceDetails
@@ -278,29 +301,17 @@
                             id: property['id'],
                             property_id: property['bk_property_id'],
                             property_name: property['bk_property_name'],
-                            property_value: this.changedData.type === 'added' ? '--' : propertyValue,
-                            template_property_value: this.getAfterValueByType(propertyValue, property['id'])
+                            before_value: this.changedData.type === 'added' ? '--' : propertyValue,
+                            show_value: this.changedData.type === 'added' ? propertyValue : this.$t("BusinessSynchronous['该进程已删除']")
                         }
                     })
             },
-            getAfterValueByType (value, propertyId) {
-                if (this.changedData.type === 'changed') {
-                    const current = this.changedData.current.find(property => property['property_id'] === propertyId)
-                    return current ? current['template_property_value'] : ''
-                } else if (this.changedData.type === 'added') {
-                    return value
-                } else {
-                    return this.$t("BusinessSynchronous['该进程已删除']")
-                }
-            },
             filterShowList () {
                 const list = this.propertiesGroup()
-                if (this.changedData.type === 'changed') {
-                    return list.filter(property => this.changedData.current.find(current => property['id'] === current['property_id']))
-                } else if (this.changedData.type === 'added') {
-                    return list.filter(property => property['template_property_value'])
+                if (this.changedData.type === 'added') {
+                    return list.filter(property => property['show_value'])
                 } else {
-                    return list.filter(property => property['property_value'])
+                    return list.filter(property => property['before_value'])
                 }
             },
             handleContentView (id, index) {
@@ -310,31 +321,66 @@
                     this.readNum++
                 }
             },
-            async hanldeInstanceDetails (instance, type) {
-                const instanceId = instance['service_instance']['id']
-                if (this.instanceMap.hasOwnProperty(instanceId)) {
-                    this.changedData.instanceDetails = this.instanceMap[instanceId]
-                } else {
-                    try {
-                        const result = await this.getServiceInstanceProcesses({
-                            params: this.$injectMetadata({
-                                service_instance_id: 48
-                            })
-                        })
-                        this.changedData.instanceDetails = result[0]['property']
-                        this.$store.commit('businessSync/setInstance', {
-                            id: instanceId,
-                            instanceProperty: result[0]['property']
-                        })
-                    } catch (e) {
-                        console.error(e)
+            getTableShowList (list) {
+                return list.map(item => {
+                    const result = item
+                    const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
+                    if (['enum'].includes(property['bk_property_type'])) {
+                        result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
+                    } else if (['bool'].includes(property['bk_property_type'])) {
+                        result['before_value'] = item['property_value'] ? '是' : '否'
+                    } else {
+                        result['before_value'] = item['property_value']
                     }
-                }
+                    return result
+                })
+            },
+            async hanldeInstanceDetails (instance, type, processId) {
+                const instanceId = instance['service_instance']['id']
                 this.slider.title = instance['service_instance']['name']
                 this.changedData.current = instance['changed_attributes']
                 this.changedData.type = type
+                if (type === 'changed') {
+                    this.slider.details = this.getTableShowList(instance['changed_attributes'])
+                } else if (type === 'remove') {
+                    if (this.instanceMap.hasOwnProperty(instanceId)) {
+                        this.changedData.instanceDetails = this.instanceMap[instanceId]
+                    } else {
+                        try {
+                            const result = await this.getServiceInstanceProcesses({
+                                params: this.$injectMetadata({
+                                    service_instance_id: instanceId
+                                })
+                            })
+                            this.changedData.instanceDetails = result[0]['property']
+                            this.$store.commit('businessSync/setInstance', {
+                                id: instanceId,
+                                instanceProperty: result[0]['property']
+                            })
+                        } catch (e) {
+                            console.error(e)
+                        }
+                    }
+                    this.slider.details = this.filterShowList()
+                } else {
+                    try {
+                        const result = await this.getBatchProcessTemplate({
+                            params: this.$injectMetadata({
+                                service_template_id: instance['service_instance']['service_template_id']
+                            })
+                        })
+                        const processProperties = result.info.find(process => process['id'] === processId)['property']
+                        const instanceDetails = {}
+                        Object.keys(processProperties).forEach(key => {
+                            instanceDetails[key] = processProperties[key]['value']
+                        })
+                        this.changedData.instanceDetails = instanceDetails
+                    } catch (e) {
+                        console.error(e)
+                    }
+                    this.slider.details = this.filterShowList()
+                }
                 this.slider.show = true
-                this.slider.details = this.filterShowList()
             },
             handleSubmitSync () {
                 this.syncServiceInstanceByTemplate({
@@ -348,10 +394,10 @@
                 })
             },
             handleGoBackModule () {
-                this.$router.push({
+                this.$router.replace({
                     name: 'topology',
                     query: {
-                        module: Number(this.routerParams.moduleId)
+                        module: this.routerParams.moduleId
                     }
                 })
             }
