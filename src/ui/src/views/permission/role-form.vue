@@ -1,19 +1,18 @@
 <template>
-    <bk-dialog 
-    :is-show.sync="isShow" 
-    :has-header="false" 
-    :has-footer="false" 
-    :quick-close="false" 
-    :width="565" 
-    :padding="0"
-    @cancel="closeRoleForm">
-    >
+    <bk-dialog
+        :is-show.sync="isShow"
+        :has-header="false"
+        :has-footer="false"
+        :quick-close="false"
+        :width="565"
+        :padding="0"
+        @cancel="closeRoleForm">
         <form class="role-form" slot="content">
             <h2 class="role-form-title">{{title}}</h2>
             <div class="role-form-content">
                 <div class="content-group clearfix">
                     <label for="groupName" class="fl">{{$t('Permission["角色名"]')}}</label>
-                    <input type="text" class="cmdb-form-input fl" id="groupName" v-model.trim="data['group_name']">
+                    <input type="text" class="cmdb-form-input fl" id="groupName" v-model.trim="data['group_name']" maxlength="50">
                 </div>
                 <div class="content-group clearfix">
                     <label for="userList" class="fl">{{$t('Permission["角色成员"]')}}</label>
@@ -62,7 +61,7 @@
                 return this.type === 'create' ? this.$t('Permission["新建角色"]') : this.$t('Permission["编辑角色"]')
             },
             params () {
-                let params = {
+                const params = {
                     group_name: this.data['group_name'],
                     user_list: this.data['user_list'].split(',').join(';')
                 }
@@ -82,12 +81,23 @@
                 }
             },
             async createRole () {
-                const res = await this.createUserGroup({params: this.params, config: {requestId: 'saveRole'}})
+                const res = await this.createUserGroup({
+                    params: this.params,
+                    config: {
+                        requestId: 'saveRole'
+                    }
+                })
                 this.$success(this.$t('Permission["新建角色成功"]'))
                 this.$emit('on-success', res)
             },
             async updateRole () {
-                const res = await this.updateUserGroup({bkGroupId: this.data['group_id'], params: this.params, config: {requestId: 'saveRole'}})
+                const res = await this.updateUserGroup({
+                    bkGroupId: this.data['group_id'],
+                    params: this.params,
+                    config: {
+                        requestId: 'saveRole'
+                    }
+                })
                 this.$success(this.$t('Permission["更新角色成功"]'))
                 this.$emit('on-success', res)
             },

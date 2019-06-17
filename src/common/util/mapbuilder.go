@@ -13,7 +13,6 @@
 package util
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -51,12 +50,6 @@ func (m *MapBuiler) Delete(k string) {
 	delete(m.value, k)
 }
 
-func NewMapFromJSON(data string) map[string]interface{} {
-	value := map[string]interface{}{}
-	_ = json.Unmarshal([]byte(data), &value)
-	return value
-}
-
 func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[string]interface{} {
 	newinst := map[string]interface{}{}
 
@@ -79,11 +72,18 @@ func CopyMap(data map[string]interface{}, keys []string, ignores []string) map[s
 
 }
 
-// CopyHeader copy http header
-func CopyHeader(src http.Header) http.Header {
+// CloneHeader clone http header
+func CloneHeader(src http.Header) http.Header {
 	tar := http.Header{}
 	for key := range src {
 		tar.Set(key, src.Get(key))
 	}
 	return tar
+}
+
+// CopyHeader copy http header into target
+func CopyHeader(src http.Header, target http.Header) {
+	for key := range src {
+		target.Set(key, src.Get(key))
+	}
 }

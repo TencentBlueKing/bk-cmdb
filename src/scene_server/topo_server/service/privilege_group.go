@@ -22,7 +22,7 @@ import (
 )
 
 // CreateUserGroup create user goup
-func (s *topoService) CreateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	userGroup := &metadata.UserGroup{}
 	_, err := userGroup.Parse(data)
@@ -31,25 +31,25 @@ func (s *topoService) CreateUserGroup(params types.ContextParams, pathParams, qu
 		return nil, params.Err.New(common.CCErrCommParamsIsInvalid, err.Error())
 	}
 
-	err = s.core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
+	err = s.Core.PermissionOperation().UserGroup(params).CreateUserGroup(params.SupplierAccount, userGroup)
 	return nil, err
 }
 
 // DeleteUserGroup delete user goup
-func (s *topoService) DeleteUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	err := s.core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
+func (s *Service) DeleteUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	err := s.Core.PermissionOperation().UserGroup(params).DeleteUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"))
 	return nil, err
 }
 
 // UpdateUserGroup update user goup
-func (s *topoService) UpdateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	err := s.core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
+	err := s.Core.PermissionOperation().UserGroup(params).UpdateUserGroup(pathParams("bk_supplier_account"), pathParams("group_id"), data)
 	return nil, err
 }
 
 // SearchUserGroup search user goup
-func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchUserGroup(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 
@@ -58,5 +58,5 @@ func (s *topoService) SearchUserGroup(params types.ContextParams, pathParams, qu
 		return nil
 	})
 
-	return s.core.PermissionOperation().UserGroup(params).SearchUserGroup(pathParams("bk_supplier_account"), cond)
+	return s.Core.PermissionOperation().UserGroup(params).SearchUserGroup(pathParams("bk_supplier_account"), cond)
 }

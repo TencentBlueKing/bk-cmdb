@@ -3,12 +3,12 @@
         <div class="hosts-options">
             <slot name="options">
                 <bk-button class="options-button" type="primary"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || editDisabled"
                     @click="handleMultipleEdit">
                     {{$t('Common["编辑"]')}}
                 </bk-button>
                 <bk-button class="options-button" type="default"
-                    :disabled="!table.checked.length"
+                    :disabled="!table.checked.length || transferDisabled"
                     @click="transfer.show = true">
                     {{$t('BusinessTopology["转移"]')}}
                 </bk-button>
@@ -19,7 +19,9 @@
                 </bk-button>
                 <form id="exportForm" :action="table.exportUrl" method="POST" hidden>
                     <input type="hidden" name="bk_host_id" :value="table.checked">
-                    <input type="hidden" name="export_custom_fields" :value="usercustom[columnsConfigKey]">
+                    <input type="hidden" name="export_custom_fields"
+                        v-if="usercustom[columnsConfigKey]"
+                        :value="usercustom[columnsConfigKey]">
                     <input type="hidden" name="bk_biz_id" value="-1">
                     <input type="hidden" name="metadata"
                         v-if="$route.name !== 'resource'"
@@ -58,9 +60,9 @@
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
-            :defaultSort="table.defaultSort"
+            :default-sort="table.defaultSort"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="table.tableMinusHeight"
+            :wrapper-minus-height="table.tableMinusHeight"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
             @handlePageChange="handlePageChange"
@@ -69,10 +71,10 @@
             <template v-for="(header, index) in table.header" :slot="header.id" slot-scope="{ item }">
                 <label class="table-checkbox bk-form-checkbox bk-checkbox-small"
                     :key="index"
-                    v-if="header.id === 'bk_host_id'" 
+                    v-if="header.id === 'bk_host_id'"
                     @click.stop>
                     <input type="checkbox"
-                        :value="item['host']['bk_host_id']" 
+                        :value="item['host']['bk_host_id']"
                         v-model="table.checked">
                 </label>
                 <span v-else :key="index">
@@ -80,57 +82,18 @@
                 </span>
             </template>
         </cmdb-table>
-        <cmdb-slider :isShow.sync="slider.show" :title="slider.title" :beforeClose="handleSliderBeforeClose">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
             <bk-tab :active-name.sync="tab.active" slot="content">
                 <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
-                    <cmdb-details v-if="tab.attribute.type === 'details'"
-                        :authority="authority"
-                        :properties="properties.host"
-                        :propertyGroups="propertyGroups"
-                        :inst="tab.attribute.inst.details"
-                        :show-delete="false"
-                        @on-edit="handleEdit">
-                        <cmdb-host-topo slot="details-header" :host="tab.attribute.inst.original"></cmdb-host-topo>
-                    </cmdb-details>
-                    <cmdb-form v-else-if="tab.attribute.type === 'update'"
-                        ref="form"
-                        :authority="authority"
-                        :properties="properties.host"
-                        :propertyGroups="propertyGroups"
-                        :inst="tab.attribute.inst.edit"
-                        :type="tab.attribute.type"
-                        @on-submit="handleSave"
-                        @on-cancel="handleCancel">
-                    </cmdb-form>
-                    <cmdb-form-multiple v-else-if="tab.attribute.type === 'multiple'"
+                    <cmdb-form-multiple v-if="tab.attribute.type === 'multiple'"
                         ref="multipleForm"
-                        :authority="authority"
                         :properties="properties.host"
-                        :propertyGroups="propertyGroups"
+                        :property-groups="propertyGroups"
+                        :object-unique="objectUnique"
+                        :save-disabled="saveDisabled"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['details', 'update'].includes(tab.attribute.type)">
-                    <cmdb-relation
-                        v-if="tab.active === 'relevance'"
-                        obj-id="host"
-                        :authority="authority"
-                        :inst="tab.attribute.inst.details">
-                    </cmdb-relation>
-                </bk-tabpanel>
-                <bk-tabpanel name="status" :title="$t('HostResourcePool[\'实时状态\']')" :show="['details', 'update'].includes(tab.attribute.type)">
-                    <cmdb-host-status
-                        v-if="tab.active === 'status'"
-                        :host-id="tab.attribute.inst.details['bk_host_id']"
-                        :is-windows="tab.attribute.inst.details['bk_os_type'] === 'Windows'">
-                    </cmdb-host-status>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['details', 'update'].includes(tab.attribute.type)">
-                    <cmdb-audit-history v-if="tab.active === 'history'"
-                        target="host"
-                        :ext-key="{'$in': [tab.attribute.inst.details['bk_host_innerip']]}">
-                    </cmdb-audit-history>
                 </bk-tabpanel>
             </bk-tab>
         </cmdb-slider>
@@ -162,6 +125,7 @@
             </div>
             <div class="transfer-content" slot="content">
                 <cmdb-transfer-host v-if="transfer.show"
+                    :transfer-resource-disabled="transferResourceDisabled"
                     :selected-hosts="selectedHosts"
                     @on-success="handleTransferSuccess"
                     @on-cancel="transfer.show = false">
@@ -172,25 +136,17 @@
 </template>
 
 <script>
-    import {mapGetters, mapActions} from 'vuex'
-    import cmdbHostsFilter from '@/components/hosts/filter'
+    import { mapGetters, mapActions } from 'vuex'
+    // import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
-    import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbTransferHost from '@/components/hosts/transfer'
-    import cmdbRelation from '@/components/relation'
-    import cmdbHostStatus from '@/components/hosts/status/status'
     import cmdbHostQuickSearch from './_quick-search.vue'
-    import cmdbHostTopo from './_host-topo.vue'
     export default {
         components: {
-            cmdbHostsFilter,
+            // cmdbHostsFilter,
             cmdbColumnsConfig,
-            cmdbAuditHistory,
             cmdbTransferHost,
-            cmdbRelation,
-            cmdbHostStatus,
-            cmdbHostQuickSearch,
-            cmdbHostTopo
+            cmdbHostQuickSearch
         },
         props: {
             columnsConfigProperties: {
@@ -211,15 +167,15 @@
                 type: Boolean,
                 default: false
             },
-            authority: {
-                type: Array,
-                default () {
-                    return ['search', 'update', 'delete']
-                }
-            }
+            saveDisabled: Boolean,
+            editDisabled: Boolean,
+            deleteDisabled: Boolean,
+            transferDisabled: Boolean,
+            transferResourceDisabled: Boolean
         },
         data () {
             return {
+                objectUnique: [],
                 properties: {
                     biz: [],
                     host: [],
@@ -331,9 +287,9 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
-                    }, {inject: this.$route.name !== 'resource'}),
+                    }, { inject: this.$route.name !== 'resource' }),
                     config: {
                         requestId: `post_batchSearchObjectAttribute_${Object.keys(this.properties).join('_')}`,
                         requestGroup: Object.keys(this.properties).map(id => `post_searchObjectAttribute_${id}`)
@@ -391,7 +347,7 @@
                 const propertyId = header.id
                 const headerProperty = this.$tools.getProperty(this.properties[objId], propertyId)
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
-                let text = []
+                const text = []
                 originalValues.forEach(value => {
                     const flatternedText = this.$tools.getPropertyText(headerProperty, value)
                     flatternedText ? text.push(flatternedText) : void (0)
@@ -492,25 +448,22 @@
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
             },
             handleRowClick (item) {
-                const inst = this.$tools.flatternItem(this.properties['host'], item['host'])
-                this.slider.show = true
-                this.slider.title = inst['bk_host_innerip']
-                this.tab.attribute.inst.details = inst
-                this.tab.attribute.inst.original = item
-                this.tab.attribute.type = 'details'
-            },
-            async handleSave (values, changedValues, inst, type) {
-                await this.batchUpdate(this.$injectMetadata({
-                    ...changedValues,
-                    'bk_host_id': inst['bk_host_id'].toString()
-                }, {inject: this.$route.name !== 'resource'}))
-                this.tab.attribute.type = 'details'
-                this.searchHostByInnerip({
-                    bizId: this.filter.business,
-                    innerip: inst['bk_host_innerip']
-                }).then(data => {
-                    this.tab.attribute.inst.details = this.$tools.flatternItem(this.properties['host'], data.host)
-                })
+                if (this.filter.business > -1) {
+                    this.$router.push({
+                        name: 'businessHostDetails',
+                        params: {
+                            business: this.filter.business,
+                            id: item.host.bk_host_id
+                        }
+                    })
+                } else {
+                    this.$router.push({
+                        name: 'resourceHostDetails',
+                        params: {
+                            id: item.host.bk_host_id
+                        }
+                    })
+                }
             },
             batchUpdate (params) {
                 return this.updateHost(params).then(data => {
@@ -519,16 +472,13 @@
                     return data
                 })
             },
-            handleCancel () {
-                this.tab.attribute.type = 'details'
-            },
-            async handleEdit (flatternItem) {
-                const list = await this.$http.cache.get('searchHosts')
-                const originalItem = list.info.find(item => item['host']['bk_host_id'] === flatternItem['bk_host_id'])
-                this.tab.attribute.inst.edit = originalItem['host']
-                this.tab.attribute.type = 'update'
-            },
-            handleMultipleEdit () {
+            async handleMultipleEdit () {
+                this.objectUnique = await this.$store.dispatch('objectUnique/searchObjectUniqueConstraints', {
+                    objId: 'host',
+                    params: this.$injectMetadata({}, {
+                        inject: this.$route.name !== 'resource'
+                    })
+                })
                 this.tab.attribute.type = 'multiple'
                 this.slider.title = this.$t('HostResourcePool[\'主机属性\']')
                 this.slider.show = true
@@ -537,7 +487,7 @@
                 await this.batchUpdate(this.$injectMetadata({
                     ...changedValues,
                     'bk_host_id': this.table.checked.join(',')
-                }, {inject: this.$route.name !== 'resource'}))
+                }, { inject: this.$route.name !== 'resource' }))
                 this.slider.show = false
             },
             handleMultipleCancel () {

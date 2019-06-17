@@ -9,21 +9,21 @@
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange">
-                <template slot="bk_resource_type" slot-scope="{ item }">
-                    <span class="change-span" v-if="item.bk_resource_type === 'change'">
-                        {{$t('Cloud["变更"]')}}
-                    </span>
-                    <span class="new-add-span" v-else>
-                        {{$t('Cloud["新增"]')}}
-                    </span>
-                </template>
-                <template slot="bk_account_type" slot-scope="{ item }">
-                    <span>{{$t('Cloud["腾讯云"]')}}</span>
-                </template>
+            <template slot="bk_resource_type" slot-scope="{ item }">
+                <span class="change-span" v-if="item.bk_resource_type === 'change'">
+                    {{$t('Cloud["变更"]')}}
+                </span>
+                <span class="new-add-span" v-else>
+                    {{$t('Cloud["新增"]')}}
+                </span>
+            </template>
+            <template slot="bk_account_type">
+                <span>{{$t('Cloud["腾讯云"]')}}</span>
+            </template>
         </cmdb-table>
     </div>
 </template>
@@ -45,7 +45,7 @@
                 dateRange: [],
                 operator: '',
                 table: {
-                    header: [ {
+                    header: [{
                         id: 'bk_host_innerip',
                         name: this.$t('Cloud["资源名称"]')
                     }, {
@@ -112,10 +112,10 @@
                 this.dateRange = [start, end]
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {}
-                let innerParams = {}
-                let page = {
+                const pagination = this.table.pagination
+                const params = {}
+                const innerParams = {}
+                const page = {
                     start: (pagination.current - 1) * pagination.size,
                     limit: pagination.size,
                     sort: this.table.sort
@@ -124,7 +124,7 @@
                 innerParams['$lte'] = this.filterRange[1]
                 params['confirm_time'] = innerParams
                 params['page'] = page
-                let res = await this.searchConfirmHistory({params, config: {requestID: 'getConfirHistory'}})
+                const res = await this.searchConfirmHistory({ params, config: { requestID: 'getConfirHistory' } })
                 this.table.list = res.info.map(data => {
                     data['create_time'] = this.$tools.formatTime(data['create_time'], 'YYYY-MM-DD HH:mm:ss')
                     data['confirm_time'] = this.$tools.formatTime(data['confirm_time'], 'YYYY-MM-DD HH:mm:ss')

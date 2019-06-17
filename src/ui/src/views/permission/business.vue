@@ -14,12 +14,12 @@
             <div class="checkbox-container clearfix">
                 <span v-for="(authority, index) in authorities.list" class="checkbox-span fl" :key="index">
                     <label class="cmdb-form-checkbox cmdb-checkbox-small authority-checkbox"
-                        :class="{'disabled': isMaintainers}"
+                        :class="{ 'disabled': isMaintainers }"
                         :for="'business-authority-' + authority.id"
                         :title="$t(authority.name)">
-                        <input type="checkbox" 
-                            :value="authority.id" 
-                            :id="'business-authority-' + authority.id" 
+                        <input type="checkbox"
+                            :value="authority.id"
+                            :id="'business-authority-' + authority.id"
                             :disabled="isMaintainers"
                             v-model="authorities.selected">
                         <span class="cmdb-checkbox-text">{{$t(authority.name)}}</span>
@@ -96,13 +96,13 @@
             ]),
             async getBusinessRoles () {
                 const res = await this.searchObjectAttribute({
-                    params: this.$injectMetadata({bk_obj_id: 'biz'}),
+                    params: this.$injectMetadata({ bk_obj_id: 'biz' }),
                     config: {
                         requestId: 'post_searchObjectAttribute_biz',
                         fromCache: true
                     }
                 })
-                let roles = []
+                const roles = []
                 res.map(role => {
                     if (role['bk_property_type'] === 'objuser') {
                         roles.push({
@@ -116,13 +116,22 @@
                 this.selectedBusinessRole = roles[0].id
             },
             async getBusinessRoleAuthorities () {
-                const res = await this.getRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole})
+                const res = await this.getRolePrivilege({ bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole })
                 if (!this.isMaintainers) {
                     this.authorities.selected = res.length ? res : []
                 }
             },
             async updateAuthorities () {
-                await this.bindRolePrivilege({bkObjId: 'biz', bkPropertyId: this.selectedBusinessRole, params: this.authorities.selected, config: {requestId: 'updateAuthorities'}})
+                await this.bindRolePrivilege({
+                    bkObjId: 'biz',
+                    bkPropertyId: this.selectedBusinessRole,
+                    params: {
+                        data: this.authorities.selected
+                    },
+                    config: {
+                        requestId: 'updateAuthorities'
+                    }
+                })
                 this.$success(this.$t('Common[\'保存成功\']'))
             }
         }

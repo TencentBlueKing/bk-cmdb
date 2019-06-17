@@ -1,40 +1,24 @@
 <template>
     <div class="topology-layout clearfix">
         <cmdb-resize-layout class="tree-layout fl"
-            v-bkloading="{isLoading: $loading([`get_getInstTopo_${business}`, `get_getInternalTopo_${business}`])}"
+            v-bkloading="{ isLoading: $loading([`get_getInstTopo_${business}`, `get_getInternalTopo_${business}`]) }"
             direction="right"
             :handler-offset="3"
             :min="200"
             :max="480">
-            <div class="tree-simplify" v-if="false && tree.simplifyAvailable">
-                <cmdb-form-bool class="tree-simplify-checkbox"
-                    :size="16"
-                    :true-value="true"
-                    :false-value="false"
-                    v-model="tree.simplify">
-                    <span>
-                        {{$t('BusinessTopology["精简显示"]')}}
-                    </span>
-                </cmdb-form-bool>
-                <v-popover style="display: inline-block;" trigger="hover" :delay="200">
-                    <i class="tree-simplify-tips bk-icon icon-info-circle">
-                    </i>
-                    <img src="@/assets/images/simplify-tips.png" slot="popover">
-                </v-popover>
-            </div>
             <cmdb-tree ref="topoTree" class="topo-tree"
                 children-key="child"
                 :id-generator="getTopoNodeId"
                 :tree="tree.data"
                 @on-selected="handleNodeSelected">
-                <div class="tree-node clearfix" slot-scope="{node, state}"
+                <div class="tree-node clearfix" slot-scope="{ node, state }"
                     :class="{
                         'tree-node-selected': state.selected,
                         'tree-node-module': node['bk_obj_id'] === 'module'
                     }">
                     <template v-if="[1, 2].includes(node.default)">
-                        <i class='topo-node-icon topo-node-icon-internal icon-cc-host-free-pool' v-if="node.default === 1"></i>
-                        <i class='topo-node-icon topo-node-icon-internal icon-cc-host-breakdown' v-else></i>
+                        <i class="topo-node-icon topo-node-icon-internal icon-cc-host-free-pool" v-if="node.default === 1"></i>
+                        <i class="topo-node-icon topo-node-icon-internal icon-cc-host-breakdown" v-else></i>
                     </template>
                     <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
                     <span class="topo-node-text" :title="node['bk_inst_name']">{{node['bk_inst_name']}}</span>
@@ -70,6 +54,10 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
+                        delete-disabled
+                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
@@ -77,11 +65,10 @@
                     </cmdb-hosts-table>
                 </bk-tabpanel>
                 <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
-                    v-bkloading="{isLoading: $loading()}"
+                    v-bkloading="{ isLoading: $loading() }"
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
                         v-if="isNodeDetailsActive"
-                        :authority="['search', 'update', 'delete']"
                         :show-delete="false"
                         :show-options="!isAdminView"
                         :properties="tab.properties"
@@ -90,7 +77,6 @@
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
-                        :authority="['search', 'update', 'delete']"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
                         :inst="tree.selectedNodeInst"
@@ -121,6 +107,7 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbTopoNodeProcess from './children/_node-process'
     import treeNodeCreate from './children/_node-create.vue'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsTable,
@@ -129,6 +116,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: {
                     biz: [],
                     host: [],
@@ -141,9 +129,6 @@
                 topoModel: [],
                 tree: {
                     data: [],
-                    simplify: false,
-                    simplifyAvailable: false,
-                    simplifyParentNode: null,
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
@@ -226,13 +211,6 @@
                 if (!val) {
                     this.tab.active = 'hosts'
                 }
-            },
-            'tree.simplify' (simplify) {
-                if (simplify) {
-                    this.simplifyTree()
-                } else {
-                    this.getBusinessTopo()
-                }
             }
         },
         async created () {
@@ -288,7 +266,7 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {
@@ -303,7 +281,6 @@
             },
             getCommonProperties (objId) {
                 if (this.properties.hasOwnProperty(objId)) {
-                    this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
@@ -316,7 +293,6 @@
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
-                    this.tab.properties = properties
                     return properties
                 })
             },
@@ -344,7 +320,7 @@
                 const objId = selectedNode['bk_obj_id']
                 const instId = selectedNode['bk_inst_id']
                 const requestParams = {
-                    page: {start: 0, limit: 1},
+                    page: { start: 0, limit: 1 },
                     fields: [],
                     condition: {}
                 }
@@ -414,7 +390,7 @@
                     })
                 ]).then(([instTopo, internalTopo]) => {
                     const moduleModel = this.getModelByObjId('module')
-                    const internalModule = internalTopo.module.map(module => {
+                    const internalModule = (internalTopo.module || []).map(module => {
                         return {
                             'default': ['空闲机', 'idle machine'].includes(module['bk_module_name']) ? 1 : 2,
                             'bk_obj_id': 'module',
@@ -430,12 +406,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    // this.setSimplifyAvailable()
                 })
-            },
-            setSimplifyAvailable () {
-                const simplifyData = this.tree.data.filter(data => !this.tree.internalModule.includes(data))
-                this.tree.simplifyAvailable = simplifyData.length === 1 && simplifyData[0].child.length
             },
             getModelByObjId (id) {
                 return this.topoModel.find(model => model['bk_obj_id'] === id)
@@ -467,7 +438,7 @@
                 this.$refs.topoTable.search(this.bizId, this.table.params, true)
             },
             setSearchParams () {
-                const necessaryObj = Object.keys(this.properties)
+                const necessaryObj = ['host', 'module', 'set', 'biz']
                 const condition = necessaryObj.map(objId => {
                     return {
                         'bk_obj_id': objId,
@@ -531,7 +502,8 @@
                 const selectedNode = this.tree.selectedNode
                 if (this.showAttributePanel && active === 'attribute') {
                     if (this.tab.type === 'details') {
-                        await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        const [, properties] = await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        this.tab.properties = properties
                         await this.getNodeInst()
                     } else {
                         const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
@@ -554,10 +526,7 @@
             async handleCreate () {
                 this.tree.create.showDialog = true
                 this.tree.create.active = true
-                let targetNode = this.tree.selectedNode
-                if (this.tree.simplify && targetNode['bk_obj_id'] === 'biz') {
-                    targetNode = this.tree.simplifyParentNode
-                }
+                const targetNode = this.tree.selectedNode
                 const model = this.topoModel.find(model => model['bk_obj_id'] === targetNode['bk_obj_id'])
                 const properties = await this.getCommonProperties(model['bk_next_obj'])
                 this.tree.create.properties = properties
@@ -575,16 +544,13 @@
                 this.tree.create.properties = []
             },
             handleSubmit (value, changedValue, originalInst, type) {
-                let promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
+                const promise = type === 'create' ? this.createNode(value) : this.updateNode(value)
                 promise.then(() => {
                     this.$http.cancelCache('getInstTopo')
                 })
             },
             createNode (value) {
-                let selectedNode = this.tree.selectedNode
-                if (this.tree.simplify && selectedNode['bk_obj_id'] === 'biz') {
-                    selectedNode = this.tree.simplifyParentNode
-                }
+                const selectedNode = this.tree.selectedNode
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
                 const formData = {
@@ -644,7 +610,7 @@
                 return promise
             },
             updateNode (value) {
-                const formData = {...value}
+                const formData = { ...value }
                 const selectedNode = this.tree.selectedNode
                 const objId = selectedNode['bk_obj_id']
                 let promise
@@ -698,7 +664,7 @@
                 const selectedNode = this.tree.selectedNode
                 const parentNode = this.tree.selectedNodeState.parent.node
                 const objId = selectedNode['bk_obj_id']
-                const config = {requestId: 'deleteNode'}
+                const config = { requestId: 'deleteNode' }
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${selectedNode['bk_inst_name']}?`,
                     content: objId === 'module'
@@ -743,18 +709,6 @@
                 const isBlueKing = this.tree.data[0]['bk_inst_name'] === '蓝鲸'
                 const isModule = node['bk_obj_id'] === 'module'
                 return !this.isAdminView && selected && !isBlueKing && !isModule
-            },
-            simplifyTree () {
-                this.$refs.topoTree.selectNode(this.getTopoNodeId(this.tree.data[0]))
-                let instTopo = this.tree.data[0].child.slice(this.tree.internalModule.length)
-                let simplifyParentNode
-                while (instTopo.length === 1 && instTopo[0].child.length) {
-                    simplifyParentNode = instTopo[0]
-                    instTopo = instTopo[0].child
-                }
-                this.tree.simplifyParentNode = simplifyParentNode
-                this.tree.data[0].child.splice(this.tree.internalModule.length, 1, ...instTopo)
-                this.$refs.topoTree.$forceUpdate()
             }
         }
     }
@@ -775,17 +729,10 @@
             width: auto;
             margin: 20px 20px 13px;
         }
-        .tree-simplify {
-            padding: 0 20px;
-            font-size: 14px;
-            .tree-simplify-tips:hover {
-                color: #0082ff;
-            }
-        }
         .topo-tree{
             padding: 0 0 0 20px;
             margin: 10px 0 0 0;
-            height: calc(100% - 100px);
+            height: calc(100% - 20px);
             @include scrollbar-y;
             .tree-node {
                 font-size: 0;

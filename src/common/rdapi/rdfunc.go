@@ -17,24 +17,24 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 	"strings"
+
+	restful "github.com/emicklei/go-restful"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-
-	restful "github.com/emicklei/go-restful"
 )
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
-	util.SetActionOwerIDAndAccount(req)
-	ownerId, user := util.GetActionOnwerIDAndUser(req)
-	if "" == ownerId {
+	util.SetOwnerIDAndAccount(req)
+	if "" == util.GetOwnerID(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
 	}
-	if "" == user {
+	if "" == util.GetUser(req.Request.Header) {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
 	}
 
@@ -44,6 +44,16 @@ func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, s
 
 func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+		defer func() {
+			if fetalErr := recover(); fetalErr != nil {
+				rid := util.GetHTTPCCRequestID(req.Request.Header)
+				blog.Errorf("server panic, err:%#v, rid:%s, debug strace:%s", fetalErr, rid, debug.Stack())
+				ccErrTip := errFunc().CreateDefaultCCErrorIf(util.GetLanguage(req.Request.Header)).Errorf(common.CCErrCommInternalServerError, common.GetIdentification())
+				respErrInfo := &metadata.RespError{Msg: ccErrTip}
+				io.WriteString(resp, respErrInfo.Error())
+			}
+
+		}()
 		generateHttpHeaderRID(req, resp)
 
 		whilteListSuffix := strings.Split(common.URLFilterWhiteListSuffix, common.URLFilterWhiteListSepareteChar)
@@ -53,7 +63,7 @@ func AllGlobalFilter(errFunc func() errors.CCErrorIf) func(req *restful.Request,
 				return
 			}
 		}
-		language := util.GetActionLanguage(req)
+		language := util.GetLanguage(req.Request.Header)
 		defErr := errFunc().CreateDefaultCCErrorIf(language)
 
 		errNO, errMsg := checkHTTPAuth(req, defErr)
@@ -114,8 +124,6 @@ func generateHttpHeaderRID(req *restful.Request, resp *restful.Response) {
 		}
 		req.Request.Header.Set(common.BKHTTPCCRequestID, cid)
 	}
-	// todo support esb request id
-
 	resp.Header().Set(common.BKHTTPCCRequestID, cid)
 }
 
@@ -132,6 +140,5 @@ func ServiceErrorHandler(err restful.ServiceError, req *restful.Request, resp *r
 
 // getHTTPOtherRequestID return other system request id from http header
 func getHTTPOtherRequestID(header http.Header) string {
-	rid := header.Get(common.BKHTTPOtherRequestID)
-	return rid
+	return header.Get(common.BKHTTPOtherRequestID)
 }

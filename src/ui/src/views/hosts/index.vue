@@ -2,10 +2,14 @@
     <div class="hosts-layout clearfix">
         <cmdb-hosts-filter class="hosts-filter fr"
             :filter-config-key="filterConfigKey"
-            :collection-content="{business: filter.business}"
+            :collection-content="{ business: filter.business }"
             @on-refresh="handleRefresh">
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
+            delete-disabled
+            :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
+            :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>
@@ -16,6 +20,7 @@
     import { mapGetters, mapActions } from 'vuex'
     import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbHostsTable from '@/components/hosts/table'
+    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsFilter,
@@ -23,6 +28,7 @@
         },
         data () {
             return {
+                OPERATION,
                 properties: {
                     biz: [],
                     host: [],
@@ -68,6 +74,7 @@
         async created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["主机查询"]'))
             try {
+                // eslint-disable-next-line
                 const res = await Promise.all([
                     this.getBusiness(),
                     this.getParams(),
@@ -107,7 +114,7 @@
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
-                        bk_obj_id: {'$in': Object.keys(this.properties)},
+                        bk_obj_id: { '$in': Object.keys(this.properties) },
                         bk_supplier_account: this.supplierAccount
                     }),
                     config: {

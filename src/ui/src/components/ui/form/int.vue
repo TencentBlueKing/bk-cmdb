@@ -1,11 +1,11 @@
 <template>
     <div class="cmdb-form form-int">
         <input class="cmdb-form-input form-int-input" type="text"
-            :placeholder="$t('Form[\'请输入数字\']')"
+            :placeholder="placeholder || $t('Form[\'请输入数字\']')"
             :value="value"
             :maxlength="maxlength"
             :disabled="disabled"
-            @input="handleInput($event)"
+            @blur="handleInput($event)"
             @change="handleChange">
     </div>
 </template>
@@ -15,7 +15,10 @@
         name: 'cmdb-form-int',
         props: {
             value: {
-                default: null
+                default: null,
+                validator (val) {
+                    return typeof val === 'number' || val === '' || val === null
+                }
             },
             disabled: {
                 type: Boolean,
@@ -24,6 +27,10 @@
             maxlength: {
                 type: Number,
                 default: 11
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

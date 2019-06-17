@@ -41,22 +41,56 @@ var createIgnoreKeys = []string{
 	common.BKDataStatusField,
 }
 
+func FetchBizIDFromInstance(objID string, instanceData mapstr.MapStr) (int64, error) {
+	switch objID {
+	case common.BKInnerObjIDApp, common.BKInnerObjIDSet, common.BKInnerObjIDModule, common.BKInnerObjIDProc:
+		biz, exist := instanceData[common.BKAppIDField]
+		if exist == false {
+			return 0, nil
+		}
+		bizID, err := util.GetInt64ByInterface(biz)
+		if err != nil {
+			return 0, err
+		}
+		return bizID, nil
+	case common.BKInnerObjIDPlat:
+		return 0, nil
+	default:
+		if _, exist := instanceData[common.MetadataField]; exist == false {
+			return 0, nil
+		}
+		return metadata.ParseBizIDFromData(instanceData)
+	}
+	return 0, nil
+}
+
 func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr) error {
-	valid, err := NewValidator(ctx, m.dependent, objID)
+	bizID, err := FetchBizIDFromInstance(objID, instanceData)
+	if err != nil {
+		blog.Errorf("validCreateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+
+	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed %s", err.Error())
 		return err
 	}
 	FillLostedFieldValue(instanceData, valid.propertyslice, valid.requirefields)
 	for _, key := range valid.requirefields {
 		if _, ok := instanceData[key]; !ok {
-			blog.Errorf("params in need, valid %s, data: %+v", objID, instanceData)
+			blog.Errorf("field [%s] in required for model [%s], input data: %+v", key, objID, instanceData)
 			return valid.errif.Errorf(common.CCErrCommParamsNeedSet, key)
 		}
 	}
 	var instMedataData metadata.Metadata
 	instMedataData.Label = make(metadata.Label)
 	for key, val := range instanceData {
+		if key == common.BKObjIDField {
+			// common instance always has no property bk_obj_id, but this field need save to db
+			blog.V(9).Infof("skip verify filed: %s", key)
+			continue
+		}
 		if metadata.BKMetadata == key {
 			bizID := metadata.GetBusinessIDFromMeta(val)
 			if "" != bizID {
@@ -70,7 +104,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 		}
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("params is not valid, the key is %s", key)
+			blog.Errorf("field [%s] is not a valid property for model [%s]", key, objID)
 			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
 		}
 		fieldType := property.PropertyType
@@ -81,6 +115,8 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
 			err = valid.validInt(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
 		case common.FieldTypeEnum:
 			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:
@@ -104,7 +140,18 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
-	valid, err := NewValidator(ctx, m.dependent, objID)
+	originData, err := m.getInstDataByID(ctx, objID, instID, m)
+	if err != nil {
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return err
+	}
+	bizID, err := FetchBizIDFromInstance(objID, originData)
+	if err != nil {
+		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
+		return ctx.Error.Errorf(common.CCErrCommParamsIsInvalid, "bk_biz_id")
+	}
+
+	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
 		blog.Errorf("init validator faile %s", err.Error())
 		return err
@@ -130,6 +177,8 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			err = valid.validLongChar(val, key)
 		case common.FieldTypeInt:
 			err = valid.validInt(val, key)
+		case common.FieldTypeFloat:
+			err = valid.validFloat(val, key)
 		case common.FieldTypeEnum:
 			err = valid.validEnum(val, key)
 		case common.FieldTypeDate:

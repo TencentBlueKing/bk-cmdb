@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -36,14 +35,12 @@ func (lgc *Logics) GetObjectData(ownerID, objID string, header http.Header, meta
 	}
 
 	result, err := lgc.Engine.CoreAPI.ApiServer().GetObjectData(context.Background(), header, condition)
-
 	if nil != err {
-		blog.Errorf("failed to parse the code, error info is %s ", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("get object data failed, err: %v", err)
 	}
 
-	if false == result.Result {
-		return nil, fmt.Errorf(result.ErrMsg)
+	if !result.Result {
+		return nil, fmt.Errorf("get object data failed, but got err: %s", result.ErrMsg)
 	}
 
 	return result.Data[objID].Attr, nil
@@ -63,7 +60,6 @@ func GetPropertyFieldType(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("val_type_bool"), //"布尔",
 		"isrequired":             lang.Language("val_type_bool"), //"布尔",
 		"isreadonly":             lang.Language("val_type_bool"), //"布尔",
-		"isonly":                 lang.Language("val_type_bool"), //"布尔",
 	}
 	return fieldType
 }
@@ -82,7 +78,6 @@ func GetPropertyFieldDesc(lang language.DefaultCCLanguageIf) map[string]string {
 		"editable":               lang.Language("is_editable"),                //"是否可编辑",
 		"isrequired":             lang.Language("property_is_required"),       //"是否必填",
 		"isreadonly":             lang.Language("property_is_readonly"),       //"是否只读",
-		"isonly":                 lang.Language("property_is_only"),           //"是否唯一",
 	}
 
 	return fields

@@ -1,7 +1,7 @@
 <template>
     <div class="create-wrapper">
         <div class="create-box">
-            <ul class="create-form" v-model="taskMap">
+            <ul class="create-form">
                 <li class="create-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
@@ -12,7 +12,7 @@
                             class="cmdb-form-input"
                             name="taskName"
                             v-validate="'required|singlechar'"
-                            :placeholder="$t('Cloud[\'请输入任务名称\']')"/>
+                            :placeholder="$t('Cloud[\'请输入任务名称\']')" />
                     </div>
                     <span v-show="errors.has('taskName')" class="error-info color-danger">{{ errors.first('taskName') }}</span>
                 </li>
@@ -42,7 +42,7 @@
                             class="cmdb-form-input"
                             name="ID"
                             v-validate="'required|singlechar'"
-                            :placeholder="$t('Cloud[\'请输入ID\']')"/>
+                            :placeholder="$t('Cloud[\'请输入ID\']')" />
                     </div>
                     <span v-show="errors.has('ID')" class="error-info color-danger">{{ errors.first('ID') }}</span>
                 </li>
@@ -50,8 +50,8 @@
                     <label for="" class="label-name">
                         {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
                         <a class="a-set"
-                           href="https://cloud.tencent.com/document/api/213/15692"
-                           target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
+                            href="https://cloud.tencent.com/document/api/213/15692"
+                            target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
                         </a>
                     </label>
                     <div class="create-item-content">
@@ -61,7 +61,7 @@
                             class="cmdb-form-input"
                             name="Key"
                             v-validate="'required|singlechar'"
-                            :placeholder="$t('Cloud[\'请输入key\']')"/>
+                            :placeholder="$t('Cloud[\'请输入key\']')" />
                     </div>
                     <span v-show="errors.has('Key')" class="error-info color-danger">{{ errors.first('Key') }}</span>
                 </li>
@@ -82,7 +82,7 @@
                             v-if="taskMap.bk_period_type === 'day'"
                             name="day"
                             v-validate="'required|dayFormat'"
-                            :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
+                            :placeholder="$t('Cloud[\'例如: 19:30\']')" />
                         <input type="text"
                             class="cmdb-form-input"
                             v-model="taskMap.bk_period"
@@ -116,7 +116,7 @@
                 </li>
                 <li>
                     <div class="resource-confirm">{{ $t('Cloud["资源自动确认"]')}}
-                    <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
+                        <span class="span-text">{{ $t('Cloud["(不勾选，发现实例将不需要确认直接录入主机资源池)"]')}}</span>
                     </div>
                     <div>
                         <label class="cmdb-form-checkbox">
@@ -198,9 +198,8 @@
                 if (!isValidate) {
                     return
                 }
-                let params = this.taskMap
-                let res = null
-                res = await this.addCloudTask({params: params, config: {requestId: 'savePush'}})
+                const params = this.taskMap
+                await this.addCloudTask({ params: params, config: { requestId: 'savePush' } })
                 this.$emit('saveSuccess')
                 this.$success(this.$t('Inst["创建成功"]'))
             },
@@ -208,9 +207,9 @@
                 this.$emit('cancel')
             },
             isCloseConfirmShow () {
-                let tempTaskMap = this.tempTaskMap
-                let taskMap = this.taskMap
-                for (let key in taskMap) {
+                const tempTaskMap = this.tempTaskMap
+                const taskMap = this.taskMap
+                for (const key in taskMap) {
                     if (taskMap[key] !== tempTaskMap[key]) {
                         return true
                     }

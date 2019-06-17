@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
@@ -21,18 +22,25 @@ import (
 )
 
 // CreateObjectAttribute create a new object attribute
-func (s *topoService) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) CreateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
-	attr, err := s.core.AttributeOperation().CreateObjectAttribute(params, data)
+	attr, err := s.Core.AttributeOperation().CreateObjectAttribute(params, data)
 	if nil != err {
 		return nil, err
+	}
+
+	// auth: register resource
+	attribute := attr.Attribute()
+	if err := s.AuthManager.RegisterModelAttribute(params.Context, params.Header, *attribute); err != nil {
+		blog.Errorf("create object attribute success, but register model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
 	}
 
 	return attr.ToMapStr()
 }
 
 // SearchObjectAttribute search the object attributes
-func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) SearchObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	cond := condition.CreateCondition()
 	data.Remove(metadata.PageName)
@@ -42,11 +50,11 @@ func (s *topoService) SearchObjectAttribute(params types.ContextParams, pathPara
 	}
 	cond.Field(metadata.AttributeFieldIsSystem).NotEq(true)
 	cond.Field(metadata.AttributeFieldIsAPI).NotEq(true)
-	return s.core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
+	return s.Core.AttributeOperation().FindObjectAttributeWithDetail(params, cond)
 }
 
 // UpdateObjectAttribute update the object attribute
-func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) UpdateObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
 	id, err := paramPath.Int64("id")
@@ -57,13 +65,19 @@ func (s *topoService) UpdateObjectAttribute(params types.ContextParams, pathPara
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.AttributeOperation().UpdateObjectAttribute(params, data, id)
+	err = s.Core.AttributeOperation().UpdateObjectAttribute(params, data, id)
+
+	// auth: update registered resource
+	if err := s.AuthManager.UpdateRegisteredModelAttributeByID(params.Context, params.Header, id); err != nil {
+		blog.Errorf("update object attribute success , but update registered model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommRegistResourceToIAMFailed)
+	}
 
 	return nil, err
 }
 
 // DeleteObjectAttribute delete the object attribute
-func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *Service) DeleteObjectAttribute(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	paramPath := mapstr.MapStr{}
 	paramPath.Set("id", pathParams("id"))
@@ -79,7 +93,13 @@ func (s *topoService) DeleteObjectAttribute(params types.ContextParams, pathPara
 
 	data.Remove(metadata.BKMetadata)
 
-	err = s.core.AttributeOperation().DeleteObjectAttribute(params, cond)
+	// auth: update registered resource
+	if err := s.AuthManager.DeregisterModelAttributeByID(params.Context, params.Header, id); err != nil {
+		blog.Errorf("delete object attribute failed, deregistered model attribute to auth failed, err: %+v", err)
+		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
+	}
+
+	err = s.Core.AttributeOperation().DeleteObjectAttribute(params, cond)
 
 	return nil, err
 }

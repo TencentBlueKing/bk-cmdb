@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -47,9 +46,8 @@ func (s *Service) ImportInst(c *gin.Context) {
 		return
 	}
 
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -68,7 +66,7 @@ func (s *Service) ImportInst(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //delete file
+	defer os.Remove(filePath)
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -100,9 +98,8 @@ func (s *Service) ExportInst(c *gin.Context) {
 	instIDStr := c.PostForm(common.BKInstIDField)
 	customFieldsStr := c.PostForm(common.ExportCustomFields)
 
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -110,12 +107,10 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	kvMap := mapstr.MapStr{}
 	instInfo, err := s.Logics.GetInstData(ownerID, objID, instIDStr, pheader, kvMap, metaInfo)
-
 	if err != nil {
-		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-
-		c.String(http.StatusInternalServerError, msg, nil)
+		fmt.Println("return msg: ", msg)
+		c.String(http.StatusForbidden, msg)
 		return
 	}
 
@@ -125,6 +120,13 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
+	if err != nil {
+		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v", objID, err)
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
 	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
@@ -139,7 +141,6 @@ func (s *Service) ExportInst(c *gin.Context) {
 	}
 	fileName := fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano())
 	dirFileName = fmt.Sprintf("%s/%s", dirFileName, fileName)
-	//fileName := fmt.Sprintf("tmp/%s_inst.xls", time.Now().UnixNano())
 	logics.ProductExcelCommentSheet(file, defLang)
 	err = file.Save(dirFileName)
 	if err != nil {
@@ -151,7 +152,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			return
 		}
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	c.File(dirFileName)
 	os.Remove(dirFileName)
 }

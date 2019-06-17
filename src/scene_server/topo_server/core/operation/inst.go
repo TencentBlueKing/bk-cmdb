@@ -62,9 +62,11 @@ type InputKey string
 type InstID int64
 
 type BatchResult struct {
-	Errors       []string `json:"error"`
-	Success      []string `json:"success"`
-	UpdateErrors []string `json:"update_error"`
+	Errors         []string `json:"error"`
+	Success        []string `json:"success"`
+	SuccessCreated []int64  `json:"success_created"`
+	SuccessUpdated []int64  `json:"success_updated"`
+	UpdateErrors   []string `json:"update_error"`
 }
 
 type commonInst struct {
@@ -83,6 +85,14 @@ func (c *commonInst) SetProxy(modelFactory model.Factory, instFactory inst.Facto
 }
 
 func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Object, batchInfo *InstBatchInfo) (*BatchResult, error) {
+	var err error
+	var bizID int64
+	if params.MetaData != nil {
+		bizID, err = metadata.BizIDFromMetadata(*params.MetaData)
+		if err != nil {
+			return nil, fmt.Errorf("parse business id from metadata failed, err: %+v", err)
+		}
+	}
 
 	var rowErr map[int64]error
 	results := &BatchResult{}
@@ -98,6 +108,7 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 	}
 
 	object := obj.Object()
+
 	// all the instances's name should not be same,
 	// so we need to check first.
 	instNameMap := make(map[string]struct{})
@@ -123,6 +134,9 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		instNameMap[name] = struct{}{}
 	}
 
+	updatedInstanceIDs := make([]int64, 0)
+	createdInstanceIDs := make([]int64, 0)
+
 	for colIdx, colInput := range *batchInfo.BatchInfo {
 		if colInput == nil {
 			// this is a empty excel line.
@@ -133,7 +147,8 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		item := c.instFactory.CreateInst(params, obj)
 		item.SetValues(colInput)
 
-		if item.GetValues().Exists(obj.GetInstIDFieldName()) {
+		exist := item.GetValues().Exists(obj.GetInstIDFieldName())
+		if exist {
 			// check update
 			targetInstID, err := item.GetInstID()
 			if nil != err {
@@ -141,8 +156,9 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
+			updatedInstanceIDs = append(updatedInstanceIDs, targetInstID)
 			if err = NewSupplementary().Validator(c).ValidatorUpdate(params, obj, item.ToMapStr(), targetInstID, nil); nil != err {
-				blog.Errorf("[operation-inst] failed to valid, err: %s", err.Error())
+				blog.Errorf("[operation-inst] CreateInstBatch failed, update instance failed, validation failed, err: %+v", err)
 				results.Errors = append(results.Errors, params.Lang.Languagef("import_row_int_error_str", colIdx, err.Error()))
 				continue
 			}
@@ -166,6 +182,11 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 				}
 
 			}
+
+			// create with metadata
+			if bizID != 0 {
+				colInput[metadata.BKMetadata] = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+			}
 		}
 
 		// set data
@@ -177,7 +198,19 @@ func (c *commonInst) CreateInstBatch(params types.ContextParams, obj model.Objec
 		}
 		results.Success = append(results.Success, strconv.FormatInt(colIdx, 10))
 		NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+		instanceID, err := item.GetInstID()
+		if err != nil {
+			blog.Errorf("unexpected error, instances created success, but get id failed, err: %+v", err)
+			continue
+		}
+		if exist == false {
+			createdInstanceIDs = append(createdInstanceIDs, instanceID)
+		}
 	}
+
+	results.SuccessCreated = createdInstanceIDs
+	results.SuccessUpdated = updatedInstanceIDs
 
 	return results, nil
 }
@@ -229,6 +262,21 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+	instID, err := item.GetInstID()
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrTopoInstCreateFailed)
+	}
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	_, insts, err := c.FindInst(params, obj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, inst := range insts {
+		return inst, nil
+	}
 
 	return item, nil
 }
@@ -325,12 +373,12 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 	}
 
 	for _, delInst := range deleteIDS {
-		preAudit := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
+		preAudit := NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CreateSnapshot(delInst.instID, condition.CreateCondition().ToMapStr())
 		// if this instance has been bind to a instance by the association, then this instance should not be deleted.
 		innerCond := condition.CreateCondition()
-		innerCond.Field(common.BKAsstObjIDField).Eq(object.ObjectID)
+		innerCond.Field(common.BKAsstObjIDField).Eq(delInst.obj.GetObjectID())
 		innerCond.Field(common.BKAsstInstIDField).Eq(delInst.instID)
-		err := c.asst.CheckBeAssociation(params, obj, innerCond)
+		err := c.asst.CheckBeAssociation(params, delInst.obj, innerCond)
 		if nil != err {
 			return err
 		}
@@ -338,7 +386,7 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 		// this instance has not be bind to another instance, we can delete all the associations it created
 		// by the association with other instances.
 		innerCond = condition.CreateCondition()
-		innerCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+		innerCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
 		innerCond.Field(common.BKInstIDField).Eq(delInst.instID)
 		if err := c.asst.DeleteInstAssociation(params, innerCond); nil != err {
 			blog.Errorf("[operation-inst] failed to delete the inst asst, err: %s", err.Error())
@@ -347,23 +395,23 @@ func (c *commonInst) DeleteInstByInstID(params types.ContextParams, obj model.Ob
 
 		// delete this instance now.
 		delCond := condition.CreateCondition()
-		delCond.Field(obj.GetInstIDFieldName()).In(delInst.instID)
-		if obj.IsCommon() {
-			delCond.Field(common.BKObjIDField).Eq(object.ObjectID)
+		delCond.Field(delInst.obj.GetInstIDFieldName()).In(delInst.instID)
+		if delInst.obj.IsCommon() {
+			delCond.Field(common.BKObjIDField).Eq(delInst.obj.GetObjectID())
 		}
 		// clear association
-		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
+		rsp, err := c.clientSet.CoreService().Instance().DeleteInstance(context.Background(), params.Header, delInst.obj.GetObjectID(), &metadata.DeleteOption{Condition: delCond.ToMapStr()})
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if !rsp.Result {
-			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", object.ObjectID, delCond.ToMapStr(), rsp.ErrMsg)
+			blog.Errorf("[operation-inst] failed to delete the object(%s) inst by the condition(%#v), err: %s", delInst.obj.GetObjectID(), delCond.ToMapStr(), rsp.ErrMsg)
 			return params.Err.New(rsp.Code, rsp.ErrMsg)
 		}
 
-		NewSupplementary().Audit(params, c.clientSet, obj, c).CommitDeleteLog(preAudit, nil, nil)
+		NewSupplementary().Audit(params, c.clientSet, delInst.obj, c).CommitDeleteLog(preAudit, nil, nil)
 	}
 	return nil
 }
@@ -395,7 +443,6 @@ func (c *commonInst) DeleteInst(params types.ContextParams, obj model.Object, co
 		if nil != err {
 			return err
 		}
-
 	}
 
 	return nil
@@ -740,7 +787,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 					switch t := objCondition.Value.(type) {
 					case string:
 						instCond[objCondition.Field] = map[string]interface{}{
-							common.BKDBEQ: gparams.SpeceialCharChange(t),
+							common.BKDBEQ: gparams.SpecialCharChange(t),
 						}
 					default:
 						instCond[objCondition.Field] = objCondition.Value
@@ -838,6 +885,10 @@ func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object
 	default:
 		queryCond, err := mapstr.NewFromInterface(cond.Condition)
 		input := &metadata.QueryCondition{Condition: queryCond}
+		input.Limit.Offset = int64(cond.Start)
+		input.Limit.Limit = int64(cond.Limit)
+		input.Fields = strings.Split(cond.Fields, ",")
+		input.SortArr = metadata.NewSearchSortParse().String(cond.Sort).ToSearchSortArr()
 		rsp, err := c.clientSet.CoreService().Instance().ReadInstance(context.Background(), params.Header, obj.GetObjectID(), input)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
@@ -864,10 +915,6 @@ func (c *commonInst) FindInst(params types.ContextParams, obj model.Object, cond
 
 func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, obj model.Object, cond condition.Condition, instID int64) error {
 
-	//	if err := NewSupplementary().Validator(c).ValidatorUpdate(params, obj, data, instID, cond); nil != err {
-	//		return err
-	//	}
-
 	// update association
 	query := &metadata.QueryInput{}
 	query.Condition = cond.ToMapStr()
@@ -888,7 +935,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 		Data:      data,
 		Condition: fCond,
 	}
-	blog.Infof("aaaaaaaaaaaaaaaa %#v", inputParams)
+
 	preAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, fCond)
 	rsp, err := c.clientSet.CoreService().Instance().UpdateInstance(context.Background(), params.Header, obj.GetObjectID(), &inputParams)
 	if nil != err {
@@ -897,7 +944,7 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	}
 
 	if !rsp.Result {
-		blog.Errorf("[operation-inst] faild to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg)
+		blog.Errorf("[operation-inst] failed to set the object(%s) inst by the condition(%#v), err: %s", obj.Object().ObjectID, fCond, rsp.ErrMsg)
 		return params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 	currAuditLog := NewSupplementary().Audit(params, c.clientSet, obj, c).CreateSnapshot(-1, cond.ToMapStr())

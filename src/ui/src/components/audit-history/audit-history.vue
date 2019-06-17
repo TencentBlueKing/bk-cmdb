@@ -9,14 +9,14 @@
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
                 <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
             </div>
-            <bk-button class="fr" type="primary" @click="refresh">{{$t("Common['查询']")}}</bk-button>
+            <bk-button class="fr" type="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
         </div>
         <cmdb-table class="audit-table"
             :loading="$loading('getOperationLog')"
             :header="header"
             :list="list"
             :pagination.sync="pagination"
-            :wrapperMinusHeight="220"
+            :wrapper-minus-height="220"
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange"
             @handleSortChange="handleSortChange"
@@ -30,10 +30,10 @@
                 <span>{{$t('OperationAudit[\'操作详情\']')}}</span>
                 <i class="bk-icon icon-close" @click="closeDetails"></i>
             </p>
-            <v-details class="details-content" 
-                :isShow="this.details.isShow"
+            <v-details class="details-content"
+                :is-show="details.isShow"
                 :details="details.data"
-                :height="342" 
+                :height="342"
                 :width="635"></v-details>
         </div>
     </div>
@@ -44,6 +44,9 @@
     import vDetails from './details'
     import { mapActions } from 'vuex'
     export default {
+        components: {
+            vDetails
+        },
         props: {
             extKey: {
                 type: Object,
@@ -63,6 +66,7 @@
             return {
                 dateRange: [],
                 operator: '',
+                sendOperator: '',
                 header: [{
                     id: 'op_desc',
                     name: this.$t("HostResourcePool['变更内容']")
@@ -101,10 +105,10 @@
             this.refresh()
         },
         beforeDestroy () {
-            this.$http.cancel('getOperationLog')
+            this.$http.cancel('getUserOperationLog')
         },
         methods: {
-            ...mapActions('operationAudit', ['getOperationLog']),
+            ...mapActions('operationAudit', ['getUserOperationLog']),
             initDateRange () {
                 const start = this.$tools.formatTime(moment().subtract(14, 'days'), 'YYYY-MM-DD')
                 const end = this.$tools.formatTime(moment(), 'YYYY-MM-DD')
@@ -116,12 +120,17 @@
                     this.details.data = null
                 }
             },
-            refresh () {
-                this.getOperationLog({
+            refresh (isClickSearch) {
+                if (isClickSearch) {
+                    this.pagination.current = 1
+                    this.sendOperator = this.operator
+                }
+                this.getUserOperationLog({
+                    objId: this.target,
                     params: this.getParams(),
                     config: {
                         cancelPrevious: true,
-                        requestId: 'getOperationLog'
+                        requestId: 'getUserOperationLog'
                     }
                 }).then(data => {
                     this.list = data.info
@@ -139,8 +148,8 @@
                 if (!isNaN(this.instId)) {
                     condition['inst_id'] = this.instId
                 }
-                if (this.operator) {
-                    condition.operator = this.operator
+                if (this.sendOperator) {
+                    condition.operator = this.sendOperator
                 }
                 return {
                     condition,
@@ -169,9 +178,6 @@
                     this.details.clickoutside = false
                 })
             }
-        },
-        components: {
-            vDetails
         }
     }
 </script>

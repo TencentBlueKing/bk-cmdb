@@ -1,5 +1,5 @@
 <template>
-    <div :class="['form-bool', {disabled}]" @click="handleChange">
+    <div :class="['form-bool', { disabled }]" @click="handleChange">
         <input class="form-bool-input" type="checkbox"
             ref="input"
             :class="{
@@ -27,15 +27,19 @@
         },
         props: {
             checked: {
+                type: [Boolean, String, Number],
                 default: false
             },
             disabled: {
+                type: Boolean,
                 default: false
             },
             trueValue: {
+                type: [Boolean, String, Number],
                 default: true
             },
             falseValue: {
+                type: [Boolean, String, Number],
                 default: false
             },
             size: {
@@ -51,7 +55,7 @@
         },
         computed: {
             style () {
-                let size = this.size ? this.size : 18
+                const size = this.size ? this.size : 18
                 return {
                     transform: `scale(${size / 18})`
                 }
@@ -60,17 +64,13 @@
         watch: {
             checked (checked) {
                 this.localChecked = checked
-            },
-            localChecked (localChecked) {
-                this.$emit('change', localChecked, this)
-                this.$emit('on-change', localChecked, this)
             }
         },
         created () {
             this.localChecked = this.checked
         },
         mounted () {
-            for (let attr in this.$attrs) {
+            for (const attr in this.$attrs) {
                 this.$el.setAttribute(attr, '')
                 this.$refs.input.setAttribute(attr, this.$attrs[attr])
             }
@@ -80,7 +80,13 @@
                 if (this.disabled) {
                     return false
                 }
-                this.localChecked = this.localChecked ? this.falseValue : this.trueValue
+                if (this.indeterminate) {
+                    this.localChecked = this.trueValue
+                } else {
+                    this.localChecked = this.localChecked === this.trueValue ? this.falseValue : this.trueValue
+                }
+                this.$emit('change', this.localChecked, this)
+                this.$emit('on-change', this.localChecked, this)
                 this.$emit('click')
             }
         }
@@ -97,6 +103,13 @@
         font-size: 0;
         &.disabled {
             cursor: not-allowed;
+        }
+        &:before {
+            content: "";
+            display: inline-block;
+            vertical-align: middle;
+            width: 0;
+            height: 100%;
         }
     }
     .form-bool-input{

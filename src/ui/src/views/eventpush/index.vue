@@ -1,42 +1,63 @@
 <template>
-    <div class="push-wrapper">
+    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'eventpush'"
+            :show-tips="showFeatureTips"
+            :desc="$t('EventPush[\'事件推送顶部提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary" @click="createPush">{{$t('Common["新建"]')}}</bk-button>
+            <bk-button type="primary"
+                :disabled="!$isAuthorized(OPERATION.C_EVENT)"
+                @click="createPush">
+                {{$t('Common["新建"]')}}
+            </bk-button>
         </div>
         <cmdb-table
-            rowCursor="default"
+            row-cursor="default"
             :loading="$loading('searchSubscription')"
             :header="table.header"
             :list="table.list"
             :pagination.sync="table.pagination"
-            :defaultSort="table.defaultSort"
-            :wrapperMinusHeight="150"
+            :default-sort="table.defaultSort"
+            :wrapper-minus-height="150"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
-                <template slot="statistics" slot-scope="{ item }">
-                    <i class="circle" :class="[{'danger':item.statistics.failure},{'success':!item.statistics.failure}]"></i>
-                    {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
-                </template>
-                <template slot="setting" slot-scope="{ item }">
-                    <span class="text-primary mr20" @click.stop="editPush(item)">{{$t('Common["编辑"]')}}</span>
-                    <span class="text-danger" @click.stop="deleteConfirm(item)">{{$t('Common["删除"]')}}</span>
-                </template>
-                <div class="empty-info" slot="data-empty">
-                    <p>{{$t("Common['暂时没有数据']")}}</p>
-                    <p>{{$t("EventPush['事件推送功能能够实现当配置信息发生变化的时候，实时通知到关联的系统中，目前支持 http 的推送方式']")}}</p>
-                </div>
+            <template slot="statistics" slot-scope="{ item }">
+                <i class="circle" :class="[{ 'danger': item.statistics.failure },{ 'success': !item.statistics.failure }]"></i>
+                {{$t('EventPush[\'失败\']')}} {{item.statistics.failure}} / {{$t('EventPush[\'总量\']')}} {{item.statistics.total}}
+            </template>
+            <template slot="setting" slot-scope="{ item }">
+                <span class="text-primary mr20"
+                    v-if="$isAuthorized(OPERATION.U_EVENT)"
+                    @click.stop="editPush(item)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary disabled mr20" v-else>{{$t('Common["编辑"]')}}</span>
+                <span class="text-danger"
+                    v-if="$isAuthorized(OPERATION.D_EVENT)"
+                    @click.stop="deleteConfirm(item)">
+                    {{$t('Common["删除"]')}}
+                </span>
+                <span class="text-danger disabled" v-else>{{$t('Common["删除"]')}}</span>
+            </template>
+            <div class="empty-info" slot="data-empty">
+                <p>{{$t("Common['暂时没有数据']")}}</p>
+                <p>{{$t("EventPush['事件推送功能提示']")}}</p>
+            </div>
         </cmdb-table>
         <cmdb-slider
-            :isShow.sync="slider.isShow"
+            :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"
-            :beforeClose="handleBeforeSliderClose">
+            :before-close="handleBeforeSliderClose">
             <v-push-detail
                 ref="detail"
                 slot="content"
                 :type="slider.type"
-                :curPush="curPush"
+                :cur-push="curPush"
                 @saveSuccess="saveSuccess"
                 @cancel="closeSlider">
             </v-push-detail>
@@ -46,11 +67,19 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
+    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
+    import { OPERATION } from './router.config.js'
     export default {
+        components: {
+            vPushDetail,
+            featureTips
+        },
         data () {
             return {
+                showFeatureTips: false,
+                OPERATION,
                 curPush: {},
                 table: {
                     header: [{
@@ -91,9 +120,13 @@
                 }
             }
         },
+        computed: {
+            ...mapGetters(['featureTipsParams'])
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
+            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [
@@ -122,21 +155,21 @@
                 this.slider.title = this.$t('EventPush["新增推送"]')
             },
             editPush (item) {
-                this.curPush = {...item}
+                this.curPush = { ...item }
                 this.slider.isShow = true
                 this.slider.type = 'edit'
                 this.slider.title = this.$t('EventPush["编辑推送"]')
             },
             deleteConfirm (item) {
                 this.$bkInfo({
-                    title: this.$tc('EventPush["删除推送确认"]', item['subscription_name'], {name: item['subscription_name']}),
+                    title: this.$tc('EventPush["删除推送确认"]', item['subscription_name'], { name: item['subscription_name'] }),
                     confirmFn: () => {
                         this.deletePush(item['subscription_id'])
                     }
                 })
             },
             async deletePush (subscriptionId) {
-                await this.unsubcribeEvent({bkBizId: 0, subscriptionId})
+                await this.unsubcribeEvent({ bkBizId: 0, subscriptionId })
                 this.$success(this.$t('EventPush["删除推送成功"]'))
                 this.getTableData()
             },
@@ -152,15 +185,15 @@
                 this.slider.isShow = false
             },
             async getTableData () {
-                let pagination = this.table.pagination
-                let params = {
+                const pagination = this.table.pagination
+                const params = {
                     page: {
                         start: (pagination.current - 1) * pagination.size,
                         limit: pagination.size,
                         sort: this.table.sort
                     }
                 }
-                let res = await this.searchSubscription({bkBizId: 0, params, config: {requestId: 'searchSubscription'}})
+                const res = await this.searchSubscription({ bkBizId: 0, params, config: { requestId: 'searchSubscription' } })
                 res.info.map(item => {
                     item['subscription_form'] = item['subscription_form'].split(',')
                     item['last_time'] = formatTime(item['last_time'])
@@ -180,9 +213,6 @@
                 this.table.pagination.current = page
                 this.getTableData()
             }
-        },
-        components: {
-            vPushDetail
         }
     }
 </script>

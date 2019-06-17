@@ -64,9 +64,8 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
+	metaInfo, err := parseMetadata(c.PostForm(metadata.BKMetadata))
+	if err != nil {
 		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
 		c.String(http.StatusOK, string(msg))
 		return
@@ -85,7 +84,7 @@ func (s *Service) ImportObject(c *gin.Context) {
 		c.String(http.StatusOK, string(msg))
 		return
 	}
-	defer os.Remove(filePath) //delete file
+	defer os.Remove(filePath)
 	f, err := xlsx.OpenFile(filePath)
 	if nil != err {
 		msg := getReturnStr(common.CCErrWebOpenFileFail, defErr.Errorf(common.CCErrWebOpenFileFail, err.Error()).Error(), nil)
@@ -112,8 +111,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 
 	logics.ConvAttrOption(attrItems)
 
-	blog.Debug("the object file content:%#v", attrItems)
-
 	params := map[string]interface{}{
 		objID: map[string]interface{}{
 			"meta": nil,
@@ -123,7 +120,6 @@ func (s *Service) ImportObject(c *gin.Context) {
 	}
 
 	result, err := s.CoreAPI.ApiServer().AddObjectBatch(context.Background(), c.Request.Header, common.BKDefaultOwnerID, objID, params)
-
 	if nil != err {
 		msg := getReturnStr(common.CCErrCommHTTPDoRequestFailed, defErr.Errorf(common.CCErrCommHTTPDoRequestFailed, "").Error(), nil)
 		c.String(http.StatusOK, string(msg))
@@ -146,7 +142,7 @@ func setExcelTitle(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Row {
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fields[key]
-		blog.Debug("key:%s value:%v", key, fields[key])
+		blog.V(5).Infof("key:%s value:%v", key, fields[key])
 	}
 	return row
 }
@@ -156,7 +152,7 @@ func setExcelTitleType(row *xlsx.Row, defLang lang.DefaultCCLanguageIf) *xlsx.Ro
 	for _, key := range sortFields {
 		cell := row.AddCell()
 		cell.Value = fieldType[key]
-		blog.Debug("key:%s value:%v", key, fieldType[key])
+		blog.V(5).Infof("key:%s value:%v", key, fieldType[key])
 	}
 	return row
 }
@@ -165,7 +161,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 
 	itemMap, ok := item.(map[string]interface{})
 	if !ok {
-		blog.Debug("failed to convert to map")
+		blog.V(5).Infof("failed to convert to map")
 		return row
 	}
 
@@ -179,7 +175,7 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 			blog.Warnf("not fount the key(%s), skip it", key)
 			continue
 		}
-		blog.Debug("key:%s value:%v", key, keyVal)
+		blog.V(5).Infof("key:%s value:%v", key, keyVal)
 		if nil == keyVal {
 			cell.SetString("")
 			continue
@@ -216,6 +212,14 @@ func setExcelRow(row *xlsx.Row, item interface{}) *xlsx.Row {
 	return row
 }
 
+type ExportObjectBody struct {
+	Metadata struct {
+		Label struct {
+			BkBizID string `json:"bk_biz_id"`
+		} `json:"label"`
+	} `json:"metadata"`
+}
+
 // ExportObject export object
 func (s *Service) ExportObject(c *gin.Context) {
 
@@ -228,37 +232,35 @@ func (s *Service) ExportObject(c *gin.Context) {
 	defLang := s.Language.CreateDefaultCCLanguageIf(language)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 
-	inputJson := c.PostForm(metadata.BKMetadata)
-	metaInfo := metadata.Metadata{}
-	if err := json.Unmarshal([]byte(inputJson), &metaInfo); 0 != len(inputJson) && nil != err {
-		msg := getReturnStr(common.CCErrCommJSONUnmarshalFailed, defErr.Error(common.CCErrCommJSONUnmarshalFailed).Error(), nil)
-		c.String(http.StatusOK, string(msg))
+	requestBody := ExportObjectBody{}
+	err := c.BindJSON(&requestBody)
+	if err != nil {
+		blog.Error("export model failed, parse request body to json failed, err: %v", err)
+		msg := fmt.Sprintf("invalid body, parse json failed, err: %+v", err)
+		c.String(http.StatusBadRequest, msg)
 		return
 	}
+	metaInfo := metadata.NewMetaDataFromBusinessID(requestBody.Metadata.Label.BkBizID)
 
 	// get the all attribute of the object
 	arrItems, err := s.Logics.GetObjectData(ownerID, objID, c.Request.Header, metaInfo)
 	if nil != err {
-		blog.Error(err.Error())
+		blog.Error("export model, but get object data failed, err: %v", err)
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg)
+		c.String(http.StatusOK, msg)
 		return
 	}
-
-	blog.Debug("the result:%+v", arrItems)
 
 	// construct the excel file
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
 
 	file = xlsx.NewFile()
-
 	sheet, err = file.AddSheet(objID)
-
 	if err != nil {
 		blog.Error(err.Error())
 		msg := getReturnStr(common.CCErrWebCreateEXCELFail, defErr.Errorf(common.CCErrWebCreateEXCELFail, err.Error()).Error(), nil)
-		c.String(http.StatusInternalServerError, msg, nil)
+		c.String(http.StatusOK, msg)
 		return
 	}
 
@@ -267,18 +269,11 @@ func (s *Service) ExportObject(c *gin.Context) {
 	setExcelTitleType(sheet.AddRow(), defLang)
 	setExcelSubTitle(sheet.AddRow())
 
-	/*
-		dd := xlsx.NewXlsxCellDataValidation(true, true, true)
-		dd.SetDropList([]string{})
-		sheet.Col(2).SetDataValidationWithStart(dd, 3)
-		sheet.Cell(1,1).SetString()
-	*/
-
 	// add the value
 	for _, item := range arrItems {
 
 		innerRow := item.(map[string]interface{})
-		blog.Debug("object attribute data :%+v", innerRow)
+		blog.V(5).Infof("object attribute data :%+v", innerRow)
 
 		// set row value
 		setExcelRow(sheet.AddRow(), innerRow)
@@ -297,7 +292,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 		blog.Errorf("ExportInst save file error:%s", err.Error())
 		fmt.Printf(err.Error())
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
 	c.File(dirFileName)
 
 	os.Remove(dirFileName)

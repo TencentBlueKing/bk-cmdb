@@ -551,8 +551,8 @@ func (hs *hostServer) GetPlat(ctx context.Context, h http.Header) (resp *metadat
 	return
 }
 
-func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (hs *hostServer) CreatePlat(ctx context.Context, h http.Header, dat map[string]interface{}) (resp *metadata.CreatedOneOptionResult, err error) {
+	resp = new(metadata.CreatedOneOptionResult)
 	subPath := "/plat"
 
 	err = hs.client.Post().
@@ -705,12 +705,12 @@ func (hs *hostServer) GetUserCustomQueryResult(ctx context.Context, businessID, 
 	return
 }
 
-func (a *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
+func (hs *hostServer) HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult, err error) {
 
 	resp = new(metadata.QueryInstResult)
 	subPath := fmt.Sprintf("hosts/search")
 
-	err = a.client.Post().
+	err = hs.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResource(subPath).

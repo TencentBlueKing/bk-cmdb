@@ -20,8 +20,7 @@ import (
 	"sync"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/backbone/configcenter"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -31,6 +30,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
 	svc "configcenter/src/scene_server/admin_server/service"
+	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -61,6 +61,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service.Engine = engine
+	service.Config = *process.Config
 	process.Core = engine
 	process.Service = service
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
@@ -84,13 +85,32 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		if err != nil {
 			return err
 		}
+
+		if process.Config.AuthCenter.Enable {
+			blog.Info("enable auth center access.")
+			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
+			if err != nil {
+				return fmt.Errorf("new authcenter client failed: %v", err)
+			}
+			process.Service.SetAuthcenter(authcli)
+
+			if process.Config.AuthCenter.EnableSync {
+				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+				authSynchronizer.Run()
+				blog.Info("enable auth center and enable auth sync function.")
+			}
+
+		} else {
+			blog.Infof("disable auth center access.")
+		}
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		return err
 	}
+
 	<-ctx.Done()
-	blog.V(0).Info("process stoped")
+	blog.V(0).Info("process stopped")
 	return nil
 }
 
@@ -111,7 +131,7 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 			h.Config = new(options.Config)
 		}
 
-		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") //ignore err, cause ConfigMap is map[string]string
+		out, _ := json.MarshalIndent(current.ConfigMap, "", "  ") // ignore err, because ConfigMap is map[string]string
 		blog.V(3).Infof("config updated: \n%s", out)
 
 		mongoConf := mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
@@ -124,6 +144,12 @@ func (h *MigrateServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 		h.Config.Register.Address = current.ConfigMap["register-server.addrs"]
 
 		h.Config.ProcSrvConfig.CCApiSrvAddr, _ = current.ConfigMap["procsrv.cc_api"]
+
+		var err error
+		h.Config.AuthCenter, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+		if err != nil && h.Config.AuthCenter.Enable {
+			blog.Errorf("parse authcenter error: %v, config: %+v", err, current.ConfigMap)
+		}
 	}
 }
 

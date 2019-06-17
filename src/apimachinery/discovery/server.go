@@ -14,16 +14,16 @@ package discovery
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/registerdiscover"
 	"configcenter/src/common/types"
-	"configcenter/src/framework/core/errors"
 )
 
-func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server, error) {
+func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*server, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
 		return nil, eventErr
@@ -31,6 +31,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server
 
 	svr := &server{
 		path:         path,
+		name:         name,
 		servers:      make([]string, 0),
 		discoverChan: discoverChan,
 	}
@@ -41,19 +42,24 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path string) (*server
 
 type server struct {
 	sync.RWMutex
-	index        int
+	index int
+	// server's name
+	name         string
 	path         string
 	servers      []string
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 }
 
 func (s *server) GetServers() ([]string, error) {
+	if s == nil {
+		return []string{}, nil
+	}
 	s.RLock()
 	defer s.RUnlock()
 
 	num := len(s.servers)
 	if num == 0 {
-		return []string{}, errors.New("oops, there is no server can be used")
+		return []string{}, fmt.Errorf("oops, there is no %s can be used", s.name)
 	}
 
 	if s.index < num-1 {
@@ -67,6 +73,9 @@ func (s *server) GetServers() ([]string, error) {
 
 // IsMaster 判断当前进程是否为master 进程， 服务注册节点的第一个节点
 func (s *server) IsMaster(strAddrs string) bool {
+	if s == nil {
+		return false
+	}
 	s.RLock()
 	defer s.RUnlock()
 	if 0 < len(s.servers) {

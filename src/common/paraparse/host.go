@@ -66,18 +66,9 @@ func ParseHostParams(input []metadata.ConditionItem, output map[string]interface
 			queryCondItem[i.Operator] = i.Value
 			output[i.Field] = queryCondItem
 		case common.BKDBLIKE:
-			//d := make(map[string]interface{})
-			queryCondItem, ok := output[i.Field].(map[string]interface{})
-			if !ok {
-				queryCondItem = make(map[string]interface{})
-			}
-			valStr, ok := i.Value.(string)
-			if ok {
-				queryCondItem[i.Operator] = SpeceialCharChange(valStr)
-			} else {
-				queryCondItem[i.Operator] = i.Value
-			}
-			output[i.Field] = queryCondItem
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
 		default:
 			queryCondItem, ok := output[i.Field].(map[string]interface{})
 			if !ok {
@@ -131,7 +122,7 @@ func ParseHostIPParams(ipCond metadata.IPInfo, output map[string]interface{}) er
 		orCond := make([]map[string]map[string]interface{}, 0)
 		for _, ip := range ipArr {
 			c := make(map[string]interface{})
-			c[common.BKDBLIKE] = SpeceialCharChange(ip)
+			c[common.BKDBLIKE] = SpecialCharChange(ip)
 			if INNERONLY == flag {
 				ipCon := make(map[string]map[string]interface{})
 				ipCon[common.BKHostInnerIPField] = c

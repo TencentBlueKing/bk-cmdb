@@ -94,7 +94,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	// TaskName Uniqueness check
 	response, err := s.CoreAPI.HostController().Cloud().TaskNameCheck(srvData.ctx, srvData.header, data)
 	if err != nil {
-		blog.Debug("task name unique check fail, error: %v, rid: %s", err, srvData.rid)
+		blog.Errorf("task name unique check fail, error: %v, rid: %s", err, srvData.rid)
 		return
 	}
 

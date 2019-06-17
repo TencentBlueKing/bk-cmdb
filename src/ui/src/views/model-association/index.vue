@@ -1,14 +1,23 @@
 <template>
-    <div class="relation-wrapper">
+    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'association'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ModelManagement[\'关联关系提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <p class="operation-box">
             <bk-button type="primary"
-                :disabled="!authority.includes('update')"
+                class="create-btn"
+                v-if="isAdminView"
+                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
                 @click="createRelation">
                 {{$t('Common["新建"]')}}
             </bk-button>
             <label class="search-input">
-                <i class="bk-icon icon-search" @click="searchRelation"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation">
+                <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
+                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
             </label>
         </p>
         <cmdb-table
@@ -23,50 +32,57 @@
                 {{item['bk_asst_name'] || '--'}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <template v-if="item.ispre">
-                    <span class="text-primary disabled mr10">
-                        {{$t('Common["编辑"]')}}
-                    </span>
-                    <span class="text-primary disabled">
-                        {{$t('Common["删除"]')}}
-                    </span>
-                </template>
-                <template v-else>
-                    <span class="text-primary mr10" @click.stop="editRelation(item)">
-                        {{$t('Common["编辑"]')}}
-                    </span>
-                    <span class="text-primary" @click.stop="deleteRelation(item)">
-                        {{$t('Common["删除"]')}}
-                    </span>
-                </template>
+                <span class="text-primary disabled mr10"
+                    v-if="item.ispre || !$isAuthorized(OPERATION.U_RELATION)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary mr10"
+                    v-else
+                    @click.stop="editRelation(item)">
+                    {{$t('Common["编辑"]')}}
+                </span>
+                <span class="text-primary disabled"
+                    v-if="item.ispre || !$isAuthorized(OPERATION.D_RELATION)">
+                    {{$t('Common["删除"]')}}
+                </span>
+                <span class="text-primary"
+                    v-else
+                    @click.stop="deleteRelation(item)">
+                    {{$t('Common["删除"]')}}
+                </span>
             </template>
         </cmdb-table>
         <cmdb-slider
             class="relation-slider"
             :width="450"
             :title="slider.title"
-            :isShow.sync="slider.isShow">
+            :is-show.sync="slider.isShow">
             <the-relation
                 slot="content"
                 class="slider-content"
-                :isEdit="slider.isEdit"
+                :is-edit="slider.isEdit"
                 :relation="slider.relation"
                 @saved="saveRelation"
-                @cancel="slider.isShow = false"
-            ></the-relation>
+                @cancel="slider.isShow = false">
+            </the-relation>
         </cmdb-slider>
     </div>
 </template>
 
 <script>
+    import featureTips from '@/components/feature-tips/index'
     import theRelation from './_detail'
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions, mapGetters } from 'vuex'
+    import { OPERATION } from './router.config'
     export default {
         components: {
-            theRelation
+            theRelation,
+            featureTips
         },
         data () {
             return {
+                showFeatureTips: false,
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -104,48 +120,41 @@
                     },
                     defaultSort: '-ispre',
                     sort: '-ispre'
-                }
+                },
+                sendSearchText: ''
             }
         },
         computed: {
-            ...mapGetters('objectModel', [
-                'activeModel'
-            ]),
-            isReadOnly () {
-                if (this.activeModel) {
-                    return this.activeModel['bk_ispaused']
-                }
-                return false
-            },
+            ...mapGetters(['isAdminView', 'featureTipsParams']),
             searchParams () {
-                let params = {
+                const params = {
                     page: {
                         start: (this.table.pagination.current - 1) * this.table.pagination.size,
                         limit: this.table.pagination.size,
                         sort: this.table.sort
                     }
                 }
-                if (this.searchText.length) {
+                if (this.sendSearchText.length) {
                     Object.assign(params, {
                         condition: {
                             bk_asst_name: {
-                                '$regex': this.searchText
+                                '$regex': this.sendSearchText
                             }
                         }
                     })
                 }
                 return params
-            },
-            authority () {
-                return this.$store.getters.admin ? ['search', 'update', 'delete'] : []
             }
         },
         created () {
-            if (!this.authority.includes('update')) {
+            const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
+            const deleteAuth = this.$isAuthorized(this.OPERATION.D_RELATION)
+            if (!this.isAdminView || !(updateAuth || deleteAuth)) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
+            this.showFeatureTips = this.featureTipsParams['association']
         },
         methods: {
             ...mapActions('objectAssociation', [
@@ -153,7 +162,11 @@
                 'deleteAssociationType',
                 'searchAssociationListWithAssociationKindList'
             ]),
-            searchRelation () {
+            searchRelation (fromClick) {
+                if (fromClick) {
+                    this.sendSearchText = this.searchText
+                    this.table.pagination.current = 1
+                }
                 this.searchAssociationType({
                     params: this.searchParams,
                     config: {
@@ -167,15 +180,15 @@
                 })
             },
             async searchUsageCount () {
-                let asstIds = []
-                this.table.list.forEach(({bk_asst_id: asstId}) => asstIds.push(asstId))
+                const asstIds = []
+                this.table.list.forEach(({ bk_asst_id: asstId }) => asstIds.push(asstId))
                 const res = await this.searchAssociationListWithAssociationKindList({
                     params: {
                         asst_ids: asstIds
                     }
                 })
                 this.table.list.forEach(item => {
-                    let asst = res.associations.find(({bk_asst_id: asstId}) => asstId === item['bk_asst_id'])
+                    const asst = res.associations.find(({ bk_asst_id: asstId }) => asstId === item['bk_asst_id'])
                     if (asst) {
                         this.$set(item, 'count', asst.assts.length)
                     }
@@ -195,7 +208,7 @@
             },
             deleteRelation (relation) {
                 this.$bkInfo({
-                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], {name: relation['bk_asst_name']}),
+                    title: this.$tc('ModelManagement["确定删除关联类型？"]', relation['bk_asst_name'], { name: relation['bk_asst_name'] }),
                     confirmFn: async () => {
                         await this.deleteAssociationType({
                             id: relation.id,
@@ -227,15 +240,16 @@
     }
 </script>
 
-
 <style lang="scss" scoped>
     .operation-box {
         margin: 0 0 20px 0;
         font-size: 0;
+        .create-btn {
+            margin: 0 10px 0 0;
+        }
         .search-input {
             position: relative;
             display: inline-block;
-            margin-left: 10px;
             width: 300px;
             .icon-search {
                 position: absolute;

@@ -186,8 +186,18 @@ type AssociationKind struct {
 	Direction AssociationDirection `field:"direction" json:"direction" bson:"direction"`
 	// whether this is a pre-defined kind.
 	IsPre *bool `field:"ispre" json:"ispre" bson:"ispre"`
-	//	define the metadata of assocication kind
+	//	define the metadata of association kind
 	Metadata `field:"metadata" json:"metadata" bson:"metadata"`
+}
+
+func (cli *AssociationKind) Parse(data mapstr.MapStr) (*AssociationKind, error) {
+	// TODO support parse metadata params
+	err := mapstr.SetValueToStructByTags(cli, data)
+	if nil != err {
+		return nil, err
+	}
+
+	return cli, err
 }
 
 type AssociationOnDeleteAction string

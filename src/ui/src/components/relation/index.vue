@@ -3,8 +3,8 @@
         <div class="relation-options clearfix">
             <div class="fl">
                 <bk-button class="options-button options-button-update" size="small" type="primary"
-                    :disabled="!hasRelation || !authority.includes('update')"
-                    :class="{active: activeComponent === 'cmdbRelationUpdate'}"
+                    :disabled="!hasRelation || disabled"
+                    :class="{ active: activeComponent === 'cmdbRelationUpdate' }"
                     @click="handleShowUpdate">
                     {{$t('Association["关联管理"]')}}
                     <i class="bk-icon icon-angle-down"></i>
@@ -22,11 +22,6 @@
                     <i class="icon-cc-resources"></i>
                     {{$t('Association["拓扑"]')}}
                 </bk-button>
-                <bk-button class="options-button" :type="activeComponent === 'cmdbRelationTree' ? 'primary' : 'default'"
-                    @click.prevent="activeComponent = 'cmdbRelationTree'">
-                    <i class="icon-cc-tree"></i>
-                    {{$t('Association["树形"]')}}
-                </bk-button>
             </div>
         </div>
         <div class="relation-component">
@@ -39,12 +34,10 @@
 
 <script>
     import cmdbRelationTopology from './_topology.vue'
-    import cmdbRelationTree from './_tree.vue'
     import cmdbRelationUpdate from './_update.vue'
     export default {
         components: {
             cmdbRelationTopology,
-            cmdbRelationTree,
             cmdbRelationUpdate
         },
         props: {
@@ -56,12 +49,7 @@
                 type: Object,
                 required: true
             },
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
-            }
+            disabled: Boolean
         },
         data () {
             return {
@@ -97,8 +85,8 @@
             async getRelation () {
                 try {
                     let [dataAsSource, dataAsTarget, mainLineModels] = await Promise.all([
-                        this.getObjectAssociation({'bk_obj_id': this.objId}, {requestId: 'getSourceAssocaition'}),
-                        this.getObjectAssociation({'bk_asst_obj_id': this.objId}, {requestId: 'getTargetAssocaition'}),
+                        this.getObjectAssociation({ 'bk_obj_id': this.objId }, { requestId: 'getSourceAssocaition' }),
+                        this.getObjectAssociation({ 'bk_asst_obj_id': this.objId }, { requestId: 'getTargetAssocaition' }),
                         this.$store.dispatch('objectMainLineModule/searchMainlineObject', {
                             config: {
                                 requestId: 'getMainLineModels'
@@ -122,7 +110,7 @@
             },
             getObjectAssociation (condition, config) {
                 return this.$store.dispatch('objectAssociation/searchObjectAssociation', {
-                    params: this.$injectMetadata({condition}),
+                    params: this.$injectMetadata({ condition }),
                     config
                 })
             },

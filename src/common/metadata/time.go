@@ -16,6 +16,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/coccyx/timeparser"
@@ -52,13 +53,19 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	parsed, err := timeparser.TimeParser(string(data))
+	parsed, err := time.ParseInLocation(`"2006-01-02 15:04:05"`, string(data), time.UTC)
 	if err == nil {
 		*t = Time{parsed}
 		return nil
 	}
 
-	parsed, err = time.ParseInLocation(`"2006-01-02 15:04:05"`, string(data), time.UTC)
+	parsed, err = time.Parse(time.RFC3339, strings.Trim(string(data), "\""))
+	if err == nil {
+		*t = Time{parsed}
+		return nil
+	}
+
+	parsed, err = timeparser.TimeParser(strings.Trim(string(data), "\""))
 	if err == nil {
 		*t = Time{parsed}
 		return nil
@@ -68,7 +75,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	if err == nil {
 		*t = Time{time.Unix(timestamp, 0)}
 	}
-	return err
+	return fmt.Errorf("parse unknow time format: %s, %v", data, err)
 }
 
 // GetBSON implements bson.GetBSON interface

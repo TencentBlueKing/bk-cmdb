@@ -36,7 +36,7 @@ type ModelClassification interface {
 	SetManyModelClassification(ctx ContextParams, inputParam metadata.SetManyModelClassification) (*metadata.SetDataResult, error)
 	SetOneModelClassification(ctx ContextParams, inputParam metadata.SetOneModelClassification) (*metadata.SetDataResult, error)
 	UpdateModelClassification(ctx ContextParams, inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error)
-	DeleteModelClassificaiton(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
+	DeleteModelClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	CascadeDeleteModeClassification(ctx ContextParams, inputParam metadata.DeleteOption) (*metadata.DeletedCount, error)
 	SearchModelClassification(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryModelClassificationDataResult, error)
 }
@@ -56,7 +56,7 @@ type ModelAttribute interface {
 type ModelAttrUnique interface {
 	CreateModelAttrUnique(ctx ContextParams, objID string, data metadata.CreateModelAttrUnique) (*metadata.CreateOneDataResult, error)
 	UpdateModelAttrUnique(ctx ContextParams, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error)
-	DeleteModelAttrUnique(ctx ContextParams, objID string, id uint64) (*metadata.DeletedCount, error)
+	DeleteModelAttrUnique(ctx ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) (*metadata.DeletedCount, error)
 	SearchModelAttrUnique(ctx ContextParams, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error)
 }
 
@@ -126,6 +126,21 @@ type DataSynchronizeOperation interface {
 	ClearData(ctx ContextParams, input *metadata.SynchronizeClearDataParameter) error
 }
 
+// TopoOperation methods
+type TopoOperation interface {
+	SearchMainlineModelTopo(withDetail bool) (*metadata.TopoModelNode, error)
+	SearchMainlineInstanceTopo(objID int64, withDetail bool) (*metadata.TopoInstanceNode, error)
+}
+
+// HostOperation methods
+type HostOperation interface {
+	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
+	TransferHostModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
+	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
+	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
+}
+
 // AssociationOperation association methods
 type AssociationOperation interface {
 	AssociationKind
@@ -133,12 +148,20 @@ type AssociationOperation interface {
 	InstanceAssociation
 }
 
+type AuditOperation interface {
+	CreateAuditLog(ctx ContextParams, logs ...metadata.SaveAuditLogParams) error
+	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
+}
+
 // Core core itnerfaces methods
 type Core interface {
 	ModelOperation() ModelOperation
 	InstanceOperation() InstanceOperation
 	AssociationOperation() AssociationOperation
+	TopoOperation() TopoOperation
 	DataSynchronizeOperation() DataSynchronizeOperation
+	HostOperation() HostOperation
+	AuditOperation() AuditOperation
 }
 
 type core struct {
@@ -146,15 +169,21 @@ type core struct {
 	instance        InstanceOperation
 	associaction    AssociationOperation
 	dataSynchronize DataSynchronizeOperation
+	topo            TopoOperation
+	host            HostOperation
+	audit           AuditOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
 		associaction:    association,
 		dataSynchronize: dataSynchronize,
+		topo:            topo,
+		host:            host,
+		audit:           audit,
 	}
 }
 
@@ -170,6 +199,18 @@ func (m *core) AssociationOperation() AssociationOperation {
 	return m.associaction
 }
 
+func (m *core) TopoOperation() TopoOperation {
+	return m.topo
+}
+
 func (m *core) DataSynchronizeOperation() DataSynchronizeOperation {
 	return m.dataSynchronize
+}
+
+func (m *core) HostOperation() HostOperation {
+	return m.host
+}
+
+func (m *core) AuditOperation() AuditOperation {
+	return m.audit
 }

@@ -15,7 +15,6 @@ package logics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -41,7 +40,7 @@ func (lgc *Logics) GetProcbyProcIDArr(ctx context.Context, procID []int64) ([]ma
 	}
 
 	if len(ret.Data.Info) < 1 {
-		fmt.Errorf("there is no process with procID(%d),input:%+v,rid:%s", procID, reqParam, lgc.rid)
+		blog.Errorf("there is no process with procID(%d), input:%#v, rid:%s", procID, reqParam, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommNotFound)
 	}
 

@@ -204,7 +204,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
 			// common inst op valid
-			modelPrivi := session.Get("modelPrivi").(string)
+			modelPrivi := util.GetStrByInterface(session.Get("modelPrivi"))
 			if 0 == len(modelPrivi) {
 				blog.Error("get model privilege json error")
 				return false
@@ -219,7 +219,8 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 			} else {
 				objName = pathArr[len(pathArr)-2]
 			}
-			mainLineObjIDStr := session.Get("mainLineObjID").(string)
+
+			mainLineObjIDStr := util.GetStrByInterface(session.Get("mainLineObjID"))
 			err := json.Unmarshal([]byte(mainLineObjIDStr), &mainLineObjIDArr)
 			if nil != err {
 				blog.Error("get main line object id array false")
@@ -241,7 +242,7 @@ func (m *publicAuth) ValidResAccess(pathArr []string, c *gin.Context) bool {
 	if strings.Contains(pathStr, types.BK_INSTSI) && !strings.Contains(pathStr, types.BK_IMPORT) {
 		est := c.GetHeader(common.BKAppIDField)
 		if "" == est {
-			modelPrivi := session.Get("modelPrivi").(string)
+			modelPrivi := util.GetStrByInterface(session.Get("modelPrivi"))
 			if 0 == len(modelPrivi) {
 				blog.Error("get model privilege json error")
 				return false

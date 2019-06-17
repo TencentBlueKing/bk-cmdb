@@ -355,7 +355,7 @@ func (lgc *Logics) checkNetProperty(
 	if "" != netPropertyInfo.Period && common.Infinite != netPropertyInfo.Period {
 		netPropertyInfo.Period, err = util.FormatPeriod(netPropertyInfo.Period)
 		if nil != err {
-			blog.Errorf("[NetProperty] check net collect property, format period [%s] fail, error: %v", err)
+			blog.Errorf("[NetProperty] check net collect property, format period [%s] fail, error: %v", netPropertyInfo.Period, err)
 			return false, defErr.Error(common.CCErrCollectPeriodFormatFail)
 		}
 	}
@@ -554,7 +554,7 @@ func (lgc *Logics) getObjIDsAndShowFields(pheader http.Header, objectCond map[st
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	objectCond[common.BKClassificationIDField] = common.BKNetwork
 
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objectCond)
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objectCond})
 	if nil != err {
 		blog.Errorf("[NetProperty] get net device object fail, error: %v, condition [%#v]", err, objectCond)
 		return nil, nil, defErr.Error(common.CCErrObjectSelectInstFailed)
@@ -564,15 +564,15 @@ func (lgc *Logics) getObjIDsAndShowFields(pheader http.Header, objectCond map[st
 		return nil, nil, defErr.New(objResult.Code, objResult.ErrMsg)
 	}
 
-	if nil == objResult.Data || 0 == len(objResult.Data) {
+	if 0 == len(objResult.Data.Info) {
 		return nil, nil, nil
 	}
 
 	objIDs := []string{}
 	objIDMapobjName := map[string]objShowField{}
-	for _, obj := range objResult.Data {
-		objIDs = append(objIDs, obj.ObjectID)
-		objIDMapobjName[obj.ObjectID] = objShowField{obj.ObjectName}
+	for _, obj := range objResult.Data.Info {
+		objIDs = append(objIDs, obj.Spec.ObjectID)
+		objIDMapobjName[obj.Spec.ObjectID] = objShowField{obj.Spec.ObjectName}
 	}
 
 	return objIDs, objIDMapobjName, nil
@@ -639,8 +639,7 @@ func (lgc *Logics) getPropertyIDsAndShowFields(
 
 	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 
-	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(
-		context.Background(), pheader, propertyCond)
+	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pheader, &meta.QueryCondition{Condition: propertyCond})
 	if nil != err {
 		blog.Errorf("[NetProperty] get property fail, error: %v, condition [%#v]", err, propertyCond)
 		return nil, nil, nil, defErr.Error(common.CCErrTopoObjectAttributeSelectFailed)
@@ -650,7 +649,7 @@ func (lgc *Logics) getPropertyIDsAndShowFields(
 		return nil, nil, nil, defErr.New(attrResult.Code, attrResult.ErrMsg)
 	}
 
-	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Data)
+	objIDs, propertyIDs, propertyIDMapPropertyShowFields := lgc.assembleAttrShowFieldValue(attrResult.Data.Info)
 
 	if 0 == len(objIDs) || 0 == len(propertyIDs) || 0 == len(propertyIDMapPropertyShowFields) {
 		blog.Errorf("[NetProperty] get property fail, property is not exist, condition [%#v]", propertyCond)

@@ -14,13 +14,13 @@
             <span class="label-text">
                 {{$t('ModelManagement["关联描述"]')}}
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstName')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstName') }">
                 <input type="text" class="cmdb-form-input"
-                name="asstName"
-                :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
-                :disabled="relationInfo.ispre || isReadOnly"
-                v-model.trim="relationInfo['bk_obj_asst_name']"
-                v-validate="'singlechar'">
+                    name="asstName"
+                    :placeholder="$t('ModelManagement[\'请输入关联描述\']')"
+                    :disabled="relationInfo.ispre || isReadOnly"
+                    v-model.trim="relationInfo['bk_obj_asst_name']"
+                    v-validate="'singlechar'">
                 <p class="form-error">{{errors.first('asstName')}}</p>
             </div>
             <i class="bk-icon icon-info-circle"></i>
@@ -30,11 +30,11 @@
                 {{$t('ModelManagement["源模型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('objId')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('objId') }">
                 <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
-                    :autoSelect="false"
+                    :auto-select="false"
                     :list="asstList"
                     v-validate="'required'"
                     name="objId"
@@ -49,11 +49,11 @@
                 {{$t('ModelManagement["目标模型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstObjId')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstObjId') }">
                 <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :has-children="true"
-                    :autoSelect="false"
+                    :auto-select="false"
                     :list="asstList"
                     v-validate="'required'"
                     name="asstObjId"
@@ -68,7 +68,7 @@
                 {{$t('ModelManagement["关联类型"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('asstId')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('asstId') }">
                 <cmdb-selector
                     :disabled="relationInfo.ispre || isReadOnly"
                     :list="usefulRelationList"
@@ -85,7 +85,7 @@
                 {{$t('ModelManagement["源-目标约束"]')}}
                 <span class="color-danger">*</span>
             </span>
-            <div class="cmdb-form-item" :class="{'is-error': errors.has('mapping')}">
+            <div class="cmdb-form-item" :class="{ 'is-error': errors.has('mapping') }">
                 <cmdb-selector
                     :disabled="relationInfo.ispre || isEdit"
                     :list="mappingList"
@@ -130,14 +130,14 @@
         data () {
             return {
                 mappingList: [{
-                    id: '1:1',
-                    name: '1-1'
+                    id: 'n:n',
+                    name: 'N-N'
                 }, {
                     id: '1:n',
                     name: '1-N'
                 }, {
-                    id: 'n:n',
-                    name: 'N-N'
+                    id: '1:1',
+                    name: '1-1'
                 }],
                 relationInfo: {
                     ispre: false,
@@ -164,9 +164,10 @@
                 return this.relationList.filter(relation => relation.id !== 'bk_mainline')
             },
             objAsstId () {
-                let {
-                    relationInfo
-                } = this
+                if (this.isEdit) {
+                    return this.relation.bk_obj_asst_id
+                }
+                const relationInfo = this.relationInfo
                 if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
                     return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
                 }
@@ -189,11 +190,11 @@
                 }
             },
             asstList () {
-                let asstList = []
+                const asstList = []
                 this.classifications.forEach(classify => {
                     if (classify['bk_objects'].length) {
-                        let objects = []
-                        classify['bk_objects'].forEach(({bk_obj_id: objId, bk_obj_name: objName}) => {
+                        const objects = []
+                        classify['bk_objects'].forEach(({ bk_obj_id: objId, bk_obj_name: objName }) => {
                             if (!this.specialModel.includes(objId)) {
                                 objects.push({
                                     id: objId,
@@ -238,7 +239,7 @@
             },
             initData () {
                 if (this.isEdit) {
-                    for (let key in this.relationInfo) {
+                    for (const key in this.relationInfo) {
                         this.relationInfo[key] = this.$tools.clone(this.relation[key])
                     }
                 } else {

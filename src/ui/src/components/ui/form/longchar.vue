@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-longchar">
         <input class="cmdb-form-input form-longchar-input" type="text"
-            :placeholder="$t('Form[\'请输入长字符\']')"
+            :placeholder="placeholder || $t('Form[\'请输入长字符\']')"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
@@ -15,6 +15,7 @@
         name: 'cmdb-form-longchar',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -24,11 +25,15 @@
             maxlength: {
                 type: Number,
                 default: 2000
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         methods: {
             handleInput (event) {
-                let value = event.target.value.trim()
+                const value = event.target.value.trim()
                 this.$emit('input', value)
             },
             handleChange () {

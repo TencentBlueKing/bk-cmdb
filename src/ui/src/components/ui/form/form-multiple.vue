@@ -19,7 +19,7 @@
                                     </cmdb-form-bool>
                                     <label class="property-name-text"
                                         :for="`property-name-${property['bk_property_id']}`"
-                                        :class="{required: property['isrequired']}">
+                                        :class="{ required: property['isrequired'] }">
                                         {{property['bk_property_name']}}
                                     </label>
                                     <i class="property-name-tooltips icon icon-cc-tips"
@@ -30,7 +30,7 @@
                                 <div class="property-value">
                                     <component class="form-component"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
-                                        :class="{error: errors.has(property['bk_property_id'])}"
+                                        :class="{ error: errors.has(property['bk_property_id']) }"
                                         :disabled="!editable[property['bk_property_id']]"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
@@ -48,10 +48,10 @@
         <div class="form-empty" v-else>
             {{$t("Inst['暂无可批量更新的属性']")}}
         </div>
-        <div class="form-options" :class="{sticky: scrollbar}">
+        <div class="form-options" :class="{ sticky: scrollbar }">
             <slot name="details-options">
                 <bk-button class="button-save" type="primary"
-                    :disabled="!authority.includes('update') || !hasChange || $loading()"
+                    :disabled="saveDisabled || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}
                 </bk-button>
@@ -68,12 +68,7 @@
         name: 'cmdb-form-multiple',
         mixins: [formMixins],
         props: {
-            authority: {
-                type: Array,
-                default () {
-                    return []
-                }
-            }
+            saveDisabled: Boolean
         },
         data () {
             return {
@@ -89,11 +84,11 @@
         computed: {
             changedValues () {
                 const changedValues = {}
-                for (let propertyId in this.values) {
+                for (const propertyId in this.values) {
                     const property = this.getProperty(propertyId)
                     if (
-                        ['bool'].includes(property['bk_property_type']) ||
-                        this.values[propertyId] !== this.refrenceValues[propertyId]
+                        ['bool'].includes(property['bk_property_type'])
+                        || this.values[propertyId] !== this.refrenceValues[propertyId]
                     ) {
                         changedValues[propertyId] = this.values[propertyId]
                     }
@@ -102,7 +97,7 @@
             },
             hasChange () {
                 let hasChange = false
-                for (let propertyId in this.editable) {
+                for (const propertyId in this.editable) {
                     if (this.editable[propertyId] && this.changedValues.hasOwnProperty(propertyId)) {
                         hasChange = true
                         break
@@ -164,7 +159,7 @@
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')
                 temp.innerHTML = placeholder
-                let output = temp.innerText
+                const output = temp.innerText
                 temp = null
                 return output
             },
@@ -203,7 +198,7 @@
             },
             getMultipleValues () {
                 const multipleValues = {}
-                for (let propertyId in this.editable) {
+                for (const propertyId in this.editable) {
                     if (this.editable[propertyId]) {
                         multipleValues[propertyId] = this.values[propertyId]
                     }
