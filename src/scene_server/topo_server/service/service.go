@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -154,6 +155,20 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 
 }
 
+func (s *Service) sendNoAuthResp(resp *restful.Response, dataMsg interface{}) {
+	js, err := json.Marshal(dataMsg)
+	if err != nil {
+		if _, err := io.WriteString(resp, "unknown error"); nil != err {
+			blog.Errorf("failed to write no auth resp, err:%s", err.Error())
+		}
+		return
+	}
+	if _, err := io.WriteString(resp, string(js)); nil != err {
+		blog.Errorf("failed to write resp, err:%s", err.Error())
+	}
+	return
+}
+
 func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
 	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
 }
@@ -253,6 +268,11 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				if dataErr == nil {
 					s.sendResponse(resp, common.CCSuccess, data)
+					return
+				}
+
+				if dataErr == auth.NoAuthorizeError {
+					s.sendNoAuthResp(resp, data)
 					return
 				}
 

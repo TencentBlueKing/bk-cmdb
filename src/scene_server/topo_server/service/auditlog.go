@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"context"
 	"fmt"
 
@@ -75,7 +76,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v", err)
-			return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
+			return s.AuthManager.AuthorizeAduitReadPermissionsResponse(businessID), auth.NoAuthorizeError
 		}
 	} else {
 		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)

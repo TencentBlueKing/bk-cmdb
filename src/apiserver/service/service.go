@@ -13,8 +13,6 @@
 package service
 
 import (
-	"net/http"
-
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apiserver/core"
 	compatiblev2 "configcenter/src/apiserver/core/compatiblev2/service"
@@ -128,7 +126,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommParseAuthAttributeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeaderAndJson(http.StatusBadRequest, rsp, restful.MIME_JSON)
+			resp.WriteAsJson(rsp)
 			return
 		}
 
@@ -141,7 +139,7 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
+			resp.WriteAsJson(rsp)
 			return
 		}
 
@@ -154,18 +152,29 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) func(req *restful.
 				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 				Result: false,
 			}
-			resp.WriteHeaderAndJson(http.StatusInternalServerError, rsp, restful.MIME_JSON)
+			resp.WriteAsJson(rsp)
 			return
 		}
 
 		if !decision.Authorized {
-			blog.Errorf("authFilter failed, url: %s, reason: %s, rid: %s", path, decision.Reason, rid)
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrCommAuthNotHavePermission,
-				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
-				Result: false,
+			permissions, err := authcenter.AdoptPermissions(attribute.Resources)
+			if err != nil {
+				rsp := metadata.BaseResp{
+					Code:   common.CCErrCommCheckAuthorizeFailed,
+					ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+					Result: false,
+				}
+				resp.WriteAsJson(rsp)
+				return
 			}
-			resp.WriteHeaderAndJson(http.StatusForbidden, rsp, restful.MIME_JSON)
+			blog.Warnf("authFilter failed, url: %s, reason: %s, rid: %s", path, decision.Reason, rid)
+			rsp := metadata.BaseResp{
+				Code:        9900403,
+				ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
+				Result:      false,
+				Permissions: permissions,
+			}
+			resp.WriteAsJson(rsp)
 			return
 		}
 
