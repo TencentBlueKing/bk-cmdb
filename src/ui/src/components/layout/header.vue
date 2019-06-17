@@ -41,7 +41,22 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
+            <bk-tooltip
+                class="admin-tooltips"
+                v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' }) && !isAdminView && showTips"
+                :always="true"
+                :width="275"
+                placement="bottom-end">
+                <div slot="content" class="tooltips-main clearfix">
+                    <h3>管理员后台搬到这里了</h3>
+                    <p>在管理员后台，可以对跨业务的资源如硬件设备，网络设备等进行管理</p>
+                    <span class="fr" @click="handleCloseTips">我知道了</span>
+                </div>
+                <div class="admin" @click="toggleAdminView">
+                    {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+                </div>
+            </bk-tooltip>
+            <div class="admin" v-else-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -69,11 +84,15 @@
                 'showBack',
                 'navStick',
                 'headerTitle',
-                'isAdminView'
+                'isAdminView',
+                'featureTipsParams'
             ]),
             ...mapGetters('objectBiz', ['authorizedBusiness']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            },
+            showTips () {
+                return this.featureTipsParams['adminTips']
             }
         },
         methods: {
@@ -104,6 +123,9 @@
             },
             handleCloseHelper () {
                 this.isShowHelper = false
+            },
+            handleCloseTips () {
+                this.$store.commit('setFeatureTipsParams', 'adminTips')
             }
         }
     }
@@ -297,6 +319,36 @@
                 border-color: white;
                 z-index: 1;
             }
+        }
+    }
+    .admin-tooltips {
+        .tooltips-main {
+            font-size: 14px;
+            h3 {
+                font-size: 16px;
+            }
+            p {
+                white-space: pre-wrap;
+                padding: 4px 0 6px;
+            }
+            span {
+                font-size: 12px;
+                padding: 4px 10px;
+                background-color: #5d90e4;
+                border-radius: 20px;
+                cursor: pointer;
+            }
+        }
+        .bk-tooltip-popper {
+            top: -14px !important;
+            left: -38px !important;
+        }
+        .bk-tooltip-arrow {
+            border-bottom-color: #699DF4 !important;
+        }
+        .bk-tooltip-inner {
+            background-color: #699DF4 !important;
+            padding-top: 12px;
         }
     }
 </style>
