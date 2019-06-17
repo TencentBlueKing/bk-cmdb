@@ -163,9 +163,10 @@
                 return this.relationList.filter(relation => relation.id !== 'bk_mainline')
             },
             objAsstId () {
-                let {
-                    relationInfo
-                } = this
+                if (this.isEdit) {
+                    return this.relation.bk_obj_asst_id
+                }
+                const relationInfo = this.relationInfo
                 if (relationInfo['bk_obj_id'].length && relationInfo['bk_asst_id'].length && relationInfo['bk_asst_obj_id'].length) {
                     return `${relationInfo['bk_obj_id']}_${relationInfo['bk_asst_id']}_${relationInfo['bk_asst_obj_id']}`
                 }
