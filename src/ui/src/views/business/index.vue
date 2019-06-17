@@ -1,12 +1,16 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <bk-button class="fl" type="primary"
-                v-if="isAdminView"
-                :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
-                @click="handleCreate">
-                {{$t("Common['新建']")}}
-            </bk-button>
+            <span class="fl"
+                v-cursor="{
+                    active: true || !$isAuthorized(OPERATION.C_BUSINESS)
+                }">
+                <bk-button class="fl" type="primary"
+                    :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
+                    @click="handleCreate">
+                    {{$t("Common['新建']")}}
+                </bk-button>
+            </span>
             <div class="options-button fr">
                 <bk-button class="button-history"
                     v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
