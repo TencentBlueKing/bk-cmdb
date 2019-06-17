@@ -192,7 +192,7 @@
                 staList: [],
                 chartType: true,
                 showDia: true,
-                hostFilter: ['host', 'module', 'biz'],
+                hostFilter: ['host', 'module', 'biz', 'set'],
                 editTitle: this.openType === 'add' ? this.$t('Common["新增"]') : this.$t('Common["编辑"]')
             }
         },
