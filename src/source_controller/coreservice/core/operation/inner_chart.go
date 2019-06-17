@@ -45,11 +45,11 @@ func (m *operationManager) ModelInst(ctx core.ContextParams) {
 		return
 	}
 
-	modelInstNumber := make([]metadata.IDStringCountInn64, 0)
+	modelInstNumber := make([]metadata.IDStringCountInt64, 0)
 	for _, countInfo := range modelInstCount {
 		for _, model := range modelInfo {
 			if countInfo.Id == model.ObjectID {
-				info := metadata.IDStringCountInn64{}
+				info := metadata.IDStringCountInt64{}
 				info.Id = model.ObjectName
 				info.Count = countInfo.Count
 				modelInstNumber = append(modelInstNumber, info)
@@ -273,9 +273,10 @@ func (m *operationManager) HostCloudChartData(ctx core.ContextParams, inputParam
 	for _, data := range commonCount {
 		for _, cloud := range cloudMapping {
 			if data.Id == cloud.CloudID {
-				info := metadata.StringIDCount{}
-				info.Id = cloud.CloudName
-				info.Count = data.Count
+				info := metadata.StringIDCount{
+					Id:    cloud.CloudName,
+					Count: data.Count,
+				}
 				respData = append(respData, info)
 			}
 		}
@@ -312,9 +313,10 @@ func (m *operationManager) HostBizChartData(ctx core.ContextParams, inputParam m
 		}
 		for _, host := range bizHost {
 			if host.Id == id {
-				info := metadata.StringIDCount{}
-				info.Id = name
-				info.Count = host.Count
+				info := metadata.StringIDCount{
+					Id:    name,
+					Count: host.Count,
+				}
 				respData = append(respData, info)
 			}
 		}

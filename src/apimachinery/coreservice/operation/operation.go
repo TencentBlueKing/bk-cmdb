@@ -11,7 +11,7 @@ import (
 type OperationClientInterface interface {
 	ModelInstAggregate(ctx context.Context, h http.Header, data interface{}) (resp *metadata.AggregateStringResponse, err error)
 	CommonAggregate(ctx context.Context, h http.Header, data metadata.ChartConfig) (resp *metadata.Response, err error)
-	SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error)
 	CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error)
 	SearchOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.SearchChartResponse, err error)
 	DeleteOperationChart(ctx context.Context, h http.Header, data string) (resp *metadata.Response, err error)

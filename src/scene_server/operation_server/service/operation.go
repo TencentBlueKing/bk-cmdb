@@ -112,8 +112,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
-	if err != nil {
+	if _, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt); err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateStatisticsFail, "update statistic info fail, err: %v", err)
 		return
 	}
@@ -167,7 +166,6 @@ func (o *OperationServer) SearchChartData(ctx *rest.Contexts) {
 		return
 	}
 
-	blog.Info("report_type: %v", chart.Data.Info.Name)
 	result, err := o.CoreAPI.CoreService().Operation().CommonAggregate(ctx.Kit.Ctx, ctx.Kit.Header, chart.Data.Info)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrOperationGetChartDataFail, "search chart data fail, err: %v", err)
