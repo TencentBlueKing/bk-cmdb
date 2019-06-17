@@ -231,7 +231,7 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 
 	// service template that referenced by process template shouldn't be removed
 	usageFilter := map[string]int64{
-		common.BKServiceTemplateIDField: template.ID,
+		common.BKProcessTemplateIDField: template.ID,
 	}
 	usageCount, e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
 	if nil != e {
