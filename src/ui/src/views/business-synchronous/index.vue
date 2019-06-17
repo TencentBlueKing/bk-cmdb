@@ -67,14 +67,14 @@
                                 <div class="info-item fl"
                                     v-for="(attribute, attributeIndex) in properties[process['process_template_id']]"
                                     :key="attributeIndex">
-                                    {{`${attribute['property_name']}：${attribute['show_value']}`}}
+                                    {{`${attribute['property_name']}：${attribute['show_value'] ? attribute['show_value'] : '--'}`}}
                                 </div>
                             </div>
                         </div>
                         <div class="instances-box">
                             <div class="title">
                                 <h3>{{$t("BusinessSynchronous['涉及实例']")}}</h3>
-                                <span>（2）</span>
+                                <span>（{{process['service_instances'].length}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
@@ -386,7 +386,7 @@
                 this.syncServiceInstanceByTemplate({
                     params: this.$injectMetadata({
                         service_template_id: this.serviceTemplateId,
-                        module_id: Number(this.routerParams.moduleId),
+                        bk_module_id: Number(this.routerParams.moduleId),
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
@@ -541,7 +541,7 @@
                             @include space-between;
                             width: 240px;
                             font-size: 12px;
-                            padding: 2px 6px;
+                            padding: 2px 6px 4px;
                             margin-bottom: 16px;
                             margin-right: 14px;
                             border: 1px solid #dcdee5;

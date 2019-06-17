@@ -24,7 +24,7 @@ export default [{
 }, {
     id: NAV_SERVICE_MANAGEMENT,
     i18n: 'Nav["服务管理"]',
-    icon: 'icon-cog-shape',
+    icon: 'icon-cc-template-management',
     submenu: []
 }, {
     id: NAV_AUDIT_ANALYSE,
