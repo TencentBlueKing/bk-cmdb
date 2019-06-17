@@ -170,8 +170,13 @@ func (p *processOperation) ListServiceTemplates(ctx core.ContextParams, option m
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
+
+	sort := "-id"
+	if len(option.Page.Sort) > 0 {
+		sort = option.Page.Sort
+	}
 	templates := make([]metadata.ServiceTemplate, 0)
-	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &templates); nil != err {
+	if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).Sort(sort).All(ctx.Context, &templates); nil != err {
 		blog.Errorf("ListServiceTemplates failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
