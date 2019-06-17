@@ -228,7 +228,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 		return
 	}
 
-	blog.Debug("the result:%+v", arrItems)
+	blog.V(5).Infof("the result:%#v", arrItems)
 
 	// construct the excel file
 	var file *xlsx.File
@@ -280,7 +280,7 @@ func (s *Service) ExportObject(c *gin.Context) {
 		blog.Errorf("ExportInst save file error:%s", err.Error())
 		fmt.Printf(err.Error())
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_model_%s.xlsx", objID))
 	c.File(dirFileName)
 
 	os.Remove(dirFileName)
