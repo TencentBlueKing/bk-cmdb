@@ -13,15 +13,26 @@
 package metadata
 
 import (
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 )
 
 // BaseResp common result struct
 type BaseResp struct {
-	Result bool   `json:"result"`
-	Code   int    `json:"bk_error_code"`
-	ErrMsg string `json:"bk_error_msg"`
+	Result      bool                    `json:"result"`
+	Code        int                     `json:"bk_error_code"`
+	ErrMsg      string                  `json:"bk_error_msg"`
+	Permissions []authcenter.Permission `json:"permission"`
+}
+
+func NewNoPermissionResp(permission []authcenter.Permission) BaseResp {
+	return BaseResp{
+		Result:      false,
+		Code:        common.CCNoPermission,
+		ErrMsg:      "no permissions",
+		Permissions: permission,
+	}
 }
 
 // SuccessBaseResp default result

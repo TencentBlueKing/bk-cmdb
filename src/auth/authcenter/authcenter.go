@@ -155,9 +155,7 @@ func (ac *AuthCenter) Enabled() bool {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
-		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 

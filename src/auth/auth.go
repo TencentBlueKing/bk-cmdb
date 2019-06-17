@@ -13,16 +13,20 @@
 package auth
 
 import (
+	"context"
+	"errors"
+
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
-	"context"
 )
 
 type Authorize interface {
 	Authorizer
 	ResourceHandler
 }
+
+var NoAuthorizeError = errors.New("no authorize")
 
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.

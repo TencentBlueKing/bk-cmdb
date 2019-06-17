@@ -13,6 +13,7 @@
 package extensions
 
 import (
+	"configcenter/src/auth/authcenter"
 	"context"
 	"fmt"
 	"net/http"
@@ -224,4 +225,31 @@ func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Heade
 		BusinessID:      businessID,
 	}
 	return am.authorize(ctx, header, businessID, resource)
+}
+
+func (am *AuthManager) AuthorizeAduitReadPermissionsResponse(businessID int64) metadata.BaseResp {
+	var p authcenter.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ActionID = authcenter.Get
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+	if businessID > 0 {
+		p.Resources = [][]authcenter.Resource{
+			{{
+				ResourceType:     authcenter.BizAuditLog,
+				ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizAuditLog],
+			}},
+		}
+	} else {
+		p.Resources = [][]authcenter.Resource{
+			{{
+				ResourceType:     authcenter.SysAuditLog,
+				ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysAuditLog],
+			}},
+		}
+	}
+
+	return metadata.NewNoPermissionResp([]authcenter.Permission{p})
 }

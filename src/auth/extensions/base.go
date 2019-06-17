@@ -13,14 +13,13 @@
 package extensions
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"strings"
-
+	"configcenter/src/auth"
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common/metadata"
+	"context"
+	"fmt"
+	"net/http"
 )
 
 // correctBusinessID correct businessID to 0 if default field is 1, as we need to set it to 0 for iam.
@@ -59,7 +58,7 @@ func (am *AuthManager) authorize(ctx context.Context, header http.Header, busine
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}
 	if decision.Authorized == false {
-		return fmt.Errorf("authorize failed, reason: %s", decision.Reason)
+		return auth.NoAuthorizeError
 	}
 
 	return nil
@@ -76,14 +75,10 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header, r
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}
 
-	messages := make([]string, 0)
 	for _, decision := range decisions {
 		if decision.Authorized == false {
-			messages = append(messages, fmt.Sprintf("authorize failed, reason: %s", decision.Reason))
+			return auth.NoAuthorizeError
 		}
-	}
-	if len(messages) > 0 {
-		return fmt.Errorf(strings.Join(messages, "\n"))
 	}
 
 	return nil
