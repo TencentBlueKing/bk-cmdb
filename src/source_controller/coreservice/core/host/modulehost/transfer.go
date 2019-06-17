@@ -25,6 +25,8 @@ import (
 )
 
 type transferHostModule struct {
+	dependent OperationDependence
+
 	// depend parametere
 	mh          *ModuleHost
 	moduleIDArr []int64
@@ -57,6 +59,7 @@ func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
 		isIncr:      isIncr,
+		dependent:   mh.dependence,
 	}
 }
 
@@ -110,7 +113,7 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 	if err != nil {
 		// It is not the time to merge and base the time. When it fails,
 		// it is clear that the data before the change is pushed.
-		//t.origindatas = nil
+		// t.origindatas = nil
 		return err
 	}
 	// delete host.
@@ -122,9 +125,14 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 		return nil
 
 	}
-	// transfer host module cofnig
+	// transfer host module config
 	curDatas, err = t.AddHostModuleRelation(ctx, hostID)
 	if err != nil {
+		return err
+	}
+
+	// auto create service instance if necessary
+	if err := t.autoCreateServiceInstance(ctx, hostID); err != nil {
 		return err
 	}
 
@@ -346,7 +354,7 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 // delHostModuleRelation delete single host module relation
 func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
-	// transfer the host across businees,
+	// transfer the host across business,
 	// check host belongs to the original business ID
 	if t.crossBizTransfer {
 		bizID = t.srcBizID
@@ -420,7 +428,7 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 			blog.ErrorJSON("add  host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
-		//  map[moduleID]bool
+		// map[moduleID]bool
 		existModuleIDMap := make(map[int64]bool, 0)
 		for _, item := range relationArr {
 			existModuleIDMap[item.ModuleID] = true
@@ -455,6 +463,15 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return insertDataArr, nil
+}
+
+func (t *transferHostModule) autoCreateServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+	for _, moduleID := range t.moduleIDArr {
+		if _, err := t.dependent.AutoCreateServiceInstanceModuleHost(ctx, hostID, moduleID); err != nil {
+			blog.Warnf("autoCreateServiceInstance failed, hostID: %d, moduleID: %d, rid: %s", hostID, moduleID, ctx.ReqID)
+		}
+	}
+	return nil
 }
 
 // getInnerModuleIDArr get default module
@@ -521,21 +538,18 @@ func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error
 }
 
 // DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams) error {
-	innerModuleIDArr, err := t.GetInnerModuleIDArr(ctx)
-	if err != nil {
-		return err
-	}
-	if len(innerModuleIDArr) == 0 {
+func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs []int64) error {
+	if len(hostIDs) == 0 {
 		return nil
 	}
 
-	// check 1: 不能有服务实例/进程实例
+	// check: 不能有服务实例/进程实例绑定主机实例
 	filter := map[string]interface{}{
-		common.BKHostIDField: map[string][]int64{"$in": innerModuleIDArr},
+		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
 	}
 	var count uint64
-	if count, err = t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context); nil != err {
+	count, err := t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context)
+	if err != nil {
 		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}

@@ -25,10 +25,12 @@ type SetInst struct {
 	SetEnv    string `bson:"bk_set_env"`
 }
 type ModuleInst struct {
-	BizID           int64  `bson:"bk_biz_id"`
-	ModuleID        int64  `bson:"bk_module_id"`
-	ModuleName      string `bson:"bk_module_name"`
-	SupplierAccount string `bson:"bk_supplier_account"`
+	BizID             int64  `bson:"bk_biz_id"`
+	ModuleID          int64  `bson:"bk_module_id"`
+	ModuleName        string `bson:"bk_module_name"`
+	SupplierAccount   string `bson:"bk_supplier_account"`
+	ServiceCategoryID int64  `bson:"service_category_id"`
+	ServiceTemplateID int64  `bson:"service_template_id"`
 }
 type BizInst struct {
 	BizID           int64  `bson:"bk_biz_id"`

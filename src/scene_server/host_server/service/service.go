@@ -81,7 +81,7 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.CCErr
 	}
-	api.Path("/host/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/host/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	// restful.DefaultRequestContentType(restful.MIME_JSON)
 	// restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -96,7 +96,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("hosts/favorites/{id}").To(s.UpdateHostFavouriteByID))
 	api.Route(api.DELETE("hosts/favorites/{id}").To(s.DeleteHostFavouriteByID))
 	api.Route(api.PUT("/hosts/favorites/{id}/incr").To(s.IncrHostFavouritesCount))
-	api.Route(api.POST("/hosts/modules").To(s.HostModuleRelation))
+	api.Route(api.POST("/hosts/modules").To(s.TransferHostModule))
 	api.Route(api.POST("/hosts/modules/idle").To(s.MoveHost2EmptyModule))
 	api.Route(api.POST("/hosts/modules/fault").To(s.MoveHost2FaultModule))
 	api.Route(api.POST("/hosts/modules/resource").To(s.MoveHostToResourcePool))

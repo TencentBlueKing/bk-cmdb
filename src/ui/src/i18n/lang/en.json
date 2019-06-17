@@ -127,7 +127,9 @@
         "请选择时间": "Please select time",
         "更多详情": "More details",
         "更多": "Show All",
-        "请输入关键字": "Please input keyword..."
+        "请输入关键字": "Please input keyword...",
+        "添加": "Add",
+        "全部展开": "Expand all"
     },
     "Nav": {
         "首页": "Index",
@@ -155,9 +157,9 @@
         "基础资源": "Basic Resource",
         "后台管理": "Back-stage",
         "后台管理标题": "Back-stage Management",
+        "基础资源": "Basic Resource",
         "云资源发现": "Cloud resource discovery",
-        "资源确认": "Resource confirm",
-        "统计报表": "Statistical report"
+        "资源确认": "Resource confirm"
     },
     "Index": {
         "首页": "Index",
@@ -779,26 +781,6 @@
         "最新": "Latest",
         "采集方式": "Action",
         "获取单个": "Single"
-    },
-    "Operation": {
-        "编辑": "Edit",
-        "主机统计": "Host statistics",
-        "统计报表": "Statistical report forms",
-        "实例": "Example",
-        "图表类型": "Chart type",
-        "图表选择": "Chart selection",
-        "图表宽度": "Chart width",
-        "图表名称": "Chart name",
-        "统计维度": "Statistical dimension",
-        "图表展示": "Chart presentation",
-        "统计对象": "Statistical object",
-        "饼图": "Pie chart",
-        "柱状图": "Histogram",
-        "实例统计": "Case statistics",
-        "该图表暂无数据": "The chart has no data for the time being.",
-        "编辑模式": "Editorial Model",
-        "退出编辑模式": "Exit editing mode",
-        "是否确认删除": "Whether to confirm deletion?"
     },
     "HostDetails": {
         "主机详情": "Host Details",

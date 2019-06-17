@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/source_controller/coreservice/core/operation"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -43,7 +44,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core/instances"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
-	"configcenter/src/source_controller/coreservice/core/operation"
 	"configcenter/src/source_controller/coreservice/core/process"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
@@ -119,9 +119,9 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		association.New(db, s),
 		datasynchronize.New(db, s),
 		mainline.New(db),
-		host.New(db, cache),
+		host.New(db, cache, s),
 		auditlog.New(db),
-		process.New(db),
+		process.New(db, s),
 		operation.New(db),
 	)
 	return nil

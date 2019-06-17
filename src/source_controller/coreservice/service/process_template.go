@@ -60,13 +60,7 @@ func (s *coreService) GetProcessTemplate(params core.ContextParams, pathParams, 
 
 func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID         int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceTemplateID  int64             `json:"service_template_id" field:"service_template_id"`
-		ProcessTemplateIDs *[]int64          `json:"process_template_ids" field:"process_template_ids"`
-		Page               metadata.BasePage `json:"page" field:"page"`
-	}{}
-
+	fp := metadata.ListProcessTemplatesOption{}
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessTemplates failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
@@ -77,7 +71,7 @@ func (s *coreService) ListProcessTemplates(params core.ContextParams, pathParams
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessTemplates(params, fp.BusinessID, fp.ServiceTemplateID, fp.ProcessTemplateIDs, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessTemplates(params, fp)
 	if err != nil {
 		blog.Errorf("ListProcessTemplates failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err

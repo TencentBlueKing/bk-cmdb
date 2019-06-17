@@ -31,7 +31,7 @@ import (
 	"configcenter/src/storage/dal/redis"
 )
 
-// CoreServer the logics server
+// CoreServer the core server
 type CoreServer struct {
 	Core    *backbone.Engine
 	Config  options.Config
@@ -99,8 +99,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-
-	go coreService.WebService()
 	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
 		return err
 	}
