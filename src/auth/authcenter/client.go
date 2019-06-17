@@ -110,11 +110,11 @@ func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Hea
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
 	// register resource with emtpy id will make crash
 	for _, resource := range info.Resources {
-		if resource.ResourceID == nil || len(resource.ResourceID) == 0{
+		if resource.ResourceID == nil || len(resource.ResourceID) == 0 {
 			return fmt.Errorf("resource id can't be empty, resource: %+v", resource)
 		}
 	}
-	
+
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-register", a.Config.SystemID)
@@ -424,6 +424,26 @@ func (a *authClient) DeleteResourceType(ctx context.Context, header http.Header,
 func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAuthorizedResources) ([]AuthorizedResource, error) {
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/authorized-resources/search", SystemIDCMDB)
 	resp := ListAuthorizedResourcesResult{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(a.basicHeader).
+		Body(body).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", err)
+	}
+	if !resp.Result {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", resp.ErrorString())
+	}
+
+	return resp.Data, nil
+}
+
+func (a *authClient) GetAuthorizedScopes(ctx context.Context, body *ListAuthorizedResources) ([]string, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, ScopeTypeIDBiz)
+	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().
 		SubResource(url).
