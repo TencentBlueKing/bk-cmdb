@@ -49,7 +49,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		objCond[common.BKObjIDField] = objID
 	}
 
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objCond})
 	if nil != err {
 		blog.Errorf("[NetCollect] check net device object, get net device object fail, error: %v, condition [%#v]", err, objCond)
 		return "", "", defErr.Errorf(common.CCErrObjectSelectInstFailed)
@@ -60,12 +60,12 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 		return "", "", defErr.New(objResult.Code, objResult.ErrMsg)
 	}
 
-	if nil == objResult.Data || 0 == len(objResult.Data) {
+	if 0 == len(objResult.Data.Info) {
 		blog.Errorf("[NetCollect] check net device object, device object is not exist, condition [%#v]", objCond)
 		return "", "", defErr.Errorf(common.CCErrCollectObjIDNotNetDevice)
 	}
 
-	return objResult.Data[0].ObjectID, objResult.Data[0].ObjectName, nil
+	return objResult.Data.Info[0].Spec.ObjectID, objResult.Data.Info[0].Spec.ObjectName, nil
 }
 
 // by checking if bk_property_id and bk_property_name function parameter are valid net device object property or not
@@ -94,7 +94,7 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		propertyCond[common.BKPropertyIDField] = propertyID
 	}
 
-	attrResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), pheader, propertyCond)
+	attrResult, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), pheader, &meta.QueryCondition{Condition: propertyCond})
 	if nil != err {
 		blog.Errorf("[NetCollect] get object attribute fail, error: %v, condition [%#v]", err, propertyCond)
 		return "", defErr.Errorf(common.CCErrTopoObjectAttributeSelectFailed)
@@ -104,12 +104,12 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 		return "", defErr.New(attrResult.Code, attrResult.ErrMsg)
 	}
 
-	if nil == attrResult.Data || 0 == len(attrResult.Data) {
+	if 0 == len(attrResult.Data.Info) {
 		blog.Errorf("[NetCollect] check net device object property, property is not exist, condition [%#v]", propertyCond)
 		return "", defErr.Errorf(common.CCErrCollectNetDeviceObjPropertyNotExist)
 	}
 
-	return attrResult.Data[0].PropertyID, nil
+	return attrResult.Data.Info[0].PropertyID, nil
 }
 
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not

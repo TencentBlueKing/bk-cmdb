@@ -399,7 +399,7 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 		}
 	}
 
-	objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+	objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objCond})
 	if nil != err {
 		blog.Errorf("[NetDevice] search net device object, search objectName fail, %v", err)
 		return nil, err
@@ -410,10 +410,8 @@ func (lgc *Logics) getObjIDMapObjNameFromNetDevice(
 	}
 
 	objIDMapObjName := map[string]string{}
-	if nil != objResult.Data {
-		for _, data := range objResult.Data {
-			objIDMapObjName[data.ObjectID] = data.ObjectName
-		}
+	for _, data := range objResult.Data.Info {
+		objIDMapObjName[data.Spec.ObjectID] = data.Spec.ObjectName
 	}
 
 	return objIDMapObjName, nil
@@ -481,7 +479,7 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pheader http.Header, objCond map[str
 
 	if _, ok := objCond[common.BKObjNameField]; ok {
 		objCond[common.BKClassificationIDField] = common.BKNetwork
-		objResult, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), pheader, objCond)
+		objResult, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), pheader, &meta.QueryCondition{Condition: objCond})
 		if nil != err {
 			blog.Errorf("[NetDevice] check net device object ID, search objectName fail, %v", err)
 			return nil, err
@@ -492,10 +490,8 @@ func (lgc *Logics) getNetDeviceObjIDsByCond(pheader http.Header, objCond map[str
 			return nil, defErr.New(objResult.Code, objResult.ErrMsg)
 		}
 
-		if nil != objResult.Data {
-			for _, data := range objResult.Data {
-				objIDs = append(objIDs, data.ObjectID)
-			}
+		for _, data := range objResult.Data.Info {
+			objIDs = append(objIDs, data.Spec.ObjectID)
 		}
 	}
 
