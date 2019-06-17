@@ -84,7 +84,7 @@ type BizHostChart struct {
 	Count int64     `json:"count" bson:"count"`
 }
 
-type IDStringCountInn64 struct {
+type IDStringCountInt64 struct {
 	Id    string `json:"id" bson:"id"`
 	Count int64  `json:"count" bson:"count"`
 }

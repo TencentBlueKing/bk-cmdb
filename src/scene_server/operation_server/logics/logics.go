@@ -1,36 +1,48 @@
 package logics
 
 import (
+	"context"
+
+	"github.com/robfig/cron"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"context"
-	"time"
 )
 
-func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetBizModuleHostCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := metadata.QueryCondition{}
-	data := make([]mapstr.MapStr, 0)
+	data := make([]metadata.IDStringCountInt64, 0)
 	target := [3]string{common.BKInnerObjIDApp, common.BKInnerObjIDModule, common.BKInnerObjIDHost}
 
 	for _, obj := range target {
+		if obj == common.BKInnerObjIDApp {
+			cond = metadata.QueryCondition{
+				Condition: mapstr.MapStr{"bk_data_status": mapstr.MapStr{"$ne": "disabled"}},
+			}
+		}
 		result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj, &cond)
 		if err != nil {
 			blog.Errorf("search %v amount failed, err: %v", obj, err)
 			return nil, kit.CCError.Error(common.CCErrOperationBizModuleHostAmountFail)
 		}
-		info := mapstr.MapStr{}
-		info["id"] = obj
-		info["count"] = result.Data.Count
+		info := metadata.IDStringCountInt64{}
+		if obj == common.BKInnerObjIDApp {
+			info.Id = obj
+			info.Count = int64(result.Data.Count) - 1
+		} else {
+			info.Id = obj
+			info.Count = int64(result.Data.Count)
+		}
 		data = append(data, info)
 	}
 
 	return data, nil
 }
 
-func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]mapstr.MapStr, error) {
+func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]metadata.IDStringCountInt64, error) {
 	cond := &metadata.QueryCondition{}
 	result, err := lgc.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
@@ -38,8 +50,11 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]mapstr.MapStr, error) 
 		return nil, err
 	}
 
-	info := make([]mapstr.MapStr, 0)
-	info = append(info, mapstr.MapStr{"id": "model", "count": result.Data.Count})
+	info := make([]metadata.IDStringCountInt64, 0)
+	info = append(info, metadata.IDStringCountInt64{
+		Id:    "model",
+		Count: result.Data.Count,
+	})
 
 	opt := make(map[string]interface{})
 	resp, err := lgc.CoreAPI.CoreService().Operation().SearchInstCount(kit.Ctx, kit.Header, opt)
@@ -47,7 +62,10 @@ func (lgc *Logics) GetModelAndInstCount(kit *rest.Kit) ([]mapstr.MapStr, error) 
 		blog.Errorf("get instance number fail, err: %v", err)
 		return nil, err
 	}
-	info = append(info, mapstr.MapStr{"id": "inst", "count": resp.Data})
+	info = append(info, metadata.IDStringCountInt64{
+		Id:    "inst",
+		Count: int64(resp.Data),
+	})
 
 	return info, nil
 }
@@ -70,18 +88,32 @@ func (lgc *Logics) CreateInnerChart(kit *rest.Kit, chartInfo *metadata.ChartConf
 func (lgc *Logics) TimerFreshData(ctx context.Context) {
 	opt := mapstr.MapStr{}
 
-	_, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
-	if err != nil {
-		blog.Error("start collect chart data timer fail, err: %v", err)
+	// 主服务器跑定时
+	if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
+		return
 	}
 
-	timer := time.NewTicker(time.Duration(24) * time.Hour)
-	for range timer.C {
-		_, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt)
-		if err != nil {
-			blog.Error("start collect chart data timer fail, err: %v", err)
-		}
+	if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
+		blog.Error("start collect chart data timer fail, err: %v", err)
+		return
 	}
+
+	c := cron.New()
+	spec := "0 0 2 * * ?"
+	err := c.AddFunc(spec, func() {
+		if _, err := lgc.CoreAPI.CoreService().Operation().TimerFreshData(ctx, lgc.header, opt); err != nil {
+			blog.Error("start collect chart data timer fail, err: %v", err)
+			return
+		}
+	})
+
+	if err != nil {
+		blog.Error("start collect chart data timer fail, err: %v", err)
+		return
+	}
+	c.Start()
+
+	select {}
 }
 
 func (lgc *Logics) InnerChartData(kit *rest.Kit, chartInfo metadata.ChartConfig) (interface{}, error) {

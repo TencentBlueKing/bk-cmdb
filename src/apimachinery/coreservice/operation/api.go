@@ -8,8 +8,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
+func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CoreUint64Response, err error) {
+	resp = new(metadata.CoreUint64Response)
 	subPath := "read/operation/inst/count"
 
 	err = s.client.Post().
