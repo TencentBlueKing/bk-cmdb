@@ -152,7 +152,6 @@
             if (!this.isAdminView || !(updateAuth || deleteAuth)) {
                 this.table.header.pop()
             }
-            this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
             this.showFeatureTips = this.featureTipsParams['association']
         },

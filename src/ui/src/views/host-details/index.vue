@@ -77,8 +77,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('HostDetails["主机详情"]'))
-            this.$store.commit('setHeaderStatus', { back: true })
             this.getData()
         },
         methods: {

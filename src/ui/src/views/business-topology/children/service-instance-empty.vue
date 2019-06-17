@@ -1,9 +1,9 @@
 <template>
     <div class="empty">
-        <div class="empty-content" v-if="withTemplate">
+        <div class="empty-content" v-if="withTemplate && !templates.length">
             <img src="../../../../static/svg/cc-empty.svg" alt="">
-            <p class="empty-text">Agent模版尚未定义进程，无法创建服务</p>
-            <p class="empty-tips">您可以先跳转模版添加进程或直接添加主机，后续再添加模版进程</p>
+            <p class="empty-text">{{$t('BusinessTopology["模板未定义进程"]', { template: (moduleNode || {}).name })}}</p>
+            <p class="empty-tips">{{$t('BusinessTopology["模板未定义进程提示"]')}}</p>
             <div class="empty-options">
                 <bk-button class="empty-button" type="primary" @click="goToTemplate">跳转模板添加进程</bk-button>
                 <bk-button class="empty-button" type="default" @click="handleAddHost">添加主机</bk-button>
@@ -57,7 +57,7 @@
                 return {}
             },
             withTemplate () {
-                return this.moduleNode && this.moduleInstance.service_template_id && this.moduleInstance.service_template_id !== 2
+                return this.moduleNode && this.moduleInstance.service_template_id
             }
         },
         watch: {
@@ -94,6 +94,9 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.moduleInstance.service_template_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
@@ -131,13 +134,21 @@
                 }
             },
             handleCreateServiceInstance () {
-                this.$router.push({
-                    name: 'createServiceInstance',
-                    params: {
-                        moduleId: this.moduleNode.data.bk_inst_id,
-                        setId: this.moduleNode.parent.data.bk_inst_id
-                    }
-                })
+                if (this.withTemplate) {
+                    this.handleAddHost()
+                } else {
+                    this.$router.push({
+                        name: 'createServiceInstance',
+                        params: {
+                            moduleId: this.moduleNode.data.bk_inst_id,
+                            setId: this.moduleNode.parent.data.bk_inst_id
+                        },
+                        query: {
+                            from: this.$route.fullPath,
+                            title: this.moduleNode.name
+                        }
+                    })
+                }
             }
         }
     }
@@ -154,6 +165,7 @@
             @include inlineBlock;
         }
         .empty-content {
+            margin: -120px 0 0 0;
             @include inlineBlock;
         }
         .empty-text {
@@ -185,6 +197,11 @@
             font-size: 19px;
             color: #3A84FF;
             cursor: pointer;
+            &:hover {
+                font-weight: bold;
+                border-style: solid;
+                box-shadow: 0 0 2px #3A84FF;
+            }
         }
     }
 </style>

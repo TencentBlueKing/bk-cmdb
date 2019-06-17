@@ -34,7 +34,8 @@ export default [{
         auth: {
             operation: Object.values(OPERATION)
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: 'Cloud["资源确认"]'
     })
 }, {
     name: 'confirmHistory',
@@ -45,6 +46,7 @@ export default [{
             operation: [
                 R_CONFIRM_HISTORY
             ]
-        }
+        },
+        i18nTitle: 'Cloud["确认记录"]'
     })
 }]

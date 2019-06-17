@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" type="primary" @click="operationTemplate(-1)">{{$t("Common['新建']")}}</bk-button>
+            <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
@@ -25,7 +25,7 @@
                     :allow-clear="true"
                     :list="secondaryList"
                     v-model="filter['secondaryClassification']"
-                    @on-selected="getTableData">
+                    @on-selected="handleSelectSecondary">
                 </cmdb-selector>
                 <div class="filter-search fl">
                     <input type="text"
@@ -43,12 +43,13 @@
             :list="table.list"
             :pagination.sync="table.pagination"
             :default-sort="table.defaultSort"
-            :wrapper-minus-height="300"
+            :sortable="false"
+            :wrapper-minus-height="210"
             @handleSortChange="handleSortChange"
             @handleSizeChange="handleSizeChange"
             @handlePageChange="handlePageChange">
             <template slot="last_time" slot-scope="{ item }">
-                {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD')}}
+                {{$tools.formatTime(item['last_time'], 'YYYY-MM-DD HH:mm')}}
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <button class="text-primary mr10"
@@ -56,7 +57,7 @@
                     {{$t('Common["编辑"]')}}
                 </button>
                 <span class="text-primary"
-                    style="color: #c4c6cc !important;"
+                    style="color: #c4c6cc !important; cursor: not-allowed;"
                     v-if="item['service_instance_count']"
                     v-bktooltips.top="$t('ServiceManagement[\'不可删除\']')">
                     {{$t('Common["删除"]')}}
@@ -108,8 +109,7 @@
                             name: this.$t("ServiceManagement['修改时间']")
                         }, {
                             id: 'operation',
-                            name: this.$t('Common["操作"]'),
-                            sortable: false
+                            name: this.$t('Common["操作"]')
                         }
                     ],
                     height: 600,
@@ -120,26 +120,32 @@
                         count: 0,
                         size: 10
                     },
-                    defaultSort: '-id',
+                    defaultSort: '-last_time',
                     sort: '-id'
                 },
                 mainList: [],
                 secondaryList: [],
                 allSecondaryList: [],
-                originTemplateData: []
+                originTemplateData: [],
+                maincategoryId: null,
+                categoryId: null
             }
         },
         computed: {
             ...mapGetters(['featureTipsParams']),
             params () {
-                const categoryId = this.filter.secondaryClassification ? Number(this.filter.secondaryClassification) : null
+                const id = this.categoryId
+                    ? this.categoryId
+                    : this.maincategoryId ? this.maincategoryId : 0
                 return {
-                    service_category_id: categoryId
+                    service_category_id: id,
+                    page: {
+                        sort: this.table.defaultSort
+                    }
                 }
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t("Nav['服务模板']"))
             this.showFeatureTips = this.featureTipsParams['serviceTemplate']
             try {
                 await this.getServiceClassification()
@@ -160,7 +166,7 @@
                         ...template['service_template']
                     }
                     const secondaryCategory = this.allSecondaryList.find(classification => classification['id'] === result['service_category_id'])
-                    const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['parent_id'])
+                    const mainCategory = this.mainList.find(classification => secondaryCategory && classification['id'] === secondaryCategory['bk_parent_id'])
                     const secondaryCategoryName = secondaryCategory ? secondaryCategory['name'] : '--'
                     const mainCategoryName = mainCategory ? mainCategory['name'] : '--'
                     result['service_category'] = `${mainCategoryName} / ${secondaryCategoryName}`
@@ -189,21 +195,28 @@
                 this.allSecondaryList = this.classificationList.filter(classification => classification['bk_parent_id'])
             },
             searchByTemplateName () {
-                const filterList = this.table.allList.filter(template => template['name'] === this.filter.templateName)
+                const reg = new RegExp(this.filter.templateName, 'gi')
+                const filterList = this.table.allList.filter(template => reg.test(template['name']))
                 this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
                 this.filter.secondaryClassification = ''
+                this.maincategoryId = id
+                this.getTableData()
+            },
+            handleSelectSecondary (id) {
+                this.categoryId = id
+                this.getTableData()
             },
             operationTemplate (id) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'operationalTemplate',
                     params: {
                         templateId: id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
@@ -221,8 +234,13 @@
                             config: {
                                 requestId: 'delete_proc_service_template'
                             }
+                        }).then(() => {
+                            this.$bkMessage({
+                                message: this.$t("Common['删除成功']"),
+                                theme: 'success'
+                            })
+                            this.getTableData()
                         })
-                        this.getTableData()
                     }
                 })
             },

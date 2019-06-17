@@ -32,6 +32,7 @@ export default {
         auth: {
             view: R_EVENT,
             operation: Object.values(OPERATION)
-        }
+        },
+        i18nTitle: 'Nav["事件推送"]'
     })
 }

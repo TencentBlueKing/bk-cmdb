@@ -14,8 +14,7 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item"
-                                :style="{ float: property['bk_property_id'] === 'bk_process_name' ? 'right !important' : 'left !important' }"
+                            <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
@@ -25,8 +24,7 @@
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i> -->
-                                    <label class=""
-                                        :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                    <label :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
                                         v-if="property['isLocking'] !== undefined">
                                         <input type="checkbox"
                                             v-model="values[property['bk_property_id']]['as_default_value']"
@@ -38,7 +36,7 @@
                                     <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="type === 'update'"
+                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -139,13 +137,6 @@
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                     filterProperties.map(property => {
-                        if (property['bk_property_id'] === 'bk_process_name') {
-                            property['isrequired'] = true
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程别名']")
-                        }
-                        if (property['bk_property_id'] === 'bk_func_name') {
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程名称']")
-                        }
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
@@ -345,7 +336,7 @@
         margin: 10px 20px 0;
     }
     .form-groups{
-        padding-left: 20px;
+        padding: 0 20px;
     }
     .property-group{
         padding: 20px 0 10px 0;
@@ -365,8 +356,13 @@
         .property-item{
             width: 50%;
             margin: 12px 0 0;
-            padding: 0 54px 0 0;
             font-size: 12px;
+            &:nth-child(odd) {
+                padding-right: 30px;
+            }
+            &:nth-child(even) {
+                padding-left: 30px;
+            }
             .property-name{
                 display: block;
                 margin: 6px 0 9px;
@@ -378,7 +374,7 @@
                 position: relative;
                 display: inline-block;
                 max-width: calc(100% - 20px);
-                padding: 0 10px 0 0;
+                padding: 0 14px 0 0;
                 vertical-align: middle;
                 font-size: 14px;
                 @include ellipsis;

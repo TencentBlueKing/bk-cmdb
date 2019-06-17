@@ -63,6 +63,7 @@
         },
         async created () {
             try {
+                this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["克隆实例"]')}【${this.$route.query.title}】`)
                 const [module, processes] = await Promise.all([
                     this.getModuleInstance(),
                     this.getServiceInstanceProcesses()
