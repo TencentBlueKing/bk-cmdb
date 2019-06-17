@@ -65,6 +65,7 @@ export function getUserCustom (app) {
 
 export function getUserList (app) {
     return app.$store.dispatch('getUserList').then(list => {
+        list = list || []
         window.CMDB_USER_LIST = list
         app.$store.commit('setUserList', list)
         return list
