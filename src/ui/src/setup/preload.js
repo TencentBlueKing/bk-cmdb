@@ -51,6 +51,7 @@ export function _preloadUserCustom (app) {
 
 export function _preloadUserList (app) {
     return app.$store.dispatch('getUserList').then(list => {
+        list = list || []
         window.CMDB_USER_LIST = list
         app.$store.commit('setUserList', list)
         return list
