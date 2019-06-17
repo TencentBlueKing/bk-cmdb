@@ -74,7 +74,7 @@
                         <div class="instances-box">
                             <div class="title">
                                 <h3>{{$t("BusinessSynchronous['涉及实例']")}}</h3>
-                                <span>（2）</span>
+                                <span>（{{process['service_instances'].length}}）</span>
                             </div>
                             <div class="service-instances">
                                 <div class="instances-item"
@@ -541,7 +541,7 @@
                             @include space-between;
                             width: 240px;
                             font-size: 12px;
-                            padding: 2px 6px;
+                            padding: 2px 6px 4px;
                             margin-bottom: 16px;
                             margin-right: 14px;
                             border: 1px solid #dcdee5;
