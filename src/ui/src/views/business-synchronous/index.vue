@@ -67,7 +67,7 @@
                                 <div class="info-item fl"
                                     v-for="(attribute, attributeIndex) in properties[process['process_template_id']]"
                                     :key="attributeIndex">
-                                    {{`${attribute['property_name']}：${attribute['show_value']}`}}
+                                    {{`${attribute['property_name']}：${attribute['show_value'] ? attribute['show_value'] : '--'}`}}
                                 </div>
                             </div>
                         </div>
@@ -386,7 +386,7 @@
                 this.syncServiceInstanceByTemplate({
                     params: this.$injectMetadata({
                         service_template_id: this.serviceTemplateId,
-                        module_id: Number(this.routerParams.moduleId),
+                        bk_module_id: Number(this.routerParams.moduleId),
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
