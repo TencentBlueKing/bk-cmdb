@@ -16,6 +16,7 @@ export default {
         },
         auth: {
             view: R_AUDIT
-        }
+        },
+        i18nTitle: 'Nav["操作审计"]'
     })
 }

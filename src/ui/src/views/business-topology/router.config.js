@@ -19,7 +19,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'topology',
-            i18n: 'Nav["业务拓扑"]',
+            i18n: 'Nav["服务拓扑"]',
             path: path,
             order: 2,
             parent: NAV_BUSINESS_RESOURCE,
@@ -28,6 +28,7 @@ export default {
         auth: {
             operation: Object.values(OPERATION)
         },
+        i18nTitle: 'Nav["服务拓扑"]',
         requireBusiness: true
     })
 }

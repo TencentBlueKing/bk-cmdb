@@ -1,11 +1,11 @@
 <template>
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
-        <label class="create-label fl">{{$t('businessTopology["添加主机"]')}}</label>
+        <label class="create-label fl">{{$t('BusinessTopology["添加主机"]')}}</label>
         <div class="create-hosts">
             <bk-button class="select-host-button" type="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
-                {{$t('businessTopology["添加主机"]')}}
+                {{$t('BusinessTopology["添加主机"]')}}
             </bk-button>
             <div class="create-tables">
                 <service-instance-table class="service-instance-table"
@@ -50,6 +50,7 @@
         },
         data () {
             return {
+                seed: 0,
                 hostSelectorVisible: false,
                 moduleInstance: {},
                 hosts: [],
@@ -67,8 +68,7 @@
                 return parseInt(this.$route.params.setId)
             },
             withTemplate () {
-                const templateId = this.moduleInstance.service_template_id
-                return templateId && templateId !== 2
+                return this.moduleInstance.service_template_id
             },
             sourceProcesses () {
                 return this.templates.map(template => {
@@ -88,6 +88,7 @@
             }
         },
         created () {
+            this.$store.commit('setHeaderTitle', `${this.$t('BusinessTopology["添加服务实例"]')}【${this.$route.query.title}】`)
             this.getModuleInstance()
         },
         methods: {

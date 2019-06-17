@@ -214,7 +214,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["云资源发现"]'))
             const urlType = this.$route.params.type
             if (urlType) {
                 this.handleCreate()

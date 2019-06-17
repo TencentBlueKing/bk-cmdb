@@ -3,7 +3,7 @@
         :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
             <i class="breadcrumbs-back icon-cc-arrow" href="javascript:void(0)"
-                v-if="showBack || $route.meta.returnPath"
+                v-if="showBack"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
@@ -66,7 +66,6 @@
                 'site',
                 'userName',
                 'admin',
-                'showBack',
                 'navStick',
                 'headerTitle',
                 'isAdminView'
@@ -74,6 +73,9 @@
             ...mapGetters('objectBiz', ['authorizedBusiness']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            },
+            showBack () {
+                return this.$route.query.from
             }
         },
         methods: {
@@ -82,14 +84,7 @@
             },
             // 回退路由
             back () {
-                if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push({ path: this.$route.meta.returnPath })
-                } else {
-                    this.$store.commit('setHeaderStatus', {
-                        back: false
-                    })
-                    this.$router.back()
-                }
+                this.$router.push(this.$route.query.from)
             },
             // 退出登陆
             logOut () {

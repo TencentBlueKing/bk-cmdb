@@ -454,6 +454,9 @@
                         params: {
                             business: this.filter.business,
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 } else {
@@ -461,6 +464,9 @@
                         name: 'resourceHostDetails',
                         params: {
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 }
