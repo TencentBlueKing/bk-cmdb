@@ -360,6 +360,8 @@ const (
 	// BKPropertyNameField the property name field
 	BKPropertyNameField = "bk_property_name"
 
+	BKPropertyIndexField = "bk_property_index"
+
 	// BKPropertyTypeField the property type field
 	BKPropertyTypeField = "bk_property_type"
 
@@ -457,6 +459,9 @@ const (
 	BKProcessTemplateIDField = "process_template_id"
 	BKServiceCategoryIDField = "service_category_id"
 
+	BKParentIDField = "bk_parent_id"
+	BKRootIDField   = "bk_root_id"
+
 	// BKProcessNameField the process name field
 	BKProcessNameField = "bk_process_name"
 
@@ -465,6 +470,8 @@ const (
 
 	// BKFuncName the function name
 	BKFuncName = "bk_func_name"
+
+	BKStartParamRegex = "bk_start_param_regex"
 
 	// BKBindIP the bind ip
 	BKBindIP = "bind_ip"
@@ -1039,6 +1046,13 @@ const (
 
 const (
 	NameFieldMaxLength = 256
+
+	// 用于表示还未设置服务模板的情况，比如没有绑定服务模板
+	ServiceTemplateIDNotSet = 0
+
+	MetadataLabelBiz = "metadata.label.bk_biz_id"
+
+	DefaultServiceCategoryName = "Default"
 )
 
 const (

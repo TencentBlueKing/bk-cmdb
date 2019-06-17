@@ -13,18 +13,20 @@
 package service
 
 import (
+	"configcenter/src/common/json"
 	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) CreateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	relation := metadata.ProcessInstanceRelation{}
-	if err := mapstr.DecodeFromMapStr(&relation, data); err != nil {
+	relation := &metadata.ProcessInstanceRelation{}
+	if err := mapstr.DecodeFromMapStr(relation, data); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -60,14 +62,7 @@ func (s *coreService) GetProcessInstanceRelation(params core.ContextParams, path
 
 func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceInstanceID int64             `json:"service_instance_id" field:"service_instance_id"`
-		HostID            int64             `json:"host_id" field:"host_id"`
-		ProcessIDs        []int64           `json:"process_ids" field:"process_ids"`
-		ProcessTemplateID int64             `json:"process_template_id" field:"process_template_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListProcessInstanceRelationOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
@@ -79,7 +74,7 @@ func (s *coreService) ListProcessInstanceRelation(params core.ContextParams, pat
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp.BusinessID, fp.ServiceInstanceID, fp.HostID, fp.ProcessTemplateID, fp.ProcessIDs, fp.Page)
+	result, err := s.core.ProcessOperation().ListProcessInstanceRelation(params, fp)
 	if err != nil {
 		blog.Errorf("ListProcessInstanceRelation failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
@@ -128,4 +123,25 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 	}
 
 	return nil, nil
+}
+
+func (s *coreService) CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
+	processBytes, err := json.Marshal(process)
+	if err != nil {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+	}
+	mData := mapstr.MapStr{}
+	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_DECODE)
+	}
+	inputParam := metadata.CreateModelInstance{
+		Data: mData,
+	}
+	result, err := s.core.InstanceOperation().CreateModelInstance(params, common.BKProcessObjectName, inputParam)
+	if err != nil {
+		blog.Errorf("CreateProcessInstance failed, CreateModelInstance failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrProcCreateProcessFailed)
+	}
+	process.ProcessID = int64(result.Created.ID)
+	return process, nil
 }

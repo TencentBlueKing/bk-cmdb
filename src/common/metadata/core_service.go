@@ -266,7 +266,7 @@ type OneServiceCategoryResult struct {
 	Data     ServiceCategory `json:"data"`
 }
 
-type ServiceCategoryWithStatisticsResult struct {
+type OneServiceCategoryWithStatisticsResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceCategoryWithStatistics `json:"data"`
 }
@@ -276,20 +276,36 @@ type MultipleServiceCategory struct {
 	Info  []ServiceCategory `json:"info"`
 }
 
+type MultipleServiceCategoryWithStatistics struct {
+	Count int64                           `json:"count"`
+	Info  []ServiceCategoryWithStatistics `json:"info"`
+}
+
 type MultipleServiceCategoryResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleServiceCategory `json:"data"`
 }
 
+type MultipleServiceCategoryWithStatisticsResult struct {
+	BaseResp `json:",inline"`
+	Data     MultipleServiceCategoryWithStatistics `json:"data"`
+}
+
 type ListServiceTemplateOption struct {
-	BusinessID        int64    `json:"bk_biz_id"`
-	ServiceCategoryID int64    `json:"service_category_id"`
-	Page              BasePage `json:"page,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ServiceCategoryID  *int64   `json:"service_category_id"`
+	ServiceTemplateIDs *[]int64 `json:"service_template_ids"`
+	Page               BasePage `json:"page,omitempty"`
 }
 
 type OneServiceTemplateResult struct {
 	BaseResp `json:",inline"`
 	Data     ServiceTemplate `json:"data"`
+}
+
+type OneServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplateDetail `json:"data"`
 }
 
 type MultipleServiceTemplate struct {
@@ -302,15 +318,19 @@ type ListServiceInstanceOption struct {
 	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
 	HostID            int64    `json:"host_id,omitempty"`
 	ModuleID          int64    `json:"module_id,omitempty"`
+	SearchKey         *string  `json:"search_key,omitempty"`
 	Page              BasePage `json:"page,omitempty"`
+	// only when WithName is true, name field with be filled with `ip + process name + process port`
+	WithName bool `json:"with_name,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
-	BusinessID        int64   `json:"bk_biz_id"`
-	ProcessIDs        []int64 `json:"process_ids,omitempty"`
-	ServiceInstanceID []int64 `json:"service_instance_id,omitempty"`
-	ProcessTemplateID int64   `json:"process_template_id,omitempty"`
-	HostID            int64   `json:"host_id,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ProcessIDs         *[]int64 `json:"process_ids,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_id,omitempty"`
+	ProcessTemplateID  int64    `json:"process_template_id,omitempty"`
+	HostID             int64    `json:"host_id,omitempty"`
+	Page               BasePage `json:"page" field:"page"`
 }
 
 type MultipleServiceTemplateResult struct {
@@ -343,9 +363,10 @@ type DeleteProcessInstanceRelationOption struct {
 }
 
 type ListProcessTemplatesOption struct {
-	BusinessID         int64   `json:"bk_biz_id"`
-	ServiceTemplateID  int64   `json:"service_template_id,omitempty"`
-	ProcessTemplateIDs []int64 `json:"process_template_ids,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
+	ProcessTemplateIDs *[]int64 `json:"process_template_ids,omitempty" bson:"process_template_ids"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
+	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 
 type OneServiceInstanceResult struct {
@@ -376,4 +397,15 @@ type MultipleProcessInstanceRelation struct {
 type MultipleProcessInstanceRelationResult struct {
 	BaseResp `json:",inline"`
 	Data     MultipleProcessInstanceRelation `json:"data"`
+}
+
+type BusinessDefaultSetModuleInfo struct {
+	IdleSetID     int64 `json:"idle_set_id"`
+	IdleModuleID  int64 `json:"idle_module_id"`
+	FaultModuleID int64 `json:"fault_module_id"`
+}
+
+type BusinessDefaultSetModuleInfoResult struct {
+	BaseResp `json:",inline"`
+	Data     BusinessDefaultSetModuleInfo `json:"data"`
 }

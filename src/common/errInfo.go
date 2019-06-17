@@ -631,15 +631,6 @@ const (
 
 	// coreservice 1113xxx
 
-	// operation 1114xxx
-	CCErrOperationBizModuleHostAmountFail = 1114001
-	CCErrOperationNewAddStatisticFail     = 1114002
-	CCErrOperationSearchStatisticsFail    = 1114003
-	CCErrOperationUpdateStatisticsFail    = 1114004
-	CCErrOperationGetChartDataFail        = 1114005
-	CCErrOperationDeleteStatisticFail     = 1114006
-	CCErrOperationChartAlreadyExist       = 1114007
-
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
@@ -665,7 +656,7 @@ const (
 	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
 	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
 
-	// synchronize data logics service  11139xx
+	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
 	CCErrCoreServiceSyncDataClassifyNotExistError = 1113901

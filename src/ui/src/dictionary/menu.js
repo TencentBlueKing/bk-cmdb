@@ -5,6 +5,7 @@ export const NAV_AUDIT_ANALYSE = 'auditAnalyse'
 export const NAV_MODEL_MANAGEMENT = 'modelManagement'
 export const NAV_PERMISSION = 'permission'
 export const NAV_COLLECT = 'collect'
+export const NAV_SERVICE_MANAGEMENT = 'serviceManagement'
 
 export default [{
     id: NAV_INDEX,
@@ -19,6 +20,11 @@ export default [{
     id: NAV_BUSINESS_RESOURCE,
     i18n: 'Nav["业务资源"]',
     icon: 'icon-cc-nav-resource',
+    submenu: []
+}, {
+    id: NAV_SERVICE_MANAGEMENT,
+    i18n: 'Nav["服务管理"]',
+    icon: 'icon-cog-shape',
     submenu: []
 }, {
     id: NAV_AUDIT_ANALYSE,

@@ -30,7 +30,8 @@ export default [{
         },
         auth: {
             operation: Object.values(OPERATION)
-        }
+        },
+        i18nTitle: 'Nav["业务"]'
     })
 }, {
     name: 'businessHistory',
@@ -40,6 +41,7 @@ export default [{
         auth: {
             view: BUSINESS_ARCHIVE,
             operation: [BUSINESS_ARCHIVE]
-        }
+        },
+        i18nTitle: 'Nav["业务"]'
     })
 }]

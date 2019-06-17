@@ -52,7 +52,7 @@ func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]
 	return processes, nil
 }
 
-func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, error) {
+func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metadata.Process, errors.CCErrorCoder) {
 	condition := map[string]interface{}{
 		common.BKProcessIDField: procID,
 	}
@@ -62,20 +62,23 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 	ret, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, reqParam)
 	if nil != err {
 		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, err)
-		return nil, kit.CCError.Error(common.CCErrCommHTTPDoRequestFailed)
+		return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	if !ret.Result {
 		blog.Errorf("rid: %s get process instance with procID: %d failed, err: %v", kit.Rid, procID, ret.ErrMsg)
-		return nil, kit.CCError.New(ret.Code, ret.ErrMsg)
+		return nil, errors.New(ret.Code, ret.ErrMsg)
 
 	}
 
 	process := new(metadata.Process)
-	if len(ret.Data.Info) != 0 {
-		if err := ret.Data.Info[0].ToStructByTag(process, "field"); err != nil {
-			return nil, kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)
-		}
+	if len(ret.Data.Info) == 0 {
+		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
+	}
+
+	if err := ret.Data.Info[0].MarshalJSONInto(process); err != nil {
+		blog.Errorf("GetProcessInstanceWithID fai", err)
+		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
 	return process, nil
@@ -95,7 +98,7 @@ func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr
 
 	if !result.Result {
 		blog.Errorf("rid: %s, update process instance: %d failed, err: %s", kit.Rid, procID, result.ErrMsg)
-		return kit.CCError.Error(result.Code)
+		return kit.CCError.New(result.Code, result.ErrMsg)
 	}
 	return nil
 }
@@ -139,7 +142,7 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (uint64, error) {
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (int64, error) {
 	inst := metadata.CreateModelInstance{
 		Data: mapstr.NewFromStruct(proc, "field"),
 	}
@@ -151,16 +154,15 @@ func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (
 
 	if !result.Result {
 		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
-		return 0, errors.NewCCError(result.Code, result.ErrMsg)
+		return 0, errors.New(result.Code, result.ErrMsg)
 	}
 
-	return result.Data.Created.ID, nil
+	return int64(result.Data.Created.ID), nil
 }
 
 // it works to find the different attribute value between the process instance and it's bounded process template.
 // return with the changed attribute's details.
-func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessProperty, i *metadata.Process,
-	attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
+func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metadata.Process, attrMap map[string]metadata.Attribute) []metadata.ProcessChangedAttribute {
 	changes := make([]metadata.ProcessChangedAttribute, 0)
 	if t == nil || i == nil {
 		return changes
@@ -238,8 +240,8 @@ func (lgc *Logic) GetDifferenceInProcessTemplateAndInstance(t *metadata.ProcessP
 		}
 	}
 
-	if t.BindIP.Value != nil {
-		if *t.BindIP.Value != i.BindIP {
+	if t.BindIP.Value != nil && i.BindIP != nil {
+		if *t.BindIP.Value != *i.BindIP {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bind_ip"].ID,
 				PropertyID:            "bind_ip",
@@ -465,8 +467,8 @@ func (lgc *Logic) CheckProcessTemplateAndInstanceIsDifferent(t *metadata.Process
 		}
 	}
 
-	if t.BindIP.Value != nil {
-		if *t.BindIP.Value != i.BindIP {
+	if t.BindIP.Value != nil && i.BindIP != nil {
+		if *t.BindIP.Value != *i.BindIP {
 			process["bind_ip"] = *t.BindIP.Value
 			changed = true
 
@@ -608,7 +610,7 @@ func (lgc *Logic) NewProcessInstanceFromProcessTemplate(t *metadata.ProcessPrope
 	}
 
 	if t.BindIP.Value != nil {
-		p.BindIP = *t.BindIP.Value
+		p.BindIP = t.BindIP.Value
 	}
 
 	if t.Priority.Value != nil {

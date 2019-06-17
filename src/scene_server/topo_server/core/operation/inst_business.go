@@ -113,7 +113,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 			var createAsstRsp *metadata.CreatedOneOptionResult
 			var err error
 			if asst.AsstKindID == common.AssociationKindMainline {
-				// bk_mainline is a inner association type that can only create in special case, 
+				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
 				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			} else {
@@ -194,12 +194,20 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
+	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
+	if err != nil {
+		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(common.CCErrProcGetDefaultServiceCategoryFailed, err.Error())
+	}
+
 	moduleData := mapstr.New()
 	moduleData.Set(common.BKSetIDField, setID)
 	moduleData.Set(common.BKInstParentStr, setID)
 	moduleData.Set(common.BKAppIDField, bizID)
 	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	moduleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	moduleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
 	if nil != err {
@@ -214,6 +222,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	faultModuleData.Set(common.BKAppIDField, bizID)
 	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
+	faultModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	faultModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {

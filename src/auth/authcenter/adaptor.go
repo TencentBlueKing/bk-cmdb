@@ -144,7 +144,6 @@ const (
 
 // Business Resource
 const (
-	// the alias name maybe "dynamic classification"
 	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
 	BizHostInstance    ResourceTypeID = "bizHostInstance"
 	BizProcessInstance ResourceTypeID = "bizProcessInstance"

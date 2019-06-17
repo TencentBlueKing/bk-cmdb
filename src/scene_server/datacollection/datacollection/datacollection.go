@@ -29,17 +29,20 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type DataCollection struct {
 	Config *options.Config
 	*backbone.Engine
-	db  dal.RDB
-	ctx context.Context
+	db       dal.RDB
+	ctx      context.Context
+	registry prometheus.Registerer
 }
 
-func NewDataCollection(ctx context.Context, config *options.Config, backbone *backbone.Engine) *DataCollection {
-	return &DataCollection{ctx: ctx, Config: config, Engine: backbone}
+func NewDataCollection(ctx context.Context, config *options.Config, backbone *backbone.Engine, registry prometheus.Registerer) *DataCollection {
+	return &DataCollection{ctx: ctx, Config: config, Engine: backbone, registry: registry}
 }
 
 func (d *DataCollection) Run() error {
@@ -82,7 +85,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[datacollect][RUN]connected to snap-redis %+v", d.Config.SnapRedis.Config)
 		snapChanName := d.getSnapChanName(defaultAppID)
 		hostsnapCollector := hostsnap.NewHostSnap(d.ctx, rediscli, db)
-		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, rediscli, snapcli, snapChanName, hostsnap.MockMessage)
+		snapPorter := BuildChanPorter("hostsnap", hostsnapCollector, rediscli, snapcli, snapChanName, hostsnap.MockMessage, d.registry)
 		man.AddPorter(snapPorter)
 	}
 
@@ -96,7 +99,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[datacollect][RUN]connected to discover-redis %+v", d.Config.DiscoverRedis.Config)
 		discoverChanName := d.getDiscoverChanName(defaultAppID)
 		middlewareCollector := middleware.NewDiscover(d.ctx, rediscli, d.Engine)
-		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, rediscli, discli, discoverChanName, middleware.MockMessage)
+		middlewarePorter := BuildChanPorter("middleware", middlewareCollector, rediscli, discli, discoverChanName, middleware.MockMessage, d.registry)
 		man.AddPorter(middlewarePorter)
 	}
 
@@ -110,7 +113,7 @@ func (d *DataCollection) Run() error {
 		blog.Infof("[datacollect][RUN]connected to netcollect-redis %+v", d.Config.NetcollectRedis.Config)
 		netdevChanName := d.getNetcollectChanName(defaultAppID)
 		netcollector := netcollect.NewNetcollect(d.ctx, db)
-		netcollectPorter := BuildChanPorter("netcollect", netcollector, rediscli, netcli, netdevChanName, netcollect.MockMessage)
+		netcollectPorter := BuildChanPorter("netcollect", netcollector, rediscli, netcli, netdevChanName, netcollect.MockMessage, d.registry)
 		man.AddPorter(netcollectPorter)
 	}
 

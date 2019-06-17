@@ -290,6 +290,7 @@ func (a *apiServer) ImportAssociation(ctx context.Context, h http.Header, objID 
 
 	return
 }
+
 func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.Header, user string) (*metadata.InstDataInfo, error) {
 	h.Add(common.BKHTTPHeaderUser, user)
 	subPath := "/auth/business-list"
@@ -311,4 +312,68 @@ func (a *apiServer) GetUserAuthorizedBusinessList(ctx context.Context, h http.He
 	}
 
 	return &resp.Data, nil
+}
+
+func (a *apiServer) SearchNetCollectDevice(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/device/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDeviceProperty(ctx context.Context, h http.Header, cond condition.Condition) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/property/action/search"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetCollectDeviceBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "collector/netcollect/device/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
+}
+
+func (a *apiServer) SearchNetDevicePropertyBatch(ctx context.Context, h http.Header, cond mapstr.MapStr) (resp *metadata.ResponseInstData, err error) {
+	resp = new(metadata.ResponseInstData)
+
+	subPath := "/collector/netcollect/property/action/batch"
+
+	err = a.client.Post().
+		WithContext(ctx).
+		Body(cond).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	return
 }
