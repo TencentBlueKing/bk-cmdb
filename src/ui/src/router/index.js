@@ -24,6 +24,7 @@ import resource from '@/views/resource/router.config'
 import topology from '@/views/topology/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
+import operation from '@/views/operation/router.config'
 
 Vue.use(Router)
 
@@ -41,6 +42,7 @@ export const viewRouters = [
     process,
     resource,
     topology,
+    operation,
     ...generalModel,
     ...business,
     ...model,

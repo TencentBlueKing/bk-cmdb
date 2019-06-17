@@ -71,12 +71,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authorize, err := auth.NewAuthorize(nil, authConf)
+	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
 
-	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), operationSvr.EsbConfigChn)
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), operationSvr.EsbConfigChn, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}

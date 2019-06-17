@@ -169,8 +169,12 @@ const (
 	CCErrCommRemoveReferencedRecordForbidden  = 1199056
 	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
 
-	CCErrCommGenerateRecordIDFailed = 1199058
-	CCErrCommPageLimitIsExceeded    = 1199059
+	CCErrCommGenerateRecordIDFailed   = 1199058
+	CCErrCommPageLimitIsExceeded      = 1199059
+	CCErrCommUnexpectedParameterField = 1199060
+
+	CCErrCommParseDBFailed                     = 1199061
+	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -506,16 +510,20 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	CCErrProcGetServiceInstancesFailed        = 1108024
-	CCErrProcCreateServiceInstancesFailed     = 1108025
-	CCErrProcDeleteServiceInstancesFailed     = 1108026
-	CCErrProcGetProcessTemplatesFailed        = 1108027
-	CCErrProcGetProcessInstanceFailed         = 1108028
-	CCErrProcGetProcessInstanceRelationFailed = 1108029
-	CCErrProcDeleteServiceTemplateFailed      = 1108030
-	CCErrProcCreateProcessTemplateFailed      = 1108031
-	CCErrProcUpdateProcessTemplateFailed      = 1108032
-	CCErrProcGetProcessTemplateFailed         = 1108033
+	CCErrProcGetServiceInstancesFailed                    = 1108024
+	CCErrProcCreateServiceInstancesFailed                 = 1108025
+	CCErrProcDeleteServiceInstancesFailed                 = 1108026
+	CCErrProcGetProcessTemplatesFailed                    = 1108027
+	CCErrProcGetProcessInstanceFailed                     = 1108028
+	CCErrProcGetProcessInstanceRelationFailed             = 1108029
+	CCErrProcDeleteServiceTemplateFailed                  = 1108030
+	CCErrProcCreateProcessTemplateFailed                  = 1108031
+	CCErrProcUpdateProcessTemplateFailed                  = 1108032
+	CCErrProcGetProcessTemplateFailed                     = 1108033
+	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
+	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
+	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
+	CCErrProcModuleNotBindWithTemplate                    = 1108037
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -656,6 +664,16 @@ const (
 	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
 	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
 
+	CCErrHostRemoveFromDefaultModuleFailed                                    = 1113012
+	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
+	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
+	CCErrCoreServiceModuleNotFound                                            = 1113015
+	CCErrCoreServiceInstanceAlreadyExist                                      = 1113016
+	CCErrCoreServiceServiceCategoryNameDuplicated                             = 1113017
+	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
+	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
+	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
+
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
@@ -685,6 +703,15 @@ const (
 	// synchronize_server 1114xxx
 
 	CCErrSynchronizeError = 1114001
+
+	// operation_server 1116xxx
+	CCErrOperationBizModuleHostAmountFail = 1116001
+	CCErrOperationNewAddStatisticFail     = 1116002
+	CCErrOperationChartAlreadyExist       = 1116003
+	CCErrOperationDeleteChartFail         = 1116004
+	CCErrOperationSearchChartFail         = 1116005
+	CCErrOperationUpdateChartFail         = 1116006
+	CCErrOperationGetChartDataFail        = 1116007
 
 	/** TODO: 以下错误码需要改造 **/
 

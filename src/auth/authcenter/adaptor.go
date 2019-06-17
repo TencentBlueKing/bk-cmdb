@@ -119,6 +119,10 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 		iamResourceType = UserCustom
 	case meta.NetDataCollector:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
+	case meta.ProcessServiceTemplate:
+		iamResourceType = BizProcessServiceTemplate
+	case meta.ProcessServiceCategory:
+		iamResourceType = BizProcessServiceCategory
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -144,14 +148,17 @@ const (
 
 // Business Resource
 const (
-	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
-	BizHostInstance    ResourceTypeID = "bizHostInstance"
-	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopo            ResourceTypeID = "bizTopo"
-	BizModelGroup      ResourceTypeID = "bizModelGroup"
-	BizModel           ResourceTypeID = "bizModel"
-	BizInstance        ResourceTypeID = "bizInstance"
-	BizAuditLog        ResourceTypeID = "bizAuditLog"
+	// the alias name maybe "dynamic classification"
+	BizCustomQuery            ResourceTypeID = "bizCustomQuery"
+	BizHostInstance           ResourceTypeID = "bizHostInstance"
+	BizModelGroup             ResourceTypeID = "bizModelGroup"
+	BizModel                  ResourceTypeID = "bizModel"
+	BizInstance               ResourceTypeID = "bizInstance"
+	BizAuditLog               ResourceTypeID = "bizAuditLog"
+	BizProcessServiceTemplate ResourceTypeID = "bizProcessServiceTemplate"
+	BizProcessServiceCategory ResourceTypeID = "bizProcessServiceCategory"
+	BizTopo                   ResourceTypeID = "bizTopo"
+	BizProcessInstance        ResourceTypeID = "bizProcessInstance"
 )
 
 const (

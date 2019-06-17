@@ -70,7 +70,7 @@ func (o *OperationServer) DeleteOperationChart(ctx *rest.Contexts) {
 	id := ctx.Request.PathParameter("id")
 	_, err := o.Engine.CoreAPI.CoreService().Operation().DeleteOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, id)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationDeleteStatisticFail, "search chart info fail, err: %v, id: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrOperationDeleteChartFail, "search chart info fail, err: %v, id: %v", err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (o *OperationServer) SearchOperationChart(ctx *rest.Contexts) {
 
 	result, err := o.Engine.CoreAPI.CoreService().Operation().SearchOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationSearchStatisticsFail, "search chart info fail, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrOperationSearchChartFail, "search chart info fail, err: %v", err)
 		return
 	}
 
@@ -104,7 +104,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 	filterCondition["width"] = opt["width"]
 	exist, err := o.CoreAPI.CoreService().Operation().SearchChartCommon(ctx.Kit.Ctx, ctx.Kit.Header, filterCondition)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateStatisticsFail, "new add statistic fail, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "new add statistic fail, err: %v", err)
 		return
 	}
 	if exist.Data.Count > 0 {
@@ -113,7 +113,7 @@ func (o *OperationServer) UpdateOperationChart(ctx *rest.Contexts) {
 	}
 
 	if _, err := o.Engine.CoreAPI.CoreService().Operation().UpdateOperationChart(ctx.Kit.Ctx, ctx.Kit.Header, opt); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateStatisticsFail, "update statistic info fail, err: %v", err)
+		ctx.RespErrorCodeOnly(common.CCErrOperationUpdateChartFail, "update statistic info fail, err: %v", err)
 		return
 	}
 
