@@ -15,18 +15,18 @@ package service
 import (
 	"net/http"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
+
+	"github.com/emicklei/go-restful"
 )
 
 func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
 	ownerID := common.BKDefaultOwnerID
 
 	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{
@@ -38,7 +38,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 
 	if nil != err {
 		blog.Errorf("db upgrade error: %v", err)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommMigrateFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error())})
 		return
 	}
 

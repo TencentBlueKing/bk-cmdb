@@ -69,7 +69,7 @@ func (m *modelAttrUnique) createModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck)
+	err := m.recheckUniqueForExistsInsts(ctx, objID, inputParam.Data.Keys, inputParam.Data.MustCheck, inputParam.Data.Metadata)
 	if nil != err {
 		blog.Errorf("[CreateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, inputParam, err)
 		return 0, ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
@@ -133,7 +133,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 		}
 	}
 
-	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck)
+	err := m.recheckUniqueForExistsInsts(ctx, objID, unique.Keys, unique.MustCheck, unique.Metadata)
 	if nil != err {
 		blog.Errorf("[UpdateObjectUnique] recheckUniqueForExistsInsts for %s with %#v error: %#v", objID, unique, err)
 		return ctx.Error.Errorf(common.CCErrCommDuplicateItem, "")
@@ -143,6 +143,9 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
 	cond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
+	if len(unique.Metadata.Label) > 0 {
+		cond.Field(metadata.BKMetadata).Eq(unique.Metadata)
+	}
 
 	oldunique := metadata.ObjectUnique{}
 	err = m.dbProxy.Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).One(ctx, &oldunique)
@@ -152,7 +155,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	}
 
 	if oldunique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %s", err, oldunique)
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v", oldunique, err)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
@@ -164,7 +167,7 @@ func (m *modelAttrUnique) updateModelAttrUnique(ctx core.ContextParams, objID st
 	return nil
 }
 
-func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64) error {
+func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID string, id uint64, meta metadata.DeleteModelAttrUnique) error {
 	cond := condition.CreateCondition()
 	cond.Field("id").Eq(id)
 	cond.Field(common.BKObjIDField).Eq(objID)
@@ -178,20 +181,28 @@ func (m *modelAttrUnique) deleteModelAttrUnique(ctx core.ContextParams, objID st
 	}
 
 	if unique.Ispre {
-		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %s", err, unique)
+		blog.Errorf("[DeleteObjectUnique] could not delete preset constrain: %+v, %v", unique, err)
 		return ctx.Error.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
-	err = m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, cond.ToMapStr())
+	fCond := cond.ToMapStr()
+	if len(meta.Label) > 0 {
+		fCond.Merge(metadata.PublicAndBizCondition(meta.Metadata))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	err = m.dbProxy.Table(common.BKTableNameObjUnique).Delete(ctx, fCond)
 	if nil != err {
-		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v", err, cond.ToMapStr())
+		blog.Errorf("[DeleteObjectUnique] Delete error: %s, raw: %#v", err, fCond)
 		return ctx.Error.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	return nil
 }
 
-func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool) error {
+func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, objID string, keys []metadata.UniqueKey, mustCheck bool, meta metadata.Metadata) error {
 	propertyIDs := []uint64{}
 	for _, key := range keys {
 		switch key.Kind {
@@ -203,11 +214,19 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 	}
 
 	propertys := []metadata.Attribute{}
-	cond := condition.CreateCondition()
-	cond.Field(common.BKObjIDField).Eq(objID)
-	cond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
-	cond.Field(common.BKFieldID).In(propertyIDs)
-	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(ctx, &propertys)
+	attcond := condition.CreateCondition()
+	attcond.Field(common.BKObjIDField).Eq(objID)
+	attcond.Field(common.BKOwnerIDField).Eq(ctx.SupplierAccount)
+	attcond.Field(common.BKFieldID).In(propertyIDs)
+	fCond := attcond.ToMapStr()
+	if len(meta.Label) > 0 {
+		fCond.Merge(metadata.PublicAndBizCondition(meta))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(fCond).All(ctx, &propertys)
 	if err != nil {
 		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts find propertys for %s failed %s: %s", objID, err)
 		return err
@@ -224,20 +243,20 @@ func (m *modelAttrUnique) recheckUniqueForExistsInsts(ctx core.ContextParams, ob
 
 	pipeline := []interface{}{}
 
-	instcond := mapstr.MapStr{
-		common.BKObjIDField: objID,
+	instcond := mapstr.MapStr{}
+	if len(meta.Label) > 0 {
+		instcond.Merge(metadata.PublicAndBizCondition(meta))
+		instcond.Remove(metadata.BKMetadata)
+	} else {
+		instcond.Merge(metadata.BizLabelNotExist)
 	}
 	if common.GetObjByType(objID) == common.BKInnerObjIDObject {
 		instcond.Set(common.BKObjIDField, objID)
 	}
 
 	if !mustCheck {
-		matchs := []mapstr.MapStr{}
 		for _, key := range keynames {
-			matchs = append(matchs, mapstr.MapStr{key: mapstr.MapStr{common.BKDBNE: nil}})
-		}
-		if len(matchs) > 0 {
-			instcond.Set(common.BKDBOR, matchs)
+			instcond.Set(key, mapstr.MapStr{common.BKDBNE: nil})
 		}
 	}
 

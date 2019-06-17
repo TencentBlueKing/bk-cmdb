@@ -26,7 +26,7 @@ const (
 
 // cc modules
 const (
-	CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
+	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
 	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
 	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
 	CC_MODULE_PROCCONTROLLER   = "proccontroller"
@@ -47,7 +47,7 @@ const (
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	CC_MODULE_AUDITCONTROLLER:  true,
+	// CC_MODULE_AUDITCONTROLLER:  true,
 	CC_MODULE_HOSTCONTROLLER:   true,
 	CC_MODULE_OBJECTCONTROLLER: true,
 	CC_MODULE_PROCCONTROLLER:   true,
@@ -61,7 +61,7 @@ var AllModule = map[string]bool{
 	CC_MODULE_EVENTSERVER:      true,
 	CC_MODULE_TXC:              true,
 	CC_MODULE_CORESERVICE:      true,
-	CC_MODULE_SYNCHRONZESERVER: true,
+	// CC_MODULE_SYNCHRONZESERVER: true,
 }
 
 // cc functionality define
@@ -148,5 +148,8 @@ type EventServInfo struct {
 
 // Address convert struct to host address
 func (s *ServerInfo) Address() string {
+	if s == nil {
+		return ""
+	}
 	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.IP, s.Port)
 }

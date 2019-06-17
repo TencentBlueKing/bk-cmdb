@@ -26,7 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 type Service struct {
@@ -51,7 +51,7 @@ func (s *Service) WebService() *gin.Engine {
 
 	ws.POST("/hosts/import", s.ImportHost)
 	ws.POST("/hosts/export", s.ExportHost)
-	ws.GET("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
+	ws.POST("/importtemplate/:bk_obj_id", s.BuildDownLoadExcelTemplate)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/import", s.ImportInst)
 	ws.POST("/insts/owner/:bk_supplier_account/object/:bk_obj_id/export", s.ExportInst)
 	ws.POST("/logout", s.LogOutUser)

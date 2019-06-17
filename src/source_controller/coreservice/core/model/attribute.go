@@ -77,7 +77,7 @@ func (m *modelAttribute) CreateModelAttributes(ctx core.ContextParams, objID str
 		}
 		id, err := m.save(ctx, attr)
 		if nil != err {
-			blog.Errorf("request(%s): it is failed to save the attribute(%#v), error info is %s", attr, err.Error())
+			blog.Errorf("request(%s): it is failed to save the attribute(%#v), error info is %s", ctx.ReqID, attr, err.Error())
 			addExceptionFunc(int64(attrIdx), err.(errors.CCErrorCoder), &attr)
 			continue
 		}
@@ -186,7 +186,7 @@ func (m *modelAttribute) UpdateModelAttributesByCondition(ctx core.ContextParams
 
 	cnt, err := m.update(ctx, inputParam.Data, cond)
 	if nil != err {
-		blog.Errorf("request(%s): it is failed to update some fields (%#v)of the attribute by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Data, err.Error())
+		blog.Errorf("request(%s): it is failed to update some fields (%#v)of the attribute by the condition(%#v), error info is %s", ctx.ReqID, inputParam.Data, cond.ToMapStr(), err.Error())
 		return &metadata.UpdatedCount{}, err
 	}
 

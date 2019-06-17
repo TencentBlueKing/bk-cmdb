@@ -26,11 +26,11 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-// CreateUserGroupPrivi create group privi
+//CreateUserGroupPrivi create group privi
 func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -94,10 +94,10 @@ func (cli *Service) CreateUserGroupPrivi(req *restful.Request, resp *restful.Res
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
 }
 
-// UpdateUserGroupPrivi update group privi
+//UpdateUserGroupPrivi update group privi
 func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -142,7 +142,7 @@ func (cli *Service) UpdateUserGroupPrivi(req *restful.Request, resp *restful.Res
 func (cli *Service) GetUserGroupPrivi(req *restful.Request, resp *restful.Response) {
 
 	//get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)

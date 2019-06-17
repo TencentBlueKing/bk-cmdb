@@ -33,7 +33,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 	blog.Info("create property group")
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -83,7 +83,7 @@ func (cli *Service) CreatePropertyGroup(req *restful.Request, resp *restful.Resp
 func (cli *Service) UpdatePropertyGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -120,7 +120,7 @@ func (cli *Service) UpdatePropertyGroup(req *restful.Request, resp *restful.Resp
 func (cli *Service) SelectGroup(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -169,7 +169,7 @@ func (cli *Service) DeletePropertyGroup(req *restful.Request, resp *restful.Resp
 	blog.Info("delete property group")
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -212,7 +212,7 @@ func (cli *Service) UpdatePropertyGroupObjectAtt(req *restful.Request, resp *res
 	blog.Info("update property group")
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -267,7 +267,7 @@ func (cli *Service) DeletePropertyGroupObjectAtt(req *restful.Request, resp *res
 	blog.Info("delete property group object attribute")
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
@@ -313,7 +313,7 @@ func (cli *Service) DeletePropertyGroupObjectAtt(req *restful.Request, resp *res
 func (cli *Service) SelectPropertyGroupByObjectID(req *restful.Request, resp *restful.Response) {
 
 	// get the language
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	// get the error factory by the language
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)

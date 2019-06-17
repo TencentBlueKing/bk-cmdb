@@ -1,16 +1,45 @@
+import {
+    SYSTEM_MANAGEMENT
+} from '@/dictionary/auth'
+
+import { viewRouters } from '@/router'
+
 const preloadConfig = {
     fromCache: true,
     cancelWhenRouteChange: false
 }
 
-export function _preloadPrivilege (app) {
-    return app.$store.dispatch('userPrivilege/getUserPrivilege', {
-        ...preloadConfig,
-        requestId: 'get_getUserPrivilege'
+export function getSystemAuth (app) {
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'system',
+        list: [SYSTEM_MANAGEMENT],
+        config: {
+            ...preloadConfig,
+            requestId: 'getSystemAuth'
+        }
     })
 }
 
-export function _preloadClassifications (app) {
+export function getViewAuth (app) {
+    const viewAuthorities = []
+    viewRouters.forEach(route => {
+        const meta = route.meta || {}
+        const auth = meta.auth || {}
+        if (auth.view) {
+            viewAuthorities.push(auth.view)
+        }
+    })
+    return app.$store.dispatch('auth/getAuth', {
+        type: 'view',
+        list: viewAuthorities,
+        config: {
+            ...preloadConfig,
+            requestId: 'getViewAuth'
+        }
+    })
+}
+
+export function getClassifications (app) {
     return app.$store.dispatch('objectModelClassify/searchClassificationsObjects', {
         params: app.$injectMetadata(),
         config: {
@@ -20,27 +49,11 @@ export function _preloadClassifications (app) {
     })
 }
 
-export function _preloadBusiness (app) {
-    return app.$store.dispatch('objectBiz/searchBusiness', {
-        params: {
-            'fields': ['bk_biz_id', 'bk_biz_name'],
-            'condition': {
-                'bk_data_status': {
-                    '$ne': 'disabled'
-                }
-            }
-        },
-        config: {
-            ...preloadConfig,
-            requestId: 'post_searchBusiness_$ne_disabled'
-        }
-    }).then(business => {
-        app.$store.commit('objectBiz/setBusiness', business.info)
-        return business
-    })
+export function getAuthorizedBusiness (app) {
+    return app.$store.dispatch('objectBiz/getAuthorizedBusiness')
 }
 
-export function _preloadUserCustom (app) {
+export function getUserCustom (app) {
     return app.$store.dispatch('userCustom/searchUsercustom', {
         config: {
             ...preloadConfig,
@@ -50,8 +63,9 @@ export function _preloadUserCustom (app) {
     })
 }
 
-export function _preloadUserList (app) {
+export function getUserList (app) {
     return app.$store.dispatch('getUserList').then(list => {
+        list = list || []
         window.CMDB_USER_LIST = list
         app.$store.commit('setUserList', list)
         return list
@@ -61,11 +75,18 @@ export function _preloadUserList (app) {
 }
 
 export default async function (app) {
-    await _preloadBusiness(app)
+    try {
+        await Promise.all([
+            getSystemAuth(app),
+            getAuthorizedBusiness(app)
+        ])
+    } catch (e) {
+        console.error(e)
+    }
     return Promise.all([
-        _preloadPrivilege(app),
-        _preloadClassifications(app),
-        _preloadUserCustom(app),
-        _preloadUserList(app)
+        getViewAuth(app),
+        getClassifications(app),
+        getUserCustom(app),
+        getUserList(app)
     ])
 }

@@ -14,10 +14,11 @@ package service
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/validator" //TODO: need to be removed
+	"configcenter/src/source_controller/coreservice/core/instances"
 )
 
 var defaultNameLanguagePkg = map[string]map[string][]string{
@@ -44,12 +45,16 @@ func (s *coreService) TranslatePropertyName(defLang language.DefaultCCLanguageIf
 	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID), att.PropertyName, att.PropertyID)
 }
 
-func (s *coreService) TranslateDescription(defLang language.DefaultCCLanguageIf, att *metadata.Attribute) string {
-	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_description_"+att.PropertyID), att.Description)
+func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf, att *metadata.Attribute) string {
+	return util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_placeholder_"+att.PropertyID), att.Placeholder)
 }
 
 func (s *coreService) TranslateEnumName(defLang language.DefaultCCLanguageIf, att *metadata.Attribute, val interface{}) interface{} {
-	options := validator.ParseEnumOption(val)
+	options, err := instances.ParseEnumOption(val)
+	if err != nil {
+		blog.Warnf("TranslateEnumName failed: %v", err)
+		return val
+	}
 	for index := range options {
 		options[index].Name = util.FirstNotEmptyString(defLang.Language(att.ObjectID+"_property_"+att.PropertyID+"_enum_"+options[index].ID), options[index].Name, options[index].ID)
 	}

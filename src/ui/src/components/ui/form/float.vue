@@ -1,10 +1,10 @@
 <template>
     <div class="cmdb-form form-float">
         <input class="cmdb-form-input form-float-input" type="text"
-            :placeholder="$t('Form[\'请输入浮点数\']')"
+            :placeholder="placeholder || $t('Form[\'请输入浮点数\']')"
             :value="value"
             :disabled="disabled"
-            @input="handleInput"
+            @blur="handleInput($event)"
             @change="handleChange">
     </div>
 </template>
@@ -14,11 +14,18 @@
         name: 'cmdb-form-float',
         props: {
             value: {
-                default: null
+                default: null,
+                validator (val) {
+                    return typeof val === 'number' || val === '' || val === null
+                }
             },
             disabled: {
                 type: Boolean,
                 default: false
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         data () {

@@ -13,11 +13,14 @@
 package metadata
 
 import (
+	"configcenter/src/common/json"
 	"errors"
 	"fmt"
 	"strconv"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/util"
 )
 
 type ModelKind string
@@ -44,6 +47,7 @@ var (
 
 var BizLabelNotExist = mapstr.MapStr{"metadata.label.bk_biz_id": mapstr.MapStr{"$exists": false}}
 
+/*
 func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	exist, bizID := meta.Label.Get(LabelBusinessID)
 	if false == exist {
@@ -51,6 +55,50 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 	}
 	condArr := make([]mapstr.MapStr, 0)
 	condArr = append(condArr, BizLabelNotExist, mapstr.MapStr{"metadata.label.bk_biz_id": bizID})
+	return mapstr.MapStr{"$or": condArr}
+}
+*/
+
+func BizIDFromMetadata(meta Metadata) (int64, error) {
+	var businessID int64
+	var err error
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		return 0, nil
+	}
+	businessID, err = util.GetInt64ByInterface(bizID)
+	if err != nil {
+		return 0, fmt.Errorf("convert business id failed, err: %+v", err)
+	}
+	return businessID, nil
+}
+
+func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
+	var businessID int64
+	var err error
+	exist, bizID := meta.Label.Get(LabelBusinessID)
+	if false == exist {
+		return NewPublicOrBizConditionByBizID(0)
+	}
+
+	bizIDStr := util.GetStrByInterface(bizID)
+	if len(bizIDStr) > 0 {
+		businessID, err = util.GetInt64ByInterface(bizID)
+		if err != nil {
+			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
+			businessID = 0
+		}
+	}
+	return NewPublicOrBizConditionByBizID(businessID)
+}
+
+// NewPublicOrBizConditionByBizID new a query condition
+func NewPublicOrBizConditionByBizID(businessID int64) mapstr.MapStr {
+	condArr := make([]mapstr.MapStr, 0)
+	condArr = append(condArr, BizLabelNotExist)
+	if businessID != 0 {
+		condArr = append(condArr, mapstr.MapStr{"metadata.label.bk_biz_id": strconv.FormatInt(businessID, 10)})
+	}
 	return mapstr.MapStr{"$or": condArr}
 }
 
@@ -88,26 +136,35 @@ func GetBusinessIDFromMeta(data interface{}) string {
 	return bizID
 }
 
-func NewMetaDataFromMap(mapData mapstr.MapStr) *Metadata {
-	data, exsit := mapData.Get(BKMetadata)
-	if !exsit {
-		return nil
+// GetBizIDFromMetadata parse biz id from metadata, 0 for global case
+// nil ==> 0, error
+// [] ==> 0, error
+// {}  ==> 0, nil
+// {"label": {}} ==> 0, nil
+// {"label": []} ==> 0, error
+// {"label": {"bk_biz_id": 1}} ==> 1, nil
+// {"label": {"bk_biz_id": "a"}} ==> 0, error
+func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
+	rawMetadata, exist := rawData.Get(BKMetadata)
+	if exist == false {
+		return 0, fmt.Errorf("invalid input, metadata field not exist")
+	}
+	js, _ := json.Marshal(rawMetadata)
+	meta := new(Metadata)
+	if err := json.Unmarshal(js, meta); err != nil {
+		return 0, err
 	}
 
-	tmp, ok := data.(map[string]interface{})
-	if !ok {
-		return nil
+	rawBizID, existed := meta.Label[LabelBusinessID]
+	if !existed {
+		return 0, nil
 	}
-	label, ok := tmp[BKLabel].(map[string]interface{})
-	if !ok {
-		return nil
+	bizID, err := util.GetInt64ByInterface(rawBizID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid biz id value, parse int failed, id: %+v, err: %+v", rawBizID, err)
 	}
-	bizID, ok := label[LabelBusinessID].(string)
-	if !ok {
-		return nil
-	}
+	return bizID, nil
 
-	return &Metadata{Label: Label{LabelBusinessID: bizID}}
 }
 
 // Metadata  used to define the metadata for the resources

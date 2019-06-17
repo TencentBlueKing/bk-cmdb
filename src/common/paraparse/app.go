@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-//common search struct
+// common search struct
 type SearchParams struct {
 	Condition map[string]interface{} `json:"condition"`
 	Page      map[string]interface{} `json:"page,omitempty"`
@@ -30,7 +30,7 @@ type SearchParams struct {
 	Native    int                    `json:"native,omitempty"`
 }
 
-//common result struct
+// common result struct
 type CommonResult struct {
 	Result  bool        `json:"result"`
 	Code    int         `json:"int"`
@@ -43,15 +43,20 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 		switch i.Operator {
 		case common.BKDBEQ:
 			if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				output[i.Field] = SpeceialCharChange(i.Value.(string))
+				output[i.Field] = SpecialCharChange(i.Value.(string))
 			} else {
 				output[i.Field] = i.Value
 			}
-
+		case common.BKDBLIKE:
+			regex := make(map[string]interface{})
+			regex[common.BKDBLIKE] = i.Value
+			output[i.Field] = regex
 		default:
 			d := make(map[string]interface{})
-			if reflect.TypeOf(i.Value).Kind() == reflect.String {
-				d[i.Operator] = SpeceialCharChange(i.Value.(string))
+			if i.Value == nil {
+				d[i.Operator] = i.Value
+			} else if reflect.TypeOf(i.Value).Kind() == reflect.String {
+				d[i.Operator] = SpecialCharChange(i.Value.(string))
 			} else {
 				d[i.Operator] = i.Value
 			}
@@ -61,7 +66,7 @@ func ParseCommonParams(input []metadata.ConditionItem, output map[string]interfa
 	return nil
 }
 
-func SpeceialCharChange(targetStr string) string {
+func SpecialCharChange(targetStr string) string {
 
 	re := regexp.MustCompile(`([\^\$\(\)\*\+\?\.\\\|\[\]\{\}])`)
 	delItems := re.FindAllString(targetStr, -1)
@@ -85,7 +90,7 @@ func ParseAppSearchParams(input map[string]interface{}) map[string]interface{} {
 		case reflect.String:
 			d := make(map[string]interface{})
 			targetStr := j.(string)
-			d[common.BKDBLIKE] = SpeceialCharChange(targetStr)
+			d[common.BKDBLIKE] = SpecialCharChange(targetStr)
 			output[i] = d
 		default:
 			output[i] = j

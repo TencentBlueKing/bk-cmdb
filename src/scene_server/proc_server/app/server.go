@@ -18,8 +18,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -43,8 +44,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	procSvr := new(service.ProcServer)
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
-	container := restful.NewContainer()
-	container.Add(procSvr.WebService())
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
@@ -68,6 +67,16 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if false == configReady {
 		return fmt.Errorf("Configuration item not found")
 	}
+	authConf, err := authcenter.ParseConfigFromKV("auth", procSvr.ConfigMap)
+	if err != nil {
+		return err
+	}
+
+	authorize, err := auth.NewAuthorize(nil, authConf)
+	if err != nil {
+		return fmt.Errorf("new authorize failed, err: %v", err)
+	}
+
 	cacheDB, err := redis.NewFromConfig(*procSvr.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %s", err.Error())
@@ -78,11 +87,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return fmt.Errorf("create esb api  object failed. err: %v", err)
 	}
+	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
 	procSvr.Engine = engine
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
-	if err := backbone.StartServer(ctx, engine, container); err != nil {
+	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err
 	}
 

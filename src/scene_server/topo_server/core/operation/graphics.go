@@ -17,6 +17,7 @@ import (
 	"strconv"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -31,14 +32,18 @@ type GraphicsOperationInterface interface {
 	SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface)
 }
 
-func NewGraphics(client apimachinery.ClientSetInterface) GraphicsOperationInterface {
-	return &graphics{clientSet: client}
+func NewGraphics(client apimachinery.ClientSetInterface, authManager *extensions.AuthManager) GraphicsOperationInterface {
+	return &graphics{
+		clientSet:   client,
+		authManager: authManager,
+	}
 }
 
 type graphics struct {
-	clientSet apimachinery.ClientSetInterface
-	obj       ObjectOperationInterface
-	asst      AssociationOperationInterface
+	clientSet   apimachinery.ClientSetInterface
+	obj         ObjectOperationInterface
+	asst        AssociationOperationInterface
+	authManager *extensions.AuthManager
 }
 
 func (g *graphics) SetProxy(obj ObjectOperationInterface, asst AssociationOperationInterface) {
@@ -162,6 +167,7 @@ func (g *graphics) UpdateObjectTopoGraphics(params types.ContextParams, scopeTyp
 			datas[index].SetMetaData(*params.MetaData)
 		}
 	}
+
 	rsp, err := g.clientSet.ObjectController().Meta().UpdateTopoGraphics(context.Background(), params.Header, datas)
 	if err != nil {
 		blog.Errorf("UpdateGraphics failed %v", err.Error())

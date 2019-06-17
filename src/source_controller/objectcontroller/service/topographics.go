@@ -30,7 +30,7 @@ import (
 // CreateClassification create object's classification
 func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -74,7 +74,7 @@ func (cli *Service) SearchTopoGraphics(req *restful.Request, resp *restful.Respo
 
 func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Response) {
 
-	language := util.GetActionLanguage(req)
+	language := util.GetLanguage(req.Request.Header)
 	ownerID := util.GetOwnerID(req.Request.Header)
 	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
 	ctx := util.GetDBContext(context.Background(), req.Request.Header)
@@ -105,12 +105,7 @@ func (cli *Service) UpdateTopoGraphics(req *restful.Request, resp *restful.Respo
 			"bk_inst_id":          datas[index].InstID,
 			"bk_supplier_account": ownerID,
 		}
-		_, err := datas[index].Metadata.Label.GetBusinessID()
-		if nil != err {
-			cond.Merge(meta.BizLabelNotExist)
-		} else {
-			cond.Set("metadata", datas[index].Metadata)
-		}
+
 		cnt, err := db.Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx)
 		if nil != err {
 			blog.Errorf("update topo graphics, search data error: %s", value, err.Error())

@@ -14,13 +14,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"time"
 
-	restful "github.com/emicklei/go-restful"
-
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -29,36 +30,40 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/core"
-	toposvr "configcenter/src/scene_server/topo_server/service"
+	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/dal/mongo"
+	"configcenter/src/storage/dal/mongo/remote"
 )
 
 // TopoServer the topo server
 type TopoServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service toposvr.TopoServiceInterface
+	Core        *backbone.Engine
+	Config      options.Config
+	Service     *service.Service
+	configReady bool
 }
 
 func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
-	topoMax := common.BKTopoBusinessLevelDefault
-	var err error
+	t.configReady = true
 	if current.ConfigMap["level.businessTopoMax"] != "" {
-		topoMax, err = strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
+		max, err := strconv.Atoi(current.ConfigMap["level.businessTopoMax"])
 		if err != nil {
+			t.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
 			blog.Errorf("invalid business topo max value, err: %v", err)
-			return
+		} else {
+			t.Config.BusinessTopoLevelMax = max
 		}
+		blog.Infof("config update with max topology level: %d", t.Config.BusinessTopoLevelMax)
 	}
-	t.Config.BusinessTopoLevelMax = topoMax
 	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
+	t.Config.ConfigMap = current.ConfigMap
+	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
 
-	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
-	for t.Core == nil {
-		time.Sleep(time.Second)
-		blog.V(3).Info("sleep for engine")
+	var err error
+	t.Config.Auth, err = authcenter.ParseConfigFromKV("auth", current.ConfigMap)
+	if err != nil {
+		blog.Warnf("parse auth center config failed: %v", err)
 	}
-	t.Service.SetConfig(t.Config, t.Core)
 }
 
 // Run main function
@@ -68,36 +73,72 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return fmt.Errorf("wrap server info failed, err: %v", err)
 	}
 
-	blog.V(5).Infof("srv conf:", svrInfo)
+	blog.Infof("srv conf: %+v", svrInfo)
 
-	topoSvr := new(TopoServer)
-	topoSvr.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
-
-	topoService := toposvr.New()
-	topoSvr.Service = topoService
+	server := new(TopoServer)
+	server.Config.BusinessTopoLevelMax = common.BKTopoBusinessLevelDefault
+	server.Service = new(service.Service)
 
 	input := &backbone.BackboneParameter{
 		Regdiscv:     op.ServConf.RegDiscover,
 		ConfigPath:   op.ServConf.ExConfig,
-		ConfigUpdate: topoSvr.onTopoConfigUpdate,
+		ConfigUpdate: server.onTopoConfigUpdate,
 		SrvInfo:      svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
+	server.Core = engine
 
-	topoSvr.Core = engine
+	if err := server.CheckForReadiness(); err != nil {
+		return err
+	}
 
-	topoService.SetOperation(core.New(engine.CoreAPI), engine.CCErr, engine.Language)
-	// topoService.SetConfig(topoSvr.Config, engine)
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(topoService.WebService())); err != nil {
+	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers, server.Config.Mongo)
+	if err != nil {
+		blog.Errorf("failed to connect the txc server, error info is %v", err)
+		return err
+	}
+
+	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
+	if err != nil {
+		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
+	}
+
+	authManager := extensions.NewAuthManager(engine.CoreAPI, authorize)
+	server.Service = &service.Service{
+		Language:    engine.Language,
+		Engine:      engine,
+		AuthManager: authManager,
+		Core:        core.New(engine.CoreAPI, authManager),
+		Error:       engine.CCErr,
+		Txn:         txn,
+		Config:      server.Config,
+	}
+
+	if err := backbone.StartServer(ctx, engine, server.Service.WebService()); err != nil {
 		return err
 	}
 	select {
 	case <-ctx.Done():
 	}
 	return nil
+}
+
+const waitForSeconds = 180
+
+func (t *TopoServer) CheckForReadiness() error {
+	for i := 1; i < waitForSeconds; i++ {
+		if !t.configReady {
+			blog.Info("waiting for topology server configuration ready.")
+			time.Sleep(time.Second)
+			continue
+		}
+		blog.Info("topology server configuration ready.")
+		return nil
+	}
+	return errors.New("wait for topology server configuration timeout")
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {

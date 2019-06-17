@@ -1,25 +1,25 @@
 <template>
     <div class="import-wrapper">
-        <div class="up-file upload-file" v-bkloading="{isLoading: isLoading}">
+        <div class="up-file upload-file" v-bkloading="{ isLoading: isLoading }">
             <img src="../../assets/images/up_file.png">
-            <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile"/>
-            <i18n path="Inst['导入提示']" tag="p" :places="{allowType: allowType.join(','), maxSize: maxSize}">
+            <input ref="fileInput" type="file" class="fullARea" @change.prevent="handleFile" />
+            <i18n path="Inst['导入提示']" tag="p" :places="{ allowType: allowType.join(','), maxSize: maxSize }">
                 <b place="clickUpload">{{$t("Inst['点击上传']")}}</b>
                 <br place="breakRow">
             </i18n>
         </div>
-        <div :class="['upload-file-info', {'uploading': isLoading}, {'fail': failed}, {'uploaded': !isLoading}]">
+        <div :class="['upload-file-info', { 'uploading': isLoading }, { 'fail': failed }, { 'uploaded': !isLoading }]">
             <div class="upload-file-name">{{fileInfo.name}}</div>
             <div class="upload-file-size fr">{{fileInfo.size}}</div>
             <div class="upload-file-status" hidden>{{fileInfo.status}}</div>
             <div class="upload-file-status-icon" hidden>
-                <i :class="['bk-icon ',{'icon-check-circle-shape':uploaded,'icon-close-circle-shape':failed}]"></i>
+                <i :class="['bk-icon ',{ 'icon-check-circle-shape': uploaded,'icon-close-circle-shape': failed }]"></i>
             </div>
         </div>
         <div class="upload-details" v-if="hasUploadError()">
             <div class="upload-details-success" v-if="uploadResult.success && uploadResult.success.length">
                 <i class="bk-icon icon-check-circle-shape"></i>
-                <span>{{$t("Inst['成功上传N条数据']", {N: uploadResult.success.length})}}</span>
+                <span>{{$t("Inst['成功上传N条数据']", { N: uploadResult.success.length })}}</span>
             </div>
             <!-- 上传失败列表  -->
             <div class="upload-details-fail" v-if="uploadResult.error && uploadResult.error.length">
@@ -28,7 +28,7 @@
                     <span>{{$t("Inst['上传失败列表']")}}({{uploadResult.error.length}})</span>
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg">{{errorMsg}}</li>
+                    <li v-for="(errorMsg, index) in uploadResult.error" :title="errorMsg" :key="index">{{errorMsg}}</li>
                 </ul>
             </div>
             <div class="upload-details-fail" v-if="uploadResult.update_error && uploadResult.update_error.length">
@@ -37,7 +37,7 @@
                     <span>{{$t("Inst['更新失败列表']")}}({{uploadResult.update_error.length}})</span>
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg">{{errorMsg}}</li>
+                    <li v-for="(errorMsg, index) in uploadResult.update_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
                 </ul>
             </div>
             <div class="upload-details-fail" v-if="uploadResult.asst_error && uploadResult.asst_error.length">
@@ -46,7 +46,7 @@
                     <span>关联关系导入失败列表({{uploadResult.asst_error.length}})</span>
                 </div>
                 <ul ref="failList" class="upload-details-fail-list">
-                    <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg">{{errorMsg}}</li>
+                    <li v-for="(errorMsg, index) in uploadResult.asst_error" :title="errorMsg" :key="index">{{errorMsg}}</li>
                 </ul>
             </div>
         </div>
@@ -120,26 +120,26 @@
         methods: {
             handleFile (e) {
                 this.reset()
-                let files = e.target.files
-                let fileInfo = files[0]
+                const files = e.target.files
+                const fileInfo = files[0]
                 if (!this.allowTypeRegExp.test(fileInfo.name)) {
                     this.$refs.fileInput.value = ''
-                    this.$error(this.$t("Inst['文件格式非法']", {allowType: this.allowType.join(',')}))
+                    this.$error(this.$t("Inst['文件格式非法']", { allowType: this.allowType.join(',') }))
                     return false
                 } else if (fileInfo.size / 1024 > this.maxSize) {
                     this.$refs.fileInput.value = ''
-                    this.$error(this.$t("Inst['文件大小溢出']", {maxSize: this.maxSize}))
+                    this.$error(this.$t("Inst['文件大小溢出']", { maxSize: this.maxSize }))
                     return false
                 } else {
                     this.fileInfo.name = fileInfo.name
                     this.fileInfo.size = `${(fileInfo.size / 1024).toFixed(2)}kb`
-                    let formData = new FormData()
+                    const formData = new FormData()
                     formData.append('file', files[0])
                     if (this.importPayload.hasOwnProperty('metadata')) {
                         formData.append('metadata', JSON.stringify(this.importPayload.metadata))
                     }
                     this.isLoading = true
-                    this.$http.post(this.importUrl, formData, {transformData: false, globalError: false}).then(res => {
+                    this.$http.post(this.importUrl, formData, { transformData: false, globalError: false }).then(res => {
                         const defaultResult = {
                             success: null,
                             error: null,
@@ -172,10 +172,10 @@
             },
             hasUploadError () {
                 const uploadResult = this.uploadResult
-                return (uploadResult.success && uploadResult.success.length) ||
-                    (uploadResult.error && uploadResult.error.length) ||
-                    (uploadResult.update_error && uploadResult.update_error.length) ||
-                    (uploadResult.asst_error && uploadResult.asst_error.length)
+                return (uploadResult.success && uploadResult.success.length)
+                    || (uploadResult.error && uploadResult.error.length)
+                    || (uploadResult.update_error && uploadResult.update_error.length)
+                    || (uploadResult.asst_error && uploadResult.asst_error.length)
             },
             reset () {
                 this.uploaded = false
@@ -192,29 +192,24 @@
                     asst_error: null
                 }
             },
-            exportExcel (response) {
-                const contentDisposition = response.headers['content-disposition']
-                const fileName = contentDisposition.substring(contentDisposition.indexOf('filename') + 9)
-                const url = window.URL.createObjectURL(new Blob([response.data], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                }))
-                const link = document.createElement('a')
-                link.style.display = 'none'
-                link.href = url
-                link.setAttribute('download', fileName)
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-            },
             async handleDownloadTemplate () {
                 try {
-                    const response = await this.$http.get(this.templateUrl, {
-                        originalResponse: true,
-                        globalError: false,
-                        responseType: 'blob',
-                        data: this.downloadPayload
+                    let data = this.downloadPayload
+                    if (!(data instanceof FormData)) {
+                        data = new FormData()
+                        Object.keys(this.downloadPayload).forEach(key => {
+                            const value = this.downloadPayload[key]
+                            if (typeof value === 'object') {
+                                data.append(key, JSON.stringify(value))
+                            } else {
+                                data.append(key, value)
+                            }
+                        })
+                    }
+                    this.$http.download({
+                        url: this.templateUrl,
+                        data: data
                     })
-                    this.exportExcel(response)
                 } catch (e) {
                     console.log(e)
                 }

@@ -15,6 +15,7 @@
         name: 'cmdb-form-enum',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {

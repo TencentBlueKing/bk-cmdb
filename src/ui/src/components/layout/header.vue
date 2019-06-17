@@ -1,19 +1,22 @@
 <template>
-    <header class="header-layout clearfix" 
-        :class="{'nav-sticked': navStick}">
+    <header class="header-layout clearfix"
+        :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
-            <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
+            <i class="breadcrumbs-back icon-cc-arrow" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
         </div>
         <div class="header-options">
-            <cmdb-business-selector class="business-selector"></cmdb-business-selector>
+            <cmdb-business-selector
+                class="business-selector"
+                v-if="!isAdminView">
+            </cmdb-business-selector>
             <div class="user" v-click-outside="handleCloseUser">
                 <p class="user-name" @click="isShowUserDropdown = !isShowUserDropdown">
-                    {{userName}}({{userRole}})
+                    {{userName}}
                     <i class="user-name-angle bk-icon icon-angle-down"
-                        :class="{dropped: isShowUserDropdown}">
+                        :class="{ dropped: isShowUserDropdown }">
                     </i>
                 </p>
                 <transition name="toggle-slide">
@@ -38,7 +41,7 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="admin" @click="toggleAdminView">
+            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -47,24 +50,30 @@
 
 <script>
     import { mapGetters } from 'vuex'
+    import { SYSTEM_MANAGEMENT } from '@/dictionary/auth'
     export default {
         data () {
             return {
+                OPERATION: {
+                    SYSTEM_MANAGEMENT
+                },
                 isShowUserDropdown: false,
                 isShowHelper: false
             }
         },
         computed: {
-            ...mapGetters(['site', 'userName', 'admin', 'showBack', 'navStick', 'headerTitle', 'isAdminView']),
+            ...mapGetters([
+                'site',
+                'userName',
+                'admin',
+                'showBack',
+                'navStick',
+                'headerTitle',
+                'isAdminView'
+            ]),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
-            },
-            title () {
-                let {
-                    $classify
-                } = this
-                let title = $classify.i18n ? this.$t($classify.i18n) : $classify.name
-                return this.$route.meta.title ? this.$route.meta.title : title
             }
         },
         methods: {
@@ -74,7 +83,7 @@
             // 回退路由
             back () {
                 if (!this.showBack && this.$route.meta.returnPath) {
-                    this.$router.push({path: this.$route.meta.returnPath})
+                    this.$router.push({ path: this.$route.meta.returnPath })
                 } else {
                     this.$store.commit('setHeaderStatus', {
                         back: false
@@ -116,29 +125,31 @@
     .breadcrumbs{
         line-height: 60px;
         position: relative;
-        margin: 0 0 0 25px;
+        margin: 0 0 0 12px;
         font-size: 0;
         .breadcrumbs-back{
             display: inline-block;
             vertical-align: middle;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
             text-align: center;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
+            color: #3c96ff;
+            transition: background-color .1s ease-in;
             &:hover{
-                color: #3c96ff;
+                background-color: #f0f1f5;
             }
         }
         .breadcrumbs-current{
-            margin: 0;
+            margin: 0 0 0 8px;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
             font-size: 16px;
             font-weight: normal;
+            color: #313238;
         }
         .icon-info-circle {
             margin-left: 5px;

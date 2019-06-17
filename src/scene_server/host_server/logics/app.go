@@ -13,18 +13,18 @@
 package logics
 
 import (
-    "context"
-    "strings"
+	"context"
+	"strings"
 
-    "configcenter/src/common"
-    "configcenter/src/common/blog"
-    "configcenter/src/common/errors"
-    "configcenter/src/common/mapstr"
-    types "configcenter/src/common/mapstr"
-    "configcenter/src/common/metadata"
-    "configcenter/src/common/paraparse"
-    "configcenter/src/common/util"
-    hutil "configcenter/src/scene_server/host_server/util"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
+	types "configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
+	"configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
+	hutil "configcenter/src/scene_server/host_server/util"
 )
 
 func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, errors.CCError) {
@@ -45,8 +45,8 @@ func (lgc *Logics) GetDefaultAppIDWithSupplier(ctx context.Context) (int64, erro
 	return id, nil
 }
 
-func (lgc *Logics) GetDefaultAppID(ctx context.Context, ownerID string) (int64, errors.CCError) {
-	cond := hutil.NewOperation().WithOwnerID(ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
+func (lgc *Logics) GetDefaultAppID(ctx context.Context) (int64, errors.CCError) {
+	cond := hutil.NewOperation().WithOwnerID(lgc.ownerID).WithDefaultField(int64(common.DefaultAppFlag)).Data()
 	cond[common.BKDBAND] = []mapstr.MapStr{
 		mapstr.MapStr{common.BKOwnerIDField: util.GetOwnerID(lgc.header)},
 	}
@@ -117,13 +117,14 @@ func (lgc *Logics) IsHostExistInApp(ctx context.Context, appID, hostID int64) (b
 
 // ExistHostIDSInApp exist host id in app return []int64 don't exist in app hostID, error handle logic error
 func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArray []int64) ([]int64, error) {
-    defErr := lgc.ccErr
-	conf := map[string][]int64{
-		common.BKAppIDField:  []int64{appID},
-		common.BKHostIDField: hostIDArray,
+	defErr := lgc.ccErr
+
+	conf := &metadata.HostModuleRelationRequest{
+		ApplicationID: appID,
+		HostIDArr:     hostIDArray,
 	}
 
-	result, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx,lgc.header,  conf)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx, lgc.header, conf)
 	if err != nil {
 		blog.Errorf("ExistHostIDSInApp http do error. err:%s, input:%#v,rid:%s", err.Error(), conf, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -148,6 +149,7 @@ func (lgc *Logics) ExistHostIDSInApp(ctx context.Context, appID int64, hostIDArr
 }
 
 func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr.MapStr, errors.CCError) {
+	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: 1},
@@ -173,8 +175,11 @@ func (lgc *Logics) GetSingleApp(ctx context.Context, cond mapstr.MapStr) (mapstr
 func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.ConditionItem) ([]int64, errors.CCError) {
 	condc := make(map[string]interface{})
 	params.ParseCommonParams(cond, condc)
+	condMap := mapstr.NewFromMap(condc)
+	condMap.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
+
 	query := &metadata.QueryCondition{
-		Condition: mapstr.NewFromMap(condc),
+		Condition: condMap,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},
 		SortArr:   metadata.NewSearchSortParse().String(common.BKAppIDField).ToSearchSortArr(),
 		Fields:    []string{common.BKAppIDField},
@@ -204,6 +209,10 @@ func (lgc *Logics) GetAppIDByCond(ctx context.Context, cond []metadata.Condition
 
 func (lgc *Logics) GetAppMapByCond(ctx context.Context, fields []string, cond mapstr.MapStr) (map[int64]types.MapStr, errors.CCError) {
 
+	if cond == nil {
+		cond = mapstr.New()
+	}
+	cond.Set(common.BKDataStatusField, mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled})
 	query := &metadata.QueryCondition{
 		Condition: cond,
 		Limit:     metadata.SearchLimit{Offset: 0, Limit: common.BKNoLimit},

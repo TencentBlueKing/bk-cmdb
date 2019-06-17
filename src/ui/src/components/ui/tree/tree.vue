@@ -1,6 +1,6 @@
 <template>
     <ul class="tree-list">
-        <cmdb-tree-node v-for="(node, index) in tree"
+        <cmdb-tree-node v-for="node in tree"
             :key="layout.getNodeId(node)"
             :node="node"
             :level="1"

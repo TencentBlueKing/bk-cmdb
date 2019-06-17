@@ -13,10 +13,10 @@
 package middleware
 
 import (
-    "configcenter/src/apimachinery/discovery"
-    "plugin"
+	"plugin"
 	"strings"
 
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -28,7 +28,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/holmeswang/contrib/sessions"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 var sLoginURL string
@@ -52,15 +52,18 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 
 		if isAuthed(c, config) {
 			// valid resource access privilege
-			auth := auth.NewAuth()
-			ok := auth.ValidResAccess(pathArr, c)
-			if false == ok {
-				c.JSON(403, gin.H{
-					"status": "access forbidden",
-				})
-				c.Abort()
-				return
+			if config.Site.AuthScheme == "internal" {
+				auth := auth.NewAuth()
+				ok := auth.ValidResAccess(pathArr, c)
+				if false == ok {
+					c.JSON(403, gin.H{
+						"status": "access forbidden",
+					})
+					c.Abort()
+					return
+				}
 			}
+
 			// http request header add user
 			session := sessions.Default(c)
 			userName, _ := session.Get(common.WEBSessionUinKey).(string)
@@ -130,6 +133,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 
 		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
+
 		session.Set(common.WEBSessionRoleKey, "1")
 		session.Set(webCommon.IsSkipLogin, "1")
 		session.Save()
@@ -163,7 +167,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 	}
 	bk_token, err := c.Cookie(bkTokenName)
-	blog.Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
+	blog.V(5).Infof("valid user login session token %s, cookie token %s", cc_token, bk_token)
 	if nil != err || bk_token != cc_token {
 		return user.LoginUser(c)
 	}

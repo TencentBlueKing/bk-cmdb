@@ -1,7 +1,7 @@
 <template>
     <div class="cmdb-form form-singlechar">
         <input class="cmdb-form-input form-singlechar-input" type="text"
-            :placeholder="$t('Form[\'请输入短字符\']')"
+            :placeholder="placeholder || $t('Form[\'请输入短字符\']')"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
@@ -15,6 +15,7 @@
         name: 'cmdb-form-singlechar',
         props: {
             value: {
+                type: [String, Number],
                 default: ''
             },
             disabled: {
@@ -24,11 +25,15 @@
             maxlength: {
                 type: Number,
                 default: 256
+            },
+            placeholder: {
+                type: String,
+                default: ''
             }
         },
         methods: {
             handleInput (event) {
-                let value = event.target.value.trim()
+                const value = event.target.value.trim()
                 this.$emit('input', value)
             },
             handleChange () {

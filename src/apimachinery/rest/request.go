@@ -200,6 +200,11 @@ func (r *Request) WrapURL() *url.URL {
 }
 
 func (r *Request) Do() *Result {
+	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
+	if rid == "" {
+		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+	}
+
 	result := new(Result)
 	if r.err != nil {
 		result.Err = r.err
@@ -248,6 +253,7 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
+			start := time.Now()
 			resp, err := client.Do(req)
 			if err != nil {
 				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
@@ -257,7 +263,7 @@ func (r *Request) Do() *Result {
 				if !isConnectionReset(err) || r.verb != GET {
 					result.Err = err
 					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
+						blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					}
 					return result
 				}
@@ -267,6 +273,7 @@ func (r *Request) Do() *Result {
 				continue
 
 			}
+			cost := time.Since(start).Nanoseconds() / int64(time.Millisecond)
 
 			var body []byte
 			if resp.Body != nil {
@@ -278,19 +285,16 @@ func (r *Request) Do() *Result {
 						continue
 					}
 					result.Err = err
-					if r.peek {
-						blog.Infof("[apimachinary][peek] %s %s with body %s, but %v", string(r.verb), url, r.body, err)
-					}
+					blog.Infof("[apimachinery][peek] %s %s with body %s, but %v, rid: %s", string(r.verb), url, r.body, err, rid)
 					return result
 				}
 				body = data
 			}
-			blog.V(4).InfoDepthf(2, "[apimachinary][peek] %s %s with body %s, response %s, rid: %s", string(r.verb), url, r.body, body, commonUtil.GetHTTPCCRequestID(r.headers))
+			blog.V(4).InfoDepthf(2, "[apimachinery][peek] cost: %dms, %s %s with body %s\nresponse status: %s, response body: %s, rid: %s",
+				cost, string(r.verb), url, r.body, resp.Status, body, rid)
 			result.Body = body
 			result.StatusCode = resp.StatusCode
-			if r.peek {
-				blog.Infof("[apimachinary][peek] %s %s with body %s, response %s", string(r.verb), url, r.body, body)
-			}
+			result.Status = resp.Status
 
 			return result
 		}
@@ -318,6 +322,7 @@ type Result struct {
 	Body       []byte
 	Err        error
 	StatusCode int
+	Status     string
 }
 
 func (r *Result) Into(obj interface{}) error {
@@ -328,12 +333,14 @@ func (r *Result) Into(obj interface{}) error {
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
-			if http.StatusOK != r.StatusCode {
+			if r.StatusCode >= 300 {
 				return fmt.Errorf("http request err: %s", string(r.Body))
 			}
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", string(r.Body), err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
+	} else if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
 }

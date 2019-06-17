@@ -4,6 +4,7 @@
 
 <script>
     export default {
+        // eslint-disable-next-line
         props: ['value', 'type', 'disabled'],
         data () {
             return {

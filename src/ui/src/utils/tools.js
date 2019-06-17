@@ -55,6 +55,13 @@ export function getPropertyText (property, item) {
     const propertyId = property['bk_property_id']
     const propertyType = property['bk_property_type']
     let propertyValue = item[propertyId]
+    if (
+        propertyValue === null
+        || propertyValue === undefined
+        || propertyValue === ''
+    ) {
+        return '--'
+    }
     if (propertyType === 'enum') {
         const options = Array.isArray(property.option) ? property.option : []
         const enumOption = options.find(option => option.id === propertyValue)
@@ -73,7 +80,7 @@ export function getPropertyText (property, item) {
             return String(propertyValue).length ? propertyValue : '--'
         }
     }
-    return String(propertyValue).length ? propertyValue : '--'
+    return propertyValue
 }
 
 /**
@@ -99,7 +106,7 @@ export function flatternHostList (properties, list) {
  */
 export function flatternHostItem (properties, item) {
     const flatternedItem = clone(item)
-    for (let objId in properties) {
+    for (const objId in properties) {
         properties[objId].forEach(property => {
             const originalValue = item[objId] instanceof Array ? item[objId] : [item[objId]]
             originalValue.forEach(value => {
@@ -127,7 +134,7 @@ export function getInstFormValues (properties, inst = {}) {
         } else if (['date', 'time'].includes(propertyType)) {
             const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
             values[propertyId] = formatedTime || null
-        } else if (['int'].includes(propertyType)) {
+        } else if (['int', 'float'].includes(propertyType)) {
             values[propertyId] = ['', undefined].includes(inst[propertyId]) ? null : inst[propertyId]
         } else if (['bool'].includes(propertyType)) {
             values[propertyId] = !!inst[propertyId]
@@ -150,7 +157,7 @@ export function formatTime (originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
     if (!originalTime) {
         return ''
     }
-    let formatedTime = moment(originalTime).format(format)
+    const formatedTime = moment(originalTime).format(format)
     if (formatedTime === 'Invalid date') {
         return originalTime
     } else {
@@ -264,11 +271,42 @@ export function clone (object) {
  * @param {Object} object - 需拷贝的对象
  * @return {Object} 拷贝后的对象
  */
-export function getMetadataBiz (object) {
+export function getMetadataBiz (object = {}) {
     const metadata = object.metadata || {}
     const label = metadata.label || {}
     const biz = label['bk_biz_id']
     return biz
+}
+
+export function getValidateRules (property) {
+    const rules = {}
+    const {
+        bk_property_type: propertyType,
+        option,
+        isrequired
+    } = property
+    if (isrequired) {
+        rules.required = true
+    }
+    if (option) {
+        if (propertyType === 'int') {
+            if (option.hasOwnProperty('min') && !['', null, undefined].includes(option.min)) {
+                rules['min_value'] = option.min
+            }
+            if (option.hasOwnProperty('max') && !['', null, undefined].includes(option.max)) {
+                rules['max_value'] = option.max
+            }
+        } else if (['singlechar', 'longchar'].includes(propertyType)) {
+            rules['regex'] = option
+        }
+    }
+    if (['singlechar', 'longchar'].includes(propertyType)) {
+        rules[propertyType] = true
+    }
+    if (propertyType === 'float') {
+        rules['float'] = true
+    }
+    return rules
 }
 
 export default {
@@ -286,5 +324,6 @@ export default {
     formatTime,
     clone,
     getInstFormValues,
-    getMetadataBiz
+    getMetadataBiz,
+    getValidateRules
 }

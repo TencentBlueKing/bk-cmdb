@@ -1,7 +1,7 @@
 <template>
     <div class="update-wrapper">
         <div class="update-box">
-            <ul class="update-event-form" v-model="curPush">
+            <ul class="update-event-form">
                 <li class="update-form-item">
                     <label for="" class="label-name">
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
@@ -39,7 +39,7 @@
                             v-model="curPush.bk_secret_id"
                             name="ID"
                             v-validate="'required|singlechar'"
-                            class="cmdb-form-input"/>
+                            class="cmdb-form-input" />
                     </div>
                     <span v-show="errors.has('ID')" class="color-danger">{{ errors.first('ID') }}</span>
                 </li>
@@ -47,14 +47,14 @@
                     <label for="" class="label-name">
                         {{ $t('Cloud["Key"]')}}<span class="color-danger">*</span>
                         <a class="set"
-                           href="https://cloud.tencent.com/document/api/213/15692"
-                           target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
+                            href="https://cloud.tencent.com/document/api/213/15692"
+                            target="_blank">{{ $t('Cloud["如何获取ID和Key?"]')}}
                         </a>
                     </label>
                     <div class="update-item-content">
                         <input v-model="curPush.bk_secret_key"
-                               class="cmdb-form-input"
-                               type="password"/>
+                            class="cmdb-form-input"
+                            type="password" />
                     </div>
                 </li>
                 <li class="form-item-two">
@@ -70,7 +70,7 @@
                             v-if="curPush.bk_period_type === 'day'"
                             name="day"
                             v-validate="'required|dayFormat'"
-                            :placeholder="$t('Cloud[\'例如: 19:30\']')"/>
+                            :placeholder="$t('Cloud[\'例如: 19:30\']')" />
                         <input type="text"
                             class="cmdb-form-input"
                             v-model="curPush.bk_period"
@@ -158,29 +158,6 @@
                 }]
             }
         },
-        methods: {
-            ...mapActions('cloudDiscover', ['updateCloudTask']),
-            async update () {
-                const isValidate = await this.$validator.validateAll()
-                if (!isValidate) {
-                    return
-                }
-                let params = this.curPush
-                let res = null
-                res = await this.updateCloudTask({params: params, config: {requestId: 'savePush'}})
-                this.$emit('saveSuccess')
-                this.$success(this.$t('EventPush["修改成功"]'))
-            },
-            cancel () {
-                this.$emit('cancel')
-            },
-            isCloseConfirmShow () {
-                if (this.tips) {
-                    return true
-                }
-                return false
-            }
-        },
         watch: {
             'curPush.bk_period_type' () {
                 if (this.curPush.bk_period_type === 'hour') {
@@ -194,6 +171,28 @@
                     this.tips = true
                 },
                 deep: true
+            }
+        },
+        methods: {
+            ...mapActions('cloudDiscover', ['updateCloudTask']),
+            async update () {
+                const isValidate = await this.$validator.validateAll()
+                if (!isValidate) {
+                    return
+                }
+                const params = this.curPush
+                await this.updateCloudTask({ params: params, config: { requestId: 'savePush' } })
+                this.$emit('saveSuccess')
+                this.$success(this.$t('EventPush["修改成功"]'))
+            },
+            cancel () {
+                this.$emit('cancel')
+            },
+            isCloseConfirmShow () {
+                if (this.tips) {
+                    return true
+                }
+                return false
             }
         }
     }
