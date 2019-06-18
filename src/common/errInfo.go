@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy   = -1
+	CCSuccess      = 0
+	CCSuccessStr   = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 

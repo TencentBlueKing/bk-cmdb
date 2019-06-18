@@ -14,9 +14,12 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -139,6 +142,35 @@ func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.He
 	}
 
 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+}
+
+func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ActionID = string(authcenter.Get)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+
+	p.Resources = [][]metadata.Resource{
+		{{
+			ResourceType:     string(authcenter.SysBusinessInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance],
+		}},
+	}
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if len(businesses) != 1 {
+		return nil, errors.New("get business detail failed")
+	}
+	p.ScopeName = businesses[0].BKAppNameField
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp, nil
 }
 
 func (am *AuthManager) UpdateRegisteredBusiness(ctx context.Context, header http.Header, businesses ...BusinessSimplify) error {
@@ -272,14 +304,14 @@ func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http
 	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
-func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
-	if err != nil {
-		return fmt.Errorf("get businesses by id failed, err: %+v", err)
-	}
-	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
-}
+// func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+// 	if err != nil {
+// 		return fmt.Errorf("get businesses by id failed, err: %+v", err)
+// 	}
+// 	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+// }

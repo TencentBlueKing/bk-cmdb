@@ -409,39 +409,39 @@ func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Head
 }
 
 // AuthorizeInstanceCreateByObjectID authorize create priority by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if am.Enabled() == false {
-		return nil
-	}
-
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
-	if err != nil {
-		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v, rid: %s", objects, err, rid)
-		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
-	}
-
-	resources := make([]meta.ResourceAttribute, 0)
-	for _, parentResource := range parentResources {
-		layers := parentResource.Layers
-		layers = append(layers, meta.Item{
-			Type:       parentResource.Basic.Type,
-			Action:     parentResource.Basic.Action,
-			Name:       parentResource.Basic.Name,
-			InstanceID: parentResource.Basic.InstanceID,
-		})
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Type:   meta.ModelInstance,
-				Action: meta.Create,
-			},
-			SupplierAccount: parentResource.SupplierAccount,
-			BusinessID:      parentResource.BusinessID,
-			Layers:          layers,
-		}
-		resources = append(resources, resource)
-	}
-
-	return am.batchAuthorize(ctx, header, resources...)
-}
+// func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+// 	rid := util.ExtractRequestIDFromContext(ctx)
+//
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+// 	if err != nil {
+// 		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v, rid: %s", objects, err, rid)
+// 		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
+// 	}
+//
+// 	resources := make([]meta.ResourceAttribute, 0)
+// 	for _, parentResource := range parentResources {
+// 		layers := parentResource.Layers
+// 		layers = append(layers, meta.Item{
+// 			Type:       parentResource.Basic.Type,
+// 			Action:     parentResource.Basic.Action,
+// 			Name:       parentResource.Basic.Name,
+// 			InstanceID: parentResource.Basic.InstanceID,
+// 		})
+// 		resource := meta.ResourceAttribute{
+// 			Basic: meta.Basic{
+// 				Type:   meta.ModelInstance,
+// 				Action: meta.Create,
+// 			},
+// 			SupplierAccount: parentResource.SupplierAccount,
+// 			BusinessID:      parentResource.BusinessID,
+// 			Layers:          layers,
+// 		}
+// 		resources = append(resources, resource)
+// 	}
+//
+// 	return am.batchAuthorize(ctx, header, resources...)
+// }
