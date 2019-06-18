@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -21,7 +23,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"strconv"
 )
 
 func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
@@ -180,7 +181,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 		}
 
 		// create service instance at first
-		temp, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
+		serviceInstance, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed,
 				"create service instance for template: %d, moduleID: %d, failed, err: %v",
@@ -190,6 +191,12 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 
 		// if this service have process instance to create, then create it now.
 		for _, detail := range inst.Processes {
+			if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &detail.ProcessInfo); err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"create process instance failed, serviceInstanceID: %d, process: %+v, err: %v",
+					serviceInstance.ID, detail, err)
+				return
+			}
 			id, err := ps.Logic.CreateProcessInstance(ctx.Kit, &detail.ProcessInfo)
 			if err != nil {
 				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
@@ -202,7 +209,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 				Metadata:          input.Metadata,
 				ProcessID:         int64(id),
 				ProcessTemplateID: detail.ProcessTemplateID,
-				ServiceInstanceID: temp.ID,
+				ServiceInstanceID: serviceInstance.ID,
 				HostID:            inst.HostID,
 			}
 
@@ -215,7 +222,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 			}
 		}
 
-		serviceInstanceIDs = append(serviceInstanceIDs, temp.ID)
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
 	ctx.RespEntity(serviceInstanceIDs)
@@ -238,7 +245,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		BusinessID:         bizID,
 		ServiceInstanceIDs: &[]int64{serviceInstance.ID},
 		ProcessTemplateID:  common.ServiceTemplateIDNotSet,
-		HostID:             serviceInstance.ID,
+		HostID:             serviceInstance.HostID,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
@@ -286,7 +293,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		common.BKProcessIDField: map[string]interface{}{
 			common.BKDBIN: otherProcessIDs,
 		},
-		common.BKStartParamRegex: processInfo.ProcessName,
+		common.BKStartParamRegex: processInfo.StartParamRegex,
 		common.BKFuncName:        processInfo.FuncName,
 	}
 	funcNameFilterCond := &metadata.QueryCondition{
