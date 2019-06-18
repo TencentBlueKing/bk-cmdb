@@ -167,63 +167,63 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 }
 
 // AuthorizeByObjectID authorize model by id
-func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, businessID int64, objectIDs ...string) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if len(objectIDs) == 0 {
-		return nil
-	}
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, models: %+v, rid: %s", objectIDs, rid)
-		return nil
-	}
-
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
-	if err != nil {
-		return fmt.Errorf("get model by id failed, err: %+v", err)
-	}
-
-	return am.AuthorizeByObject(ctx, header, action, objects...)
-}
-
-// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany || action == meta.ModelTopologyView) {
-		blog.V(4).Infof("skip authorization for reading, models: %+v, rid: %s", objects, rid)
-		return nil
-	}
-
-	// make resources from objects
-	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
-	if err != nil {
-		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
-	}
-
-	return am.batchAuthorize(ctx, header, resources...)
-}
+// func (am *AuthManager) AuthorizeByObjectID(ctx context.Context, header http.Header, action meta.Action, businessID int64, objectIDs ...string) error {
+// 	rid := util.ExtractRequestIDFromContext(ctx)
+//
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	if len(objectIDs) == 0 {
+// 		return nil
+// 	}
+// 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+// 		blog.V(4).Infof("skip authorization for reading, models: %+v, rid: %s", objectIDs, rid)
+// 		return nil
+// 	}
+//
+// 	objects, err := am.collectObjectsByObjectIDs(ctx, header, businessID, objectIDs...)
+// 	if err != nil {
+// 		return fmt.Errorf("get model by id failed, err: %+v", err)
+// 	}
+//
+// 	return am.AuthorizeByObject(ctx, header, action, objects...)
+// }
 
 // AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	if am.Enabled() == false {
-		return nil
-	}
+// func (am *AuthManager) AuthorizeByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+// 	rid := util.ExtractRequestIDFromContext(ctx)
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany || action == meta.ModelTopologyView) {
+// 		blog.V(4).Infof("skip authorization for reading, models: %+v, rid: %s", objects, rid)
+// 		return nil
+// 	}
+//
+// 	// make resources from objects
+// 	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+// 	if err != nil {
+// 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+// 	}
+//
+// 	return am.batchAuthorize(ctx, header, resources...)
+// }
 
-	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
-	if err != nil {
-		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
-	}
-
-	return am.batchAuthorize(ctx, header, resources...)
-}
+// AuthorizeObject authorize by object, plz be note this method only overlay model read/update/delete, without create
+// func (am *AuthManager) AuthorizeResourceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+// 	if err != nil {
+// 		return fmt.Errorf("make auth resource by models failed, err: %+v", err)
+// 	}
+//
+// 	return am.batchAuthorize(ctx, header, resources...)
+// }
 
 func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64, resourceType meta.ResourceType) error {
 	if am.Enabled() == false {

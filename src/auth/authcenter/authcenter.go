@@ -155,9 +155,7 @@ func (ac *AuthCenter) Enabled() bool {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
-		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 
@@ -251,7 +249,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 		// modify special resource
 		if rsc.Type == meta.MainlineModel || rsc.Type == meta.ModelTopology {
-			blog.Warnf("force convert scope type to global for resource type: %s, rid: %s", rsc.Type, rid)
+			blog.V(4).Infof("force convert scope type to global for resource type: %s, rid: %s", rsc.Type, rid)
 			rsc.BusinessID = 0
 		}
 
