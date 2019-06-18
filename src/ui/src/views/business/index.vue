@@ -3,11 +3,11 @@
         <div class="business-options clearfix">
             <span class="fl" v-if="isAdminView"
                 v-cursor="{
-                    active: !$isAuthorized(OPERATION.C_BUSINESS),
+                    active: $isAuthorized(OPERATION.C_BUSINESS),
                     auth: [OPERATION.C_BUSINESS]
                 }">
                 <bk-button class="fl" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
+                    :disabled="$isAuthorized(OPERATION.C_BUSINESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}
                 </bk-button>
@@ -98,7 +98,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
+                        :auth="OPERATION.U_BUSINESS"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>

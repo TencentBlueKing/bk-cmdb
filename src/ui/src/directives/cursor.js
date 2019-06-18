@@ -87,7 +87,6 @@ const createProxy = () => {
     proxy.style.zIndex = options.zIndex
     proxy.style.width = options.width + 'px'
     proxy.style.height = options.height + 'px'
-    proxy.style.background = '#f30'
     proxy.classList.add(options.className)
     document.body.append(proxy)
 }
