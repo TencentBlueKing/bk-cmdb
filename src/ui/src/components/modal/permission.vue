@@ -64,12 +64,20 @@
                 this.isModalShow = true
                 this.list = this.translateAuth(authList)
             },
-            translateAuth (authList) {
-                return authList.map(auth => {
+            translateAuth (authList = []) {
+                const authMap = {}
+                authList.forEach(auth => {
                     const meta = GET_AUTH_META(auth)
+                    if (authMap.hasOwnProperty(meta.resource_type)) {
+                        authMap[meta.resource_type].push(meta.action)
+                    } else {
+                        authMap[meta.resource_type] = [meta.action]
+                    }
+                })
+                return Object.keys(authMap).map(type => {
                     return {
-                        resource: RESOURCE_TYPE_NAME[meta.resource_type],
-                        action: RESOURCE_ACTION_NAME[meta.action]
+                        resource: RESOURCE_TYPE_NAME[type],
+                        action: authMap[type].map(action => RESOURCE_ACTION_NAME[action]).join('，')
                     }
                 })
             },
