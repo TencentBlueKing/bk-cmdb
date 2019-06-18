@@ -108,6 +108,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 	}
 	return setInst.ToMapStr(), nil
 }
+
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
@@ -449,7 +450,7 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("seearch inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v", pathParams("inst_id"), err)
+		blog.Errorf("search inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v", pathParams("inst_id"), err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 	}
 

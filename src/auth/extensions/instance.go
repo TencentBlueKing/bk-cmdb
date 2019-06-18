@@ -317,6 +317,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 		return nil
 	}
 
+	if objectID == common.BKInnerObjIDPlat {
+		return am.UpdateRegisteredPlatByID(ctx, header, ids...)
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
@@ -327,6 +331,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
 	if am.Enabled() == false {
 		return nil
+	}
+
+	if objectID == common.BKInnerObjIDPlat {
+		return am.UpdateRegisteredPlatByRawID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
@@ -340,6 +348,9 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 	if am.Enabled() == false {
 		return nil
 	}
+	if objectID == common.BKInnerObjIDPlat {
+		return am.DeregisterPlatByID(ctx, header, ids...)
+	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
@@ -352,15 +363,18 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 	if am.Enabled() == false {
 		return nil
 	}
+	if objectID == common.BKInnerObjIDPlat {
+		return am.RegisterPlatByID(ctx, header, ids...)
+	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
 	}
-	return am.RegisterInstances(ctx, header, instances...)
+	return am.registerInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
+func (am *AuthManager) registerInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if am.Enabled() == false {
