@@ -54,12 +54,14 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 	// validate service template id field
 	var serviceTemplate *metadata.ServiceTemplate
-	st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
-	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
+	if instance.ServiceTemplateID > 0 {
+		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		serviceTemplate = st
 	}
-	serviceTemplate = st
 
 	if module.ServiceTemplateID != instance.ServiceTemplateID {
 		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
@@ -121,6 +123,19 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		blog.Errorf("CreateServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instance, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
+
+	// transfer host to target module
+	transferConfig := &metadata.HostsModuleRelation{
+		ApplicationID: bizID,
+		HostID:        []int64{instance.HostID},
+		ModuleID:      []int64{instance.ModuleID},
+		IsIncrement:   true,
+	}
+	if _, err := p.dependence.TransferHostModuleDep(ctx, transferConfig); err != nil {
+		blog.Errorf("CreateServiceInstance failed, transfer host module failed, transfer: %+v, instance: %+v, err: %+v, rid: %s", transferConfig, instance, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrHostTransferModule)
+	}
+
 	return &instance, nil
 }
 

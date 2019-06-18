@@ -89,9 +89,13 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 
 func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *metadata.ProcessTemplate) errors.CCErrorCoder {
 	// process name unique
+	processName := ""
+	if template.Property.ProcessName.Value != nil {
+		processName = *template.Property.ProcessName.Value
+	}
 	processNameFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField:  template.ServiceTemplateID,
-		"property.bk_process_name.value": template.Property.ProcessName,
+		"property.bk_process_name.value": processName,
 	}
 	if template.ID != 0 {
 		processNameFilter[common.BKFieldID] = map[string]interface{}{
@@ -108,10 +112,18 @@ func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *meta
 	}
 
 	// func name unique
+	funcName := ""
+	if template.Property.FuncName.Value != nil {
+		funcName = *template.Property.FuncName.Value
+	}
+	startRegex := ""
+	if template.Property.StartParamRegex.Value != nil {
+		startRegex = *template.Property.StartParamRegex.Value
+	}
 	funcNameFilter := map[string]interface{}{
 		common.BKServiceTemplateIDField:       template.ServiceTemplateID,
-		"property.bk_func_name.value":         *template.Property.ProcessName.Value,
-		"property.bk_start_param_regex.value": template.Property.StartParamRegex.Value,
+		"property.bk_func_name.value":         funcName,
+		"property.bk_start_param_regex.value": startRegex,
 	}
 	if template.ID != 0 {
 		funcNameFilter[common.BKFieldID] = map[string]interface{}{

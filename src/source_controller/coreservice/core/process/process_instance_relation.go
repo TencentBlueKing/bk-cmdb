@@ -120,7 +120,7 @@ func (p *processOperation) ListProcessInstanceRelation(ctx core.ContextParams, o
 	}
 
 	if option.HostID > 0 {
-		filter[common.BKProcessIDField] = option.HostID
+		filter[common.BKHostIDField] = option.HostID
 	}
 
 	if option.ProcessIDs != nil && len(*option.ProcessIDs) > 0 {

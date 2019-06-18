@@ -30,6 +30,7 @@ type processOperation struct {
 // OperationDependence methods definition
 type OperationDependence interface {
 	CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
+	TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
 }
 
 // New create a new model manager instance
