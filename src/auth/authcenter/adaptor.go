@@ -91,6 +91,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = BizInstance
 		}
 
+	case meta.Plat:
+		iamResourceType = SysInstance
 	case meta.HostInstance:
 		if businessID <= 0 {
 			iamResourceType = SysHostInstance
