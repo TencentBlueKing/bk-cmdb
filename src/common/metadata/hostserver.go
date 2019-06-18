@@ -260,6 +260,7 @@ type CloudSyncRedisPendingStart struct {
 	TaskID       int64       `json:"bk_task_id"`
 	TaskItemInfo TaskInfo    `json:"task_item_info"`
 	OwnerID      string      `json:"bk_supplier_account"`
+	Update       bool        `json:"update"`
 }
 
 type CloudSyncRedisAlreadyStarted struct {
@@ -268,11 +269,6 @@ type CloudSyncRedisAlreadyStarted struct {
 	TaskID       int64       `json:"bk_task_id"`
 	TaskItemInfo TaskInfo    `json:"task_item_info"`
 	OwnerID      string      `json:"bk_supplier_account"`
-}
-
-type CloudSyncRedisPendingStop struct {
-	TaskID  int64  `json:"bk_task_id"`
-	OwnerID string `json:"bk_supplier_account"`
 }
 
 // TransferHostAcrossBusinessParameter Transfer host across business request parameter

@@ -236,6 +236,7 @@ func (s *Service) InitBackground() {
 		header.Set(common.BKHTTPOwnerID, common.BKSuperOwnerID)
 		header.Set(common.BKHTTPHeaderUser, common.BKProcInstanceOpUser)
 	}
+	s.CacheDB.FlushDb()
 
 	srvData := s.newSrvComm(header)
 	go srvData.lgc.TimerTriggerCheckStatus(srvData.ctx)
