@@ -54,12 +54,14 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 	// validate service template id field
 	var serviceTemplate *metadata.ServiceTemplate
-	st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
-	if err != nil {
-		blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
+	if instance.ServiceTemplateID > 0 {
+		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
+		}
+		serviceTemplate = st
 	}
-	serviceTemplate = st
 
 	if module.ServiceTemplateID != instance.ServiceTemplateID {
 		blog.Errorf("CreateServiceInstance failed, module template id and instance template not equal, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
