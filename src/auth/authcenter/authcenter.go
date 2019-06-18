@@ -416,29 +416,15 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 }
 
 func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
-	info := &ListAuthorizedResources{
-		Principal: Principal{
-			Type: cmdbUser,
-			ID:   user.UserName,
-		},
-		ScopeInfo: ScopeInfo{
-			ScopeType: ScopeTypeIDSystem,
-			ScopeID:   SystemIDCMDB,
-		},
-		TypeActions: []TypeAction{
-			{
-				ActionID:     Get,
-				ResourceType: SysBusinessInstance,
-			},
-		},
-		DataType: "array",
-		Exact:    true,
+	info := &Principal{
+		Type: cmdbUser,
+		ID:   user.UserName,
 	}
 
 	var appList []string
 	var err error
 	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedScopes(ctx, info)
+		appList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
 		if err != nil {
 			return nil, err
 		}
@@ -454,6 +440,23 @@ func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.U
 	}
 
 	return businessIDs, nil
+}
+func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error) {
+	info := &Principal{
+		Type: cmdbUser,
+		ID:   user.UserName,
+	}
+
+	var systemList []string
+	var err error
+	if ac.Config.Enable {
+		systemList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return systemList, nil
 }
 
 func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]AuthorizedResource, error) {
