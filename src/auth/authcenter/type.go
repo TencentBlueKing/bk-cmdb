@@ -220,26 +220,3 @@ type AuthorizedResource struct {
 	ResourceType ResourceTypeID   `json:"resource_type"`
 	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
 }
-
-// Permission  describes all the authorities that a user
-// is need, when he attempts to operate a resource.
-// Permission is used only when a user do not have the authority to
-// access a resources with a action.
-type Permission struct {
-	SystemID      string       `json:"system_id"`
-	SystemName    string       `json:"system_name"`
-	ScopeType     string       `json:"scope_type"`
-	ScopeTypeName string       `json:"scope_type_name"`
-	ScopeID       string       `json:"scope_id"`
-	ScopeName     string       `json:"scope_name"`
-	ActionID      ActionID     `json:"action_id"`
-	ActionName    string       `json:"action_name"`
-	Resources     [][]Resource `json:"resources"`
-}
-
-type Resource struct {
-	ResourceTypeName string         `json:"resource_type_name"`
-	ResourceType     ResourceTypeID `json:"resource_type"`
-	ResourceName     string         `json:"resource_name"`
-	ResourceID       string         `json:"resource_id"`
-}

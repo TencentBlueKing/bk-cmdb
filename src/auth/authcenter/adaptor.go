@@ -13,6 +13,7 @@
 package authcenter
 
 import (
+	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
 
@@ -332,16 +333,16 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 }
 
 // TODO: add multiple language support
-func AdoptPermissions(rs []meta.ResourceAttribute) ([]Permission, error) {
+func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
 
-	ps := make([]Permission, 0)
+	ps := make([]metadata.Permission, 0)
 	for _, r := range rs {
-		p := Permission{}
-		actID, err := adaptorAction(r)
+		var p metadata.Permission
+		actID, err := adaptorAction(&r)
 		if err != nil {
 			return nil, err
 		}
-		p.ActionID = actID
+		p.ActionID = string(actID)
 		p.ActionName = ActionIDNameMap[actID]
 
 		rscType, err := convertResourceType(r.Basic.Type, r.BusinessID)
@@ -349,13 +350,13 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]Permission, error) {
 			return nil, err
 		}
 
-		rscIDs, err := GenerateResourceID(*rscType, r)
+		rscIDs, err := GenerateResourceID(*rscType, &r)
 		if err != nil {
 			return nil, err
 		}
 
-		rsc := Resource{}
-		rsc.ResourceType = *rscType
+		var rsc metadata.Resource
+		rsc.ResourceType = string(*rscType)
 		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
 		rsc.ResourceID = rscIDs[0].ResourceID
 		rsc.ResourceName = r.Basic.Name
