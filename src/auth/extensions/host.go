@@ -424,6 +424,11 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
 }
 
+func (am *AuthManager) AuthorizeByHostsIDsNoPermissionsResponse(businessID int64) metadata.BaseResp {
+
+	return metadata.BaseResp{}
+}
+
 func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) ([]meta.ResourceAttribute, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 

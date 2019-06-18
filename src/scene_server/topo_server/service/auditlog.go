@@ -76,7 +76,7 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v", err)
-			return s.AuthManager.AuthorizeAduitReadPermissionsResponse(businessID), auth.NoAuthorizeError
+			return s.AuthManager.AuthorizeAuditReadNoPermissionsResponse(businessID), auth.NoAuthorizeError
 		}
 	} else {
 		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
@@ -179,7 +179,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		err = s.AuthManager.AuthorizeByInstanceID(context.Background(), params.Header, action, objectID, instanceID)
 	}
 	if err != nil {
-		blog.Error("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
+		blog.Errorf("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
 		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
