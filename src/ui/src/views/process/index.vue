@@ -47,8 +47,8 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.D_PROCESS)"
+                        :edit-auth="OPERATION.U_PROCESS"
+                        :delete-auth="OPERATION.D_PROCESS"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -57,7 +57,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_PROCESS' : 'C_PROCESS'])"
+                        :save-auth="attribute.type === 'update' ? OPERATION.U_PROCESS : OPERATION.C_PROCESS"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -65,7 +65,7 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
+                        :save-auth="OPERATION.U_PROCESS"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>

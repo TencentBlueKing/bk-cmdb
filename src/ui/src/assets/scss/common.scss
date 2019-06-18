@@ -67,6 +67,11 @@ input::-webkit-input-placeholder {
     font-size: 12px;
 }
 
+.inline-block-middle {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 div.cmdb-form-item {
     position: relative;
     display: inline-block;
