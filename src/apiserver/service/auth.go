@@ -101,7 +101,7 @@ func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response)
 	systemlist, err := s.authorizer.AdminEntrance(req.Request.Context(), userInfo)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 		return
 	}
 
