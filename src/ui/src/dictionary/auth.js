@@ -125,6 +125,41 @@ export const DYNAMIC_BUSINESS_MODE = [
     R_INST
 ]
 
+export const RESOURCE_TYPE_NAME = {
+    modelClassification: '模型分类',
+    model: '模型',
+    modelInstance: '实例',
+    dynamicGrouping: '动态分组',
+    process: '进程',
+    mainlineInstanceTopology: '业务拓扑',
+    hostInstance: '主机',
+    associationType: '关联类型',
+    business: '业务',
+    eventPushing: '事件推送',
+    auditlog: '操作审计',
+    systemBase: '系统基础',
+    cloudDiscover: '云资源发现',
+    cloudConfirm: '云资源确认',
+    cloudConfirmHistory: '云资源确认历史'
+}
+
+export const RESOURCE_ACTION_NAME = {
+    create: '新建',
+    update: '编辑',
+    delete: '删除',
+    findMany: '查询',
+    boundModuleToProcess: '绑定到模块',
+    unboundModelToProcess: '解绑模块',
+    findBoundModuleProcess: '查询已绑定模块',
+    transferHost: '转移主机',
+    moveHostFromModuleToResPool: '归还主机至资源池',
+    moveResPoolHostToBizIdleModule: '分配主机到业务空闲机',
+    archive: '归档',
+    modelTopologyOperation: '拓扑层级管理',
+    adminEntrance: '管理页面入口',
+    modelTopologyView: '模型拓扑视图'
+}
+
 export const GET_AUTH_META = (auth, options = {}) => {
     const [type, action] = auth.split('.')
     return {
