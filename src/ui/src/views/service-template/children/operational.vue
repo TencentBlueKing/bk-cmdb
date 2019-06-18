@@ -41,6 +41,7 @@
                         :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
                         :auto-select="true"
                         :list="secondaryList"
+                        :empty-text="emptyText"
                         v-validate="'required'"
                         name="secondaryClassificationId"
                         v-model="formData['secondaryClassification']">
@@ -136,6 +137,7 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
+                emptyText: this.$t("ServiceManagement['请选择一级分类']"),
                 createdSucess: {
                     show: false,
                     name: ''
@@ -293,6 +295,7 @@
             },
             handleSelect (id, data) {
                 this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
+                this.emptyText = this.$t("ServiceManagement['没有二级分类']")
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }

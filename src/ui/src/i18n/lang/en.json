@@ -812,7 +812,8 @@
         "返回列表": "Back to list",
         "搜索": "Please enter template name to search...",
         "所有一级分类": "(All primary classification)",
-        "所有二级分类": "(All secondary classification)"
+        "所有二级分类": "(All secondary classification)",
+        "没有二级分类": "No secondary classification"
     },
     "ServiceCagetory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
