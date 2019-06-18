@@ -32,13 +32,19 @@
                 :max-height="462"
                 :empty-height="40">
                 <template slot="__operation__" slot-scope="{ item }">
-                    <span class="text-primary"
-                        @click="cancelAssociation(item)">
+                    <span class="text-primary" @click="showTips($event, item)">
                         {{$t('Association["取消关联"]')}}
                     </span>
                 </template>
             </cmdb-table>
         </cmdb-collapse-transition>
+        <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
+            <p class="tips-content">{{$t('Association["确认取消"]')}}</p>
+            <div class="tips-option">
+                <bk-button class="tips-button" type="primary" @click="cancelAssociation">{{$t('Common["确认"]')}}</bk-button>
+                <bk-button class="tips-button" type="default" @click="hideTips">{{$t('Common["取消"]')}}</bk-button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -71,7 +77,12 @@
                     current: 1,
                     size: 10
                 },
-                localVisible: this.visible
+                localVisible: this.visible,
+                confirm: {
+                    instance: null,
+                    item: null,
+                    target: null
+                }
             }
         },
         computed: {
@@ -79,6 +90,12 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
+            expandAll () {
+                return this.$store.state.hostDetails.expandAll
+            },
+            indeterminate () {
+                return this.$store.state.hostDetails.indeterminate
+            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
@@ -151,17 +168,29 @@
                 if (visible) {
                     this.getData()
                 }
+                this.$store.commit('hostDetails/updateExpandCount', visible ? 1 : -1)
+                this.checkExpandAllState()
             },
             instances () {
                 if (this.localVisible) {
                     this.getData()
                 }
+            },
+            expandAll (expandAll) {
+                if (!this.indeterminate) {
+                    this.localVisible = expandAll
+                }
             }
         },
         created () {
+            this.$store.commit('hostDetails/updateTableCount', 1)
             if (this.visible) {
                 this.getData()
+                this.$store.commit('hostDetails/updateExpandCount', 1)
             }
+        },
+        beforeDestroy () {
+            this.$store.commit('hostDetails/updateTableCount', -1)
         },
         methods: {
             getData () {
@@ -292,7 +321,8 @@
                     return data
                 })
             },
-            async cancelAssociation (item) {
+            async cancelAssociation () {
+                const item = this.confirm.item
                 const keyMap = {
                     host: 'bk_host_id',
                     biz: 'bk_biz_id'
@@ -337,6 +367,35 @@
                 }
                 this.pagination.current = newCurrent
                 this.getInstances()
+            },
+            hideTips (event) {
+                if (event && event.target === this.confirm.target) {
+                    return false
+                }
+                this.confirm.instance && this.confirm.instance.setVisible(false)
+            },
+            showTips (event, item) {
+                this.confirm.item = item
+                this.confirm.target = event.target
+                this.confirm.instance && this.confirm.instance.destroy()
+                this.confirm.instance = this.$tooltips({
+                    duration: 100,
+                    theme: 'light',
+                    zIndex: 9999,
+                    width: 200,
+                    container: document.body,
+                    target: event.target
+                })
+                this.confirm.instance.$el.append(this.$refs.confirmTips)
+            },
+            checkExpandAllState () {
+                this.$nextTick(() => {
+                    const state = this.$store.state.hostDetails
+                    const tableCount = state.tableCount
+                    const expandCount = state.expandCount
+                    this.$store.commit('hostDetails/setExpandIndeterminate', expandCount !== 0 && tableCount !== expandCount)
+                    this.$store.commit('hostDetails/toggleExpandAll', tableCount === expandCount)
+                })
             }
         }
     }
@@ -383,6 +442,24 @@
                     color: #C4C6CC;
                     cursor: not-allowed;
                 }
+            }
+        }
+    }
+    .confirm-tips {
+        padding: 9px;
+        text-align: center;
+        .tips-content {
+            color: $cmdbTextColor;
+            line-height: 20px;
+        }
+        .tips-option {
+            margin: 12px 0 0 0;
+            .tips-button {
+                height: 26px;
+                line-height: 24px;
+                padding: 0 16px;
+                min-width: 56px;
+                font-size: 12px;
             }
         }
     }
