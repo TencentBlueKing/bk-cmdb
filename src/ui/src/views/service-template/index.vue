@@ -25,6 +25,7 @@
                     :allow-clear="true"
                     :list="secondaryList"
                     v-model="filter['secondaryClassification']"
+                    :empty-text="emptyText"
                     @on-selected="handleSelectSecondary">
                 </cmdb-selector>
                 <div class="filter-search fl">
@@ -143,6 +144,9 @@
                         sort: this.table.defaultSort
                     }
                 }
+            },
+            emptyText () {
+                return this.filter.mainClassification ? this.$t("ServiceManagement['没有二级分类']") : this.$t("ServiceManagement['请选择一级分类']")
             }
         },
         async created () {
