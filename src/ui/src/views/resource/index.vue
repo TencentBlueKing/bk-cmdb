@@ -26,12 +26,17 @@
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
-                    <bk-button class="options-button" type="primary" style="margin-left: 0"
-                        v-if="isAdminView"
-                        :disabled="!$isAuthorized(OPERATION.C_RESOURCE_HOST)"
-                        @click="importInst.show = true">
-                        {{$t('HostResourcePool[\'导入主机\']')}}
-                    </bk-button>
+                    <span style="display: inline-block;" v-if="isAdminView"
+                        v-cursor="{
+                            active: !$isAuthorized(OPERATION.C_RESOURCE_HOST),
+                            auth: [OPERATION.C_RESOURCE_HOST]
+                        }">
+                        <bk-button class="options-button" type="primary" style="margin-left: 0"
+                            :disabled="!$isAuthorized(OPERATION.C_RESOURCE_HOST)"
+                            @click="importInst.show = true">
+                            {{$t('HostResourcePool[\'导入主机\']')}}
+                        </bk-button>
+                    </span>
                     <cmdb-selector class="options-business-selector"
                         v-if="isAdminView"
                         :placeholder="$t('HostResourcePool[\'分配到业务空闲机池\']')"
@@ -43,17 +48,28 @@
                         v-model="assignBusiness"
                         @on-selected="handleAssignHosts">
                     </cmdb-selector>
-                    <bk-button class="options-button" type="default"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_RESOURCE_HOST)"
-                        @click="handleMultipleEdit">
-                        {{$t('BusinessTopology[\'修改\']')}}
-                    </bk-button>
-                    <bk-button class="options-button options-button-delete" type="default"
-                        v-if="isAdminView"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_RESOURCE_HOST)"
-                        @click="handleMultipleDelete">
-                        {{$t('Common[\'删除\']')}}
-                    </bk-button>
+                    <span style="display: inline-block;"
+                        v-cursor="{
+                            active: !$isAuthorized(OPERATION.U_RESOURCE_HOST),
+                            auth: [OPERATION.U_RESOURCE_HOST]
+                        }">
+                        <bk-button class="options-button" type="default"
+                            :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_RESOURCE_HOST)"
+                            @click="handleMultipleEdit">
+                            {{$t('BusinessTopology[\'修改\']')}}
+                        </bk-button>
+                    </span>
+                    <span style="display: inline-block;" v-if="isAdminView"
+                        v-cursor="{
+                            active: !$isAuthorized(OPERATION.D_RESOURCE_HOST),
+                            auth: [OPERATION.D_RESOURCE_HOST]
+                        }">
+                        <bk-button class="options-button options-button-delete" type="default"
+                            :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_RESOURCE_HOST)"
+                            @click="handleMultipleDelete">
+                            {{$t('Common[\'删除\']')}}
+                        </bk-button>
+                    </span>
                     <bk-button class="options-button" type="default"
                         form="exportForm"
                         :disabled="!table.checked.length"

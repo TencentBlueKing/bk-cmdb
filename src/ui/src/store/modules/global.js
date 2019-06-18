@@ -23,7 +23,8 @@ const state = {
         model: true,
         modelBusiness: true,
         association: true,
-        eventpush: true
+        eventpush: true,
+        adminTips: true
     }
 }
 
@@ -102,6 +103,7 @@ const mutations = {
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
         } else if (window.localStorage.getItem('featureTipsParams')) {
             state.featureTipsParams = {
+                ...state.featureTipsParams,
                 ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
             }
         } else {
