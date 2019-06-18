@@ -181,6 +181,12 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		filter[common.BKModuleIDField] = option.ModuleID
 	}
 
+	if option.ServiceInstanceIDs != nil {
+		filter[common.BKFieldID] = map[string]interface{}{
+			common.BKDBIN: *option.ServiceInstanceIDs,
+		}
+	}
+
 	if option.SearchKey != nil {
 		filter[common.BKHostInnerIPField] = map[string]interface{}{
 			"$regex": fmt.Sprintf(".*%s.*", *option.SearchKey),
