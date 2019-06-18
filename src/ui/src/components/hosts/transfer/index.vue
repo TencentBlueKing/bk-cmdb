@@ -87,7 +87,10 @@
                     return []
                 }
             },
-            transferResourceDisabled: Boolean
+            transferResourceAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {
@@ -204,7 +207,7 @@
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    if (this.transferResourceDisabled) {
+                    if (this.$isAuthorized(this.transferResourceAuth)) {
                         treeData.shift()
                     }
                     this.tree.data = treeData

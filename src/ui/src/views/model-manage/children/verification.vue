@@ -1,10 +1,15 @@
 <template>
     <div>
-        <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !updateAuth"
-            @click="createVerification">
-            {{$t('ModelManagement["新建校验"]')}}
-        </bk-button>
+        <span v-cursor="{
+            active: !$isAuthorized(OPERATION.U_MODEL),
+            auth: [OPERATION.U_MODEL]
+        }">
+            <bk-button class="create-btn" type="primary"
+                :disabled="isReadOnly || !updateAuth"
+                @click="createVerification">
+                {{$t('ModelManagement["新建校验"]')}}
+            </bk-button>
+        </span>
         <cmdb-table
             class="relation-table"
             :loading="$loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])"
@@ -64,6 +69,7 @@
         },
         data () {
             return {
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
