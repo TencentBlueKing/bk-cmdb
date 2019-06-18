@@ -108,7 +108,7 @@ const cursor = {
         if (!proxy) {
             createProxy()
         }
-        const data = { ...options }
+        const data = { ...options, $vnode: vNode }
         if (typeof binding.value !== 'object') {
             data.active = binding.value
         } else {
