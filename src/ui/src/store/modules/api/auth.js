@@ -105,7 +105,7 @@ const actions = {
             is_pass: false
         }
         try {
-            const response = await $http.post('auth/admin-entrance', params, config)
+            const response = await $http.get('auth/admin-entrance', config)
             data.is_pass = response.is_pass
         } catch (e) {
             console.error(e)

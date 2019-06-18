@@ -145,12 +145,13 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
+
+const PermissionCode = 9900403
 function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
-    if (transformedResponse.bk_error_code === 9900403) {
-        window.permissionModal && window.permissionModal.show((transformedResponse.permission || []).map(permission => {
-            return `${permission.scope_type}.${permission.action_id}`
-        }))
+    if (transformedResponse.bk_error_code === PermissionCode) {
+        popupPermissionModal(transformedResponse.permission)
+        return reject({ message: transformedResponse['bk_error_msg'], code: PermissionCode })
     }
     if (!transformedResponse.result && config.globalError) {
         reject({ message: transformedResponse['bk_error_msg'] })
@@ -166,6 +167,9 @@ function handleResponse ({ config, response, resolve, reject }) {
  * @return Promise.reject
  */
 function handleReject (error, config) {
+    if (error.code && error.code === PermissionCode) {
+        return Promise.reject(error)
+    }
     if (Axios.isCancel(error)) {
         return Promise.reject(error)
     }
@@ -186,6 +190,33 @@ function handleReject (error, config) {
     }
     $error(error.message)
     return Promise.reject(error)
+}
+
+function popupPermissionModal (permission = []) {
+    const data = permission.map(datum => {
+        const scope = [datum.scope_type_name]
+        if (datum.scope_id) {
+            scope.push(datum.scope_name)
+        }
+        return {
+            scope: getPermissionText(datum, 'scope_type_name', 'scope_name'),
+            resource: datum.resources.map(resource => {
+                const resourceInfo = resource.map(info => getPermissionText(info, 'resource_type_name', 'resource_name')).join('\n')
+                return resourceInfo
+            }).join('\n'),
+            action: datum.action_name
+        }
+    })
+    window.permissionModal && window.permissionModal.show(data, true)
+}
+
+function getPermissionText (data, necessaryKey, extraKey, split = '：') {
+    const text = [data[necessaryKey]]
+    console.log(data, data[necessaryKey], necessaryKey)
+    if (data[extraKey]) {
+        text.push(data)
+    }
+    return text.join(split)
 }
 
 /**

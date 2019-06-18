@@ -24,6 +24,9 @@
                 :empty-height="140"
                 :visible="isModalShow"
                 :sortable="false">
+                <template slot="resource" slot-scope="{ item }">
+                    <div class="resouce-list" v-html="item.resource"></div>
+                </template>
             </cmdb-table>
         </div>
         <div class="permission-footer" slot="footer">
@@ -33,20 +36,13 @@
     </bk-dialog>
 </template>
 <script>
-    import { RESOURCE_TYPE_NAME, RESOURCE_ACTION_NAME, GET_AUTH_META } from '@/dictionary/auth'
     export default {
         name: 'permissionModal',
         props: {},
         data () {
             return {
+                showResource: false,
                 isModalShow: false,
-                header: [{
-                    id: 'resource',
-                    name: this.$t('资源')
-                }, {
-                    id: 'action',
-                    name: this.$t('需要申请的权限')
-                }],
                 list: [],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
@@ -59,27 +55,29 @@
                 }
             }
         },
+        computed: {
+            header () {
+                const header = [{
+                    id: 'scope',
+                    name: this.$t('资源所属')
+                }, {
+                    id: 'action',
+                    name: this.$t('需要申请的权限')
+                }]
+                if (this.showResource) {
+                    header.splice(1, 0, {
+                        id: 'resource',
+                        name: this.$t('资源')
+                    })
+                }
+                return header
+            }
+        },
         methods: {
-            show (authList) {
+            show (list, showResource = true) {
+                this.showResource = showResource
+                this.list = list
                 this.isModalShow = true
-                this.list = this.translateAuth(authList)
-            },
-            translateAuth (authList = []) {
-                const authMap = {}
-                authList.forEach(auth => {
-                    const meta = GET_AUTH_META(auth)
-                    if (authMap.hasOwnProperty(meta.resource_type)) {
-                        authMap[meta.resource_type].push(meta.action)
-                    } else {
-                        authMap[meta.resource_type] = [meta.action]
-                    }
-                })
-                return Object.keys(authMap).map(type => {
-                    return {
-                        resource: RESOURCE_TYPE_NAME[type],
-                        action: authMap[type].map(action => RESOURCE_ACTION_NAME[action]).join('，')
-                    }
-                })
             },
             handleApplyPermission () {
                 const topWindow = window.top
@@ -114,6 +112,11 @@
                 font-size: 24px;
             }
         }
+    }
+    .resouce-list {
+        padding: 12px 0;
+        word-break: break-all;
+        white-space: normal;
     }
     /deep/ .bk-dialog-footer.bk-d-footer {
         height: 50px;
