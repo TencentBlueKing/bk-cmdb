@@ -144,7 +144,7 @@
                 <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
-                        :disabled="!$isAuthorized(OPERATION.U_INST)"
+                        :auth="OPERATION.U_INST"
                         :obj-id="objId"
                         :inst="attribute.inst.details">
                     </cmdb-relation>

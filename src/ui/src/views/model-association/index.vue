@@ -8,7 +8,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <p class="operation-box">
-            <span v-if="isAdminView" style="display: inline-block;"
+            <span v-if="isAdminView" class="inline-block-middle"
                 v-cursor="{
                     active: !$isAuthorized(OPERATION.C_RELATION),
                     auth: [OPERATION.C_RELATION]
@@ -37,8 +37,7 @@
                 {{item['bk_asst_name'] || '--'}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary mr10"
-                    style="opacity: .385;"
+                <span class="text-primary disabled mr10"
                     v-cursor="{
                         active: !$isAuthorized(OPERATION.U_RELATION),
                         auth: [OPERATION.U_RELATION]
@@ -51,8 +50,7 @@
                     @click.stop="editRelation(item)">
                     {{$t('Common["编辑"]')}}
                 </span>
-                <span class="text-primary"
-                    style="opacity: .385;"
+                <span class="text-primary disabled"
                     v-cursor="{
                         active: !$isAuthorized(OPERATION.D_RELATION),
                         auth: [OPERATION.D_RELATION]

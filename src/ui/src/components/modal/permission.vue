@@ -27,7 +27,7 @@
             </cmdb-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button type="primary" @click="goToApply">{{ i18n.apply }}</bk-button>
+            <bk-button type="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
             <bk-button type="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
         </div>
     </bk-dialog>
@@ -81,7 +81,19 @@
                     }
                 })
             },
-            goToApply () {},
+            handleApplyPermission () {
+                const topWindow = window.top
+                const isPaasConsole = topWindow !== window
+                const authCenter = window.Site.authCenter || {}
+                if (isPaasConsole) {
+                    topWindow.postMessage(JSON.stringify({
+                        action: 'open_other_app',
+                        app_code: authCenter.appCode
+                    }), '*')
+                } else {
+                    window.open(authCenter.url)
+                }
+            },
             onCloseDialog () {
                 this.isModalShow = false
             }

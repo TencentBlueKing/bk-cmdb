@@ -43,7 +43,7 @@
             </div>
             <bk-tooltip
                 class="admin-tooltips"
-                v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' }) && !isAdminView && showTips"
+                v-if="hasAdminEntrance && !isAdminView && showTips"
                 :always="true"
                 :width="275"
                 placement="bottom-end">
@@ -56,7 +56,7 @@
                     {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
                 </div>
             </bk-tooltip>
-            <div class="admin" v-else-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
+            <div class="admin" v-else-if="hasAdminEntrance" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -88,6 +88,9 @@
                 'featureTipsParams'
             ]),
             ...mapGetters('objectBiz', ['authorizedBusiness']),
+            hasAdminEntrance () {
+                return this.$store.state.auth.adminEntranceAuth.is_pass
+            },
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
             },
