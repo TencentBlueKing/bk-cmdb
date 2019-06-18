@@ -8,18 +8,29 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="process-filter clearfix">
-            <bk-button class="process-btn"
-                type="default"
-                :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)"
-                @click="handleMultipleEdit">
-                <i class="icon-cc-edit"></i>
-                <span>{{$t("BusinessTopology['修改']")}}</span>
-            </bk-button>
-            <bk-button class="process-btn" type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
-                @click="handleCreate">
-                {{$t("Common['新建']")}}
-            </bk-button>
+            <span class="process-btn"
+                v-cursor="{
+                    active: !$isAuthorized(OPERATION.U_PROCESS),
+                    auth: [OPERATION.U_PROCESS]
+                }">
+                <bk-button type="default"
+                    :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)"
+                    @click="handleMultipleEdit">
+                    <i class="icon-cc-edit"></i>
+                    <span>{{$t("BusinessTopology['修改']")}}</span>
+                </bk-button>
+            </span>
+            <span class="process-btn"
+                v-cursor="{
+                    active: !$isAuthorized(OPERATION.C_PROCESS),
+                    auth: [OPERATION.C_PROCESS]
+                }">
+                <bk-button type="primary"
+                    :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
+                    @click="handleCreate">
+                    {{$t("Common['新建']")}}
+                </bk-button>
+            </span>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
                     v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">

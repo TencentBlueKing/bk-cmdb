@@ -8,13 +8,18 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <p class="operation-box">
-            <bk-button type="primary"
-                class="create-btn"
-                v-if="isAdminView"
-                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
-                @click="createRelation">
-                {{$t('Common["新建"]')}}
-            </bk-button>
+            <span v-if="isAdminView" style="display: inline-block;"
+                v-cursor="{
+                    active: !$isAuthorized(OPERATION.C_RELATION),
+                    auth: [OPERATION.C_RELATION]
+                }">
+                <bk-button type="primary"
+                    class="create-btn"
+                    :disabled="!$isAuthorized(OPERATION.C_RELATION)"
+                    @click="createRelation">
+                    {{$t('Common["新建"]')}}
+                </bk-button>
+            </span>
             <label class="search-input">
                 <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
                 <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
@@ -32,7 +37,12 @@
                 {{item['bk_asst_name'] || '--'}}
             </template>
             <template slot="operation" slot-scope="{ item }">
-                <span class="text-primary disabled mr10"
+                <span class="text-primary mr10"
+                    style="opacity: .385;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.U_RELATION),
+                        auth: [OPERATION.U_RELATION]
+                    }"
                     v-if="item.ispre || !$isAuthorized(OPERATION.U_RELATION)">
                     {{$t('Common["编辑"]')}}
                 </span>
@@ -41,7 +51,12 @@
                     @click.stop="editRelation(item)">
                     {{$t('Common["编辑"]')}}
                 </span>
-                <span class="text-primary disabled"
+                <span class="text-primary"
+                    style="opacity: .385;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.D_RELATION),
+                        auth: [OPERATION.D_RELATION]
+                    }"
                     v-if="item.ispre || !$isAuthorized(OPERATION.D_RELATION)">
                     {{$t('Common["删除"]')}}
                 </span>
@@ -147,9 +162,7 @@
             }
         },
         created () {
-            const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
-            const deleteAuth = this.$isAuthorized(this.OPERATION.D_RELATION)
-            if (!this.isAdminView || !(updateAuth || deleteAuth)) {
+            if (!this.isAdminView) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
