@@ -1,6 +1,7 @@
 import {
     isSameRequest,
-    isRedirectResponse
+    isRedirectResponse,
+    getRedirectId
 } from './util.js'
 import Cookies from 'js-cookie'
 
@@ -18,7 +19,8 @@ const redirect = {
                 '$ne': 'disabled'
             }
         }
-    }
+    },
+    redirectId: getRedirectId()
 }
 
 export default {

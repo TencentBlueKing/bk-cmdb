@@ -20,7 +20,8 @@ const state = {
     view: [],
     system: [],
     businessMeta: {},
-    parentMeta: {}
+    parentMeta: {},
+    adminEntranceAuth: {}
 }
 
 const getters = {
@@ -98,6 +99,19 @@ const actions = {
         })
 
         return allAuthData
+    },
+    async getAdminEntranceAuth ({ commit, getters, rootGetters }, params, config) {
+        const data = {
+            is_pass: false
+        }
+        try {
+            const response = await $http.post('auth/admin-entrance', params, config)
+            data.is_pass = response.is_pass
+        } catch (e) {
+            console.error(e)
+        }
+        commit('setAdminEntranceAuth', data)
+        return Promise.resolve(data)
     }
 }
 
@@ -110,6 +124,9 @@ const mutations = {
     },
     setBusinessMeta (state, meta = {}) {
         state.businessMeta = meta
+    },
+    setAdminEntranceAuth (state, data) {
+        state.adminEntranceAuth = data
     },
     clearDynamicMeta (state) {
         state.parentMeta = {}

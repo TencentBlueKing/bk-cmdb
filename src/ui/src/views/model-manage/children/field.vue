@@ -1,11 +1,16 @@
 <template>
     <div class="model-field-wrapper">
         <div>
-            <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createField">
-                {{$t('ModelManagement["新建字段"]')}}
-            </bk-button>
+            <span v-cursor="{
+                active: !$isAuthorized(OPERATION.U_MODEL),
+                auth: [OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" type="primary"
+                    :disabled="isReadOnly || !updateAuth"
+                    @click="createField">
+                    {{$t('ModelManagement["新建字段"]')}}
+                </bk-button>
+            </span>
         </div>
         <cmdb-table
             class="field-table"
