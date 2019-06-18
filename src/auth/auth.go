@@ -19,7 +19,6 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
-	"context"
 )
 
 type Authorize interface {
