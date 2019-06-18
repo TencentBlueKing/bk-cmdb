@@ -33,7 +33,7 @@
                             <div class="menu-operational">
                                 <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("ServiceCagetory['添加二级分类']")}}</i>
                                 <i class="not-allowed" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">{{$t("Common['删除']")}}</i>
-                                <i v-else @click.stop="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
+                                <i v-else @click="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
                     </template>
