@@ -58,7 +58,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
 		if err != nil {
 			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
 		}
 		serviceTemplate = st
 	}
@@ -123,6 +123,19 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		blog.Errorf("CreateServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instance, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
+
+	// transfer host to target module
+	transferConfig := &metadata.HostsModuleRelation{
+		ApplicationID: bizID,
+		HostID:        []int64{instance.HostID},
+		ModuleID:      []int64{instance.ModuleID},
+		IsIncrement:   true,
+	}
+	if _, err := p.dependence.TransferHostModuleDep(ctx, transferConfig); err != nil {
+		blog.Errorf("CreateServiceInstance failed, transfer host module failed, transfer: %+v, instance: %+v, err: %+v, rid: %s", transferConfig, instance, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrHostTransferModule)
+	}
+
 	return &instance, nil
 }
 
