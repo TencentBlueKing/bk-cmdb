@@ -64,6 +64,9 @@ const mouseleave = event => {
 const click = event => {
     const el = event.currentTarget
     const data = el.__cursor__
+    if (!data.active) {
+        return false
+    }
     const callback = data.onclick
     if (typeof callback === 'function') {
         callback(data)

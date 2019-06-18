@@ -147,6 +147,11 @@ async function getPromise (method, url, data, userConfig = {}) {
  */
 function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
+    if (transformedResponse.bk_error_code === 9900403) {
+        window.permissionModal && window.permissionModal.show((transformedResponse.permission || []).map(permission => {
+            return `${permission.scope_type}.${permission.action_id}`
+        }))
+    }
     if (!transformedResponse.result && config.globalError) {
         reject({ message: transformedResponse['bk_error_msg'] })
     } else {
