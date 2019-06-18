@@ -64,8 +64,6 @@
             this.authorizedBusiness = await this.$store.dispatch('objectBiz/getAuthorizedBusiness')
             if (this.authorizedBusiness.length) {
                 this.setLocalSelected()
-            } else {
-                this.$error(this.$t('Common["您没有业务权限"]'))
             }
         },
         methods: {
