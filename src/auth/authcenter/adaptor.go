@@ -367,9 +367,11 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error
 		var rsc metadata.Resource
 		rsc.ResourceType = string(*rscType)
 		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
-		rsc.ResourceID = rscIDs[0].ResourceID
+		if len(rscIDs) != 0 {
+			rsc.ResourceID = rscIDs[0].ResourceID
+		}
 		rsc.ResourceName = r.Basic.Name
-
+		p.Resources = [][]metadata.Resource{{rsc}}
 		ps = append(ps, p)
 	}
 	return ps, nil
