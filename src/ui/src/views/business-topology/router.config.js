@@ -1,5 +1,5 @@
 import Meta from '@/router/meta'
-import { NAV_BUSINESS_RESOURCE } from '@/dictionary/menu'
+import { NAV_SERVICE_MANAGEMENT } from '@/dictionary/menu'
 import {
     U_HOST,
     HOST_TO_RESOURCE
@@ -21,8 +21,8 @@ export default {
             id: 'topology',
             i18n: 'Nav["服务拓扑"]',
             path: path,
-            order: 2,
-            parent: NAV_BUSINESS_RESOURCE,
+            order: 3,
+            parent: NAV_SERVICE_MANAGEMENT,
             adminView: false
         },
         auth: {

@@ -1,7 +1,7 @@
 <template>
     <div class="create-template-wrapper">
         <div class="info-group">
-            <h3>基本属性</h3>
+            <h3>{{$t("ProcessManagement['基本属性']")}}</h3>
             <div class="form-info clearfix">
                 <label class="label-text fl" for="templateName">
                     {{$t('ServiceManagement["模板名称"]')}}
@@ -50,7 +50,7 @@
             </div>
         </div>
         <div class="info-group">
-            <h3>进程服务</h3>
+            <h3>{{$t("ProcessManagement['服务进程']")}}</h3>
             <div class="precess-box">
                 <div class="process-create">
                     <bk-button class="create-btn" @click="handleCreateProcess">
