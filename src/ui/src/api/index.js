@@ -18,11 +18,15 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
     config => {
-        middlewares.forEach(middleware => {
-            if (typeof middleware.request === 'function') {
-                config = middleware.request(config)
-            }
-        })
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.request === 'function') {
+                    config = middleware.request(config)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
         return config
     },
     error => {
@@ -32,11 +36,15 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
     response => {
-        middlewares.forEach(middleware => {
-            if (typeof middleware.response === 'function') {
-                response = middleware.response(response)
-            }
-        })
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.response === 'function') {
+                    response = middleware.response(response)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
         return response
     },
     error => {
@@ -212,7 +220,6 @@ function popupPermissionModal (permission = []) {
 
 function getPermissionText (data, necessaryKey, extraKey, split = '：') {
     const text = [data[necessaryKey]]
-    console.log(data, data[necessaryKey], necessaryKey)
     if (data[extraKey]) {
         text.push(data)
     }
