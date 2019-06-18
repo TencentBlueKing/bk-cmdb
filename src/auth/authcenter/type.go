@@ -156,6 +156,7 @@ type ResourceType struct {
 	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
 	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
+	Share                bool           `json:"is_share"`
 	Actions              []Action       `json:"actions"`
 }
 
@@ -213,6 +214,11 @@ type TypeAction struct {
 type ListAuthorizedResourcesResult struct {
 	BaseResponse
 	Data []AuthorizedResource `json:"data"`
+}
+
+type ListAuthorizedScopeResult struct {
+	BaseResponse
+	Data []string `json:"data"`
 }
 
 type AuthorizedResource struct {

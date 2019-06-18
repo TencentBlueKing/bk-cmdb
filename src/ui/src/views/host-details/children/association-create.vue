@@ -328,7 +328,9 @@
                         '_label': `${isSource ? type['src_des'] : type['dest_des']}-${model['bk_obj_name']}`
                     }
                 })
-                this.options = options
+                const allLabel = options.map(option => option._label)
+                const uniqueLabel = [...new Set(allLabel)]
+                this.options = uniqueLabel.map(label => options.find(option => option._label === label))
             },
             async handleSelectObj (asstId, option) {
                 this.tempData = []
@@ -381,14 +383,17 @@
                         this.$success(this.$t('Association["取消关联成功"]'))
                     } else if (updateType === 'update') {
                         await this.deleteAssociation(this.isSource ? this.existInstAssociation[0]['bk_asst_inst_id'] : this.existInstAssociation[0]['bk_inst_id'])
+                        this.hasChange = true
+                        this.tempData = []
                         await this.createAssociation(instId)
-                        this.tempData.push(instId)
+                        this.tempData = [instId]
                         this.$success(this.$t('Association["添加关联成功"]'))
                     }
-                    this.getExistInstAssociation()
                     this.hasChange = true
                 } catch (e) {
                     console.log(e)
+                } finally {
+                    this.getExistInstAssociation()
                 }
             },
             createAssociation (instId) {
@@ -544,8 +549,8 @@
             getProperty (propertyId) {
                 return this.properties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === propertyId)
             },
-            handleCloseConfirm () {
-                this.confirm.id = null
+            handleCloseConfirm (event) {
+                // this.confirm.id = null
             },
             handlePropertySelected (value, data) {
                 this.filter.id = data['bk_property_id']
