@@ -11,7 +11,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'请选择一级分类\']')"
+                    :placeholder="$t('ServiceManagement[\'所有一级分类\']')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="mainList"
@@ -20,7 +20,7 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
+                    :placeholder="$t('ServiceManagement[\'所有二级分类\']')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="secondaryList"
@@ -30,7 +30,7 @@
                 <div class="filter-search fl">
                     <input type="text"
                         class="bk-form-input"
-                        :placeholder="$t('ServiceManagement[\'模板名称\']')"
+                        :placeholder="$t('ServiceManagement[\'搜索\']')"
                         v-model.trim="filter.templateName"
                         @keypress.enter="searchByTemplateName">
                     <i class="bk-icon icon-search" @click="searchByTemplateName"></i>

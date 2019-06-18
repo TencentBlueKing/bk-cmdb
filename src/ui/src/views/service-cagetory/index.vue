@@ -83,7 +83,7 @@
                                     </i>
                                 </div>
                             </div>
-                            <span>{{childCagetory['usage_amount']}}</span>
+                            <!-- <span>{{childCagetory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
