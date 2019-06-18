@@ -13,12 +13,12 @@
 package metadata
 
 import (
-	"configcenter/src/common/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
