@@ -17,44 +17,14 @@
                 </span>
                 <h3>{{i18n.permissionTitle}}</h3>
             </div>
-            <table class="permission-table table-header">
-                <thead>
-                    <tr>
-                        <th width="30%">{{i18n.system}}</th>
-                        <th width="35%">{{i18n.resource}}</th>
-                        <th width="35%">{{i18n.requiredPermissions}}</th>
-                    </tr>
-                </thead>
-            </table>
-            <div class="table-content">
-                <table class="permission-table">
-                    <tbody>
-                        <tr>
-                            <td width="30%">作业平台</td>
-                            <td width="35%">作业：gse初始化作业作业：gse初始化作业作业：gse初始化作业</td>
-                            <td width="35%">查看，执行</td>
-                        </tr>
-                        <tr>
-                            <td>作业平台</td>
-                            <td>快速脚本执行作业：gse初始化作业</td>
-                            <td>执行</td>
-                        </tr>
-                        <tr>
-                            <td>作业平台</td>
-                            <td>快速脚本执行作业：gse初始化作业</td>
-                            <td>执行</td>
-                        </tr>
-                        <tr>
-                            <td>作业平台</td>
-                            <td>快速脚本执行作业：gse初始化作业</td>
-                            <td>执行</td>
-                        </tr>
-                        <tr v-if="false">
-                            <td class="no-data" colspan="3">{{i18n.noData}}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <cmdb-table
+                :header="header"
+                :list="list"
+                :max-height="180"
+                :empty-height="140"
+                :visible="isModalShow"
+                :sortable="false">
+            </cmdb-table>
         </div>
         <div class="permission-footer" slot="footer">
             <bk-button type="primary" @click="goToApply">{{ i18n.apply }}</bk-button>
@@ -63,12 +33,20 @@
     </bk-dialog>
 </template>
 <script>
+    import { RESOURCE_TYPE_NAME, RESOURCE_ACTION_NAME, GET_AUTH_META } from '@/dictionary/auth'
     export default {
         name: 'permissionModal',
         props: {},
         data () {
             return {
                 isModalShow: false,
+                header: [{
+                    id: 'resource',
+                    name: this.$t('资源')
+                }, {
+                    id: 'action',
+                    name: this.$t('需要申请的权限')
+                }],
                 list: [],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
@@ -82,13 +60,20 @@
             }
         },
         methods: {
-            show (data) {
+            show (authList) {
                 this.isModalShow = true
-                this.list = data
+                this.list = this.translateAuth(authList)
             },
-            goToApply () {
-
+            translateAuth (authList) {
+                return authList.map(auth => {
+                    const meta = GET_AUTH_META(auth)
+                    return {
+                        resource: RESOURCE_TYPE_NAME[meta.resource_type],
+                        action: RESOURCE_ACTION_NAME[meta.action]
+                    }
+                })
             },
+            goToApply () {},
             onCloseDialog () {
                 this.isModalShow = false
             }
@@ -107,46 +92,6 @@
                 margin: 10px 0 30px;
                 color: #979ba5;
                 font-size: 24px;
-            }
-        }
-        .permission-table {
-            width: 100%;
-            height: 100px;
-            color: #63656e;
-            border: 1px solid #dcdee5;
-            border-collapse: collapse;
-            table-layout: fixed;
-            th,
-            td {
-                padding: 12px 18px;
-                font-size: 12px;
-                text-align: left;
-                border-bottom: 1px solid #dcdee5;
-                border-right: 1px solid #dcdee5;
-            }
-            th {
-                color: #313238;
-                background: rgb(250, 251, 253);
-            }
-        }
-        .table-content {
-            max-height: 180px;
-            border-bottom: 1px solid #dcdee5;
-            border-top: none;
-            overflow: auto;
-            .permission-table {
-                border-top: none;
-                border-bottom: none;
-                td:last-child {
-                    border-right: none;
-                }
-                tr:last-child td {
-                    border-bottom: none;
-                }
-            }
-            .no-data {
-                text-align: center;
-                color: #999999;
             }
         }
     }

@@ -1,9 +1,10 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <span class="fl"
+            <span class="fl" v-if="isAdminView"
                 v-cursor="{
-                    active: true || !$isAuthorized(OPERATION.C_BUSINESS)
+                    active: $isAuthorized(OPERATION.C_BUSINESS),
+                    auth: [OPERATION.C_BUSINESS]
                 }">
                 <bk-button class="fl" type="primary"
                     :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
