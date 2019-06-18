@@ -844,8 +844,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Type:   meta.MainlineInstanceTopology,
+					Action: meta.Find,
 				},
 			},
 		}

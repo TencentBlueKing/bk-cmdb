@@ -13,11 +13,10 @@
 package authcenter
 
 import (
+	"configcenter/src/auth/meta"
 	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
-
-	"configcenter/src/auth/meta"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -337,6 +336,17 @@ func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error
 	ps := make([]metadata.Permission, 0)
 	for _, r := range rs {
 		var p metadata.Permission
+		p.SystemID = SystemIDCMDB
+		p.SystemName = SystemNameCMDB
+
+		if r.BusinessID > 0 {
+			p.ScopeType = ScopeTypeIDBiz
+			p.ScopeTypeName = ScopeTypeIDBizName
+		} else {
+			p.ScopeType = ScopeTypeIDSystem
+			p.ScopeTypeName = ScopeTypeIDSystemName
+		}
+
 		actID, err := adaptorAction(&r)
 		if err != nil {
 			return nil, err
