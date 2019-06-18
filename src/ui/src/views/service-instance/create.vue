@@ -144,7 +144,8 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
+                    const apiUrl = this.withTemplate ? 'serviceInstance/createProcServiceInstanceByTemplate' : 'serviceInstance/createProcServiceInstanceWithRaw'
+                    await this.$store.dispatch(apiUrl, {
                         params: this.$injectMetadata({
                             name: this.moduleInstance.bk_module_name,
                             bk_module_id: this.moduleId,
