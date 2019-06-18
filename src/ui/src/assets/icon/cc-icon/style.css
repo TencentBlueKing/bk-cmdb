@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?kq3tr1');
-  src:  url('fonts/icomoon.eot?kq3tr1#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?kq3tr1') format('truetype'),
-    url('fonts/icomoon.woff?kq3tr1') format('woff'),
-    url('fonts/icomoon.svg?kq3tr1#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?gkz7vk');
+  src:  url('fonts/icomoon.eot?gkz7vk#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?gkz7vk') format('truetype'),
+    url('fonts/icomoon.woff?gkz7vk') format('woff'),
+    url('fonts/icomoon.svg?gkz7vk#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -537,54 +537,57 @@
 .icon-cc-switch2:before {
   content: "\e9aa";
 }
-.icon-cc-thumbtack:before {
+.icon-cc-template-management:before {
   content: "\e9ab";
 }
-.icon-cc-tips:before {
+.icon-cc-thumbtack:before {
   content: "\e9ac";
 }
-.icon-cc-tips-close:before {
+.icon-cc-tips:before {
   content: "\e9ad";
 }
-.icon-cc-tomcat:before {
+.icon-cc-tips-close:before {
   content: "\e9ae";
 }
-.icon-cc-tree:before {
+.icon-cc-tomcat:before {
   content: "\e9af";
 }
-.icon-cc-triangle:before {
+.icon-cc-tree:before {
   content: "\e9b0";
 }
-.icon-cc-triangle-sider:before {
+.icon-cc-triangle:before {
   content: "\e9b1";
 }
-.icon-cc-unix:before {
+.icon-cc-triangle-sider:before {
   content: "\e9b2";
 }
-.icon-cc-ups:before {
+.icon-cc-unix:before {
   content: "\e9b3";
 }
-.icon-cc-user:before {
+.icon-cc-ups:before {
   content: "\e9b4";
 }
-.icon-cc-virtual:before {
+.icon-cc-user:before {
   content: "\e9b5";
 }
-.icon-cc-vmware:before {
+.icon-cc-virtual:before {
   content: "\e9b6";
 }
-.icon-cc-vsphere:before {
+.icon-cc-vmware:before {
   content: "\e9b7";
 }
-.icon-cc-weblogic:before {
+.icon-cc-vsphere:before {
   content: "\e9b8";
 }
-.icon-cc-win:before {
+.icon-cc-weblogic:before {
   content: "\e9b9";
 }
-.icon-cc-win7:before {
+.icon-cc-win:before {
   content: "\e9ba";
 }
-.icon-cc-wireless:before {
+.icon-cc-win7:before {
   content: "\e9bb";
+}
+.icon-cc-wireless:before {
+  content: "\e9bc";
 }
