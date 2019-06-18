@@ -19,9 +19,9 @@
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
-            :edit-disabled="!$isAuthorized(OPERATION.U_RESOURCE_HOST)"
-            :delete-disabled="!$isAuthorized(OPERATION.D_RESOURCE_HOST)"
-            :save-disabled="!$isAuthorized(OPERATION.U_RESOURCE_HOST)"
+            :edit-auth="OPERATION.U_RESOURCE_HOST"
+            :delete-auth="OPERATION.D_RESOURCE_HOST"
+            :save-auth="OPERATION.U_RESOURCE_HOST"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
