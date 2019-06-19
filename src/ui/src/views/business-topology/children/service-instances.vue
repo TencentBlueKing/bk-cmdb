@@ -79,7 +79,8 @@
         </service-instance-empty>
         <cmdb-slider
             :title="processForm.title"
-            :is-show.sync="processForm.show">
+            :is-show.sync="processForm.show"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content" v-if="processForm.show"
                 ref="processForm"
                 :type="processForm.type"
@@ -88,7 +89,7 @@
                 :properties="processForm.properties"
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
-                @on-cancel="handleCloseProcessForm">
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -362,6 +363,23 @@
                 this.processForm.referenceService = null
                 this.processForm.instance = null
                 this.processForm.uneditableProperties = []
+            },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCloseProcessForm()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCloseProcessForm()
             },
             handleCreateServiceInstance () {
                 this.$router.push({
