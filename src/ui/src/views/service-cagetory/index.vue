@@ -27,13 +27,16 @@
                     <template v-else>
                         <div class="cagetory-name">
                             <span>{{mainCagetory['name']}}</span>
-                            <i class="property-edit icon-cc-edit-shape" @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])"></i>
+                            <i v-if="!mainCagetory['is_built_in']"
+                                class="property-edit icon-cc-edit-shape"
+                                @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])">
+                            </i>
                         </div>
-                        <cmdb-dot-menu class="dot-menu">
+                        <cmdb-dot-menu class="dot-menu" v-if="!mainCagetory['is_built_in']">
                             <div class="menu-operational">
                                 <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("ServiceCagetory['添加二级分类']")}}</i>
-                                <i class="not-allowed" v-if="mainCagetory['child_cagetory_list'].length || mainCagetory['is_built_in']">{{$t("Common['删除']")}}</i>
-                                <i v-else @click.stop="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
+                                <i class="not-allowed" v-if="mainCagetory['child_cagetory_list'].length">{{$t("Common['删除']")}}</i>
+                                <i v-else @click="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
                     </template>
@@ -83,7 +86,7 @@
                                     </i>
                                 </div>
                             </div>
-                            <span>{{childCagetory['usage_amount']}}</span>
+                            <!-- <span>{{childCagetory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
@@ -179,10 +182,7 @@
                         name
                     })
                 }).then(() => {
-                    this.$bkMessage({
-                        message: this.$t("Common['保存成功']"),
-                        theme: 'success'
-                    })
+                    this.$success(this.$t('Common["保存成功"]'))
                     this.showAddMianCagetory = false
                     this.handleCloseAddChild()
                     this.getCagetoryList()
@@ -214,10 +214,7 @@
                             name: type === 'main' ? this.mainCagetoryName : this.childCagetoryName
                         })
                     }).then(() => {
-                        this.$bkMessage({
-                            message: this.$t("Common['保存成功']"),
-                            theme: 'success'
-                        })
+                        this.$success(this.$t('Common["保存成功"]'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
                         this.getCagetoryList()
@@ -236,10 +233,7 @@
                                 requestId: 'delete_proc_services_category'
                             }
                         }).then(() => {
-                            this.$bkMessage({
-                                message: this.$t("Common['删除成功']"),
-                                theme: 'success'
-                            })
+                            this.$success(this.$t('Common["删除成功"]'))
                             this.getCagetoryList()
                         })
                     }

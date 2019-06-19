@@ -390,6 +390,7 @@
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
+                    this.$success(this.$t('BusinessSynchronous["同步成功"]'))
                     this.handleGoBackModule()
                 })
             },
