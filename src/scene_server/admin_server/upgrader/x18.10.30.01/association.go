@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -130,6 +131,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		return err
 	}
 
+	properyMap := map[string]metadata.ObjAttDes{}
+	buildObjPropertyMapKey := func(objID string, propertyID string) string { return fmt.Sprintf("%s:%s", objID, propertyID) }
+	for _, property := range propertys {
+		properyMap[buildObjPropertyMapKey(property.ObjectID, property.PropertyID)] = property
+		blog.Infof("key %s: %+v", buildObjPropertyMapKey(property.ObjectID, property.PropertyID), property)
+	}
+
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
@@ -145,7 +153,18 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
 			asst.AssociationName = buildObjAsstID(asst)
-			asst.Mapping = metadata.OneToManyMapping
+			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
+			switch property.PropertyType {
+			case common.FieldTypeSingleAsst:
+				asst.Mapping = metadata.OneToManyMapping
+			case common.FieldTypeMultiAsst:
+				asst.Mapping = metadata.ManyToManyMapping
+			default:
+				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
+				asst.Mapping = metadata.ManyToManyMapping
+			}
+			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
+
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
 		}
