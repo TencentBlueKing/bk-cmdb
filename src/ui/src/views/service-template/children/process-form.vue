@@ -218,9 +218,7 @@
                 } else if (this.type === 'update') {
                     this.values['process_id'] = inst['process_id']
                 }
-                setTimeout(() => {
-                    this.refrenceValues = this.$tools.clone(this.values)
-                }, 0)
+                this.refrenceValues = this.$tools.clone(this.values)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
