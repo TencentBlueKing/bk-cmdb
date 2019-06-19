@@ -86,7 +86,7 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
 		return
 	}
 	opt := make(map[string]interface{}, 0)
-	resp, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	resp, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("get cloud sync task instance failed, err: %v, rid: %s", err, lgc.rid)
 		return
@@ -128,7 +128,7 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
 }
 
 func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interface{}, update bool) error {
-	response, err := lgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	response, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("search cloud task instance failed, err: %v, rid: %s", err, lgc.rid)
 		return lgc.ccErr.Error(1110036)
@@ -400,7 +400,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 	newLgc := lgc.NewFromHeader(header)
 
 	opt := make(map[string]interface{})
-	response, err := newLgc.CoreAPI.HostController().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	response, err := newLgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("search cloud task info fail, err: %v, rid: %s", err, lgc.rid)
 		return
@@ -734,7 +734,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			resourceConfirm[common.BKCloudSyncAccountAdmin] = taskInfo.AccountAdmin
 			resourceConfirm[common.BKResourceType] = "change"
 
-			if _, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm); err != nil {
+			if _, err := lgc.CoreAPI.CoreService().Cloud().CreateConfirm(ctx, lgc.header, resourceConfirm); err != nil {
 				blog.Errorf("add resource confirm failed with confirmInfo: %#v, err: %v, rid: %s", resourceConfirm, err, lgc.rid)
 				errOrigin = err
 				return err
@@ -819,7 +819,7 @@ func (lgc *Logics) UpdateCloudHosts(ctx context.Context, cloudHostAttr []mapstr.
 func (lgc *Logics) NewAddConfirm(ctx context.Context, taskInfo meta.CloudTaskInfo, newCloudHost []mapstr.MapStr) (int, error) {
 	// Check whether the host is already exist in resource confirm.
 	opt := make(map[string]interface{})
-	confirmHosts, err := lgc.CoreAPI.HostController().Cloud().SearchConfirm(ctx, lgc.header, opt)
+	confirmHosts, err := lgc.CoreAPI.CoreService().Cloud().SearchConfirm(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("get confirm info failed with err: %v, rid: %s", err, lgc.rid)
 		return 0, err
@@ -879,7 +879,7 @@ func (lgc *Logics) NewAddConfirm(ctx context.Context, taskInfo meta.CloudTaskInf
 			resourceConfirm[common.BKCloudSyncAccountAdmin] = taskInfo.AccountAdmin
 			resourceConfirm[common.BKResourceType] = common.BKNewAddHost
 
-			if _, err := lgc.CoreAPI.HostController().Cloud().ResourceConfirm(ctx, lgc.header, resourceConfirm); err != nil {
+			if _, err := lgc.CoreAPI.CoreService().Cloud().CreateConfirm(ctx, lgc.header, resourceConfirm); err != nil {
 				blog.Errorf("add resource confirm failed with err: confirmInfo: %#v, %v, rid: %s", resourceConfirm, err, lgc.rid)
 				return 0, err
 			}
@@ -974,12 +974,12 @@ func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime
 	updateData[common.BKNewAddHost] = cloudHistory.NewAdd
 	updateData[common.BKAttrChangedHost] = cloudHistory.AttrChanged
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().UpdateCloudTask(ctx, lgc.header, updateData); err != nil {
+	if _, err := lgc.CoreAPI.CoreService().Cloud().UpdateCloudTask(ctx, lgc.header, updateData); err != nil {
 		blog.Errorf("update task failed, taskInfo: %#v, err: %v, rid: %s", updateData, err, lgc.rid)
 		return
 	}
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().AddSyncHistory(ctx, lgc.header, cloudHistory); err != nil {
+	if _, err := lgc.CoreAPI.CoreService().Cloud().CreateSyncHistory(ctx, lgc.header, cloudHistory); err != nil {
 		blog.Errorf("add cloud history table failed, history: %v, err: %v, rid: %s", cloudHistory, err, lgc.rid)
 		return
 	}

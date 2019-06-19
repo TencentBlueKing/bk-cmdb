@@ -92,7 +92,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	}
 
 	// TaskName Uniqueness check
-	response, err := s.CoreAPI.HostController().Cloud().TaskNameCheck(srvData.ctx, srvData.header, data)
+	response, err := s.CoreAPI.CoreService().Cloud().TaskNameUniqueCheck(srvData.ctx, srvData.header, data)
 	if err != nil {
 		blog.Errorf("task name unique check fail, error: %v, rid: %s", err, srvData.rid)
 		return
@@ -104,7 +104,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
 		blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
@@ -119,7 +119,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 
 	if status {
 		// 开启同步状态下，update；先关闭同步，更新数据后，再开启同步
-		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 			return
@@ -130,7 +130,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 			return
 		}
 	} else {
-		if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 			return
@@ -150,7 +150,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if _, err := s.CoreAPI.HostController().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, opt); err != nil {
+	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, opt); err != nil {
 		blog.Errorf("update task failed with decode body, %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
@@ -198,7 +198,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 	for _, id := range resourceIDs {
 		opt := make(map[string]interface{})
 		opt["bk_resource_id"] = id
-		response, err := s.CoreAPI.HostController().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
+		response, err := s.CoreAPI.CoreService().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
 		if err != nil {
 			blog.Errorf("get resourceID %v confirm list failed. err: %v, rid: %s", id, err, srvData.rid)
 			continue
@@ -248,7 +248,7 @@ func (s *Service) ResourceConfirm(req *restful.Request, resp *restful.Response) 
 
 	// After resource confirmation, delete the items from table cc_CloudResourceSync
 	for _, id := range resourceIDs {
-		_, errD := srvData.lgc.CoreAPI.HostController().Cloud().DeleteConfirm(srvData.ctx, srvData.header, id)
+		_, errD := srvData.lgc.CoreAPI.CoreService().Cloud().DeleteConfirm(srvData.ctx, srvData.header, id)
 		if errD != nil {
 			blog.Errorf("delete resource confirm failed with err: %v, rid: %s", errD, srvData.rid)
 			continue
@@ -268,7 +268,7 @@ func (s *Service) SearchConfirm(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchConfirm(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search confirm instance failed, rid: %s", srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
@@ -287,7 +287,7 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
 
 	if err != nil {
 		blog.Errorf("search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
@@ -322,7 +322,7 @@ func (s *Service) CloudSyncHistory(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchSyncHistory(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchSyncHistory(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search cloud sync history failed, err: %v, rid: %s", err, srvData.rid)
 		resp.WriteEntity(meta.NewSuccessResp(err))
@@ -347,7 +347,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 	for _, id := range resourceIDs {
 		condition := make(map[string]interface{})
 		condition["bk_resource_id"] = id
-		response, err := s.CoreAPI.HostController().Cloud().SearchConfirm(srvData.ctx, srvData.header, condition)
+		response, err := s.CoreAPI.CoreService().Cloud().SearchConfirm(srvData.ctx, srvData.header, condition)
 		if err != nil {
 			blog.Errorf("search confirm instance failed, rid: %s", srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmFail)})
@@ -355,7 +355,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 
 		if response.Count > 0 {
 			opt := response.Info[0]
-			if _, err := s.CoreAPI.HostController().Cloud().AddConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
+			if _, err := s.CoreAPI.CoreService().Cloud().AddConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
 				blog.Errorf("add confirm history failed, rid: %s", srvData.rid)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
 			}
@@ -375,7 +375,7 @@ func (s *Service) SearchConfirmHistory(req *restful.Request, resp *restful.Respo
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchConfirmHistory(context.Background(), srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchConfirmHistory(context.Background(), srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search confirm history failed, rid: %s", srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetConfirmHistoryFail)})
