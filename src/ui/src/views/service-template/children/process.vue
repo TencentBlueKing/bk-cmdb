@@ -58,6 +58,10 @@
                             name: this.$t("ProcessManagement['进程名称']"),
                             sortable: false
                         }, {
+                            id: 'bk_process_name',
+                            name: this.$t("ProcessManagement['进程别名']"),
+                            sortable: false
+                        }, {
                             id: 'bind_ip',
                             name: this.$t("ProcessManagement['监听IP']"),
                             sortable: false

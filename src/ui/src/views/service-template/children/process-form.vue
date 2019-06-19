@@ -24,11 +24,9 @@
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i> -->
-                                    <label :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
-                                        <input type="checkbox"
-                                            v-model="values[property['bk_property_id']]['as_default_value']"
-                                            :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']">
+                                        <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
                                         <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
                                     </label>
                                 </div>
@@ -48,7 +46,6 @@
                                     <component class="form-component" v-else
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -291,17 +288,17 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (!this.hasChange()) {
-                        this.handleCancel()
+                        this.$emit('on-cancel')
                         return
                     }
                     if (result && this.isCreatedService) {
                         if (this.type === 'create' && !this.hasProcessName(this.values)) {
                             this.values['sign_id'] = new Date().getTime()
                             this.addLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else if (this.type === 'update') {
                             this.updateLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else {
                             this.$bkMessage({
                                 message: this.$t("ServiceManagement['进程名称已存在']"),
@@ -423,15 +420,8 @@
                 float: right;
                 line-height: 16px;
                 cursor: pointer;
-                &.disabled .cmdb-checkbox-text {
-                    cursor: not-allowed;
-                }
                 .cmdb-checkbox-text {
                     font-size: 12px;
-                }
-                input[type=checkbox][disabled] {
-                    background-color: #f1f1f1;
-                    cursor: not-allowed;
                 }
             }
         }
