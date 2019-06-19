@@ -51,8 +51,8 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
-	taskID := req.PathParameter("taskID")
-	_, err := s.CoreAPI.HostController().Cloud().DeleteCloudTask(srvData.ctx, srvData.header, taskID)
+	taskID := req.PathParameter("id")
+	_, err := s.CoreAPI.CoreService().Cloud().DeleteCloudTask(srvData.ctx, srvData.header, taskID)
 
 	retData := make(map[string]interface{})
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	response, err := s.CoreAPI.HostController().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})

@@ -179,3 +179,8 @@ type OperaterException struct {
 	BaseResp `json:",inline"`
 	Data     []ExceptionResult `json:"data"`
 }
+
+type Uint64DataResponse struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
+}
