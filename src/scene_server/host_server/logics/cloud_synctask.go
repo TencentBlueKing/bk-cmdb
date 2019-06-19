@@ -152,15 +152,17 @@ func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interf
 
 			pendingStartTaskInfo, err := json.Marshal(info)
 			if err != nil {
-				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v， rid: %s, error: %v",
-					taskInfo.TaskID, taskInfo.AccountAdmin, lgc.rid, err)
+				blog.Errorf("add redis failed taskID: %v, accountAdmin: %v， rid: %s, error: %v", taskInfo.TaskID, taskInfo.AccountAdmin, lgc.rid, err)
+				return err
 			}
 			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, pendingStartTaskInfo).Err(); err != nil {
 				blog.Errorf("add cloud task redis item fail, info: %v, err: %v, rid: %s", info, err, lgc.rid)
+				return err
 			}
 		} else {
 			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStop, taskInfo.TaskID).Err(); err != nil {
 				blog.Errorf("add cloud task redis item fail, info: %v, err: %v, rid: %s", taskInfo.TaskID, err, lgc.rid)
+				return err
 			}
 		}
 	}
@@ -173,25 +175,30 @@ func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
 	var mutex = &sync.Mutex{}
 	newClient := *lgc.cache
 
-	pub, err := newClient.Subscribe("stop")
-	if err != nil {
-		// todo sleep try again
-		blog.Errorf("redis subscribe fail, err: %v", err)
-	}
 	for {
-		receive, err := pub.ReceiveMessage()
+		pub, err := newClient.Subscribe("stop")
 		if err != nil {
-			blog.Errorf("redis subscribe get value fail, err: %v", err)
+			time.Sleep(5 * time.Second)
+			blog.Errorf("redis subscribe fail, err: %v", err)
+			continue
 		}
+		for {
+			receive, err := pub.ReceiveMessage()
+			if err != nil {
+				blog.Errorf("redis subscribe get value fail, err: %v", err)
+				continue
+			}
 
-		taskID, err := strconv.ParseInt(receive.Payload, 10, 64)
-		if err != nil {
-			blog.Errorf("interface convert to int64 fail, err: %v", err)
-		}
-		if _, ok := taskChan[taskID]; ok {
-			mutex.Lock()
-			taskChan[taskID] <- true
-			mutex.Unlock()
+			taskID, err := strconv.ParseInt(receive.Payload, 10, 64)
+			if err != nil {
+				blog.Errorf("interface convert to int64 fail, err: %v", err)
+				continue
+			}
+			if _, ok := taskChan[taskID]; ok {
+				mutex.Lock()
+				taskChan[taskID] <- true
+				mutex.Unlock()
+			}
 		}
 	}
 }
@@ -222,7 +229,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 				taskChan[taskID] <- true
 				mutex.Unlock()
 			} else {
-				//lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
+				lgc.cache.Publish("stop", strconv.FormatInt(taskID, 10))
 			}
 		}
 		taskInfoItem := pendingStartItem.TaskItemInfo
@@ -292,6 +299,7 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 	redisTaskItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStop, 0, -1).Result()
 	if err != nil {
 		blog.Errorf("get task item from redis fail, error: %v, rid: %s", err, lgc.rid)
+		return
 	}
 
 	if len(redisTaskItems) == 0 {
@@ -309,6 +317,7 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 			if stopTaskId == key {
 				if err := lgc.cache.LRem(common.RedisCloudSyncInstancePendingStop, 1, item).Err(); err != nil {
 					blog.Errorf("remove stop task item fail, taskInfo: %s, error: %v, rid: %s", item, err, lgc.rid)
+					continue
 				}
 
 				mutex.Lock()
@@ -413,16 +422,19 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 	pendingStopItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStop, 0, -1).Result()
 	if err != nil {
 		blog.Errorf("get task item from redis fail, error: %v, rid: %s", err, lgc.rid)
+		return
 	}
 
 	pendingStartItems, err := lgc.cache.LRange(common.RedisCloudSyncInstancePendingStart, 0, -1).Result()
 	if err != nil {
 		blog.Errorf("get task item from redis fail, error: %v, rid: %s", err, lgc.rid)
+		return
 	}
 
 	startedItems, err := lgc.cache.LRange(common.RedisCloudSyncInstanceStarted, 0, -1).Result()
 	if err != nil {
 		blog.Errorf("get task item from redis fail, error: %v, rid: %s", err, lgc.rid)
+		return
 	}
 
 	allStartItems := make([]string, 0)
@@ -476,6 +488,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 			waitStart, err := json.Marshal(item)
 			if err != nil {
 				blog.Errorf("add redis failed taskID: %v, rid: %s", item.TaskID, lgc.rid)
+				return
 			}
 			if err := lgc.cache.RPush(common.RedisCloudSyncInstancePendingStart, waitStart).Err(); err != nil {
 				blog.Errorf("add cloud task item to redis fail, err: %v, rid: %s", err, lgc.rid)
@@ -520,7 +533,7 @@ func (lgc *Logics) CloudSyncSwitch(ctx context.Context, taskInfoItem *meta.TaskI
 	}()
 }
 
-func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) error {
+func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) {
 	cloudHistory := new(meta.CloudHistory)
 	cloudHistory.ObjID = taskInfo.ObjID
 	cloudHistory.TaskID = taskInfo.TaskID
@@ -546,7 +559,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 	if err != nil {
 		blog.Errorf("search host failed, err: %v, rid: %s", err, lgc.rid)
 		errOrigin = err
-		return err
+		return
 	}
 
 	existHostList := make([]string, 0)
@@ -555,25 +568,25 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 		if err != nil {
 			blog.Errorf("get hostInfo failed with err: %v, rid: %s", err, lgc.rid)
 			errOrigin = err
-			return err
+			return
 		}
 
 		ip, err := hostInfo.String(common.BKHostInnerIPField)
 		if err != nil {
 			blog.Errorf("get hostIp failed with err: %v, rid: %s", err, lgc.rid)
 			errOrigin = err
-			return err
+			return
 		}
 
 		existHostList = append(existHostList, ip)
 	}
 
 	// obtain hosts from TencentCloud needs secretID and secretKey
-	decodeBytes, errDecode := base64.StdEncoding.DecodeString(taskInfo.SecretKey)
-	if errDecode != nil {
+	decodeBytes, err := base64.StdEncoding.DecodeString(taskInfo.SecretKey)
+	if err != nil {
 		blog.Errorf("Base64 decode secretKey failed, rid: %s", lgc.rid)
-		errOrigin = errDecode
-		return errDecode
+		errOrigin = err
+		return
 	}
 	secretKey := string(decodeBytes)
 	secretID := taskInfo.SecretID
@@ -583,7 +596,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 	if err != nil {
 		blog.Errorf("obtain cloud hosts failed with err: %v, rid: %s", err, lgc.rid)
 		errOrigin = err
-		return err
+		return
 	}
 
 	// pick out the new add cloud hosts
@@ -624,7 +637,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			if err != nil {
 				blog.Errorf("get hostInfo failed with err: %v, rid: %s", err, lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
 
 			existHostIp, ok := existHostInfo.String(common.BKHostInnerIPField)
@@ -633,17 +646,17 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 				errOrigin = ok
 				break
 			}
-			existHostOsname, osOk := existHostInfo.String(common.BKOSNameField)
-			if osOk != nil {
+			existHostOsname, ok := existHostInfo.String(common.BKOSNameField)
+			if ok != nil {
 				blog.Errorf("get os name failed with err: %v, rid: %s", ok, lgc.rid)
-				errOrigin = osOk
+				errOrigin = ok
 				break
 			}
 
-			existHostOuterip, ipOk := existHostInfo.String(common.BKHostOuterIPField)
-			if ipOk != nil {
+			existHostOuterip, ok := existHostInfo.String(common.BKHostOuterIPField)
+			if ok != nil {
 				blog.Errorf("get outerip failed with, rid: %s", lgc.rid)
-				errOrigin = ipOk
+				errOrigin = ok
 				break
 			}
 
@@ -675,7 +688,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			if err != nil {
 				blog.Errorf("add cloud hosts failed, err: %v, rid: %s", err, lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
 		}
 		if len(cloudHostAttr) > 0 {
@@ -683,7 +696,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			if err != nil {
 				blog.Errorf("update cloud hosts failed, err: %v, rid: %s", err, lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
 		}
 	}
@@ -694,7 +707,7 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 		if err != nil {
 			blog.Errorf("newly add cloud resource confirm failed, err: %v, rid: %s", err, lgc.rid)
 			errOrigin = err
-			return err
+			return
 		}
 	}
 
@@ -708,19 +721,19 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			if err != nil {
 				blog.Errorf("mapstr.Map convert to string failed, rid: %s", lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
-			outerIp, errOut := host.String(common.BKHostOuterIPField)
-			if errOut != nil {
+			outerIp, err := host.String(common.BKHostOuterIPField)
+			if err != nil {
 				blog.Error("mapstr.Map convert to string failed, rid: %s", lgc.rid)
-				errOrigin = errOut
-				return errOut
+				errOrigin = err
+				return
 			}
 			osName, err := host.String(common.BKOSNameField)
 			if err != nil {
 				blog.Error("mapstr.Map convert to string failed, rid: %s", lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
 
 			resourceConfirm[common.BKHostInnerIPField] = innerIp
@@ -737,15 +750,15 @@ func (lgc *Logics) ExecSync(ctx context.Context, taskInfo meta.CloudTaskInfo) er
 			if _, err := lgc.CoreAPI.CoreService().Cloud().CreateConfirm(ctx, lgc.header, resourceConfirm); err != nil {
 				blog.Errorf("add resource confirm failed with confirmInfo: %#v, err: %v, rid: %s", resourceConfirm, err, lgc.rid)
 				errOrigin = err
-				return err
+				return
 			}
 		}
-		return nil
+		return
 	}
 
 	cloudHistory.Status = "success"
 	blog.V(3).Info("finish sync")
-	return nil
+	return
 }
 
 func (lgc *Logics) AddCloudHosts(ctx context.Context, newCloudHost []mapstr.MapStr) error {
