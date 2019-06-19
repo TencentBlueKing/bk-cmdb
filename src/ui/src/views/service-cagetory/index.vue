@@ -182,10 +182,7 @@
                         name
                     })
                 }).then(() => {
-                    this.$bkMessage({
-                        message: this.$t("Common['保存成功']"),
-                        theme: 'success'
-                    })
+                    this.$success(this.$t('Common["保存成功"]'))
                     this.showAddMianCagetory = false
                     this.handleCloseAddChild()
                     this.getCagetoryList()
@@ -217,10 +214,7 @@
                             name: type === 'main' ? this.mainCagetoryName : this.childCagetoryName
                         })
                     }).then(() => {
-                        this.$bkMessage({
-                            message: this.$t("Common['保存成功']"),
-                            theme: 'success'
-                        })
+                        this.$success(this.$t('Common["保存成功"]'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
                         this.getCagetoryList()
@@ -239,10 +233,7 @@
                                 requestId: 'delete_proc_services_category'
                             }
                         }).then(() => {
-                            this.$bkMessage({
-                                message: this.$t("Common['删除成功']"),
-                                theme: 'success'
-                            })
+                            this.$success(this.$t('Common["删除成功"]'))
                             this.getCagetoryList()
                         })
                     }
