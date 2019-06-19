@@ -265,9 +265,6 @@
                 listInterval: null,
                 panelStyle: {},
                 listSlideName: 'toggle-slide'
-                // defaultPlaceholder: this.t('selector.pleaseselect'),
-                // defaultEmptyText: this.t('selector.emptyText'),
-                // defaultSearchEmptyText: this.t('selector.searchEmptyText')
             }
         },
         computed: {
@@ -424,17 +421,6 @@
                     document.onkeydown = null
                 }
             }
-        },
-        created () {
-            // if (this.placeholder) {
-            //     this.defaultPlaceholder = this.placeholder
-            // }
-            // if (this.emptyText) {
-            //     this.defaultEmptyText = this.emptyText
-            // }
-            // if (this.searchEmptyText) {
-            //     this.defaultSearchEmptyText = this.searchEmptyText
-            // }
         },
         mounted () {
             this.popup = this.$el
