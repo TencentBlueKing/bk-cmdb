@@ -390,10 +390,7 @@
                         service_instances: this.instanceIds
                     })
                 }).then(() => {
-                    this.$bkMessage({
-                        message: this.$t("BusinessSynchronous['同步成功']"),
-                        theme: 'success'
-                    })
+                    this.$success(this.$t('BusinessSynchronous["同步成功"]'))
                     this.handleGoBackModule()
                 })
             },
