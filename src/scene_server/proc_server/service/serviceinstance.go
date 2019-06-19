@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -21,7 +23,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"strconv"
 )
 
 func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
@@ -180,7 +181,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 		}
 
 		// create service instance at first
-		temp, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
+		serviceInstance, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
 			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed,
 				"create service instance for template: %d, moduleID: %d, failed, err: %v",
@@ -190,6 +191,12 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 
 		// if this service have process instance to create, then create it now.
 		for _, detail := range inst.Processes {
+			if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &detail.ProcessInfo); err != nil {
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
+					"create process instance failed, serviceInstanceID: %d, process: %+v, err: %v",
+					serviceInstance.ID, detail, err)
+				return
+			}
 			id, err := ps.Logic.CreateProcessInstance(ctx.Kit, &detail.ProcessInfo)
 			if err != nil {
 				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
@@ -202,7 +209,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 				Metadata:          input.Metadata,
 				ProcessID:         int64(id),
 				ProcessTemplateID: detail.ProcessTemplateID,
-				ServiceInstanceID: temp.ID,
+				ServiceInstanceID: serviceInstance.ID,
 				HostID:            inst.HostID,
 			}
 
@@ -215,7 +222,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 			}
 		}
 
-		serviceInstanceIDs = append(serviceInstanceIDs, temp.ID)
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
 	}
 
 	ctx.RespEntity(serviceInstanceIDs)
@@ -238,7 +245,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		BusinessID:         bizID,
 		ServiceInstanceIDs: &[]int64{serviceInstance.ID},
 		ProcessTemplateID:  common.ServiceTemplateIDNotSet,
-		HostID:             serviceInstance.ID,
+		HostID:             serviceInstance.HostID,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
@@ -286,7 +293,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 		common.BKProcessIDField: map[string]interface{}{
 			common.BKDBIN: otherProcessIDs,
 		},
-		common.BKStartParamRegex: processInfo.ProcessName,
+		common.BKStartParamRegex: processInfo.StartParamRegex,
 		common.BKFuncName:        processInfo.FuncName,
 	}
 	funcNameFilterCond := &metadata.QueryCondition{
@@ -780,8 +787,8 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 	// process instance and it's template, service instance, etc.
 	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
-	for _, pTemplate := range processTemplates.Info {
-		pTemplateMap[pTemplate.ID] = &pTemplate
+	for idx, pTemplate := range processTemplates.Info {
+		pTemplateMap[pTemplate.ID] = &processTemplates.Info[idx]
 
 		option := metadata.ListProcessInstanceRelationOption{
 			BusinessID:        bizID,
@@ -1005,6 +1012,28 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 
+	// step 0:
+	// find service instances
+	serviceInstanceOption := &metadata.ListServiceInstanceOption{
+		BusinessID:         bizID,
+		ServiceInstanceIDs: &input.ServiceInstances,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		WithName: false,
+	}
+	serviceInstanceResult, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceOption)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "sync service instance with template: %d failed, get service instances failed, err: %v", input.ServiceTemplateID, err)
+		return
+	}
+	for _, serviceInstance := range serviceInstanceResult.Info {
+		if serviceInstance.ServiceTemplateID != input.ServiceTemplateID {
+			ctx.RespWithError(err, common.CCErrCommParamsInvalid, "sync service instance with template: %d failed, instance %d doesn't come from template %d, err: %v", serviceInstance.ID, input.ServiceTemplateID, err)
+			return
+		}
+	}
+
 	// step 1:
 	// find all the process template according to the service template id
 	option := &metadata.ListProcessTemplatesOption{
@@ -1020,8 +1049,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 
 	}
 	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
-	for _, t := range processTemplate.Info {
-		processTemplateMap[t.ID] = &t
+	for idx, t := range processTemplate.Info {
+		processTemplateMap[t.ID] = &processTemplate.Info[idx]
 	}
 
 	// step2:
@@ -1052,8 +1081,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		return
 	}
 	processInstanceMap := make(map[int64]*metadata.Process)
-	for _, p := range processInstances {
-		processInstanceMap[p.ProcessID] = &p
+	for idx, p := range processInstances {
+		processInstanceMap[p.ProcessID] = &processInstances[idx]
 	}
 
 	// step 4:
@@ -1062,6 +1091,11 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	serviceInstanceWithTemplateMap := make(map[int64]map[int64]bool)
 	serviceInstanceWithHostMap := make(map[int64]int64)
 	processInstanceWithTemplateMap := make(map[int64]int64)
+	for _, serviceInstance := range serviceInstanceResult.Info {
+		serviceInstanceWithTemplateMap[serviceInstance.ID] = make(map[int64]bool)
+		serviceInstanceWithHostMap[serviceInstance.ID] = serviceInstance.HostID
+		serviceInstanceWithProcessMap[serviceInstance.ID] = make([]*metadata.Process, 0)
+	}
 	for _, r := range relations.Info {
 		p, exist := processInstanceMap[r.ProcessID]
 		if !exist {
@@ -1071,16 +1105,8 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 				input.ServiceTemplateID, r.ProcessID)
 			continue
 		}
-		if _, exist := serviceInstanceWithProcessMap[r.ServiceInstanceID]; !exist {
-			serviceInstanceWithProcessMap[r.ServiceInstanceID] = make([]*metadata.Process, 0)
-		}
 		serviceInstanceWithProcessMap[r.ServiceInstanceID] = append(serviceInstanceWithProcessMap[r.ServiceInstanceID], p)
 		processInstanceWithTemplateMap[r.ProcessID] = r.ProcessTemplateID
-		serviceInstanceWithHostMap[r.ServiceInstanceID] = r.HostID
-
-		if _, exist := serviceInstanceWithTemplateMap[r.ServiceInstanceID][r.ProcessTemplateID]; !exist {
-			serviceInstanceWithTemplateMap[r.ServiceInstanceID] = make(map[int64]bool)
-		}
 		serviceInstanceWithTemplateMap[r.ServiceInstanceID][r.ProcessTemplateID] = true
 	}
 
