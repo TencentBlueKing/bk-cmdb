@@ -156,6 +156,8 @@ func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	// create with template shouldn't receive instances parameter
+	input.Instances = make([]metadata.ServiceInstanceDetail, 0)
 
 	_, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
@@ -261,7 +263,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	otherProcessIDs := existProcessIDs
 	if processInfo.ProcessID != 0 {
-		otherProcessIDs := make([]int64, 0)
+		otherProcessIDs = make([]int64, 0)
 		for _, processID := range existProcessIDs {
 			if processID != processInfo.ProcessID {
 				otherProcessIDs = append(otherProcessIDs, processID)
@@ -1061,9 +1063,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	}
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relationOption)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-			"force sync service instance according to service template: %d, but list process template failed, err: %v",
-			input.ServiceTemplateID, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed, "force sync service instance according to service template: %d, but list process template failed, err: %v", input.ServiceTemplateID, err)
 		return
 	}
 	procIDs := make([]int64, 0)
@@ -1075,9 +1075,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	// find all the process instance in process instance relation.
 	processInstances, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
 	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-			"force sync service instance according to service template: %d, but list process instance: %v failed, err: %v",
-			input.ServiceTemplateID, procIDs, err)
+		ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed, "force sync service instance according to service template: %d, but list process instance: %v failed, err: %v", input.ServiceTemplateID, procIDs, err)
 		return
 	}
 	processInstanceMap := make(map[int64]*metadata.Process)
@@ -1101,8 +1099,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 		if !exist {
 			// something is wrong, but can this process instance,
 			// but we can find it in the process instance relation.
-			blog.Warnf("force sync service instance according to service template: %d, but can not find the process instance: %d",
-				input.ServiceTemplateID, r.ProcessID)
+			blog.Warnf("force sync service instance according to service template: %d, but can not find the process instance: %d", input.ServiceTemplateID, r.ProcessID)
 			continue
 		}
 		serviceInstanceWithProcessMap[r.ServiceInstanceID] = append(serviceInstanceWithProcessMap[r.ServiceInstanceID], p)
@@ -1119,9 +1116,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 				// this process template has already removed form the service template,
 				// which means this process instance need to be removed from this service instance
 				if err := ps.Logic.DeleteProcessInstance(ctx.Kit, process.ProcessID); err != nil {
-					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
-						"force sync service instance according to service template: %d, but delete process instance: %d with template: %d failed, err: %v",
-						input.ServiceTemplateID, process.ProcessID, template.ID, err)
+					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "force sync service instance according to service template: %d, but delete process instance: %d with template: %d failed, err: %v", input.ServiceTemplateID, process.ProcessID, template.ID, err)
 					return
 				}
 
@@ -1129,16 +1124,14 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 				deleteOption := metadata.DeleteProcessInstanceRelationOption{}
 				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
 				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
-					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed,
-						"force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v",
-						input.ServiceTemplateID, process.ProcessID, template.ID, err)
+					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v", input.ServiceTemplateID, process.ProcessID, template.ID, err)
 				}
 				continue
 			}
 
 			// this process's bounded is still exist, need to check whether this process instance
 			// need to be updated or not.
-			proc, changed := ps.Logic.CheckProcessTemplateAndInstanceIsDifferent(template.Property, process)
+			proc, changed := ps.Logic.CheckAndUpdateProcessInstanceWithTemplate(template.Property, process)
 			if !changed {
 				// nothing is changed.
 				continue
@@ -1160,7 +1153,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 	for id, pt := range processTemplateMap {
 		for svcID, templates := range serviceInstanceWithTemplateMap {
 			if _, exist := templates[id]; exist {
-				// nothing is changed.
+				// nothing changed
 				continue
 			}
 
