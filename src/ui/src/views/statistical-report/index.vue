@@ -17,15 +17,6 @@
                     <span>{{$t('Index["数量"]')}}：{{ navData.biz }}</span>
                 </div>
             </div>
-            <div class="menu-items" @click="goRouter('topology')">
-                <div class="item-left">
-                    <i class="icon icon-cc-host"></i>
-                </div>
-                <div class="item-right">
-                    <span>{{$t('Hosts["模块"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：{{ navData.module }}</span>
-                </div>
-            </div>
             <div class="menu-items" @click="goRouter('resource')">
                 <div class="item-left">
                     <i class="icon icon-cc-host"></i>
@@ -158,28 +149,6 @@
                 'updateChartPosition'
             ]),
             async getChartList () {
-<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
-                // const res = await this.getCountedCharts({})
-                // this.charData = res.data.info
-                // this.getChartData()
-                // this.charData.forEach(item => {
-                //    const data = this.getChartData(item.config_id).data
-                //    item.chart_id = item.report_type + item.config_id
-                // })
-                this.charData = [{
-                    'report_type': 'custom',
-                    'name': '主机1',
-                    'config_id': 1,
-                    'chart_id': 'custom1',
-                    'option': {
-                        'bk_obj_id': 'host',
-                        'chart_type': 'pie',
-                        'field': 'bk_os_type'
-                    },
-                    'position': {
-                        'width': '50',
-                        'index': 3
-=======
                 const res = await this.getCountedCharts({})
                 this.hostData.disList = res.info.host
                 this.instData.disList = res.info.inst
@@ -193,11 +162,10 @@
                     this.getNavData(item, 'inst', key, this.instData.disList.length)
                 })
             },
-            async getNavData (item, type, key, length) {
+            async getNavData (item, type, key) {
                 const res = await this.getCountedChartsData({
                     params: {
                         config_id: item.config_id
->>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
                     },
                     config: {
                         globalError: false
@@ -223,34 +191,8 @@
                         item.hasData = true
                         item.data = await this.dataDeal(item, res)
                     }
-                    if (type === 'host') {
-                        this.hostData.disList[key] = item
-                        if (length === (key + 1)) {
-                            setTimeout(() => {
-                                this.drawCharts(this.hostData.disList)
-                            }, 100)
-                        }
-                    } else {
-                        this.instData.disList[key] = item
-                        if (length === (key + 1)) {
-                            setTimeout(() => {
-                                this.drawCharts(this.instData.disList)
-                            }, 100)
-                        }
-                    }
-<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
-                }]
-                this.disCharts = this.$tools.clone(this.charData)
-            },
-            async getChartData (id) {
-                const res = await this.getCountedCharts({ id })
-                return res
-            },
-            async getStaList () {
-                this.staList = await this.getStaticObj({})
-=======
+                    this.drawCharts(item)
                 }
->>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
             },
             dataDeal (data, res) {
                 const returnData = {
@@ -327,75 +269,26 @@
                 }
                 return returnData
             },
-            drawCharts (charList) {
-                charList.forEach(item => {
-                    const myDiv = document.getElementById(item.report_type + item.config_id)
-                    const data = item.data.data
-                    if (!item.hasData) this.$set(item, 'noData', true)
-                    const layout = {
-                        height: 400,
-                        title: item.name,
-                        barmode: 'stack'
-                    }
-                    const options = {
-                        displaylogo: false,
-                        displayModeBar: false
-                    }
-                    Plotly.newPlot(myDiv, data, layout, options)
-                })
-            },
-            goDraws () {
-                this.drawCharts(this.hostData.disList)
-                this.drawCharts(this.instData.disList)
-            },
-<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
-            mutipChart () {
-                const muDiv = document.getElementById('muDiv')
-                const trace1 = {
-                    x: ['giraffes', 'orangutans', 'monkeys'],
-                    y: [20, 14, 23],
-                    name: 'SF Zoo',
-                    type: 'bar'
+            drawCharts (item) {
+                const myDiv = item.report_type + item.config_id
+                const data = item.data.data
+                if (!item.hasData) this.$set(item, 'noData', true)
+                const layout = {
+                    height: 400,
+                    title: item.name,
+                    barmode: 'stack'
                 }
-
-                const trace2 = {
-                    x: ['giraffes', 'orangutans', 'monkeys'],
-                    y: [12, 18, 29],
-                    name: 'LA Zoo',
-                    type: 'bar'
-=======
+                const options = {
+                    displaylogo: false,
+                    displayModeBar: false
+                }
+                if (this.editModel) Plotly.relayout(myDiv, layout)
+                else Plotly.newPlot(myDiv, data, layout, options, { responsive: true })
+            },
             editCancel () {
                 this.editModel = false
-                setTimeout(() => {
-                    this.goDraws()
-                }, 100)
             },
-<<<<<<< HEAD:src/ui/src/views/statistical-report/index.vue
-            openNew (type) {
-                this.newChart = {
-                    type: true,
-                    name: '',
-                    static: '',
-                    dim: '',
-                    present: 'pie',
-                    choose: '',
-                    width: 50
-                }
-                this.isShow = !this.isShow
-                this.newChart.newType = type
-                if (type === 'host') {
-                    this.seList.disList = this.$tools.clone(this.seList.host)
-                    this.getDemList('host')
-                } else {
-                    this.seList.disList = this.$tools.clone(this.seList.inst)
-                    this.getStaList()
->>>>>>> dcdf32d55... feature: operation-chart ui:src/ui/src/views/operation/index.vue
-                }
-            },
-            moveChart (type, dire, key) {
-=======
             moveChart (type, dire, key, list) {
->>>>>>> ab5c12e07... feature: operation 前端页面展示（图标数据生成）:src/ui/src/views/operation/index.vue
                 if (dire === 'up' && key !== 0) {
                     list[key] = list.splice(key - 1, 1, list[key])[0]
                 } else if (dire === 'down' && key !== list.length - 1) {
@@ -422,7 +315,7 @@
             async openNew (type, host, data, key) {
                 this.editType.hostType = host
                 this.editType.key = key
-                if (type === 'edit') this.newChart = data
+                if (type === 'edit') this.newChart = this.$tools.clone(data)
                 else {
                     this.newChart = {
                         report_type: 'custom',
@@ -448,8 +341,7 @@
                 }
                 this.isShow = false
                 await this.getNavData(data, this.editType.hostType,
-                                      this.editType.openType === 'add' ? (editList.length - 1) : this.editType.key,
-                                      editList.length)
+                                      this.editType.openType === 'add' ? (editList.length - 1) : this.editType.key)
                 this.updatePosition()
                 this.newChart = {}
             },
@@ -473,9 +365,6 @@
                         position: data
                     }
                 })
-                setTimeout(() => {
-                    this.goDraws()
-                }, 100)
             },
             goRouter (route) {
                 this.$router.push(route)
