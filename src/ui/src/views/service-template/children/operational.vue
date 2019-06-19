@@ -393,10 +393,7 @@
                         if (this.isCreatedType) {
                             this.handleSubmitProcessList()
                         } else {
-                            this.$bkMessage({
-                                message: this.$t("Common['保存成功']"),
-                                theme: 'success'
-                            })
+                            this.$success(this.$t('Common["保存成功"]'))
                             this.handleCancelOperation()
                         }
                     })
