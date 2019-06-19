@@ -129,7 +129,8 @@
         "更多": "Show All",
         "请输入关键字": "Please input keyword...",
         "添加": "Add",
-        "全部展开": "Expand all"
+        "全部展开": "Expand all",
+        "暂无数据": "No data"
     },
     "Nav": {
         "首页": "Index",
@@ -526,7 +527,8 @@
         "进程别名": "Process alias",
         "启动参数匹配规则": "Start parameter matching rule",
         "进程描述": "Process description",
-        "协议": "protocol"
+        "协议": "protocol",
+        "服务进程": "Service Process"
     },
     "Hosts": {
         "主机管理": "Hosts Manage",
@@ -784,7 +786,7 @@
         "获取单个": "Single"
     },
     "ServiceManagement": {
-        "功能提示": "Service template: By creating a template, the automatic application process is configured. When the template is applied, the instance automatically applies all the information of the template template. The template is not valid immediately when the template is modified. Manual synchronization is required on the host instance interface.",
+        "功能提示": "When there are a large number of common services, you can help the service to implement more efficient batch service deployment and change by configuring service templates.",
         "批量删除": "Batch Deletion",
         "模板名称": "Template name",
         "进程数量": "Number of processes",
@@ -799,18 +801,22 @@
         "服务分类": "Service Classification",
         "新建进程": "Create Process",
         "应用实例": "Applications",
-        "新建进程提示": "You can create process by which the instance host automatically applies process attributes when the template is applied to the instance.",
-        "请选择一级分类": "Please select first classification",
+        "新建进程提示": "The first process in the template defaults to a critical process, and the instantiated name of the service contains the basic information of the process.",
+        "请选择一级分类": "Please select primary classification",
         "请选择二级分类": "Please select secondary classification",
         "进程名称已存在": "Process name already exists.",
         "确认删除模板进程": "Confirm delete template process?",
         "服务模板创建成功": "The service template was created successfully.",
         "创建成功前往服务拓扑": "The {name} is created successfully. You can go to the service topology to create a service instance.",
         "创建服务实例": "Create service instance",
-        "返回列表": "Back to list"
+        "返回列表": "Back to list",
+        "搜索": "Please enter template name to search...",
+        "所有一级分类": "(All primary classification)",
+        "所有二级分类": "(All secondary classification)",
+        "没有二级分类": "No secondary classification"
     },
     "ServiceCagetory": {
-        "服务分类功能提示": "Service Classification: Defines the level of the service, which is used to define the service level when creating the service template and creating the service. The built-in classification does not support modification and deletion.",
+        "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
         "请输入一级分类": "Please enter",
         "请输入二级分类": "Please enter",
         "一级分类": "First classification",
@@ -887,6 +893,7 @@
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
         "确认并同步": "Confirm and synchronize",
+        "同步成功": "Successful Synchronization",
         "从模版中删除": "process has been removed from the template.",
         "模板中新增进程": "New process in the template：",
         "变更内容": "Change Content",

@@ -11,7 +11,7 @@
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'请选择一级分类\']')"
+                    :placeholder="$t('ServiceManagement[\'所有一级分类\']')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="mainList"
@@ -20,17 +20,18 @@
                 </cmdb-selector>
                 <cmdb-selector
                     class="fl"
-                    :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
+                    :placeholder="$t('ServiceManagement[\'所有二级分类\']')"
                     :auto-select="false"
                     :allow-clear="true"
                     :list="secondaryList"
                     v-model="filter['secondaryClassification']"
+                    :empty-text="emptyText"
                     @on-selected="handleSelectSecondary">
                 </cmdb-selector>
                 <div class="filter-search fl">
                     <input type="text"
                         class="bk-form-input"
-                        :placeholder="$t('ServiceManagement[\'模板名称\']')"
+                        :placeholder="$t('ServiceManagement[\'搜索\']')"
                         v-model.trim="filter.templateName"
                         @keypress.enter="searchByTemplateName">
                     <i class="bk-icon icon-search" @click="searchByTemplateName"></i>
@@ -143,6 +144,9 @@
                         sort: this.table.defaultSort
                     }
                 }
+            },
+            emptyText () {
+                return this.filter.mainClassification ? this.$t("ServiceManagement['没有二级分类']") : this.$t("ServiceManagement['请选择一级分类']")
             }
         },
         async created () {
@@ -200,7 +204,7 @@
                 this.table.list = this.filter.templateName ? filterList : this.table.allList
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
                 this.filter.secondaryClassification = ''
                 this.maincategoryId = id
                 this.getTableData()
@@ -235,10 +239,7 @@
                                 requestId: 'delete_proc_service_template'
                             }
                         }).then(() => {
-                            this.$bkMessage({
-                                message: this.$t("Common['删除成功']"),
-                                theme: 'success'
-                            })
+                            this.$success(this.$t('Common["删除成功"]'))
                             this.getTableData()
                         })
                     }

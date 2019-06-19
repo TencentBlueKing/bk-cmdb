@@ -221,7 +221,9 @@
                 } else if (this.type === 'update') {
                     this.values['process_id'] = inst['process_id']
                 }
-                this.refrenceValues = this.$tools.clone(this.values)
+                setTimeout(() => {
+                    this.refrenceValues = this.$tools.clone(this.values)
+                }, 0)
             },
             checkGroupAvailable (properties) {
                 const availabelProperties = properties.filter(property => {
@@ -321,7 +323,21 @@
                 })
             },
             handleCancel () {
-                this.$emit('on-cancel')
+                if (this.hasChange()) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.$emit('on-cancel')
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                } else {
+                    this.$emit('on-cancel')
+                }
             }
         }
     }
