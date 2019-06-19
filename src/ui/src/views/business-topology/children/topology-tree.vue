@@ -185,7 +185,6 @@
                         'bk_biz_id': this.business,
                         'bk_parent_id': parentNode.data.bk_inst_id
                     }
-                    console.log(formData)
                     const nextModelId = this.createInfo.nextModelId
                     const nextModel = this.mainLineModels.find(model => model.bk_obj_id === nextModelId)
                     const handlerMap = {
@@ -200,11 +199,7 @@
                         bk_obj_id: nextModel.bk_obj_id,
                         ...data
                     }
-                    if (parentNode.data.bk_obj_id === 'biz') {
-                        this.$refs.tree.addNode(nodeData, parentNode.id, 2)
-                    } else {
-                        this.$refs.tree.addNode(nodeData, parentNode.id, 0)
-                    }
+                    this.$refs.tree.addNode(nodeData, parentNode.id, 0)
                     this.$success(this.$t('Common[\'新建成功\']'))
                     this.handleCancelCreateNode()
                 } catch (e) {
