@@ -25,7 +25,7 @@ func (lgc *Logics) CreateCloudTask(ctx context.Context, input interface{}) error
 	}
 
 	inputc := input.(map[string]interface{})
-	inputc["bk_task_id"] = objID
+	inputc[common.CloudSyncTaskID] = objID
 	if err := lgc.Instance.Table(common.BKTableNameCloudTask).Insert(ctx, inputc); err != nil {
 		return err
 	}

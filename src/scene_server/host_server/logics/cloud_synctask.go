@@ -44,7 +44,7 @@ var (
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
 	// TaskName Uniqueness check
-	resp, err := lgc.CoreAPI.HostController().Cloud().TaskNameCheck(ctx, lgc.header, taskList)
+	resp, err := lgc.CoreAPI.CoreService().Cloud().TaskNameUniqueCheck(ctx, lgc.header, taskList)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskLis
 	// Encode secretKey
 	taskList.SecretKey = base64.StdEncoding.EncodeToString([]byte(taskList.SecretKey))
 
-	if _, err := lgc.CoreAPI.HostController().Cloud().AddCloudTask(ctx, lgc.header, taskList); err != nil {
+	if _, err := lgc.CoreAPI.CoreService().Cloud().CreateCloudSyncTask(ctx, lgc.header, taskList); err != nil {
 		blog.Errorf("add cloud task failed, err: %v, rid: %s", err, lgc.rid)
 		return err
 	}
