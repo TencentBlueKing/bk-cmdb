@@ -98,7 +98,6 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	blog.Debug("task count: %v", response.Count)
 	if response.Count > 1 {
 		blog.Errorf("update task failed, task name already exits. rid: %s", srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudTaskNameAlreadyExist)})

@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 )
 
 func (lgc *Logics) CreateCloudTask(ctx context.Context, input interface{}) error {
@@ -46,7 +45,6 @@ func (lgc *Logics) CreateResourceConfirm(ctx context.Context, input interface{})
 		return err
 	}
 
-	blog.Info("CreateResourceSync table bk_CloudResourceSync")
 	return nil
 }
 
