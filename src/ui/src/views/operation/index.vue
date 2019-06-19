@@ -17,15 +17,6 @@
                     <span>{{$t('Index["数量"]')}}：{{ navData.biz }}</span>
                 </div>
             </div>
-            <div class="menu-items" @click="goRouter('topology')">
-                <div class="item-left">
-                    <i class="icon icon-cc-host"></i>
-                </div>
-                <div class="item-right">
-                    <span>{{$t('Hosts["模块"]')}}</span>
-                    <span>{{$t('Index["数量"]')}}：{{ navData.module }}</span>
-                </div>
-            </div>
             <div class="menu-items" @click="goRouter('resource')">
                 <div class="item-left">
                     <i class="icon icon-cc-host"></i>
@@ -171,7 +162,7 @@
                     this.getNavData(item, 'inst', key, this.instData.disList.length)
                 })
             },
-            async getNavData (item, type, key, length) {
+            async getNavData (item, type, key) {
                 const res = await this.getCountedChartsData({
                     params: {
                         config_id: item.config_id
@@ -200,21 +191,7 @@
                         item.hasData = true
                         item.data = await this.dataDeal(item, res)
                     }
-                    if (type === 'host') {
-                        this.hostData.disList[key] = item
-                        if (length === (key + 1)) {
-                            setTimeout(() => {
-                                this.drawCharts(this.hostData.disList)
-                            }, 100)
-                        }
-                    } else {
-                        this.instData.disList[key] = item
-                        if (length === (key + 1)) {
-                            setTimeout(() => {
-                                this.drawCharts(this.instData.disList)
-                            }, 100)
-                        }
-                    }
+                    this.drawCharts(item)
                 }
             },
             dataDeal (data, res) {
@@ -292,32 +269,24 @@
                 }
                 return returnData
             },
-            drawCharts (charList) {
-                charList.forEach(item => {
-                    const myDiv = document.getElementById(item.report_type + item.config_id)
-                    const data = item.data.data
-                    if (!item.hasData) this.$set(item, 'noData', true)
-                    const layout = {
-                        height: 400,
-                        title: item.name,
-                        barmode: 'stack'
-                    }
-                    const options = {
-                        displaylogo: false,
-                        displayModeBar: false
-                    }
-                    Plotly.newPlot(myDiv, data, layout, options)
-                })
-            },
-            goDraws () {
-                this.drawCharts(this.hostData.disList)
-                this.drawCharts(this.instData.disList)
+            drawCharts (item) {
+                const myDiv = item.report_type + item.config_id
+                const data = item.data.data
+                if (!item.hasData) this.$set(item, 'noData', true)
+                const layout = {
+                    height: 400,
+                    title: item.name,
+                    barmode: 'stack'
+                }
+                const options = {
+                    displaylogo: false,
+                    displayModeBar: false
+                }
+                if (this.editModel) Plotly.relayout(myDiv, layout)
+                else Plotly.newPlot(myDiv, data, layout, options, { responsive: true })
             },
             editCancel () {
                 this.editModel = false
-                setTimeout(() => {
-                    this.goDraws()
-                }, 100)
             },
             moveChart (type, dire, key, list) {
                 if (dire === 'up' && key !== 0) {
@@ -346,7 +315,7 @@
             async openNew (type, host, data, key) {
                 this.editType.hostType = host
                 this.editType.key = key
-                if (type === 'edit') this.newChart = data
+                if (type === 'edit') this.newChart = this.$tools.clone(data)
                 else {
                     this.newChart = {
                         report_type: 'custom',
@@ -372,8 +341,7 @@
                 }
                 this.isShow = false
                 await this.getNavData(data, this.editType.hostType,
-                                      this.editType.openType === 'add' ? (editList.length - 1) : this.editType.key,
-                                      editList.length)
+                                      this.editType.openType === 'add' ? (editList.length - 1) : this.editType.key)
                 this.updatePosition()
                 this.newChart = {}
             },
@@ -397,9 +365,6 @@
                         position: data
                     }
                 })
-                setTimeout(() => {
-                    this.goDraws()
-                }, 100)
             },
             goRouter (route) {
                 this.$router.push(route)
