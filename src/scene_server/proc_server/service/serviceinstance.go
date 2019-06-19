@@ -39,7 +39,7 @@ func (ps *ProcServer) CreateServiceInstancesWithRaw(ctx *rest.Contexts) {
 		return
 	}
 
-	ps.createServiceInstances(ctx, input)
+	ps.createServiceInstances(ctx, input, true)
 }
 
 func (ps *ProcServer) CreateProcessInstancesWithRaw(ctx *rest.Contexts) {
@@ -165,13 +165,13 @@ func (ps *ProcServer) CreateServiceInstancesWithTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	ps.createServiceInstances(ctx, input)
+	ps.createServiceInstances(ctx, input, false)
 }
 
 // create service instance batch, which must belongs to a same module and service template.
 // if needed, it also create process instance for a service instance at the same time.
-func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata.CreateServiceInstanceForServiceTemplateInput) {
-
+func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata.CreateServiceInstanceForServiceTemplateInput, raw bool) {
+	// TODO: validate moduleID and raw
 	serviceInstanceIDs := make([]int64, 0)
 	for _, inst := range input.Instances {
 		instance := &metadata.ServiceInstance{
@@ -191,7 +191,7 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input *metadata
 			return
 		}
 
-		if input.TemplateID == 0 {
+		if raw == true {
 			// if this service have process instance to create, then create it now.
 			for _, detail := range inst.Processes {
 				if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &detail.ProcessInfo); err != nil {
@@ -526,209 +526,6 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 		}
 	}
 	ctx.RespEntity(nil)
-}
-
-// this function works to find differences between the service template and service instances in a module.
-// compared to the service template's process template, a process instance in the service instance may
-// contains several differences, like as follows:
-// unchanged: the process instance's property values are same with the process template it belongs.
-// changed: the process instance's property values are not same with the process template it belongs.
-// add: a new process template is added, compared to the service instance belongs to this service template.
-// deleted: a process is already deleted, compared to the service instance belongs to this service template.
-func (ps *ProcServer) FindDifferencesBetweenServiceAndProcessInstance(ctx *rest.Contexts) {
-	input := new(metadata.FindServiceTemplateAndInstanceDifferenceOption)
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "find difference between service template and process instances, but parse biz id failed, err: %v", err)
-		return
-	}
-
-	// step 1:
-	// find process object's attribute
-	attrResult, err := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDProc, new(metadata.QueryCondition))
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-			"find difference between service template: %d and process instances, bizID: %d, but get process attributes failed, err: %v",
-			input.ServiceTemplateID, bizID, err)
-		return
-	}
-
-	attributeMap := make(map[string]metadata.Attribute)
-	for _, attr := range attrResult.Data.Info {
-		attributeMap[attr.PropertyID] = attr
-	}
-
-	// step 2:
-	// find all the process template in this service template, for compare usage.
-	listProcOption := &metadata.ListProcessTemplatesOption{
-		BusinessID:        bizID,
-		ServiceTemplateID: input.ServiceTemplateID,
-	}
-	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, listProcOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetProcessTemplatesFailed,
-			"find difference between service template: %d and process instances, bizID: %d, but get process templates failed, err: %v",
-			input.ServiceTemplateID, bizID, err)
-		return
-	}
-
-	// step 3:
-	// find process instance's relations, which allows us know the relationship between
-	// process instance and it's template, service instance, etc.
-	pTemplateMap := make(map[int64]*metadata.ProcessTemplate)
-	serviceRelationMap := make(map[int64][]metadata.ProcessInstanceRelation)
-	for _, pTemplate := range processTemplates.Info {
-		pTemplateMap[pTemplate.ID] = &pTemplate
-
-		option := metadata.ListProcessInstanceRelationOption{
-			BusinessID:        bizID,
-			ProcessTemplateID: pTemplate.ID,
-		}
-
-		relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &option)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetProcessInstanceRelationFailed,
-				"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance relations failed, err: %v",
-				input.ServiceTemplateID, bizID, input.ModuleID, err)
-			return
-		}
-
-		for _, r := range relations.Info {
-			serviceRelationMap[r.ServiceInstanceID] = append(serviceRelationMap[r.ServiceInstanceID], r)
-		}
-
-	}
-
-	// step 4:
-	// find all the service instances belongs to this service template and this module.
-	// which contains the process instances details at the same time.
-	serviceOption := &metadata.ListServiceInstanceOption{
-		BusinessID:        bizID,
-		ServiceTemplateID: input.ServiceTemplateID,
-		ModuleID:          input.ModuleID,
-	}
-	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
-			"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get service instance failed, err: %v",
-			input.ServiceTemplateID, bizID, input.ModuleID, err)
-		return
-	}
-
-	// step 5: compare the process instance with it's process template one by one in a service instance.
-	differences := make([]*metadata.ServiceProcessInstanceDifference, 0)
-	processTemplatesUsing := make(map[int64]bool)
-	for _, serviceInstance := range serviceInstances.Info {
-		// get the process instance relation
-		relations := serviceRelationMap[serviceInstance.ID]
-
-		if len(relations) == 0 {
-			// There is no relations in this service instance, which means no process instances.
-			// Normally, this can not be happy.
-			// TODO: what???
-			differences = append(differences, &metadata.ServiceProcessInstanceDifference{
-				ServiceInstanceID:   serviceInstance.ID,
-				ServiceInstanceName: serviceInstance.Name,
-				HostID:              serviceInstance.HostID,
-				Differences:         metadata.NewDifferenceDetail(),
-			})
-			continue
-		}
-
-		// now, we can compare the differences between process template and process instance.
-		diff := &metadata.ServiceProcessInstanceDifference{
-			ServiceInstanceID:   serviceInstance.ID,
-			ServiceInstanceName: serviceInstance.Name,
-			HostID:              serviceInstance.HostID,
-			Differences:         metadata.NewDifferenceDetail(),
-		}
-		for _, r := range relations {
-			// remember what process template is using, so that we can check whether a new process template has
-			// been added or not.
-			processTemplatesUsing[r.ProcessTemplateID] = true
-
-			// find the process instance now.
-			processInstance, err := ps.Logic.GetProcessInstanceWithID(ctx.Kit, r.ProcessID)
-			if err != nil {
-				if err.GetCode() == common.CCErrCommNotFound {
-					processInstance = new(metadata.Process)
-				} else {
-					ctx.RespWithError(err, common.CCErrProcGetProcessInstanceFailed,
-						"find difference between service template: %d and process instances, bizID: %d, moduleID: %d, but get process instance: %d failed, err: %v",
-						input.ServiceTemplateID, bizID, input.ModuleID, r.ProcessID, err)
-					return
-				}
-			}
-
-			// let's check if the process instance bounded process template is still exist in it's service template
-			// if not exist, that means that this process has already been removed from service template.
-			pTemplate, exist := pTemplateMap[r.ProcessTemplateID]
-			if !exist {
-				// the process instance's bounded process template has already been removed from this service template.
-				diff.Differences.Removed = append(diff.Differences.Removed, metadata.ProcessDifferenceDetail{
-					ProcessTemplateID: r.ProcessTemplateID,
-					ProcessInstance:   *processInstance,
-				})
-				differences = append(differences, diff)
-				continue
-			}
-
-			diff := &metadata.ServiceProcessInstanceDifference{
-				ServiceInstanceID:   serviceInstance.ID,
-				ServiceInstanceName: serviceInstance.Name,
-				HostID:              serviceInstance.HostID,
-				Differences:         metadata.NewDifferenceDetail(),
-			}
-
-			if pTemplate.Property == nil {
-				continue
-			}
-
-			diffAttributes := ps.Logic.DiffWithProcessTemplate(pTemplate.Property, processInstance, attributeMap)
-			if len(diffAttributes) == 0 {
-				// the process instance's value is exactly same with the process template's value
-				diff.Differences.Unchanged = append(diff.Differences.Unchanged, metadata.ProcessDifferenceDetail{
-					ProcessTemplateID: pTemplate.ID,
-					ProcessInstance:   *processInstance,
-				})
-			} else {
-				// the process instance's value is not same with the process template's value
-				diff.Differences.Changed = append(diff.Differences.Changed, metadata.ProcessDifferenceDetail{
-					ProcessTemplateID: pTemplate.ID,
-					ProcessInstance:   *processInstance,
-					ChangedAttributes: diffAttributes,
-				})
-			}
-
-		}
-
-		// it's time to see whether a new process template has been added.
-		for _, t := range processTemplates.Info {
-			if _, exist := processTemplatesUsing[t.ID]; exist {
-				continue
-			}
-
-			// this process template does not exist in this template's all service instances.
-			// so it's a new one to be added.
-			if t.Property == nil {
-				continue
-			}
-			diff.Differences.Added = append(diff.Differences.Added, metadata.ProcessDifferenceDetail{
-				ProcessTemplateID: t.ID,
-				ProcessInstance:   *ps.Logic.NewProcessInstanceFromProcessTemplate(t.Property),
-			})
-
-		}
-
-		differences = append(differences, diff)
-	}
-
-	ctx.RespEntity(differences)
 }
 
 // this function works to find differences between the service template and service instances in a module.

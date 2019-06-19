@@ -481,6 +481,9 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == true {
 		processInstance.Description = *property.Description.Value
 	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == true {
+		processInstance.StartParamRegex = *property.StartParamRegex.Value
+	}
 	return processInstance
 }
 

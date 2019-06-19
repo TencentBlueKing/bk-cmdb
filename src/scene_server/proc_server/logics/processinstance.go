@@ -205,7 +205,7 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.ForceStopCmd.AsDefaultValue) {
-		if (t.ForceStopCmd.Value != nil && len(i.ForceStopCmd) != 0) || (t.ForceStopCmd.Value != nil && *t.ForceStopCmd.Value != i.ForceStopCmd) {
+		if (t.ForceStopCmd.Value == nil && len(i.ForceStopCmd) != 0) || (t.ForceStopCmd.Value != nil && *t.ForceStopCmd.Value != i.ForceStopCmd) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["face_stop_cmd"].ID,
 				PropertyID:            "face_stop_cmd",
@@ -289,7 +289,7 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.Port.AsDefaultValue) {
-		if (t.Port.Value == nil || len(i.Port) != 0) || (t.Port.Value != nil && *t.Port.Value != i.Port) {
+		if (t.Port.Value == nil && len(i.Port) != 0) || (t.Port.Value != nil && *t.Port.Value != i.Port) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["port"].ID,
 				PropertyID:            "port",
@@ -409,7 +409,7 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	}
 
 	if metadata.IsAsDefaultValue(t.StartParamRegex.AsDefaultValue) {
-		if (t.StartParamRegex.Value == nil && len(i.StartParamRegex) != 0) || (t.StartParamRegex.Value != nil && *t.StartParamRegex.Value != i.Description) {
+		if (t.StartParamRegex.Value == nil && len(i.StartParamRegex) != 0) || (t.StartParamRegex.Value != nil && *t.StartParamRegex.Value != i.StartParamRegex) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bk_start_param_regex"].ID,
 				PropertyID:            "bk_start_param_regex",
@@ -524,7 +524,6 @@ func (lgc *Logic) CheckAndUpdateProcessInstanceWithTemplate(t *metadata.ProcessP
 		if t.Port.Value != nil && *t.Port.Value != i.Port {
 			process["port"] = *t.Port.Value
 			changed = true
-
 		}
 	}
 
@@ -599,6 +598,13 @@ func (lgc *Logic) CheckAndUpdateProcessInstanceWithTemplate(t *metadata.ProcessP
 	if metadata.IsAsDefaultValue(t.Description.AsDefaultValue) {
 		if t.Description.Value != nil && *t.Description.Value != i.Description {
 			process["description"] = *t.Description.Value
+			changed = true
+		}
+	}
+
+	if metadata.IsAsDefaultValue(t.StartParamRegex.AsDefaultValue) {
+		if t.StartParamRegex.Value != nil && *t.StartParamRegex.Value != i.StartParamRegex {
+			process["bk_start_param_regex"] = *t.StartParamRegex.Value
 			changed = true
 		}
 	}
