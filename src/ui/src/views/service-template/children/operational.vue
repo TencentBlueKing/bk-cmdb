@@ -74,9 +74,10 @@
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
             <template slot="content">
                 <process-form
+                    ref="processForm"
                     :properties="properties"
                     :property-groups="propertyGroups"
                     :inst="attribute.inst.edit"
@@ -417,6 +418,23 @@
             },
             handleCancelOperation () {
                 this.$router.replace({ name: 'serviceTemplate' })
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = this.$refs.processForm.hasChange()
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                return true
             }
         }
     }
