@@ -174,7 +174,7 @@ func (ia *importAssociation) importAssociation() {
 				continue
 			}
 
-			ia.addSrcAssociation(idx, asstID.AssociationName, srcInstID, dstInstID)
+			ia.addSrcAssociation(idx, asstID, srcInstID, dstInstID)
 		case metadata.ExcelAssocationOperateDelete:
 			conds := condition.CreateCondition()
 			conds.Field(common.AssociationObjAsstIDField).Eq(asstInfo.ObjectAsstID)
@@ -356,6 +356,9 @@ func (ia *importAssociation) getInstDataByConds() error {
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		conds := condition.CreateCondition()
 		conds.NewOR().MapStrArr(valArr)
+		if !util.IsInnerObject(objID) {
+			conds.Field(common.BKObjIDField).Eq(objID)
+		}
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
 		if err != nil {
@@ -451,15 +454,18 @@ func (ia *importAssociation) delSrcAssociation(idx int, cond condition.Condition
 
 }
 
-func (ia *importAssociation) addSrcAssociation(idx int, asstFlag string, instID, assInstID int64) {
+func (ia *importAssociation) addSrcAssociation(idx int, asst *metadata.Association, instID, assInstID int64) {
 	_, ok := ia.parseImportDataErr[idx]
 	if ok {
 		return
 	}
 	inst := metadata.CreateOneInstanceAssociation{}
-	inst.Data.ObjectAsstID = asstFlag
+	inst.Data.ObjectAsstID = asst.AssociationName
 	inst.Data.InstID = instID
 	inst.Data.AsstInstID = assInstID
+	inst.Data.ObjectID = ia.objID
+	inst.Data.AsstObjectID = asst.AsstObjID
+	inst.Data.AssociationKindID = asst.AsstKindID
 	rsp, err := ia.cli.clientSet.CoreService().Association().CreateInstAssociation(ia.ctx, ia.params.Header, &inst)
 	if err != nil {
 		ia.parseImportDataErr[idx] = err.Error()
