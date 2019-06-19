@@ -294,7 +294,7 @@
                 })
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
                 this.emptyText = this.$t("ServiceManagement['没有二级分类']")
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
