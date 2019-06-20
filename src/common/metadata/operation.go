@@ -13,43 +13,34 @@
 package metadata
 
 import (
-	"configcenter/src/common/mapstr"
+	"time"
 )
 
 type ChartConfig struct {
-	Metadata      `field:"metadata" json:"metadata" bson:"metadata"`
-	ReportType    string      `json:"report_type" bson:"report_type"`
-	Name          string      `json:"name" bson:"name"`
-	Option        ChartOption `json:"option" bson:"option"`
-	ChartPosition Info        `json:"chart_position" bson:"chart_position"`
-	CreateTime    time.Time   `json:"create_time" bson:"create_time"`
-	OwnerID       string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
-}
-
-type ChartOption struct {
-	ChartType string `json:"chart_type" bson:"chart_type"`
-	Field     string `json:"field" bson:"field"`
+	ConfigID   uint64 `json:"config_id" bson:"config_id"`
+	Metadata   `field:"metadata" json:"metadata" bson:"metadata"`
+	ReportType string    `json:"report_type" bson:"report_type"`
+	Name       string    `json:"name" bson:"name"`
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	ObjID      string    `json:"bk_obj_id" bson:"bk_obj_id"`
+	Width      string    `json:"width" bson:"width"`
+	ChartType  string    `json:"chart_type" bson:"chart_type"`
+	Field      string    `json:"field" bson:"field"`
 }
 
 type ChartPosition struct {
-	BizID    int64        `json:"bk_biz_id"`
-	Position PositionInfo `json:"position"`
-	OwnerID  string       `json:"bk_supplier_account"`
-}
-
-type PositionInfo map[string][]Info
-
-type Info struct {
-	ConfigId uint64 `json:"config_id" bson:"config_id"`
-	Width    string `json:"width" bson:"width"`
+	BizID    int64               `json:"bk_biz_id" bson:"bk_biz_id"`
+	Position map[string][]uint64 `json:"position" bson:"position"`
+	OwnerID  string              `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type ModelInstChange map[string]*InstChangeCount
 
 type InstChangeCount struct {
-	Create int64 `json:"create"`
-	Update int64 `json:"update"`
-	Delete int64 `json:"delete"`
+	Create int64 `json:"create" bson:"create"`
+	Update int64 `json:"update" bson:"update"`
+	Delete int64 `json:"delete" bson:"delete"`
 }
 
 type AggregateIntResponse struct {
@@ -83,15 +74,25 @@ type UpdateID struct {
 }
 
 type HostChangeChartData struct {
-	ReportType string                   `json:"report_type"`
-	Data       map[string]mapstr.MapStr `json:"data"`
-	OwnerID    string                   `json:"bk_supplier_account"`
+	ReportType string                    `json:"report_type" bson:"report_type"`
+	Data       map[string][]BizHostChart `json:"data" bson:"data"`
+	OwnerID    string                    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+}
+
+type BizHostChart struct {
+	Id    time.Time `json:"id" bson:"id"`
+	Count int64     `json:"count" bson:"count"`
+}
+
+type IDStringCountInt64 struct {
+	Id    string `json:"id" bson:"id"`
+	Count int64  `json:"count" bson:"count"`
 }
 
 type ChartData struct {
-	ReportType string      `json:"report_type"`
-	Data       interface{} `json:"data"`
-	OwnerID    string      `json:"bk_supplier_account"`
+	ReportType string      `json:"report_type" bson:"report_type"`
+	Data       interface{} `json:"data" data:"data"`
+	OwnerID    string      `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
 
 type SearchChartResponse struct {
@@ -99,7 +100,39 @@ type SearchChartResponse struct {
 	Data     SearchChartConfig `json:"data"`
 }
 
+type SearchChartCommon struct {
+	BaseResp `json:",inline"`
+	Data     CommonSearchChart `json:"data"`
+}
+
+type CommonSearchChart struct {
+	Count uint64      `json:"count"`
+	Info  ChartConfig `json:"info"`
+}
+
 type SearchChartConfig struct {
-	Count uint64        `json:"count"`
-	Info  []ChartConfig `json:"info"`
+	Count uint64                   `json:"count"`
+	Info  map[string][]ChartConfig `json:"info"`
+}
+
+type CloudMapping struct {
+	CreateTime time.Time `json:"create_time" bson:"create_time"`
+	LastTime   time.Time `json:"last_time" bson:"lsat_time"`
+	CloudName  string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
+	OwnerID    string    `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CloudID    int64     `json:"bk_cloud_id" bson:"bk_cloud_id"`
+}
+
+type AttributesOptions []AttributesOption
+
+type AttributesOption struct {
+	Id        string `json:"id" bson:"id"`
+	Name      string `json:"name" bson:"name"`
+	Type      string `json:"type" bson:"type"`
+	IsDefault string `json:"is_default" bson:"is_default"`
+}
+
+type CoreUint64Response struct {
+	BaseResp `json:",inline"`
+	Data     uint64 `json:"data"`
 }

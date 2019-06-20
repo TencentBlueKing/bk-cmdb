@@ -13,14 +13,14 @@
 package service
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-<<<<<<< HEAD
-=======
+	"strconv"
 	"time"
->>>>>>> c7685d399... fix: operation crud bugs
 )
 
 func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -36,7 +36,8 @@ func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, que
 
 func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	condition := metadata.ChartConfig{}
-	if err := data.MarshalJSONInto(condition); err != nil {
+	if err := data.MarshalJSONInto(&condition); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
 		return nil, err
 	}
 
@@ -49,67 +50,157 @@ func (s *coreService) CommonAggregate(params core.ContextParams, pathParams, que
 }
 
 func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-<<<<<<< HEAD
-=======
-	opt := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&opt); err != nil {
+	id := pathParams("id")
+	int64ID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		blog.Errorf("delete chart fail, string convert to int64 fail, err: %v", err)
+	}
+	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, int64ID); err != nil {
 		return nil, err
 	}
-	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, opt); err != nil {
-		return nil, err
-	}
->>>>>>> c7685d399... fix: operation crud bugs
 
 	return nil, nil
 }
 
 func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-
-	return nil, nil
-}
-
-func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-<<<<<<< HEAD
-	result, err := s.core.StatisticOperation().SearchOperationChart(params, data)
-=======
-	opt := mapstr.MapStr{}
-
-	result, err := s.core.StatisticOperation().SearchOperationChart(params, opt)
->>>>>>> c7685d399... fix: operation crud bugs
-	if err != nil {
-		blog.Errorf("search chart config fail, err: %v", err)
-		return nil, err
-	}
-
-	return result, err
-}
-
-func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-<<<<<<< HEAD
-=======
 	chartConfig := metadata.ChartConfig{}
 	if err := data.MarshalJSONInto(&chartConfig); err != nil {
 		blog.Errorf("marshal chart config fail, err: %v", err)
 		return nil, err
 	}
 
-	result, err := s.core.StatisticOperation().UpdateOperationChart(params, chartConfig)
+	ownerID := util.GetOwnerID(params.Header)
+	chartConfig.CreateTime = time.Now()
+	chartConfig.OwnerID = ownerID
+	result, err := s.core.StatisticOperation().CreateOperationChart(params, chartConfig)
+	if err != nil {
+		blog.Errorf("save chart config fail, err: %v", err)
+		return nil, err
+	}
+	blog.Debug("result: %v", result)
+	return result, nil
+}
+
+func (s *coreService) SearchOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+
+	result, err := s.core.StatisticOperation().SearchOperationChart(params, opt)
+	if err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
+	if err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	return struct {
+		Count uint64      `json:"count"`
+		Info  interface{} `json:"info"`
+	}{
+		Count: count,
+		Info:  result,
+	}, err
+}
+
+func (s *coreService) UpdateOperationChart(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	result, err := s.core.StatisticOperation().UpdateOperationChart(params, opt)
 	if err != nil {
 		return nil, err
 	}
 
 	return result, nil
 }
->>>>>>> e4f2a1554... fix: operation add bug
+
+func (s *coreService) UpdateOperationChartPosition(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := metadata.ChartPosition{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal chart position fail, err: %v", err)
+		return nil, err
+	}
+	result, err := s.core.StatisticOperation().UpdateChartPosition(params, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *coreService) SearchOperationChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := metadata.ChartConfig{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	result, err := s.core.StatisticOperation().SearchOperationChartData(params, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *coreService) SearchChartCommon(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+	if err := data.MarshalJSONInto(&opt); err != nil {
+		blog.Errorf("marshal chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	chartConfig := make([]metadata.ChartConfig, 0)
+	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(params.Context, &chartConfig); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	count, err := s.db.Table(common.BKTableNameChartConfig).Find(opt).Count(params.Context)
+	if err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
+		return nil, err
+	}
+
+	if len(chartConfig) > 0 {
+		return struct {
+			Count uint64      `json:"count"`
+			Info  interface{} `json:"info"`
+		}{
+			Count: count,
+			Info:  chartConfig[0],
+		}, err
+	}
+
+	return struct {
+		Count uint64      `json:"count"`
+		Info  interface{} `json:"info"`
+	}{
+		Count: count,
+		Info:  nil,
+	}, err
+}
+
+func (s *coreService) TimerFreshData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	s.core.StatisticOperation().TimerFreshData(params)
 
 	return nil, nil
 }
 
-func (s *coreService) SearchOperationChartData(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	result, err := s.core.StatisticOperation().UpdateChartPosition(params, data)
-	if err != nil {
+func (s *coreService) SearchCloudMapping(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	opt := mapstr.MapStr{}
+
+	respData := new(metadata.CloudMapping)
+	if err := s.db.Table(common.BKTableNameChartConfig).Find(opt).All(params.Context, respData); err != nil {
+		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
 	}
 
-	return result, nil
+	return respData, nil
 }

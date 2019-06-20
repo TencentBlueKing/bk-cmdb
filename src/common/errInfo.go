@@ -638,17 +638,6 @@ const (
 	CCErrCollectNetPropertyUpdateFail          = 1112018
 
 	// coreservice 1113xxx
-
-	// operation 1114xxx
-	CCErrOperationBizModuleHostAmountFail = 1114001
-	CCErrOperationNewAddStatisticFail     = 1114002
-	CCErrOperationSearchStatisticsFail    = 1114003
-	CCErrOperationUpdateStatisticsFail    = 1114004
-	CCErrOperationGetChartDataFail        = 1114005
-	CCErrOperationDeleteStatisticFail     = 1114006
-	CCErrOperationChartAlreadyExist       = 1114007
-	CCErrOperationGetModelInstCountFail   = 1114008
-
 	// CCErrorModelAttributeGroupHasSomeAttributes the group has some attributes
 	CCErrCoreServiceModelAttributeGroupHasSomeAttributes = 1113001
 
@@ -713,6 +702,15 @@ const (
 	// synchronize_server 1114xxx
 
 	CCErrSynchronizeError = 1114001
+
+	// operation_server 1116xxx
+	CCErrOperationBizModuleHostAmountFail = 1116001
+	CCErrOperationNewAddStatisticFail     = 1116002
+	CCErrOperationChartAlreadyExist       = 1116003
+	CCErrOperationDeleteChartFail         = 1116004
+	CCErrOperationSearchChartFail         = 1116005
+	CCErrOperationUpdateChartFail         = 1116006
+	CCErrOperationGetChartDataFail        = 1116007
 
 	/** TODO: 以下错误码需要改造 **/
 

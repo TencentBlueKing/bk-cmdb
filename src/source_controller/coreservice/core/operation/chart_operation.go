@@ -22,18 +22,14 @@ import (
 
 func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputParam interface{}) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	chartConfig := metadata.ChartConfig{}
+	chartConfig := make([]metadata.ChartConfig, 0)
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Find(opt).All(ctx, &chartConfig); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	return chartConfig, nil
-}
-=======
-	chartPosition := metadata.ChartPosition{}
+	chartPosition := make([]metadata.ChartPosition, 0)
 	if err := m.dbProxy.Table(common.BKTableNameChartPosition).Find(opt).All(ctx, &chartPosition); err != nil {
 		blog.Errorf("search chart config fail, err: %v", err)
 		return nil, err
@@ -44,17 +40,29 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 	}
 
 	chartsInfo := make(map[string][]interface{})
+	chartsInfo["host"] = make([]interface{}, 0)
+	chartsInfo["inst"] = make([]interface{}, 0)
+	chartsInfo["nav"] = make([]interface{}, 0)
 	for _, info := range chartPosition[0].Position["host"] {
 		for _, chart := range chartConfig {
-			if chart.ConfigID == info.ConfigId {
+			if chart.ConfigID == info {
 				chartsInfo["host"] = append(chartsInfo["host"], chart)
 			}
 		}
 	}
 
+	for _, chart := range chartConfig {
+		if chart.ReportType == common.BizModuleHostChart {
+			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+		}
+		if chart.ReportType == common.ModelAndInstCount {
+			chartsInfo["nav"] = append(chartsInfo["nav"], chart)
+		}
+	}
+
 	for _, info := range chartPosition[0].Position["inst"] {
 		for _, chart := range chartConfig {
-			if chart.ConfigID == info.ConfigId {
+			if chart.ConfigID == info {
 				chartsInfo["inst"] = append(chartsInfo["inst"], chart)
 			}
 		}
@@ -63,19 +71,18 @@ func (m *operationManager) SearchOperationChart(ctx core.ContextParams, inputPar
 	return chartsInfo, nil
 }
 
-func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) CreateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (uint64, error) {
 	objID, err := m.dbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	inputParam.ConfigID = objID
 
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Insert(ctx, inputParam); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
-		return nil, err
+		return 0, err
 	}
 
-	blog.Debug("objID: %v", objID)
 	return objID, nil
 }
 
@@ -95,11 +102,9 @@ func (m *operationManager) UpdateChartPosition(ctx core.ContextParams, inputPara
 	return nil, nil
 }
 
-func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
+func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, id int64) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	condition := mapstr.MapStr{}
-	condition["$in"] = inputParam["id"]
-	opt["config_id"] = condition
+	opt[common.OperationConfigID] = id
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Delete(ctx, opt); err != nil {
 		blog.Errorf("create chart fail, err: %v", err)
 		return nil, err
@@ -108,15 +113,13 @@ func (m *operationManager) DeleteOperationChart(ctx core.ContextParams, inputPar
 	return nil, nil
 }
 
-func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) UpdateOperationChart(ctx core.ContextParams, inputParam mapstr.MapStr) (interface{}, error) {
 	opt := mapstr.MapStr{}
-	opt["config_id"] = inputParam.ConfigID
-	blog.Debug("input: %v", inputParam)
+	opt[common.OperationConfigID] = inputParam[common.OperationConfigID]
 	if err := m.dbProxy.Table(common.BKTableNameChartConfig).Update(ctx, opt, inputParam); err != nil {
-		blog.Errorf("update chart config fail,id: %v err: %v", inputParam.ConfigID, err)
+		blog.Errorf("update chart config fail,id: %v err: %v", inputParam[common.OperationConfigID], err)
 		return nil, err
 	}
 
 	return nil, nil
 }
->>>>>>> e4f2a1554... fix: operation add bug

@@ -40,6 +40,7 @@ type DiscoveryInterface interface {
 	ProcCtrl() Interface
 	GseProcServer() Interface
 	CoreService() Interface
+	OperationServer() Interface
 	ServiceManageInterface
 }
 
@@ -130,4 +131,8 @@ func (d *discover) TMServer() Interface {
 func (d *discover) IsMaster() bool {
 
 	return d.servers[common.GetIdentification()].IsMaster(common.GetServerInfo().Address())
+}
+
+func (d *discover) OperationServer() Interface {
+	return d.servers[types.CC_MODULE_OPERATION]
 }

@@ -156,15 +156,16 @@ type AuditOperation interface {
 	SearchAuditLog(ctx ContextParams, param metadata.QueryInput) ([]metadata.OperationLog, uint64, error)
 }
 
-// Core core interfaces methods
 type StatisticOperation interface {
 	SearchInstCount(ctx ContextParams, inputParam mapstr.MapStr) (uint64, error)
 	CommonAggregate(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
 	SearchOperationChart(ctx ContextParams, inputParam interface{}) (interface{}, error)
 	CreateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (uint64, error)
 	UpdateChartPosition(ctx ContextParams, inputParam interface{}) (interface{}, error)
-	DeleteOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
-	UpdateOperationChart(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	DeleteOperationChart(ctx ContextParams, id int64) (interface{}, error)
+	UpdateOperationChart(ctx ContextParams, inputParam mapstr.MapStr) (interface{}, error)
+	SearchOperationChartData(ctx ContextParams, inputParam metadata.ChartConfig) (interface{}, error)
+	TimerFreshData(params ContextParams)
 }
 
 // Core core itnerfaces methods
@@ -177,6 +178,7 @@ type Core interface {
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
 	ProcessOperation() ProcessOperation
+	StatisticOperation() StatisticOperation
 }
 
 // ProcessOperation methods
@@ -219,7 +221,6 @@ type ProcessOperation interface {
 	DeleteProcessInstanceRelation(ctx ContextParams, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	GetBusinessDefaultSetModuleInfo(ctx ContextParams, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
-	StatisticOperation() StatisticOperation
 }
 
 type core struct {
@@ -235,7 +236,7 @@ type core struct {
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, operation StatisticOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation, operation StatisticOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -244,6 +245,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		topo:            topo,
 		host:            host,
 		audit:           audit,
+		process:         process,
 		operation:       operation,
 	}
 }

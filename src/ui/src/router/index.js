@@ -46,7 +46,6 @@ export const viewRouters = [
     modelTopology,
     resource,
     ...template,
-    topology,
     statisticalReport,
     ...generalModel,
     ...business,

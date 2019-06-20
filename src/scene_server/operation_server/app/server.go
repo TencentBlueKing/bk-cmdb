@@ -15,96 +15,88 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/emicklei/go-restful"
 	"os"
 	"time"
 
+	"configcenter/src/auth"
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/rdapi"
 	"configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/scene_server/operation_server/app/options"
+	"configcenter/src/scene_server/operation_server/logics"
 	"configcenter/src/scene_server/operation_server/service"
-	"configcenter/src/storage/dal/mongo"
-	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdpartyclient/esbserver"
+	"configcenter/src/thirdpartyclient/esbserver/esbutil"
 )
 
-type OperationServer struct {
-	Core    *backbone.Engine
-	Config  options.Config
-	Service *service.Service
-}
-
-func (t *OperationServer) onOperationServiceConfigUpdate(previous, current cc.ProcessConfig) {
-
-	t.Config.Mongo = mongo.ParseConfigFromKV("mongodb", current.ConfigMap)
-	t.Config.Redis = redis.ParseConfigFromKV("redis", current.ConfigMap)
-
-	blog.V(3).Infof("the new cfg:%#v the origin cfg:%#v", t.Config, current.ConfigMap)
-
-}
-
-// Run main function
 func Run(ctx context.Context, op *options.ServerOption) error {
+
 	svrInfo, err := newServerInfo(op)
 	if err != nil {
-		return fmt.Errorf("wrap server info failed, err: %v", err)
+		blog.Errorf("fail to new server information. err: %s", err.Error())
+		return fmt.Errorf("make server information failed, err:%v", err)
 	}
 
-	operationSvr := new(OperationServer)
-	operationService := new(service.Service)
-	operationSvr.Service = operationService
-
-	webhandler := restful.NewContainer().Add(operationService.WebService())
-	webhandler.ServiceErrorHandler(rdapi.ServiceErrorHandler)
+	operationSvr := new(service.OperationServer)
+	operationSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
 
 	input := &backbone.BackboneParameter{
-		ConfigUpdate: operationSvr.onOperationServiceConfigUpdate,
+		ConfigUpdate: operationSvr.OnOperationConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
 		Regdiscv:     op.ServConf.RegDiscover,
 		SrvInfo:      svrInfo,
 	}
-
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
-
-	var configReady bool
+	configReady := false
 	for sleepCnt := 0; sleepCnt < common.APPConfigWaitTime; sleepCnt++ {
-		// redis not found
-		if "" == operationSvr.Config.Redis.Address {
+		if nil == operationSvr.Config {
 			time.Sleep(time.Second)
-			continue
+		} else {
+			configReady = true
+			break
 		}
-		// Mongo not found
-		if "" == operationSvr.Config.Mongo.Address {
-			time.Sleep(time.Second)
-			continue
-		}
-		configReady = true
-		break
-
 	}
-
 	if false == configReady {
-		return fmt.Errorf("Configuration item not found")
+		return fmt.Errorf("configuration item not found")
 	}
-
-	operationSvr.Core = engine
-	err = operationService.SetConfig(operationSvr.Config, engine, engine.CCErr, engine.Language)
+	authConf, err := authcenter.ParseConfigFromKV("auth", operationSvr.ConfigMap)
 	if err != nil {
 		return err
 	}
-	if err := backbone.StartServer(ctx, engine, webhandler); err != nil {
+
+	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
+	if err != nil {
+		return fmt.Errorf("new authorize failed, err: %v", err)
+	}
+
+	esbSrv, err := esbserver.NewEsb(engine.ApiMachineryConfig(), operationSvr.EsbConfigChn, engine.Metric().Registry())
+	if err != nil {
+		return fmt.Errorf("create esb api  object failed. err: %v", err)
+	}
+	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, authorize)
+	operationSvr.Engine = engine
+	operationSvr.EsbServ = esbSrv
+	operationSvr.Logic = &logics.Logic{
+		Engine: operationSvr.Engine,
+	}
+
+	go operationSvr.InitFunc()
+	if err := backbone.StartServer(ctx, engine, operationSvr.WebService()); err != nil {
 		return err
 	}
+
 	select {
 	case <-ctx.Done():
+		blog.Infof("operation will exit!")
 	}
+
 	return nil
 }
 
@@ -124,7 +116,7 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 		return nil, err
 	}
 
-	info := &types.ServerInfo{
+	svrInfo := &types.ServerInfo{
 		IP:       ip,
 		Port:     port,
 		HostName: hostname,
@@ -132,5 +124,6 @@ func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
 		Version:  version.GetVersion(),
 		Pid:      os.Getpid(),
 	}
-	return info, nil
+
+	return svrInfo, nil
 }

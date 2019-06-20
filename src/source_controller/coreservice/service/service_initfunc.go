@@ -128,13 +128,14 @@ func (s *coreService) audit() {
 func (s *coreService) initOperation() {
 	s.addAction(http.MethodPost, "/read/operation/inst/count", s.SearchInstCount, nil)
 	s.addAction(http.MethodPost, "/read/operation/common/aggregate", s.CommonAggregate, nil)
-	s.addAction(http.MethodDelete, "/delete/operation/chart/%v", s.DeleteOperationChart, nil)
-	s.addAction(http.MethodDelete, "/delete/operation/chart", s.DeleteOperationChart, nil)
+	s.addAction(http.MethodDelete, "/delete/operation/chart/{id}", s.DeleteOperationChart, nil)
 	s.addAction(http.MethodPost, "/create/operation/chart", s.CreateOperationChart, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart", s.SearchOperationChart, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart", s.UpdateOperationChart, nil)
 	s.addAction(http.MethodPost, "/update/operation/chart/position", s.UpdateOperationChartPosition, nil)
 	s.addAction(http.MethodPost, "/search/operation/chart/data", s.SearchOperationChartData, nil)
+	s.addAction(http.MethodPost, "/search/operation/chart/common", s.SearchChartCommon, nil)
+	s.addAction(http.MethodPost, "/start/operation/chart/timer", s.TimerFreshData, nil)
 }
 
 func (s *coreService) initService() {

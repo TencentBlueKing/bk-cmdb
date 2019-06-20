@@ -74,6 +74,10 @@ func (d *MockDiscovery) TMServer() Interface {
 	return &mockServer{}
 }
 
+func (d *MockDiscovery) OperationServer() Interface {
+	return &mockServer{}
+}
+
 func (d *MockDiscovery) IsMaster() bool {
 	return true
 }
