@@ -302,7 +302,7 @@
                             property_id: property['bk_property_id'],
                             property_name: property['bk_property_name'],
                             before_value: this.changedData.type === 'added' ? '--' : propertyValue,
-                            show_value: this.changedData.type === 'added' ? propertyValue : this.$t("BusinessSynchronous['该进程已删除']")
+                            show_value: this.changedData.type === 'removed' ? this.$t("BusinessSynchronous['该进程已删除']") : propertyValue
                         }
                     })
             },
@@ -327,10 +327,13 @@
                     const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
                     if (['enum'].includes(property['bk_property_type'])) {
                         result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
+                        result['show_value'] = property['option'].find(option => option['id'] === item['template_property_value']['value'])['name']
                     } else if (['bool'].includes(property['bk_property_type'])) {
                         result['before_value'] = item['property_value'] ? '是' : '否'
+                        result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
                     } else {
                         result['before_value'] = item['property_value']
+                        result['show_value'] = item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
                     }
                     return result
                 })
