@@ -40,24 +40,18 @@ func (s *coreService) CreateCloudSyncTask(params core.ContextParams, pathParams,
 	return id, nil
 }
 
-func (s *coreService) TaskNameCheck(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := make(map[string]interface{})
-	if err := data.MarshalJSONInto(input); nil != err {
-		blog.Errorf("task name check failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
-		return nil, err
-	}
-
-	condition := common.KvMap{common.CloudSyncTaskName: input[common.CloudSyncTaskName]}
+func (s *coreService) CheckTaskNameUnique(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	condition := common.KvMap{common.CloudSyncTaskName: data[common.CloudSyncTaskName]}
 	num, err := s.db.Table(common.BKTableNameCloudTask).Find(condition).Count(params)
 	if err != nil {
-		blog.Error("get task name [%s] failed, err: %v", input["bk_task_name"], err)
+		blog.Error("get task name [%s] failed, err: %v", data["bk_task_name"], err)
 		return nil, err
 	}
 
 	return num, nil
 }
 
-func (s *coreService) DeleteCloudTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	taskID := pathParams("id")
 	intTaskID, err := strconv.ParseInt(taskID, 10, 64)
 	if err != nil {
@@ -74,22 +68,16 @@ func (s *coreService) DeleteCloudTask(params core.ContextParams, pathParams, que
 	return nil, nil
 }
 
-func (s *coreService) SearchCloudTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("search cloud sync task failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
-		return nil, err
-	}
-
-	page := meta.ParsePage(input["page"])
+func (s *coreService) SearchCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	page := meta.ParsePage(data["page"])
 	result := make([]meta.CloudTaskInfo, 0)
-	err := s.db.Table(common.BKTableNameCloudTask).Find(input).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
+	err := s.db.Table(common.BKTableNameCloudTask).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
 	if err != nil {
 		blog.Error("get failed, err: %v", err)
 		return nil, err
 	}
 
-	count, errN := s.db.Table(common.BKTableNameCloudTask).Find(input).Count(params)
+	count, errN := s.db.Table(common.BKTableNameCloudTask).Find(data).Count(params)
 	if errN != nil {
 		blog.Error("get task name [%s] failed, err: %v", errN)
 		return nil, err
@@ -101,15 +89,9 @@ func (s *coreService) SearchCloudTask(params core.ContextParams, pathParams, que
 	}, nil
 }
 
-func (s *coreService) UpdateCloudTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("update cloud sync task failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), input, params.ReqID)
-		return nil, err
-	}
-
+func (s *coreService) UpdateCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	opt := common.KvMap{common.CloudSyncTaskID: data[common.CloudSyncTaskID]}
-	err := s.db.Table(common.BKTableNameCloudTask).Update(params, opt, input)
+	err := s.db.Table(common.BKTableNameCloudTask).Update(params, opt, data)
 	if nil != err {
 		blog.Error("update cloud task failed, error information is %s, params:%v", err.Error(), params)
 		return nil, err
@@ -136,21 +118,15 @@ func (s *coreService) CreateConfirm(params core.ContextParams, pathParams, query
 }
 
 func (s *coreService) SearchConfirm(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("search confirm failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
-		return nil, err
-	}
-
-	page := meta.ParsePage(input["page"])
+	page := meta.ParsePage(data["page"])
 	result := make([]map[string]interface{}, 0)
-	err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(input).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
+	err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
 	if err != nil {
 		blog.Error("search cloud resource confirm %v", err)
 		return nil, err
 	}
 
-	count, err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(input).Count(params)
+	count, err := s.db.Table(common.BKTableNameCloudResourceConfirm).Find(data).Count(params)
 	if err != nil {
 		blog.Error("get cloud resource confirm fail, err: %v", err)
 		return nil, err
@@ -196,20 +172,14 @@ func (s *coreService) CreateSyncHistory(params core.ContextParams, pathParams, q
 }
 
 func (s *coreService) SearchSyncHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := make(map[string]interface{})
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("search sync history failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
-		return nil, err
-	}
-
 	condition := make(map[string]interface{})
-	condition["bk_start_time"] = util.ConvParamsTime(input["bk_start_time"])
-	condition["bk_task_id"] = input["bk_task_id"]
-	page := meta.ParsePage(input["page"])
+	condition["bk_start_time"] = util.ConvParamsTime(data["bk_start_time"])
+	condition["bk_task_id"] = data["bk_task_id"]
+	page := meta.ParsePage(data["page"])
 
 	result := make([]map[string]interface{}, 0)
 	if err := s.db.Table(common.BKTableNameCloudSyncHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result); err != nil {
-		blog.Error("search cloud sync history fail, err: %v, input: %v", err, input)
+		blog.Error("search cloud sync history fail, err: %v, input: %v", err, data)
 		return nil, err
 	}
 
@@ -226,16 +196,10 @@ func (s *coreService) SearchSyncHistory(params core.ContextParams, pathParams, q
 }
 
 func (s *coreService) CreateConfirmHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := mapstr.MapStr{}
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("create confirm history failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), input, params.ReqID)
-		return nil, err
-	}
-
-	input[common.CloudSyncConfirmTime] = time.Now()
-	id, err := s.core.HostOperation().CreateConfirmHistory(params, input)
+	data[common.CloudSyncConfirmTime] = time.Now()
+	id, err := s.core.HostOperation().CreateConfirmHistory(params, data)
 	if err != nil {
-		blog.Errorf("create cloud history data: %v error: %v", input, err)
+		blog.Errorf("create cloud history data: %v error: %v", data, err)
 		return nil, err
 	}
 
@@ -243,26 +207,20 @@ func (s *coreService) CreateConfirmHistory(params core.ContextParams, pathParams
 }
 
 func (s *coreService) SearchConfirmHistory(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	input := make(map[string]interface{})
-	if err := data.MarshalJSONInto(&input); nil != err {
-		blog.Errorf("search confirm history failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
-		return nil, err
-	}
-
-	page := meta.ParsePage(input["page"])
-	delete(input, "page")
-	condition := util.ConvParamsTime(input)
+	page := meta.ParsePage(data["page"])
+	delete(data, "page")
+	condition := util.ConvParamsTime(data)
 
 	result := make([]map[string]interface{}, 0)
 	err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Sort(page.Sort).Start(uint64(page.Start)).Limit(uint64(page.Limit)).All(params, &result)
 	if err != nil {
-		blog.Error("search resource confirm history fail, err: %v, input: %v", err, input)
+		blog.Error("search resource confirm history fail, err: %v, input: %v", err, data)
 		return nil, err
 	}
 
 	num, err := s.db.Table(common.BKTableNameResourceConfirmHistory).Find(condition).Count(params)
 	if err != nil {
-		blog.Error("get resource confirm count fail, err: %v, input: %v", err, input)
+		blog.Error("get resource confirm count fail, err: %v, input: %v", err, data)
 		return nil, err
 	}
 
