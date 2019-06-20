@@ -13,7 +13,9 @@
 package service
 
 import (
+	"encoding/json"
 	"strconv"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -41,7 +43,7 @@ func (ps *ProcServer) CreateProcessInstances(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata.CreateRawProcessInstanceInput) ([]int64, errors.CCErrorCoder) {
-	_, e := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, e := metadata.BizIDFromMetadata(input.Metadata)
 	if e != nil {
 		blog.Errorf("create process instance with raw, parse biz id from metadata failed, err: %+v, rid: %s", e, ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommHTTPInputInvalid, common.MetadataField)
@@ -52,6 +54,15 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		blog.Errorf("create process instance failed, get service instance by id failed, serviceInstanceID: %d, err: %v", input.ServiceInstanceID, err, ctx.Kit.Rid)
 		return nil, err
 	}
+	businessID, e := metadata.BizIDFromMetadata(serviceInstance.Metadata)
+	if e != nil {
+		blog.Errorf("create process instance with raw, parse biz id from service instance metadata failed, err: %+v, rid: %s", e, ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParseBizIDFromMetadataInDBFailed, common.MetadataField)
+	}
+	if businessID != bizID {
+		blog.Errorf("create process instance with raw, biz id from input not equal with service instance, err: %+v, rid: %s", e, ctx.Kit.Rid)
+		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.MetadataField)
+	}
 	if serviceInstance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
 		blog.Errorf("create process instance failed, create process instance on service instance initialized by template forbidden, serviceInstanceID: %d, err: %v", input.ServiceInstanceID, err, ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCError(common.CCErrProcEditProcessInstanceCreateByTemplateForbidden)
@@ -60,10 +71,14 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 	processIDs := make([]int64, 0)
 	for _, process := range input.Processes {
 		process.ProcessInfo.ProcessID = 0
+		process.ProcessInfo.BusinessID = bizID
+		process.ProcessInfo.SupplierAccount = ctx.Kit.SupplierAccount
+		now := time.Now()
+		process.ProcessInfo.CreateTime = now
+		process.ProcessInfo.LastTime = now
+
 		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &process.ProcessInfo); err != nil {
-			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
-				"create process instance failed, serviceInstanceID: %d, process: %+v, err: %v",
-				input.ServiceInstanceID, process, err)
+			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "create process instance failed, serviceInstanceID: %d, process: %+v, err: %v", input.ServiceInstanceID, process, err)
 			return nil, err
 		}
 
@@ -125,6 +140,9 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 
 	processTemplateMap := make(map[int64]*metadata.ProcessTemplate)
 	for _, relation := range relations.Info {
+		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
+			continue
+		}
 		if _, exist := processTemplateMap[relation.ProcessTemplateID]; exist == true {
 			continue
 		}
@@ -168,13 +186,23 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		processID := process.ProcessID
 		process.BusinessID = bizID
 		process.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-		data := mapstr.NewFromStruct(process, "field")
-		data.Remove(common.BKProcessIDField)
-		data.Remove(common.MetadataField)
-		data.Remove(common.LastTimeField)
-		data.Remove(common.CreateTimeField)
-		err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, data)
+		processBytes, err := json.Marshal(process)
 		if err != nil {
+			blog.Errorf("UpdateProcessInstances failed, json Marshal process failed, process: %+v, err: %+v", process, err)
+			err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+			ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+		}
+		processData := mapstr.MapStr{}
+		if err := json.Unmarshal(processBytes, &processData); nil != err && 0 != len(processBytes) {
+			blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v", processData, err)
+			err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
+			ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+		}
+		processData.Remove(common.BKProcessIDField)
+		processData.Remove(common.MetadataField)
+		processData.Remove(common.LastTimeField)
+		processData.Remove(common.CreateTimeField)
+		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, processData); err != nil {
 			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			return
 		}
@@ -262,7 +290,7 @@ func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.M
 	}
 	module := modules.Data.Info[0]
 	moduleInst := &metadata.ModuleInst{}
-	if err := module.MarshalJSONInto(moduleInst); err != nil {
+	if err := module.ToStructByTag(moduleInst, "field"); err != nil {
 		blog.Errorf("getModule failed, marshal json failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -270,6 +298,12 @@ func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.M
 }
 
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processInfo *metadata.Process) errors.CCErrorCoder {
+	if len(processInfo.ProcessName) == 0 || len(processInfo.ProcessName) > common.NameFieldMaxLength {
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
+	}
+	if len(processInfo.FuncName) == 0 || len(processInfo.ProcessName) > common.NameFieldMaxLength {
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
+	}
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
 	if err != nil {
 		blog.Errorf("validateRawInstanceUnique failed, get service instance failed, metadata: %+v, err: %v, rid: %s", serviceInstance.Metadata, err, ctx.Kit.Rid)

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"encoding/json"
 )
 
 func (lgc *Logic) ListProcessInstanceWithIDs(kit *rest.Kit, procIDs []int64) ([]metadata.Process, error) {
@@ -142,19 +143,26 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (int64, errors.CCErrorCoder) {
-	inst := metadata.CreateModelInstance{
-		Data: mapstr.NewFromStruct(proc, "field"),
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, process *metadata.Process) (int64, errors.CCErrorCoder) {
+	processBytes, err := json.Marshal(process)
+	if err != nil {
+		return 0, kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
 	}
-
-	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inst)
+	mData := mapstr.MapStr{}
+	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
+		return 0, kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
+	}
+	inputParam := metadata.CreateModelInstance{
+		Data: mData,
+	}
+	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inputParam)
 	if err != nil {
 		blog.Errorf("CreateProcessInstance failed, http request failed, err: %+v", err)
 		return 0, errors.CCHttpError
 	}
 
 	if !result.Result {
-		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, proc, result.ErrMsg)
+		blog.Errorf("rid: %s, create process instance: %+v failed, err: %s", kit.Rid, process, result.ErrMsg)
 		return 0, errors.New(result.Code, result.ErrMsg)
 	}
 
