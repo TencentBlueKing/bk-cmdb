@@ -176,8 +176,8 @@ type ServiceInstanceDetail struct {
 }
 
 type ProcessInstanceDetail struct {
-	ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo       Process `json:"process_info"`
+	// ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
