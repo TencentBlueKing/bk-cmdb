@@ -25,7 +25,7 @@ const state = {
         association: true,
         eventpush: true,
         serviceTemplate: true,
-        cagetory: true
+        category: true
     }
 }
 

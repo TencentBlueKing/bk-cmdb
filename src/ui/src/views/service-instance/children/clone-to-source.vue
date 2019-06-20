@@ -78,11 +78,12 @@
         computed: {
             header () {
                 const display = [
+                    'bk_func_name',
                     'bk_process_name',
+                    'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path',
-                    'user'
+                    'work_path'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -201,7 +202,7 @@
             },
             async doClone () {
                 try {
-                    await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                         params: this.$injectMetadata({
                             service_instance_id: parseInt(this.$route.params.instanceId),
                             processes: this.getCloneProcessValues()
