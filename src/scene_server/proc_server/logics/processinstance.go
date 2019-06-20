@@ -142,14 +142,15 @@ func (lgc *Logic) DeleteProcessInstanceBatch(kit *rest.Kit, procIDs []int64) err
 	return nil
 }
 
-func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (int64, error) {
+func (lgc *Logic) CreateProcessInstance(kit *rest.Kit, proc *metadata.Process) (int64, errors.CCErrorCoder) {
 	inst := metadata.CreateModelInstance{
 		Data: mapstr.NewFromStruct(proc, "field"),
 	}
 
 	result, err := lgc.CoreAPI.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, common.BKInnerObjIDProc, &inst)
 	if err != nil {
-		return 0, err
+		blog.Errorf("CreateProcessInstance failed, http request failed, err: %+v", err)
+		return 0, errors.CCHttpError
 	}
 
 	if !result.Result {
