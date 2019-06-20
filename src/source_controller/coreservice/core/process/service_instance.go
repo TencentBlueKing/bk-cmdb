@@ -124,6 +124,43 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 
+	if instance.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		listProcessTemplateOption := metadata.ListProcessTemplatesOption{
+			BusinessID:        module.BizID,
+			ServiceTemplateID: module.ServiceTemplateID,
+			Page: metadata.BasePage{
+				Limit: common.BKNoLimit,
+			},
+		}
+		listProcTplResult, ccErr := p.ListProcessTemplates(ctx, listProcessTemplateOption)
+		if ccErr != nil {
+			blog.Errorf("CreateServiceInstance failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, ccErr, ctx.ReqID)
+			return nil, ccErr
+		}
+		bizMetadata := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+		for _, processTemplate := range listProcTplResult.Info {
+			processData := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
+			process, ccErr := p.dependence.CreateProcessInstance(ctx, processData)
+			if ccErr != nil {
+				blog.Errorf("CreateServiceInstance failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, ctx.ReqID)
+				return nil, ccErr
+			}
+			relation := &metadata.ProcessInstanceRelation{
+				Metadata:          bizMetadata,
+				ProcessID:         process.ProcessID,
+				ServiceInstanceID: instance.ID,
+				ProcessTemplateID: processTemplate.ID,
+				HostID:            instance.HostID,
+				SupplierAccount:   ctx.SupplierAccount,
+			}
+			relation, ccErr = p.CreateProcessInstanceRelation(ctx, relation)
+			if ccErr != nil {
+				blog.Errorf("CreateServiceInstance failed, create process relation failed, relation: %+v, err: %+v, rid: %s", relation, ccErr, ctx.ReqID)
+				return nil, ccErr
+			}
+		}
+	}
+
 	// transfer host to target module
 	transferConfig := &metadata.HostsModuleRelation{
 		ApplicationID: bizID,
@@ -446,44 +483,12 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 				blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get exist service instance failed, serviceInstanceData: %+v, err: %+v, rid: %s", serviceInstanceData, ccErr, ctx.ReqID)
 				return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 			}
+			return serviceInstance, nil
 		} else {
 			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create service instance failed, serviceInstance: %+v, err: %+v, rid: %s", serviceInstance, ccErr, ctx.ReqID)
 			return nil, ccErr
 		}
 	}
 
-	listProcessTemplateOption := metadata.ListProcessTemplatesOption{
-		BusinessID:        module.BizID,
-		ServiceTemplateID: module.ServiceTemplateID,
-		Page: metadata.BasePage{
-			Limit: common.BKNoLimit,
-		},
-	}
-	listProcTplResult, ccErr := p.ListProcessTemplates(ctx, listProcessTemplateOption)
-	if ccErr != nil {
-		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, get process templates failed, listProcessTemplateOption: %+v, err: %+v, rid: %s", listProcessTemplateOption, ccErr, ctx.ReqID)
-		return nil, ccErr
-	}
-	for _, processTemplate := range listProcTplResult.Info {
-		processData := processTemplate.NewProcess(module.BizID, ctx.SupplierAccount)
-		process, ccErr := p.dependence.CreateProcessInstance(ctx, processData)
-		if ccErr != nil {
-			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process instance failed, process: %+v, err: %+v, rid: %s", processData, ccErr, ctx.ReqID)
-			return nil, ccErr
-		}
-		relation := &metadata.ProcessInstanceRelation{
-			Metadata:          bizMetadata,
-			ProcessID:         process.ProcessID,
-			ServiceInstanceID: serviceInstance.ID,
-			ProcessTemplateID: processTemplate.ID,
-			HostID:            hostID,
-			SupplierAccount:   ctx.SupplierAccount,
-		}
-		relation, ccErr = p.CreateProcessInstanceRelation(ctx, relation)
-		if ccErr != nil {
-			blog.Errorf("AutoCreateServiceInstanceModuleHost failed, create process relation failed, relation: %+v, err: %+v, rid: %s", relation, ccErr, ctx.ReqID)
-			return nil, ccErr
-		}
-	}
 	return serviceInstance, nil
 }
