@@ -43,11 +43,17 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" type="primary"
-                    :disabled="saveDisabled || !hasChange || $loading()"
-                    @click="handleSave">
-                    {{$t("Common['保存']")}}
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(saveAuth),
+                        auth: [saveAuth]
+                    }">
+                    <bk-button class="button-save" type="primary"
+                        :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
+                        @click="handleSave">
+                        {{$t("Common['保存']")}}
+                    </bk-button>
+                </span>
                 <bk-button class="button-cancel" @click="handleCancel">{{$t("Common['取消']")}}</bk-button>
             </slot>
             <slot name="extra-options"></slot>
@@ -82,7 +88,10 @@
                 type: Boolean,
                 default: true
             },
-            saveDisabled: Boolean
+            saveAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {

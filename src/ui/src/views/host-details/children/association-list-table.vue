@@ -32,7 +32,15 @@
                 :max-height="462"
                 :empty-height="40">
                 <template slot="__operation__" slot-scope="{ item }">
-                    <span class="text-primary" @click="showTips($event, item)">
+                    <span class="text-primary" @click="showTips($event, item)" v-if="$isAuthorized(updateAuth)">
+                        {{$t('Association["取消关联"]')}}
+                    </span>
+                    <span class="text-primary disabled"
+                        v-else
+                        v-cursor="{
+                            active: true,
+                            auth: [updateAuth]
+                        }">
                         {{$t('Association["取消关联"]')}}
                     </span>
                 </template>
@@ -99,9 +107,9 @@
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                    return OPERATION.U_RESOURCE_HOST
                 }
-                return this.$isAuthorized(OPERATION.U_HOST)
+                return OPERATION.U_HOST
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list)
@@ -150,13 +158,11 @@
                         name: property.bk_property_name
                     }
                 })
-                if (this.updateAuth) {
-                    header.push({
-                        id: '__operation__',
-                        name: this.$t('Common["操作"]'),
-                        width: 150
-                    })
-                }
+                header.push({
+                    id: '__operation__',
+                    name: this.$t('Common["操作"]'),
+                    width: 150
+                })
                 return header
             }
         },

@@ -225,31 +225,31 @@ func (am *AuthManager) DeregisterModelAttributeGroupByID(ctx context.Context, he
 	return am.DeregisterModelAttributeGroup(ctx, header, attributeGroups...)
 }
 
-func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
-	if err != nil {
-		return fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
-	}
-
-	if am.RegisterModelAttributeEnabled == false {
-		objectIDs := make([]string, 0)
-		for _, attributeGroup := range attributeGroups {
-			objectIDs = append(objectIDs, attributeGroup.ObjectID)
-		}
-		return am.AuthorizeByObjectID(ctx, header, action, businessID, objectIDs...)
-	}
-
-	resources, err := am.makeResourceByAttributeGroup(ctx, header, action, attributeGroups...)
-	if err != nil {
-		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
-	}
-
-	return am.batchAuthorize(ctx, header, resources...)
-}
+// func (am *AuthManager) AuthorizeModelAttributeGroup(ctx context.Context, header http.Header, action meta.Action, attributeGroups ...metadata.Group) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	businessID, err := am.ExtractBusinessIDFromAttributeGroup(attributeGroups...)
+// 	if err != nil {
+// 		return fmt.Errorf("extract business id from attribute groups failed, err: %+v", err)
+// 	}
+//
+// 	if am.RegisterModelAttributeEnabled == false {
+// 		objectIDs := make([]string, 0)
+// 		for _, attributeGroup := range attributeGroups {
+// 			objectIDs = append(objectIDs, attributeGroup.ObjectID)
+// 		}
+// 		return am.AuthorizeByObjectID(ctx, header, action, businessID, objectIDs...)
+// 	}
+//
+// 	resources, err := am.makeResourceByAttributeGroup(ctx, header, action, attributeGroups...)
+// 	if err != nil {
+// 		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
+// 	}
+//
+// 	return am.batchAuthorize(ctx, header, resources...)
+// }
 
 func (am *AuthManager) UpdateRegisteredModelAttributeGroup(ctx context.Context, header http.Header, attributeGroups ...metadata.Group) error {
 	if am.Enabled() == false {
@@ -290,14 +290,14 @@ func (am *AuthManager) UpdateRegisteredModelAttributeGroupByID(ctx context.Conte
 	return am.UpdateRegisteredModelAttributeGroup(ctx, header, attributeGroups...)
 }
 
-func (am *AuthManager) AuthorizeAttributeGroupByID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)
-	if err != nil {
-		return fmt.Errorf("get attributes by id failed, err: %+v", err)
-	}
-	return am.AuthorizeModelAttributeGroup(ctx, header, action, attributeGroups...)
-}
+// func (am *AuthManager) AuthorizeAttributeGroupByID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	attributeGroups, err := am.collectAttributesGroupByIDs(ctx, header, attributeIDs...)
+// 	if err != nil {
+// 		return fmt.Errorf("get attributes by id failed, err: %+v", err)
+// 	}
+// 	return am.AuthorizeModelAttributeGroup(ctx, header, action, attributeGroups...)
+// }
