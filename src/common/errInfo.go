@@ -524,6 +524,8 @@ const (
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
 	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
 	CCErrProcModuleNotBindWithTemplate                    = 1108037
+	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
+	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
