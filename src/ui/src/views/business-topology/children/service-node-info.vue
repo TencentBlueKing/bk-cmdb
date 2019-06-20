@@ -353,17 +353,19 @@
                 return data.info[0]
             },
             handleEdit () {
-                if (!this.withTemplate) {
-                    const second = this.instance.service_category_id
-                    const firstCategory = this.firstCategories.find(({ secondCategory }) => {
-                        return secondCategory.some(category => category.id === second)
+                if (this.modelId === 'module') {
+                    if (!this.withTemplate) {
+                        const second = this.instance.service_category_id
+                        const firstCategory = this.firstCategories.find(({ secondCategory }) => {
+                            return secondCategory.some(category => category.id === second)
+                        })
+                        this.first = firstCategory.id
+                        this.second = second
+                    }
+                    this.updateCategoryProperty({
+                        editable: !this.withTemplate
                     })
-                    this.first = firstCategory.id
-                    this.second = second
                 }
-                this.updateCategoryProperty({
-                    editable: !this.withTemplate
-                })
                 this.type = 'update'
             },
             handleChangeCategory (id, category) {

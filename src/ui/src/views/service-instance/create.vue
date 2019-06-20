@@ -144,23 +144,31 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
-                    const apiUrl = this.withTemplate ? 'serviceInstance/createProcServiceInstanceByTemplate' : 'serviceInstance/createProcServiceInstanceWithRaw'
-                    await this.$store.dispatch(apiUrl, {
-                        params: this.$injectMetadata({
-                            name: this.moduleInstance.bk_module_name,
-                            bk_module_id: this.moduleId,
-                            instances: serviceInstanceTables.map(table => {
-                                return {
-                                    bk_host_id: table.id,
-                                    processes: table.processList.map(item => {
-                                        return {
-                                            process_info: item
-                                        }
-                                    })
-                                }
+                    if (this.withTemplate) {
+                        await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
+                            params: this.$injectMetadata({
+                                name: this.moduleInstance.bk_module_name,
+                                bk_module_id: this.moduleId
                             })
                         })
-                    })
+                    } else {
+                        await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
+                            params: this.$injectMetadata({
+                                name: this.moduleInstance.bk_module_name,
+                                bk_module_id: this.moduleId,
+                                instances: serviceInstanceTables.map(table => {
+                                    return {
+                                        bk_host_id: table.id,
+                                        processes: table.processList.map(item => {
+                                            return {
+                                                process_info: item
+                                            }
+                                        })
+                                    }
+                                })
+                            })
+                        })
+                    }
                     this.handleBackToModule()
                 } catch (e) {
                     console.error(e)
