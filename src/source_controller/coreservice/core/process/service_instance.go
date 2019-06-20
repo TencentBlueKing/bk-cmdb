@@ -217,6 +217,9 @@ func (p *processOperation) UpdateServiceInstance(ctx core.ContextParams, instanc
 }
 
 func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder) {
+	if option.BusinessID == 0 {
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+	}
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
 	filter := map[string]interface{}{}
 	filter[common.MetadataField] = md.ToMapStr()
@@ -451,8 +454,8 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	if module.ServiceTemplateID == 0 {
-		blog.Warnf("AutoCreateServiceInstanceModuleHost failed, ServiceTemplateID is 0, rid: %s", ctx.ReqID)
+	if module.ServiceTemplateID == common.ServiceTemplateIDNotSet {
+		blog.Warnf("AutoCreateServiceInstanceModuleHost failed, ServiceTemplateID is %d, rid: %s", common.ServiceTemplateIDNotSet, ctx.ReqID)
 		return nil, nil
 	}
 
@@ -491,4 +494,76 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(ctx core.ContextP
 	}
 
 	return serviceInstance, nil
+}
+
+func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams, moduleID int64) errors.CCErrorCoder {
+	moduleFilter := map[string]interface{}{
+		common.BKModuleIDField: moduleID,
+	}
+	moduleSimple := struct {
+		ServiceTemplateID int64 `field:"service_template_id" bson:"service_template_id" json:"service_template_id"`
+		ServiceCategoryID int64 `field:"service_category_id" bson:"service_category_id" json:"service_category_id"`
+		BizID             int64 `field:"bk_biz_id" bson:"bk_biz_id" json:"bk_biz_id"`
+	}{}
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Find(moduleFilter).One(ctx.Context, &moduleSimple); err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, get module by id failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	if moduleSimple.ServiceTemplateID == 0 {
+		return ctx.Error.CCError(common.CCErrCoreServiceModuleNotBoundWithTemplate)
+	}
+
+	// clear template id field on module
+	resetServiceTemplateIDOption := map[string]interface{}{
+		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameBaseModule).Update(ctx.Context, moduleFilter, resetServiceTemplateIDOption); err != nil {
+		blog.Errorf("remove template binding on module failed, reset service_template_id on module failed, module: %d, err: %+v, rid: %s", moduleID, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+
+	// clear service instance template
+	serviceInstanceFilter := map[string]int64{
+		common.BKModuleIDField: moduleID,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Update(ctx.Context, serviceInstanceFilter, resetServiceTemplateIDOption); err != nil {
+		blog.Errorf("remove template binding on module failed, reset service_template_id on service instance failed, module: %d, err: %+v, rid: %s", moduleID, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+
+	listOption := metadata.ListServiceInstanceOption{
+		BusinessID:         moduleSimple.BizID,
+		ModuleID:           moduleID,
+		SearchKey:          nil,
+		ServiceInstanceIDs: nil,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+		WithName: false,
+	}
+	serviceInstanceResult, err := p.ListServiceInstance(ctx, listOption)
+	if err != nil {
+		blog.Errorf("", err)
+		return err
+	}
+	serviceInstanceIDs := make([]int64, 0)
+	for _, serviceInstance := range serviceInstanceResult.Info {
+		serviceInstanceIDs = append(serviceInstanceIDs, serviceInstance.ID)
+	}
+
+	// clear process template id on relation
+	processInstanceRelationFilter := map[string]interface{}{
+		common.BKServiceInstanceIDField: map[string]interface{}{
+			common.BKDBIN: serviceInstanceIDs,
+		},
+	}
+	resetProcessTemplateIDOption := map[string]int64{
+		common.BKProcessTemplateIDField: common.ServiceTemplateIDNotSet,
+	}
+	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(ctx.Context, processInstanceRelationFilter, resetProcessTemplateIDOption); err != nil {
+		blog.Errorf("remove template binding on module failed, reset service_template_id on process instance relation failed, module: %d, err: %+v, rid: %s", moduleID, err, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
