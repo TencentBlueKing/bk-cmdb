@@ -542,21 +542,6 @@ button.bk-button.bk-danger {
 .v-cursor {
     background-repeat: no-repeat;
     background-position: center center;
-    background-size: 16px 16px;
-    animation: cursorAnimation 1s linear infinite;
-}
-
-@keyframes cursorAnimation {
-    0% {
-        background-image: url("../images/lock-closed.svg");
-    }
-    25% {
-        background-image: url("../images/lock-opening.svg");
-    }
-    75% {
-        background-image: url("../images/lock-opened.svg");
-    }
-    100% {
-        background-image: url("../images/lock-closed.svg");
-    }
+    background-size: 12px 16px;
+    background-image: url("../images/lock.svg");
 }
