@@ -1,5 +1,4 @@
 import { language } from '@/i18n'
-import { SYSTEM_MANAGEMENT, GET_AUTH_META } from '@/dictionary/auth'
 import $http from '@/api'
 
 const state = {
@@ -24,6 +23,7 @@ const state = {
         modelBusiness: true,
         association: true,
         eventpush: true,
+        adminTips: true,
         serviceTemplate: true,
         cagetory: true
     }
@@ -35,12 +35,8 @@ const getters = {
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
     isAdminView: (state, getters, rootState, rootGetters) => {
-        const systemAuth = rootState.auth.system
-        const managementData = systemAuth.find(data => {
-            const meta = GET_AUTH_META(SYSTEM_MANAGEMENT)
-            return data.resource_type === meta.resource_type && data.action === meta.action
-        }) || {}
-        if (!managementData.is_pass) {
+        const adminEntranceAuth = rootState.auth.adminEntranceAuth
+        if (!adminEntranceAuth.is_pass) {
             return false
         }
         if (window.sessionStorage.hasOwnProperty('isAdminView')) {
@@ -104,6 +100,7 @@ const mutations = {
             window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
         } else if (window.localStorage.getItem('featureTipsParams')) {
             state.featureTipsParams = {
+                ...state.featureTipsParams,
                 ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
             }
         } else {

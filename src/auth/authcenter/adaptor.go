@@ -13,10 +13,10 @@
 package authcenter
 
 import (
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
-
-	"configcenter/src/auth/meta"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -91,6 +91,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = BizInstance
 		}
 
+	case meta.Plat:
+		iamResourceType = SysInstance
 	case meta.HostInstance:
 		if businessID <= 0 {
 			iamResourceType = SysHostInstance
@@ -165,6 +167,28 @@ const (
 	UserCustom ResourceTypeID = "userCustom"
 )
 
+var ResourceTypeIDMap = map[ResourceTypeID]string{
+	SysSystemBase:       "系统基础",
+	SysBusinessInstance: "业务",
+	SysHostInstance:     "主机",
+	SysEventPushing:     "事件推送",
+	SysModelGroup:       "模型分级",
+	SysModel:            "模型",
+	SysInstance:         "实例",
+	SysAssociationType:  "关联类型",
+	SysAuditLog:         "操作审计",
+	BizCustomQuery:      "动态分组",
+	BizHostInstance:     "业务主机",
+	BizProcessInstance:  "进程",
+	// TODO: delete this when upgrade to v3.5.x
+	BizTopo:       "",
+	BizModelGroup: "模型分组",
+	BizModel:      "模型",
+	BizInstance:   "实例",
+	BizAuditLog:   "操作审计",
+	UserCustom:    "",
+}
+
 type ActionID string
 
 // ActionID define
@@ -192,6 +216,18 @@ const (
 	BindModule            ActionID = "bindModule"
 	AdminEntrance         ActionID = "adminEntrance"
 )
+
+var ActionIDNameMap = map[ActionID]string{
+	Unknown:                "未知操作",
+	Edit:                   "编辑",
+	Create:                 "新建",
+	Get:                    "查询",
+	Delete:                 "删除",
+	Archive:                "归档",
+	ModelTopologyOperation: "拓扑层级管理",
+	// TODO: delete this when upgrade to v3.5.x
+	BindModule: "绑定到模块",
+}
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
@@ -300,6 +336,53 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
+}
+
+// TODO: add multiple language support
+func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+
+	ps := make([]metadata.Permission, 0)
+	for _, r := range rs {
+		var p metadata.Permission
+		p.SystemID = SystemIDCMDB
+		p.SystemName = SystemNameCMDB
+
+		if r.BusinessID > 0 {
+			p.ScopeType = ScopeTypeIDBiz
+			p.ScopeTypeName = ScopeTypeIDBizName
+		} else {
+			p.ScopeType = ScopeTypeIDSystem
+			p.ScopeTypeName = ScopeTypeIDSystemName
+		}
+
+		actID, err := adaptorAction(&r)
+		if err != nil {
+			return nil, err
+		}
+		p.ActionID = string(actID)
+		p.ActionName = ActionIDNameMap[actID]
+
+		rscType, err := convertResourceType(r.Basic.Type, r.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+
+		rscIDs, err := GenerateResourceID(*rscType, &r)
+		if err != nil {
+			return nil, err
+		}
+
+		var rsc metadata.Resource
+		rsc.ResourceType = string(*rscType)
+		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
+		if len(rscIDs) != 0 {
+			rsc.ResourceID = rscIDs[0].ResourceID
+		}
+		rsc.ResourceName = r.Basic.Name
+		p.Resources = [][]metadata.Resource{{rsc}}
+		ps = append(ps, p)
+	}
+	return ps, nil
 }
 
 type ResourceDetail struct {

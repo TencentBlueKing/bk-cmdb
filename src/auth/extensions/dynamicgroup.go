@@ -110,22 +110,22 @@ func (am *AuthManager) extractBusinessIDFromDynamicGroups(dynamicGroups ...Dynam
 	return businessID, nil
 }
 
-func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http.Header, action meta.Action, dynamicGroups ...DynamicGroupSimplify) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
-	if err != nil {
-		return fmt.Errorf("authorize user api failed, extract business id from user api failed, err: %+v", err)
-	}
-
-	// make auth resources
-	resources := am.MakeResourcesByDynamicGroups(header, action, bizID, dynamicGroups...)
-
-	return am.authorize(ctx, header, bizID, resources...)
-}
+// func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http.Header, action meta.Action, dynamicGroups ...DynamicGroupSimplify) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	// extract business id
+// 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
+// 	if err != nil {
+// 		return fmt.Errorf("authorize user api failed, extract business id from user api failed, err: %+v", err)
+// 	}
+//
+// 	// make auth resources
+// 	resources := am.MakeResourcesByDynamicGroups(header, action, bizID, dynamicGroups...)
+//
+// 	return am.authorize(ctx, header, bizID, resources...)
+// }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
 	if am.Enabled() == false {

@@ -23,6 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 
