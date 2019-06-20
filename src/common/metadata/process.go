@@ -279,7 +279,7 @@ func (p ProtocolType) Validate() error {
 
 type Process struct {
 	Metadata        Metadata        `field:"metadata" json:"metadata" bson:"metadata"`
-	ProcNum         int64           `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
+	ProcNum         *int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
 	StopCmd         string          `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
 	RestartCmd      string          `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
 	ForceStopCmd    string          `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd"`
@@ -287,20 +287,20 @@ type Process struct {
 	FuncName        string          `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name"`
 	WorkPath        string          `field:"work_path" json:"work_path,omitempty" bson:"work_path"`
 	BindIP          *SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip"`
-	Priority        int64           `field:"priority" json:"priority,omitempty" bson:"priority"`
+	Priority        *int64          `field:"priority" json:"priority,omitempty" bson:"priority"`
 	ReloadCmd       string          `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd"`
 	ProcessName     string          `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name"`
 	Port            string          `field:"port" json:"port,omitempty" bson:"port"`
 	PidFile         string          `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file"`
 	AutoStart       bool            `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start"`
-	AutoTimeGap     int64           `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap"`
+	AutoTimeGap     *int64          `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap"`
 	LastTime        time.Time       `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
 	CreateTime      time.Time       `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
 	BusinessID      int64           `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 	StartCmd        string          `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd"`
 	FuncID          string          `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id"`
 	User            string          `field:"user" json:"user,omitempty" bson:"user"`
-	TimeoutSeconds  int64           `field:"timeout" json:"timeout,omitempty" bson:"timeout"`
+	TimeoutSeconds  *int64          `field:"timeout" json:"timeout,omitempty" bson:"timeout"`
 	Protocol        ProtocolType    `field:"protocol" json:"protocol,omitempty" bson:"protocol"`
 	Description     string          `field:"description" json:"description,omitempty" bson:"description"`
 	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
@@ -424,7 +424,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.ProcessName = *property.ProcessName.Value
 	}
 	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == true {
-		processInstance.ProcNum = *property.ProcNum.Value
+		processInstance.ProcNum = property.ProcNum.Value
 	}
 	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == true {
 		processInstance.StopCmd = *property.StopCmd.Value
@@ -446,7 +446,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.BindIP = property.BindIP.Value
 	}
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) == true {
-		processInstance.Priority = *property.Priority.Value
+		processInstance.Priority = property.Priority.Value
 	}
 	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == true {
 		processInstance.ReloadCmd = *property.ReloadCmd.Value
@@ -461,7 +461,7 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.AutoStart = *property.AutoStart.Value
 	}
 	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
-		processInstance.AutoTimeGap = *property.AutoTimeGapSeconds.Value
+		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
 	}
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == true {
 		processInstance.StartCmd = *property.StartCmd.Value
@@ -473,13 +473,16 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.User = *property.User.Value
 	}
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == true {
-		processInstance.TimeoutSeconds = *property.TimeoutSeconds.Value
+		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
 	}
 	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == true {
 		processInstance.Protocol = *property.Protocol.Value
 	}
 	if IsAsDefaultValue(property.Description.AsDefaultValue) == true {
 		processInstance.Description = *property.Description.Value
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == true {
+		processInstance.StartParamRegex = *property.StartParamRegex.Value
 	}
 	return processInstance
 }
@@ -509,7 +512,7 @@ func (pt *ProcessTemplate) InstanceUpdate(process *Process) {
 	}
 	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) {
 		if property.AutoTimeGapSeconds.Value != nil {
-			process.AutoTimeGap = *property.AutoTimeGapSeconds.Value
+			process.AutoTimeGap = property.AutoTimeGapSeconds.Value
 		}
 	}
 	if IsAsDefaultValue(property.User.AsDefaultValue) {
@@ -524,7 +527,7 @@ func (pt *ProcessTemplate) InstanceUpdate(process *Process) {
 	}
 	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) {
 		if property.ProcNum.Value != nil {
-			process.ProcNum = *property.ProcNum.Value
+			process.ProcNum = property.ProcNum.Value
 		}
 	}
 	if IsAsDefaultValue(property.Port.AsDefaultValue) {
@@ -544,7 +547,7 @@ func (pt *ProcessTemplate) InstanceUpdate(process *Process) {
 	}
 	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) {
 		if property.TimeoutSeconds.Value != nil {
-			process.TimeoutSeconds = *property.TimeoutSeconds.Value
+			process.TimeoutSeconds = property.TimeoutSeconds.Value
 		}
 	}
 	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) {
@@ -584,7 +587,7 @@ func (pt *ProcessTemplate) InstanceUpdate(process *Process) {
 	}
 	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
 		if property.Priority.Value != nil {
-			process.Priority = *property.Priority.Value
+			process.Priority = property.Priority.Value
 		}
 	}
 	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {

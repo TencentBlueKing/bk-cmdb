@@ -18,7 +18,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
@@ -160,11 +159,7 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 }
 
 func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
-	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-	filter := map[string]mapstr.MapStr{
-		common.MetadataField: md.ToMapStr(),
-	}
-
+	filter := metadata.NewPublicOrBizConditionByBizID(bizID)
 	categories := make([]metadata.ServiceCategory, 0)
 	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).All(ctx.Context, &categories); nil != err {
 		blog.Errorf("ListServiceCategories failed, mongodb failed, filter: %+v, category: %+v, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, categories, err, ctx.ReqID)
@@ -181,6 +176,10 @@ func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID i
 			common.BKServiceCategoryIDField: map[string]interface{}{
 				common.BKDBIN: categoryIDs,
 			},
+		}
+		if bizID != 0 {
+			md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+			templateFilter[common.MetadataField] = md
 		}
 		serviceTemplates := make([]metadata.ServiceTemplate, 0)
 		if err := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(templateFilter).All(ctx.Context, &serviceTemplates); nil != err {

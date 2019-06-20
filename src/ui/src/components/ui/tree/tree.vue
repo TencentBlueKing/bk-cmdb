@@ -139,7 +139,15 @@
                 }
                 const children = parent.children
                 const offset = typeof trailing === 'number' ? trailing : trailing ? children.length : 0
-                const insertIndex = parent.index + Math.min(offset, children.length) + 1
+                let insertIndex
+                if (offset > 0) {
+                    const referenceChild = children[offset - 1]
+                    const referenceChildWithDescendants = [referenceChild, ...referenceChild.descendants]
+                    const referenceNode = referenceChildWithDescendants[referenceChildWithDescendants.length - 1]
+                    insertIndex = referenceNode.index + 1
+                } else {
+                    insertIndex = parent.index + 1
+                }
                 const data = Array.isArray(nodeData) ? nodeData : [nodeData]
                 const nodes = data.map(datum => {
                     return new TreeNode(datum, {

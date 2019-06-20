@@ -1,7 +1,7 @@
 <template>
     <div class="create-template-wrapper">
         <div class="info-group">
-            <h3>基本属性</h3>
+            <h3>{{$t("ProcessManagement['基本属性']")}}</h3>
             <div class="form-info clearfix">
                 <label class="label-text fl" for="templateName">
                     {{$t('ServiceManagement["模板名称"]')}}
@@ -41,6 +41,7 @@
                         :placeholder="$t('ServiceManagement[\'请选择二级分类\']')"
                         :auto-select="true"
                         :list="secondaryList"
+                        :empty-text="emptyText"
                         v-validate="'required'"
                         name="secondaryClassificationId"
                         v-model="formData['secondaryClassification']">
@@ -50,7 +51,7 @@
             </div>
         </div>
         <div class="info-group">
-            <h3>进程服务</h3>
+            <h3>{{$t("ProcessManagement['服务进程']")}}</h3>
             <div class="precess-box">
                 <div class="process-create">
                     <bk-button class="create-btn" @click="handleCreateProcess">
@@ -73,9 +74,10 @@
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
+        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
             <template slot="content">
                 <process-form
+                    ref="processForm"
                     :properties="properties"
                     :property-groups="propertyGroups"
                     :inst="attribute.inst.edit"
@@ -136,6 +138,7 @@
                 processList: [],
                 originTemplateValues: {},
                 hasUsed: false,
+                emptyText: this.$t("ServiceManagement['请选择一级分类']"),
                 createdSucess: {
                     show: false,
                     name: ''
@@ -292,7 +295,8 @@
                 })
             },
             handleSelect (id, data) {
-                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id && classification['bk_root_id'] === id)
+                this.secondaryList = this.allSecondaryList.filter(classification => classification['bk_parent_id'] === id)
+                this.emptyText = this.$t("ServiceManagement['没有二级分类']")
                 if (!this.secondaryList.length) {
                     this.formData.secondaryClassification = ''
                 }
@@ -389,10 +393,7 @@
                         if (this.isCreatedType) {
                             this.handleSubmitProcessList()
                         } else {
-                            this.$bkMessage({
-                                message: this.$t("Common['保存成功']"),
-                                theme: 'success'
-                            })
+                            this.$success(this.$t('Common["保存成功"]'))
                             this.handleCancelOperation()
                         }
                     })
@@ -414,6 +415,23 @@
             },
             handleCancelOperation () {
                 this.$router.replace({ name: 'serviceTemplate' })
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = this.$refs.processForm.hasChange()
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                return true
             }
         }
     }

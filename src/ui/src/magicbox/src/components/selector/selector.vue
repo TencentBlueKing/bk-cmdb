@@ -264,10 +264,7 @@
                 isKeydown: false,
                 listInterval: null,
                 panelStyle: {},
-                listSlideName: 'toggle-slide',
-                defaultPlaceholder: this.t('selector.pleaseselect'),
-                defaultEmptyText: this.t('selector.emptyText'),
-                defaultSearchEmptyText: this.t('selector.searchEmptyText')
+                listSlideName: 'toggle-slide'
             }
         },
         computed: {
@@ -347,6 +344,15 @@
                 }
 
                 return textArr.length ? textArr.join(',') : this.defaultPlaceholder
+            },
+            defaultPlaceholder () {
+                return this.placeholder ? this.placeholder : this.t('selector.pleaseselect')
+            },
+            defaultEmptyText () {
+                return this.emptyText ? this.emptyText : this.t('selector.emptyText')
+            },
+            defaultSearchEmptyText () {
+                return this.searchEmptyText ? this.searchEmptyText : this.t('selector.searchEmptyText')
             }
         },
         watch: {
@@ -414,17 +420,6 @@
                     window.onkeydown = null
                     document.onkeydown = null
                 }
-            }
-        },
-        created () {
-            if (this.placeholder) {
-                this.defaultPlaceholder = this.placeholder
-            }
-            if (this.emptyText) {
-                this.defaultEmptyText = this.emptyText
-            }
-            if (this.searchEmptyText) {
-                this.defaultSearchEmptyText = this.searchEmptyText
             }
         },
         mounted () {
