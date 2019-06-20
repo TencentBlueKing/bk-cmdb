@@ -65,11 +65,10 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata   Metadata                `json:"metadata"`
-	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"service_template_id"`
-	ModuleID   int64                   `json:"bk_module_id"`
-	Instances  []ServiceInstanceDetail `json:"instances"`
+	Metadata  Metadata                `json:"metadata"`
+	Name      string                  `json:"name"`
+	ModuleID  int64                   `json:"bk_module_id"`
+	Instances []ServiceInstanceDetail `json:"instances"`
 }
 
 type CreateRawProcessInstanceInput struct {
@@ -96,10 +95,9 @@ type GetServiceInstanceInModuleInput struct {
 	WithName  bool     `json:"with_name"`
 }
 
-type FindServiceTemplateAndInstanceDifferenceOption struct {
-	Metadata          Metadata `json:"metadata"`
-	ModuleID          int64    `json:"bk_module_id"`
-	ServiceTemplateID int64    `json:"service_template_id"`
+type DiffServiceInstanceWithTemplateOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
 }
 
 type DeleteServiceInstanceOption struct {
@@ -172,7 +170,8 @@ type ServiceDifferenceDetails struct {
 }
 
 type ServiceInstanceDetail struct {
-	HostID    int64                   `json:"bk_host_id"`
+	HostID int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
@@ -188,11 +187,9 @@ type ListProcessTemplateWithServiceTemplateInput struct {
 	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
-type ForceSyncServiceInstanceWithTemplateInput struct {
-	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"service_template_id"`
-	ModuleID          int64    `json:"bk_module_id"`
-	ServiceInstances  []int64  `json:"service_instances"`
+type SyncServiceInstanceByTemplateOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
@@ -485,6 +482,195 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 		processInstance.StartParamRegex = *property.StartParamRegex.Value
 	}
 	return processInstance
+}
+
+// ExtractChangeInfo get changes that will be applied to process instance
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
+	t := pt.Property
+	var changed bool
+	if t == nil || i == nil {
+		return nil, false
+	}
+
+	process := make(mapstr.MapStr)
+	if IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
+		if t.ProcNum.Value == nil && i.ProcNum != nil {
+			process["proc_num"] = nil
+			changed = true
+		} else if t.ProcNum.Value != nil && i.ProcNum == nil {
+			process["proc_num"] = *t.ProcNum.Value
+			changed = true
+		} else if t.ProcNum.Value != nil && i.ProcNum != nil && *t.ProcNum.Value != *i.ProcNum {
+			process["proc_num"] = *t.ProcNum.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StopCmd.AsDefaultValue) {
+		if t.StopCmd.Value != nil && *t.StopCmd.Value != i.StopCmd {
+			process["stop_cmd"] = *t.StopCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.RestartCmd.AsDefaultValue) {
+		if t.RestartCmd.Value != nil && *t.RestartCmd.Value != i.RestartCmd {
+			process["restart_cmd"] = *t.RestartCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ForceStopCmd.AsDefaultValue) {
+		if t.ForceStopCmd.Value != nil && *t.ForceStopCmd.Value != i.ForceStopCmd {
+			process["face_stop_cmd"] = *t.ForceStopCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.FuncName.AsDefaultValue) {
+		if t.FuncName.Value != nil && *t.FuncName.Value != i.FuncName {
+			process["bk_func_name"] = *t.FuncName.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.WorkPath.AsDefaultValue) {
+		if t.WorkPath.Value != nil && *t.WorkPath.Value != i.WorkPath {
+			process["work_path"] = *t.WorkPath.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.BindIP.AsDefaultValue) {
+		if t.BindIP.Value == nil && i.BindIP != nil {
+			process["bind_ip"] = nil
+			changed = true
+		} else if t.BindIP.Value != nil && i.BindIP == nil {
+			process["bind_ip"] = *t.BindIP.Value
+			changed = true
+		} else if t.BindIP.Value != nil && i.BindIP != nil && *t.BindIP.Value != *i.BindIP {
+			process["bind_ip"] = *t.BindIP.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Priority.AsDefaultValue) {
+		if t.Priority.Value != nil && i.Priority == nil {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		} else if t.Priority.Value == nil && i.Priority != nil {
+			process["priority"] = nil
+			changed = true
+		} else if t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ReloadCmd.AsDefaultValue) {
+		if t.ReloadCmd.Value != nil && *t.ReloadCmd.Value != i.ReloadCmd {
+			process["reload_cmd"] = *t.ReloadCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ProcessName.AsDefaultValue) {
+		if t.ProcessName.Value != nil && *t.ProcessName.Value != i.ProcessName {
+			process["bk_process_name"] = *t.ProcessName.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Port.AsDefaultValue) {
+		if t.Port.Value != nil && *t.Port.Value != i.Port {
+			process["port"] = *t.Port.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.PidFile.AsDefaultValue) {
+		if t.PidFile.Value != nil && *t.PidFile.Value != i.PidFile {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.AutoStart.AsDefaultValue) {
+		if t.AutoStart.Value != nil && *t.AutoStart.Value != i.AutoStart {
+			process["auto_start"] = *t.AutoStart.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
+		if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StartCmd.AsDefaultValue) {
+		if t.StartCmd.Value != nil && *t.StartCmd.Value != i.StartCmd {
+			process["start_cmd"] = *t.StartCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.FuncID.AsDefaultValue) {
+		if t.FuncID.Value != nil && *t.FuncID.Value != i.FuncID {
+			process["bk_func_id"] = *t.FuncID.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.User.AsDefaultValue) {
+		if t.User.Value != nil && *t.User.Value != i.User {
+			process["user"] = *t.User.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.TimeoutSeconds.AsDefaultValue) {
+		if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds == nil {
+			process["timeout"] = *t.TimeoutSeconds.Value
+			changed = true
+		} else if t.TimeoutSeconds.Value == nil && i.TimeoutSeconds != nil {
+			process["timeout"] = nil
+			changed = true
+		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil && *t.TimeoutSeconds.Value != *i.TimeoutSeconds {
+			process["timeout"] = *t.TimeoutSeconds.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Protocol.AsDefaultValue) {
+		if t.Protocol.Value != nil && *t.Protocol.Value != i.Protocol {
+			process["protocol"] = *t.Protocol.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Description.AsDefaultValue) {
+		if t.Description.Value != nil && *t.Description.Value != i.Description {
+			process["description"] = *t.Description.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StartParamRegex.AsDefaultValue) {
+		if t.StartParamRegex.Value != nil && *t.StartParamRegex.Value != i.StartParamRegex {
+			process["bk_start_param_regex"] = *t.StartParamRegex.Value
+			changed = true
+		}
+	}
+
+	return process, changed
 }
 
 // InstanceUpdate is used for update instance's value
