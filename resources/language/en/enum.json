@@ -50,6 +50,9 @@
     "bk_firewall_property_protocol_enum_1": "ready",
     "bk_firewall_property_protocol_enum_2": "online",
     "bk_firewall_property_protocol_enum_3": "offline",
+    "bk_firewall_property_bk_biz_status_enum_1": "ready",
+    "bk_firewall_property_bk_biz_status_enum_2": "online",
+    "bk_firewall_property_bk_biz_status_enum_3": "offline",
 
     "host_property_bk_state_name_enum_AR" : "Argentina",
     "host_property_bk_state_name_enum_AD" : "Andorra",
