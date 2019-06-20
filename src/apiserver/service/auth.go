@@ -133,7 +133,7 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 
 	appIDList, err := s.authorizer.GetAuthorizedBusinessList(req.Request.Context(), userInfo)
 	if err != nil {
-		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
