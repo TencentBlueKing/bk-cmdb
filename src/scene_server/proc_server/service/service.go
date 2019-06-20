@@ -151,9 +151,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance", Handler: ps.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_template", Handler: ps.CreateServiceInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/service_instance/with_raw", Handler: ps.CreateServiceInstances})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance", Handler: ps.CreateProcessInstances})
-	// Deprecated
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance/with_raw", Handler: ps.CreateProcessInstances})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/proc/process_instance", Handler: ps.CreateProcessInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/proc/process_instance", Handler: ps.UpdateProcessInstances})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/proc/service_instance/{service_instance_id}/process", Handler: ps.DeleteProcessInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/proc/service_instance", Handler: ps.SearchServiceInstancesInModule})

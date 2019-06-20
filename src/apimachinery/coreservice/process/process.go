@@ -60,6 +60,8 @@ type ProcessInterface interface {
 	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
 	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
 	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
+
+	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder)
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {
