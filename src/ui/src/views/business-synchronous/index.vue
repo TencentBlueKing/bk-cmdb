@@ -463,7 +463,7 @@
                         @include ellipsis;
                         flex: 1;
                         padding-right: 10px;
-                        font-size: 14px;
+                        font-size: 16px;
                     }
                     .badge {
                         display: inline-block;
@@ -517,7 +517,7 @@
                         align-items: center;
                         padding-bottom: 24px;
                         h3 {
-                            font-size: 14px;
+                            font-size: 16px;
                         }
                         span {
                             color: #c4c6cc;
@@ -544,7 +544,7 @@
                         .instances-item {
                             @include space-between;
                             width: 240px;
-                            font-size: 12px;
+                            font-size: 14px;
                             padding: 2px 6px 4px;
                             margin-bottom: 16px;
                             margin-right: 14px;
@@ -554,6 +554,7 @@
                             h6 {
                                 @include ellipsis;
                                 flex: 1;
+                                font-size: 14px;
                                 padding-right: 4px;
                                 font-weight: normal;
                             }
