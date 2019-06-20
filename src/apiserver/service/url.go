@@ -267,8 +267,8 @@ func (u *URLPath) WithOperation(req *restful.Request) (isHit bool) {
 	from, to := rootPath, statisticsRoot
 
 	switch {
-	case strings.HasPrefix(string(*u), rootPath+"/operation/"):
-		from, to, isHit = rootPath+"/operation", statisticsRoot, true
+	case strings.Contains(string(*u), "/operation/"):
+		from, to, isHit = rootPath, statisticsRoot, true
 
 	default:
 		isHit = false

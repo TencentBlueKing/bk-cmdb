@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/source_controller/coreservice/core/instances"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 
@@ -32,7 +33,6 @@ type operationManager struct {
 
 type M bson.M
 
-// New create a new instance manager instance
 func New(dbProxy dal.RDB) core.StatisticOperation {
 	return &operationManager{
 		dbProxy: dbProxy,
@@ -40,7 +40,8 @@ func New(dbProxy dal.RDB) core.StatisticOperation {
 }
 
 func (m *operationManager) SearchInstCount(ctx core.ContextParams, inputParam mapstr.MapStr) (uint64, error) {
-	count, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(inputParam).Count(ctx)
+	opt := mapstr.MapStr{}
+	count, err := m.dbProxy.Table(common.BKTableNameBaseInst).Find(opt).Count(ctx)
 	if nil != err {
 		blog.Errorf("query database error:%s, condition:%v", err.Error(), inputParam)
 		return 0, err
@@ -49,31 +50,66 @@ func (m *operationManager) SearchInstCount(ctx core.ContextParams, inputParam ma
 	return count, nil
 }
 
-func (m *operationManager) SearchBizHost(ctx core.ContextParams) ([]metadata.IntIDCount, error) {
+func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+	switch inputParam.ReportType {
+	case common.HostCloudChart:
+		data, err := m.HostCloudChartData(ctx, inputParam)
+		if err != nil {
+			blog.Error("search host cloud chart data fail, err: %v", err)
+			return nil, err
+		}
+		return data, nil
+	case common.HostBizChart:
+		data, err := m.HostBizChartData(ctx, inputParam)
+		if err != nil {
+			blog.Error("search host cloud chart data fail, err: %v", err)
+			return nil, err
+		}
+		return data, nil
+	default:
+		data, err := m.CommonModelStatistic(ctx, inputParam)
+		if err != nil {
+			blog.Error("search host cloud chart data fail, err: %v", err)
+			return nil, err
+		}
+		return data, nil
+	}
+}
 
-	bizHostCount := make([]metadata.IntIDCount, 0)
+func (m *operationManager) SearchOperationChartData(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 
-	pipeline := []M{{"$group": M{"_id": "$bk_biz_id", "count": M{"$sum": 1}}}}
-	if err := m.dbProxy.Table(common.BKTableNameModuleHostConfig).AggregateAll(ctx, pipeline, &bizHostCount); err != nil {
-		blog.Errorf("biz' host count aggregate fail, err: %v", err)
+	condition := mapstr.MapStr{}
+	condition[common.OperationReportType] = inputParam.ReportType
+
+	chartData := metadata.ChartData{}
+	if err := m.dbProxy.Table(common.BKTableNameChartData).Find(condition).One(ctx, &chartData); err != nil {
+		blog.Errorf("search chart data fail, chart name: %v err: %v", inputParam.Name, err)
 		return nil, err
 	}
 
-	return bizHostCount, nil
+	return chartData.Data, nil
 }
 
-func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
+func (m *operationManager) CommonModelStatistic(ctx core.ContextParams, inputParam metadata.ChartConfig) (interface{}, error) {
 	commonCount := make([]metadata.StringIDCount, 0)
-	filterCondition := fmt.Sprintf("$%v", inputParam.Option.Field)
+	filterCondition := fmt.Sprintf("$%v", inputParam.Field)
 
-	switch inputParam.ObjID {
-	case common.BKInnerObjIDHost:
+	attribute := metadata.Attribute{}
+	opt := mapstr.MapStr{}
+	opt[common.BKObjIDField] = inputParam.ObjID
+	opt[common.BKPropertyIDField] = inputParam.Field
+	if err := m.dbProxy.Table(common.BKTableNameObjAttDes).Find(opt).One(ctx, &attribute); err != nil {
+		blog.Errorf("model's instance count aggregate fail, err: %v", err)
+		return nil, err
+	}
+
+	if inputParam.ObjID == common.BKInnerObjIDHost {
 		pipeline := []M{{"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameBaseHost).AggregateAll(ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, err: %v", err)
 			return nil, err
 		}
-	default:
+	} else {
 		pipeline := []M{{"$match": M{"bk_obj_id": inputParam.ObjID}}, {"$group": M{"_id": filterCondition, "count": M{"$sum": 1}}}}
 		if err := m.dbProxy.Table(common.BKTableNameBaseInst).AggregateAll(ctx, pipeline, &commonCount); err != nil {
 			blog.Errorf("model's instance count aggregate fail, err: %v", err)
@@ -81,5 +117,24 @@ func (m *operationManager) CommonAggregate(ctx core.ContextParams, inputParam me
 		}
 	}
 
-	return commonCount, nil
+	option, err := instances.ParseEnumOption(attribute.Option)
+	if err != nil {
+		blog.Errorf("parse enum option fail, err:%v", err)
+		return nil, err
+	}
+
+	respData := make([]metadata.IDStringCountInt64, 0)
+	for _, count := range commonCount {
+		for _, opt := range option {
+			if count.Id == opt.ID {
+				info := metadata.IDStringCountInt64{
+					Id:    opt.Name,
+					Count: count.Count,
+				}
+				respData = append(respData, info)
+			}
+		}
+	}
+
+	return respData, nil
 }
