@@ -44,7 +44,7 @@ var (
 
 func (lgc *Logics) AddCloudTask(ctx context.Context, taskList *meta.CloudTaskList) error {
 	// TaskName Uniqueness check
-	resp, err := lgc.CoreAPI.CoreService().Cloud().TaskNameUniqueCheck(ctx, lgc.header, taskList)
+	resp, err := lgc.CoreAPI.CoreService().Cloud().CheckTaskNameUnique(ctx, lgc.header, taskList)
 	if err != nil {
 		return err
 	}
@@ -82,11 +82,11 @@ func (lgc *Logics) TimerTriggerCheckStatus(ctx context.Context) {
 func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
 
 	if isMaster := lgc.Engine.ServiceManageInterface.IsMaster(); !isMaster {
-		blog.Errorf("not master, stop syncTaskDBManager")
+		blog.Errorf("not master, stop syncTaskDBManager, rid: %v", lgc.rid)
 		return
 	}
 	opt := make(map[string]interface{}, 0)
-	resp, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	resp, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("get cloud sync task instance failed, err: %v, rid: %s", err, lgc.rid)
 		return
@@ -128,7 +128,7 @@ func (lgc *Logics) SyncTaskDBManager(ctx context.Context) {
 }
 
 func (lgc *Logics) FrontEndSyncSwitch(ctx context.Context, opt map[string]interface{}, update bool) error {
-	response, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	response, err := lgc.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("search cloud task instance failed, err: %v, rid: %s", err, lgc.rid)
 		return lgc.ccErr.Error(1110036)
@@ -179,19 +179,19 @@ func (lgc *Logics) ListenRedisSubscribe(ctx context.Context) {
 		pub, err := newClient.Subscribe("stop")
 		if err != nil {
 			time.Sleep(5 * time.Second)
-			blog.Errorf("redis subscribe fail, err: %v", err)
+			blog.Errorf("redis subscribe fail, err: %v, rid: %v", err, lgc.rid)
 			continue
 		}
 		for {
 			receive, err := pub.ReceiveMessage()
 			if err != nil {
-				blog.Errorf("redis subscribe get value fail, err: %v", err)
+				blog.Errorf("redis subscribe get value fail, err: %v, rid: %v", err, lgc.rid)
 				continue
 			}
 
 			taskID, err := strconv.ParseInt(receive.Payload, 10, 64)
 			if err != nil {
-				blog.Errorf("interface convert to int64 fail, err: %v", err)
+				blog.Errorf("interface convert to int64 fail, err: %v, rid: %v", err, lgc.rid)
 				continue
 			}
 			if _, ok := taskChan[taskID]; ok {
@@ -251,7 +251,7 @@ func (lgc *Logics) SyncTaskRedisStartManager(ctx context.Context) {
 			for _, stopTaskID := range waitStopItems {
 				intStopItem, err := strconv.ParseInt(stopTaskID, 10, 64)
 				if err != nil {
-					blog.Errorf("string convert to int64 fail, taskID: %v", intStopItem)
+					blog.Errorf("string convert to int64 fail, taskID: %v, rid: %v", intStopItem, lgc.rid)
 					continue
 				}
 				if taskID == intStopItem {
@@ -309,7 +309,7 @@ func (lgc *Logics) SyncTaskRedisStopManager(ctx context.Context) {
 	for _, item := range redisTaskItems {
 		stopTaskId, err := strconv.ParseInt(item, 10, 64)
 		if err != nil {
-			blog.Errorf("string convert to int64 fail, taskID: %v", stopTaskId)
+			blog.Errorf("string convert to int64 fail, taskID: %v, rid: %v", stopTaskId, lgc.rid)
 			continue
 		}
 
@@ -409,7 +409,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 	newLgc := lgc.NewFromHeader(header)
 
 	opt := make(map[string]interface{})
-	response, err := newLgc.CoreAPI.CoreService().Cloud().SearchCloudTask(ctx, lgc.header, opt)
+	response, err := newLgc.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(ctx, lgc.header, opt)
 	if err != nil {
 		blog.Errorf("search cloud task info fail, err: %v, rid: %s", err, lgc.rid)
 		return
@@ -472,7 +472,7 @@ func (lgc *Logics) CompareRedisWithDB(ctx context.Context) {
 			for _, item := range pendingStopItems {
 				int64Item, err := strconv.ParseInt(item, 10, 64)
 				if err != nil {
-					blog.Errorf("string convert to int64 fail,taskID: %v ,err: %v", item, err)
+					blog.Errorf("string convert to int64 fail,taskID: %v ,err: %v, rid: %v", item, err, lgc.rid)
 					continue
 				}
 				if dbItem.TaskID == int64Item {
@@ -987,7 +987,7 @@ func (lgc *Logics) CloudSyncHistory(ctx context.Context, taskID int64, startTime
 	updateData[common.BKNewAddHost] = cloudHistory.NewAdd
 	updateData[common.BKAttrChangedHost] = cloudHistory.AttrChanged
 
-	if _, err := lgc.CoreAPI.CoreService().Cloud().UpdateCloudTask(ctx, lgc.header, updateData); err != nil {
+	if _, err := lgc.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(ctx, lgc.header, updateData); err != nil {
 		blog.Errorf("update task failed, taskInfo: %#v, err: %v, rid: %s", updateData, err, lgc.rid)
 		return
 	}
@@ -1023,7 +1023,7 @@ func (lgc *Logics) ObtainCloudHosts(ctx context.Context, secretID string, secret
 	data := Response.ToJsonString()
 	regionResponse := new(meta.RegionResponse)
 	if err := json.Unmarshal([]byte(data), regionResponse); err != nil {
-		blog.Errorf("json unmarsha1 error :%v\n", err)
+		blog.Errorf("json unmarsha1 error :%v, rid: %v", err, lgc.rid)
 		return nil, err
 	}
 
@@ -1039,18 +1039,18 @@ func (lgc *Logics) ObtainCloudHosts(ctx context.Context, secretID string, secret
 		response, err := client.DescribeInstances(instRequest)
 
 		if _, ok := err.(*cErrors.TencentCloudSDKError); ok {
-			fmt.Printf("An API error has returned: %s", err)
+			fmt.Printf("An API error has returned: %s, rid: %v", err, lgc.rid)
 			return nil, err
 		}
 		if err != nil {
-			blog.Error("obtain cloud hosts failed")
+			blog.Error("obtain cloud hosts failed, err: %v, rid: %v", err, lgc.rid)
 			return nil, err
 		}
 
 		data := response.ToJsonString()
 		Hosts := meta.HostResponse{}
 		if err := json.Unmarshal([]byte(data), &Hosts); err != nil {
-			fmt.Printf("json unmarsha1 error :%v\n", err)
+			fmt.Printf("json unmarsha1 error :%v\n, rid: %v", err, lgc.rid)
 		}
 
 		instSet := Hosts.HostResponse.InstanceSet

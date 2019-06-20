@@ -17,6 +17,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/emicklei/go-restful"
 
@@ -51,8 +52,14 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
-	taskID := req.PathParameter("id")
-	_, err := s.CoreAPI.CoreService().Cloud().DeleteCloudTask(srvData.ctx, srvData.header, taskID)
+	id := req.PathParameter("id")
+	int64ID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		blog.Errorf("string convert to int64 fail, err: %v, rid: %v", err, srvData.rid)
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncDeleteSyncTaskFail)})
+		return
+	}
+	_, err = s.CoreAPI.CoreService().Cloud().DeleteCloudSyncTask(srvData.ctx, srvData.header, int64ID)
 
 	retData := make(map[string]interface{})
 	if err != nil {
@@ -72,7 +79,7 @@ func (s *Service) SearchCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(srvData.ctx, srvData.header, opt)
 	if err != nil {
 		blog.Errorf("search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudGetTaskFail)})
@@ -92,7 +99,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	}
 
 	// TaskName Uniqueness check
-	response, err := s.CoreAPI.CoreService().Cloud().TaskNameUniqueCheck(srvData.ctx, srvData.header, data)
+	response, err := s.CoreAPI.CoreService().Cloud().CheckTaskNameUnique(srvData.ctx, srvData.header, data)
 	if err != nil {
 		blog.Errorf("task name unique check fail, error: %v, rid: %s", err, srvData.rid)
 		return
@@ -104,7 +111,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 		blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
@@ -119,7 +126,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 
 	if status {
 		// 开启同步状态下，update；先关闭同步，更新数据后，再开启同步
-		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 			return
@@ -130,7 +137,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 			return
 		}
 	} else {
-		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, data); err != nil {
+		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
 			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 			return
@@ -150,7 +157,7 @@ func (s *Service) StartCloudSync(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudTask(srvData.ctx, srvData.header, opt); err != nil {
+	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, opt); err != nil {
 		blog.Errorf("update task failed with decode body, %v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
 		return
@@ -287,7 +294,7 @@ func (s *Service) SearchAccount(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudTask(srvData.ctx, srvData.header, opt)
+	response, err := s.CoreAPI.CoreService().Cloud().SearchCloudSyncTask(srvData.ctx, srvData.header, opt)
 
 	if err != nil {
 		blog.Errorf("search %v failed, err: %v, rid: %s", opt["bk_task_name"], err, srvData.rid)
@@ -355,7 +362,7 @@ func (s *Service) AddConfirmHistory(req *restful.Request, resp *restful.Response
 
 		if response.Count > 0 {
 			opt := response.Info[0]
-			if _, err := s.CoreAPI.CoreService().Cloud().AddConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
+			if _, err := s.CoreAPI.CoreService().Cloud().CreateConfirmHistory(srvData.ctx, srvData.header, opt); err != nil {
 				blog.Errorf("add confirm history failed, rid: %s", srvData.rid)
 				resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudAddConfirmHistoryFail)})
 			}

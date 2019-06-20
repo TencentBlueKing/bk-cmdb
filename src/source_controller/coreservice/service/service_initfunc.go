@@ -122,11 +122,11 @@ func (s *coreService) host() {
 
 func (s *coreService) initCloudSync() {
 	s.addAction(http.MethodPost, "/create/cloud/sync/task", s.CreateCloudSyncTask, nil)
-	s.addAction(http.MethodDelete, "/delete/cloud/sync/task/{id}", s.DeleteCloudTask, nil)
-	s.addAction(http.MethodPost, "/update/cloud/sync/task", s.UpdateCloudTask, nil)
-	s.addAction(http.MethodPost, "/search/cloud/sync/task", s.SearchCloudTask, nil)
+	s.addAction(http.MethodDelete, "/delete/cloud/sync/task/{id}", s.DeleteCloudSyncTask, nil)
+	s.addAction(http.MethodPost, "/update/cloud/sync/task", s.UpdateCloudSyncTask, nil)
+	s.addAction(http.MethodPost, "/search/cloud/sync/task", s.SearchCloudSyncTask, nil)
 	s.addAction(http.MethodPost, "/create/cloud/confirm", s.CreateConfirm, nil)
-	s.addAction(http.MethodPost, "/check/cloud/task/name", s.TaskNameCheck, nil)
+	s.addAction(http.MethodPost, "/check/cloud/task/name", s.CheckTaskNameUnique, nil)
 	s.addAction(http.MethodDelete, "/delete/cloud/confirm/{id}", s.DeleteConfirm, nil)
 	s.addAction(http.MethodPost, "/search/cloud/confirm", s.SearchConfirm, nil)
 	s.addAction(http.MethodPost, "/create/cloud/sync/history", s.CreateSyncHistory, nil)

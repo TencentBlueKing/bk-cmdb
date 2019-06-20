@@ -22,17 +22,17 @@ import (
 
 type CloudSyncClientInterface interface {
 	CreateCloudSyncTask(ctx context.Context, h http.Header, input interface{}) (resp *metadata.Uint64DataResponse, err error)
-	DeleteCloudTask(ctx context.Context, h http.Header, id string) (resp *metadata.Response, err error)
-	UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error)
+	DeleteCloudSyncTask(ctx context.Context, h http.Header, id int64) (resp *metadata.Response, err error)
+	UpdateCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	SearchCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error)
 	CreateConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64DataResponse, err error)
-	TaskNameUniqueCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error)
 	DeleteConfirm(ctx context.Context, h http.Header, id int64) (resp *metadata.Response, err error)
 	SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 	CreateSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error)
 	SearchSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
 	CreateConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	SearchConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error)
+	CheckTaskNameUnique(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error)
 }
 
 func NewCloudSyncClientInterface(client rest.ClientInterface) CloudSyncClientInterface {

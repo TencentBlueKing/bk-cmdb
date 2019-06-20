@@ -13,10 +13,11 @@
 package cloudsync
 
 import (
-	"configcenter/src/common/metadata"
 	"context"
 	"fmt"
 	"net/http"
+
+	"configcenter/src/common/metadata"
 )
 
 func (c *cloud) CreateCloudSyncTask(ctx context.Context, header http.Header, input interface{}) (resp *metadata.Uint64DataResponse, err error) {
@@ -33,7 +34,7 @@ func (c *cloud) CreateCloudSyncTask(ctx context.Context, header http.Header, inp
 	return
 }
 
-func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, id string) (resp *metadata.Response, err error) {
+func (c *cloud) DeleteCloudSyncTask(ctx context.Context, h http.Header, id int64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := fmt.Sprintf("/delete/cloud/sync/task/%v", id)
 
@@ -47,7 +48,7 @@ func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, id string) (
 	return
 }
 
-func (c *cloud) UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) UpdateCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/update/cloud/sync/task"
 
@@ -61,7 +62,7 @@ func (c *cloud) UpdateCloudTask(ctx context.Context, h http.Header, data interfa
 	return
 }
 
-func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error) {
+func (c *cloud) SearchCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error) {
 	resp = new(metadata.CloudTaskSearch)
 	subPath := "/search/cloud/sync/task"
 
@@ -89,7 +90,7 @@ func (c *cloud) CreateConfirm(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (c *cloud) TaskNameUniqueCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
+func (c *cloud) CheckTaskNameUnique(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
 	resp = new(metadata.Uint64Response)
 	subPath := "/check/cloud/task/name"
 
