@@ -13,10 +13,11 @@
 package authcenter
 
 import (
-	"configcenter/src/auth/meta"
-	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
+
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -133,28 +134,28 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sysSystemBase"
-	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
-	SysHostInstance     ResourceTypeID = "sysHostInstance"
-	SysEventPushing     ResourceTypeID = "sysEventPushing"
-	SysModelGroup       ResourceTypeID = "sysModelGroup"
-	SysModel            ResourceTypeID = "sysModel"
-	SysInstance         ResourceTypeID = "sysInstance"
-	SysAssociationType  ResourceTypeID = "sysAssociationType"
-	SysAuditLog         ResourceTypeID = "sysAuditLog"
+	SysSystemBase       ResourceTypeID = "sys_system_base"
+	SysBusinessInstance ResourceTypeID = "sys_business_instance"
+	SysHostInstance     ResourceTypeID = "sys_host_instance"
+	SysEventPushing     ResourceTypeID = "sys_event_pushing"
+	SysModelGroup       ResourceTypeID = "sys_model_group"
+	SysModel            ResourceTypeID = "sys_model"
+	SysInstance         ResourceTypeID = "sys_instance"
+	SysAssociationType  ResourceTypeID = "sys_association_type"
+	SysAuditLog         ResourceTypeID = "sys_audit_log"
 )
 
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
-	BizHostInstance    ResourceTypeID = "bizHostInstance"
-	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopo            ResourceTypeID = "bizTopo"
-	BizModelGroup      ResourceTypeID = "bizModelGroup"
-	BizModel           ResourceTypeID = "bizModel"
-	BizInstance        ResourceTypeID = "bizInstance"
-	BizAuditLog        ResourceTypeID = "bizAuditLog"
+	BizCustomQuery     ResourceTypeID = "biz_custom_query"
+	BizHostInstance    ResourceTypeID = "biz_host_instance"
+	BizProcessInstance ResourceTypeID = "biz_process_instance"
+	BizTopo            ResourceTypeID = "biz_topology"
+	BizModelGroup      ResourceTypeID = "biz_model_group"
+	BizModel           ResourceTypeID = "biz_model"
+	BizInstance        ResourceTypeID = "biz_instance"
+	BizAuditLog        ResourceTypeID = "biz_audit_log"
 )
 
 const (
@@ -197,18 +198,18 @@ const (
 	// Archive for business
 	Archive ActionID = "archive"
 	// host action
-	ModuleTransfer ActionID = "moduleTransfer"
+	ModuleTransfer ActionID = "module_transfer"
 	// business topology action
-	HostTransfer ActionID = "hostTransfer"
+	HostTransfer ActionID = "host_transfer"
 	// system base action, related to model topology
-	ModelTopologyView ActionID = "modelTopologyView"
+	ModelTopologyView ActionID = "model_topology_view"
 	// business model topology operation.
-	ModelTopologyOperation ActionID = "modelTopologyOperation"
+	ModelTopologyOperation ActionID = "model_topology_operation"
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
-	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
-	BindModule            ActionID = "bindModule"
-	AdminEntrance         ActionID = "adminEntrance"
+	AssignHostsToBusiness ActionID = "assign_hosts_to_business"
+	BindModule            ActionID = "bind_module"
+	AdminEntrance         ActionID = "admin_entrance"
 )
 
 var ActionIDNameMap = map[ActionID]string{
