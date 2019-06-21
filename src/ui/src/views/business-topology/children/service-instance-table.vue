@@ -217,7 +217,8 @@
                         instanceId: this.instance.id,
                         hostId: this.instance.bk_host_id,
                         setId: this.module.bk_set_id,
-                        moduleId: this.module.bk_module_id
+                        moduleId: this.module.bk_module_id,
+                        moduleName: this.module.bk_module_name
                     },
                     query: {
                         from: this.$route.fullPath,
