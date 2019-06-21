@@ -14,8 +14,11 @@ const (
 
 // ScopeTypeID constant
 const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
+	ScopeTypeIDSystem     = "system"
+	ScopeTypeIDSystemName = "全局"
+
+	ScopeTypeIDBiz     = "biz"
+	ScopeTypeIDBizName = "业务"
 )
 
 type AuthConfig struct {
