@@ -13,16 +13,16 @@
 package extensions
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"context"
+	"fmt"
+	"net/http"
 )
 
 /*
@@ -136,6 +136,25 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 		return fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
 	}
 	return am.AuthorizeByModule(ctx, header, action, modules...)
+}
+
+func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ActionID = string(authcenter.ModelTopologyOperation)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.ModelTopologyOperation]
+	p.Resources = [][]metadata.Resource{
+		{{
+			ResourceType:     string(authcenter.SysSystemBase),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysSystemBase],
+		}},
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
 }
 
 func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action, modules ...ModuleSimplify) error {

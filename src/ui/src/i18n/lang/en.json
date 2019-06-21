@@ -816,7 +816,7 @@
         "所有二级分类": "(All secondary classification)",
         "没有二级分类": "No secondary classification"
     },
-    "ServiceCagetory": {
+    "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
         "请输入一级分类": "Please enter",
         "请输入二级分类": "Please enter",
@@ -824,7 +824,7 @@
         "二级分类": "Secondary classification",
         "确认删除分类": "Confirm delete category?",
         "请输入分类名称": "Please enter category name",
-        "添加二级分类": "Add Secondary Cagetory",
+        "添加二级分类": "Add Secondary Category",
         "二级分类删除提示": "This category cannot be deleted because there is service instance"
     },
     "HostDetails": {
