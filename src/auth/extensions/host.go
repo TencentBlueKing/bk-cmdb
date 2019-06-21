@@ -13,12 +13,8 @@
 package extensions
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-
 	"configcenter/src/apimachinery/coreservice"
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,6 +22,11 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
 )
 
 // GetHostLayers get resource layers id by hostID(layers is a data structure for call iam)
@@ -368,22 +369,22 @@ func (am *AuthManager) makeHostsResourcesGroupByBusiness(ctx context.Context, he
 	return result
 }
 
-func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	// make auth resources
-	bizResourcesMap := am.makeHostsResourcesGroupByBusiness(ctx, header, action, hosts...)
-
-	for bizID, resources := range bizResourcesMap {
-		err := am.authorize(ctx, header, bizID, resources...)
-		if err != nil {
-			return fmt.Errorf("authorize resources with businessID %d failed, err: %+v", bizID, err)
-		}
-	}
-	return nil
-}
+// func (am *AuthManager) AuthorizeHostsCrossMultipleBusiness(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	// make auth resources
+// 	bizResourcesMap := am.makeHostsResourcesGroupByBusiness(ctx, header, action, hosts...)
+//
+// 	for bizID, resources := range bizResourcesMap {
+// 		err := am.authorize(ctx, header, bizID, resources...)
+// 		if err != nil {
+// 			return fmt.Errorf("authorize resources with businessID %d failed, err: %+v", bizID, err)
+// 		}
+// 	}
+// 	return nil
+// }
 
 func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action, hosts ...HostSimplify) error {
 	if am.Enabled() == false {
@@ -400,6 +401,47 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 		return fmt.Errorf("make host resources failed, err: %+v", err)
 	}
 	return am.batchAuthorize(ctx, header, resources...)
+}
+func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ActionID = string(authcenter.Delete)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
+
+	for _, id := range hostIDs {
+		p.Resources = append(p.Resources, []metadata.Resource{{
+			ResourceType:     string(authcenter.SysHostInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
+			ResourceID:       strconv.FormatInt(id, 64),
+		}})
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
+}
+
+func (am *AuthManager) GenMoveHostFromModuleToIdleFaultModuleResp(hostIDs []int64) *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDBiz
+	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+	p.ActionID = string(authcenter.Edit)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
+
+	for _, id := range hostIDs {
+		p.Resources = append(p.Resources, []metadata.Resource{{
+			ResourceType:     string(authcenter.BizHostInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
+			ResourceID:       strconv.FormatInt(id, 64),
+		}})
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
 }
 
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
@@ -422,6 +464,11 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v, rid: %s", err, rid)
 	}
 	return am.AuthorizeByHosts(ctx, header, action, hosts...)
+}
+
+func (am *AuthManager) AuthorizeByHostsIDsNoPermissionsResponse(businessID int64) metadata.BaseResp {
+
+	return metadata.BaseResp{}
 }
 
 func (am *AuthManager) DryRunAuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) ([]meta.ResourceAttribute, error) {
@@ -567,12 +614,12 @@ func (am *AuthManager) DeregisterHosts(ctx context.Context, header http.Header, 
 	return am.Authorize.DeregisterResource(ctx, resources...)
 }
 
-func (am *AuthManager) AuthorizeAddToResourcePool(ctx context.Context, header http.Header) error {
-	resource := meta.ResourceAttribute{
-		Basic: meta.Basic{
-			Type:   meta.HostInstance,
-			Action: meta.AddHostToResourcePool,
-		},
-	}
-	return am.authorize(ctx, header, 0, resource)
-}
+// func (am *AuthManager) AuthorizeAddToResourcePool(ctx context.Context, header http.Header) error {
+// 	resource := meta.ResourceAttribute{
+// 		Basic: meta.Basic{
+// 			Type:   meta.HostInstance,
+// 			Action: meta.AddHostToResourcePool,
+// 		},
+// 	}
+// 	return am.authorize(ctx, header, 0, resource)
+// }

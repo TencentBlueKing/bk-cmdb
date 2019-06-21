@@ -160,29 +160,29 @@ func (am *AuthManager) MakeResourcesByClassifications(header http.Header, action
 	return resources
 }
 
-func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classifications ...metadata.Classification) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
-		blog.V(4).Infof("skip authorization for reading, classifications: %+v, rid: %s", classifications, rid)
-		return nil
-	}
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
-	if err != nil {
-		return fmt.Errorf("authorize classifications failed, extract business id from classification failed, err: %+v", err)
-	}
-
-	// make auth resources
-	resources := am.MakeResourcesByClassifications(header, action, bizID, classifications...)
-
-	return am.authorize(ctx, header, bizID, resources...)
-}
+// func (am *AuthManager) AuthorizeByClassification(ctx context.Context, header http.Header, action meta.Action, classifications ...metadata.Classification) error {
+// 	rid := util.ExtractRequestIDFromContext(ctx)
+//
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+// 		blog.V(4).Infof("skip authorization for reading, classifications: %+v, rid: %s", classifications, rid)
+// 		return nil
+// 	}
+//
+// 	// extract business id
+// 	bizID, err := am.extractBusinessIDFromClassifications(ctx, classifications...)
+// 	if err != nil {
+// 		return fmt.Errorf("authorize classifications failed, extract business id from classification failed, err: %+v", err)
+// 	}
+//
+// 	// make auth resources
+// 	resources := am.MakeResourcesByClassifications(header, action, bizID, classifications...)
+//
+// 	return am.authorize(ctx, header, bizID, resources...)
+// }
 
 func (am *AuthManager) UpdateRegisteredClassification(ctx context.Context, header http.Header, classifications ...metadata.Classification) error {
 	if am.Enabled() == false {

@@ -32,18 +32,30 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <bk-button class="button-edit" type="primary"
+                <span class="inline-block-middle"
                     v-if="showEdit"
-                    :disabled="editDisabled"
-                    @click="handleEdit">
-                    {{editText}}
-                </bk-button>
-                <bk-button class="button-delete" type="danger"
+                    v-cursor="{
+                        active: !$isAuthorized(editAuth),
+                        auth: [editAuth]
+                    }">
+                    <bk-button class="button-edit" type="primary"
+                        :disabled="!$isAuthorized(editAuth)"
+                        @click="handleEdit">
+                        {{editText}}
+                    </bk-button>
+                </span>
+                <span class="inline-block-middle"
                     v-if="showDelete"
-                    :disabled="deleteDisabled"
-                    @click="handleDelete">
-                    {{deleteText}}
-                </bk-button>
+                    v-cursor="{
+                        active: !$isAuthorized(deleteAuth),
+                        auth: [deleteAuth]
+                    }">
+                    <bk-button class="button-delete" type="danger"
+                        :disabled="!$isAuthorized(deleteAuth)"
+                        @click="handleDelete">
+                        {{deleteText}}
+                    </bk-button>
+                </span>
             </slot>
         </div>
     </div>
@@ -80,8 +92,14 @@
                 type: Boolean,
                 default: true
             },
-            editDisabled: Boolean,
-            deleteDisabled: Boolean
+            editAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            deleteAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {

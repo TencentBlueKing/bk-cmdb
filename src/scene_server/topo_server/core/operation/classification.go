@@ -271,7 +271,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err
 	}
-	
+
 	// auth: update registered classifications
 	if len(class.ClassificationID) > 0 {
 		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
@@ -279,7 +279,7 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
 	} else {
-		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
+		if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, class.ID); err != nil {
 			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
 			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 		}
