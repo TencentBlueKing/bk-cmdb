@@ -8,10 +8,10 @@ const actions = {
         return $http.put('update/proc/process_instance', params, config)
     },
     createServiceInstanceProcess (context, { params, config }) {
-        return $http.post('create/proc/process_instance/with_raw', params, config)
+        return $http.post('create/proc/process_instance', params, config)
     },
     deleteServiceInstanceProcess (context, { serviceInstanceId, config }) {
-        return $http.delete(`delete/proc/service_instance/${serviceInstanceId}/process`, config)
+        return $http.delete(`delete/proc/process_instance`, config)
     }
 }
 
