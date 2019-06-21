@@ -26,7 +26,14 @@
                 </a>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="createAuth && canAddLevel(model)"
+                    :class="{
+                        disabled: !createAuth
+                    }"
+                    v-cursor="{
+                        active: !createAuth,
+                        auth: [OPERATION.SYSTEM_TOPOLOGY]
+                    }"
+                    v-if="canAddLevel(model)"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -106,8 +113,10 @@
                 return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
-                this.addLevel.parent = model
-                this.addLevel.showDialog = true
+                if (this.createAuth) {
+                    this.addLevel.parent = model
+                    this.addLevel.showDialog = true
+                }
             },
             async handleCreateLevel (data) {
                 try {
@@ -256,6 +265,9 @@
                 top: 4px;
                 width: 2px;
                 height: 8px;
+            }
+            &.disabled {
+                background-color: #ccc;
             }
         }
     }
