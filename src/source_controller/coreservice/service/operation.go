@@ -13,14 +13,15 @@
 package service
 
 import (
+	"strconv"
+	"time"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"strconv"
-	"time"
 )
 
 func (s *coreService) SearchInstCount(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
@@ -54,6 +55,7 @@ func (s *coreService) DeleteOperationChart(params core.ContextParams, pathParams
 	int64ID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		blog.Errorf("delete chart fail, string convert to int64 fail, err: %v", err)
+		return nil, err
 	}
 	if _, err := s.core.StatisticOperation().DeleteOperationChart(params, int64ID); err != nil {
 		return nil, err
@@ -77,7 +79,6 @@ func (s *coreService) CreateOperationChart(params core.ContextParams, pathParams
 		blog.Errorf("save chart config fail, err: %v", err)
 		return nil, err
 	}
-	blog.Debug("result: %v", result)
 	return result, nil
 }
 
@@ -143,7 +144,9 @@ func (s *coreService) SearchOperationChartData(params core.ContextParams, pathPa
 
 	result, err := s.core.StatisticOperation().SearchOperationChartData(params, opt)
 	if err != nil {
+		blog.Errorf("search operation chart data fail, chartName: %v, err: %v", opt.Name, err)
 		return nil, err
+
 	}
 
 	return result, nil

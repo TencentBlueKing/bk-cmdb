@@ -13,10 +13,10 @@
 package logics
 
 import (
-	"configcenter/src/auth/extensions"
 	"gopkg.in/redis.v5"
 	"net/http"
 
+	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
