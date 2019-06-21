@@ -2,11 +2,17 @@
     <div class="topo-wrapper" :class="{ 'has-nav': topoEdit.isEdit }">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.U_MODEL)"
-                    @click="editTopo">
-                    {{$t('ModelManagement["编辑拓扑"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.U_MODEL),
+                        auth: [OPERATION.U_MODEL]
+                    }">
+                    <bk-button class="edit-button" type="primary"
+                        :disabled="!$isAuthorized(OPERATION.U_MODEL)"
+                        @click="editTopo">
+                        {{$t('ModelManagement["编辑拓扑"]')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
                 <bk-button type="primary" @click="exitEdit">

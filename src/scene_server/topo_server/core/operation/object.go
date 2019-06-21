@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -557,12 +556,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
-	}
-
-	// auth: check authorization
-	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Delete, objects...); err != nil {
-		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
-		return err
 	}
 
 	for _, obj := range objs {

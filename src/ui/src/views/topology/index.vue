@@ -54,10 +54,10 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
-                        delete-disabled
-                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
+                        delete-auth=""
+                        :save-auth="OPERATION.U_HOST"
+                        :edit-auth="OPERATION.U_HOST"
+                        :transfer-resource-auth="OPERATION.HOST_TO_RESOURCE"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
