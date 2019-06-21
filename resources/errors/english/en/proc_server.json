@@ -32,5 +32,7 @@
     "1108035": "create or update process instance under service instance create by template forbidden",
     "1108036": "service category and template not conincide",
     "1108037": "module doesn't bind a service template yet",
+    "1108038": "create service instance on module with wrong http method",
+    "1108039": "forbidden add process on service instance initialized with template",
     "": ""
 }
