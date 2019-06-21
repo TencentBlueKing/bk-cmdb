@@ -269,7 +269,7 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		}
 	}
 	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
-		ctx.RespWithError(err, common.CCErrCoreServiceHostNotBelongBusiness, "create service instance failed, host %+v not belong to business %d, hostIDs: %+v, err: %v", invalidHost, bizID, err)
+		ctx.RespWithError(err, common.CCErrCoreServiceHostNotBelongBusiness, "create service instance failed, host %+v not belong to business %d, hostIDs: %+v, err: %v", hostIDs, bizID, err)
 		return
 	}
 
