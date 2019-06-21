@@ -167,6 +167,8 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
+
+			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
 		}
 		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 		if err != nil {
@@ -218,6 +220,12 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		if err = db.Table(common.BKTableNameObjAsst).DropColumn(ctx, column); err != nil {
 			return err
 		}
+	}
+
+	delCond := condition.CreateCondition()
+	delCond.Field(common.AssociationKindIDField).Eq(nil)
+	if err = db.Table(common.BKTableNameObjAsst).Delete(ctx, delCond.ToMapStr()); err != nil {
+		return err
 	}
 	return nil
 }
