@@ -144,10 +144,27 @@ func (s *coreService) GetBusinessDefaultSetModuleInfo(params core.ContextParams,
 	return defaultSetModuleInfo, nil
 }
 
+// AutoCreateServiceInstanceModuleHost is dependence for host
 func (s *coreService) AutoCreateServiceInstanceModuleHost(params core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	serviceInstance, err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(params, hostID, moduleID)
 	if err != nil {
+		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %d, moduleID: %d, err: %+v, rid: %s", hostID, moduleID, err, params.ReqID)
 		return nil, err
 	}
 	return serviceInstance, nil
+}
+
+func (s *coreService) RemoveTemplateBindingOnModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	moduleIDStr := pathParams(common.BKModuleIDField)
+	moduleID, err := strconv.ParseInt(moduleIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKAppIDField, moduleIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	if err := s.core.ProcessOperation().RemoveTemplateBindingOnModule(params, moduleID); err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
 }

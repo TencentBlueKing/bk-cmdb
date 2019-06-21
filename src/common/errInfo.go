@@ -527,6 +527,7 @@ const (
 	CCErrProcModuleNotBindWithTemplate                    = 1108037
 	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
 	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
+	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -676,6 +677,8 @@ const (
 	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
 	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
+	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
+	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
