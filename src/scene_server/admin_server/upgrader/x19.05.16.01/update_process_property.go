@@ -155,7 +155,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 		PropertyIndex: -3,
 		Unit:          "",
 		IsEditable:    true,
-		IsRequired:    false,
+		IsRequired:    true,
 		Option:        "",
 		PropertyID:    "bk_process_name",
 		CreateTime:    &now,
