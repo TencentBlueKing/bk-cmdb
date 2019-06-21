@@ -165,7 +165,7 @@
                             ...item['category']
                         }
                     })
-                    const list = categoryList.filter(category => !category.hasOwnProperty('bk_parent_id'))
+                    const list = categoryList.filter(category => !category.hasOwnProperty('bk_parent_id') && category.id !== 1)
                     this.list = list.map(mainCategory => {
                         return {
                             ...mainCategory,
