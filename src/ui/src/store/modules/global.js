@@ -25,7 +25,7 @@ const state = {
         eventpush: true,
         adminTips: true,
         serviceTemplate: true,
-        cagetory: true
+        category: true
     }
 }
 
