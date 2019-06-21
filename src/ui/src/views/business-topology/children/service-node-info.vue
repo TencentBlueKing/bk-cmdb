@@ -90,6 +90,9 @@
             selectedNode () {
                 return this.$store.state.businessTopology.selectedNode
             },
+            isModuleNode () {
+                return this.selectedNode && this.selectedNode.bk_obj_id === 'module'
+            },
             modelId () {
                 if (this.selectedNode) {
                     return this.selectedNode.data.bk_obj_id
@@ -97,7 +100,7 @@
                 return null
             },
             withTemplate () {
-                return !!this.instance.service_template_id
+                return this.isModuleNode && !!this.instance.service_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
