@@ -813,7 +813,8 @@
         "搜索": "Please enter template name to search...",
         "所有一级分类": "(All primary classification)",
         "所有二级分类": "(All secondary classification)",
-        "没有二级分类": "No secondary classification"
+        "没有二级分类": "No secondary classification",
+        "锁定不可编辑": "Locked service instance is not editable"
     },
     "ServiceCategory": {
         "服务分类功能提示": "Service classification can help the business sort out service usage. Configuring platform initialization includes some common classifications and supports more classifications based on business development.",
@@ -888,7 +889,8 @@
         "其他主机": "Other host",
         "模板未定义进程": "Template named with {template} has not difine process, can not create service.",
         "模板未定义进程提示": "You can add process in template fist or add host directly",
-        "暂无符合条件的实例": "There are no matched instances with input condition"
+        "暂无符合条件的实例": "There are no matched instances with input condition",
+        "删除模块提示": "Need to remove all service instances under the module first"
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
