@@ -172,51 +172,49 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 	}
 
 	datas := []metadata.ClassificationWithObject{}
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: condition.CreateCondition().ToMapStr()})
+	if nil != err {
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		return nil, err
+	}
+	if !queryObjectResp.Result {
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
+		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
+	}
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
 			Objects:        []metadata.Object{},
 			AsstObjects:    map[string][]metadata.Object{},
 		}
-		queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).Eq(cls.ClassificationID)
-		queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
-		if nil != err {
-			blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
-			return nil, err
-		}
-
-		if !queryObjectResp.Result {
-			blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
-			return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
-		}
-
 		for _, info := range queryObjectResp.Data.Info {
-			clsItem.Objects = append(clsItem.Objects, info.Spec)
+			if info.Spec.ObjCls == cls.ClassificationID {
+				clsItem.Objects = append(clsItem.Objects, info.Spec)
+			}
 		}
 
 		datas = append(datas, clsItem)
 	}
 
+	asstObjs, err := c.obj.FindObject(params, condition.CreateCondition())
+	if nil != err {
+		return nil, err
+	}
+	asstItems, err := c.asst.SearchObjectAssociation(params, "")
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
+	}
+	
 	for idx, clsItem := range datas {
 		for _, objItem := range clsItem.Objects {
-			asstItems, err := c.asst.SearchObjectAssociation(params, objItem.ObjectID)
-			if nil != err {
-				return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
-			}
-
 			for _, asstItem := range asstItems {
-
-				searchObjCond := condition.CreateCondition()
-				searchObjCond.Field(common.BKObjIDField).Eq(asstItem.AsstObjID)
-				asstObjs, err := c.obj.FindObject(params, searchObjCond)
-				if nil != err {
-					return nil, err
+				if asstItem.ObjectID == objItem.ObjectID {
+					for _, obj := range asstObjs {
+						if obj.Object().ObjectID == asstItem.AsstObjID {
+							datas[idx].AsstObjects[objItem.ObjectID] = append(datas[idx].AsstObjects[objItem.ObjectID], obj.Object())
+						}
+					}
 				}
-
-				for _, obj := range asstObjs {
-					datas[idx].AsstObjects[objItem.ObjectID] = append(datas[idx].AsstObjects[objItem.ObjectID], obj.Object())
-				}
-
 			}
 		}
 
