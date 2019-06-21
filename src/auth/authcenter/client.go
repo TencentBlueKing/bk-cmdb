@@ -428,7 +428,7 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
-func (a *authClient) GetAuthorizedScopes(ctx context.Context, body *ListAuthorizedResources) ([]string, error) {
+func (a *authClient) GetAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
 	resp := ListAuthorizedScopeResult{}
 
 	err := a.client.Post().

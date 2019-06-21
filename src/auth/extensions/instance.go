@@ -317,6 +317,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 		return nil
 	}
 
+	if objectID == common.BKInnerObjIDPlat {
+		return am.UpdateRegisteredPlatByID(ctx, header, ids...)
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
@@ -327,6 +331,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, header http.Header, objectID string, ids ...int64) error {
 	if am.Enabled() == false {
 		return nil
+	}
+
+	if objectID == common.BKInnerObjIDPlat {
+		return am.UpdateRegisteredPlatByRawID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
@@ -340,6 +348,9 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 	if am.Enabled() == false {
 		return nil
 	}
+	if objectID == common.BKInnerObjIDPlat {
+		return am.DeregisterPlatByID(ctx, header, ids...)
+	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
@@ -352,15 +363,18 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 	if am.Enabled() == false {
 		return nil
 	}
+	if objectID == common.BKInnerObjIDPlat {
+		return am.RegisterPlatByID(ctx, header, ids...)
+	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("register instances failed, get instance by id failed, err: %+v", err)
 	}
-	return am.RegisterInstances(ctx, header, instances...)
+	return am.registerInstances(ctx, header, instances...)
 }
 
-func (am *AuthManager) RegisterInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
+func (am *AuthManager) registerInstances(ctx context.Context, header http.Header, instances ...InstanceSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if am.Enabled() == false {
@@ -395,39 +409,39 @@ func (am *AuthManager) DeregisterInstances(ctx context.Context, header http.Head
 }
 
 // AuthorizeInstanceCreateByObjectID authorize create priority by object, plz be note this method only overlay model read/update/delete, without create
-func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	if am.Enabled() == false {
-		return nil
-	}
-
-	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
-	if err != nil {
-		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v, rid: %s", objects, err, rid)
-		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
-	}
-
-	resources := make([]meta.ResourceAttribute, 0)
-	for _, parentResource := range parentResources {
-		layers := parentResource.Layers
-		layers = append(layers, meta.Item{
-			Type:       parentResource.Basic.Type,
-			Action:     parentResource.Basic.Action,
-			Name:       parentResource.Basic.Name,
-			InstanceID: parentResource.Basic.InstanceID,
-		})
-		resource := meta.ResourceAttribute{
-			Basic: meta.Basic{
-				Type:   meta.ModelInstance,
-				Action: meta.Create,
-			},
-			SupplierAccount: parentResource.SupplierAccount,
-			BusinessID:      parentResource.BusinessID,
-			Layers:          layers,
-		}
-		resources = append(resources, resource)
-	}
-
-	return am.batchAuthorize(ctx, header, resources...)
-}
+// func (am *AuthManager) AuthorizeInstanceCreateByObject(ctx context.Context, header http.Header, action meta.Action, objects ...metadata.Object) error {
+// 	rid := util.ExtractRequestIDFromContext(ctx)
+//
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	parentResources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+// 	if err != nil {
+// 		blog.V(5).Infof("AuthorizeInstanceCreateByObject failed, make auth resource from objects failed, objects: %+v, err: %+v, rid: %s", objects, err, rid)
+// 		return fmt.Errorf("make parent auth resource by models failed, err: %+v", err)
+// 	}
+//
+// 	resources := make([]meta.ResourceAttribute, 0)
+// 	for _, parentResource := range parentResources {
+// 		layers := parentResource.Layers
+// 		layers = append(layers, meta.Item{
+// 			Type:       parentResource.Basic.Type,
+// 			Action:     parentResource.Basic.Action,
+// 			Name:       parentResource.Basic.Name,
+// 			InstanceID: parentResource.Basic.InstanceID,
+// 		})
+// 		resource := meta.ResourceAttribute{
+// 			Basic: meta.Basic{
+// 				Type:   meta.ModelInstance,
+// 				Action: meta.Create,
+// 			},
+// 			SupplierAccount: parentResource.SupplierAccount,
+// 			BusinessID:      parentResource.BusinessID,
+// 			Layers:          layers,
+// 		}
+// 		resources = append(resources, resource)
+// 	}
+//
+// 	return am.batchAuthorize(ctx, header, resources...)
+// }

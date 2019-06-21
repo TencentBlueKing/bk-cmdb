@@ -18,11 +18,15 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
     config => {
-        middlewares.forEach(middleware => {
-            if (typeof middleware.request === 'function') {
-                config = middleware.request(config)
-            }
-        })
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.request === 'function') {
+                    config = middleware.request(config)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
         return config
     },
     error => {
@@ -32,11 +36,15 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
     response => {
-        middlewares.forEach(middleware => {
-            if (typeof middleware.response === 'function') {
-                response = middleware.response(response)
-            }
-        })
+        try {
+            middlewares.forEach(middleware => {
+                if (typeof middleware.response === 'function') {
+                    response = middleware.response(response)
+                }
+            })
+        } catch (e) {
+            console.error(e)
+        }
         return response
     },
     error => {
@@ -145,8 +153,14 @@ async function getPromise (method, url, data, userConfig = {}) {
  * @param {reject} promise拒绝函数
  * @return
  */
+
+const PermissionCode = 9900403
 function handleResponse ({ config, response, resolve, reject }) {
     const transformedResponse = response.data
+    if (transformedResponse.bk_error_code === PermissionCode) {
+        popupPermissionModal(transformedResponse.permission)
+        return reject({ message: transformedResponse['bk_error_msg'], code: PermissionCode })
+    }
     if (!transformedResponse.result && config.globalError) {
         reject({ message: transformedResponse['bk_error_msg'] })
     } else {
@@ -161,6 +175,9 @@ function handleResponse ({ config, response, resolve, reject }) {
  * @return Promise.reject
  */
 function handleReject (error, config) {
+    if (error.code && error.code === PermissionCode) {
+        return Promise.reject(error)
+    }
     if (Axios.isCancel(error)) {
         return Promise.reject(error)
     }
@@ -181,6 +198,32 @@ function handleReject (error, config) {
     }
     $error(error.message)
     return Promise.reject(error)
+}
+
+function popupPermissionModal (permission = []) {
+    const data = permission.map(datum => {
+        const scope = [datum.scope_type_name]
+        if (datum.scope_id) {
+            scope.push(datum.scope_name)
+        }
+        return {
+            scope: getPermissionText(datum, 'scope_type_name', 'scope_name'),
+            resource: datum.resources.map(resource => {
+                const resourceInfo = resource.map(info => getPermissionText(info, 'resource_type_name', 'resource_name')).join('\n')
+                return resourceInfo
+            }).join('\n'),
+            action: datum.action_name
+        }
+    })
+    window.permissionModal && window.permissionModal.show(data, true)
+}
+
+function getPermissionText (data, necessaryKey, extraKey, split = '：') {
+    const text = [data[necessaryKey]]
+    if (data[extraKey]) {
+        text.push(data)
+    }
+    return text.join(split)
 }
 
 /**

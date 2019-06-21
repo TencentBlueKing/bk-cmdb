@@ -14,9 +14,12 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
+	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
 	"configcenter/src/auth/parser"
 	"configcenter/src/common"
@@ -224,4 +227,43 @@ func (am *AuthManager) AuthorizeAuditRead(ctx context.Context, header http.Heade
 		BusinessID:      businessID,
 	}
 	return am.authorize(ctx, header, businessID, resource)
+}
+
+func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ActionID = string(authcenter.Get)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+	if businessID > 0 {
+		p.Resources = [][]metadata.Resource{
+			{{
+				ResourceType:     string(authcenter.BizAuditLog),
+				ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizAuditLog],
+			}},
+		}
+		businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+		if err != nil {
+			return nil, err
+		}
+		if len(businesses) != 1 {
+			return nil, errors.New("get business detail failed")
+		}
+		p.ScopeType = authcenter.ScopeTypeIDBiz
+		p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+		p.ScopeID = strconv.FormatInt(businessID, 64)
+		p.ScopeName = businesses[0].BKAppNameField
+	} else {
+		p.ScopeType = authcenter.ScopeTypeIDSystem
+		p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+		p.Resources = [][]metadata.Resource{
+			{{
+				ResourceType:     string(authcenter.SysAuditLog),
+				ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysAuditLog],
+			}},
+		}
+	}
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp, nil
 }
