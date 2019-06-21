@@ -228,7 +228,7 @@
                 try {
                     await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                         params: this.$injectMetadata({
-                            name: this.$route.params.moduleName,
+                            name: this.$parent.module.bk_module_name,
                             bk_module_id: this.$route.params.moduleId,
                             instances: [
                                 {

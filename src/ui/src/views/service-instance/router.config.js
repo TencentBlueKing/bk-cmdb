@@ -9,7 +9,7 @@ export default [{
     })
 }, {
     name: 'cloneServiceInstance',
-    path: '/service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId/moduleName/:moduleName',
+    path: '/service/instance/clone/set/:setId/module/:moduleId/instance/:instanceId/host/:hostId',
     props: true,
     component: () => import('./clone.vue'),
     meta: new Meta({
