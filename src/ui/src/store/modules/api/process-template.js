@@ -24,7 +24,7 @@ const actions = {
      * @return {promises} promises 对象
      */
     createProcessTemplate ({ commit, state, dispatch, rootGetters }, { params, config }) {
-        return $http.post(`createmany/proc/proc_template/for_service_template`, params, config)
+        return $http.post(`createmany/proc/proc_template`, params, config)
     },
     /**
      * 批量查询进程模板

@@ -166,7 +166,7 @@
                 if (this.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.disabledProperties.includes(property.bk_property_id)
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')

@@ -148,7 +148,12 @@
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
                                 name: this.moduleInstance.bk_module_name,
-                                bk_module_id: this.moduleId
+                                bk_module_id: this.moduleId,
+                                instances: serviceInstanceTables.map(table => {
+                                    return {
+                                        bk_host_id: table.id
+                                    }
+                                })
                             })
                         })
                     } else {

@@ -414,6 +414,7 @@
         position: relative;
         color: #63656e;
         padding-top: 10px;
+        height: 100%;
         .no-content {
             position: absolute;
             top: 50%;
@@ -437,7 +438,9 @@
         }
         .info-tab {
             @include space-between;
-            height: 500px;
+            max-height: 500px;
+            min-height: 300px;
+            height: calc(100% - 160px);
             border: 1px solid #c3cdd7;
             .tab-head {
                 height: 100%;
@@ -506,9 +509,9 @@
                 }
             }
             .tab-content {
+                @include scrollbar-y;
                 flex: 1;
                 height: 100%;
-                overflow: hidden;
                 .tab-pane {
                     font-size: 14px;
                     padding: 20px 20px 20px 38px;
@@ -538,7 +541,7 @@
                     }
                     .service-instances {
                         @include scrollbar-y;
-                        max-height: 186px;
+                        max-height: 290px;
                         display: flex;
                         flex-wrap: wrap;
                         .instances-item {
