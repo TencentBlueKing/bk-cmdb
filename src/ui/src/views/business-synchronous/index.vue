@@ -302,7 +302,7 @@
                             property_id: property['bk_property_id'],
                             property_name: property['bk_property_name'],
                             before_value: this.changedData.type === 'added' ? '--' : propertyValue,
-                            show_value: this.changedData.type === 'added' ? propertyValue : this.$t("BusinessSynchronous['该进程已删除']")
+                            show_value: this.changedData.type === 'removed' ? this.$t("BusinessSynchronous['该进程已删除']") : propertyValue
                         }
                     })
             },
@@ -327,10 +327,13 @@
                     const property = this.modelProperties.find(property => property['bk_property_id'] === item['property_id'])
                     if (['enum'].includes(property['bk_property_type'])) {
                         result['before_value'] = property['option'].find(option => option['id'] === item['property_value'])['name']
+                        result['show_value'] = property['option'].find(option => option['id'] === item['template_property_value']['value'])['name']
                     } else if (['bool'].includes(property['bk_property_type'])) {
                         result['before_value'] = item['property_value'] ? '是' : '否'
+                        result['show_value'] = item['template_property_value']['value'] ? '是' : '否'
                     } else {
                         result['before_value'] = item['property_value']
+                        result['show_value'] = item['template_property_value']['value'] ? item['template_property_value']['value'] : '--'
                     }
                     return result
                 })
@@ -411,6 +414,7 @@
         position: relative;
         color: #63656e;
         padding-top: 10px;
+        height: 100%;
         .no-content {
             position: absolute;
             top: 50%;
@@ -434,7 +438,9 @@
         }
         .info-tab {
             @include space-between;
-            height: 500px;
+            max-height: 500px;
+            min-height: 300px;
+            height: calc(100% - 160px);
             border: 1px solid #c3cdd7;
             .tab-head {
                 height: 100%;
@@ -460,7 +466,7 @@
                         @include ellipsis;
                         flex: 1;
                         padding-right: 10px;
-                        font-size: 14px;
+                        font-size: 16px;
                     }
                     .badge {
                         display: inline-block;
@@ -503,9 +509,9 @@
                 }
             }
             .tab-content {
+                @include scrollbar-y;
                 flex: 1;
                 height: 100%;
-                overflow: hidden;
                 .tab-pane {
                     font-size: 14px;
                     padding: 20px 20px 20px 38px;
@@ -514,7 +520,7 @@
                         align-items: center;
                         padding-bottom: 24px;
                         h3 {
-                            font-size: 14px;
+                            font-size: 16px;
                         }
                         span {
                             color: #c4c6cc;
@@ -535,13 +541,13 @@
                     }
                     .service-instances {
                         @include scrollbar-y;
-                        max-height: 186px;
+                        max-height: 290px;
                         display: flex;
                         flex-wrap: wrap;
                         .instances-item {
                             @include space-between;
                             width: 240px;
-                            font-size: 12px;
+                            font-size: 14px;
                             padding: 2px 6px 4px;
                             margin-bottom: 16px;
                             margin-right: 14px;
@@ -551,6 +557,7 @@
                             h6 {
                                 @include ellipsis;
                                 flex: 1;
+                                font-size: 14px;
                                 padding-right: 4px;
                                 font-weight: normal;
                             }

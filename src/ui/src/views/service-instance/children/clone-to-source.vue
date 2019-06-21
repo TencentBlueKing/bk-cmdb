@@ -37,13 +37,16 @@
         </div>
         <cmdb-slider
             :is-show.sync="processForm.show"
-            :title="processForm.title">
+            :title="processForm.title"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content"
+                ref="processForm"
                 :properties="properties"
                 :property-groups="propertyGroups"
                 :object-unique="processForm.type === 'single' ? [] : propertyUnique"
                 :inst="processForm.instance"
-                @on-submit="handleSubmit">
+                @on-submit="handleSubmit"
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -78,11 +81,12 @@
         computed: {
             header () {
                 const display = [
+                    'bk_func_name',
                     'bk_process_name',
+                    'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path',
-                    'user'
+                    'work_path'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -199,12 +203,39 @@
                 }
                 this.processForm.show = false
             },
+            handleCloseProcessForm () {
+                this.processForm.show = false
+                this.processForm.instance = {}
+            },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCloseProcessForm()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCloseProcessForm()
+            },
             async doClone () {
                 try {
-                    await this.$store.dispatch('processInstance/createServiceInstanceProcess', {
+                    await this.$store.dispatch('serviceInstance/createProcServiceInstanceWithRaw', {
                         params: this.$injectMetadata({
-                            service_instance_id: parseInt(this.$route.params.instanceId),
-                            processes: this.getCloneProcessValues()
+                            name: this.$route.params.moduleName,
+                            bk_module_id: this.$route.params.moduleId,
+                            instances: [
+                                {
+                                    bk_host_id: this.$route.params.hostId,
+                                    processes: this.getCloneProcessValues()
+                                }
+                            ]
                         })
                     })
                     this.$router.replace({
