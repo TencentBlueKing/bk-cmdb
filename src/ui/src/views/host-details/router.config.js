@@ -22,7 +22,8 @@ export default [{
         auth: {
             view: null,
             operation: [U_RESOURCE_HOST]
-        }
+        },
+        i18nTitle: 'HostDetails["主机详情"]'
     }
 }, {
     name: BUSINESS_HOST,
@@ -32,6 +33,7 @@ export default [{
         auth: {
             view: null,
             operation: [U_HOST]
-        }
+        },
+        i18nTitle: 'HostDetails["主机详情"]'
     }
 }]

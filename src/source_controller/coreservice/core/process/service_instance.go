@@ -42,22 +42,25 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	// keep metadata clean
 	instance.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 
-	// validate service template id field
-	var serviceTemplate *metadata.ServiceTemplate
-	if instance.ServiceTemplateID != 0 {
-		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
-		if err != nil {
-			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
-			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "service_template_id")
-		}
-		serviceTemplate = st
-	}
-
 	// validate module id field
 	module, err := p.validateModuleID(ctx, instance.ModuleID)
 	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, module id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	if instance.ServiceTemplateID == 0 {
+		instance.ServiceTemplateID = module.ServiceTemplateID
+	}
+	// validate service template id field
+	var serviceTemplate *metadata.ServiceTemplate
+	if instance.ServiceTemplateID > 0 {
+		st, err := p.GetServiceTemplate(ctx, instance.ServiceTemplateID)
+		if err != nil {
+			blog.Errorf("CreateServiceInstance failed, service_template_id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		serviceTemplate = st
 	}
 
 	if module.ServiceTemplateID != instance.ServiceTemplateID {
@@ -66,10 +69,12 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	}
 
 	// validate host id field
-	if err = p.validateHostID(ctx, instance.HostID); err != nil {
+	innerIP, err := p.validateHostID(ctx, instance.HostID)
+	if err != nil {
 		blog.Errorf("CreateServiceInstance failed, host id invalid, code: %d, err: %+v, rid: %s", common.CCErrCommParamsInvalid, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
+	instance.InnerIP = innerIP
 
 	// make sure biz id identical with service template
 	if serviceTemplate != nil {
@@ -83,20 +88,6 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "metadata.label.bk_biz_id")
 		}
 	}
-
-	// generate id field
-	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
-	if nil != err {
-		blog.Errorf("CreateServiceInstance failed, generate id failed, err: %+v, rid: %s", err, ctx.ReqID)
-		return nil, ctx.Error.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
-	}
-	instance.ID = int64(id)
-
-	instance.Creator = ctx.User
-	instance.Modifier = ctx.User
-	instance.CreateTime = time.Now()
-	instance.LastTime = time.Now()
-	instance.SupplierAccount = ctx.SupplierAccount
 
 	// check unique `template_id + module_id + host_id`
 	if instance.ServiceTemplateID != 0 {
@@ -115,10 +106,36 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		}
 	}
 
+	// generate id field
+	id, err := p.dbProxy.NextSequence(ctx, common.BKTableNameProcessTemplate)
+	if nil != err {
+		blog.Errorf("CreateServiceInstance failed, generate id failed, err: %+v, rid: %s", err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
+	}
+	instance.ID = int64(id)
+	instance.Creator = ctx.User
+	instance.Modifier = ctx.User
+	instance.CreateTime = time.Now()
+	instance.LastTime = time.Now()
+	instance.SupplierAccount = ctx.SupplierAccount
+
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Insert(ctx.Context, &instance); nil != err {
 		blog.Errorf("CreateServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instance, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
+
+	// transfer host to target module
+	transferConfig := &metadata.HostsModuleRelation{
+		ApplicationID: bizID,
+		HostID:        []int64{instance.HostID},
+		ModuleID:      []int64{instance.ModuleID},
+		IsIncrement:   true,
+	}
+	if _, err := p.dependence.TransferHostModuleDep(ctx, transferConfig); err != nil {
+		blog.Errorf("CreateServiceInstance failed, transfer host module failed, transfer: %+v, instance: %+v, err: %+v, rid: %s", transferConfig, instance, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrHostTransferModule)
+	}
+
 	return &instance, nil
 }
 
@@ -177,6 +194,18 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.ModuleID != 0 {
 		filter[common.BKModuleIDField] = option.ModuleID
+	}
+
+	if option.ServiceInstanceIDs != nil {
+		filter[common.BKFieldID] = map[string]interface{}{
+			common.BKDBIN: *option.ServiceInstanceIDs,
+		}
+	}
+
+	if option.SearchKey != nil {
+		filter[common.BKHostInnerIPField] = map[string]interface{}{
+			"$regex": fmt.Sprintf(".*%s.*", *option.SearchKey),
+		}
 	}
 
 	var total uint64

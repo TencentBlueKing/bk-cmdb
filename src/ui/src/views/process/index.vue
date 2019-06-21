@@ -168,7 +168,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
             this.showFeatureTips = this.featureTipsParams['process']
             this.reload()
         },

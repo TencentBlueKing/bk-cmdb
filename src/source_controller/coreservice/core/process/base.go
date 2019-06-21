@@ -30,6 +30,7 @@ type processOperation struct {
 // OperationDependence methods definition
 type OperationDependence interface {
 	CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder)
+	TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
 }
 
 // New create a new model manager instance
@@ -88,23 +89,23 @@ func (p *processOperation) validateModuleID(ctx core.ContextParams, moduleID int
 	return module, nil
 }
 
-func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+func (p *processOperation) validateHostID(ctx core.ContextParams, hostID int64) (string, errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if hostID == 0 {
-		return ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		return "", ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
 
 	// check bizID valid
+	host := &struct {
+		InnerIP string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
+	}{}
 	cond := condition.CreateCondition()
 	cond.Field(common.BKHostIDField).Eq(hostID)
-	count, err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(cond.ToMapStr()).Count(ctx.Context)
+	err := p.dbProxy.Table(common.BKTableNameBaseHost).Find(cond.ToMapStr()).One(ctx.Context, host)
 	if nil != err {
 		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	if count < 1 {
-		return ctx.Error.CCErrorf(common.CCErrHostNotFound)
+		return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
-	return nil
+	return host.InnerIP, nil
 }

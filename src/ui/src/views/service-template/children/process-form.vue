@@ -14,8 +14,7 @@
                         :label="group['bk_group_name']"
                         :collapse.sync="groupState[group['bk_group_id']]">
                         <ul class="property-list clearfix">
-                            <li class="property-item"
-                                :style="{ float: property['bk_property_id'] === 'bk_process_name' ? 'right !important' : 'left !important' }"
+                            <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
                                 v-if="checkEditable(property)"
                                 :key="propertyIndex">
@@ -25,12 +24,9 @@
                                         v-if="property['placeholder'] && property['bk_property_id'] === 'bk_start_param_regex'"
                                         v-tooltip="htmlEncode(property['placeholder'])">
                                     </i> -->
-                                    <label class=""
-                                        :class="['cmdb-form-checkbox', 'cmdb-checkbox-small', hasUsed ? 'disabled' : '']"
+                                    <label class="cmdb-form-checkbox cmdb-checkbox-small"
                                         v-if="property['isLocking'] !== undefined">
-                                        <input type="checkbox"
-                                            v-model="values[property['bk_property_id']]['as_default_value']"
-                                            :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']">
+                                        <input type="checkbox" v-model="values[property['bk_property_id']]['as_default_value']">
                                         <span class="cmdb-checkbox-text">{{$t('ProcessManagement["锁定"]')}}</span>
                                     </label>
                                 </div>
@@ -38,7 +34,7 @@
                                     <component class="form-component" v-if="['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])"
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="type === 'update'"
+                                        :disabled="type === 'update' && ['bk_func_name'].includes(property['bk_property_id'])"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -50,7 +46,6 @@
                                     <component class="form-component" v-else
                                         :is="`cmdb-form-${property['bk_property_type']}`"
                                         :class="{ error: errors.has(property['bk_property_id']) }"
-                                        :disabled="hasUsed && values[property['bk_property_id']]['as_default_value']"
                                         :options="property.option || []"
                                         :data-vv-name="property['bk_property_id']"
                                         :data-vv-as="property['bk_property_name']"
@@ -139,13 +134,6 @@
                 const properties = this.$groupedProperties.map(properties => {
                     const filterProperties = properties.filter(property => !['singleasst', 'multiasst', 'foreignkey'].includes(property['bk_property_type']))
                     filterProperties.map(property => {
-                        if (property['bk_property_id'] === 'bk_process_name') {
-                            property['isrequired'] = true
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程别名']")
-                        }
-                        if (property['bk_property_id'] === 'bk_func_name') {
-                            property['bk_property_name'] = this.$t("ProcessManagement['进程名称']")
-                        }
                         if (!['bk_func_name', 'bk_process_name'].includes(property['bk_property_id'])) {
                             property.isLocking = false
                         }
@@ -298,17 +286,17 @@
             handleSave () {
                 this.$validator.validateAll().then(result => {
                     if (!this.hasChange()) {
-                        this.handleCancel()
+                        this.$emit('on-cancel')
                         return
                     }
                     if (result && this.isCreatedService) {
                         if (this.type === 'create' && !this.hasProcessName(this.values)) {
                             this.values['sign_id'] = new Date().getTime()
                             this.addLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else if (this.type === 'update') {
                             this.updateLocalProcessTemplate(this.values)
-                            this.handleCancel()
+                            this.$emit('on-cancel')
                         } else {
                             this.$bkMessage({
                                 message: this.$t("ServiceManagement['进程名称已存在']"),
@@ -330,7 +318,21 @@
                 })
             },
             handleCancel () {
-                this.$emit('on-cancel')
+                if (this.hasChange()) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.$emit('on-cancel')
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                } else {
+                    this.$emit('on-cancel')
+                }
             }
         }
     }
@@ -345,7 +347,7 @@
         margin: 10px 20px 0;
     }
     .form-groups{
-        padding-left: 20px;
+        padding: 0 20px;
     }
     .property-group{
         padding: 20px 0 10px 0;
@@ -365,8 +367,13 @@
         .property-item{
             width: 50%;
             margin: 12px 0 0;
-            padding: 0 54px 0 0;
             font-size: 12px;
+            &:nth-child(odd) {
+                padding-right: 30px;
+            }
+            &:nth-child(even) {
+                padding-left: 30px;
+            }
             .property-name{
                 display: block;
                 margin: 6px 0 9px;
@@ -378,7 +385,7 @@
                 position: relative;
                 display: inline-block;
                 max-width: calc(100% - 20px);
-                padding: 0 10px 0 0;
+                padding: 0 14px 0 0;
                 vertical-align: middle;
                 font-size: 14px;
                 @include ellipsis;
@@ -411,15 +418,8 @@
                 float: right;
                 line-height: 16px;
                 cursor: pointer;
-                &.disabled .cmdb-checkbox-text {
-                    cursor: not-allowed;
-                }
                 .cmdb-checkbox-text {
                     font-size: 12px;
-                }
-                input[type=checkbox][disabled] {
-                    background-color: #f1f1f1;
-                    cursor: not-allowed;
                 }
             }
         }

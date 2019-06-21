@@ -14,7 +14,8 @@
             :header="header"
             :list="processFlattenList"
             :empty-height="58"
-            :sortable="false">
+            :sortable="false"
+            :reference-document-height="false">
             <template slot="data-empty">
                 <button class="add-process-button text-primary" @click="handleAddProcess">
                     <i class="bk-icon icon-plus"></i>
@@ -22,9 +23,9 @@
                 </button>
             </template>
             <template slot="__operation__" slot-scope="{ rowIndex }">
-                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('BusinessTopology["编辑"]')}}</a>
+                <a href="javascript:void(0)" class="text-primary" @click="handleEditProcess(rowIndex)">{{$t('Common["编辑"]')}}</a>
                 <a href="javascript:void(0)" class="text-primary" v-if="!sourceProcesses.length"
-                    @click="handleDeleteProcess(rowIndex)">{{$t('BusinessTopology["删除"]')}}
+                    @click="handleDeleteProcess(rowIndex)">{{$t('Common["删除"]')}}
                 </a>
             </template>
         </cmdb-table>
@@ -36,15 +37,17 @@
         </div>
         <cmdb-slider
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
-            :is-show.sync="processForm.show">
+            :is-show.sync="processForm.show"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content"
+                ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
                 :properties="processProperties"
                 :property-groups="processPropertyGroups"
                 :uneditable-properties="immutableProperties"
                 @on-submit="handleSaveProcess"
-                @on-cancel="handleCancelCreateProcess">
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -83,25 +86,27 @@
         data () {
             return {
                 localExpanded: this.expanded,
-                processList: this.sourceProcesses,
+                processList: this.$tools.clone(this.sourceProcesses),
                 processProperties: [],
                 processPropertyGroups: [],
                 processForm: {
                     show: false,
                     type: 'create',
                     rowIndex: null,
-                    instance: {}
+                    instance: {},
+                    unwatch: null
                 }
             }
         },
         computed: {
             header () {
                 const display = [
+                    'bk_func_name',
                     'bk_process_name',
+                    'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path',
-                    'user'
+                    'work_path'
                 ]
                 const header = []
                 display.map(id => {
@@ -124,7 +129,7 @@
             },
             immutableProperties () {
                 const properties = []
-                if (this.processForm.rowIndex !== null) {
+                if (this.processForm.rowIndex !== null && this.templates.length) {
                     const template = this.templates[this.processForm.rowIndex]
                     Object.keys(template.property).forEach(key => {
                         if (template.property[key].as_default_value) {
@@ -179,8 +184,19 @@
                 this.processForm.instance = {}
                 this.processForm.type = 'create'
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             handleSaveProcess (values) {
+                this.processForm.unwatch && this.processForm.unwatch()
                 if (this.processForm.type === 'create') {
                     this.processList.push(values)
                 } else {
@@ -191,6 +207,23 @@
             handleCancelCreateProcess () {
                 this.processForm.show = false
                 this.processForm.rowIndex = null
+            },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCancelCreateProcess()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCancelCreateProcess()
             },
             handleEditProcess (rowIndex) {
                 this.processForm.instance = this.processList[rowIndex]

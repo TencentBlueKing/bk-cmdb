@@ -168,11 +168,12 @@
             },
             setHeader () {
                 const display = [
+                    'bk_func_name',
                     'bk_process_name',
+                    'bk_start_param_regex',
                     'bind_ip',
                     'port',
-                    'work_path',
-                    'user'
+                    'work_path'
                 ]
                 const header = display.map(id => {
                     const property = this.properties.find(property => property.bk_property_id === id) || {}
@@ -217,13 +218,17 @@
                         hostId: this.instance.bk_host_id,
                         setId: this.module.bk_set_id,
                         moduleId: this.module.bk_module_id
+                    },
+                    query: {
+                        from: this.$route.fullPath,
+                        title: this.instance.name
                     }
                 })
             },
             handleDeleteInstance () {
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$tc('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
+                    content: this.$t('BusinessTopology["即将删除实例"]', { name: this.instance.name }),
                     confirmFn: async () => {
                         try {
                             await this.$store.dispatch('serviceInstance/deleteServiceInstance', {
@@ -246,6 +251,9 @@
                     name: 'operationalTemplate',
                     params: {
                         templateId: this.instance.service_template_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             }
@@ -259,7 +267,7 @@
     }
     .table-title {
         height: 40px;
-        padding: 0 16px;
+        padding: 0 11px;
         line-height: 40px;
         border-radius: 2px 2px 0 0;
         background-color: #DCDEE5;

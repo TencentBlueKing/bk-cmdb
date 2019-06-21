@@ -195,7 +195,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["主机"]'))
             try {
                 this.$store.dispatch('userCustom/setRencentlyData', { id: 'resource' })
                 this.setQueryParams()
@@ -273,6 +272,9 @@
                     name: 'history',
                     params: {
                         objId: 'host'
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },

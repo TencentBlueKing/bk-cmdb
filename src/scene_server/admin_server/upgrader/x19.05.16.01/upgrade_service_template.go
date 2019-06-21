@@ -248,8 +248,8 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 	var True = true
 	template := metadata.ProcessProperty{}
-	if inst.ProcNum > 0 {
-		template.ProcNum.Value = &inst.ProcNum
+	if inst.ProcNum != nil && *inst.ProcNum > 0 {
+		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
 	}
 	if inst.StopCmd != "" {
@@ -276,8 +276,8 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.BindIP.Value = inst.BindIP
 		template.BindIP.AsDefaultValue = &True
 	}
-	if inst.Priority > 0 {
-		template.Priority.Value = &inst.Priority
+	if inst.Priority != nil && *inst.Priority > 0 {
+		template.Priority.Value = inst.Priority
 		template.Priority.AsDefaultValue = &True
 	}
 	if inst.ReloadCmd != "" {
@@ -300,8 +300,8 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.AutoStart.Value = &inst.AutoStart
 		template.AutoStart.AsDefaultValue = &True
 	}
-	if inst.AutoTimeGap > 0 {
-		template.AutoTimeGapSeconds.Value = &inst.AutoTimeGap
+	if inst.AutoTimeGap != nil && *inst.AutoTimeGap > 0 {
+		template.AutoTimeGapSeconds.Value = inst.AutoTimeGap
 		template.AutoTimeGapSeconds.AsDefaultValue = &True
 	}
 	if inst.StartCmd != "" {
@@ -316,8 +316,8 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.User.Value = &inst.User
 		template.User.AsDefaultValue = &True
 	}
-	if inst.TimeoutSeconds > 0 {
-		template.TimeoutSeconds.Value = &inst.TimeoutSeconds
+	if inst.TimeoutSeconds != nil && *inst.TimeoutSeconds > 0 {
+		template.TimeoutSeconds.Value = inst.TimeoutSeconds
 		template.TimeoutSeconds.AsDefaultValue = &True
 	}
 	if inst.Protocol != "" {
