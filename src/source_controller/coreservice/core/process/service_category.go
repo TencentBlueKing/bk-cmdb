@@ -161,7 +161,8 @@ func (p *processOperation) UpdateServiceCategory(ctx core.ContextParams, categor
 func (p *processOperation) ListServiceCategories(ctx core.ContextParams, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder) {
 	filter := metadata.NewPublicOrBizConditionByBizID(bizID)
 	categories := make([]metadata.ServiceCategory, 0)
-	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).All(ctx.Context, &categories); nil != err {
+	sort := "name"
+	if err := p.dbProxy.Table(common.BKTableNameServiceCategory).Find(filter).Sort(sort).All(ctx.Context, &categories); nil != err {
 		blog.Errorf("ListServiceCategories failed, mongodb failed, filter: %+v, category: %+v, table: %s, err: %+v, rid: %s", common.BKTableNameServiceCategory, filter, categories, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -245,13 +246,26 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 	// category that referenced by service template shouldn't be removed
 	usageFilter := map[string]int64{common.BKServiceCategoryIDField: category.ID}
 	usageCount, e := p.dbProxy.Table(common.BKTableNameServiceTemplate).Find(usageFilter).Count(ctx.Context)
-	if nil != err {
+	if e != nil {
 		blog.Errorf("DeleteServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, usageFilter, e, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 	if usageCount > 0 {
-		blog.Errorf("DeleteServiceCategory failed, forbidden delete category be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
-		err := ctx.Error.CCError(common.CCErrCommRemoveRecordHasChildrenForbidden)
+		blog.Errorf("DeleteServiceCategory failed, forbidden delete category be referenced by service template, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
+		return err
+	}
+
+	// category that referenced by service template shouldn't be removed
+	usageFilter = map[string]int64{common.BKServiceCategoryIDField: category.ID}
+	usageCount, e = p.dbProxy.Table(common.BKTableNameBaseModule).Find(usageFilter).Count(ctx.Context)
+	if e != nil {
+		blog.Errorf("DeleteServiceCategory failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceTemplate, usageFilter, e, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
+	}
+	if usageCount > 0 {
+		blog.Errorf("DeleteServiceCategory failed, forbidden delete category be referenced by module, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
+		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
 		return err
 	}
 

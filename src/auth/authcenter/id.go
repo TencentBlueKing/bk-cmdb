@@ -73,6 +73,8 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return auditLogResourceID(resourceType, attribute)
 	case meta.SystemBase:
 		return make([]RscTypeAndID, 0), nil
+	case meta.Plat:
+		return platID(resourceType, attribute)
 	default:
 		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
@@ -337,6 +339,16 @@ func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.Reso
 
 func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	instanceID := attribute.InstanceIDEx
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   instanceID,
+		},
+	}, nil
+}
+
+func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	instanceID := fmt.Sprintf("plat:%d", attribute.InstanceID)
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,

@@ -410,3 +410,10 @@ type BusinessDefaultSetModuleInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     BusinessDefaultSetModuleInfo `json:"data"`
 }
+
+type RemoveTemplateBoundOnModuleResult struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		ServiceTemplateID int64 `json:"service_template_id" bson:"service_template_id" field:"service_template_id"`
+	} `json:"data"`
+}

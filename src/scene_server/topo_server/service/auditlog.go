@@ -13,7 +13,7 @@
 package service
 
 import (
-	"context"
+	"configcenter/src/auth"
 	"fmt"
 
 	"configcenter/src/auth/meta"
@@ -75,7 +75,11 @@ func (s *Service) AuditQuery(params types.ContextParams, pathParams, queryParams
 	if s.AuthManager.RegisterAuditCategoryEnabled == false {
 		if err := s.AuthManager.AuthorizeAuditRead(params.Context, params.Header, businessID); err != nil {
 			blog.Errorf("AuditQuery failed, authorize failed, AuthorizeAuditRead failed, err: %+v", err)
-			return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
+			resp, err := s.AuthManager.GenAuthorizeAuditReadNoPermissionsResponse(params.Context, params.Header, businessID)
+			if err != nil {
+				return nil, fmt.Errorf("try authorize failed, err: %v", err)
+			}
+			return resp, auth.NoAuthorizeError
 		}
 	} else {
 		authCondition, hasAuthorization, err := s.AuthManager.MakeAuthorizedAuditListCondition(params.Context, params.Header, businessID)
@@ -165,20 +169,40 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 	action := meta.Find
 	switch objectID {
 	case common.BKInnerObjIDHost:
-		err = s.AuthManager.AuthorizeByHostsIDs(context.Background(), params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByHostsIDs(params.Context, params.Header, action, instanceID)
 	case common.BKInnerObjIDProc:
-		err = s.AuthManager.AuthorizeByProcessID(context.Background(), params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByProcessID(params.Context, params.Header, action, instanceID)
+		if err != nil && err == auth.NoAuthorizeError {
+			resp, err := s.AuthManager.GenProcessNoPermissionResp(params.Context, params.Header, businessID)
+			if err != nil {
+				return nil, params.Err.Errorf(common.CCErrTopoGetAppFaild, bizID)
+			}
+			return resp, auth.NoAuthorizeError
+		}
 	case common.BKInnerObjIDModule:
-		err = s.AuthManager.AuthorizeByModuleID(context.Background(), params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByModuleID(params.Context, params.Header, action, instanceID)
+		if err != nil && err == auth.NoAuthorizeError {
+			return s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError
+		}
 	case common.BKInnerObjIDSet:
-		err = s.AuthManager.AuthorizeBySetID(context.Background(), params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeBySetID(params.Context, params.Header, action, instanceID)
+		if err != nil && err == auth.NoAuthorizeError {
+			return s.AuthManager.GenModuleSetNoPermissionResp(), auth.NoAuthorizeError
+		}
 	case common.BKInnerObjIDApp:
-		err = s.AuthManager.AuthorizeByBusinessID(context.Background(), params.Header, action, instanceID)
+		err = s.AuthManager.AuthorizeByBusinessID(params.Context, params.Header, action, instanceID)
+		if err != nil && err == auth.NoAuthorizeError {
+			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, businessID)
+			if err != nil {
+				return nil, params.Err.Errorf(common.CCErrTopoGetAppFaild, bizID)
+			}
+			return resp, auth.NoAuthorizeError
+		}
 	default:
-		err = s.AuthManager.AuthorizeByInstanceID(context.Background(), params.Header, action, objectID, instanceID)
+		err = s.AuthManager.AuthorizeByInstanceID(params.Context, params.Header, action, objectID, instanceID)
 	}
 	if err != nil {
-		blog.Error("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
+		blog.Errorf("InstanceAuditQuery failed, query instance audit log failed, authorization on instance of model %s failed, err: %+v", objectID, err)
 		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 

@@ -67,6 +67,11 @@ input::-webkit-input-placeholder {
     font-size: 12px;
 }
 
+.inline-block-middle {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 div.cmdb-form-item {
     position: relative;
     display: inline-block;
@@ -532,3 +537,11 @@ button.bk-button.bk-danger {
 }
 
 /* table -------end------- */
+
+
+.v-cursor {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 12px 16px;
+    background-image: url("../images/lock.svg");
+}

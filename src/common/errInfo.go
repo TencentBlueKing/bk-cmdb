@@ -23,6 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 
@@ -524,6 +525,9 @@ const (
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
 	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
 	CCErrProcModuleNotBindWithTemplate                    = 1108037
+	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
+	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
+	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -673,6 +677,8 @@ const (
 	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
 	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
+	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
+	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

@@ -6,10 +6,10 @@
             @on-refresh="handleRefresh">
         </cmdb-hosts-filter>
         <cmdb-hosts-table class="hosts-main" ref="hostsTable"
-            delete-disabled
-            :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-            :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
-            :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
+            delete-auth=""
+            :edit-auth="OPERATION.U_HOST"
+            :save-auth="OPERATION.U_HOST"
+            :transfer-resource-auth="OPERATION.HOST_TO_RESOURCE"
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties">
         </cmdb-hosts-table>

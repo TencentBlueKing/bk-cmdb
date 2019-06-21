@@ -265,6 +265,7 @@ const (
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
+	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts//host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -370,12 +371,13 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// move resource pool hosts to a business idle module operation.
+	// authcenter: system->host/resource_pool->edit
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -435,6 +437,19 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveResPoolHostToBizIdleModule,
 				},
 			},
 		}
