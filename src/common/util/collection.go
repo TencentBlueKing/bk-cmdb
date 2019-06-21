@@ -71,3 +71,18 @@ func CalSliceInt64Diff(oldslice, newslice []int64) (subs, inter, plugs []int64) 
 	}
 	return
 }
+
+func SliceInt64Equal(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	if a != nil && b != nil {
+		for index := range a {
+			if a[index] != b[index] {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
