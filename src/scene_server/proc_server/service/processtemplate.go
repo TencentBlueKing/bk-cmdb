@@ -96,10 +96,9 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	template := metadata.ProcessTemplate{
-		ID:                input.ProcessTemplateID,
-		Metadata:          input.Metadata,
-		ServiceTemplateID: input.ServiceTemplateID,
-		Property:          input.ProcessProperty,
+		ID:       input.ProcessTemplateID,
+		Metadata: input.Metadata,
+		Property: input.ProcessProperty,
 	}
 	tmp, err := ps.CoreAPI.CoreService().Process().UpdateProcessTemplate(ctx.Kit.Ctx, ctx.Kit.Header, input.ProcessTemplateID, &template)
 	if err != nil {

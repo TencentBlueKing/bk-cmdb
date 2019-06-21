@@ -13,14 +13,13 @@
 package process
 
 import (
-	"strconv"
-	"strings"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"strconv"
+	"strings"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -189,8 +188,9 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 		}
 	}
 	if len(templateProcessIDs) > 0 {
-		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, strings.Join(templateProcessIDs, ","))
+		invalidProcesses := strings.Join(templateProcessIDs, ",")
+		blog.Errorf("DeleteProcessInstanceRelation failed, some process:%s initialized by template, rid: %s", invalidProcesses, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, invalidProcesses)
 	}
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {
