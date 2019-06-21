@@ -160,7 +160,6 @@
                 if (this.type === 'create') {
                     return !property['bk_isapi']
                 }
-                console.log(property.bk_property_id, property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id))
                 return property.editable && !property['bk_isapi'] && !this.uneditableProperties.includes(property.bk_property_id)
             },
             checkDisabled (property) {
