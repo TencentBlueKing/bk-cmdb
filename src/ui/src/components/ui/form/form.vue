@@ -11,7 +11,6 @@
                         <ul class="property-list clearfix">
                             <li class="property-item fl"
                                 v-for="(property, propertyIndex) in groupedProperties[groupIndex]"
-                                v-if="checkEditable(property)"
                                 :key="propertyIndex">
                                 <div class="property-name">
                                     <span class="property-name-text" :class="{ required: property['isrequired'] }">{{property['bk_property_name']}}</span>
@@ -157,7 +156,7 @@
                 if (this.type === 'create') {
                     return false
                 }
-                return !property.editable || property.isreadonly
+                return !property.editable || property.isreadonly || this.uneditableProperties.includes(property.bk_property_id)
             },
             htmlEncode (placeholder) {
                 let temp = document.createElement('div')

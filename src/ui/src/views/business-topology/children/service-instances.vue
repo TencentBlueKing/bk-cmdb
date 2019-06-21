@@ -285,7 +285,7 @@
                     const uneditableProperties = []
                     Object.keys(template).forEach(propertyId => {
                         const value = template[propertyId]
-                        if (value.as_default_value && value.value) {
+                        if (value.as_default_value) {
                             uneditableProperties.push(propertyId)
                         }
                     })
