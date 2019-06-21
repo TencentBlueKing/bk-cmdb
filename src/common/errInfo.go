@@ -677,6 +677,7 @@ const (
 	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
 	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
+	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

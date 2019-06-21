@@ -151,10 +151,12 @@ func (ps *ProcServer) ListProcessTemplate(ctx *rest.Contexts) {
 	}
 
 	option := &metadata.ListProcessTemplatesOption{
-		BusinessID:         bizID,
-		ProcessTemplateIDs: &input.ProcessTemplatesIDs,
-		ServiceTemplateID:  input.ServiceTemplateID,
-		Page:               input.Page,
+		BusinessID:        bizID,
+		ServiceTemplateID: input.ServiceTemplateID,
+		Page:              input.Page,
+	}
+	if input.ProcessTemplatesIDs != nil {
+		option.ProcessTemplateIDs = input.ProcessTemplatesIDs
 	}
 	tmp, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
