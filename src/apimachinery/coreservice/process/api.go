@@ -696,3 +696,25 @@ func (p *process) GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.He
 
 	return ret.Data, nil
 }
+
+func (p *process) RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder) {
+	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
+	subPath := fmt.Sprintf("/delete/process/module_bound_template/%d", moduleID)
+
+	err := p.client.Delete().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		blog.Errorf("GetBusinessDefaultSetModuleInfo failed, http request failed, err: %+v", err)
+		return nil, errors.CCHttpError
+	}
+	if ret.Result == false || ret.Code != 0 {
+		return nil, errors.NewCCError(ret.Code, ret.ErrMsg)
+	}
+
+	return nil, nil
+}
