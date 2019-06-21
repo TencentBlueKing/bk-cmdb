@@ -37,9 +37,8 @@ type CreateProcessTemplateBatchInput struct {
 }
 
 type DeleteProcessTemplateBatchInput struct {
-	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"service_template_id"`
-	ProcessTemplates  []int64  `json:"process_templates"`
+	Metadata         Metadata `json:"metadata"`
+	ProcessTemplates []int64  `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -182,7 +181,7 @@ type ProcessInstanceDetail struct {
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
+	ProcessTemplatesIDs *[]int64 `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
 	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
@@ -211,7 +210,6 @@ type RemoveTemplateBindingOnModuleOption struct {
 type UpdateProcessTemplateInput struct {
 	Metadata          Metadata         `json:"metadata"`
 	ProcessTemplateID int64            `json:"process_template_id"`
-	ServiceTemplateID int64            `json:"service_template_id"`
 	ProcessProperty   *ProcessProperty `json:"process_property"`
 }
 
