@@ -138,7 +138,7 @@ var expectBizResourceType = []ResourceType{
 		},
 	},
 	{
-		ResourceTypeID:       BizTopo,
+		ResourceTypeID:       BizTopology,
 		ResourceTypeName:     "拓扑",
 		ParentResourceTypeID: "",
 		Share:                true,

@@ -233,7 +233,7 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB
-	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ScopeID = strconv.FormatInt(businessID, 10)
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
 	if businessID > 0 {
@@ -252,7 +252,7 @@ func (am *AuthManager) GenAuthorizeAuditReadNoPermissionsResponse(ctx context.Co
 		}
 		p.ScopeType = authcenter.ScopeTypeIDBiz
 		p.ScopeTypeName = authcenter.ScopeTypeIDBizName
-		p.ScopeID = strconv.FormatInt(businessID, 64)
+		p.ScopeID = strconv.FormatInt(businessID, 10)
 		p.ScopeName = businesses[0].BKAppNameField
 	} else {
 		p.ScopeType = authcenter.ScopeTypeIDSystem

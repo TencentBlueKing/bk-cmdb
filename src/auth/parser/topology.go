@@ -849,7 +849,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstanceTopology,
+					Type:       meta.MainlineInstanceTopology,
 					Action:     meta.Find,
 					InstanceID: bizID,
 				},
