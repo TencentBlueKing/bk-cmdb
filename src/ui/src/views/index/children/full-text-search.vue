@@ -95,7 +95,6 @@
         },
         data () {
             return {
-                alwaysShow: false,
                 toggleTips: null,
                 scrollTop: null,
                 currentClassify: -1,
