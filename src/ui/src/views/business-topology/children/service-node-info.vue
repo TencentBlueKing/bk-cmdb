@@ -183,7 +183,7 @@
                 }]
             },
             updateCategoryProperty (state) {
-                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__')
+                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__') || {}
                 Object.assign(serviceCategoryProperty, state)
             },
             async getPropertyGroups () {
