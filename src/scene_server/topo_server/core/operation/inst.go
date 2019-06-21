@@ -251,10 +251,15 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	item := c.instFactory.CreateInst(params, obj)
 	item.SetValues(data)
 
-	//	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-	//		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", item.ToMapStr(), err.Error())
-	//		return nil, err
-	//	}
+	iData := item.ToMapStr()
+	if obj.Object().ObjectID == "plat" {
+		iData["bk_supplier_account"] = params.SupplierAccount
+	}
+
+	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
+		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
+		return nil, err
+	}
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
