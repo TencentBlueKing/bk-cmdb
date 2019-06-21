@@ -72,7 +72,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["主机查询"]'))
             try {
                 // eslint-disable-next-line
                 const res = await Promise.all([

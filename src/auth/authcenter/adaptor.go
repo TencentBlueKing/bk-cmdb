@@ -151,16 +151,16 @@ const (
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
-	BizHostInstance    ResourceTypeID = "bizHostInstance"
-	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopo            ResourceTypeID = "bizTopo"
-	BizModelGroup      ResourceTypeID = "bizModelGroup"
-	BizModel           ResourceTypeID = "bizModel"
-	BizInstance        ResourceTypeID = "bizInstance"
-	BizAuditLog        ResourceTypeID = "bizAuditLog"
-    BizProcessServiceTemplate ResourceTypeID = "bizProcessServiceTemplate"
+	BizCustomQuery            ResourceTypeID = "bizCustomQuery"
+	BizHostInstance           ResourceTypeID = "bizHostInstance"
+	BizModelGroup             ResourceTypeID = "bizModelGroup"
+	BizModel                  ResourceTypeID = "bizModel"
+	BizInstance               ResourceTypeID = "bizInstance"
+	BizAuditLog               ResourceTypeID = "bizAuditLog"
+	BizProcessServiceTemplate ResourceTypeID = "bizProcessServiceTemplate"
 	BizProcessServiceCategory ResourceTypeID = "bizProcessServiceCategory"
+	BizTopo                   ResourceTypeID = "bizTopo"
+	BizProcessInstance        ResourceTypeID = "bizProcessInstance"
 )
 
 const (

@@ -60,9 +60,9 @@
 
 <style lang="scss" scoped>
     .dot-menu {
-        width: 15px;
-        height: 15px;
-        line-height: 15px;
+        width: 25px;
+        height: 20px;
+        line-height: 20px;
         text-align: center;
         font-size: 0;
         @include inlineBlock;

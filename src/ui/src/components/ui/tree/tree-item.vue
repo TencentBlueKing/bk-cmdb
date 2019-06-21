@@ -139,10 +139,10 @@
             background-color: #e1ecff;
             .node-icon {
                 color: #fff;
-                background-color: #498fe0;
+                background-color: #3A84FF;
             }
             .node-content {
-                color: #498fe0;
+                color: #3A84FF;
             }
         }
         &.is-leaf {

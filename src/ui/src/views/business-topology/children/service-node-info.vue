@@ -28,7 +28,8 @@
                 </bk-button>
             </span>
         </cmdb-details>
-        <cmdb-form class="topology-details" v-else-if="type === 'update'"
+        <cmdb-form class="topology-form" v-else-if="type === 'update'"
+            ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
             :inst="instance"
@@ -38,6 +39,17 @@
             <template slot="extra-options">
                 <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
                 </bk-button>
+            </template>
+            <template slot="__service_category__" v-if="!withTemplate">
+                <cmdb-selector class="category-selector fl"
+                    :list="firstCategories"
+                    v-model="first">
+                </cmdb-selector>
+                <cmdb-selector class="category-selector fl"
+                    :list="secondCategories"
+                    v-model="second"
+                    @on-selected="handleChangeCategory">
+                </cmdb-selector>
             </template>
         </cmdb-form>
     </div>
@@ -50,7 +62,9 @@
                 type: 'details',
                 properties: [],
                 propertyGroups: [],
-                instance: {}
+                instance: {},
+                first: '',
+                second: ''
             }
         },
         computed: {
@@ -66,6 +80,13 @@
             categoryMap () {
                 return this.$store.state.businessTopology.categoryMap
             },
+            firstCategories () {
+                return this.categoryMap[this.business] || []
+            },
+            secondCategories () {
+                const firstCategory = this.firstCategories.find(category => category.id === this.first) || {}
+                return firstCategory.secondCategory || []
+            },
             selectedNode () {
                 return this.$store.state.businessTopology.selectedNode
             },
@@ -76,7 +97,7 @@
                 return null
             },
             withTemplate () {
-                return this.instance.service_template_id && this.instance.service_template_id !== 2
+                return !!this.instance.service_template_id
             },
             flattenedInstance () {
                 return this.$tools.flattenItem(this.properties, this.instance)
@@ -146,13 +167,21 @@
                     bk_property_id: '__template_name__',
                     bk_property_name: this.$t('BusinessTopology["模板名称"]'),
                     bk_property_group: group.bk_group_id,
-                    bk_property_index: 1
+                    bk_property_index: 1,
+                    bk_isapi: false,
+                    editable: false
                 }, {
                     bk_property_id: '__service_category__',
                     bk_property_name: this.$t('BusinessTopology["服务分类"]'),
                     bk_property_group: group.bk_group_id,
-                    bk_property_index: 2
+                    bk_property_index: 2,
+                    bk_isapi: false,
+                    editable: false
                 }]
+            },
+            updateCategoryProperty (state) {
+                const serviceCategoryProperty = this.properties.find(property => property.bk_property_id === '__service_category__')
+                Object.assign(serviceCategoryProperty, state)
             },
             async getPropertyGroups () {
                 let groups = []
@@ -261,7 +290,7 @@
             },
             async getServiceInfo (instance) {
                 const serviceInfo = {}
-                if (instance.service_template_id !== 2) {
+                if (instance.service_template_id) {
                     serviceInfo.__template_name__ = instance.bk_module_name
                 }
                 const categories = await this.getServiceCategories()
@@ -324,7 +353,23 @@
                 return data.info[0]
             },
             handleEdit () {
+                if (this.modelId === 'module') {
+                    if (!this.withTemplate) {
+                        const second = this.instance.service_category_id
+                        const firstCategory = this.firstCategories.find(({ secondCategory }) => {
+                            return secondCategory.some(category => category.id === second)
+                        })
+                        this.first = firstCategory.id
+                        this.second = second
+                    }
+                    this.updateCategoryProperty({
+                        editable: !this.withTemplate
+                    })
+                }
                 this.type = 'update'
+            },
+            handleChangeCategory (id, category) {
+                this.$set(this.$refs.form.values, 'service_category_id', id)
             },
             async handleSubmit (value) {
                 const promiseMap = {
@@ -356,6 +401,8 @@
                 })
             },
             updateModuleInstance (value) {
+                delete value.__template_name__
+                delete value.__service_category__
                 return this.$store.dispatch('objectModule/updateModule', {
                     bizId: this.business,
                     setId: this.selectedNode.parent.data.bk_inst_id,
@@ -367,6 +414,9 @@
                     config: {
                         requestId: 'updateNodeInstance'
                     }
+                }).then(async () => {
+                    const serviceInfo = await this.getServiceInfo({ service_category_id: value.service_category_id })
+                    Object.assign(this.instance, serviceInfo)
                 })
             },
             updateCustomInstance (value) {
@@ -398,7 +448,9 @@
                             const tree = this.selectedNode.tree
                             const parentId = this.selectedNode.parent.id
                             const nodeId = this.selectedNode.id
-                            tree.setSelected(parentId, true, true)
+                            tree.setSelected(parentId, {
+                                emitEvent: true
+                            })
                             tree.removeNode(nodeId)
                             this.$success(this.$t('Common[\'删除成功\']'))
                         } catch (e) {
@@ -437,9 +489,14 @@
                 })
             },
             handleRemoveTemplate () {
+                const content = this.$createElement('div', {
+                    domProps: {
+                        innerHTML: this.$t('BusinessTopology["解除模板影响"]')
+                    }
+                })
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认解除模板"]'),
-                    content: this.$t('BusinessTopology["解除模板影响"]'),
+                    content: content,
                     confirmFn: async () => {
                         await this.$store.dispatch('serviceInstance/removeServiceTemplate', {
                             config: {
@@ -467,9 +524,17 @@
     .unbind-button {
         height: 26px;
         padding: 0 4px;
-        margin: -5px 0 0 6px;
+        margin: 0 0 0 6px;
         line-height: 24px;
         font-size: 12px;
         color: #63656E;
+    }
+    .topology-form {
+        .category-selector {
+            width: calc(50% - 5px);
+            & + .category-selector {
+                margin-left: 10px;
+            }
+        }
     }
 </style>

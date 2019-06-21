@@ -1,15 +1,16 @@
 <template>
     <div class="layout" v-bkloading="{ isLoading: $loading('getModuleServiceInstances') }">
-        <template v-if="instances.length">
+        <template v-if="instances.length || inSearch">
             <div class="options">
+                <cmdb-form-bool class="options-checkall"
+                    :size="16"
+                    :checked="isCheckAll"
+                    :title="$t('Common[\'全选本页\']')"
+                    @change="handleCheckALL">
+                </cmdb-form-bool>
                 <bk-button class="options-button" type="primary"
                     @click="handleCreateServiceInstance">
                     {{$t('BusinessTopology["添加服务实例"]')}}
-                </bk-button>
-                <bk-button class="options-button" type="default"
-                    v-if="withTemplate"
-                    @click="handleSyncTemplate">
-                    {{$t('BusinessTopology["同步模板"]')}}
                 </bk-button>
                 <bk-dropdown-menu trigger="click">
                     <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
@@ -25,20 +26,23 @@
                         </li>
                     </ul>
                 </bk-dropdown-menu>
-                <cmdb-form-bool class="options-checkbox"
-                    :size="16"
-                    @change="handleCheckALL">
-                    <span class="checkbox-label">{{$t('Common["全选本页"]')}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-bool class="options-checkbox"
-                    :size="16"
-                    @change="handleExpandAll">
-                    <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
-                </cmdb-form-bool>
-                <cmdb-form-singlechar class="options-search fr"
-                    :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
-                    v-model="filter">
-                </cmdb-form-singlechar>
+                <div class="options-right fr">
+                    <cmdb-form-bool class="options-checkbox"
+                        :size="16"
+                        :checked="isExpandAll"
+                        @change="handleExpandAll">
+                        <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
+                    </cmdb-form-bool>
+                    <cmdb-form-singlechar class="options-search"
+                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
+                        v-model="filter">
+                        <i class="bk-icon icon-close"
+                            v-show="filter.length"
+                            @click="handleClearFilter">
+                        </i>
+                        <i class="bk-icon icon-search" @click.stop="handleSearch"></i>
+                    </cmdb-form-singlechar>
+                </div>
             </div>
             <div class="tables">
                 <service-instance-table
@@ -53,21 +57,39 @@
                     @check-change="handleCheckChange">
                 </service-instance-table>
             </div>
+            <bk-paging class="pagination"
+                v-if="pagination.totalPage > 1"
+                pagination-able
+                location="left"
+                :cur-page="pagination.current"
+                :total-page="pagination.totalPage"
+                :pagination-count="pagination.size"
+                @page-change="handlePageChange"
+                @pagination-change="handleSizeChange">
+            </bk-paging>
+            <div class="filter-empty" v-if="!instances.length">
+                <div class="filter-empty-content">
+                    <i class="bk-icon icon-empty"></i>
+                    <span>{{$t('BusinessTopology["暂无符合条件的实例"]')}}</span>
+                </div>
+            </div>
         </template>
         <service-instance-empty v-else
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
         <cmdb-slider
             :title="processForm.title"
-            :is-show.sync="processForm.show">
+            :is-show.sync="processForm.show"
+            :before-close="handleBeforeClose">
             <cmdb-form slot="content" v-if="processForm.show"
+                ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
                 :uneditable-properties="processForm.uneditableProperties"
                 :properties="processForm.properties"
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
-                @on-cancel="handleCloseProcessForm">
+                @on-cancel="handleBeforeClose">
             </cmdb-form>
         </cmdb-slider>
     </div>
@@ -76,7 +98,6 @@
 <script>
     import serviceInstanceTable from './service-instance-table.vue'
     import serviceInstanceEmpty from './service-instance-empty.vue'
-    import Throttle from 'lodash.throttle'
     export default {
         components: {
             serviceInstanceTable,
@@ -85,9 +106,16 @@
         data () {
             return {
                 checked: [],
+                isCheckAll: false,
+                isExpandAll: false,
                 filter: '',
-                throttleFilter: null,
+                inSearch: false,
                 instances: [],
+                pagination: {
+                    current: 1,
+                    totalPage: 0,
+                    size: 10
+                },
                 processForm: {
                     type: 'create',
                     show: false,
@@ -96,7 +124,8 @@
                     referenceService: null,
                     uneditableProperties: [],
                     properties: [],
-                    propertyGroups: []
+                    propertyGroups: [],
+                    unwatch: null
                 }
             }
         },
@@ -116,9 +145,6 @@
             processTemplateMap () {
                 return this.$store.state.businessTopology.processTemplateMap
             },
-            withTemplate () {
-                return this.currentModule && this.currentModule.service_template_id !== 2
-            },
             menuItem () {
                 return [{
                     name: this.$t('BusinessTopology["批量删除"]'),
@@ -133,31 +159,15 @@
         },
         watch: {
             currentNode (node) {
-                if (node.data.bk_obj_id === 'module') {
+                if (node && node.data.bk_obj_id === 'module') {
                     this.filter = ''
                     this.getServiceInstances()
                 }
-            },
-            filter () {
-                this.throttleFilter()
             }
         },
         created () {
             this.getProcessProperties()
             this.getProcessPropertyGroups()
-            this.throttleFilter = Throttle(() => {
-                this.$refs.serviceInstanceTable.forEach(vm => {
-                    if (this.filter) {
-                        const ip = vm.instance.name.split('_')[0]
-                        vm.show = ip.indexOf(this.filter) !== -1
-                    } else {
-                        vm.show = true
-                    }
-                })
-            }, 300, {
-                leading: false,
-                trailing: true
-            })
         },
         methods: {
             async getProcessProperties () {
@@ -199,18 +209,44 @@
                     const data = await this.$store.dispatch('serviceInstance/getModuleServiceInstances', {
                         params: this.$injectMetadata({
                             bk_module_id: this.currentNode.data.bk_inst_id,
-                            with_name: true
+                            with_name: true,
+                            page: {
+                                start: (this.pagination.current - 1) * this.pagination.size,
+                                limit: this.pagination.size
+                            },
+                            search_key: this.filter
                         }),
                         config: {
                             requestId: 'getModuleServiceInstances',
                             cancelPrevious: true
                         }
                     })
+                    this.checked = []
+                    this.isCheckAll = false
+                    this.isExpandAll = false
                     this.instances = data.info
+                    this.pagination.totalPage = Math.ceil(data.count / this.pagination.size)
                 } catch (e) {
                     console.error(e)
                     this.instances = []
                 }
+            },
+            handleSearch () {
+                this.inSearch = true
+                this.handlePageChange(1)
+            },
+            handleClearFilter () {
+                this.filter = ''
+                this.handleSearch()
+            },
+            handlePageChange (page) {
+                this.pagination.current = page
+                this.getServiceInstances()
+            },
+            handleSizeChange (size) {
+                this.pagination.current = 1
+                this.pagination.size = size
+                this.getServiceInstances()
             },
             handleCheckChange (checked, instance) {
                 if (checked) {
@@ -225,6 +261,16 @@
                 this.processForm.title = `${this.$t('BusinessTopology["添加进程"]')}(${referenceService.instance.name})`
                 this.processForm.instance = {}
                 this.processForm.show = true
+                this.$nextTick(() => {
+                    const { processForm } = this.$refs
+                    this.processForm.unwatch = processForm.$watch(() => {
+                        return processForm.values.bk_func_name
+                    }, (newVal, oldValue) => {
+                        if (processForm.values.bk_process_name === oldValue) {
+                            processForm.values.bk_process_name = newVal
+                        }
+                    })
+                })
             },
             async handleUpdateProcess (processInstance, referenceService) {
                 this.processForm.referenceService = referenceService
@@ -265,21 +311,35 @@
             handleDeleteInstance (id) {
                 this.instances = this.instances.filter(instance => instance.id !== id)
             },
-            async handleSaveProcess (values, changedValues) {
+            async handleSaveProcess (values, changedValues, instance) {
                 try {
+                    this.processForm.unwatch && this.processForm.unwatch()
                     if (this.processForm.type === 'create') {
                         await this.createProcess(values)
                     } else {
-                        await this.updateProcess(changedValues)
+                        await this.updateProcess(values, instance)
                     }
-                    this.processForm.referenceService.getServiceProcessList()
+                    await this.processForm.referenceService.getServiceProcessList()
+                    this.updateServiceInstanceName()
                     this.processForm.show = false
                     this.processForm.instance = null
                     this.processForm.referenceService = null
-                    this.processForm.uneditableProperties = null
+                    this.processForm.uneditableProperties = []
                 } catch (e) {
                     console.error(e)
                 }
+            },
+            updateServiceInstanceName () {
+                const serviceInstance = this.processForm.referenceService
+                const processes = serviceInstance.list
+                const instance = this.instances.find(instance => instance === serviceInstance.instance) || {}
+                const name = (instance.name || '').split('_').slice(0, 1)
+                if (processes.length) {
+                    const process = processes[0].property
+                    name.push(process.bk_process_name)
+                    name.push(process.port)
+                }
+                instance.name = name.join('_')
             },
             createProcess (values) {
                 return this.$store.dispatch('processInstance/createServiceInstanceProcess', {
@@ -291,11 +351,11 @@
                     })
                 })
             },
-            updateProcess (values) {
+            updateProcess (values, instance) {
                 return this.$store.dispatch('processInstance/updateServiceInstanceProcess', {
-                    business: this.business,
-                    processInstanceId: this.processForm.instance.bk_process_id,
-                    params: values
+                    params: this.$injectMetadata({
+                        processes: [{ ...instance, ...values }]
+                    })
                 })
             },
             handleCloseProcessForm () {
@@ -304,24 +364,33 @@
                 this.processForm.instance = null
                 this.processForm.uneditableProperties = []
             },
+            handleBeforeClose () {
+                const changedValues = this.$refs.processForm.changedValues
+                if (Object.keys(changedValues).length) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.handleCloseProcessForm()
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.handleCloseProcessForm()
+            },
             handleCreateServiceInstance () {
                 this.$router.push({
                     name: 'createServiceInstance',
                     params: {
                         moduleId: this.currentNode.data.bk_inst_id,
                         setId: this.currentNode.parent.data.bk_inst_id
-                    }
-                })
-            },
-            handleSyncTemplate () {
-                this.$router.push({
-                    name: 'synchronous',
-                    params: {
-                        moduleId: this.currentNode.data.bk_inst_id,
-                        setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / ')
+                        from: this.$route.fullPath,
+                        title: this.currentNode.name
                     }
                 })
             },
@@ -330,12 +399,14 @@
             },
             handleCheckALL (checked) {
                 this.filter = ''
+                this.isCheckAll = checked
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.checked = checked
                 })
             },
             handleExpandAll (expanded) {
                 this.filter = ''
+                this.isExpandAll = expanded
                 this.$refs.serviceInstanceTable.forEach(table => {
                     table.localExpanded = expanded
                 })
@@ -351,7 +422,7 @@
                 }
                 this.$bkInfo({
                     title: this.$t('BusinessTopology["确认删除实例"]'),
-                    content: this.$tc('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
+                    content: this.$t('BusinessTopology["即将删除选中的实例"]', { count: this.checked.length }),
                     confirmFn: async () => {
                         try {
                             const serviceInstanceIds = this.checked.map(instance => instance.id)
@@ -389,21 +460,66 @@
     .options-button {
         height: 32px;
         padding: 0 8px;
-        margin: 0 6px 0 0;
+        margin: 0 0 0 6px;
         line-height: 30px;
     }
+    .options-checkall {
+        width: 36px;
+        height: 32px;
+        line-height: 30px;
+        padding: 0 9px;
+        text-align: center;
+        border: 1px solid #C4C6CC;
+        border-radius: 2px;
+    }
+    .options-right {
+        text-align: right;
+        white-space: nowrap;
+    }
     .options-checkbox {
-        margin: 0 19px 0 10px;
+        margin: 0 15px 0 0;
         .checkbox-label {
-            padding: 0 0 0 9px;
-            line-height: 1.5;
+            padding: 0 0 0 4px;
         }
     }
     .options-search {
+        @include inlineBlock;
+        position: relative;
+        width: 240px;
+        .icon-search {
+            position: absolute;
+            top: 9px;
+            right: 9px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .icon-close {
+            position: absolute;
+            top: 8px;
+            right: 30px;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            background-color: #ddd;
+            color: #fff;
+            font-size: 12px;
+            transition: backgroundColor .2s linear;
+            cursor: pointer;
+            &:before {
+                display: block;
+                transform: scale(.7);
+            }
+            &:hover {
+                background-color: #ccc;
+            }
+        }
         /deep/ {
             .cmdb-form-input {
                 height: 32px;
                 line-height: 30px;
+                padding-right: 50px;
             }
         }
     }
@@ -439,7 +555,26 @@
         }
     }
     .tables {
-        height: calc(100% - 42px);
+        max-height: calc(100% - 120px);
         @include scrollbar-y;
+    }
+    .pagination {
+        padding: 10px 0 0 0;
+    }
+    .filter-empty {
+        width: 100%;
+        height: calc(100% - 130px);
+        display: table;
+        .filter-empty-content {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            .icon-empty {
+                display: block;
+                margin: 0 0 10px 0;
+                font-size: 65px;
+                color: #c3cdd7;
+            }
+        }
     }
 </style>

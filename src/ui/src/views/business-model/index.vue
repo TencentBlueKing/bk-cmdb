@@ -15,15 +15,15 @@
                     marginLeft: `${index * margin}px`
                 }"
                 :key="index">
-                <router-link :to="`/model/details/${model['bk_obj_id']}`" class="node-circle"
+                <a href="javascript:void(0);" class="node-circle"
                     :class="{
                         'is-first': index === 0,
                         'is-last': index === (topo.length - 1),
                         'is-inner': innerModel.includes(model['bk_obj_id'])
                     }"
-                    @click.native="handleLinkClick">
+                    @click="handleLinkClick(model)">
                     <i :class="['icon', model['bk_obj_icon']]"></i>
-                </router-link>
+                </a>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
                     :class="{
@@ -80,7 +80,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务层级"]'))
             this.showFeatureTips = this.featureTipsParams['modelBusiness']
             this.getMainLineModel()
         },
@@ -149,9 +148,15 @@
                 this.addLevel.parent = null
                 this.addLevel.showDialog = false
             },
-            handleLinkClick () {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
+            handleLinkClick (model) {
+                this.$router.push({
+                    name: 'modelDetails',
+                    params: {
+                        modelId: model.bk_obj_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
+                    }
                 })
             }
         }

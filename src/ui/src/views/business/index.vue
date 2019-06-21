@@ -218,7 +218,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.$store.dispatch('userCustom/setRencentlyData', { id: 'business' })
                 this.properties = await this.searchObjectAttribute({
@@ -427,7 +426,12 @@
                 })
             },
             routeToHistory () {
-                this.$router.push({ name: 'businessHistory' })
+                this.$router.push({
+                    name: 'businessHistory',
+                    query: {
+                        from: this.$route.fullPath
+                    }
+                })
             },
             handleSliderBeforeClose () {
                 if (this.tab.active === 'attribute' && this.attribute.type !== 'details') {

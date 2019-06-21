@@ -70,5 +70,21 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 		blog.Errorf("[upgrade x19.05.16.01] updateTimeoutProperty error, err: %s", err.Error())
 		return err
 	}
+	if err := updateProcessNamePropertyIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] updateProcessNamePropertyIndex error, err: %s", err.Error())
+		return err
+	}
+	if err := updateFuncNamePropertyIndex(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] updateFuncNamePropertyIndex error, err: %s", err.Error())
+		return err
+	}
+	if err := deleteProcessUnique(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] deleteProcessUnique error, err: %s", err.Error())
+		return err
+	}
+	if err := addInnerCategory(ctx, db, conf); err != nil {
+		blog.Errorf("[upgrade x19.05.16.01] addInnerCategory error, err: %s", err.Error())
+		return err
+	}
 	return nil
 }
