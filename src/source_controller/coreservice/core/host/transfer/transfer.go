@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package modulehost
+package transfer
 
 import (
 	"configcenter/src/common"
@@ -24,11 +24,11 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-type transferHostModule struct {
+type genericTransfer struct {
 	dependent OperationDependence
 
 	// depend parametere
-	mh          *ModuleHost
+	mh          *TransferManager
 	moduleIDArr []int64
 	bizID       int64
 	// Incr=true is added to the module
@@ -53,18 +53,18 @@ type transferHostModule struct {
 }
 
 // NewHostModuleTransfer business normal module transfer
-func (mh *ModuleHost) NewHostModuleTransfer(ctx core.ContextParams, bizID int64, moduleIDArr []int64, isIncr bool) *transferHostModule {
-	return &transferHostModule{
-		mh:          mh,
+func (manager *TransferManager) NewHostModuleTransfer(ctx core.ContextParams, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
+	return &genericTransfer{
+		mh:          manager,
 		moduleIDArr: moduleIDArr,
 		bizID:       bizID,
 		isIncr:      isIncr,
-		dependent:   mh.dependence,
+		dependent:   manager.dependence,
 	}
 }
 
 // validParameter valid parametere legal
-func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
+func (t *genericTransfer) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(ctx)
 		if err != nil {
@@ -86,17 +86,17 @@ func (t *transferHostModule) ValidParameter(ctx core.ContextParams) errors.CCErr
 }
 
 // SetCrossBusiness Set host cross-service transfer parameters
-func (t *transferHostModule) SetCrossBusiness(ctx core.ContextParams, bizID int64) {
+func (t *genericTransfer) SetCrossBusiness(ctx core.ContextParams, bizID int64) {
 	t.crossBizTransfer = true
 	t.srcBizID = bizID
 }
 
 // SetCrossBusiness Set host cross-service transfer parameters
-func (t *transferHostModule) SetDeleteHost(ctx core.ContextParams) {
+func (t *genericTransfer) SetDeleteHost(ctx core.ContextParams) {
 	t.delHost = true
 }
 
-func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+func (t *genericTransfer) Transfer(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	err := t.validHost(ctx, hostID)
 	if err != nil {
 		return err
@@ -139,7 +139,7 @@ func (t *transferHostModule) Transfer(ctx core.ContextParams, hostID int64) erro
 	return nil
 }
 
-func (t *transferHostModule) deleteHost(ctx core.ContextParams, hostID int64) (mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) deleteHost(ctx core.ContextParams, hostID int64) (mapstr.MapStr, errors.CCErrorCoder) {
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), ctx.SupplierAccount)
@@ -175,7 +175,7 @@ func (t *transferHostModule) deleteHost(ctx core.ContextParams, hostID int64) (m
 
 // generateEvent handle event trigger.
 // Data from before and after changes cannot be merged for historical reasons.
-func (t *transferHostModule) generateEvent(ctx core.ContextParams, originDatas, curDatas *[]mapstr.MapStr, hostInfo mapstr.MapStr) errors.CCErrorCoder {
+func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, curDatas *[]mapstr.MapStr, hostInfo mapstr.MapStr) errors.CCErrorCoder {
 
 	var eventArr []*metadata.EventInst
 	for _, data := range *originDatas {
@@ -223,7 +223,7 @@ func (t *transferHostModule) generateEvent(ctx core.ContextParams, originDatas, 
 }
 
 // validParameterInst  validate module, biz, srcBiz must be exist
-func (t *transferHostModule) validParameterInst(ctx core.ContextParams) errors.CCErrorCoder {
+func (t *genericTransfer) validParameterInst(ctx core.ContextParams) errors.CCErrorCoder {
 
 	appCond := condition.CreateCondition()
 	appCond.Field(common.BKAppIDField).Eq(t.bizID)
@@ -256,7 +256,7 @@ func (t *transferHostModule) validParameterInst(ctx core.ContextParams) errors.C
 // validParameterModule validate parameter module legal
 // module must be exist in business
 // multiple modules not default module, transfer default must be one module
-func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors.CCErrorCoder {
+func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CCErrorCoder {
 	// delete host not validation destination module
 	if t.delHost {
 		return nil
@@ -314,7 +314,7 @@ func (t *transferHostModule) validParameterModule(ctx core.ContextParams) errors
 // validParameterHostBelongbiz  legal
 // check if the host belongs to the transfer business.
 // check host exist
-func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+func (t *genericTransfer) validHost(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 
@@ -352,7 +352,7 @@ func (t *transferHostModule) validHost(ctx core.ContextParams, hostID int64) err
 }
 
 // delHostModuleRelation delete single host module relation
-func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) delHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
 	// transfer the host across business,
 	// check host belongs to the original business ID
@@ -372,7 +372,7 @@ func (t *transferHostModule) delHostModuleRelation(ctx core.ContextParams, hostI
 }
 
 // delHostModuleRelationItem delete single host module relation
-func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, bizID, hostID int64, isDefault bool) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizID, hostID int64, isDefault bool) ([]mapstr.MapStr, errors.CCErrorCoder) {
 
 	cond := condition.CreateCondition()
 	cond.Field(common.BKAppIDField).Eq(bizID)
@@ -411,7 +411,7 @@ func (t *transferHostModule) delHostModuleRelationItem(ctx core.ContextParams, b
 }
 
 // AddSingleHostModuleRelation add single host module relation
-func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) AddHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
 
 	var moduleIDArr []int64
@@ -465,7 +465,7 @@ func (t *transferHostModule) AddHostModuleRelation(ctx core.ContextParams, hostI
 	return insertDataArr, nil
 }
 
-func (t *transferHostModule) autoCreateServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
+func (t *genericTransfer) autoCreateServiceInstance(ctx core.ContextParams, hostID int64) errors.CCErrorCoder {
 	for _, moduleID := range t.moduleIDArr {
 		if _, err := t.dependent.AutoCreateServiceInstanceModuleHost(ctx, hostID, moduleID); err != nil {
 			blog.Warnf("autoCreateServiceInstance failed, hostID: %d, moduleID: %d, rid: %s", hostID, moduleID, ctx.ReqID)
@@ -475,7 +475,7 @@ func (t *transferHostModule) autoCreateServiceInstance(ctx core.ContextParams, h
 }
 
 // getInnerModuleIDArr get default module
-func (t *transferHostModule) getInnerModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
+func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCErrorCoder {
 	bizID := t.bizID
 	// transfer the host across business,
 	// check host belongs to the original business ID
@@ -509,7 +509,7 @@ func (t *transferHostModule) getInnerModuleIDArr(ctx core.ContextParams) errors.
 	return nil
 }
 
-func (t *transferHostModule) GetInnerModuleIDArr(ctx core.ContextParams) ([]int64, errors.CCError) {
+func (t *genericTransfer) GetInnerModuleIDArr(ctx core.ContextParams) ([]int64, errors.CCError) {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(ctx)
 		return t.innerModuleID, err
@@ -517,7 +517,7 @@ func (t *transferHostModule) GetInnerModuleIDArr(ctx core.ContextParams) ([]int6
 	return t.innerModuleID, nil
 }
 
-func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error) {
+func (t *genericTransfer) HasInnerModule(ctx core.ContextParams) (bool, error) {
 	innerModuleIDArr, err := t.GetInnerModuleIDArr(ctx)
 	if err != nil {
 		return false, err
@@ -538,7 +538,7 @@ func (t *transferHostModule) HasInnerModule(ctx core.ContextParams) (bool, error
 }
 
 // DoTransferToInnerCheck check whether could be transfer to inner module
-func (t *transferHostModule) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs []int64) error {
+func (t *genericTransfer) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs []int64) error {
 	if len(hostIDs) == 0 {
 		return nil
 	}
