@@ -274,7 +274,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		if r.Action == meta.AddHostToResourcePool {
-			return Edit, nil
+			return Create, nil
 		}
 
 		if r.Action == meta.MoveResPoolHostToBizIdleModule {
@@ -310,13 +310,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
-
-	case meta.AddHostToResourcePool:
-		// add hosts to resource pool
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return Edit, nil
-		}
-		return Edit, nil
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
