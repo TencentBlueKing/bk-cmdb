@@ -54,7 +54,7 @@
 	"1101081": "blueking business does not allow deletion",
 	"1101031": "query cloud area failed, %s",
 	"1101032": "cloud area does not exist",
-	"1101033": "query business failed,%s",
+	"1101033": "query business failed",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
 	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
