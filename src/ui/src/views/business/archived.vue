@@ -16,11 +16,11 @@
             <template slot="options" slot-scope="{ item }">
                 <span class="inline-block-middle"
                     v-cursor="{
-                        active: $isAuthorized(archiveAuth),
+                        active: !$isAuthorized(archiveAuth),
                         auth: [archiveAuth]
                     }">
                     <bk-button type="primary" size="mini"
-                        :disabled="$isAuthorized(archiveAuth)"
+                        :disabled="!$isAuthorized(archiveAuth)"
                         @click="handleRecovery(item)">
                         {{$t('Inst["恢复业务"]')}}
                     </bk-button>
