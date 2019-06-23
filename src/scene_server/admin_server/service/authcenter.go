@@ -36,28 +36,29 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 
 	bizs := []metadata.BizInst{}
 	if err := s.db.Table(common.BKTableNameBaseApp).Find(condition.CreateCondition().Field("default").NotEq(1).ToMapStr()).All(s.ctx, &bizs); err != nil {
-		blog.Errorf("init authcenter error: %v", err)
+		blog.Errorf("init auth center error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
 
 	cls := []metadata.Classification{}
 	if err := s.db.Table(common.BKTableNameObjClassifiction).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &cls); err != nil {
-		blog.Errorf("init authcenter error: %v", err)
+		blog.Errorf("init auth center error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
 
 	models := []metadata.Object{}
-	if err := s.db.Table(common.BKTableNameObjDes).Find(condition.CreateCondition().Field("ispre").NotEq(true).ToMapStr()).All(s.ctx, &models); err != nil {
-		blog.Errorf("init authcenter error: %v", err)
+	modelCondition := condition.CreateCondition().Field("bk_obj_id").NotIn([]string{"process", "plat"}).ToMapStr()
+	if err := s.db.Table(common.BKTableNameObjDes).Find(modelCondition).All(s.ctx, &models); err != nil {
+		blog.Errorf("init auth center error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
 
 	associationKinds := make([]metadata.AssociationKind, 0)
 	if err := s.db.Table(common.BKTableNameAsstDes).Find(condition.CreateCondition().Field("ispre").Eq(true).ToMapStr()).All(s.ctx, &associationKinds); err != nil {
-		blog.Errorf("init authcent with association kind, but get details association kind failed, err: %v", err)
+		blog.Errorf("init auth center with association kind, but get details association kind failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
@@ -68,9 +69,9 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		Classifications:  cls,
 		AssociationKinds: associationKinds,
 	}); nil != err {
-		blog.Errorf("init authcenter error: %v", err)
+		blog.Errorf("init auth center error: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
-	resp.WriteEntity(metadata.NewSuccessResp("init authcenter success"))
+	resp.WriteEntity(metadata.NewSuccessResp("init auth center success"))
 }
