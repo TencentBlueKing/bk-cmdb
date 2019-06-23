@@ -276,7 +276,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
