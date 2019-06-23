@@ -21,6 +21,7 @@ const state = {
     system: [],
     businessMeta: {},
     parentMeta: {},
+    resourceMeta: [],
     adminEntranceAuth: {}
 }
 
@@ -51,6 +52,13 @@ const getters = {
         if (DYNAMIC_BUSINESS_MODE.includes(auth)) {
             Object.assign(meta, state.parentMeta)
             Object.assign(meta, state.businessMeta)
+        }
+        const resourceMeta = state.resourceMeta.find(resourceMeta => {
+            return resourceMeta.resource_type === meta.resource_type
+                && resourceMeta.action === meta.action
+        })
+        if (resourceMeta) {
+            Object.assign(meta, resourceMeta)
         }
         return meta
     }
@@ -125,12 +133,16 @@ const mutations = {
     setBusinessMeta (state, meta = {}) {
         state.businessMeta = meta
     },
+    setResourceMeta (state, meta = {}) {
+        state.resourceMeta.push(meta)
+    },
     setAdminEntranceAuth (state, data) {
         state.adminEntranceAuth = data
     },
     clearDynamicMeta (state) {
         state.parentMeta = {}
         state.businessMeta = {}
+        state.resourceMeta = []
     }
 }
 
