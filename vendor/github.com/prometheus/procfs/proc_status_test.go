@@ -18,7 +18,7 @@ import (
 )
 
 func TestProcStatus(t *testing.T) {
-	p, err := getProcFixtures(t).NewProc(26231)
+	p, err := getProcFixtures(t).Proc(26231)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestProcStatus(t *testing.T) {
 }
 
 func TestProcStatusName(t *testing.T) {
-	p, err := getProcFixtures(t).NewProc(26231)
+	p, err := getProcFixtures(t).Proc(26231)
 	if err != nil {
 		t.Fatal(err)
 	}

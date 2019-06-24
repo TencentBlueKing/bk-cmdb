@@ -31,13 +31,13 @@ func TestNetDevParseLine(t *testing.T) {
 	}
 }
 
-func TestNewNetDev(t *testing.T) {
+func TestNetDev(t *testing.T) {
 	fs, err := NewFS(procTestFixtures)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	netDev, err := fs.NewNetDev()
+	netDev, err := fs.NetDev()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,13 +59,13 @@ func TestNewNetDev(t *testing.T) {
 	}
 }
 
-func TestProcNewNetDev(t *testing.T) {
-	p, err := getProcFixtures(t).NewProc(26231)
+func TestProcNetDev(t *testing.T) {
+	p, err := getProcFixtures(t).Proc(26231)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	netDev, err := p.NewNetDev()
+	netDev, err := p.NetDev()
 	if err != nil {
 		t.Fatal(err)
 	}
