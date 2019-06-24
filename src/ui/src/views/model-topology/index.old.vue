@@ -4,11 +4,11 @@
             <template v-if="!topoEdit.isEdit">
                 <span style="display: inline-block;"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.U_MODEL),
-                        auth: [OPERATION.U_MODEL]
+                        active: !$isAuthorized(OPERATION.U_MODEL) || !$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [OPERATION.U_MODEL, OPERATION.SYSTEM_MODEL_GRAPHICS]
                     }">
                     <bk-button class="edit-button" type="primary"
-                        :disabled="!$isAuthorized(OPERATION.U_MODEL)"
+                        :disabled="!$isAuthorized(OPERATION.U_MODEL) || !$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
                         {{$t('ModelManagement["编辑拓扑"]')}}
                     </bk-button>
