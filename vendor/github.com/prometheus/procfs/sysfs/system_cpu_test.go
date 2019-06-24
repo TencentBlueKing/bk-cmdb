@@ -24,13 +24,13 @@ func makeUint64(v uint64) *uint64 {
 	return &v
 }
 
-func TestNewSystemCpufreq(t *testing.T) {
+func TestSystemCpufreq(t *testing.T) {
 	fs, err := NewFS(sysTestFixtures)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c, err := fs.NewSystemCpufreq()
+	c, err := fs.SystemCpufreq()
 	if err != nil {
 		t.Fatal(err)
 	}
