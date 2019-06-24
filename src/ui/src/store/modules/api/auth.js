@@ -28,7 +28,7 @@ const state = {
 const getters = {
     operation: state => state.operation,
     isAuthorized: (state, getters) => (auth, option = { type: 'operation' }) => {
-        const authMeta = getters.getAuthMeta(auth)
+        const authMeta = getters.getAuthMeta(auth, option)
         const authList = state[option.type] || []
         const authData = authList.find(auth => {
             const sameType = auth.resource_type === authMeta.resource_type
@@ -38,8 +38,8 @@ const getters = {
         })
         return (authData || {}).is_pass
     },
-    getAuthMeta: (state, getters, rootState, rootGetters) => auth => {
-        const meta = GET_AUTH_META(auth)
+    getAuthMeta: (state, getters, rootState, rootGetters) => (auth, option = {}) => {
+        const meta = GET_AUTH_META(auth, option)
         const isBusinessMode = !rootGetters.isAdminView
         const bizId = rootGetters['objectBiz/bizId']
         if (
