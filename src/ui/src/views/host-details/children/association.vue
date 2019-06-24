@@ -15,8 +15,6 @@
                 </span>
                 <cmdb-form-bool v-if="hasAssociation"
                     :size="16" class="options-checkbox"
-                    :checked="expandAll"
-                    :indeterminate="indeterminate"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
@@ -67,12 +65,6 @@
             }
         },
         computed: {
-            expandAll () {
-                return this.$store.state.hostDetails.expandAll
-            },
-            indeterminate () {
-                return this.$store.state.hostDetails.indeterminate
-            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
@@ -87,7 +79,6 @@
         },
         beforeDestroy () {
             this.$store.commit('hostDetails/toggleExpandAll', false)
-            this.$store.commit('hostDetails/setExpandIndeterminate', true)
         },
         methods: {
             toggleView (view) {
@@ -95,7 +86,6 @@
             },
             handleExpandAll (expandAll) {
                 this.$store.commit('hostDetails/toggleExpandAll', expandAll)
-                this.$store.commit('hostDetails/setExpandIndeterminate', false)
             }
         }
     }
