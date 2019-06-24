@@ -293,14 +293,15 @@
                 return !this.$tools.getMetadataBiz(model)
             },
             showGroupDialog (isEdit, group) {
-                if (!this.$isAuthorized(OPERATION.U_MODEL_GROUP)) return
                 if (isEdit) {
+                    if (!this.$isAuthorized(OPERATION.U_MODEL_GROUP)) return
                     this.groupDialog.data.id = group.id
                     this.groupDialog.title = this.$t('ModelManagement["编辑分组"]')
                     this.groupDialog.data.bk_classification_id = group['bk_classification_id']
                     this.groupDialog.data.bk_classification_name = group['bk_classification_name']
                     this.groupDialog.data.id = group.id
                 } else {
+                    if (!this.$isAuthorized(OPERATION.C_MODEL_GROUP)) return
                     this.groupDialog.title = this.$t('ModelManagement["新建分组"]')
                     this.groupDialog.data.bk_classification_id = ''
                     this.groupDialog.data.bk_classification_name = ''
