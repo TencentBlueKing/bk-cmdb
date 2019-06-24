@@ -14,6 +14,7 @@ package service
 
 import (
 	"fmt"
+	"gopkg.in/redis.v5"
 	"strconv"
 
 	"configcenter/src/common"
@@ -192,4 +193,18 @@ func (s *coreService) getObjectByCondition(params core.ContextParams, objType st
 	}
 
 	return results, nil
+}
+
+func (s *coreService) GetHostSnap(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	hostID := pathParams(common.BKHostIDField)
+	key := common.RedisSnapKeyPrefix + hostID
+	result, err := s.cahce.Get(key).Result()
+	if nil != err && err != redis.Nil {
+		blog.Errorf("get host snapshot failed, hostID: %v, err: %v, rid: %s", hostID, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrHostGetSnapshot)
+	}
+
+	return metadata.HostSnap{
+		Data: result,
+	}, nil
 }

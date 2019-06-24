@@ -33,6 +33,7 @@ type HostClientInterface interface {
 
 	GetHostByID(ctx context.Context, header http.Header, hostID string) (resp *metadata.HostInstanceResult, err error)
 	GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error)
+	GetHostSnap(ctx context.Context, header http.Header, hostID string) (resp *metadata.GetHostSnapResult, err error)
 }
 
 func NewHostClientInterface(client rest.ClientInterface) HostClientInterface {
