@@ -123,6 +123,10 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/find/host/{bk_host_id}", s.GetHostByID, nil)
 	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
 	s.addAction(http.MethodPost, "/find/host/snapshot/%s", s.GetHostSnap, nil)
+
+	s.addAction(http.MethodPost, "/find/host/lock", s.LockHost, nil)
+	s.addAction(http.MethodDelete, "/delete/host/lock", s.UnlockHost, nil)
+	s.addAction(http.MethodPost, "/findmany/host/lock/search", s.QueryLockHost, nil)
 }
 
 func (s *coreService) audit() {
