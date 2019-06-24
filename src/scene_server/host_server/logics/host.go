@@ -61,7 +61,7 @@ func (lgc *Logics) GetHostAttributes(ctx context.Context, ownerID string, busine
 
 func (lgc *Logics) GetHostInstanceDetails(ctx context.Context, ownerID, hostID string) (map[string]interface{}, string, errors.CCError) {
 	// get host details, pre data
-	result, err := lgc.CoreAPI.HostController().Host().GetHostByID(ctx, hostID, lgc.header)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHostByID(ctx, lgc.header, hostID)
 	if err != nil {
 		blog.Errorf("GetHostInstanceDetails http do error, err:%s, input:%+v, rid:%s", err.Error(), hostID, lgc.rid)
 		return nil, "", lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -241,7 +241,7 @@ func (lgc *Logics) GetHostInfoByConds(ctx context.Context, cond map[string]inter
 		Sort:      common.BKHostIDField,
 	}
 
-	result, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, lgc.header, query)
+	result, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, query)
 	if err != nil {
 		blog.Errorf("GetHostInfoByConds GetHosts http do error, err:%s, input:%+v,rid:%s", err.Error(), query, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

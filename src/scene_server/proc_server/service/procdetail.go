@@ -209,7 +209,7 @@ func (ps *ProcServer) getInstAsst(forward http.Header, ownerID, objID string, id
 	var cnt int
 	switch objID {
 	case common.BKInnerObjIDHost:
-		hostRet, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, srvData.header, input)
+		hostRet, err := ps.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, srvData.header, input)
 		if err != nil || (err == nil && !hostRet.Result) {
 			blog.Errorf("search inst detail failed when GetHosts, err: %v,input:%+v,rid:%s", err, input, srvData.rid)
 			return nil, 0, common.CCErrHostSelectInst

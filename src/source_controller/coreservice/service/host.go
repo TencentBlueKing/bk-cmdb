@@ -13,9 +13,14 @@
 package service
 
 import (
+	"fmt"
+	"strconv"
+
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -113,4 +118,78 @@ func (s *coreService) TransferHostModuleDep(ctx core.ContextParams, input *metad
 		return exceptionArr, err
 	}
 	return nil, nil
+}
+
+func (s *coreService) GetHostByID(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	hostID, err := strconv.Atoi(pathParams("bk_host_id"))
+	if err != nil {
+		blog.Errorf("GetHostByID failed, get host by id, but got invalid host id, hostID: %s, err: %+v, rid: %s", hostID, err, params.ReqID)
+		return nil, params.Error.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+	}
+
+	result := make(map[string]interface{}, 0)
+	condition := common.KvMap{common.BKHostIDField: hostID}
+	condition = util.SetModOwner(condition, params.SupplierAccount)
+	err = s.db.Table(common.BKTableNameBaseHost).Find(condition).One(params.Context, &result)
+	// TODO: return error for not found and deal error with all callers
+	if err != nil && !s.db.IsNotFoundError(err) {
+		blog.Errorf("GetHostByID failed, get host by id[%d] failed, err: %+v, rid: %s", hostID, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	return result, nil
+}
+
+func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	var dat metadata.ObjQueryInput
+	if err := data.MarshalJSONInto(dat); err != nil {
+		blog.Errorf("GetHosts failed, get hosts failed with decode body err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	condition := util.ConvParamsTime(dat.Condition)
+	condition = util.SetModOwner(condition, params.SupplierAccount)
+	fieldArr := util.SplitStrField(dat.Fields, ",")
+	result, err := s.getObjectByCondition(params, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
+	if err != nil {
+		blog.Errorf("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
+		return nil, params.Error.CCError(common.CCErrHostSelectInst)
+	}
+
+	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(params.Context)
+	if err != nil {
+		blog.Errorf("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
+		return nil, params.Error.CCError(common.CCErrHostSelectInst)
+	}
+
+	return metadata.HostInfo{
+		Count: int(count),
+		Info:  result,
+	}, nil
+}
+
+func (s *coreService) getObjectByCondition(params core.ContextParams, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
+	results := make([]mapstr.MapStr, 0)
+	tName := common.GetInstTableName(objType)
+
+	dbInst := s.db.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
+	if 0 < len(fields) {
+		dbInst.Fields(fields...)
+	}
+	if err := dbInst.All(params.Context, &results); err != nil {
+		blog.Errorf("failed to query the inst , error info %s", err.Error())
+		return nil, err
+	}
+
+	// translate language for default name
+	if m, ok := defaultNameLanguagePkg[objType]; nil != params.Lang && ok {
+		for index, info := range results {
+			l := m[fmt.Sprint(info["default"])]
+			if len(l) >= 3 {
+				results[index][l[1]] = util.FirstNotEmptyString(params.Lang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
+			}
+		}
+	}
+
+	return results, nil
 }

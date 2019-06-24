@@ -381,7 +381,7 @@ func (ps *ProcServer) getHostMapByAppID(forward http.Header, configData []map[st
 	input := new(meta.QueryInput)
 	input.Fields = fmt.Sprintf("%s,%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostOuterIPField)
 	input.Condition = hostMapCondition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, forward, input)
 	if err != nil {
 		blog.Errorf("getAppMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return hostMap, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -412,7 +412,7 @@ func (ps *ProcServer) getHostMapByCond(forward http.Header, condition map[string
 	input := new(meta.QueryInput)
 	input.Fields = ""
 	input.Condition = condition
-	ret, err := ps.CoreAPI.HostController().Host().GetHosts(srvData.ctx, forward, input)
+	ret, err := ps.CoreAPI.CoreService().Host().GetHosts(srvData.ctx, forward, input)
 	if err != nil {
 		blog.Errorf("getHostMapByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), input, srvData.rid)
 		return hostMap, hostIdArr, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
