@@ -176,7 +176,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopology:   "",
+	BizTopology:   "拓扑",
 	BizModelGroup: "模型分组",
 	BizModel:      "模型",
 	BizInstance:   "实例",
@@ -254,9 +254,9 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
-	if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
-		return ModelTopologyOperation, nil
-	}
+	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
+	// 	return ModelTopologyOperation, nil
+	// }
 
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {

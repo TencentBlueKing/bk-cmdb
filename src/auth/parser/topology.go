@@ -319,7 +319,7 @@ func (ps *parseStream) mainline() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.MainlineModel,
+					Type:   meta.MainlineInstance,
 					Action: meta.Find,
 				},
 			},

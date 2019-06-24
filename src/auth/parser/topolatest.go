@@ -605,6 +605,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
 		if len(model) != 0 {
 			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
 			if err != nil {
@@ -616,7 +625,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:   meta.ModelInstance,
+						Type:   modelType,
 						Action: meta.Find,
 					},
 					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
