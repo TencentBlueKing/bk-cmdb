@@ -7,7 +7,7 @@
                     autocomplete="off"
                     class="search-keywords"
                     type="text"
-                    maxlength="33"
+                    maxlength="32"
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
                     v-model.trim="query.queryString"
                     @input="handleInputSearch"
@@ -385,7 +385,7 @@
             handleInputSearch (el) {
                 const target = el.srcElement
                 this.searchTriggerType = 'input'
-                if (target.value.length > 32) {
+                if (target.value.length === 32) {
                     this.toggleTips = this.$tooltips({
                         duration: -1,
                         content: this.$t("Index['最大支持搜索32个字符']"),
@@ -393,7 +393,6 @@
                         customClass: 'full-text-tips',
                         target: target
                     })
-                    this.query.queryString = el.srcElement.value.substr(0, el.srcElement.value.length - 1)
                 } else if (this.toggleTips) {
                     this.toggleTips.duration = 0
                     this.toggleTips.hiddenTooltips()
