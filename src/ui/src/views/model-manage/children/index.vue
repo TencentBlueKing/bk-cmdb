@@ -346,7 +346,13 @@
                 this.exportExcel(res)
             },
             dialogConfirm (type) {
-                if (!this.$isAuthorized(OPERATION.U_MODEL)) return
+                if (type === 'delete') {
+                    if (!this.$isAuthorized(OPERATION.D_MODEL)) {
+                        return false
+                    }
+                } else if (!this.$isAuthorized(OPERATION.U_MODEL)) {
+                    return false
+                }
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({
