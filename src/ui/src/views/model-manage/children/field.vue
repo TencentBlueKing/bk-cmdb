@@ -1,12 +1,12 @@
 <template>
     <div class="model-field-wrapper">
-        <div>
-            <span v-cursor="{
+        <div class="options">
+            <span class="inline-block-middle" v-cursor="{
                 active: !$isAuthorized(OPERATION.U_MODEL),
                 auth: [OPERATION.U_MODEL]
             }">
                 <bk-button class="create-btn" type="primary"
-                    :disabled="isReadOnly || !updateAuth"
+                    :disabled="createDisabled || isReadOnly || !updateAuth"
                     @click="createField">
                     {{$t('ModelManagement["新建字段"]')}}
                 </bk-button>
@@ -136,6 +136,9 @@
             objId () {
                 return this.$route.params.modelId
             },
+            createDisabled () {
+                return !this.isAdminView && this.objId === 'biz'
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -243,8 +246,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 10px 0;
     }
     .field-pre {
         display: inline-block;
