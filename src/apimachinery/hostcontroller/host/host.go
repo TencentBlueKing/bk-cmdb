@@ -13,22 +13,10 @@
 package host
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
 )
 
 type HostInterface interface {
-	GetHostByID(ctx context.Context, hostID string, h http.Header) (resp *metadata.HostInstanceResult, err error)
-	GetHosts(ctx context.Context, h http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error)
-	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetHostSnap(ctx context.Context, hostID string, h http.Header) (resp *metadata.GetHostSnapResult, err error)
-
-	LockHost(ctx context.Context, h http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error)
-	UnlockHost(ctx context.Context, h http.Header, input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error)
-	QueryHostLock(ctx context.Context, h http.Header, input *metadata.QueryHostLockRequest) (resp *metadata.HostLockQueryResponse, err error)
 }
 
 func NewHostInterface(client rest.ClientInterface) HostInterface {
