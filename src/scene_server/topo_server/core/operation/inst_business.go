@@ -286,6 +286,9 @@ func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fi
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()
 	query.Limit = int(cond.GetLimit())
+	if query.Limit > 500 {
+		query.Limit = 500
+	}
 	query.Fields = strings.Join(fields, ",")
 	query.Sort = cond.GetSort()
 	query.Start = int(cond.GetStart())
