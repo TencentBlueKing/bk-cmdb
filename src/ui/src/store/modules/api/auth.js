@@ -133,8 +133,9 @@ const mutations = {
     setBusinessMeta (state, meta = {}) {
         state.businessMeta = meta
     },
-    setResourceMeta (state, meta = {}) {
-        state.resourceMeta.push(meta)
+    setResourceMeta (state, meta) {
+        const resourceMeta = Array.isArray(meta) ? meta : [meta]
+        state.resourceMeta.push(...resourceMeta)
     },
     setAdminEntranceAuth (state, data) {
         state.adminEntranceAuth = data

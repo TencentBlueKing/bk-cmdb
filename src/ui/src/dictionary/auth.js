@@ -92,8 +92,6 @@ export const R_CONFIRM_HISTORY = 'cloudConfirmHistory.findMany'
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
-    U_MODEL,
-    D_MODEL,
 
     C_MODEL_GROUP,
     U_MODEL_GROUP,
