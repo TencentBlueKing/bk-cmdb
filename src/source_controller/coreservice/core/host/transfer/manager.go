@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package modulehost
+package transfer
 
 import (
 	"gopkg.in/redis.v5"
@@ -27,7 +27,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-type ModuleHost struct {
+type TransferManager struct {
 	dbProxy    dal.RDB
 	eventC     eventclient.Client
 	cache      *redis.Client
@@ -38,8 +38,8 @@ type OperationDependence interface {
 	AutoCreateServiceInstanceModuleHost(ctx core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
 }
 
-func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence) *ModuleHost {
-	return &ModuleHost{
+func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence OperationDependence) *TransferManager {
+	return &TransferManager{
 		dbProxy:    db,
 		cache:      cache,
 		eventC:     ec,
@@ -48,9 +48,9 @@ func New(db dal.RDB, cache *redis.Client, ec eventclient.Client, dependence Oper
 }
 
 // TransferHostToInnerModule transfer host to inner module, default module contain(idle module, fault module)
-func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
 
-	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, []int64{input.ModuleID}, false)
+	transfer := manager.NewHostModuleTransfer(ctx, input.ApplicationID, []int64{input.ModuleID}, false)
 
 	exit, err := transfer.HasInnerModule(ctx)
 	if err != nil {
@@ -92,12 +92,12 @@ func (mh *ModuleHost) TransferHostToInnerModule(ctx core.ContextParams, input *m
 
 // TransferHostModule transfer host to use add module
 // 目标模块不能为空闲机模块
-func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
 	// 确保目标模块不能为空闲机模块
 	defaultModuleFilter := map[string]interface{}{
 		common.BKDefaultField: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
 	}
-	defaultModuleCount, err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
+	defaultModuleCount, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
 	if err != nil {
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -115,7 +115,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 			},
 		}
 		hostModuleConfigs := make([]metadata.ModuleHost, 0)
-		if err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostModuleConfigs); err != nil {
+		if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostModuleConfigs); err != nil {
 			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
 		hostModuleMap := make(map[int64][]int64)
@@ -142,7 +142,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 					common.BKDBIN: removedModuleIDs,
 				},
 			}
-			instanceCount, err := mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
+			instanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
 			if err != nil {
 				return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 			}
@@ -160,7 +160,7 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 		return exceptionArr, ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
 	}
 
-	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, input.ModuleID, input.IsIncrement)
+	transfer := manager.NewHostModuleTransfer(ctx, input.ApplicationID, input.ModuleID, input.IsIncrement)
 
 	err = transfer.ValidParameter(ctx)
 	if err != nil {
@@ -191,14 +191,14 @@ func (mh *ModuleHost) TransferHostModule(ctx core.ContextParams, input *metadata
 // 如果主机属于空闲机模块，操作失败
 // 如果主机属于故障机模块，操作失败
 // 如果主机不在参数指定的模块中，操作失败
-func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) RemoveHostFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
 	hostConfigFilter := map[string]interface{}{
 		common.BKHostIDField:   input.HostID,
 		common.BKModuleIDField: input.ModuleID,
 		common.BKAppIDField:    input.ApplicationID,
 	}
 	hostConfigs := make([]metadata.ModuleHost, 0)
-	if err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
+	if err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(hostConfigFilter).All(ctx.Context, &hostConfigs); err != nil {
 		return nil, ctx.Error.CCErrorf(common.CCErrHostModuleConfigFaild, err.Error())
 	}
 
@@ -223,7 +223,7 @@ func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metada
 			common.BKDBIN: []int{common.DefaultResModuleFlag, common.DefaultFaultModuleFlag},
 		},
 	}
-	defaultModuleCount, err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
+	defaultModuleCount, err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(defaultModuleFilter).Count(ctx.Context)
 	if err != nil {
 		return nil, ctx.Error.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
 	}
@@ -244,7 +244,7 @@ func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metada
 			ModuleID:      targetModuleIDs,
 			IsIncrement:   false,
 		}
-		return mh.TransferHostModule(ctx, &option)
+		return manager.TransferHostModule(ctx, &option)
 	}
 
 	// transfer host to idle module
@@ -253,7 +253,7 @@ func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metada
 		common.BKDefaultField: common.DefaultResModuleFlag,
 	}
 	idleModule := metadata.ModuleHost{}
-	if err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(idleModuleFilter).One(ctx.Context, &idleModule); err != nil {
+	if err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(idleModuleFilter).One(ctx.Context, &idleModule); err != nil {
 		return nil, ctx.Error.CCErrorf(common.CCErrHostGetModuleFail, err.Error())
 	}
 	innerModuleOption := metadata.TransferHostToInnerModule{
@@ -261,18 +261,18 @@ func (mh *ModuleHost) RemoveHostFromModule(ctx core.ContextParams, input *metada
 		ModuleID:      idleModule.ModuleID,
 		HostID:        []int64{input.HostID},
 	}
-	return mh.TransferHostToInnerModule(ctx, &innerModuleOption)
+	return manager.TransferHostToInnerModule(ctx, &innerModuleOption)
 }
 
 // TransferHostCrossBusiness Host cross-business transfer
-func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
 	// check whether there is service instance bound to hosts
 	serviceInstanceFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
 			common.BKDBIN: input.HostIDArr,
 		},
 	}
-	serviceInstanceCount, err := mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
+	serviceInstanceCount, err := manager.dbProxy.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(ctx.Context)
 	if err != nil {
 		blog.Errorf("TransferHostCrossBusiness failed, query host related service instances failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrCommDBSelectFailed)
@@ -281,7 +281,7 @@ func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *m
 		return nil, ctx.Error.CCError(common.CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance)
 	}
 
-	transfer := mh.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
+	transfer := manager.NewHostModuleTransfer(ctx, input.DstApplicationID, input.DstModuleIDArr, false)
 	transfer.SetCrossBusiness(ctx, input.SrcApplicationID)
 
 	err = transfer.ValidParameter(ctx)
@@ -309,7 +309,7 @@ func (mh *ModuleHost) TransferHostCrossBusiness(ctx core.ContextParams, input *m
 }
 
 // GetHostModuleRelation get host module relation
-func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
+func (manager *TransferManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
 	if input.Empty() {
 		blog.Errorf("GetHostModuleRelation input empty. input:%#v, rid:%s", input, ctx.ReqID)
 		return nil, ctx.Error.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
@@ -333,7 +333,7 @@ func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metad
 	}
 	cond = util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
 	hostModuleArr := make([]metadata.ModuleHost, 0)
-	err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &hostModuleArr)
+	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &hostModuleArr)
 	if err != nil {
 		blog.ErrorJSON("GetHostModuleRelation query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
@@ -343,9 +343,9 @@ func (mh *ModuleHost) GetHostModuleRelation(ctx core.ContextParams, input *metad
 }
 
 // DeleteHost delete host module relation and host info
-func (mh *ModuleHost) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+func (manager *TransferManager) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
 
-	transfer := mh.NewHostModuleTransfer(ctx, input.ApplicationID, nil, false)
+	transfer := manager.NewHostModuleTransfer(ctx, input.ApplicationID, nil, false)
 	transfer.SetDeleteHost(ctx)
 
 	err := transfer.ValidParameter(ctx)
@@ -373,9 +373,9 @@ func (mh *ModuleHost) DeleteHost(ctx core.ContextParams, input *metadata.DeleteH
 	return nil, nil
 }
 
-func (mh *ModuleHost) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
+func (manager *TransferManager) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
 	conds = util.SetQueryOwner(conds, ctx.SupplierAccount)
-	cnt, err := mh.dbProxy.Table(tableName).Find(conds).Count(ctx)
+	cnt, err := manager.dbProxy.Table(tableName).Find(conds).Count(ctx)
 	if err != nil {
 		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds, ctx.ReqID)
 		return 0, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -384,14 +384,14 @@ func (mh *ModuleHost) countByCond(ctx core.ContextParams, conds mapstr.MapStr, t
 	return cnt, nil
 }
 
-func (mh *ModuleHost) getModuleInfoByModuleID(ctx core.ContextParams, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (manager *TransferManager) getModuleInfoByModuleID(ctx core.ContextParams, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	moduleConds := condition.CreateCondition()
 	moduleConds.Field(common.BKAppIDField).Eq(appID)
 	moduleConds.Field(common.BKModuleIDField).In(moduleID)
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := mh.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(ctx, &moduleInfoArr)
+	err := manager.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(ctx, &moduleInfoArr)
 	if err != nil {
 		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -400,14 +400,14 @@ func (mh *ModuleHost) getModuleInfoByModuleID(ctx core.ContextParams, appID int6
 	return moduleInfoArr, nil
 }
 
-func (mh *ModuleHost) getHostIDModuleMapByHostID(ctx core.ContextParams, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
+func (manager *TransferManager) getHostIDModuleMapByHostID(ctx core.ContextParams, appID int64, hostIDArr []int64) (map[int64][]metadata.ModuleHost, errors.CCErrorCoder) {
 	moduleHostCond := condition.CreateCondition()
 	moduleHostCond.Field(common.BKAppIDField).Eq(appID)
 	moduleHostCond.Field(common.BKHostIDField).In(hostIDArr)
 	cond := util.SetQueryOwner(moduleHostCond.ToMapStr(), ctx.SupplierAccount)
 
 	var dataArr []metadata.ModuleHost
-	err := mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &dataArr)
+	err := manager.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(cond).All(ctx, &dataArr)
 	if err != nil {
 		blog.ErrorJSON("getHostIDMOduleIDMapByHostID query db error. err:%s, cond:%s,rid:%s", err.Error(), cond, ctx.ReqID)
 		return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
