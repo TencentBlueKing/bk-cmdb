@@ -137,7 +137,7 @@
                 return this.$route.params.modelId
             },
             createDisabled () {
-                return !this.isAdminView && this.objId === 'biz'
+                return !this.isAdminView && this.isPublicModel
             },
             isReadOnly () {
                 if (this.activeModel) {
