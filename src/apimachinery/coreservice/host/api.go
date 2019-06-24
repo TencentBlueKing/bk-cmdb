@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-// TransferHostToInnerModule  transfer host to inner module  eg:idle module and fault module
-func (h *host) TransferHostToInnerModule(ctx context.Context, header http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error) {
+// TransferToInnerModule  transfer host to inner module  eg:idle module and fault module
+func (h *host) TransferToInnerModule(ctx context.Context, header http.Header, input *metadata.TransferHostToInnerModule) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/inner/module"
 
@@ -35,7 +35,7 @@ func (h *host) TransferHostToInnerModule(ctx context.Context, header http.Header
 }
 
 // TransferHostModule  transfer host to  module
-func (h *host) TransferHostModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
+func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, input *metadata.HostsModuleRelation) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/module"
 
@@ -49,13 +49,13 @@ func (h *host) TransferHostModule(ctx context.Context, header http.Header, input
 	return
 }
 
-// RemoveHostFromModule 将主机从模块中移出
+// RemoveFromModule 将主机从模块中移出
 // 如果主机属于n+1个模块（n>0），操作之后，主机属于n个模块
 // 如果主机属于1个模块, 且非空闲机模块，操作之后，主机属于空闲机模块
 // 如果主机属于空闲机模块，操作失败
 // 如果主机属于故障机模块，操作失败
 // 如果主机不在参数指定的模块中，操作失败
-func (h *host) RemoveHostFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error) {
+func (h *host) RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/update/host/host_module_relations"
 
@@ -70,7 +70,7 @@ func (h *host) RemoveHostFromModule(ctx context.Context, header http.Header, inp
 }
 
 // TransferHostCrossBusiness  transfer host to other bussiness module
-func (h *host) TransferHostCrossBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
+func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/cross/business"
 

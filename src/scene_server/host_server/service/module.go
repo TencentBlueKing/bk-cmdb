@@ -74,7 +74,7 @@ func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Respons
 		return
 	}
 
-	result, err := s.CoreAPI.CoreService().Host().TransferHostModule(srvData.ctx, srvData.header, config)
+	result, err := s.CoreAPI.CoreService().Host().TransferToNormalModule(srvData.ctx, srvData.header, config)
 	if err != nil {
 		blog.Errorf("add host module relation, but add config failed, err: %v, %v,input:%+v,rid:%s", err, result.ErrMsg, config, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -464,7 +464,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 		HostID:        conf.HostID,
 		ModuleID:      moduleID,
 	}
-	result, err := s.CoreAPI.CoreService().Host().TransferHostToInnerModule(ctx, pheader, transferInput)
+	result, err := s.CoreAPI.CoreService().Host().TransferToInnerModule(ctx, pheader, transferInput)
 	if err != nil {
 		blog.Errorf("moveHostToModuleByName TransferHostToDefaultModule http do error. input:%#v,condition:%#v,err:%v,rid:%s", conf, transferInput, err.Error(), rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrCommHTTPDoRequestFailed)})

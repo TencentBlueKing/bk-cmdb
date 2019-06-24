@@ -589,7 +589,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 			HostID:        serviceInstance.HostID,
 			ModuleID:      serviceInstance.ModuleID,
 		}
-		if _, err := ps.CoreAPI.CoreService().Host().RemoveHostFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
+		if _, err := ps.CoreAPI.CoreService().Host().RemoveFromModule(ctx.Kit.Ctx, ctx.Kit.Header, &removeHostFromModuleOption); err != nil {
 			ctx.RespWithError(err, common.CCErrHostMoveResourcePoolFail, "remove host from module failed, option: %+v, err: %v", removeHostFromModuleOption, err)
 			return
 		}

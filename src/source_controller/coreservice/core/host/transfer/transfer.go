@@ -22,48 +22,37 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
+	"configcenter/src/storage/dal"
 )
 
 type genericTransfer struct {
+	dbProxy   dal.DB
+	eventC    eventclient.Client
 	dependent OperationDependence
 
-	// depend parametere
-	mh          *TransferManager
+	// depend parameter
 	moduleIDArr []int64
 	bizID       int64
 	// Incr=true is added to the module
-	// Incr=false delete existing module, add current module
-	isIncr bool
+	// Incr=false delete exist module, add current module
+	isIncrement bool
 	// cross-business transfer module
 	// From the A business to the B business module
 	crossBizTransfer bool
-	//   cross-business transfer module, source business id
+	// cross-business transfer module, source business id
 	srcBizID int64
 
 	// delHost delete host model
 	delHost bool
 
-	// handle data
-
+	// ***** cache ********
 	// inner module id array
 	innerModuleID []int64
-
-	// map[module id]set id
-	moduleIDSetIDmap map[int64]int64
+	// map[bk_module_id]bk_set_id
+	moduleIDSetIDMap map[int64]int64
 }
 
-// NewHostModuleTransfer business normal module transfer
-func (manager *TransferManager) NewHostModuleTransfer(ctx core.ContextParams, bizID int64, moduleIDArr []int64, isIncr bool) *genericTransfer {
-	return &genericTransfer{
-		mh:          manager,
-		moduleIDArr: moduleIDArr,
-		bizID:       bizID,
-		isIncr:      isIncr,
-		dependent:   manager.dependence,
-	}
-}
-
-// validParameter valid parametere legal
+// validParameter valid parameter legal
 func (t *genericTransfer) ValidParameter(ctx core.ContextParams) errors.CCErrorCoder {
 	if len(t.innerModuleID) == 0 {
 		err := t.getInnerModuleIDArr(ctx)
@@ -106,7 +95,7 @@ func (t *genericTransfer) Transfer(ctx core.ContextParams, hostID int64) errors.
 	var hostInfo mapstr.MapStr
 	// transfer  host module config
 	var originDatas, curDatas []mapstr.MapStr
-	// must be silce ptr address, Each assignment will change the address
+	// must be slice ptr address, Each assignment will change the address
 	defer t.generateEvent(ctx, &originDatas, &curDatas, hostInfo)
 
 	originDatas, err = t.delHostModuleRelation(ctx, hostID)
@@ -126,7 +115,7 @@ func (t *genericTransfer) Transfer(ctx core.ContextParams, hostID int64) errors.
 
 	}
 	// transfer host module config
-	curDatas, err = t.AddHostModuleRelation(ctx, hostID)
+	curDatas, err = t.addHostModuleRelation(ctx, hostID)
 	if err != nil {
 		return err
 	}
@@ -144,7 +133,7 @@ func (t *genericTransfer) deleteHost(ctx core.ContextParams, hostID int64) (maps
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 	hostCondMap := util.SetQueryOwner(hostCond.ToMapStr(), ctx.SupplierAccount)
 	hostInfoArr := make([]mapstr.MapStr, 0)
-	err := t.mh.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(ctx, &hostInfoArr)
+	err := t.dbProxy.Table(common.BKTableNameBaseHost).Find(&hostCondMap).All(ctx, &hostInfoArr)
 	if err != nil {
 		blog.ErrorJSON("deleteHost find data error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -158,13 +147,13 @@ func (t *genericTransfer) deleteHost(ctx core.ContextParams, hostID int64) (maps
 	delMoudleHost.Field(common.BKHostIDField).Eq(hostID)
 	delMoudleHost.Field(common.BKAppIDField).Eq(t.bizID)
 	delMoudleHostMap := util.SetQueryOwner(delMoudleHost.ToMapStr(), ctx.SupplierAccount)
-	err = t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delMoudleHostMap)
+	err = t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delMoudleHostMap)
 	if err != nil {
 		blog.ErrorJSON("deleteHost delete module hsot realtion error. err:%s, cond:%s, rid:%s", err.Error(), delMoudleHostMap, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
-	err = t.mh.dbProxy.Table(common.BKTableNameBaseHost).Delete(ctx, hostCondMap)
+	err = t.dbProxy.Table(common.BKTableNameBaseHost).Delete(ctx, hostCondMap)
 	if err != nil {
 		blog.ErrorJSON("deleteHost delete host error. err:%s, cond:%s, rid:%s", err.Error(), hostCondMap, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -213,7 +202,7 @@ func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, cur
 		}
 
 	}
-	err := t.mh.eventC.Push(ctx, eventArr...)
+	err := t.eventC.Push(ctx, eventArr...)
 	if err != nil {
 		blog.Errorf("host relation event push failed, but create event error:%v", err)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
@@ -228,7 +217,7 @@ func (t *genericTransfer) validParameterInst(ctx core.ContextParams) errors.CCEr
 	appCond := condition.CreateCondition()
 	appCond.Field(common.BKAppIDField).Eq(t.bizID)
 
-	cnt, err := t.mh.countByCond(ctx, appCond.ToMapStr(), common.BKTableNameBaseApp)
+	cnt, err := t.countByCond(ctx, appCond.ToMapStr(), common.BKTableNameBaseApp)
 	if err != nil {
 		return err
 	}
@@ -241,7 +230,7 @@ func (t *genericTransfer) validParameterInst(ctx core.ContextParams) errors.CCEr
 		appCond := condition.CreateCondition()
 		appCond.Field(common.BKAppIDField).Eq(t.srcBizID)
 
-		cnt, err = t.mh.countByCond(ctx, appCond.ToMapStr(), common.BKTableNameBaseApp)
+		cnt, err = t.countByCond(ctx, appCond.ToMapStr(), common.BKTableNameBaseApp)
 		if err != nil {
 			return err
 		}
@@ -266,7 +255,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 	}
 	bizID := t.bizID
 
-	moduleInfoArr, err := t.mh.getModuleInfoByModuleID(ctx, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
+	moduleInfoArr, err := t.getModuleInfoByModuleID(ctx, bizID, t.moduleIDArr, []string{common.BKModuleIDField, common.BKDefaultField, common.BKSetIDField})
 	if err != nil {
 		return err
 	}
@@ -276,7 +265,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, t.moduleIDArr, bizID)
 	}
 
-	t.moduleIDSetIDmap = make(map[int64]int64, 0)
+	t.moduleIDSetIDMap = make(map[int64]int64, 0)
 
 	// When multiple modules are used, determine whether the default module .
 	// has default module ,not handle transfer.
@@ -304,7 +293,7 @@ func (t *genericTransfer) validParameterModule(ctx core.ContextParams) errors.CC
 			blog.ErrorJSON("validParameter module info field set id not integer. err:%s, moduleInfo:%s,rid:%s", err.Error(), moduleInfoArr, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommInstFieldConvFail, common.BKInnerObjIDModule, common.BKSetIDField, "int", err.Error())
 		}
-		t.moduleIDSetIDmap[moduleID] = setID
+		t.moduleIDSetIDMap[moduleID] = setID
 
 	}
 
@@ -318,7 +307,7 @@ func (t *genericTransfer) validHost(ctx core.ContextParams, hostID int64) errors
 	hostCond := condition.CreateCondition()
 	hostCond.Field(common.BKHostIDField).Eq(hostID)
 
-	cnt, err := t.mh.countByCond(ctx, hostCond.ToMapStr(), common.BKTableNameBaseHost)
+	cnt, err := t.countByCond(ctx, hostCond.ToMapStr(), common.BKTableNameBaseHost)
 	if err != nil {
 		return err
 	}
@@ -338,7 +327,7 @@ func (t *genericTransfer) validHost(ctx core.ContextParams, hostID int64) errors
 	cond.Field(common.BKHostIDField).Eq(hostID)
 	condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 
-	cnt, dbErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).Count(ctx)
+	cnt, dbErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).Count(ctx)
 	if dbErr != nil {
 		blog.ErrorJSON("validParameterHostBelongbiz find data error. err:%s,cond:%s, rid:%s", dbErr.Error(), condMap, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -361,7 +350,7 @@ func (t *genericTransfer) delHostModuleRelation(ctx core.ContextParams, hostID i
 	}
 	//
 
-	if t.isIncr {
+	if t.isIncrement {
 		// delete default module
 		return t.delHostModuleRelationItem(ctx, bizID, hostID, true)
 
@@ -382,7 +371,7 @@ func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizI
 	cond.Field(common.BKHostIDField).Eq(hostID)
 
 	delCondition := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
-	num, numError := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).Count(ctx)
+	num, numError := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).Count(ctx)
 	if numError != nil {
 		blog.Errorf("delete host relation, but get module host relation failed, err: %v", numError)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -394,14 +383,14 @@ func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizI
 
 	// retrieve original data
 	originDatas := make([]mapstr.MapStr, 0)
-	getErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(ctx, &originDatas)
+	getErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).All(ctx, &originDatas)
 	if getErr != nil {
 		blog.ErrorJSON("delete host relation, retrieve original data error. err:%v, cond:%s, rid:%s", getErr, delCondition, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	delCondition = util.SetModOwner(cond.ToMapStr(), ctx.SupplierAccount)
-	delErr := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delCondition) //.DelByCondition(ModuleHostCollection, delCondition)
+	delErr := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Delete(ctx, delCondition) //.DelByCondition(ModuleHostCollection, delCondition)
 	if delErr != nil {
 		blog.ErrorJSON("delete host relation, but del module host relation failed. err:%v, cond:%s, rid:%s", delErr, delCondition, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -411,19 +400,19 @@ func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizI
 }
 
 // AddSingleHostModuleRelation add single host module relation
-func (t *genericTransfer) AddHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
+func (t *genericTransfer) addHostModuleRelation(ctx core.ContextParams, hostID int64) ([]mapstr.MapStr, errors.CCErrorCoder) {
 	bizID := t.bizID
 
 	var moduleIDArr []int64
 	// append method, filter already exist modules
-	if t.isIncr {
+	if t.isIncrement {
 		cond := condition.CreateCondition()
 		cond.Field(common.BKAppIDField).Eq(t.bizID)
 		cond.Field(common.BKHostIDField).Eq(hostID)
 		cond.Field(common.BKModuleIDField).In(t.moduleIDArr)
 		condMap := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 		relationArr := make([]metadata.ModuleHost, 0)
-		err := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).All(ctx, &relationArr)
+		err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).All(ctx, &relationArr)
 		if err != nil {
 			blog.ErrorJSON("add  host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -450,14 +439,14 @@ func (t *genericTransfer) AddHostModuleRelation(ctx core.ContextParams, hostID i
 		insertData := mapstr.MapStr{
 			common.BKAppIDField: bizID, common.BKHostIDField: hostID, common.BKModuleIDField: moduleID,
 			// validation parameter ensure module must be exist  t.validParameterModule
-			common.BKSetIDField: t.moduleIDSetIDmap[moduleID],
+			common.BKSetIDField: t.moduleIDSetIDMap[moduleID],
 		}
 
 		insertData = util.SetModOwner(insertData, ctx.SupplierAccount)
 		insertDataArr = append(insertDataArr, insertData)
 	}
 
-	err := t.mh.dbProxy.Table(common.BKTableNameModuleHostConfig).Insert(ctx, insertDataArr)
+	err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Insert(ctx, insertDataArr)
 	if err != nil {
 		blog.Errorf("add host module relation, add module host relation error: %v", err)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
@@ -488,7 +477,7 @@ func (t *genericTransfer) getInnerModuleIDArr(ctx core.ContextParams) errors.CCE
 	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := t.mh.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).All(ctx, &moduleInfoArr)
+	err := t.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).All(ctx, &moduleInfoArr)
 
 	if err != nil {
 		blog.ErrorJSON("getInnerModuleIDArr find data error. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
@@ -548,7 +537,7 @@ func (t *genericTransfer) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs
 		common.BKHostIDField: map[string][]int64{common.BKDBIN: hostIDs},
 	}
 	var count uint64
-	count, err := t.mh.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context)
+	count, err := t.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).Count(ctx.Context)
 	if err != nil {
 		blog.Errorf("DoTransferToInnerCheck failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameServiceInstance, err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -558,4 +547,31 @@ func (t *genericTransfer) DoTransferToInnerCheck(ctx core.ContextParams, hostIDs
 	}
 
 	return nil
+}
+
+func (t *genericTransfer) getModuleInfoByModuleID(ctx core.ContextParams, appID int64, moduleID []int64, fields []string) ([]mapstr.MapStr, errors.CCErrorCoder) {
+	moduleConds := condition.CreateCondition()
+	moduleConds.Field(common.BKAppIDField).Eq(appID)
+	moduleConds.Field(common.BKModuleIDField).In(moduleID)
+	cond := util.SetQueryOwner(moduleConds.ToMapStr(), ctx.SupplierAccount)
+
+	moduleInfoArr := make([]mapstr.MapStr, 0)
+	err := t.dbProxy.Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(ctx, &moduleInfoArr)
+	if err != nil {
+		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	return moduleInfoArr, nil
+}
+
+func (t *genericTransfer) countByCond(ctx core.ContextParams, conds mapstr.MapStr, tableName string) (uint64, errors.CCErrorCoder) {
+	conds = util.SetQueryOwner(conds, ctx.SupplierAccount)
+	cnt, err := t.dbProxy.Table(tableName).Find(conds).Count(ctx)
+	if err != nil {
+		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds, ctx.ReqID)
+		return 0, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	return cnt, nil
 }

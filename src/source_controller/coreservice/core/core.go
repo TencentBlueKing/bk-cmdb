@@ -135,12 +135,12 @@ type TopoOperation interface {
 
 // HostOperation methods
 type HostOperation interface {
-	TransferHostToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
-	TransferHostModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
-	RemoveHostFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
-	TransferHostCrossBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
+	TransferToInnerModule(ctx ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error)
+	TransferToNormalModule(ctx ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error)
+	TransferToAnotherBusiness(ctx ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error)
+	RemoveFromModule(ctx ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error)
+	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
-	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
 }
 
