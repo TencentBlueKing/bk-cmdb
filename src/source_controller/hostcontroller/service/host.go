@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"configcenter/src/common"
@@ -26,7 +25,7 @@ import (
 	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 )
 
 const (
@@ -35,76 +34,6 @@ const (
 	ModuleHostCollection = "cc_ModuleHostConfig"
 	UserQueryCollection  = "cc_UserAPI"
 )
-
-func (s *Service) GetHostByID(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-
-	pathParams := req.PathParameters()
-	hostID, err := strconv.Atoi(pathParams["bk_host_id"])
-	if err != nil {
-		blog.Errorf("get host by id, but got invalid host id, err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommParamsIsInvalid)})
-		return
-	}
-
-	result := make(map[string]interface{}, 0)
-	condition := common.KvMap{common.BKHostIDField: hostID}
-	condition = util.SetModOwner(condition, ownerID)
-	err = s.Instance.Table(common.BKTableNameBaseHost).Find(condition).One(ctx, &result)
-	if err != nil && !s.Instance.IsNotFoundError(err) {
-		blog.Errorf("get host by id[%d] failed, err: %v", hostID, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommDBSelectFailed)})
-		return
-	}
-
-	resp.WriteEntity(meta.HostInstanceResult{
-		BaseResp: meta.SuccessBaseResp,
-		Data:     result,
-	})
-}
-
-func (s *Service) GetHosts(req *restful.Request, resp *restful.Response) {
-	pheader := req.Request.Header
-	defErr := s.Core.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
-	lang := s.Core.Language.CreateDefaultCCLanguageIf(util.GetLanguage(pheader))
-	ownerID := util.GetOwnerID(pheader)
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-
-	var dat meta.ObjQueryInput
-	if err := json.NewDecoder(req.Request.Body).Decode(&dat); err != nil {
-		blog.Errorf("get hosts failed with decode body err: %v", err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	condition := util.ConvParamsTime(dat.Condition)
-	condition = util.SetModOwner(condition, ownerID)
-	fieldArr := util.SplitStrField(dat.Fields, ",")
-	result, err := s.Logics.GetObjectByCondition(ctx, lang, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
-	if err != nil {
-		blog.Errorf("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
-		return
-	}
-
-	count, err := s.Instance.Table(common.BKTableNameBaseHost).Find(condition).Count(ctx)
-	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Error(common.CCErrHostSelectInst)})
-		return
-	}
-
-	resp.WriteEntity(meta.GetHostsResult{
-		BaseResp: meta.SuccessBaseResp,
-		Data: meta.HostInfo{
-			Count: int(count),
-			Info:  result,
-		},
-	})
-}
 
 func (s *Service) AddHost(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header

@@ -868,7 +868,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.HostController().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -57,7 +57,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, moduleID int64) (map[i
 	opt.Condition = mapstr.MapStr{common.BKHostIDField: common.KvMap{common.BKDBIN: hostIDs}}
 	opt.Fields = fmt.Sprintf("%s,%s,%s", common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField)
 	opt.Limit = common.BKNoLimit
-	hosts, err := lgc.CoreAPI.HostController().Host().GetHosts(ctx, lgc.header, opt)
+	hosts, err := lgc.CoreAPI.CoreService().Host().GetHosts(ctx, lgc.header, opt)
 	if nil != err {
 		blog.Errorf("getHostByModuleID GetHosts http do error.moduleID %d hostID:%v supplierID %s GetHosts http do error:%s,input:%+v,rid:%s", moduleID, hostIDs, supplierID, err.Error(), opt, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -13,15 +13,9 @@
 package logics
 
 import (
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common"
 	"context"
 	"errors"
-	"fmt"
-
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	"configcenter/src/common/language"
-	"configcenter/src/common/util"
 )
 
 func (lgc *Logics) GetObjectByID(ctx context.Context, objType string, fields []string, id int64, result interface{}, sort string) error {
@@ -76,30 +70,4 @@ var defaultNameLanguagePkg = map[string]map[string][]string{
 	common.BKInnerObjIDSet: {
 		"1": {"inst_set_default", common.BKSetNameField, common.BKSetIDField},
 	},
-}
-
-func (lgc *Logics) GetObjectByCondition(ctx context.Context, defLang language.DefaultCCLanguageIf, objType string, fields []string, condition interface{}, sort string, skip, limit int) ([]mapstr.MapStr, error) {
-	results := make([]mapstr.MapStr, 0)
-	tName := common.GetInstTableName(objType)
-
-	dbInst := lgc.Instance.Table(tName).Find(condition).Sort(sort).Start(uint64(skip)).Limit(uint64(limit))
-	if 0 < len(fields) {
-		dbInst.Fields(fields...)
-	}
-	if err := dbInst.All(ctx, &results); err != nil {
-		blog.Errorf("failed to query the inst , error info %s", err.Error())
-		return nil, err
-	}
-
-	// translate language for default name
-	if m, ok := defaultNameLanguagePkg[objType]; nil != defLang && ok {
-		for index, info := range results {
-			l := m[fmt.Sprint(info["default"])]
-			if len(l) >= 3 {
-				results[index][l[1]] = util.FirstNotEmptyString(defLang.Language(l[0]), fmt.Sprint(info[l[1]]), fmt.Sprint(info[l[2]]))
-			}
-		}
-	}
-
-	return results, nil
 }

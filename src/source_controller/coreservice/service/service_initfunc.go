@@ -119,6 +119,9 @@ func (s *coreService) host() {
 
 	s.addAction(http.MethodPost, "/read/host/indentifier", s.HostIdentifier, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
+
+	s.addAction(http.MethodPost, "/find/host/{bk_host_id}", s.GetHostByID, nil)
+	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
 }
 
 func (s *coreService) audit() {

@@ -14,6 +14,7 @@ package host
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"configcenter/src/common/metadata"
@@ -127,4 +128,31 @@ func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *me
 		Do().
 		Into(resp)
 	return
+}
+
+func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID string) (resp *metadata.HostInstanceResult, err error) {
+	resp = new(metadata.HostInstanceResult)
+	subPath := fmt.Sprintf("/find/host/%s", hostID)
+
+	err = h.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return resp, err
+}
+
+func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetHostsResult, err error) {
+	resp = new(metadata.GetHostsResult)
+	subPath := "/findmany/hosts/search"
+
+	err = h.client.Post().
+		Body(opt).
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return resp, err
 }
