@@ -70,7 +70,7 @@ func (h *host) RemoveFromModule(ctx context.Context, header http.Header, input *
 	return
 }
 
-// TransferHostCrossBusiness  transfer host to other bussiness module
+// TransferHostCrossBusiness  transfer host to other business module
 func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header, input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/cross/business"
@@ -210,4 +210,130 @@ func (h *host) QueryHostLock(ctx context.Context, header http.Header, input *met
 		Do().
 		Into(resp)
 	return resp, err
+}
+
+func (h *host) AddUserConfig(ctx context.Context, header http.Header, dat *metadata.UserConfig) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
+	subPath := "/userapi"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) UpdateUserConfig(ctx context.Context, businessID string, id string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+
+	err = h.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) DeleteUserConfig(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/userapi/%s/%s", businessID, id)
+
+	err = h.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetUserConfig(ctx context.Context, header http.Header, opt *metadata.QueryInput) (resp *metadata.GetUserConfigResult, err error) {
+	resp = new(metadata.GetUserConfigResult)
+	subPath := "/userapi/search"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetUserConfigDetail(ctx context.Context, businessID string, id string, header http.Header) (resp *metadata.GetUserConfigDetailResult, err error) {
+	resp = new(metadata.GetUserConfigDetailResult)
+	subPath := fmt.Sprintf("/userapi/detail/%s/%s", businessID, id)
+
+	err = h.client.Get().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) AddUserCustom(ctx context.Context, user string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/usercustom/%s", user)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) UpdateUserCustomByID(ctx context.Context, user string, id string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/usercustom/%s/%s", user, id)
+
+	err = h.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetUserCustomByUser(ctx context.Context, user string, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
+	subPath := fmt.Sprintf("/usercustom/user/search/%s", user)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetDefaultUserCustom(ctx context.Context, user string, header http.Header) (resp *metadata.GetUserCustomResult, err error) {
+	resp = new(metadata.GetUserCustomResult)
+	subPath := fmt.Sprintf("/usercustom/default/search/%s", user)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
 }

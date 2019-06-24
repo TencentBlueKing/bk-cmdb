@@ -127,6 +127,16 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/find/host/lock", s.LockHost, nil)
 	s.addAction(http.MethodDelete, "/delete/host/lock", s.UnlockHost, nil)
 	s.addAction(http.MethodPost, "/findmany/host/lock/search", s.QueryLockHost, nil)
+
+	s.addAction(http.MethodPost, "/userapi", s.AddUserConfig, nil)
+	s.addAction(http.MethodPut, "/userapi/{bk_biz_id}/{id}", s.UpdateUserConfig, nil)
+	s.addAction(http.MethodDelete, "/userapi/{bk_biz_id}/{id}", s.DeleteUserConfig, nil)
+	s.addAction(http.MethodPost, "/userapi/search", s.GetUserConfig, nil)
+	s.addAction(http.MethodGet, "/userapi/detail/{bk_biz_id}/{id}", s.UserConfigDetail, nil)
+	s.addAction(http.MethodPost, "/usercustom/{bk_user}", s.AddUserCustom, nil)
+	s.addAction(http.MethodPut, "/usercustom/{bk_user}/{id}", s.UpdateUserCustomByID, nil)
+	s.addAction(http.MethodPost, "/usercustom/user/search/{bk_user}", s.GetUserCustomByUser, nil)
+	s.addAction(http.MethodPost, "/usercustom/default/search/{bk_user}", s.GetDefaultUserCustom, nil)
 }
 
 func (s *coreService) audit() {
