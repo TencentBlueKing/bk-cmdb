@@ -33,93 +33,9 @@ func (m *mod) GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadat
 	return
 }
 
-func (m *mod) AddModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/meta/hosts/modules"
-
-	err = m.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) DelModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/meta/hosts/modules"
-
-	err = m.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) DelDefaultModuleHostConfig(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/meta/hosts/defaultmodules"
-
-	err = m.client.Delete().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) MoveHost2ResourcePool(ctx context.Context, h http.Header, dat *metadata.ParamData) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/meta/hosts/resource"
-
-	err = m.client.Put().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) AssignHostToApp(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.BaseResp, err error) {
-	resp = new(metadata.BaseResp)
-	subPath := "/meta/hosts/assign"
-
-	err = m.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
 	resp = new(metadata.HostConfig)
 	subPath := "/meta/hosts/module/config/search"
-
-	err = m.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) TransferHostToDefaultModule(ctx context.Context, h http.Header, dat *metadata.TransferHostToInnerModule) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "transfer/host/default/module"
 
 	err = m.client.Post().
 		WithContext(ctx).
