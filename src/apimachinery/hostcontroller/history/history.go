@@ -13,16 +13,10 @@
 package history
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
 )
 
 type HistoryInterface interface {
-	AddHistory(ctx context.Context, user string, h http.Header, dat *metadata.HistoryContent) (resp *metadata.AddHistoryResult, err error)
-	GetHistorys(ctx context.Context, user string, start string, limit string, h http.Header) (resp *metadata.GetHistoryResult, err error)
 }
 
 func NewHistoryInterface(client rest.ClientInterface) HistoryInterface {
