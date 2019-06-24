@@ -30,7 +30,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 	info.ResourceType = *resourceTypeID
 
