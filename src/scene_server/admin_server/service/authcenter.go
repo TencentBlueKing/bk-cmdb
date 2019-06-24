@@ -73,5 +73,5 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommInitAuthcenterFailed, err.Error())})
 		return
 	}
-	resp.WriteEntity(metadata.NewSuccessResp("init auth center success"))
+	resp.WriteEntity(metadata.NewSuccessResp("init authcenter success"))
 }
