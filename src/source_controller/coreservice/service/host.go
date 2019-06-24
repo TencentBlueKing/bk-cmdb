@@ -19,13 +19,13 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 )
 
-func (s *coreService) TransferHostToDefaultModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToInnerModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.TransferHostToInnerModule{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("TransferHostToDefaultModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	exceptionArr, err := s.core.HostOperation().TransferHostToInnerModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(params, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostToDefaultModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
 		return exceptionArr, err
@@ -33,13 +33,13 @@ func (s *coreService) TransferHostToDefaultModule(params core.ContextParams, pat
 	return nil, nil
 }
 
-func (s *coreService) TransferHostModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToNormalModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.HostsModuleRelation{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("TransferHostModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	exceptionArr, err := s.core.HostOperation().TransferHostModule(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(params, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
 		return exceptionArr, err
@@ -47,13 +47,13 @@ func (s *coreService) TransferHostModule(params core.ContextParams, pathParams, 
 	return nil, nil
 }
 
-func (s *coreService) TransferHostCrossBusiness(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) TransferHostToAnotherBusiness(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.TransferHostsCrossBusinessRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("TransferHostCrossBusiness MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	exceptionArr, err := s.core.HostOperation().TransferHostCrossBusiness(params, inputData)
+	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(params, inputData)
 	if err != nil {
 		blog.ErrorJSON("TransferHostCrossBusiness  error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), data, exceptionArr, params.ReqID)
 		return exceptionArr, err
@@ -75,13 +75,13 @@ func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParam
 	return relationArr, nil
 }
 
-func (s *coreService) DeleteHost(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) DeleteHostFromSystem(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.DeleteHostRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("DeleteHost MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
-	exceptionArr, err := s.core.HostOperation().DeleteHost(params, inputData)
+	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(params, inputData)
 	if err != nil {
 		blog.ErrorJSON("DeleteHost  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, params.ReqID)
 		return exceptionArr, err
@@ -89,7 +89,7 @@ func (s *coreService) DeleteHost(params core.ContextParams, pathParams, queryPar
 	return nil, nil
 }
 
-func (s *coreService) Identifier(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+func (s *coreService) HostIdentifier(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.SearchHostIdentifierParam{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
 		blog.Errorf("Identifier MarshalJSONInto error, err:%s,input:%#v,rid:%s", err.Error(), data, params.ReqID)
@@ -107,7 +107,7 @@ func (s *coreService) Identifier(params core.ContextParams, pathParams, queryPar
 
 // TransferHostModuleDep is a TransferHostModule dependence
 func (s *coreService) TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	exceptionArr, err := s.core.HostOperation().TransferHostModule(ctx, input)
+	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(ctx, input)
 	if err != nil {
 		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.ReqID)
 		return exceptionArr, err
