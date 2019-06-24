@@ -20,8 +20,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-
-	"github.com/prometheus/tsdb/testutil"
 )
 
 func TestConfig(t *testing.T) {
@@ -148,17 +146,19 @@ func TestDoGetFallback(t *testing.T) {
 	defer server.Close()
 
 	u, err := url.Parse(server.URL)
-	testutil.Ok(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	client := &httpClient{client: *(server.Client())}
 
 	// Do a post, and ensure that the post succeeds.
-	_, b, err := DoGetFallback(client, context.TODO(), u, v)
+	_, b, _, err := DoGetFallback(client, context.TODO(), u, v)
 	if err != nil {
 		t.Fatalf("Error doing local request: %v", err)
 	}
 	resp := &testResponse{}
 	if err := json.Unmarshal(b, resp); err != nil {
-		testutil.Ok(t, err)
+		t.Fatal(err)
 	}
 	if resp.Method != http.MethodPost {
 		t.Fatalf("Mismatch method")
@@ -169,12 +169,12 @@ func TestDoGetFallback(t *testing.T) {
 
 	// Do a fallbcak to a get.
 	u.Path = "/blockPost"
-	_, b, err = DoGetFallback(client, context.TODO(), u, v)
+	_, b, _, err = DoGetFallback(client, context.TODO(), u, v)
 	if err != nil {
 		t.Fatalf("Error doing local request: %v", err)
 	}
 	if err := json.Unmarshal(b, resp); err != nil {
-		testutil.Ok(t, err)
+		t.Fatal(err)
 	}
 	if resp.Method != http.MethodGet {
 		t.Fatalf("Mismatch method")
