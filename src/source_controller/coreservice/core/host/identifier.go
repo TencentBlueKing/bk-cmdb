@@ -16,7 +16,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/host/Identifier"
+	"configcenter/src/source_controller/coreservice/core/host/identifier"
 )
 
 func (hm *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {

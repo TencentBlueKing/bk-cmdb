@@ -142,6 +142,9 @@ type HostOperation interface {
 	DeleteFromSystem(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
+	LockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
+	UnlockHost(params ContextParams, input *metadata.HostLockRequest) errors.CCError
+	QueryHostLock(params ContextParams, input *metadata.QueryHostLockRequest) ([]metadata.HostLockData, errors.CCError)
 }
 
 // AssociationOperation association methods
