@@ -122,7 +122,7 @@ func TestMountStats(t *testing.T) {
 						Bind:                     2,
 						Connect:                  3,
 						ConnectIdleTime:          4,
-						IdleTime:                 5 * time.Second,
+						IdleTimeSeconds:          5,
 						Sends:                    6,
 						Receives:                 7,
 						BadTransactionIDs:        8,
@@ -150,7 +150,7 @@ func TestMountStats(t *testing.T) {
 						Bind:                     2,
 						Connect:                  0,
 						ConnectIdleTime:          0,
-						IdleTime:                 0,
+						IdleTimeSeconds:          0,
 						Sends:                    3,
 						Receives:                 4,
 						BadTransactionIDs:        5,
@@ -178,7 +178,7 @@ func TestMountStats(t *testing.T) {
 						Bind:                     2,
 						Connect:                  3,
 						ConnectIdleTime:          4,
-						IdleTime:                 5 * time.Second,
+						IdleTimeSeconds:          5,
 						Sends:                    6,
 						Receives:                 7,
 						BadTransactionIDs:        8,
@@ -206,7 +206,7 @@ func TestMountStats(t *testing.T) {
 						Bind:                     2,
 						Connect:                  0, // these three are not
 						ConnectIdleTime:          0, // present for UDP
-						IdleTime:                 0, //
+						IdleTimeSeconds:          0, //
 						Sends:                    3,
 						Receives:                 4,
 						BadTransactionIDs:        5,
@@ -311,24 +311,34 @@ func TestMountStats(t *testing.T) {
 								Operation: "NULL",
 							},
 							{
-								Operation:                   "READ",
-								Requests:                    1298,
-								Transmissions:               1298,
-								BytesSent:                   207680,
-								BytesReceived:               1210292152,
-								CumulativeQueueTime:         6 * time.Millisecond,
-								CumulativeTotalResponseTime: 79386 * time.Millisecond,
-								CumulativeTotalRequestTime:  79407 * time.Millisecond,
+								Operation:                           "READ",
+								Requests:                            1298,
+								Transmissions:                       1298,
+								BytesSent:                           207680,
+								BytesReceived:                       1210292152,
+								CumulativeQueueMilliseconds:         6,
+								CumulativeTotalResponseMilliseconds: 79386,
+								CumulativeTotalRequestMilliseconds:  79407,
 							},
 							{
 								Operation: "WRITE",
+							},
+							{
+								Operation:                           "ACCESS",
+								Requests:                            2927395007,
+								Transmissions:                       2927394995,
+								BytesSent:                           526931094212,
+								BytesReceived:                       362996810236,
+								CumulativeQueueMilliseconds:         18446743919241604546,
+								CumulativeTotalResponseMilliseconds: 1667369447,
+								CumulativeTotalRequestMilliseconds:  1953587717,
 							},
 						},
 						Transport: NFSTransportStats{
 							Protocol:                 "tcp",
 							Port:                     832,
 							Connect:                  1,
-							IdleTime:                 11 * time.Second,
+							IdleTimeSeconds:          11,
 							Sends:                    6428,
 							Receives:                 6428,
 							CumulativeActiveRequests: 12154,
@@ -351,7 +361,7 @@ func TestMountStats(t *testing.T) {
 		if tt.s != "" {
 			mounts, err = parseMountStats(strings.NewReader(tt.s))
 		} else {
-			proc, e := getProcFixtures(t).NewProc(26231)
+			proc, e := getProcFixtures(t).Proc(26231)
 			if e != nil {
 				t.Fatalf("failed to create proc: %v", err)
 			}
