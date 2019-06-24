@@ -56,8 +56,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/favorites/search/{user}/{id}").To(s.GetHostFavouriteByID))
 	api.Route(api.POST("/history/{user}").To(s.AddHistory))
 	api.Route(api.GET("/history/{user}/{start}/{limit}").To(s.GetHistorys))
-	api.Route(api.GET("/host/{bk_host_id}").To(s.GetHostByID))
-	api.Route(api.POST("/hosts/search").To(s.GetHosts))
 	api.Route(api.POST("/insts").To(s.AddHost))
 	api.Route(api.GET("/host/snapshot/{bk_host_id}").To(s.GetHostSnap))
 	api.Route(api.POST("/meta/hosts/modules/search").To(s.GetHostModulesIDs))

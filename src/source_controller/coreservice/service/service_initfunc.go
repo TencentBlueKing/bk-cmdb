@@ -122,6 +122,7 @@ func (s *coreService) host() {
 
 	s.addAction(http.MethodPost, "/find/host/{bk_host_id}", s.GetHostByID, nil)
 	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
+	s.addAction(http.MethodPost, "/find/host/snapshot/%s", s.GetHostSnap, nil)
 }
 
 func (s *coreService) audit() {

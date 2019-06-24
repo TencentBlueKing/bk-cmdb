@@ -156,3 +156,16 @@ func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.Q
 		Into(resp)
 	return resp, err
 }
+
+func (h *host) GetHostSnap(ctx context.Context, header http.Header, hostID string) (resp *metadata.GetHostSnapResult, err error) {
+	resp = new(metadata.GetHostSnapResult)
+	subPath := fmt.Sprintf("/find/host/snapshot/%s", hostID)
+
+	err = h.client.Get().
+		WithContext(ctx).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return resp, err
+}

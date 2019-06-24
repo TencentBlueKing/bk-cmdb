@@ -251,7 +251,7 @@ func (s *Service) HostSnapInfo(req *restful.Request, resp *restful.Response) {
 	}
 
 	// get snapshot
-	result, err := s.CoreAPI.HostController().Host().GetHostSnap(srvData.ctx, hostID, srvData.header)
+	result, err := s.CoreAPI.CoreService().Host().GetHostSnap(srvData.ctx, srvData.header, hostID)
 
 	if err != nil {
 		blog.Errorf("HostSnapInfohttp do error, err: %v ,input:%#v, rid:%s", err, hostID, srvData.rid)
