@@ -114,7 +114,8 @@ export const STATIC_BUSINESS_MODE = [
     
     C_HOST,
     U_HOST,
-    D_HOST
+    D_HOST,
+    HOST_TO_RESOURCE
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [
