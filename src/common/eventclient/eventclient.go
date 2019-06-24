@@ -69,21 +69,21 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 	c.queueLock.Lock()
 	for i := range events {
 		if events[i] != nil {
-			var allEqual = true
-			for _, data := range events[i].Data {
-				equal, err := instEqual(data)
-				if err != nil {
-					return fmt.Errorf("[event] compare failed: %v, source data is %#v", err, data)
-				}
-				if !equal {
-					allEqual = false
-					break
-				}
-			}
-
-			if allEqual {
-				continue
-			}
+			// var allEqual = true
+			// for _, data := range events[i].Data {
+			// 	equal, err := instEqual(data)
+			// 	if err != nil {
+			// 		return fmt.Errorf("[event] compare failed: %v, source data is %#v", err, data)
+			// 	}
+			// 	if !equal {
+			// 		allEqual = false
+			// 		break
+			// 	}
+			// }
+			//
+			// if allEqual {
+			// 	continue
+			// }
 
 			eventID, err := c.rdb.NextSequence(ctx, common.EventCacheEventIDKey)
 			if err != nil {

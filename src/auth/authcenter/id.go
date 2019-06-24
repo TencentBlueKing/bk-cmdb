@@ -41,7 +41,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstanceAssociation:
 		return modelInstanceAssociationResourceID(resourceType, attribute)
-	case meta.ModelInstance:
+	case meta.ModelInstance, meta.MainlineInstance:
 		return modelInstanceResourceID(resourceType, attribute)
 	case meta.ModelInstanceTopology:
 		return modelInstanceTopologyResourceID(resourceType, attribute)
