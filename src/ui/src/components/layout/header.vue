@@ -336,6 +336,9 @@
                 background-color: #5d90e4;
                 border-radius: 20px;
                 cursor: pointer;
+                &:hover {
+                    background-color: #477ad0;
+                }
             }
         }
         .bk-tooltip-popper {
