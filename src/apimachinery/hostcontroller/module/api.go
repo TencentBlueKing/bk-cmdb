@@ -11,38 +11,3 @@
  */
 
 package module
-
-import (
-	"context"
-	"net/http"
-
-	"configcenter/src/common/metadata"
-)
-
-func (m *mod) GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
-	resp = new(metadata.GetHostModuleIDsResult)
-	subPath := "/meta/hosts/modules/search"
-
-	err = m.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (m *mod) GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
-	resp = new(metadata.HostConfig)
-	subPath := "/meta/hosts/module/config/search"
-
-	err = m.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}

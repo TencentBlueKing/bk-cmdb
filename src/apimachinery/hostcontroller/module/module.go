@@ -13,16 +13,10 @@
 package module
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
 )
 
 type ModuleInterface interface {
-	GetHostModulesIDs(ctx context.Context, h http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error)
-	GetModulesHostConfig(ctx context.Context, h http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error)
 }
 
 func NewModuleInterface(client rest.ClientInterface) ModuleInterface {

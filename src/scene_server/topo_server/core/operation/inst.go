@@ -286,7 +286,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 		common.BKModuleIDField: moduleIDS,
 	}
 
-	rsp, err := c.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

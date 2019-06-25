@@ -407,3 +407,31 @@ func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string,
 		Into(resp)
 	return
 }
+
+func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
+	resp = new(metadata.GetHostModuleIDsResult)
+	subPath := "/meta/hosts/modules/search"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetModulesHostConfig(ctx context.Context, header http.Header, dat map[string][]int64) (resp *metadata.HostConfig, err error) {
+	resp = new(metadata.HostConfig)
+	subPath := "/meta/hosts/module/config/search"
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}

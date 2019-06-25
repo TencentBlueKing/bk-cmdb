@@ -124,7 +124,7 @@ func (s *Service) GetHostModulesIDs(req *restful.Request, resp *restful.Response
 
 	condition := map[string]interface{}{common.BKAppIDField: params.ApplicationID, common.BKHostIDField: params.HostID}
 	condition = util.SetModOwner(condition, ownerID)
-	moduleIDs, err := s.Logics.GetModuleIDsByHostID(ctx, condition) //params.HostID, params.ApplicationID)
+	moduleIDs, err := s.Logics.GetModuleIDsByHostID(ctx, condition)
 	if nil != err {
 		blog.Errorf("get host module id failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: defErr.Error(common.CCErrGetModule)})
