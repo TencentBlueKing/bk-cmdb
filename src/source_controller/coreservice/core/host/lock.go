@@ -27,18 +27,22 @@ import (
 
 func (hm *hostManager) LockHost(params core.ContextParams, input *metadata.HostLockRequest) errors.CCError {
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField}
-	condition := mapstr.MapStr{common.BKCloudIDField: input.CloudID, common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS}}
+	condition := mapstr.MapStr{
+		common.BKCloudIDField:     input.CloudID,
+		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
+	}
+	condition = util.SetQueryOwner(condition, params.SupplierAccount)
 	hostInfos := make([]mapstr.MapStr, 0)
-	err := hm.DbProxy.Table(common.BKTableNameBaseHost).
-		Find(util.SetQueryOwner(condition, params.SupplierAccount)).Fields(fields...).Limit(uint64(len(input.IPS))).All(params.Context, &hostInfos)
+	limit := uint64(len(input.IPS))
+	err := hm.DbProxy.Table(common.BKTableNameBaseHost).Find(condition).Fields(fields...).Limit(limit).All(params.Context, &hostInfos)
 	if nil != err {
-		blog.Errorf("lock host, query host from db error, error:%s ,logID:%s", err.Error(), params.ReqID)
+		blog.Errorf("lock host, query host from db error, condition: %+v, err: %+v, rid: %s", condition, err, params.ReqID)
 		return params.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
 	diffIP := diffHostLockIP(input.IPS, hostInfos)
 	if 0 != len(diffIP) {
-		blog.Errorf("lock host, not found ip:%+v,logID:%s", diffIP, params.ReqID)
+		blog.Errorf("lock host, not found, ip:%+v, rid:%s", diffIP, params.ReqID)
 		return params.Error.Errorf(common.CCErrCommParamsIsInvalid, " ip_list["+strings.Join(diffIP, ",")+"]")
 	}
 
@@ -50,9 +54,10 @@ func (hm *hostManager) LockHost(params core.ContextParams, input *metadata.HostL
 			common.BKHostInnerIPField: ip,
 			common.BKCloudIDField:     input.CloudID,
 		}
-		cnt, err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(util.SetQueryOwner(conds, params.SupplierAccount)).Count(params.Context)
+		conds = util.SetQueryOwner(conds, params.SupplierAccount)
+		cnt, err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(conds).Count(params.Context)
 		if nil != err {
-			blog.Errorf("lock host, query host lock from db error, error:%s, logID:%s", err.Error(), params.ReqID)
+			blog.Errorf("lock host, query host lock from db failed, err:%+v, rid:%s", err, params.ReqID)
 			return params.Error.Errorf(common.CCErrCommDBSelectFailed)
 		}
 		if 0 == cnt {
@@ -69,7 +74,7 @@ func (hm *hostManager) LockHost(params core.ContextParams, input *metadata.HostL
 	if 0 < len(insertDataArr) {
 		err := hm.DbProxy.Table(common.BKTableNameHostLock).Insert(params.Context, insertDataArr)
 		if nil != err {
-			blog.Errorf("lock host, save host lock to db error, err: %+v, logID:%s", err, params.ReqID)
+			blog.Errorf("lock host, save host lock to db failed, err: %+v, rid:%s", err, params.ReqID)
 			return params.Error.Errorf(common.CCErrCommDBInsertFailed)
 		}
 	}
@@ -81,10 +86,10 @@ func (hm *hostManager) UnlockHost(params core.ContextParams, input *metadata.Hos
 		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
 		common.BKCloudIDField:     input.CloudID,
 	}
-	err := hm.DbProxy.Table(common.BKTableNameHostLock).Delete(params.Context, util.SetModOwner(conds, params.SupplierAccount))
-
+	conds = util.SetModOwner(conds, params.SupplierAccount)
+	err := hm.DbProxy.Table(common.BKTableNameHostLock).Delete(params.Context, conds)
 	if nil != err {
-		blog.Errorf("unlock host, delete host lock from db error, err: %+v,logID:%s", err, params.ReqID)
+		blog.Errorf("unlock host, delete host lock from db error, err: %+v, rid:%s", err, params.ReqID)
 		return params.Error.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -97,12 +102,14 @@ func (hm *hostManager) QueryHostLock(params core.ContextParams, input *metadata.
 		common.BKHostInnerIPField: mapstr.MapStr{common.BKDBIN: input.IPS},
 		common.BKCloudIDField:     input.CloudID,
 	}
-	err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(util.SetModOwner(conds, params.SupplierAccount)).Limit(uint64(len(input.IPS))).All(params.Context, &hostLockInfoArr)
+	conds = util.SetModOwner(conds, params.SupplierAccount)
+	limit := uint64(len(input.IPS))
+	err := hm.DbProxy.Table(common.BKTableNameHostLock).Find(conds).Limit(limit).All(params.Context, &hostLockInfoArr)
 	if nil != err {
-		blog.Errorf("query lock host, query host lock from db error, err: %+v, logID:%s", err, params.ReqID)
+		blog.Errorf("query lock host, query host lock from db error, err: %+v, rid:%s", err, params.ReqID)
 		return nil, params.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
-	return hostLockInfoArr, err
+	return hostLockInfoArr, nil
 }
 
 func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr) []string {
@@ -110,15 +117,15 @@ func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr) []string {
 	for _, hostInfo := range hostInfos {
 		innerIP, err := hostInfo.String(common.BKHostInnerIPField)
 		if nil != err {
-			blog.Warnf("different host lock IP not inner ip")
+			blog.ErrorJSON("different host lock IP not inner ip, %s", hostInfo)
 			continue
 		}
 		mapInnerIP[innerIP] = true
 	}
 	var diffIPS []string
 	for _, ip := range ips {
-		_, ok := mapInnerIP[ip]
-		if !ok {
+		_, exist := mapInnerIP[ip]
+		if !exist {
 			diffIPS = append(diffIPS, ip)
 		}
 	}
