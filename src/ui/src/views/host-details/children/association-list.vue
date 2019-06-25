@@ -8,14 +8,14 @@
             </div>
         </div>
         <template v-else>
-            <template v-for="(item, itemIndex) in list">
+            <template v-for="item in list">
                 <cmdb-host-association-list-table
-                    v-for="(association, associationIndex) in item.associations"
+                    ref="associationListTable"
+                    v-for="association in item.associations"
                     :key="association.id"
                     :type="item.type"
                     :id="item.id"
-                    :association-type="item.associationType"
-                    :visible="!(itemIndex || associationIndex)">
+                    :association-type="item.associationType">
                 </cmdb-host-association-list-table>
             </template>
         </template>
@@ -69,7 +69,7 @@
                 } catch (e) {
                     console.log(e)
                 }
-                return false
+                return []
             },
             loading () {
                 return this.$loading([
@@ -78,6 +78,14 @@
                     'getAssociationType',
                     'getInstRelation'
                 ])
+            }
+        },
+        watch: {
+            list () {
+                this.$nextTick(() => {
+                    const [firstAssociationListTable] = this.$refs.associationListTable
+                    firstAssociationListTable && (firstAssociationListTable.expanded = true)
+                })
             }
         },
         created () {

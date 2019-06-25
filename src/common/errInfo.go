@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy   = -1
+	CCSuccess      = 0
+	CCSuccessStr   = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 
@@ -275,7 +276,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
@@ -381,6 +382,8 @@ const (
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
+	// mainline's object unique can not be updated, deleted or create new rules.
+	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
 
 	// objectcontroller 1102XXX
 

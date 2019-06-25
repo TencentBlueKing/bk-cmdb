@@ -578,7 +578,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		} else if isMainline {
-			modelType = meta.ModelInstanceTopology
+			modelType = meta.MainlineInstance
 		}
 
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -605,6 +605,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
 		if len(model) != 0 {
 			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
 			if err != nil {
@@ -616,7 +625,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:   meta.ModelInstance,
+						Type:   modelType,
 						Action: meta.Find,
 					},
 					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
@@ -649,18 +658,38 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		if len(model) != 0 {
-			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
+		var modelType = meta.ModelInstance
+		var bizID int64
+		isMainline, err := ps.isMainlineModel(model[0].ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 			if err != nil {
 				ps.err = err
 				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
+		if len(model) != 0 {
+			if bizID == 0 {
+				bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
 			}
 
 			ps.Attribute.Resources = []meta.ResourceAttribute{
 				{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       modelType,
 						Action:     meta.Update,
 						InstanceID: instID,
 					},
@@ -777,6 +806,15 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			modelType = meta.MainlineInstance
+		}
+
 		if len(model) != 0 {
 			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
 			if err != nil {
@@ -788,7 +826,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				{
 					BusinessID: bizID,
 					Basic: meta.Basic{
-						Type:       meta.ModelInstance,
+						Type:       modelType,
 						Action:     meta.Delete,
 						InstanceID: instID,
 					},
@@ -844,8 +882,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
 				},
 			},
 		}

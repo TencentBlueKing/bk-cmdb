@@ -27,10 +27,18 @@
                             {{$tools.getPropertyText(property, host)}}
                         </span>
                     </v-popover>
-                    <template v-if="updateAuth && isPropertyEditable(property)">
+                    <template v-if="isPropertyEditable(property)">
                         <i class="property-edit icon-cc-edit"
+                            v-if="$isAuthorized(updateAuth)"
                             v-show="property !== editState.property"
                             @click="setEditState(property)">
+                        </i>
+                        <i class="property-edit icon-cc-edit disabled"
+                            v-else
+                            v-cursor="{
+                                active: true,
+                                auth: [updateAuth]
+                            }">
                         </i>
                         <div class="property-form" v-if="property === editState.property">
                             <component class="form-component"
@@ -80,9 +88,9 @@
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                    return OPERATION.U_RESOURCE_HOST
                 }
-                return this.$isAuthorized(OPERATION.U_HOST)
+                return OPERATION.U_HOST
             }
         },
         methods: {
@@ -195,6 +203,10 @@
                 cursor: pointer;
                 &:hover {
                     opacity: .8;
+                }
+                &.disabled {
+                    opacity: 1;
+                    color: #ccc;
                 }
             }
             .property-form {
