@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common/util"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -171,8 +172,13 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	datas := []metadata.ClassificationWithObject{}
-	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: condition.CreateCondition().ToMapStr()})
+	clsIDs := []string{}
+	for _, cls := range rsp.Data.Info {
+		clsIDs = append(clsIDs, cls.ClassificationID)
+	}
+	clsIDs = util.StrArrayUnique(clsIDs)
+	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
 		return nil, err
@@ -181,43 +187,61 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
 		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
 	}
+	objMap := make(map[string][]metadata.Object)
+	objIDs := []string{}
+	for _, info := range queryObjectResp.Data.Info {
+		objIDs = append(objIDs, info.Spec.ObjectID)
+		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
+	}
+	objIDs = util.StrArrayUnique(objIDs)
+	asstItems, err := c.asst.SearchObjectsAssociation(params, objIDs)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
+	}
+	asstIDs := []string{}
+	for _, asstItem := range asstItems {
+		asstIDs = append(asstIDs, asstItem.AsstObjID)
+	}
+	asstIDs = util.StrArrayUnique(asstIDs)
+	searchObjCond := condition.CreateCondition()
+	searchObjCond.Field(common.BKObjIDField).In(asstIDs)
+	asstObjs, err := c.obj.FindObject(params, searchObjCond)
+	if nil != err {
+		return nil, err
+	}
+
+	asstObjsMap := make(map[string]map[string][]metadata.Object)
+	for _, asstItem := range asstItems {
+		asstObjMap := make(map[string][]metadata.Object)
+		if asstObjs, ok := asstObjsMap[asstItem.ObjectID]; ok {
+			asstObjMap = asstObjs
+		}
+		for _, obj := range asstObjs {
+			if obj.Object().ObjectID == asstItem.AsstObjID {
+				asstObjMap[asstItem.ObjectID] = append(asstObjMap[asstItem.ObjectID], obj.Object())
+			}
+		}
+		asstObjsMap[asstItem.ObjectID] = asstObjMap
+	}
+
+	datas := []metadata.ClassificationWithObject{}
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
 			Classification: cls,
 			Objects:        []metadata.Object{},
 			AsstObjects:    map[string][]metadata.Object{},
 		}
-		for _, info := range queryObjectResp.Data.Info {
-			if info.Spec.ObjCls == cls.ClassificationID {
-				clsItem.Objects = append(clsItem.Objects, info.Spec)
-			}
+		if obj, ok := objMap[cls.ClassificationID] ; ok {
+			clsItem.Objects = obj
 		}
-
-		datas = append(datas, clsItem)
-	}
-
-	asstObjs, err := c.obj.FindObject(params, condition.CreateCondition())
-	if nil != err {
-		return nil, err
-	}
-	asstItems, err := c.asst.SearchObjectAssociation(params, "")
-	if nil != err {
-		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
-	}
-	
-	for idx, clsItem := range datas {
 		for _, objItem := range clsItem.Objects {
-			for _, asstItem := range asstItems {
-				if asstItem.ObjectID == objItem.ObjectID {
-					for _, obj := range asstObjs {
-						if obj.Object().ObjectID == asstItem.AsstObjID {
-							datas[idx].AsstObjects[objItem.ObjectID] = append(datas[idx].AsstObjects[objItem.ObjectID], obj.Object())
-						}
-					}
+			if asstObjs, ok := asstObjsMap[objItem.ObjectID]; ok {
+				for asstObjKey, asstObj := range asstObjs {
+					clsItem.AsstObjects[asstObjKey] = asstObj
 				}
 			}
 		}
-
+		datas = append(datas, clsItem)
 	}
 
 	return datas, nil
