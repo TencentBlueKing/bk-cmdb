@@ -84,8 +84,8 @@
                         </label>
                         <label class="label-btn"
                             v-cursor="{
-                                active: !$isAuthorized(OPERATION.U_MODEL),
-                                auth: [OPERATION.U_MODEL]
+                                active: !$isAuthorized(OPERATION.D_MODEL),
+                                auth: [OPERATION.D_MODEL]
                             }"
                             v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
@@ -346,7 +346,13 @@
                 this.exportExcel(res)
             },
             dialogConfirm (type) {
-                if (!this.$isAuthorized(OPERATION.U_MODEL)) return
+                if (type === 'delete') {
+                    if (!this.$isAuthorized(OPERATION.D_MODEL)) {
+                        return false
+                    }
+                } else if (!this.$isAuthorized(OPERATION.U_MODEL)) {
+                    return false
+                }
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({
