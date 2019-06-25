@@ -50,26 +50,7 @@ func (ps *ProctrlServer) WebService() *restful.Container {
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	api.Route(api.DELETE("/module").To(ps.DeleteProc2Module))
-	api.Route(api.POST("/module").To(ps.CreateProc2Module))
 	api.Route(api.POST("/module/search").To(ps.GetProc2Module))
-
-	api.Route(api.POST("/template").To(ps.CreateProc2Template))
-	api.Route(api.DELETE("/template").To(ps.DeleteProc2Template))
-	api.Route(api.POST("/template/search").To(ps.GetProc2Template))
-
-	api.Route(api.POST("/instance/model").To(ps.CreateProcInstanceModel))
-	api.Route(api.POST("/instance/model/search").To(ps.GetProcInstanceModel))
-	api.Route(api.DELETE("/instance/model").To(ps.DeleteProcInstanceModel))
-	api.Route(api.POST("/instance/register/detail").To(ps.RegisterProcInstaceDetail))
-	api.Route(api.PUT("/instance/register/detail").To(ps.ModifyRegisterProcInstanceDetail))
-	api.Route(api.POST("/instance/register/detail/search").To(ps.GetProcInstanceDetail))
-	api.Route(api.DELETE("/instance/register/detail").To(ps.DeleteRegisterProcInstanceDetail))
-
-	api.Route(api.POST("/operate/task").To(ps.AddOperateTaskInfo))
-	api.Route(api.PUT("/operate/task").To(ps.UpdateOperateTaskInfo))
-	api.Route(api.POST("/operate/task/search").To(ps.SearchOperateTaskInfo))
-
 	container.Add(api)
 
 	// other
