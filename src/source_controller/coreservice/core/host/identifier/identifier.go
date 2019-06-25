@@ -240,7 +240,6 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
 			}
 		}
-
 	}
 
 	procInfos := make([]metadata.HostIdentProcess, 0)

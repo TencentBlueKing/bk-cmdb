@@ -16,21 +16,11 @@ import (
 	"fmt"
 
 	"configcenter/src/apimachinery/hostcontroller/cloud"
-	"configcenter/src/apimachinery/hostcontroller/favorite"
-	"configcenter/src/apimachinery/hostcontroller/history"
-	"configcenter/src/apimachinery/hostcontroller/host"
-	"configcenter/src/apimachinery/hostcontroller/module"
-	"configcenter/src/apimachinery/hostcontroller/user"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 )
 
 type HostCtrlClientInterface interface {
-	Favorite() favorite.FavoriteInterface
-	History() history.HistoryInterface
-	Host() host.HostInterface
-	Module() module.ModuleInterface
-	User() user.UserInterface
 	Cloud() cloud.CloudInterface
 }
 
@@ -43,26 +33,6 @@ func NewHostCtrlClientInterface(c *util.Capability, version string) HostCtrlClie
 
 type hostctl struct {
 	client rest.ClientInterface
-}
-
-func (h *hostctl) Favorite() favorite.FavoriteInterface {
-	return favorite.NewFavoriteInterface(h.client)
-}
-
-func (h *hostctl) History() history.HistoryInterface {
-	return history.NewHistoryInterface(h.client)
-}
-
-func (h *hostctl) Host() host.HostInterface {
-	return host.NewHostInterface(h.client)
-}
-
-func (h *hostctl) Module() module.ModuleInterface {
-	return module.NewModuleInterface(h.client)
-}
-
-func (h *hostctl) User() user.UserInterface {
-	return user.NewUserInterface(h.client)
 }
 
 func (h *hostctl) Cloud() cloud.CloudInterface {
