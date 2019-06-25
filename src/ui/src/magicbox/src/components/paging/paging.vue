@@ -13,7 +13,7 @@
                 :pagination-list="paginationList">
             </bk-pagination>
         </template>
-        <ul>
+        <ul v-if="totalPage > 1">
             <!-- 上一页 -->
             <li class="page-item" :class="{disabled: curPage === 1}" @click="prevPage">
                 <a href="javascript:void(0);" class="page-button">
