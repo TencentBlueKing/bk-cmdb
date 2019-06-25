@@ -659,18 +659,30 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		}
 
 		var modelType = meta.ModelInstance
-		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+		var bizID int64
+		isMainline, err := ps.isMainlineModel(model[0].ObjectID)
+		if err != nil {
 			ps.err = err
 			return ps
-		} else if isMainline {
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
 			modelType = meta.MainlineInstance
 		}
 
 		if len(model) != 0 {
-			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
-			if err != nil {
-				ps.err = err
-				return ps
+			if bizID == 0 {
+				bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+				if err != nil {
+					ps.err = err
+					return ps
+				}
 			}
 
 			ps.Attribute.Resources = []meta.ResourceAttribute{
