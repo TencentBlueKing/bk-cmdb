@@ -115,7 +115,6 @@
         line-height: 19px;
         .type-label{
             width: 100px;
-            text-align: right;
             &:after {
                 content: '*';
                 color: $cmdbDangerColor;
