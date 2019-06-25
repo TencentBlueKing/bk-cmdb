@@ -72,7 +72,6 @@ export const R_AUDIT = 'auditlog.findMany'
 
 // 系统基础
 export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
-export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
 // 云资源发现
