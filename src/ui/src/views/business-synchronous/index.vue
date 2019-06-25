@@ -14,7 +14,7 @@
                 <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
-        <template v-else>
+        <template v-else-if="list.length">
             <feature-tips
                 :show-tips="showFeatureTips"
                 :desc="$t('BusinessSynchronous[\'功能提示\']')">
@@ -130,8 +130,8 @@
             return {
                 showFeatureTips: true,
                 viewsTitle: '',
-                noFindData: true,
-                isLatsetData: true,
+                noFindData: false,
+                isLatsetData: false,
                 showContentId: null,
                 readNum: 1,
                 serviceTemplateId: '',
@@ -211,15 +211,19 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', '')
-            await this.getModaelProperty()
-            await this.getModuleInstance()
-            if (this.list.length) {
-                this.isLatsetData = false
-                this.showContentId = this.list[0]['process_template_id']
-                this.$set(this.list[0], 'has_read', true)
-            } else {
-                this.isLatsetData = true
+            try {
+                this.$store.commit('setHeaderTitle', '')
+                await this.getModaelProperty()
+                await this.getModuleInstance()
+                if (this.list.length) {
+                    this.isLatsetData = false
+                    this.showContentId = this.list[0]['process_template_id']
+                    this.$set(this.list[0], 'has_read', true)
+                } else {
+                    this.isLatsetData = true
+                }
+            } catch (e) {
+                this.noFindData = true
             }
         },
         methods: {
