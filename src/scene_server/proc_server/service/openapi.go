@@ -521,18 +521,17 @@ func (ps *ProcServer) getProcessBindModule(appId, procId int64, forward http.Hea
 
 	moduleArr := objModRet.Data.Info
 	condition[common.BKProcessIDField] = procId
-	procRet, err := ps.CoreAPI.ProcController().GetProc2Module(srvData.ctx, forward, condition)
+	option := meta.GetProc2ModuleOption{
+		ProcessID: procId,
+		BizID:     appId,
+	}
+	procModuleData, err := ps.CoreAPI.CoreService().Process().GetProc2Module(srvData.ctx, forward, option)
 	if err != nil {
-		blog.Errorf("getProcessMapByAppID http do error.  err:%s, input:%+v,rid:%s", err.Error(), condition, srvData.rid)
-		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getProcessMapByAppID http do error.  err:%s, input:%+v,rid:%s", err.Error(), option, srvData.rid)
+		return nil, err
 
 	}
-	if !procRet.Result {
-		blog.Errorf("getProcessMapByAppID http reply  error. err code:%d err msg:%s, input:%+v,rid:%s", procRet.Code, procRet.Result, condition, srvData.rid)
-		return nil, defErr.New(procRet.Code, procRet.ErrMsg)
-	}
 
-	procModuleData := procRet.Data
 	disModuleNameArr := make([]string, 0)
 	for _, modArr := range moduleArr {
 		if !util.InArray(modArr[common.BKModuleNameField], disModuleNameArr) {
