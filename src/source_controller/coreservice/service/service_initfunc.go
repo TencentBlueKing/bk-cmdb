@@ -137,6 +137,12 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPut, "/usercustom/{bk_user}/{id}", s.UpdateUserCustomByID, nil)
 	s.addAction(http.MethodPost, "/usercustom/user/search/{bk_user}", s.GetUserCustomByUser, nil)
 	s.addAction(http.MethodPost, "/usercustom/default/search/{bk_user}", s.GetDefaultUserCustom, nil)
+
+	s.addAction(http.MethodPost, "/hosts/favorites/{user}", s.AddHostFavourite, nil)
+	s.addAction(http.MethodPut, "/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)
+	s.addAction(http.MethodDelete, "/hosts/favorites/{user}/{id}", s.DeleteHostFavouriteByID, nil)
+	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}", s.GetHostFavourites, nil)
+	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
 }
 
 func (s *coreService) audit() {
