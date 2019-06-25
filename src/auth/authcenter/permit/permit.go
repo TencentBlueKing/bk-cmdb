@@ -75,7 +75,8 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 
 	case rsc.Type == meta.MainlineInstance && IsReadAction(rsc.Action):
 		return true
-
+	case rsc.Type == meta.Process && IsReadAction(rsc.Action):
+		return true
 	default:
 		return false
 	}
