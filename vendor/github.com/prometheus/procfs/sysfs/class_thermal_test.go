@@ -28,7 +28,7 @@ func TestClassThermalZoneStats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	thermalTest, err := fs.NewClassThermalZoneStats()
+	thermalTest, err := fs.ClassThermalZoneStats()
 	if err != nil {
 		t.Fatal(err)
 	}
