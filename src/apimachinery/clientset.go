@@ -23,7 +23,6 @@ import (
 	"configcenter/src/apimachinery/hostcontroller"
 	"configcenter/src/apimachinery/hostserver"
 	"configcenter/src/apimachinery/objcontroller"
-	"configcenter/src/apimachinery/proccontroller"
 	"configcenter/src/apimachinery/procserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
@@ -38,7 +37,6 @@ type ClientSetInterface interface {
 	EventServer() eventserver.EventServerClientInterface
 
 	ObjectController() objcontroller.ObjControllerClientInterface
-	ProcController() proccontroller.ProcCtrlClientInterface
 	HostController() hostcontroller.HostCtrlClientInterface
 	CoreService() coreservice.CoreServiceClientInterface
 
@@ -153,17 +151,6 @@ func (cs *ClientSet) EventServer() eventserver.EventServerClientInterface {
 	}
 	cs.Mock.SetMockData = false
 	return eventserver.NewEventServerClientInterface(c, cs.version)
-}
-
-func (cs *ClientSet) ProcController() proccontroller.ProcCtrlClientInterface {
-	c := &util.Capability{
-		Client:   cs.client,
-		Discover: cs.discover.ProcCtrl(),
-		Throttle: cs.throttle,
-		Mock:     cs.Mock,
-	}
-	cs.Mock.SetMockData = false
-	return proccontroller.NewProcCtrlClientInterface(c, cs.version)
 }
 
 func (cs *ClientSet) HostController() hostcontroller.HostCtrlClientInterface {
