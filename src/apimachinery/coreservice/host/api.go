@@ -337,3 +337,73 @@ func (h *host) GetDefaultUserCustom(ctx context.Context, user string, header htt
 		Into(resp)
 	return
 }
+
+func (h *host) AddHostFavourite(ctx context.Context, user string, header http.Header, dat *metadata.FavouriteParms) (resp *metadata.IDResult, err error) {
+	resp = new(metadata.IDResult)
+	subPath := fmt.Sprintf("/hosts/favorites/%s", user)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) UpdateHostFavouriteByID(ctx context.Context, user string, id string, header http.Header, dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
+
+	err = h.client.Put().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) DeleteHostFavouriteByID(ctx context.Context, user string, id string, header http.Header) (resp *metadata.BaseResp, err error) {
+	resp = new(metadata.BaseResp)
+	subPath := fmt.Sprintf("/hosts/favorites/%s/%s", user, id)
+
+	err = h.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetHostFavourites(ctx context.Context, user string, header http.Header, dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+	resp = new(metadata.GetHostFavoriteResult)
+	subPath := fmt.Sprintf("/hosts/favorites/search/%s", user)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(dat).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
+
+func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string, header http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error) {
+	resp = new(metadata.GetHostFavoriteWithIDResult)
+	subPath := fmt.Sprintf("/hosts/favorites/search/%s/%s", user, id)
+
+	err = h.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResource(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	return
+}
