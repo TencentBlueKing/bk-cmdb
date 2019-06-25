@@ -65,9 +65,7 @@ func (ps *ProcServer) GetProcessPortByApplicationID(req *restful.Request, resp *
 			if nil == err {
 				moduleToProcessesMap[moduleID] = processes
 			}
-
 		}
-
 	}
 
 	blog.V(5).Infof("moduleToProcessesMap: %+v,rid:%s", moduleToProcessesMap, srvData.rid)
