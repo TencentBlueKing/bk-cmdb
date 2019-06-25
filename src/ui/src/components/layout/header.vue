@@ -65,13 +65,9 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { SYSTEM_MANAGEMENT } from '@/dictionary/auth'
     export default {
         data () {
             return {
-                OPERATION: {
-                    SYSTEM_MANAGEMENT
-                },
                 isShowUserDropdown: false,
                 isShowHelper: false
             }

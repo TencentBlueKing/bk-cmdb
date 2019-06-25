@@ -6,7 +6,7 @@ import {
 
 const origin = {
     url: 'auth/admin-entrance',
-    method: 'post'
+    method: 'get'
 }
 const redirect = {
     url: `topo/privilege/user/detail/0/${window.User.name}`,
