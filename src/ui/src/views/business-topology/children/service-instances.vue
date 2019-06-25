@@ -58,7 +58,6 @@
                 </service-instance-table>
             </div>
             <bk-paging class="pagination"
-                v-if="pagination.totalPage > 1"
                 pagination-able
                 location="left"
                 :cur-page="pagination.current"
