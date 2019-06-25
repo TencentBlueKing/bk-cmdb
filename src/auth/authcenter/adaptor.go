@@ -30,7 +30,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 	info.ResourceType = *resourceTypeID
 
@@ -61,8 +61,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = SysModel
 		}
 
-	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology, meta.MainlineInstanceTopology:
-		iamResourceType = BizTopo
+	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
+		iamResourceType = BizTopology
 
 	case meta.MainlineModel, meta.ModelTopology:
 		iamResourceType = SysSystemBase
@@ -151,7 +151,7 @@ const (
 	BizCustomQuery     ResourceTypeID = "biz_custom_query"
 	BizHostInstance    ResourceTypeID = "biz_host_instance"
 	BizProcessInstance ResourceTypeID = "biz_process_instance"
-	BizTopo            ResourceTypeID = "biz_topology"
+	BizTopology        ResourceTypeID = "biz_topology"
 	BizModelGroup      ResourceTypeID = "biz_model_group"
 	BizModel           ResourceTypeID = "biz_model"
 	BizInstance        ResourceTypeID = "biz_instance"
@@ -176,7 +176,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopo:       "",
+	BizTopology:   "拓扑",
 	BizModelGroup: "模型分组",
 	BizModel:      "模型",
 	BizInstance:   "实例",
@@ -254,6 +254,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
+	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
+	// 	return ModelTopologyOperation, nil
+	// }
+
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
@@ -276,7 +280,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		if r.Action == meta.AddHostToResourcePool {
-			return Edit, nil
+			return Create, nil
 		}
 
 		if r.Action == meta.MoveResPoolHostToBizIdleModule {
@@ -312,13 +316,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
-
-	case meta.AddHostToResourcePool:
-		// add hosts to resource pool
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return Edit, nil
-		}
-		return Edit, nil
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
@@ -409,7 +406,7 @@ var (
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BizTopo,
+		Type:    BizTopology,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
