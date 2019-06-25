@@ -88,7 +88,7 @@ func (s *Service) initBusiness() {
 	s.addAction(http.MethodPut, "/app/{owner_id}/{app_id}", s.UpdateBusiness, nil)
 	s.addAction(http.MethodPut, "/app/status/{flag}/{owner_id}/{app_id}", s.UpdateBusinessStatus, nil)
 	s.addAction(http.MethodPost, "/app/search/{owner_id}", s.SearchBusiness, nil)
-	s.addAction(http.MethodPost, "/app/default/{owner_id}/search", s.SearchDefaultBusiness, nil)
+	s.addAction(http.MethodPost, "/app/default/{owner_id}/search", s.SearchArchivedBusiness, nil)
 	s.addAction(http.MethodPost, "/app/default/{owner_id}", s.CreateDefaultBusiness, nil)
 	s.addAction(http.MethodGet, "/topo/internal/{owner_id}/{app_id}", s.GetInternalModule, nil)
 }

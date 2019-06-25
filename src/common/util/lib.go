@@ -17,16 +17,12 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/storage/dal"
-
 	"github.com/emicklei/go-restful"
 	"github.com/rs/xid"
 )
@@ -156,39 +152,6 @@ type Int64Slice []int64
 func (p Int64Slice) Len() int           { return len(p) }
 func (p Int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p Int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
-func Ptrue() *bool {
-	tmp := true
-	return &tmp
-}
-func Pfalse() *bool {
-	tmp := false
-	return &tmp
-}
-
-// RunForever will run the function forever and rerun the f function if any panic happened
-func RunForever(name string, f func() error) {
-	for {
-		if err := runNoPanic(f); err != nil {
-			blog.Errorf("[%s] return %v, retry 3s later", name, err)
-			time.Sleep(time.Second * 3)
-		}
-	}
-}
-
-func runNoPanic(f func() error) (err error) {
-	defer func() {
-		if err != nil {
-			return
-		}
-		if syserr := recover(); err != nil {
-			err = fmt.Errorf("panic with error: %v, stack: \n%s", syserr, debug.Stack())
-		}
-	}()
-
-	err = f()
-	return err
-}
 
 func GenerateRID() string {
 	unused := "0000"

@@ -216,8 +216,8 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	return result, nil
 }
 
-// SearchDefaultBusiness search the business by condition
-func (s *Service) SearchDefaultBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+// search archived business by condition
+func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
 	if nil != err {
