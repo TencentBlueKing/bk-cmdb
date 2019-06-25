@@ -932,10 +932,6 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 
 	// update insts
 	fCond := cond.ToMapStr()
-	if nil != params.MetaData {
-		fCond.Set(metadata.BKMetadata, *params.MetaData)
-	}
-	data.Remove(metadata.BKMetadata)
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,
