@@ -72,6 +72,7 @@ type AssociationOperationInterface interface {
 	DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error
 	UpdateAssociation(params types.ContextParams, data mapstr.MapStr, assoID int64) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+	SearchObjectsAssociation(params types.ContextParams, objIDs []string) ([]metadata.Association, error)
 
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
@@ -153,6 +154,35 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 
 	if !rsp.Result {
 		blog.Errorf("[operation-asst] failed to search the object(%s) association info , err: %s", objID, rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data.Info, nil
+}
+
+func (a *association) SearchObjectsAssociation(params types.ContextParams, objIDs []string) ([]metadata.Association, error) {
+
+	cond := condition.CreateCondition()
+	if 0 != len(objIDs) {
+		cond.Field(common.BKObjIDField).In(objIDs)
+	}
+
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to search the object(%s) association info , err: %s", objIDs, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
