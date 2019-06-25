@@ -21,10 +21,9 @@ import (
 
 func (hm *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
 	identifier := identifier.NewIdentifier(hm.DbProxy)
-
 	host, err := identifier.Identifier(ctx, input.HostIDs)
 	if err != nil {
-		blog.ErrorJSON("Identifier get host identifier error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%+v, rid:%s", err, input, ctx.ReqID)
 		return nil, err
 	}
 	return host, nil

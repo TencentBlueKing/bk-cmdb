@@ -414,7 +414,7 @@ func (t *genericTransfer) addHostModuleRelation(ctx core.ContextParams, hostID i
 		relationArr := make([]metadata.ModuleHost, 0)
 		err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(condMap).All(ctx, &relationArr)
 		if err != nil {
-			blog.ErrorJSON("add  host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, ctx.ReqID)
+			blog.ErrorJSON("add host relation, retrieve original data error. err:%v, cond:%s, rid:%s", err, condMap, ctx.ReqID)
 			return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 		// map[moduleID]bool
