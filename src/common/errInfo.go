@@ -383,7 +383,8 @@ const (
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
 	// mainline's object unique can not be updated, deleted or create new rules.
-	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
+	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
+	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
 
 	// objectcontroller 1102XXX
 

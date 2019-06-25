@@ -441,7 +441,8 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
-func (a *authClient) GetAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
+// find resource list that a user got any authorized resources.
+func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, scopeID)
 	resp := ListAuthorizedScopeResult{}
 

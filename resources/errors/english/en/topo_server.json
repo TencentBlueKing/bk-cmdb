@@ -108,5 +108,6 @@
     "1101083":"association type inconsistent with caller method",
     "1101084": "the model stopped to use",
     "1101085": "mainline object's unique can not be changed",
+    "1101086": "get authorized business list failed",
     "": "" 
 }
