@@ -9,13 +9,16 @@ import (
 // system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
+	SystemNameCMDB = "配置平台"
 )
 
 // ScopeTypeID constant
 const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
+	ScopeTypeIDSystem     = "system"
+	ScopeTypeIDSystemName = "全局"
+
+	ScopeTypeIDBiz     = "biz"
+	ScopeTypeIDBizName = "业务"
 )
 
 type AuthConfig struct {
