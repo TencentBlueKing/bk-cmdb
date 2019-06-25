@@ -36,7 +36,7 @@ func (lgc *Logics) getHostByModuleID(ctx context.Context, moduleID int64) (map[i
 		return nil, err
 	}
 
-	ret, err := lgc.CoreAPI.HostController().Module().GetModulesHostConfig(ctx, lgc.header, dat)
+	ret, err := lgc.CoreAPI.CoreService().Host().GetModulesHostConfig(ctx, lgc.header, dat)
 	if nil != err {
 		blog.Errorf("getHostByModuleID GetModulesHostConfig http do error. moduleID %d supplierID %s  error:%s,input:%+v,rid:%s", moduleID, supplierID, err.Error(), dat, lgc.rid)
 		return nil, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

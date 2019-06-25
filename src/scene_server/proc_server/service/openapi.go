@@ -299,7 +299,7 @@ func (ps *ProcServer) getConfigByCond(forward http.Header, cond map[string][]int
 	defErr := srvData.ccErr
 
 	configArr := make([]map[string]int64, 0)
-	ret, err := ps.CoreAPI.HostController().Module().GetModulesHostConfig(srvData.ctx, forward, cond)
+	ret, err := ps.CoreAPI.CoreService().Host().GetModulesHostConfig(srvData.ctx, forward, cond)
 	if nil != err {
 		blog.Errorf("getConfigByCond http do error.  err:%s, input:%+v,rid:%s", err.Error(), cond, srvData.rid)
 		return configArr, defErr.Error(common.CCErrCommHTTPDoRequestFailed)

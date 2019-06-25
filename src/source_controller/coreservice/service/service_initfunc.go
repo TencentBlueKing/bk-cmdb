@@ -143,6 +143,9 @@ func (s *coreService) host() {
 	s.addAction(http.MethodDelete, "/hosts/favorites/{user}/{id}", s.DeleteHostFavouriteByID, nil)
 	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}", s.GetHostFavourites, nil)
 	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
+
+	s.addAction(http.MethodPost, "/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
+	s.addAction(http.MethodPost, "/meta/hosts/module/config/search", s.GetModulesHostConfig, nil)
 }
 
 func (s *coreService) audit() {
