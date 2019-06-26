@@ -41,7 +41,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstanceAssociation:
 		return modelInstanceAssociationResourceID(resourceType, attribute)
-	case meta.ModelInstance:
+	case meta.ModelInstance, meta.MainlineInstance:
 		return modelInstanceResourceID(resourceType, attribute)
 	case meta.ModelInstanceTopology:
 		return modelInstanceTopologyResourceID(resourceType, attribute)
@@ -109,6 +109,14 @@ func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttrib
 
 // generate module resource id.
 func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		// for create
+		return []RscTypeAndID{
+			{
+				ResourceType: resourceType,
+			},
+		}, nil
+	}
 
 	return []RscTypeAndID{
 		{
@@ -119,6 +127,14 @@ func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 }
 
 func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		// for create
+		return []RscTypeAndID{
+			{
+				ResourceType: resourceType,
+			},
+		}, nil
+	}
 
 	return []RscTypeAndID{
 		{

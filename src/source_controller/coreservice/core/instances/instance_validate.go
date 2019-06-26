@@ -156,7 +156,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed %s", err.Error())
 		return err
 	}
 

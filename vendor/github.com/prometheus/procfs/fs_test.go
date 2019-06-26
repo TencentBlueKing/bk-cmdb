@@ -33,7 +33,7 @@ func TestNewFS(t *testing.T) {
 func getProcFixtures(t *testing.T) FS {
 	fs, err := NewFS(procTestFixtures)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Creating pseudo fs from getProcFixtures failed at fixtures/proc with error: %s", err)
 	}
 	return fs
 }

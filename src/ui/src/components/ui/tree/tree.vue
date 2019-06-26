@@ -69,6 +69,12 @@
                 type: [String, Number],
                 default: null
             },
+            defaultDisabledNodes: {
+                type: Array,
+                default () {
+                    return []
+                }
+            },
             beforeSelect: Function,
             beforeCheck: Function
         },
@@ -264,6 +270,21 @@
                 node.expanded = mergeOptions.expanded
                 if (mergeOptions.emitEvent) {
                     this.$emit('expand-change', mergeOptions.expanded, node)
+                }
+            },
+            setDisabled (nodeId, options = {}) {
+                const mergeOptions = {
+                    disabled: true,
+                    emitEvent: false,
+                    ...options
+                }
+                const node = this.getNodeById(nodeId)
+                if (!node) {
+                    throw new Error('Unexpected node id, set disabled failed.')
+                }
+                node.disabled = mergeOptions.disabled
+                if (mergeOptions.emitEvent) {
+                    this.$emit('disable-change', mergeOptions.disabled, node)
                 }
             },
             calulateLine () {

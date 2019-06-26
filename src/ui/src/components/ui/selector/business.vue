@@ -1,6 +1,7 @@
 <template>
     <bk-selector style="text-align: left;"
         :list="authorizedBusiness"
+        :placeholder="$t('请选择业务')"
         :selected.sync="localSelected"
         :searchable="authorizedBusiness.length > 5"
         :disabled="disabled"

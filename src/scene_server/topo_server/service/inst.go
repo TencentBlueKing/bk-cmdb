@@ -223,6 +223,18 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 		return nil, err
 	}
 
+	// this is a special logic for mainline object instance.
+	// for auth reason, the front's request add metadata for mainline model's instance update.
+	// but actually, it's should not add metadata field in the request.
+	// so, we need remove it from the data if it's a mainline model instance.
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objID)
+	if err != nil {
+		return nil, err
+	}
+	if yes {
+		data.Remove("metadata")
+	}
+
 	cond := condition.CreateCondition()
 	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
 	err = s.Core.InstOperation().UpdateInst(params, data, obj, cond, instID)
