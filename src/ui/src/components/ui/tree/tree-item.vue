@@ -8,6 +8,7 @@
             'is-last-child': node.isLast,
             'is-expand': node.expanded,
             'is-selected': node.selected,
+            'is-disabled': node.disabled,
             'has-link-line': $parent.showLinkLine
         }"
         :style="style"
@@ -20,6 +21,7 @@
             <span class="node-checkbox"
                 v-if="node.hasCheckbox"
                 :class="{
+                    'is-disabled': node.disabled,
                     'is-checked': node.checked,
                     'is-indeterminate': node.indeterminate
                 }"
@@ -65,6 +67,9 @@
         },
         methods: {
             handleNodeCheck () {
+                if (this.node.disabled) {
+                    return false
+                }
                 this.$parent.setChecked(this.node.id, {
                     checked: !this.node.checked,
                     emitEvent: true,
@@ -78,6 +83,9 @@
                 })
             },
             handleNodeClick () {
+                if (this.node.disabled) {
+                    return false
+                }
                 this.$parent.$emit('node-click', this.node)
                 this.$parent.setSelected(this.node.id, {
                     emitEvent: true,
@@ -148,6 +156,9 @@
         &.is-leaf {
             padding-left: 16px;
         }
+        &.is-disabled {
+            cursor: not-allowed;
+        }
         .node-options {
             height: 100%;
             .node-folder-icon {
@@ -187,7 +198,7 @@
                 }
                 &.is-disabled {
                     border-color: #dcdee5;
-                    cursor: pointer;
+                    cursor: not-allowed;
                 }
             }
             .node-icon {
