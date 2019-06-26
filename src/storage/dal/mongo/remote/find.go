@@ -15,6 +15,7 @@ package remote
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
@@ -29,7 +30,13 @@ type Find struct {
 
 // Fields 查询字段
 func (f *Find) Fields(fields ...string) dal.Find {
-	f.msg.Fields = fields
+	var newFields []string
+	for _, field := range fields {
+		if strings.TrimSpace(field) != "" {
+			newFields = append(newFields, field)
+		}
+	}
+	f.msg.Fields = newFields
 	return f
 }
 
@@ -95,6 +102,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if !reply.Success {
 		return errors.New(reply.Message)
 	}
