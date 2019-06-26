@@ -702,6 +702,7 @@ const (
 	CCErrSynchronizeError = 1114001
 
 	CCErrCloudSyncDeleteSyncTaskFail = 1116011
+	CCErrCloudSyncUpdateSyncTaskFail = 1116012
 
 	/** TODO: 以下错误码需要改造 **/
 

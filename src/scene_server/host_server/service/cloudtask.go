@@ -52,7 +52,7 @@ func (s *Service) AddCloudTask(req *restful.Request, resp *restful.Response) {
 func (s *Service) DeleteCloudTask(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
-	id := req.PathParameter("id")
+	id := req.PathParameter("taskID")
 	int64ID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		blog.Errorf("string convert to int64 fail, err: %v, rid: %v", err, srvData.rid)
@@ -113,22 +113,22 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 
 	if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 		blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 		return
 	}
 
 	status, err := data.Bool("bk_status")
 	if err != nil {
 		blog.Errorf("interface convert to bool fail, err: %v, rid: %s", err, srvData.rid)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 		return
 	}
 
 	if status {
-		// 开启同步状态下，update；先关闭同步，更新数据后，再开启同步
+		// 开启同步状态下，update:先关闭同步，更新数据后，再开启同步
 		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 			return
 		}
 
@@ -139,7 +139,7 @@ func (s *Service) UpdateCloudTask(req *restful.Request, resp *restful.Response) 
 	} else {
 		if _, err := s.CoreAPI.CoreService().Cloud().UpdateCloudSyncTask(srvData.ctx, srvData.header, data); err != nil {
 			blog.Errorf("update task failed with decode body err: %v, rid: %s", err, srvData.rid)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommDBUpdateFailed)})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCloudSyncUpdateSyncTaskFail)})
 			return
 		}
 	}

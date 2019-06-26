@@ -27,13 +27,13 @@ import (
 func (s *coreService) CreateCloudSyncTask(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	input := new(meta.CloudTaskList)
 	if err := data.MarshalJSONInto(input); nil != err {
-		blog.Errorf("create cloud sync task failed， MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data)
+		blog.Errorf("create cloud sync task failed， MarshalJSONInto error, err:%s, input:%v", err.Error(), data)
 		return nil, err
 	}
 
 	id, err := s.core.HostOperation().CreateCloudSyncTask(params, input)
 	if err != nil {
-		blog.Errorf("create cloud sync data: %v error: %v", input, err)
+		blog.Errorf("create cloud sync data: %v, error: %v", input, err)
 		return nil, err
 	}
 

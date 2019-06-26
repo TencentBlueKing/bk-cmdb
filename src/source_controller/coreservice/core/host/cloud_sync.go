@@ -22,15 +22,15 @@ import (
 func (h *hostManager) CreateCloudSyncTask(ctx core.ContextParams, input *metadata.CloudTaskList) (uint64, error) {
 	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameCloudTask)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	input.TaskID = int64(id)
 	if err := h.DbProxy.Table(common.BKTableNameCloudTask).Insert(ctx, input); err != nil {
-		return 0, nil
+		return 0, err
 	}
 
-	return 0, nil
+	return id, nil
 }
 
 func (h *hostManager) CreateResourceConfirm(ctx core.ContextParams, input *metadata.ResourceConfirm) (uint64, error) {
@@ -41,21 +41,21 @@ func (h *hostManager) CreateResourceConfirm(ctx core.ContextParams, input *metad
 
 	input.ResourceID = int64(id)
 	if err := h.DbProxy.Table(common.BKTableNameCloudResourceConfirm).Insert(ctx, input); err != nil {
-		return 0, nil
+		return 0, err
 	}
 
-	return 0, nil
+	return id, nil
 }
 
 func (h *hostManager) CreateCloudSyncHistory(ctx core.ContextParams, input *metadata.CloudHistory) (uint64, error) {
 	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameCloudSyncHistory)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	input.HistoryID = int64(id)
 	if err := h.DbProxy.Table(common.BKTableNameCloudSyncHistory).Insert(ctx, input); err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	return id, nil
@@ -64,12 +64,12 @@ func (h *hostManager) CreateCloudSyncHistory(ctx core.ContextParams, input *meta
 func (h *hostManager) CreateConfirmHistory(ctx core.ContextParams, input mapstr.MapStr) (uint64, error) {
 	id, err := h.DbProxy.NextSequence(ctx, common.BKTableNameResourceConfirmHistory)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	input[common.CloudSyncConfirmHistoryID] = id
 	if err := h.DbProxy.Table(common.BKTableNameResourceConfirmHistory).Insert(ctx, input); err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	return id, nil
