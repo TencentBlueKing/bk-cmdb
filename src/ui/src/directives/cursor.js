@@ -1,4 +1,3 @@
-/* eslint-disable */
 const requestFrame = window.requestAnimationFrame
     || window.mozRequestAnimationFrame
     || window.webkitRequestAnimationFrame
