@@ -9,7 +9,7 @@
                     name="hostTarget"
                     v-model="hostTarget"
                     :value="targetName.source">
-                <label for="sourceHost">{{$t('BusinessTopology["源实例主机"]')}}</label>
+                <label for="sourceHost">{{$t('BusinessTopology["当前主机"]')}}</label>
             </div>
             <div class="type-item fl">
                 <input class="type-radio"
@@ -115,7 +115,6 @@
         line-height: 19px;
         .type-label{
             width: 100px;
-            text-align: right;
             &:after {
                 content: '*';
                 color: $cmdbDangerColor;
