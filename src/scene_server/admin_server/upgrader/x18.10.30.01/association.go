@@ -150,6 +150,25 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			} else {
 				asst.IsPre = pfalse()
 			}
+
+			// update ObjAsst
+			updateCond := condition.CreateCondition()
+			updateCond.Field("bk_obj_id").Eq(asst.ObjectID)
+			updateCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
+			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
+				return err
+			}
+
+			// update InstAsst
+			updateInst := mapstr.New()
+			updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+			updateInst.Set("bk_asst_id", asst.AsstKindID)
+			updateInst.Set("last_time", time.Now())
+			err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateCond.ToMapStr(), updateInst)
+			if err != nil {
+				return err
+			}
+
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
 			asst.AssociationName = buildObjAsstID(asst)
@@ -169,34 +188,38 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			asst.IsPre = pfalse()
 
 			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
-		}
-		_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, asst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
-		if err != nil {
-			return err
+			updateCond := condition.CreateCondition()
+			updateCond.Field("bk_obj_id").Eq(asst.ObjectID)
+			updateCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
+
+			// update ObjAsst
+			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
+				return err
+			}
+
+			// update InstAsst
+			instAssts := []metadata.InstAsst{}
+			if err = db.Table(common.BKTableNameInstAsst).Find(updateCond.ToMapStr()).All(ctx, instAssts); err != nil {
+				return err
+			}
+			for _, instAsst := range instAssts {
+				updateInst := mapstr.New()
+				updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+				updateInst.Set("bk_asst_id", asst.AsstKindID)
+
+				// 交换 源<->目标
+				updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
+				updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
+				updateInst.Set("bk_inst_id", instAsst.AsstInstID)
+				updateInst.Set("bk_asst_inst_id", instAsst.InstID)
+
+				updateInst.Set("last_time", time.Now())
+				if err = db.Table(common.BKTableNameInstAsst).Update(ctx, mapstr.MapStr{"id": instAsst.ID}, updateInst); err != nil {
+					return err
+				}
+			}
 		}
 
-		updateInstCond := condition.CreateCondition()
-		updateInstCond.Field("bk_obj_id").Eq(asst.ObjectID)
-		updateInstCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
-		instAssts := []metadata.InstAsst{}
-		if err = db.Table(common.BKTableNameInstAsst).Find(updateInstCond.ToMapStr()).All(ctx, instAssts); err != nil {
-			return err
-		}
-
-		for _, instAsst := range instAssts {
-			updateInst := mapstr.New()
-			updateInst.Set("bk_obj_asst_id", asst.AssociationName)
-			updateInst.Set("bk_asst_id", asst.AsstKindID)
-
-			// 交换 源<->目标
-			updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
-			updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
-			updateInst.Set("bk_inst_id", instAsst.AsstInstID)
-			updateInst.Set("bk_asst_inst_id", instAsst.InstID)
-
-			updateInst.Set("last_time", time.Now())
-			db.Table(common.BKTableNameInstAsst).Update(ctx, mapstr.MapStr{"id": instAsst.ID}, updateInst)
-		}
 	}
 
 	// update bk_cloud_id to int
