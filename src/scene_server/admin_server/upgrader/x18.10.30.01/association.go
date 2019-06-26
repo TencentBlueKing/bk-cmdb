@@ -171,7 +171,6 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 		} else {
 			asst.AsstKindID = common.AssociationTypeDefault
-			asst.AssociationName = buildObjAsstID(asst)
 			property := properyMap[buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID)]
 			switch property.PropertyType {
 			case common.FieldTypeSingleAsst:
@@ -183,21 +182,20 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.Mapping = metadata.ManyToManyMapping
 			}
 			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
-
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
+			asst.AssociationName = buildObjAsstID(asst)
 
 			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
-			updateCond := condition.CreateCondition()
-			updateCond.Field("bk_obj_id").Eq(asst.ObjectID)
-			updateCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
-
 			// update ObjAsst
+			updateCond := condition.CreateCondition()
+			updateCond.Field("bk_obj_id").Eq(asst.AsstObjID)
+			updateCond.Field("bk_asst_obj_id").Eq(asst.ObjectID)
 			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
 				return err
 			}
 
-			// update InstAsst
+			// update ObjAsst
 			instAssts := []metadata.InstAsst{}
 			if err = db.Table(common.BKTableNameInstAsst).Find(updateCond.ToMapStr()).All(ctx, instAssts); err != nil {
 				return err
