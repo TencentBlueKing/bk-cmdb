@@ -42,7 +42,7 @@ export default [{
         auth: {
             view: null,
             operation: [U_HOST],
-            setDynamicMeta(to, from, app) {
+            setDynamicMeta (to, from, app) {
                 const meta = GET_AUTH_META(U_HOST)
                 app.$store.commit('auth/setResourceMeta', {
                     ...meta,

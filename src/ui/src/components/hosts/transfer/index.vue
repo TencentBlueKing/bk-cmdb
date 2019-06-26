@@ -8,6 +8,11 @@
             </div>
             <div class="tree-layout">
                 <cmdb-tree ref="topoTree" class="topo-tree"
+                    v-cursor="{
+                        active: !$isAuthorized(transferResourceAuth),
+                        auth: [transferResourceAuth],
+                        selector: '.is-root.is-first-child'
+                    }"
                     expand-icon="bk-icon icon-down-shape"
                     collapse-icon="bk-icon icon-right-shape"
                     :options="{
@@ -21,7 +26,7 @@
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
                     <div class="node-info clearfix" slot-scope="{ node, data }">
-                        <i :class="['node-model-icon fl', data.bk_obj_icon || modelIconMap[data.bk_obj_id]]"></i>
+                        <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
                         <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
                 </cmdb-tree>
@@ -113,7 +118,7 @@
                     return false
                 }
                 const hasSpecialModule = this.selectedModules.some(node => {
-                    return node.data.bk_inst_id === 'source' || [1, 2].includes(node.data.default)
+                    return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
                 })
                 return !!this.selectedModules.length && !hasSpecialModule
             },
@@ -133,7 +138,7 @@
             modelIconMap () {
                 const map = {}
                 this.mainLineModels.forEach(model => {
-                    map[model.bk_obj_id] = model.bk_obj_icon
+                    map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
             }
@@ -197,19 +202,21 @@
                             'bk_inst_name': module.bk_module_name
                         }
                     })
-                    const resourceNode = {
+                    const treeData = [{
                         'default': 0,
                         'bk_obj_id': 'module',
-                        'bk_inst_id': 'source',
+                        'bk_inst_id': 'resource',
                         'bk_inst_name': this.$t('HostResourcePool["资源池"]')
                     }, {
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    if (this.$isAuthorized(this.transferResourceAuth)) {
-                        treeData.shift()
-                    }
                     this.$refs.topoTree.setData(treeData)
+                    if (!this.$isAuthorized(this.transferResourceAuth)) {
+                        this.$nextTick(() => {
+                            this.$refs.topoTree.setDisabled('module-resource')
+                        })
+                    }
                 })
             },
             setSelectedModules () {
@@ -243,10 +250,10 @@
                     confirmResolver = resolve
                 })
                 const data = node.data
-                const isSpecialNode = !!data.default || data.bk_inst_id === 'source'
+                const isSpecialNode = !!data.default || data.bk_inst_id === 'resource'
                 const hasNormalNode = this.selectedModules.some(selectedNode => {
                     const selectedNodeData = selectedNode.data
-                    return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'source'
+                    return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'resource'
                 })
                 if (isSpecialNode && hasNormalNode) {
                     this.$bkInfo({
@@ -262,7 +269,7 @@
                 } else {
                     const specialNodes = this.selectedModules.filter(selectedNode => {
                         const selectedNodeData = selectedNode.data
-                        return selectedNodeData.default || selectedNodeData.bk_inst_id === 'source'
+                        return selectedNodeData.default || selectedNodeData.bk_inst_id === 'resource'
                     })
                     if (specialNodes.length && !specialNodes.includes(node)) {
                         this.$refs.topoTree.removeChecked({ emitEvent: true })
@@ -295,13 +302,13 @@
             },
             getModulePath (node) {
                 const data = node.data
-                if (data.bk_inst_id === 'source') {
+                if (data.bk_inst_id === 'resource') {
                     return this.$t('Common["主机资源池"]')
                 }
                 return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
             handleTransfer () {
-                const toSource = this.selectedModules.some(node => node.data.bk_inst_id === 'source')
+                const toSource = this.selectedModules.some(node => node.data.bk_inst_id === 'resource')
                 const toIdle = this.selectedModules.some(node => node.data.default === 1)
                 const toFault = this.selectedModules.some(node => node.data.default === 2)
                 const transferConfig = {
@@ -409,10 +416,19 @@
     }
     .node-info {
         .node-model-icon {
-            width: 20px;
-            line-height: 32px;
-            font-size: 18px;
-            margin: 0 4px 0 6px;
+            width: 22px;
+            height: 22px;
+            line-height: 20px;
+            text-align: center;
+            font-style: normal;
+            font-size: 12px;
+            margin: 5px 4px 0 6px;
+            border-radius: 50%;
+            background-color: #c4c6cc;
+            color: #fff;
+            &.is-checked {
+                background-color: #3a84ff;
+            }
         }
     }
     .selected-layout {
