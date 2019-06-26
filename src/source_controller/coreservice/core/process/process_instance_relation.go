@@ -184,7 +184,7 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 	}
 	templateProcessIDs := make([]string, 0)
 	for _, relation := range relations {
-		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
+		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
 			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
 		}
 	}
