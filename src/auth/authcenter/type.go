@@ -9,7 +9,7 @@ import (
 // system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
+	SystemNameCMDB = "配置平台"
 )
 
 // ScopeTypeID constant

@@ -150,7 +150,7 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 	p.SystemName = authcenter.SystemNameCMDB
 	p.ScopeType = authcenter.ScopeTypeIDSystem
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
-	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ScopeID = strconv.FormatInt(businessID, 10)
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
 
