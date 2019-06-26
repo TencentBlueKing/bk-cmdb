@@ -154,12 +154,12 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/cloud/search").To(s.SearchCloudTask))
 	api.Route(api.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
 	api.Route(api.POST("/hosts/cloud/startSync").To(s.StartCloudSync))
-	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.ResourceConfirm))
+	api.Route(api.POST("/hosts/cloud/resourceConfirm").To(s.CreateResourceConfirm))
 	api.Route(api.POST("/hosts/cloud/searchConfirm").To(s.SearchConfirm))
 	api.Route(api.POST("/hosts/cloud/confirmHistory/add").To(s.AddConfirmHistory))
 	api.Route(api.POST("/hosts/cloud/confirmHistory/search").To(s.SearchConfirmHistory))
 	api.Route(api.POST("/hosts/cloud/accountSearch").To(s.SearchAccount))
-	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.CloudSyncHistory))
+	api.Route(api.POST("/hosts/cloud/syncHistory").To(s.SearchCloudSyncHistory))
 
 	container.Add(api)
 
