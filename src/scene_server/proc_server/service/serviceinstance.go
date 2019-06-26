@@ -78,7 +78,6 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		process.ProcessInfo.LastTime = now
 
 		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &process.ProcessInfo); err != nil {
-			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "create process instance failed, serviceInstanceID: %d, process: %+v, err: %v", input.ServiceInstanceID, process, err)
 			return nil, err
 		}
 
