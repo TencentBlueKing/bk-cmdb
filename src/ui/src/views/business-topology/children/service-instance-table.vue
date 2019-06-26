@@ -88,7 +88,7 @@
         computed: {
             isModuleNode () {
                 const node = this.$store.state.businessTopology.selectedNode
-                return node && node.bk_obj_id === 'module'
+                return node && node.data.bk_obj_id === 'module'
             },
             withTemplate () {
                 return this.isModuleNode && !!this.instance.service_template_id

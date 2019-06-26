@@ -253,10 +253,13 @@
 <style lang="scss" scoped>
     .node-info {
         .node-model-icon {
-            width: 20px;
-            line-height: 32px;
-            font-size: 18px;
-            margin: 0 4px 0 6px;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            font-size: 14px;
+            margin: 5px 4px 0 6px;
+            border-radius: 50%;
         }
         .node-button {
             height: 24px;
