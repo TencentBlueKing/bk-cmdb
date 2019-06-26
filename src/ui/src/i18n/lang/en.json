@@ -885,7 +885,7 @@
         "节点信息": "Node info",
         "源实例主机提示": "Please update process, can not repeat with source instance",
         "编辑进程": "Update process",
-        "源实例主机": "Source instance host",
+        "当前主机": "Current host",
         "其他主机": "Other host",
         "模板未定义进程": "Template named with {template} has not difine process, can not create service.",
         "模板未定义进程提示": "You can add process in template fist or add host directly",
