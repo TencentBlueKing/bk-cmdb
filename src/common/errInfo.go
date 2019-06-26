@@ -291,7 +291,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
@@ -397,6 +397,8 @@ const (
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
+	// mainline's object unique can not be updated, deleted or create new rules.
+	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
 
 	// object controller 1102XXX
 
