@@ -70,7 +70,7 @@ func MBenchmarkRemoteCUD(b *testing.B) {
 }
 
 func BenchmarkRemoteCUDParallel(b *testing.B) {
-	db, err := NewWithDiscover(func() ([]string, error) { return []string{"http://192.168.100.130:60008"}, nil })
+	db, err := NewWithDiscover(func() ([]string, error) { return []string{"http://127.0.0.1:60008"}, nil })
 	require.NoError(b, err)
 	tablename := "tmptest"
 	header := http.Header{}
