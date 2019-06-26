@@ -26,7 +26,7 @@
                     @node-click="handleNodeClick"
                     @check-change="handleNodeCheck">
                     <div class="node-info clearfix" slot-scope="{ node, data }">
-                        <i :class="['node-model-icon fl', data.bk_obj_icon || modelIconMap[data.bk_obj_id]]"></i>
+                        <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
                         <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
                 </cmdb-tree>
@@ -138,7 +138,7 @@
             modelIconMap () {
                 const map = {}
                 this.mainLineModels.forEach(model => {
-                    map[model.bk_obj_id] = model.bk_obj_icon
+                    map[model.bk_obj_id] = model.bk_obj_name[0]
                 })
                 return map
             }
@@ -416,10 +416,19 @@
     }
     .node-info {
         .node-model-icon {
-            width: 20px;
-            line-height: 32px;
-            font-size: 18px;
-            margin: 0 4px 0 6px;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            text-align: center;
+            font-style: normal;
+            font-size: 14px;
+            margin: 5px 4px 0 6px;
+            border-radius: 50%;
+            background-color: #c4c6cc;
+            color: #fff;
+            &.is-checked {
+                background-color: #3a84ff;
+            }
         }
     }
     .selected-layout {

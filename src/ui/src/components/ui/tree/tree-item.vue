@@ -151,10 +151,6 @@
             }
             .node-content {
                 color: #3a84ff;
-                .node-model-icon {
-                    background-color: #3a84ff;
-                    color: #fff;
-                }
             }
             .node-folder-icon {
                 color: #3a84ff;
