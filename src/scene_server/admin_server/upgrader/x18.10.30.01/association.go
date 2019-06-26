@@ -175,17 +175,27 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			return err
 		}
 
-		updateInst := mapstr.New()
-		updateInst.Set("bk_obj_asst_id", asst.AssociationName)
-		updateInst.Set("bk_asst_id", asst.AsstKindID)
-		updateInst.Set("last_time", time.Now())
-
 		updateInstCond := condition.CreateCondition()
 		updateInstCond.Field("bk_obj_id").Eq(asst.ObjectID)
 		updateInstCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
-		err = db.Table(common.BKTableNameInstAsst).Update(ctx, updateInstCond.ToMapStr(), updateInst)
-		if err != nil {
+		instAssts := []metadata.InstAsst{}
+		if err = db.Table(common.BKTableNameInstAsst).Find(updateInstCond.ToMapStr()).All(ctx, instAssts); err != nil {
 			return err
+		}
+
+		for _, instAsst := range instAssts {
+			updateInst := mapstr.New()
+			updateInst.Set("bk_obj_asst_id", asst.AssociationName)
+			updateInst.Set("bk_asst_id", asst.AsstKindID)
+
+			// 交换 源<->目标
+			updateInst.Set("bk_obj_id", instAsst.AsstObjectID)
+			updateInst.Set("bk_asst_obj_id", instAsst.ObjectID)
+			updateInst.Set("bk_inst_id", instAsst.AsstInstID)
+			updateInst.Set("bk_asst_inst_id", instAsst.InstID)
+
+			updateInst.Set("last_time", time.Now())
+			db.Table(common.BKTableNameInstAsst).Update(ctx, mapstr.MapStr{"id": instAsst.ID}, updateInst)
 		}
 	}
 
@@ -231,7 +241,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 }
 
 func buildObjAsstID(asst Association) string {
-	return fmt.Sprintf("%s_%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID, asst.ObjectAttID)
+	return fmt.Sprintf("%s_%s_%s", asst.ObjectID, asst.AsstKindID, asst.AsstObjID)
 }
 
 func ptrue() *bool {
