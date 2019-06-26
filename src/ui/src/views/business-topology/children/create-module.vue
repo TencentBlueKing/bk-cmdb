@@ -3,12 +3,25 @@
         <h2 class="node-create-title">{{$t('BusinessTopology["新增模块"]')}}</h2>
         <div class="node-create-path" :title="topoPath">{{$t('Common["已选择"]')}}：{{topoPath}}</div>
         <div class="node-create-form">
-            <div class="form-item">
-                <label>{{$t('BusinessTopology["创建方式"]')}}</label>
-                <cmdb-selector
-                    v-model="withTemplate"
-                    :list="createTypeList">
-                </cmdb-selector>
+            <div class="form-item clearfix mt30">
+                <div class="create-type fl">
+                    <input class="type-radio"
+                        type="radio"
+                        id="formTemplate"
+                        name="createType"
+                        v-model="withTemplate"
+                        :value="1">
+                    <label for="formTemplate">{{$t('BusinessTopology["从模板创建"]')}}</label>
+                </div>
+                <div class="create-type fl ml50">
+                    <input class="type-radio"
+                        type="radio"
+                        id="createDirectly"
+                        name="createType"
+                        v-model="withTemplate"
+                        :value="0">
+                    <label for="createDirectly">{{$t('BusinessTopology["直接创建"]')}}</label>
+                </div>
             </div>
             <div class="form-item" v-if="withTemplate">
                 <label>{{$t('BusinessTopology["模板名称"]')}}</label>
@@ -252,6 +265,30 @@
             color: $cmdbDangerColor;
             &.second-class {
                 left: 270px;
+            }
+        }
+        .create-type {
+            display: flex;
+            align-items: center;
+            .type-radio {
+                -webkit-appearance: none;
+                width: 16px;
+                height: 16px;
+                padding: 3px;
+                border: 1px solid #979BA5;
+                border-radius: 50%;
+                background-clip: content-box;
+                outline: none;
+                cursor: pointer;
+                &:checked {
+                    border-color: #3A84FF;
+                    background-color: #3A84FF;
+                }
+            }
+            label {
+                padding: 0 0 0 6px;
+                font-size: 14px;
+                cursor: pointer;
             }
         }
     }

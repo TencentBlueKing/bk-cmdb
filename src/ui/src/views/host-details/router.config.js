@@ -1,6 +1,7 @@
 import {
     U_HOST,
-    U_RESOURCE_HOST
+    U_RESOURCE_HOST,
+    GET_AUTH_META
 } from '@/dictionary/auth'
 
 const component = () => import(/* webpackChunkName: "hostDetails" */ './index.vue')
@@ -21,7 +22,15 @@ export default [{
     meta: {
         auth: {
             view: null,
-            operation: [U_RESOURCE_HOST]
+
+            operation: [U_RESOURCE_HOST],
+            setDynamicMeta (to, from, app) {
+                const meta = GET_AUTH_META(U_RESOURCE_HOST)
+                app.$store.commit('auth/setResourceMeta', {
+                    ...meta,
+                    resource_id: parseInt(to.params.id)
+                })
+            }
         },
         i18nTitle: 'HostDetails["主机详情"]'
     }
@@ -32,7 +41,15 @@ export default [{
     meta: {
         auth: {
             view: null,
-            operation: [U_HOST]
+            operation: [U_HOST],
+            setDynamicMeta (to, from, app) {
+                const meta = GET_AUTH_META(U_HOST)
+                app.$store.commit('auth/setResourceMeta', {
+                    ...meta,
+                    resource_id: parseInt(to.params.id),
+                    bk_biz_id: parseInt(to.params.business)
+                })
+            }
         },
         i18nTitle: 'HostDetails["主机详情"]'
     }

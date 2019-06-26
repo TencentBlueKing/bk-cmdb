@@ -14,6 +14,12 @@ export default {
                 return []
             }
         },
+        disabledProperties: {
+            type: Array,
+            default () {
+                return []
+            }
+        },
         objectUnique: {
             type: Array,
             default () {

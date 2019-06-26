@@ -2,11 +2,17 @@
     <div class="topo-wrapper" :class="{ 'has-nav': topoEdit.isEdit }">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.U_MODEL)"
-                    @click="editTopo">
-                    {{$t('ModelManagement["编辑拓扑"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [OPERATION.SYSTEM_MODEL_GRAPHICS]
+                    }">
+                    <bk-button class="edit-button" type="primary"
+                        :disabled="!$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                        @click="editTopo">
+                        {{$t('ModelManagement["编辑拓扑"]')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
                 <bk-button type="primary" @click="exitEdit">
@@ -775,7 +781,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({ nodes: { fixed: true } })
-                if (this.$isAuthorized(OPERATION.U_MODEL)) {
+                if (this.$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS)) {
                     this.initPosition()
                 }
                 this.addListener()

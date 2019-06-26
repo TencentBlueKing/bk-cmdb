@@ -51,11 +51,15 @@
                 <div class="btn-group">
                     <template v-if="canBeImport">
                         <label class="label-btn"
-                            v-if="tab.active === 'field' && $isAuthorized(OPERATION.U_MODEL)"
+                            v-cursor="{
+                                active: !$isAuthorized(OPERATION.U_MODEL),
+                                auth: [OPERATION.U_MODEL]
+                            }"
+                            v-if="tab.active === 'field'"
                             :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('ModelManagement["导入"]')}}</span>
-                            <input v-if="!isReadOnly" ref="fileInput" type="file" @change.prevent="handleFile">
+                            <input v-if="!isReadOnly && $isAuthorized(OPERATION.U_MODEL)" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
@@ -64,7 +68,11 @@
                     </template>
                     <template v-if="isShowOperationButton">
                         <label class="label-btn"
-                            v-if="!isMainLine && $isAuthorized(OPERATION.U_MODEL)"
+                            v-cursor="{
+                                active: !$isAuthorized(OPERATION.U_MODEL),
+                                auth: [OPERATION.U_MODEL]
+                            }"
+                            v-if="!isMainLine"
                             v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
                             <i class="bk-icon icon-minus-circle-shape"></i>
                             <span v-if="activeModel['bk_ispaused']" @click="dialogConfirm('restart')">
@@ -75,7 +83,10 @@
                             </span>
                         </label>
                         <label class="label-btn"
-                            v-if="$isAuthorized(OPERATION.D_MODEL)"
+                            v-cursor="{
+                                active: !$isAuthorized(OPERATION.D_MODEL),
+                                auth: [OPERATION.D_MODEL]
+                            }"
                             v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
                             <i class="icon-cc-del"></i>
@@ -335,6 +346,13 @@
                 this.exportExcel(res)
             },
             dialogConfirm (type) {
+                if (type === 'delete') {
+                    if (!this.$isAuthorized(OPERATION.D_MODEL)) {
+                        return false
+                    }
+                } else if (!this.$isAuthorized(OPERATION.U_MODEL)) {
+                    return false
+                }
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({

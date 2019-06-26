@@ -56,4 +56,5 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
 
 	s.addAction(http.MethodGet, "/find/process/business_default_set_module_info/{bk_biz_id}", s.GetBusinessDefaultSetModuleInfo, nil)
+	s.addAction(http.MethodDelete, "/delete/process/module_bound_template/{bk_module_id}", s.RemoveTemplateBindingOnModule, nil)
 }

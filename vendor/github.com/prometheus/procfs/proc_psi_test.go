@@ -20,7 +20,7 @@ import (
 
 func TestPSIStats(t *testing.T) {
 	t.Run("fake", func(*testing.T) {
-		stats, err := getProcFixtures(t).NewPSIStatsForResource("fake")
+		stats, err := getProcFixtures(t).PSIStatsForResource("fake")
 		if err == nil {
 			t.Fatal("fake resource does not have PSI statistics")
 		}
@@ -31,7 +31,7 @@ func TestPSIStats(t *testing.T) {
 	})
 
 	t.Run("cpu", func(t *testing.T) {
-		stats, err := getProcFixtures(t).NewPSIStatsForResource("cpu")
+		stats, err := getProcFixtures(t).PSIStatsForResource("cpu")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func TestPSIStats(t *testing.T) {
 
 	for _, resource := range res {
 		t.Run(resource, func(t *testing.T) {
-			stats, err := getProcFixtures(t).NewPSIStatsForResource(resource)
+			stats, err := getProcFixtures(t).PSIStatsForResource(resource)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -32,13 +32,13 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	ctx.RespEntity(tpl)
 }
 
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {

@@ -58,7 +58,6 @@
                 </service-instance-table>
             </div>
             <bk-paging class="pagination"
-                v-if="pagination.totalPage > 1"
                 pagination-able
                 location="left"
                 :cur-page="pagination.current"
@@ -85,7 +84,7 @@
                 ref="processForm"
                 :type="processForm.type"
                 :inst="processForm.instance"
-                :uneditable-properties="processForm.uneditableProperties"
+                :disabled-properties="processForm.disabledProperties"
                 :properties="processForm.properties"
                 :property-groups="processForm.propertyGroups"
                 @on-submit="handleSaveProcess"
@@ -122,7 +121,7 @@
                     title: '',
                     instance: null,
                     referenceService: null,
-                    uneditableProperties: [],
+                    disabledProperties: [],
                     properties: [],
                     propertyGroups: [],
                     unwatch: null
@@ -282,14 +281,14 @@
                 const processTemplateId = processInstance.relation.process_template_id
                 if (processTemplateId) {
                     const template = await this.getProcessTemplate(processTemplateId)
-                    const uneditableProperties = []
+                    const disabledProperties = []
                     Object.keys(template).forEach(propertyId => {
                         const value = template[propertyId]
                         if (value.as_default_value) {
-                            uneditableProperties.push(propertyId)
+                            disabledProperties.push(propertyId)
                         }
                     })
-                    this.processForm.uneditableProperties = uneditableProperties
+                    this.processForm.disabledProperties = disabledProperties
                 }
             },
             async getProcessTemplate (processTemplateId) {
@@ -324,7 +323,7 @@
                     this.processForm.show = false
                     this.processForm.instance = null
                     this.processForm.referenceService = null
-                    this.processForm.uneditableProperties = []
+                    this.processForm.disabledProperties = []
                 } catch (e) {
                     console.error(e)
                 }
@@ -362,7 +361,7 @@
                 this.processForm.show = false
                 this.processForm.referenceService = null
                 this.processForm.instance = null
-                this.processForm.uneditableProperties = []
+                this.processForm.disabledProperties = []
             },
             handleBeforeClose () {
                 const changedValues = this.$refs.processForm.changedValues

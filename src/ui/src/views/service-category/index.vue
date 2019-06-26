@@ -1,84 +1,84 @@
 <template>
-    <div class="cagetory-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+    <div class="category-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
         <feature-tips
-            :feature-name="'cagetory'"
+            :feature-name="'category'"
             :show-tips="showFeatureTips"
-            :desc="$t('ServiceCagetory[\'服务分类功能提示\']')"
+            :desc="$t('ServiceCategory[\'服务分类功能提示\']')"
             @close-tips="showFeatureTips = false">
         </feature-tips>
-        <div class="cagetory-list">
-            <div class="cagetory-item" v-for="(mainCagetory, index) in list" :key="index">
-                <div class="cagetory-title" :style="{ 'background-color': mainCagetory['editStatus'] ? '#f0f1f5' : '' }">
+        <div class="category-list">
+            <div class="category-item" v-for="(mainCategory, index) in list" :key="index">
+                <div class="category-title" :style="{ 'background-color': mainCategory['editStatus'] ? '#f0f1f5' : '' }">
                     <div class="main-edit"
-                        :style="{ width: editMainStatus === mainCagetory['id'] ? '100%' : 'auto' }"
-                        v-if="editMainStatus === mainCagetory['id']">
-                        <cagetory-input
+                        :style="{ width: editMainStatus === mainCategory['id'] ? '100%' : 'auto' }"
+                        v-if="editMainStatus === mainCategory['id']">
+                        <category-input
                             ref="editInput"
-                            :input-ref="'cagetoryInput'"
+                            :input-ref="'categoryInput'"
                             :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
-                            :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
-                            name="cagetoryName"
+                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
+                            name="categoryName"
                             v-validate="'required|namedCharacter'"
-                            v-model="mainCagetoryName"
-                            @on-confirm="handleEditCagetory(mainCagetory['id'], mainCagetory['name'], 'main')"
+                            v-model="mainCategoryName"
+                            @on-confirm="handleEditCategory(mainCategory['id'], mainCategory['name'], 'main')"
                             @on-cancel="handleCloseEditMain">
-                        </cagetory-input>
+                        </category-input>
                     </div>
                     <template v-else>
-                        <div class="cagetory-name">
-                            <span>{{mainCagetory['name']}}</span>
-                            <i v-if="!mainCagetory['is_built_in']"
+                        <div class="category-name">
+                            <span>{{mainCategory['name']}}</span>
+                            <i v-if="!mainCategory['is_built_in']"
                                 class="property-edit icon-cc-edit-shape"
-                                @click.stop="handleEditMain(mainCagetory['id'], mainCagetory['name'])">
+                                @click.stop="handleEditMain(mainCategory['id'], mainCategory['name'])">
                             </i>
                         </div>
-                        <cmdb-dot-menu class="dot-menu" v-if="!mainCagetory['is_built_in']">
+                        <cmdb-dot-menu class="dot-menu" v-if="!mainCategory['is_built_in']">
                             <div class="menu-operational">
-                                <i @click="handleShowAddChild(mainCagetory['id'])">{{$t("ServiceCagetory['添加二级分类']")}}</i>
-                                <i class="not-allowed" v-if="mainCagetory['child_cagetory_list'].length">{{$t("Common['删除']")}}</i>
-                                <i v-else @click="handleDeleteCagetory(mainCagetory['id'])">{{$t("Common['删除']")}}</i>
+                                <i @click="handleShowAddChild(mainCategory['id'])">{{$t("ServiceCategory['添加二级分类']")}}</i>
+                                <i class="not-allowed" v-if="mainCategory['child_category_list'].length">{{$t("Common['删除']")}}</i>
+                                <i v-else @click="handleDeleteCategory(mainCategory['id'])">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
                     </template>
                 </div>
-                <div class="child-cagetory">
-                    <div class="child-item child-edit" v-if="addChildStatus === mainCagetory['id']">
-                        <cagetory-input
+                <div class="child-category">
+                    <div class="child-item child-edit" v-if="addChildStatus === mainCategory['id']">
+                        <category-input
                             ref="editInput"
-                            :input-ref="'cagetoryInput'"
-                            :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
-                            :edit-id="mainCagetory['bk_root_id']"
-                            name="cagetoryName"
+                            :input-ref="'categoryInput'"
+                            :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
+                            :edit-id="mainCategory['bk_root_id']"
+                            name="categoryName"
                             v-validate="'required|namedCharacter'"
-                            v-model="cagetoryName"
-                            @on-confirm="handleAddCagetory"
+                            v-model="categoryName"
+                            @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddChild">
-                        </cagetory-input>
+                        </category-input>
                     </div>
-                    <div :class="['child-item', editChildStatus === childCagetory['id'] ? 'child-edit' : '']"
-                        v-for="(childCagetory, childIndex) in mainCagetory['child_cagetory_list']"
+                    <div :class="['child-item', editChildStatus === childCategory['id'] ? 'child-edit' : '']"
+                        v-for="(childCategory, childIndex) in mainCategory['child_category_list']"
                         :key="childIndex">
-                        <cagetory-input
-                            v-if="editChildStatus === childCagetory['id']"
+                        <category-input
+                            v-if="editChildStatus === childCategory['id']"
                             ref="editInput"
-                            :input-ref="'cagetoryInput'"
-                            :placeholder="$t('ServiceCagetory[\'请输入二级分类\']')"
-                            name="cagetoryName"
+                            :input-ref="'categoryInput'"
+                            :placeholder="$t('ServiceCategory[\'请输入二级分类\']')"
+                            name="categoryName"
                             v-validate="'required|namedCharacter'"
-                            v-model="childCagetoryName"
-                            @on-confirm="handleEditCagetory(childCagetory['id'], childCagetory['name'], 'child')"
+                            v-model="childCategoryName"
+                            @on-confirm="handleEditCategory(childCategory['id'], childCategory['name'], 'child')"
                             @on-cancel="handleCloseEditChild">
-                        </cagetory-input>
+                        </category-input>
                         <template v-else>
                             <div class="child-title">
-                                <span>{{childCagetory['name']}}</span>
-                                <div class="child-edit" v-if="!childCagetory['is_built_in']">
+                                <span>{{childCategory['name']}}</span>
+                                <div class="child-edit" v-if="!childCategory['is_built_in']">
                                     <i class="property-edit icon-cc-edit-shape mr10"
-                                        @click.stop="handleEditChild(childCagetory['id'], childCagetory['name'])">
+                                        @click.stop="handleEditChild(childCategory['id'], childCategory['name'])">
                                     </i>
                                     <i class="icon-cc-tips-close"
-                                        v-if="!childCagetory['usage_amount']"
-                                        @click.stop="handleDeleteCagetory(childCagetory['id'])">
+                                        v-if="!childCategory['usage_amount']"
+                                        @click.stop="handleDeleteCategory(childCategory['id'])">
                                     </i>
                                     <i class="icon-cc-tips-close" v-else
                                         style="color: #c4c6cc; cursor: not-allowed;"
@@ -86,29 +86,29 @@
                                     </i>
                                 </div>
                             </div>
-                            <!-- <span>{{childCagetory['usage_amount']}}</span> -->
+                            <!-- <span>{{childCategory['usage_amount']}}</span> -->
                         </template>
                     </div>
                 </div>
             </div>
-            <div class="cagetory-item add-item" :style="{ 'border-style': showAddMianCagetory ? 'solid' : 'dashed' }">
-                <div class="cagetory-title" :style="{ 'border-bottom-style': showAddMianCagetory ? 'solid' : 'dashed' }">
-                    <div class="main-edit" style="width: 100%;" v-if="showAddMianCagetory">
-                        <cagetory-input
-                            ref="addCagetoryInput"
-                            :input-ref="'cagetoryInput'"
+            <div class="category-item add-item" :style="{ 'border-style': showAddMianCategory ? 'solid' : 'dashed' }">
+                <div class="category-title" :style="{ 'border-bottom-style': showAddMianCategory ? 'solid' : 'dashed' }">
+                    <div class="main-edit" style="width: 100%;" v-if="showAddMianCategory">
+                        <category-input
+                            ref="addCategoryInput"
+                            :input-ref="'categoryInput'"
                             :set-style="{ border: 'none', outline: 'none', padding: 0, 'background-color': 'transparent !important' }"
-                            :placeholder="$t('ServiceCagetory[\'请输入一级分类\']')"
-                            name="cagetoryName"
+                            :placeholder="$t('ServiceCategory[\'请输入一级分类\']')"
+                            name="categoryName"
                             v-validate="'required|namedCharacter'"
-                            v-model="cagetoryName"
-                            @on-confirm="handleAddCagetory"
+                            v-model="categoryName"
+                            @on-confirm="handleAddCategory"
                             @on-cancel="handleCloseAddBox">
-                        </cagetory-input>
+                        </category-input>
                     </div>
                 </div>
-                <div class="child-cagetory"></div>
-                <span class="add-box" v-if="!showAddMianCagetory" @click="handleAddBox"></span>
+                <div class="child-category"></div>
+                <span class="add-box" v-if="!showAddMianCategory" @click="handleAddBox"></span>
             </div>
         </div>
     </div>
@@ -117,27 +117,27 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
-    import cagetoryInput from './children/cagetory-input'
+    import categoryInput from './children/category-input'
     export default {
         components: {
             featureTips,
-            cagetoryInput
+            categoryInput
         },
         data () {
             return {
                 tooltips: {
-                    content: this.$t("ServiceCagetory['二级分类删除提示']"),
+                    content: this.$t("ServiceCategory['二级分类删除提示']"),
                     arrowsSize: 5
                 },
                 showFeatureTips: false,
-                showAddMianCagetory: false,
-                showAddChildCagetory: false,
+                showAddMianCategory: false,
+                showAddChildCategory: false,
                 editMainStatus: null,
                 editChildStatus: null,
                 addChildStatus: null,
-                cagetoryName: '',
-                mainCagetoryName: '',
-                childCagetoryName: '',
+                categoryName: '',
+                mainCategoryName: '',
+                childCategoryName: '',
                 list: []
             }
         },
@@ -145,8 +145,8 @@
             ...mapGetters(['featureTipsParams'])
         },
         created () {
-            this.showFeatureTips = this.featureTipsParams['cagetory']
-            this.getCagetoryList()
+            this.showFeatureTips = this.featureTipsParams['category']
+            this.getCategoryList()
         },
         methods: {
             ...mapActions('serviceClassification', [
@@ -155,26 +155,26 @@
                 'updateServiceCategory',
                 'deleteServiceCategory'
             ]),
-            getCagetoryList () {
+            getCategoryList () {
                 this.searchServiceCategory({
                     params: this.$injectMetadata({})
                 }).then((data) => {
-                    const cagetoryList = data.info.map(item => {
+                    const categoryList = data.info.map(item => {
                         return {
                             usage_amount: item['usage_amount'],
                             ...item['category']
                         }
                     })
-                    const list = cagetoryList.filter(cagetory => !cagetory.hasOwnProperty('bk_parent_id'))
-                    this.list = list.map(mainCagetory => {
+                    const list = categoryList.filter(category => !category.hasOwnProperty('bk_parent_id') && category.id !== 1)
+                    this.list = list.map(mainCategory => {
                         return {
-                            ...mainCagetory,
-                            child_cagetory_list: cagetoryList.filter(cagetory => cagetory['bk_parent_id'] === mainCagetory['id'])
+                            ...mainCategory,
+                            child_category_list: categoryList.filter(category => category['bk_parent_id'] === mainCategory['id'])
                         }
                     })
                 })
             },
-            createdCagetory (name, rootId) {
+            createdCategory (name, rootId) {
                 this.createServiceCategory({
                     params: this.$injectMetadata({
                         bk_root_id: rootId,
@@ -183,47 +183,47 @@
                     })
                 }).then(() => {
                     this.$success(this.$t('Common["保存成功"]'))
-                    this.showAddMianCagetory = false
+                    this.showAddMianCategory = false
                     this.handleCloseAddChild()
-                    this.getCagetoryList()
+                    this.getCategoryList()
                 })
             },
-            async handleAddCagetory (name, bk_root_id = 0) {
+            async handleAddCategory (name, bk_root_id = 0) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
-                        message: this.errors.first('cagetoryName') || this.$t("ServiceCagetory['请输入分类名称']"),
+                        message: this.errors.first('categoryName') || this.$t("ServiceCategory['请输入分类名称']"),
                         theme: 'error'
                     })
                 } else {
-                    this.createdCagetory(name, bk_root_id)
+                    this.createdCategory(name, bk_root_id)
                 }
             },
-            async handleEditCagetory (id, name, type) {
+            async handleEditCategory (id, name, type) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
-                        message: this.errors.first('cagetoryName') || this.$t("ServiceCagetory['请输入分类名称']"),
+                        message: this.errors.first('categoryName') || this.$t("ServiceCategory['请输入分类名称']"),
                         theme: 'error'
                     })
-                } else if (name === this.mainCagetoryName || name === this.childCagetoryName) {
+                } else if (name === this.mainCategoryName || name === this.childCategoryName) {
                     this.handleCloseEditChild()
                     this.handleCloseEditMain()
                 } else {
                     this.updateServiceCategory({
                         params: this.$injectMetadata({
                             id,
-                            name: type === 'main' ? this.mainCagetoryName : this.childCagetoryName
+                            name: type === 'main' ? this.mainCategoryName : this.childCategoryName
                         })
                     }).then(() => {
                         this.$success(this.$t('Common["保存成功"]'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
-                        this.getCagetoryList()
+                        this.getCategoryList()
                     })
                 }
             },
-            handleDeleteCagetory (id) {
+            handleDeleteCategory (id) {
                 this.$bkInfo({
-                    title: this.$t("ServiceCagetory['确认删除分类']"),
+                    title: this.$t("ServiceCategory['确认删除分类']"),
                     confirmFn: async () => {
                         await this.deleteServiceCategory({
                             params: {
@@ -234,19 +234,19 @@
                             }
                         }).then(() => {
                             this.$success(this.$t('Common["删除成功"]'))
-                            this.getCagetoryList()
+                            this.getCategoryList()
                         })
                     }
                 })
             },
             handleEditMain (id, name) {
                 this.editMainStatus = id
-                this.mainCagetoryName = name
+                this.mainCategoryName = name
                 this.handleCloseEditChild()
                 this.handleCloseAddChild()
                 this.handleCloseAddBox()
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
+                    this.$refs.editInput[0].$refs.categoryInput.focus()
                 })
             },
             handleCloseEditMain () {
@@ -254,49 +254,49 @@
             },
             handleEditChild (id, name) {
                 this.editChildStatus = id
-                this.childCagetoryName = name
+                this.childCategoryName = name
                 this.handleCloseAddChild()
                 this.handleCloseEditMain()
                 this.handleCloseAddBox()
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
+                    this.$refs.editInput[0].$refs.categoryInput.focus()
                 })
             },
             handleCloseEditChild () {
                 this.editChildStatus = null
             },
             handleAddBox () {
-                this.showAddMianCagetory = true
+                this.showAddMianCategory = true
                 this.$nextTick(() => {
-                    this.$refs.addCagetoryInput.$refs.cagetoryInput.focus()
+                    this.$refs.addCategoryInput.$refs.categoryInput.focus()
                 })
             },
             handleCloseAddBox () {
-                this.showAddMianCagetory = false
-                this.cagetoryName = ''
+                this.showAddMianCategory = false
+                this.categoryName = ''
             },
             handleShowAddChild (id) {
                 this.addChildStatus = id
                 this.$nextTick(() => {
-                    this.$refs.editInput[0].$refs.cagetoryInput.focus()
+                    this.$refs.editInput[0].$refs.categoryInput.focus()
                 })
             },
             handleCloseAddChild () {
                 this.addChildStatus = null
-                this.cagetoryName = ''
+                this.categoryName = ''
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .cagetory-wrapper {
+    .category-wrapper {
         min-width: 1442px;
-        .cagetory-list {
+        .category-list {
             display: flex;
             flex-flow: row wrap;
         }
-        .cagetory-item {
+        .category-item {
             position: relative;
             min-width: 320px;
             flex: 0 0 22%;
@@ -304,7 +304,7 @@
             margin-right: 30px;
             margin-bottom: 20px;
             &.add-item {
-                .cagetory-name {
+                .category-name {
                     color: #dcdee5 !important;
                 }
                 .child-title {
@@ -335,7 +335,7 @@
                 }
             }
         }
-        .cagetory-title {
+        .category-title {
             @include space-between;
             background-color: #fafbfd;
             padding: 0 20px 0 16px;
@@ -363,7 +363,7 @@
                     font-weight: normal;
                 }
             }
-            .cagetory-name {
+            .category-name {
                 @include ellipsis;
                 flex: 1;
                 padding-right: 20px;
@@ -380,7 +380,7 @@
                 cursor: pointer;
             }
         }
-        .child-cagetory {
+        .child-category {
             height: 280px;
             padding: 0 10px 10px 38px;
             overflow: hidden;
@@ -482,9 +482,9 @@
         }
     }
     @media screen and (min-width: 1920px){
-        .cagetory-wrapper {
+        .category-wrapper {
             min-width: 1650px;
-            .cagetory-item {
+            .category-item {
                 min-width: auto;
                 flex: 0 0 18%;
             }

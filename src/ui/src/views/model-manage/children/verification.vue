@@ -1,12 +1,19 @@
 <template>
-    <div>
-        <bk-button class="create-btn" type="primary"
-            :disabled="isReadOnly || !updateAuth"
-            @click="createVerification">
-            {{$t('ModelManagement["新建校验"]')}}
-        </bk-button>
+    <div class="verification-layout">
+        <span class="inline-block-middle"
+            v-if="!isTopoModel"
+            v-cursor="{
+                active: !$isAuthorized(OPERATION.U_MODEL),
+                auth: [OPERATION.U_MODEL]
+            }">
+            <bk-button class="create-btn" type="primary"
+                :disabled="isReadOnly || !updateAuth"
+                @click="createVerification">
+                {{$t('ModelManagement["新建校验"]')}}
+            </bk-button>
+        </span>
         <cmdb-table
-            class="relation-table"
+            class="verification-table"
             :loading="$loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])"
             :sortable="false"
             :header="table.header"
@@ -64,6 +71,7 @@
         },
         data () {
             return {
+                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -91,6 +99,9 @@
                 'activeModel',
                 'isInjectable'
             ]),
+            isTopoModel () {
+                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -107,7 +118,7 @@
             }
         },
         async created () {
-            if (!this.updateAuth) {
+            if (!this.updateAuth || this.isTopoModel) {
                 this.table.header.pop()
             }
             this.initAttrList()
@@ -202,7 +213,10 @@
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .verification-layout {
+        padding: 10px 0;
+    }
+    .verification-table {
+        margin: 10px 0 0 0;
     }
 </style>

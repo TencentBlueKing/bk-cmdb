@@ -24,7 +24,7 @@ import resource from '@/views/resource/router.config'
 import generalModel from '@/views/general-model/router.config'
 import permission from '@/views/permission/router.config'
 import template from '@/views/service-template/router.config'
-import cagetory from '@/views/service-cagetory/router.config'
+import category from '@/views/service-category/router.config'
 
 import serviceInstance from '@/views/service-instance/router.config'
 import synchronous from '@/views/business-synchronous/router.config'
@@ -49,7 +49,7 @@ export const viewRouters = [
     ...business,
     ...model,
     ...permission,
-    cagetory,
+    category,
     synchronous,
     ...serviceInstance
 ]
@@ -201,6 +201,7 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            setLoading(true)
             await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
@@ -208,7 +209,6 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
-                setLoading(true)
                 setMenuState(to)
                 setTitle(to)
                 checkAuthDynamicMeta(to, from)

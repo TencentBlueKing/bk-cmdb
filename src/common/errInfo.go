@@ -23,6 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 
@@ -290,7 +291,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
@@ -396,6 +397,8 @@ const (
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
+	// mainline's object unique can not be updated, deleted or create new rules.
+	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
 
 	// object controller 1102XXX
 
@@ -524,6 +527,9 @@ const (
 	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
 	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
 	CCErrProcModuleNotBindWithTemplate                    = 1108037
+	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
+	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
+	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -670,6 +676,8 @@ const (
 	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
 	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
 	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
+	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
+	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
 
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900

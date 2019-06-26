@@ -1,9 +1,9 @@
 <template>
     <div class="table" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
         <div class="table-info clearfix">
-            <div class="info-title fl" @click="localVisible = !localVisible">
+            <div class="info-title fl" @click="expanded = !expanded">
                 <i class="icon bk-icon icon-right-shape"
-                    :class="{ 'is-open': localVisible }">
+                    :class="{ 'is-open': expanded }">
                 </i>
                 <span class="title-text">{{title}}</span>
                 <span class="title-count">({{instances.length}})</span>
@@ -24,7 +24,7 @@
         </div>
         <cmdb-collapse-transition>
             <cmdb-table class="association-table"
-                v-show="localVisible"
+                v-show="expanded"
                 :header="header"
                 :list="flattenList"
                 :show-footer="false"
@@ -32,7 +32,15 @@
                 :max-height="462"
                 :empty-height="40">
                 <template slot="__operation__" slot-scope="{ item }">
-                    <span class="text-primary" @click="showTips($event, item)">
+                    <span class="text-primary" @click="showTips($event, item)" v-if="$isAuthorized(updateAuth)">
+                        {{$t('Association["取消关联"]')}}
+                    </span>
+                    <span class="text-primary disabled"
+                        v-else
+                        v-cursor="{
+                            active: true,
+                            auth: [updateAuth]
+                        }">
                         {{$t('Association["取消关联"]')}}
                     </span>
                 </template>
@@ -65,8 +73,7 @@
             associationType: {
                 type: Object,
                 required: true
-            },
-            visible: Boolean
+            }
         },
         data () {
             return {
@@ -77,7 +84,7 @@
                     current: 1,
                     size: 10
                 },
-                localVisible: this.visible,
+                expanded: false,
                 confirm: {
                     instance: null,
                     item: null,
@@ -90,18 +97,12 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            expandAll () {
-                return this.$store.state.hostDetails.expandAll
-            },
-            indeterminate () {
-                return this.$store.state.hostDetails.indeterminate
-            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                    return OPERATION.U_RESOURCE_HOST
                 }
-                return this.$isAuthorized(OPERATION.U_HOST)
+                return OPERATION.U_HOST
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list)
@@ -150,47 +151,31 @@
                         name: property.bk_property_name
                     }
                 })
-                if (this.updateAuth) {
-                    header.push({
-                        id: '__operation__',
-                        name: this.$t('Common["操作"]'),
-                        width: 150
-                    })
-                }
+                header.push({
+                    id: '__operation__',
+                    name: this.$t('Common["操作"]'),
+                    width: 150
+                })
                 return header
+            },
+            expandAll () {
+                return this.$store.state.hostDetails.expandAll
             }
         },
         watch: {
-            visible (visible) {
-                this.localVisible = visible
-            },
-            localVisible (visible) {
-                if (visible) {
-                    this.getData()
-                }
-                this.$store.commit('hostDetails/updateExpandCount', visible ? 1 : -1)
-                this.checkExpandAllState()
-            },
             instances () {
-                if (this.localVisible) {
+                if (this.expanded) {
                     this.getData()
                 }
             },
-            expandAll (expandAll) {
-                if (!this.indeterminate) {
-                    this.localVisible = expandAll
+            expandAll (expanded) {
+                this.expanded = expanded
+            },
+            expanded (expanded) {
+                if (expanded) {
+                    this.getData()
                 }
             }
-        },
-        created () {
-            this.$store.commit('hostDetails/updateTableCount', 1)
-            if (this.visible) {
-                this.getData()
-                this.$store.commit('hostDetails/updateExpandCount', 1)
-            }
-        },
-        beforeDestroy () {
-            this.$store.commit('hostDetails/updateTableCount', -1)
         },
         methods: {
             getData () {
@@ -387,15 +372,6 @@
                     target: event.target
                 })
                 this.confirm.instance.$el.append(this.$refs.confirmTips)
-            },
-            checkExpandAllState () {
-                this.$nextTick(() => {
-                    const state = this.$store.state.hostDetails
-                    const tableCount = state.tableCount
-                    const expandCount = state.expandCount
-                    this.$store.commit('hostDetails/setExpandIndeterminate', expandCount !== 0 && tableCount !== expandCount)
-                    this.$store.commit('hostDetails/toggleExpandAll', tableCount === expandCount)
-                })
             }
         }
     }

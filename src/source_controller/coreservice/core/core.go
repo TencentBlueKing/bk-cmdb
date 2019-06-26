@@ -205,6 +205,7 @@ type ProcessOperation interface {
 	ListServiceInstance(ctx ContextParams, option metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
 	DeleteServiceInstance(ctx ContextParams, serviceInstanceIDs []int64) errors.CCErrorCoder
 	AutoCreateServiceInstanceModuleHost(ctx ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	RemoveTemplateBindingOnModule(ctx ContextParams, moduleID int64) errors.CCErrorCoder
 
 	// process instance relation
 	CreateProcessInstanceRelation(ctx ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)

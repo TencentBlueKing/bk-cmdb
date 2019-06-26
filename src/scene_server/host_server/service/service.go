@@ -89,7 +89,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.GET("/hosts/{bk_supplier_account}/{bk_host_id}").To(s.GetHostInstanceProperties))
 	api.Route(api.GET("/hosts/snapshot/{bk_host_id}").To(s.HostSnapInfo))
 	api.Route(api.POST("/hosts/add").To(s.AddHost))
-	api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
+	// api.Route(api.POST("/host/add/agent").To(s.AddHostFromAgent))
 	api.Route(api.POST("/hosts/sync/new/host").To(s.NewHostSyncAppTopo))
 	api.Route(api.POST("hosts/favorites/search").To(s.GetHostFavourites))
 	api.Route(api.POST("hosts/favorites").To(s.AddHostFavourite))
@@ -114,7 +114,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/hosts/modules/read").To(s.GetHostModuleRelation))
 	// transfer host to other business
 	api.Route(api.POST("/hosts/modules/across/biz").To(s.TransferHostAcrossBusiness))
-	//  delete host from business
+	//  delete host from business, used for framework
 	api.Route(api.DELETE("/hosts/module/biz/delete").To(s.DeleteHostFromBusiness))
 
 	api.Route(api.POST("/userapi").To(s.AddUserCustomQuery))
