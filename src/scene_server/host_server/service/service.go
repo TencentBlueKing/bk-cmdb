@@ -150,7 +150,7 @@ func (s *Service) WebService() *restful.Container {
 
 	// cloud sync
 	api.Route(api.POST("/hosts/cloud/add").To(s.AddCloudTask))
-	api.Route(api.DELETE("/hosts/cloud/delete/{id}").To(s.DeleteCloudTask))
+	api.Route(api.DELETE("/hosts/cloud/delete/{taskID}").To(s.DeleteCloudTask))
 	api.Route(api.POST("/hosts/cloud/search").To(s.SearchCloudTask))
 	api.Route(api.PUT("/hosts/cloud/update").To(s.UpdateCloudTask))
 	api.Route(api.POST("/hosts/cloud/startSync").To(s.StartCloudSync))

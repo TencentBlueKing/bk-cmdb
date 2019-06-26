@@ -59,6 +59,7 @@
 	"1110058": "The object in the parameter is missing the bk_inst_id field",
 
 	"1116011": "Fail to delete cloud sync task",
+	"1116012": "Fail to update cloud sync task",
 	"1110080": "Fail to add host to resource pool",
 	"": ""
 }
