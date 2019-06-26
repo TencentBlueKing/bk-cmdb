@@ -62,10 +62,13 @@ func New(txnMgr *session.Manager, db mongodb.Client) Core {
 
 func (c *core) ExecuteCommand(ctx ContextParams, input rpc.Request) (*types.OPReply, error) {
 
+	blog.V(5).Infof("RDB operate. info:%#v", ctx.Header)
+
 	cmd, ok := GCommands.cmds[ctx.Header.OPCode]
 	if !ok {
+		blog.ErrorJSON("RDB operate unkonwn operation")
 		reply := types.OPReply{}
-		reply.Message = fmt.Sprintf("unknow operation, invalid code: %d", ctx.Header.OPCode)
+		reply.Message = fmt.Sprintf("unknown operation, invalid code: %d", ctx.Header.OPCode)
 		return &reply, nil
 	}
 

@@ -29,11 +29,7 @@ type Find struct {
 
 // Fields 查询字段
 func (f *Find) Fields(fields ...string) dal.Find {
-	projection := types.Document{}
-	for _, field := range fields {
-		projection[field] = true
-	}
-	f.msg.Projection = projection
+	f.msg.Fields = fields
 	return f
 }
 
@@ -90,6 +86,8 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if f.TxnID != "" {
 		f.msg.TxnID = f.TxnID
 	}
+	f.msg.Start = 0
+	f.msg.Limit = 1
 
 	// call
 	reply := types.OPReply{}

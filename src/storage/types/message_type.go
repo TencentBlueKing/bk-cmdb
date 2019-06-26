@@ -115,7 +115,7 @@ type OPDeleteOperation struct {
 type OPFindOperation struct {
 	MsgHeader           // 标准报文头
 	Collection string   // "dbname.collectionname"
-	Projection Document // ""
+	Fields     []string // return field. default return all
 	Selector   Document // 文档查询条件
 	Start      uint64   // start index
 	Limit      uint64   // limit index
