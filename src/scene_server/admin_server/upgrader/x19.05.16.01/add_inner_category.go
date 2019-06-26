@@ -47,19 +47,19 @@ func addInnerCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			Name:       "MongoDB",
 			ParentName: "数据库",
 		}, {
+			Name:       "Etcd",
+			ParentName: "数据库",
+		}, {
+			Name:       "Zookeeper",
+			ParentName: "数据库",
+		}, {
 			Name:       "消息队列",
 			ParentName: "",
 		}, {
 			Name:       "Kafka",
 			ParentName: "消息队列",
 		}, {
-			Name:       "Zookeeper",
-			ParentName: "消息队列",
-		}, {
 			Name:       "RabbitMQ",
-			ParentName: "消息队列",
-		}, {
-			Name:       "Etcd",
 			ParentName: "消息队列",
 		}, {
 			Name:       "HTTP 服务",
