@@ -91,6 +91,9 @@ func (s *Service) initBusiness() {
 	s.addAction(http.MethodPost, "/app/default/{owner_id}/search", s.SearchArchivedBusiness, nil)
 	s.addAction(http.MethodPost, "/app/default/{owner_id}", s.CreateDefaultBusiness, nil)
 	s.addAction(http.MethodGet, "/topo/internal/{owner_id}/{app_id}", s.GetInternalModule, nil)
+	// find reduced business list with only few fields for business itself.
+	s.addAction(http.MethodGet, "/app/with_reduced", s.SearchReducedBusinessList, nil)
+
 }
 
 func (s *Service) initModule() {

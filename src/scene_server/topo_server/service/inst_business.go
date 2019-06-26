@@ -14,13 +14,18 @@ package service
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
 	"strconv"
 
+	"configcenter/src/auth"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	gparams "configcenter/src/common/paraparse"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -165,6 +170,67 @@ func (s *Service) UpdateBusinessStatus(params types.ContextParams, pathParams, q
 	return nil, nil
 }
 
+// find business list with these info：
+// 1. have any authorized resources in a business.
+// 2. only returned with a few field for this business info.
+func (s *Service) SearchReducedBusinessList(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
+	if nil != err {
+		blog.Errorf("failed to search the business, %s", err.Error())
+		return nil, err
+	}
+	fields := []string{common.BKAppIDField, common.BKAppNameField, "business_dept_id", "business_dept_name"}
+	cond := condition.CreateCondition()
+	cond.Field(common.BKDataStatusField).NotEq(common.DataStatusDisabled)
+	cond.Field(common.BKDefaultField).Eq(0)
+	if s.AuthManager.Enabled() {
+		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
+		appList, err := s.AuthManager.Authorize.GetAnyAuthorizedBusinessList(params.Context, user)
+		if err != nil {
+			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
+		}
+
+		// sort for prepare to find business with page.
+		sort.Sort(util.Int64Slice(appList))
+		// user can only find business that is already authorized.
+		cond.Field(common.BKAppIDField).In(appList)
+
+	}
+
+	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, fields, cond)
+	if nil != err {
+		blog.Errorf("[api-business] failed to find the objects(%s), error info is %s", pathParams("obj_id"), err.Error())
+		return nil, err
+	}
+
+	datas := make([]mapstr.MapStr, 0)
+	for _, item := range instItems {
+		instMap := item.GetValues()
+		inst := mapstr.New()
+		inst[common.BKAppIDField] = instMap[common.BKAppIDField]
+		inst[common.BKAppNameField] = instMap[common.BKAppNameField]
+		inst["business_dept_id"] = instMap["business_dept_id"]
+		inst["business_dept_name"] = instMap["business_dept_name"]
+
+		if val, exist := instMap["business_dept_id"]; exist {
+			inst["business_dept_id"] = val
+		} else {
+			inst["business_dept_id"] = ""
+		}
+		if val, exist := instMap["business_dept_name"]; exist {
+			inst["business_dept_name"] = val
+		} else {
+			inst["business_dept_name"] = ""
+		}
+		datas = append(datas, inst)
+	}
+
+	result := mapstr.MapStr{}
+	result.Set("count", cnt)
+	result.Set("info", datas)
+	return result, nil
+}
+
 // SearchBusiness search the business by condition
 func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, common.BKInnerObjIDApp)
@@ -178,7 +244,7 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	}
 	if err := data.MarshalJSONInto(&searchCond); nil != err {
 		blog.Errorf("failed to parse the params, error info is %s", err.Error())
-		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+		return nil, params.Err.New(common.CCErrCommParamsInvalid, err.Error())
 	}
 
 	innerCond := condition.CreateCondition()
@@ -186,12 +252,48 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	case 1: // native mode
 		if err := innerCond.Parse(searchCond.Condition); nil != err {
 			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
-			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
 		}
 	default:
 		if err := innerCond.Parse(gparams.ParseAppSearchParams(searchCond.Condition)); nil != err {
 			blog.Errorf("[api-biz] failed to parse the input data, error info is %s", err.Error())
-			return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
+			return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
+		}
+	}
+
+	// parse business id from user's condition for testing.
+	var bizID int64
+	biz, exist := searchCond.Condition[common.BKAppIDField]
+	if exist {
+		if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+			return nil, params.Err.New(common.CCErrCommParamsInvalid, common.BKAppIDField)
+		}
+		bizID = int64(searchCond.Condition[common.BKAppIDField].(float64))
+	}
+
+	if s.AuthManager.Enabled() {
+		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
+		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
+		if err != nil {
+			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
+		}
+
+		if bizID > 0 {
+			// this means that user want to find a specific business.
+			// now we check if he has this authority.
+			if !util.InArray(bizID, appList) {
+				noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, bizID)
+				if err != nil {
+					return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
+				}
+				return noAuthResp, auth.NoAuthorizeError
+			}
+			// now you have the authority.
+		} else {
+			// sort for prepare to find business with page.
+			sort.Sort(util.Int64Slice(appList))
+			// user can only find business that is already authorized.
+			innerCond.Field(common.BKAppIDField).In(appList)
 		}
 	}
 
@@ -231,6 +333,18 @@ func (s *Service) SearchArchivedBusiness(params types.ContextParams, pathParams,
 		return nil, params.Err.New(common.CCErrTopoAppSearchFailed, err.Error())
 	}
 	innerCond.Field(common.BKDefaultField).Eq(common.DefaultAppFlag)
+
+	if s.AuthManager.Enabled() {
+		user := authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount}
+		appList, err := s.AuthManager.Authorize.GetExactAuthorizedBusinessList(params.Context, user)
+		if err != nil {
+			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
+		}
+		// sort for prepare to find business with page.
+		sort.Sort(util.Int64Slice(appList))
+		// user can only find business that is already authorized.
+		innerCond.Field(common.BKAppIDField).In(appList)
+	}
 
 	cnt, instItems, err := s.Core.BusinessOperation().FindBusiness(params, obj, []string{}, innerCond)
 	if nil != err {
