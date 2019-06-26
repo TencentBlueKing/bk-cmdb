@@ -153,7 +153,6 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		}
 		businessID = id
 	}
-	blog.V(5).Infof("InstanceAuditQuery, business id: %d", businessID)
 
 	instID, exist := queryCondition.(map[string]interface{})["inst_id"]
 	if exist == false {
@@ -166,6 +165,17 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "inst_id")
 	}
 
+	opTarget, exist := queryCondition.(map[string]interface{})["op_target"]
+	if exist {
+		target, ok := opTarget.(string)
+		if !ok {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, "op_target")
+		}
+		if target == "biz" {
+			businessID = instanceID
+		}
+	}
+
 	action := meta.Find
 	switch objectID {
 	case common.BKInnerObjIDHost:
@@ -175,7 +185,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		if err != nil && err == auth.NoAuthorizeError {
 			resp, err := s.AuthManager.GenProcessNoPermissionResp(params.Context, params.Header, businessID)
 			if err != nil {
-				return nil, params.Err.Errorf(common.CCErrTopoGetAppFaild, bizID)
+				return nil, params.Err.Errorf(common.CCErrTopoGetAppFailed, bizID)
 			}
 			return resp, auth.NoAuthorizeError
 		}
@@ -194,7 +204,7 @@ func (s *Service) InstanceAuditQuery(params types.ContextParams, pathParams, que
 		if err != nil && err == auth.NoAuthorizeError {
 			resp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, businessID)
 			if err != nil {
-				return nil, params.Err.Errorf(common.CCErrTopoGetAppFaild, bizID)
+				return nil, params.Err.Error(common.CCErrTopoGetAppFailed)
 			}
 			return resp, auth.NoAuthorizeError
 		}

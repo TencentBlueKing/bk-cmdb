@@ -28,7 +28,7 @@ const options = {
     y: 0,
     width: 16,
     height: 16,
-    zIndex: 1000,
+    zIndex: 100000,
     cursor: 'pointer',
     className: 'v-cursor',
     activeClass: 'v-cursor-active'

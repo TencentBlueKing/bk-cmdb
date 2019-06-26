@@ -197,7 +197,7 @@
                             'bk_inst_name': module.bk_module_name
                         }
                     })
-                    const treeData = [{
+                    const resourceNode = {
                         'default': 0,
                         'bk_obj_id': 'module',
                         'bk_inst_id': 'source',

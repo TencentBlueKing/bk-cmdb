@@ -13,10 +13,11 @@
 package authcenter
 
 import (
-	"configcenter/src/auth/meta"
-	"configcenter/src/common/metadata"
 	"errors"
 	"fmt"
+
+	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -29,7 +30,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 	info.ResourceType = *resourceTypeID
 
@@ -60,8 +61,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = SysModel
 		}
 
-	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology, meta.MainlineInstanceTopology:
-		iamResourceType = BizTopo
+	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
+		iamResourceType = BizTopology
 
 	case meta.MainlineModel, meta.ModelTopology:
 		iamResourceType = SysSystemBase
@@ -137,30 +138,30 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sysSystemBase"
-	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
-	SysHostInstance     ResourceTypeID = "sysHostInstance"
-	SysEventPushing     ResourceTypeID = "sysEventPushing"
-	SysModelGroup       ResourceTypeID = "sysModelGroup"
-	SysModel            ResourceTypeID = "sysModel"
-	SysInstance         ResourceTypeID = "sysInstance"
-	SysAssociationType  ResourceTypeID = "sysAssociationType"
-	SysAuditLog         ResourceTypeID = "sysAuditLog"
+	SysSystemBase       ResourceTypeID = "sys_system_base"
+	SysBusinessInstance ResourceTypeID = "sys_business_instance"
+	SysHostInstance     ResourceTypeID = "sys_host_instance"
+	SysEventPushing     ResourceTypeID = "sys_event_pushing"
+	SysModelGroup       ResourceTypeID = "sys_model_group"
+	SysModel            ResourceTypeID = "sys_model"
+	SysInstance         ResourceTypeID = "sys_instance"
+	SysAssociationType  ResourceTypeID = "sys_association_type"
+	SysAuditLog         ResourceTypeID = "sys_audit_log"
 )
 
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery            ResourceTypeID = "bizCustomQuery"
-	BizHostInstance           ResourceTypeID = "bizHostInstance"
-	BizModelGroup             ResourceTypeID = "bizModelGroup"
-	BizModel                  ResourceTypeID = "bizModel"
-	BizInstance               ResourceTypeID = "bizInstance"
-	BizAuditLog               ResourceTypeID = "bizAuditLog"
-	BizProcessServiceTemplate ResourceTypeID = "bizProcessServiceTemplate"
-	BizProcessServiceCategory ResourceTypeID = "bizProcessServiceCategory"
-	BizTopo                   ResourceTypeID = "bizTopo"
-	BizProcessInstance        ResourceTypeID = "bizProcessInstance"
+	BizCustomQuery     ResourceTypeID = "biz_custom_query"
+	BizHostInstance    ResourceTypeID = "biz_host_instance"
+	BizProcessInstance ResourceTypeID = "biz_process_instance"
+	BizTopology        ResourceTypeID = "biz_topology"
+	BizModelGroup      ResourceTypeID = "biz_model_group"
+	BizModel           ResourceTypeID = "biz_model"
+	BizInstance        ResourceTypeID = "biz_instance"
+	BizAuditLog        ResourceTypeID = "biz_audit_log"
+	BizProcessServiceTemplate ResourceTypeID = "biz_process_service_template"
+	BizProcessServiceCategory ResourceTypeID = "biz_process_service_category"
 )
 
 const (
@@ -181,7 +182,7 @@ var ResourceTypeIDMap = map[ResourceTypeID]string{
 	BizHostInstance:     "业务主机",
 	BizProcessInstance:  "进程",
 	// TODO: delete this when upgrade to v3.5.x
-	BizTopo:       "",
+	BizTopology:   "拓扑",
 	BizModelGroup: "模型分组",
 	BizModel:      "模型",
 	BizInstance:   "实例",
@@ -203,18 +204,18 @@ const (
 	// Archive for business
 	Archive ActionID = "archive"
 	// host action
-	ModuleTransfer ActionID = "moduleTransfer"
+	ModuleTransfer ActionID = "module_transfer"
 	// business topology action
-	HostTransfer ActionID = "hostTransfer"
+	HostTransfer ActionID = "host_transfer"
 	// system base action, related to model topology
-	ModelTopologyView ActionID = "modelTopologyView"
+	ModelTopologyView ActionID = "model_topology_view"
 	// business model topology operation.
-	ModelTopologyOperation ActionID = "modelTopologyOperation"
+	ModelTopologyOperation ActionID = "model_topology_operation"
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
-	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
-	BindModule            ActionID = "bindModule"
-	AdminEntrance         ActionID = "adminEntrance"
+	AssignHostsToBusiness ActionID = "assign_hosts_to_business"
+	BindModule            ActionID = "bind_module"
+	AdminEntrance         ActionID = "admin_entrance"
 )
 
 var ActionIDNameMap = map[ActionID]string{
@@ -259,6 +260,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
+	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
+	// 	return ModelTopologyOperation, nil
+	// }
+
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
@@ -281,7 +286,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		if r.Action == meta.AddHostToResourcePool {
-			return Edit, nil
+			return Create, nil
 		}
 
 		if r.Action == meta.MoveResPoolHostToBizIdleModule {
@@ -317,13 +322,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
-
-	case meta.AddHostToResourcePool:
-		// add hosts to resource pool
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return Edit, nil
-		}
-		return Edit, nil
 
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
@@ -414,7 +412,7 @@ var (
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BizTopo,
+		Type:    BizTopology,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 
