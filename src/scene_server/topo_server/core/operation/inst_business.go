@@ -13,9 +13,11 @@
 package operation
 
 import (
+	"context"
+	"strings"
+
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -25,9 +27,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
-	"context"
-	"sort"
-	"strings"
 )
 
 // BusinessOperationInterface business operation methods
@@ -255,16 +254,6 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
-	if b.authManager.Enabled() {
-		applist, err := b.authManager.Authorize.GetExactAuthorizedBusinessList(params.Context, authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount})
-		if err != nil {
-			return 0, nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
-		}
-		// sort for prepare to find business with page.
-		sort.Sort(util.Int64Slice(applist))
-		cond.Field(common.BKAppIDField).In(applist)
-	}
-
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()

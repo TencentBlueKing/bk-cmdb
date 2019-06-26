@@ -63,8 +63,8 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	// TODO: {version} need to replaced by v3
-	api.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 

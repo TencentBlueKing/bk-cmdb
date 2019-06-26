@@ -44,7 +44,7 @@ const (
 	// CCErrCommHTTPBodyEmpty  HTTP request body data is not set
 	CCErrCommHTTPBodyEmpty = 1199005
 
-	// CCErrCommParamsInvalid parameter validation in the body is not paased
+	// CCErrCommParamsInvalid parameter validation in the body is not pass
 	CCErrCommParamsInvalid = 1199006
 
 	// CCErrCommParamsNeedString  the parameter must be of type string
