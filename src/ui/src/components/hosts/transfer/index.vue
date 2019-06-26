@@ -418,10 +418,10 @@
         .node-model-icon {
             width: 22px;
             height: 22px;
-            line-height: 22px;
+            line-height: 20px;
             text-align: center;
             font-style: normal;
-            font-size: 14px;
+            font-size: 12px;
             margin: 5px 4px 0 6px;
             border-radius: 50%;
             background-color: #c4c6cc;
