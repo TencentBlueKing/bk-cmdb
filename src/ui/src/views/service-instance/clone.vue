@@ -9,7 +9,7 @@
                     name="hostTarget"
                     v-model="hostTarget"
                     :value="targetName.source">
-                <label for="sourceHost">{{$t('BusinessTopology["源实例主机"]')}}</label>
+                <label for="sourceHost">{{$t('BusinessTopology["当前主机"]')}}</label>
             </div>
             <div class="type-item fl">
                 <input class="type-radio"
