@@ -265,6 +265,8 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	var bizID int64
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
+		// constrict that bk_biz_id field can only be a numeric value,
+		// operators like or/in/and is not allowed.
 		if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
 			return nil, params.Err.New(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}

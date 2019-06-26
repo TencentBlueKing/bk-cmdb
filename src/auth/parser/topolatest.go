@@ -567,7 +567,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
 		if err != nil {
 			ps.err = err
 			return ps
@@ -578,6 +579,16 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		} else if isMainline {
+			// special logic for mainline object's instance authorization.
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			if bizID == 0 {
+				ps.err = errors.New("create mainline instance must have metadata with biz id")
+				return ps
+			}
 			modelType = meta.MainlineInstance
 		}
 
