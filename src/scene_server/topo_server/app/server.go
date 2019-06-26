@@ -95,7 +95,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers, server.Config.Mongo)
+	txn, err := remote.NewWithDiscover(engine.ServiceManageInterface.TMServer().GetServers)
 	if err != nil {
 		blog.Errorf("failed to connect the txc server, error info is %v", err)
 		return err

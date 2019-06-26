@@ -28,8 +28,10 @@ import (
 	"configcenter/src/source_controller/hostcontroller/app/options"
 	"configcenter/src/source_controller/hostcontroller/logics"
 	"configcenter/src/source_controller/hostcontroller/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
 )
 
@@ -72,6 +74,12 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	coreService.Logics.Engine = coreService.Core
+	err = hostCtrl.initComponents()
+	if err != nil {
+		blog.Errorf("initializing dependent components error. err:%s", err.Error())
+		return err
+	}
+
 	if err := backbone.StartServer(ctx, coreService.Core, coreService.WebService()); err != nil {
 		return err
 	}
@@ -92,17 +100,26 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
+}
 
-	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+// initCompents Initialize dependent components
+func (h *HostController) initComponents() error {
+	var err error
+	var instance dal.RDB
+	if h.Config.Mongo.Enable == "true" {
+		instance, err = local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+	} else {
+		instance, err = remote.NewWithDiscover(h.Core.ServiceManageInterface.TMServer().GetServers)
+	}
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
-		return
+		return err
 	}
 
 	cache, err := dalredis.NewFromConfig(h.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %v", err)
-		return
+		return err
 	}
 	ec := eventclient.NewClientViaRedis(cache, instance)
 
@@ -114,6 +131,7 @@ func (h *HostController) onHostConfigUpdate(previous, current cc.ProcessConfig) 
 	h.Cache = cache
 	h.Service.Cache = cache
 	h.Service.EventC = ec
+	return nil
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
