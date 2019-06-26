@@ -74,11 +74,17 @@ func (s TxStatus) String() string {
 type Document map[string]interface{}
 
 func (d Document) Decode(result interface{}) error {
+
 	out, err := bson.Marshal(d)
 	if nil != err {
 		return err
 	}
-	return bson.Unmarshal(out, result)
+	if reflect.ValueOf(result).Type().Kind() == reflect.Ptr {
+		return bson.Unmarshal(out, result)
+	} else {
+		return bson.Unmarshal(out, &result)
+	}
+
 }
 
 func (d *Document) Encode(value interface{}) error {
@@ -127,7 +133,7 @@ func (d Documents) Decode(result interface{}) error {
 		if nil != err {
 			return fmt.Errorf("Decode Documents error when marshal: %v, source is %s", err, d[0])
 		}
-		err = bson.Unmarshal(out, result)
+		err = bson.Unmarshal(out, &result)
 		if nil != err {
 			return fmt.Errorf("Decode Documents error when unmarshal: %v, source is %s", err, out)
 		}
@@ -147,11 +153,11 @@ func (d *Documents) Encode(value interface{}) error {
 	case reflect.Slice:
 		var docs []Document
 		for idx := 0; idx < valuev.Len(); idx++ {
-			out, err := bson.Marshal(valuev.Index(idx))
+			out, err := bson.Marshal(valuev.Index(idx).Interface())
 			if nil != err {
 				return fmt.Errorf("Encode Documents when marshal error: %v, source is %#v", err, valuev.Index(idx))
 			}
-			var doc Document
+			doc := Document{}
 			err = bson.Unmarshal(out, &doc)
 			if nil != err {
 				return fmt.Errorf("Encode Documents when unmarshal error: %v, source is %v", err, valuev.Index(idx))
