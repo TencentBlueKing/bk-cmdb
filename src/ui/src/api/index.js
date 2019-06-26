@@ -221,7 +221,7 @@ function popupPermissionModal (permission = []) {
 function getPermissionText (data, necessaryKey, extraKey, split = '：') {
     const text = [data[necessaryKey]]
     if (data[extraKey]) {
-        text.push(data)
+        text.push(data[extraKey])
     }
     return text.join(split)
 }

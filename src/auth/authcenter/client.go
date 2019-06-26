@@ -106,7 +106,7 @@ func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Hea
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
-	// register resource with emtpy id will make crash
+	// register resource with empty id will make crash
 	for _, resource := range info.Resources {
 		if resource.ResourceID == nil || len(resource.ResourceID) == 0 {
 			return fmt.Errorf("resource id can't be empty, resource: %+v", resource)

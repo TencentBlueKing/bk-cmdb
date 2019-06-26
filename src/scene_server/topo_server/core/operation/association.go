@@ -14,6 +14,7 @@ package operation
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"configcenter/src/apimachinery"
@@ -22,6 +23,7 @@ import (
 	"configcenter/src/common/auditoplog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/topo_server/core/inst"
@@ -64,11 +66,13 @@ type AssociationOperationInterface interface {
 	DeleteMainlineAssociaton(params types.ContextParams, objID string) error
 	SearchMainlineAssociationTopo(params types.ContextParams, targetObj model.Object) ([]*metadata.MainlineObjectTopo, error)
 	SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error)
+	IsMainlineObject(params types.ContextParams, objID string) (bool, error)
 
 	CreateCommonAssociation(params types.ContextParams, data *metadata.Association) (*metadata.Association, error)
 	DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error
 	UpdateAssociation(params types.ContextParams, data mapstr.MapStr, assoID int64) error
 	SearchObjectAssociation(params types.ContextParams, objID string) ([]metadata.Association, error)
+	SearchObjectsAssociation(params types.ContextParams, objIDs []string) ([]metadata.Association, error)
 
 	DeleteAssociation(params types.ContextParams, cond condition.Condition) error
 	SearchInstAssociation(params types.ContextParams, query *metadata.QueryInput) ([]metadata.InstAsst, error)
@@ -150,6 +154,35 @@ func (a *association) SearchObjectAssociation(params types.ContextParams, objID 
 
 	if !rsp.Result {
 		blog.Errorf("[operation-asst] failed to search the object(%s) association info , err: %s", objID, rsp.ErrMsg)
+		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+
+	return rsp.Data.Info, nil
+}
+
+func (a *association) SearchObjectsAssociation(params types.ContextParams, objIDs []string) ([]metadata.Association, error) {
+
+	cond := condition.CreateCondition()
+	if 0 != len(objIDs) {
+		cond.Field(common.BKObjIDField).In(objIDs)
+	}
+
+	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Merge(metadata.PublicAndBizCondition(*params.MetaData))
+		fCond.Remove(metadata.BKMetadata)
+	} else {
+		fCond.Merge(metadata.BizLabelNotExist)
+	}
+
+	rsp, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header, &metadata.QueryCondition{Condition: fCond})
+	if nil != err {
+		blog.Errorf("[operation-asst] failed to request object controller, err: %s", err.Error())
+		return nil, params.Err.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if !rsp.Result {
+		blog.Errorf("[operation-asst] failed to search the object(%s) association info , err: %s", objIDs, rsp.ErrMsg)
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
@@ -266,6 +299,31 @@ func (a *association) CreateCommonInstAssociation(params types.ContextParams, da
 	}
 
 	return nil
+}
+
+func (a *association) IsMainlineObject(params types.ContextParams, objID string) (bool, error) {
+	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(context.Background(), params.Header,
+		&metadata.QueryCondition{Condition: cond})
+	if err != nil {
+		return false, err
+	}
+
+	if !asst.Result {
+		return false, errors.New(asst.Code, asst.ErrMsg)
+	}
+
+	if len(asst.Data.Info) <= 0 {
+		return false, fmt.Errorf("model association [%+v] not found", cond)
+	}
+
+	for _, mainline := range asst.Data.Info {
+		if mainline.ObjectID == objID {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (a *association) DeleteAssociationWithPreCheck(params types.ContextParams, associationID int64) error {
