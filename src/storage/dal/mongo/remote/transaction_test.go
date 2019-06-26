@@ -15,17 +15,43 @@ package remote
 import (
 	"context"
 	"net/http"
+	"os"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-
-	"github.com/stretchr/testify/require"
+	"configcenter/src/storage/dal/mongo"
 )
 
+func getTMServer() []string {
+	ips := strings.TrimSpace(os.Getenv("tmserver_ips"))
+	if ips == "" {
+		panic("env tmserver_ips require")
+	}
+
+	return strings.Split(ips, ",")
+}
+
+func getServerFunc() ([]string, error) {
+	return getTMServer(), nil
+}
+
+func TestTransactionQuery(t *testing.T) {
+	config := mongo.Config{
+		Transaction: "enable",
+	}
+	NewWithDiscover(getServerFunc, config)
+}
+
 func TestTransaction(t *testing.T) {
-	db, err := New("192.168.100.130:60008", true)
+	config := mongo.Config{
+		Transaction: "enable",
+	}
+	db, err := NewWithDiscover(getServerFunc, config)
 	require.NoError(t, err)
 
 	header := http.Header{}
@@ -40,46 +66,47 @@ func TestTransaction(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Table(tablename).Delete(orgctx, map[string]interface{}{})
 
-	tx, err := db.StartTransaction(orgctx)
+	tx, err := db.Start(orgctx)
 	require.NoError(t, err)
 	header = tx.TxnInfo().IntoHeader(header)
 	ctx := util.GetDBContext(context.Background(), header)
+
 	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 	require.True(t, ok)
 	require.NotEmpty(t, opt.RequestID)
 	require.NotEmpty(t, opt.TxnID)
 
-	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
+	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "a"})
 	require.NoError(t, err)
 
 	result := []map[string]interface{}{}
-	err = tx.Table(tablename).Find(map[string]interface{}{"name": "a"}).All(ctx, &result)
+	err = db.Table(tablename).Find(map[string]interface{}{"name": "a"}).All(ctx, &result)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "a", result[0]["name"])
 
-	count, err := tx.Table(tablename).Find(map[string]interface{}{"name": "a"}).Count(ctx)
+	count, err := db.Table(tablename).Find(map[string]interface{}{"name": "a"}).Count(ctx)
 	require.NoError(t, err)
 	require.True(t, count == 1)
 
-	err = tx.Table(tablename).Update(ctx, map[string]interface{}{"name": "a"}, map[string]interface{}{"name": "b"})
+	err = db.Table(tablename).Update(ctx, map[string]interface{}{"name": "a"}, map[string]interface{}{"name": "b"})
 	require.NoError(t, err)
 
 	result = []map[string]interface{}{}
-	err = tx.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
+	err = db.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "b", result[0]["name"])
 
-	err = tx.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
+	err = db.Table(tablename).Delete(ctx, map[string]interface{}{"name": "b"})
 	require.NoError(t, err)
 
 	result = []map[string]interface{}{}
-	err = tx.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
+	err = db.Table(tablename).Find(map[string]interface{}{"name": "b"}).All(ctx, &result)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(result))
 
-	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "c"})
+	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "c"})
 	require.NoError(t, err)
 
 	result = []map[string]interface{}{}
@@ -96,7 +123,7 @@ func TestTransaction(t *testing.T) {
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "c", result[0]["name"])
 
-	tx, err = db.StartTransaction(orgctx)
+	tx, err = db.Start(orgctx)
 	require.NoError(t, err)
 	header = tx.TxnInfo().IntoHeader(header)
 	ctx = util.GetDBContext(context.Background(), header)
@@ -104,7 +131,7 @@ func TestTransaction(t *testing.T) {
 	require.True(t, ok)
 	require.NotEmpty(t, opt.RequestID)
 	require.NotEmpty(t, opt.TxnID)
-	err = tx.Table(tablename).Insert(ctx, map[string]interface{}{"name": "d"})
+	err = db.Table(tablename).Insert(ctx, map[string]interface{}{"name": "d"})
 	require.NoError(t, err)
 	err = tx.Abort(ctx)
 	require.NoError(t, err)

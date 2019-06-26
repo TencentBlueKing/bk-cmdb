@@ -34,15 +34,16 @@ var _ dal.DB = (*Mongo)(nil)
 type Mongo struct {
 	RequestID string // 请求ID,可选项
 	TxnID     string // 事务ID,uuid
-	rpc       rpc.Client
+	rpc       *pool
 	getServer types.GetServerFunc
 	parent    *Mongo
 
+	tmAddr            string // TMServer IP. 存放事务对应的db session 存在TMServer地址的IP
 	enableTransaction bool
 }
 
 // NewWithDiscover returns new DB
-func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal.DB, err error) {
+func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db *Mongo, err error) {
 	var enableTransaction bool
 	if config.Transaction == "enable" {
 		enableTransaction = true
@@ -60,13 +61,14 @@ func NewWithDiscover(getServer types.GetServerFunc, config mongo.Config) (db dal
 		return nil, err
 	}
 	return &Mongo{
-		rpc:               pool,
+		rpc:               NewPool(pool),
 		enableTransaction: enableTransaction,
 	}, nil
 }
 
+/* 不支持事务透传的版本无法使用域名配置。
 // New returns new DB
-func New(uri string, enableTransaction bool) (dal.DB, error) {
+ func New(uri string, enableTransaction bool) (dal.DB, error) {
 	rpccli, err := rpc.DialHTTPPath("tcp", uri, "/txn/v3/rpc")
 	if err != nil {
 		return nil, err
@@ -75,7 +77,7 @@ func New(uri string, enableTransaction bool) (dal.DB, error) {
 		rpc:               rpccli,
 		enableTransaction: enableTransaction,
 	}, nil
-}
+}*/
 
 // Close replica client
 func (c *Mongo) Close() error {
@@ -169,7 +171,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return 0, err
 	}
