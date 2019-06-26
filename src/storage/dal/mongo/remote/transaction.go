@@ -22,8 +22,8 @@ import (
 	"configcenter/src/storage/types"
 )
 
-// StartTransaction create a new transaction
-func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
+// Start create a new transaction
+func (c *Mongo) Start(ctx context.Context) (dal.Transcation, error) {
 	if !c.enableTransaction {
 		blog.Warnf("not enable transaction")
 		return c, nil
@@ -44,7 +44,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 
 	// call
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	addr, err := c.rpc.CallInfo(types.CommandRDBOperation, &msg, &reply)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +55,7 @@ func (c *Mongo) StartTransaction(ctx context.Context) (dal.DB, error) {
 	clone := c.Clone().(*Mongo)
 	clone.TxnID = reply.TxnID
 	clone.RequestID = reply.RequestID
+	clone.tmAddr = addr
 	return clone, nil
 }
 
@@ -72,9 +73,10 @@ func (c *Mongo) Commit(ctx context.Context) error {
 	msg.OPCode = types.OPCommitCode
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
+	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
@@ -99,9 +101,10 @@ func (c *Mongo) Abort(ctx context.Context) error {
 	msg.OPCode = types.OPAbortCode
 	msg.RequestID = c.RequestID
 	msg.TxnID = c.TxnID
+	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
 
 	reply := types.OPReply{}
-	err := c.rpc.Call(types.CommandRDBOperation, &msg, &reply)
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
 	c.TxnID = "" // clear TxnID
 	if err != nil {
 		return err
@@ -117,5 +120,10 @@ func (c *Mongo) TxnInfo() *types.Transaction {
 	return &types.Transaction{
 		RequestID: c.RequestID,
 		TxnID:     c.TxnID,
+		TMAddr:    c.tmAddr,
 	}
+}
+
+func (c *Mongo) DB() dal.RDB {
+	return c
 }

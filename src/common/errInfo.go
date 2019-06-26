@@ -172,6 +172,13 @@ const (
 	CCErrCommGenerateRecordIDFailed = 1199058
 	CCErrCommPageLimitIsExceeded    = 1199059
 
+	// CCErrCommStartTranscationFailed start transcation failed
+	CCErrCommStartTranscationFailed = 1199060
+	// CCErrCommCommitTranscationFailed commit transcation failed
+	CCErrCommCommitTranscationFailed = 1199061
+	// CCErrCommcommitTranscationFailed abort transcation failed
+	CCErrCommAbortTranscationFailed = 1199062
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 
