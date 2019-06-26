@@ -23,7 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
-	CCNoPermission = 9900403
+	CCNoPermission       = 9900403
 
 	// common error code 1199XXX
 
@@ -176,6 +176,8 @@ const (
 
 	CCErrCommParseDBFailed                     = 1199061
 	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
+
+	CCErrCommParametersCountNotEnough = 1199063
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998

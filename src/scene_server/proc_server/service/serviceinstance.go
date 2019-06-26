@@ -15,6 +15,7 @@ package service
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -179,6 +180,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 				ctx.RespWithError(err, common.CCErrCommNotFound, "update process instance failed, process related template not found, relation: %+v, err: %v", relation, err)
 				return
 			}
+			// TODO: don't need to update from template
 			processTemplate.InstanceUpdate(&process)
 		}
 
@@ -445,9 +447,31 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process instance in service instance failed, err: %v", err)
+		return
+	}
+
+	listOption := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: bizID,
+		ProcessIDs: &input.ProcessInstanceIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	templateProcessIDs := make([]string, 0)
+	for _, relation := range relations.Info {
+		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
+			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
+		}
+	}
+	if len(templateProcessIDs) > 0 {
+		invalidProcesses := strings.Join(templateProcessIDs, ",")
+		blog.Errorf("DeleteProcessInstance failed, some process:%s initialized by template, rid: %s", invalidProcesses, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, invalidProcesses)
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
 		return
 	}
 
