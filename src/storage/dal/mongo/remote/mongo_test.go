@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -121,7 +122,7 @@ func BenchmarkRemoteCUDParallel(b *testing.B) {
 	db.Close()
 }
 
-func TestHasTable(t *testing.T) {
+func TestDDL(t *testing.T) {
 	// 127.0.0.1:60008
 	db, err := NewWithDiscover(getServerFunc)
 	require.NoError(t, err)
@@ -165,4 +166,18 @@ func TestHasTable(t *testing.T) {
 		Keys: map[string]int32{"444": 1},
 	})
 	require.NoError(t, err)
+}
+
+func TestInsertTime(t *testing.T) {
+	// 127.0.0.1:60008
+	db, err := NewWithDiscover(getServerFunc)
+	require.NoError(t, err)
+
+	tableName := "tmp_test_insert"
+
+	row := map[string]interface{}{"ts": time.Now()}
+
+	err = db.Table(tableName).Insert(context.Background(), row)
+	require.NoError(t, err)
+
 }

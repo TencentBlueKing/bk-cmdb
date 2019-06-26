@@ -98,10 +98,26 @@ func (d Documents) Decode(result interface{}) error {
 	resultv := reflect.ValueOf(result)
 	switch resultv.Elem().Kind() {
 	case reflect.Slice:
-		err := decodeBsonArray(d, result)
-		if err != nil {
-			return fmt.Errorf("Decode Document array error: %v", err)
+		if resultv.Kind() != reflect.Ptr || resultv.Elem().Kind() != reflect.Slice {
+			return errors.New("result argument must be a slice address")
 		}
+		elemt := resultv.Elem().Type().Elem()
+
+		for _, doc := range d {
+			elem := reflect.New(elemt)
+
+			out, err := bson.Marshal(doc)
+			if nil != err {
+				return fmt.Errorf("Decode array error when marshal: %v, source is %s", err, doc)
+			}
+			err = bson.Unmarshal(out, elem.Interface())
+			if nil != err {
+				return fmt.Errorf("Decode array error when unmarshal: %v, source is %s", err, doc)
+			}
+
+			resultv.Elem().Set(reflect.Append(resultv.Elem(), elem.Elem()))
+		}
+
 		return nil
 	default:
 		if len(d) <= 0 {
@@ -109,7 +125,7 @@ func (d Documents) Decode(result interface{}) error {
 		}
 		out, err := bson.Marshal(d[0])
 		if nil != err {
-			return fmt.Errorf("Decode Documents error when marshal2: %v, source is %s", err, d[0])
+			return fmt.Errorf("Decode Documents error when marshal: %v, source is %s", err, d[0])
 		}
 		err = bson.Unmarshal(out, result)
 		if nil != err {
@@ -129,10 +145,20 @@ func (d *Documents) Encode(value interface{}) error {
 	}
 	switch valuev.Kind() {
 	case reflect.Slice:
-		err := decodeBsonArray(value, d)
-		if err != nil {
-			return fmt.Errorf("Encode Document array error: %v", err)
+		var docs []Document
+		for idx := 0; idx < valuev.Len(); idx++ {
+			out, err := bson.Marshal(valuev.Index(idx))
+			if nil != err {
+				return fmt.Errorf("Encode Documents when marshal error: %v, source is %#v", err, valuev.Index(idx))
+			}
+			var doc Document
+			err = bson.Unmarshal(out, &doc)
+			if nil != err {
+				return fmt.Errorf("Encode Documents when unmarshal error: %v, source is %v", err, valuev.Index(idx))
+			}
+			docs = append(docs, doc)
 		}
+		*d = docs
 		return nil
 	default:
 		out, err := bson.Marshal(value)

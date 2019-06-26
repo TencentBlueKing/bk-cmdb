@@ -198,6 +198,9 @@ func (bsonCodec) Decode(data []byte, v interface{}) error {
 	return bson.Unmarshal(data, v)
 }
 func (bsonCodec) Encode(v interface{}) ([]byte, error) {
+	if v == nil {
+		return nil, nil
+	}
 	return bson.Marshal(v)
 }
 
