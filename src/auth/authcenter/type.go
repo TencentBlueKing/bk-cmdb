@@ -231,7 +231,7 @@ type RoleWithAuthResources struct {
 	RoleTemplateName string       `json:"perm_template_name"`
 	TemplateID       string       `json:"template_id"`
 	Desc             string       `json:"desc"`
-	ResourceActions  []RoleAction `json:"resource_type_actions"`
+	ResourceActions  []RoleAction `json:"resource_types_actions"`
 }
 
 type RoleAction struct {
