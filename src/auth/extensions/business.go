@@ -304,6 +304,34 @@ func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http
 	return am.DeregisterBusinesses(ctx, header, businesses...)
 }
 
+func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ActionID = string(authcenter.Get)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+
+	p.Resources = [][]metadata.Resource{
+		{{
+			ResourceType:     string(authcenter.SysBusinessInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance],
+		}},
+	}
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if len(businesses) != 1 {
+		return nil, errors.New("get business detail failed")
+	}
+	p.ScopeName = businesses[0].BKAppNameField
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp, nil
+}
+
 // func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {
 // 	if am.Enabled() == false {
 // 		return nil
