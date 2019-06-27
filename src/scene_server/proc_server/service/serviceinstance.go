@@ -735,6 +735,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		BusinessID:        module.BizID,
 		ServiceTemplateID: module.ServiceTemplateID,
 		ModuleID:          diffOption.ModuleID,
+		WithName:          true,
 	}
 	serviceInstances, e := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
 	if e != nil {
@@ -832,7 +833,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
-			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: *record.ServiceInstance})
+			item := metadata.ServiceDifferenceDetails{
+				ServiceInstance: *record.ServiceInstance,
+			}
+			serviceInstances = append(serviceInstances, item)
 		}
 		differences.Removed = append(differences.Removed, metadata.ServiceInstanceDifferenceDetail{
 			ProcessTemplateID:    removedID,
