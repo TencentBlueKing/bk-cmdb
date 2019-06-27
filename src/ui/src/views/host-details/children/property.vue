@@ -1,5 +1,7 @@
 <template>
-    <div class="property">
+    <div class="property" v-bkloading="{
+        isLoading: $loading('updateHostInfo')
+    }">
         <div class="group"
             v-for="(group, index) in groupedProperties"
             :key="index">
@@ -103,19 +105,28 @@
                 this.editState.property = property
             },
             async confirm () {
-                const isValid = await this.$validator.validateAll()
-                if (!isValid) {
-                    return false
+                try {
+                    const isValid = await this.$validator.validateAll()
+                    if (!isValid) {
+                        return false
+                    }
+                    const { property, value } = this.editState
+                    await this.$store.dispatch('hostUpdate/updateHost', {
+                        params: this.$injectMetadata({
+                            [property.bk_property_id]: value,
+                            bk_host_id: this.host.bk_host_id
+                        }),
+                        config: {
+                            requestId: 'updateHostInfo'
+                        }
+                    })
+                    this.$store.commit('hostDetails/updateInfo', {
+                        [property.bk_property_id]: value
+                    })
+                    this.exitForm()
+                } catch (e) {
+                    console.error(e)
                 }
-                const { property, value } = this.editState
-                this.$store.dispatch('hostUpdate/updateHost', this.$injectMetadata({
-                    [property.bk_property_id]: value,
-                    bk_host_id: this.host.bk_host_id
-                }))
-                this.$store.commit('hostDetails/updateInfo', {
-                    [property.bk_property_id]: value
-                })
-                this.exitForm()
             },
             exitForm () {
                 this.editState.property = null
