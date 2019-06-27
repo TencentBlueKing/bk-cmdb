@@ -238,9 +238,7 @@
                             ]
                         })
                     })
-                    this.$router.replace({
-                        path: this.$route.query.from
-                    })
+                    this.backToModule()
                 } catch (e) {
                     console.error(e)
                 }
