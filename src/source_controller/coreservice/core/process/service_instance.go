@@ -102,7 +102,7 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 			return nil, ctx.Error.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
-			return nil, ctx.Error.CCError(common.CCErrCoreServiceInstanceAlreadyExist)
+			return nil, ctx.Error.CCErrorf(common.CCErrCoreServiceInstanceAlreadyExist, instance.InnerIP)
 		}
 	}
 
@@ -244,7 +244,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 
 	if option.SearchKey != nil {
 		filter[common.BKHostInnerIPField] = map[string]interface{}{
-			"$regex": fmt.Sprintf(".*%s.*", *option.SearchKey),
+			common.BKDBLIKE: fmt.Sprintf(".*%s.*", *option.SearchKey),
 		}
 	}
 

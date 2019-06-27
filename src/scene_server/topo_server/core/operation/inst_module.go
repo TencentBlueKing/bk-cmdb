@@ -13,7 +13,6 @@
 package operation
 
 import (
-	"configcenter/src/common/util"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -22,6 +21,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
