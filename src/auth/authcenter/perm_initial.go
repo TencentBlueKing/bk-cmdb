@@ -218,7 +218,7 @@ func (ac *AuthCenter) initDefaultUserRoleWithAuth(ctx context.Context) error {
 			ResourceActions:  normalActions,
 		},
 		{
-			RoleTemplateName: "操作人员",
+			RoleTemplateName: "职能化",
 			TemplateID:       "product_operator",
 			Desc:             "Product Operator",
 			ResourceActions:  normalActions,
@@ -236,8 +236,8 @@ func (ac *AuthCenter) initDefaultUserRoleWithAuth(ctx context.Context) error {
 
 var bizOperatorRoleAuth = RoleWithAuthResources{
 	RoleTemplateName: "业务运维",
-	TemplateID:       "business_operator",
-	Desc:             "a business's operator",
+	TemplateID:       "business_maintainer",
+	Desc:             "a business's maintainer",
 	ResourceActions: []RoleAction{
 		// business host instance related
 		{
