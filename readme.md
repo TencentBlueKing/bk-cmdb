@@ -42,7 +42,7 @@
 ## Getting started
 * [下载与编译](docs/overview/source_compile.md)
 * [安装部署](docs/overview/installation.md)
-* [API使用说明](docs/apidoc/readme.md)
+* API使用说明：[v3.2](docs/apidoc/v3.2/readme.md)或[v3.1](docs/apidoc/v3.1/readme.md)
 * [使用CMDB开源版替换社区版](docs/overview/upgrade-from-ce.md)
 
 ## Version plan
