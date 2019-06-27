@@ -32,6 +32,7 @@
             ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
+            :disabled-properties="disabledProperties"
             :inst="instance"
             :type="type"
             @on-submit="handleSubmit"
@@ -61,6 +62,7 @@
             return {
                 type: 'details',
                 properties: [],
+                disabledProperties: [],
                 propertyGroups: [],
                 instance: {},
                 first: '',
@@ -113,10 +115,11 @@
                     this.init()
                 }
             },
-            selectedNode (node) {
+            async selectedNode (node) {
                 if (node) {
                     this.type = 'details'
-                    this.getInstance()
+                    await this.getInstance()
+                    this.getDisabledProperties()
                 }
             }
         },
@@ -163,6 +166,14 @@
                     })
                 }
                 return Promise.resolve(properties)
+            },
+            getDisabledProperties () {
+                this.disabledProperties = []
+                this.properties.forEach(property => {
+                    if (['bk_module_name'].includes(property['bk_property_id']) && this.withTemplate) {
+                        this.disabledProperties.push(property['bk_property_id'])
+                    }
+                })
             },
             getModuleServiceTemplateProperties () {
                 const group = this.getModuleServiceTemplateGroup()
@@ -234,6 +245,7 @@
                 } catch (e) {
                     console.error(e)
                     this.instance = {}
+                    this.disabledProperties = []
                 }
             },
             async getBizInstance () {

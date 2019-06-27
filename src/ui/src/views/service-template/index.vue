@@ -101,7 +101,7 @@
                             name: this.$t("ServiceManagement['进程数量']")
                         }, {
                             id: 'service_instance_count',
-                            name: this.$t("ServiceManagement['应用数量']")
+                            name: this.$t("ServiceManagement['应用模块数']")
                         }, {
                             id: 'modifier',
                             name: this.$t("ServiceManagement['修改人']")
