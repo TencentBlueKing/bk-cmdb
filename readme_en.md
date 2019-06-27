@@ -38,7 +38,7 @@ If you want to know more about the above features, please refer to the [Function
 ## Getting started
 * [Download and Compile (In Chinese)](docs/overview/source_compile.md)
 * [Installation and Deployment (In Chinese)](docs/overview/installation.md)
-* [API Instructions (In Chinese)](docs/apidoc/readme.md)
+* API Instructions (In Chinese): [v3.2](docs/apidoc/v3.2/readme.md) or [v3.1](docs/apidoc/v3.1/readme.md)
 
 ## Version plan
 * [Version iteration rules (In Chinese)](docs/VERSION.md)
