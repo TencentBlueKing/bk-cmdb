@@ -373,10 +373,11 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 			return "", ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 
-		instanceName += fmt.Sprintf("_%s", process.ProcessName)
-
-		if len(process.Port) > 0 {
-			instanceName += fmt.Sprintf("_%s", process.Port)
+		if process.ProcessName != nil {
+			instanceName += fmt.Sprintf("_%s", *process.ProcessName)
+		}
+		if process.Port != nil {
+			instanceName += fmt.Sprintf("_%s", *process.Port)
 		}
 	}
 	return instanceName, nil
