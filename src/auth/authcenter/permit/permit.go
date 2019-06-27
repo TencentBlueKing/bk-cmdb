@@ -77,6 +77,11 @@ func ShouldSkipAuthorize(rsc *meta.ResourceAttribute) bool {
 		return true
 	case rsc.Type == meta.Process && IsReadAction(rsc.Action):
 		return true
+	case rsc.Type == meta.ModelSet && IsReadAction(rsc.Action):
+		return true
+	case rsc.Type == meta.ModelModule && IsReadAction(rsc.Action):
+		return true
+
 	default:
 		return false
 	}
