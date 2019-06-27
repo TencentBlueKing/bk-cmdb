@@ -32,7 +32,8 @@ type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 	AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error)
-	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
+	GetAnyAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
+	GetExactAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
 	AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error)
 	GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]authcenter.AuthorizedResource, error)
 	Enabled() bool

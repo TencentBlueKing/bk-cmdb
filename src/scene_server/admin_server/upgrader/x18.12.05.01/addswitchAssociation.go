@@ -18,13 +18,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-
+	falseVar := false
 	switchAsst := metadata.Association{
 		OwnerID:         conf.OwnerID,
 		AsstKindID:      "connect",
@@ -33,7 +32,7 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		AssociationName: "bk_switch_host",
 		Mapping:         metadata.OneToManyMapping,
 		OnDelete:        metadata.NoAction,
-		IsPre:           util.Pfalse(),
+		IsPre:           &falseVar,
 	}
 
 	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, switchAsst, "id", []string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
