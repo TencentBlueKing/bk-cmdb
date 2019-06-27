@@ -96,7 +96,12 @@
                         templateId: this.moduleInstance.service_template_id
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.moduleInstance.bk_module_id
+                            }
+                        }
                     }
                 })
             },

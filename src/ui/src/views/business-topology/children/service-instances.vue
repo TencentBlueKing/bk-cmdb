@@ -389,7 +389,12 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.currentModule.bk_module_id
+                            }
+                        },
                         title: this.currentNode.name
                     }
                 })
