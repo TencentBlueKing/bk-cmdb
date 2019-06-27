@@ -3,7 +3,7 @@
         <input id="search"
             class="search-keywords"
             type="text"
-            maxlength="40"
+            maxlength="32"
             :placeholder="$t('Common[\'请输入搜索内容\']')"
             v-model.trim="queryString"
             @keypress.enter="handleSearch">
