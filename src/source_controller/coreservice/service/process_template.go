@@ -141,7 +141,7 @@ func (s *coreService) BatchDeleteProcessTemplate(params core.ContextParams, path
 	// TODO: replace with batch delete interface
 	for _, id := range input.ProcessTemplateIDs {
 		if err := s.core.ProcessOperation().DeleteProcessTemplate(params, id); err != nil {
-			blog.Errorf("BatchDeleteProcessTemplate failed, templateID: %d, err: %+v, rid: %s", id, err, params.ReqID)
+			blog.Errorf("BatchDeleteProcessTemplate failed, templateID: %d, err: %s, rid: %s", id, err.Error(), params.ReqID)
 			return nil, err
 		}
 	}
