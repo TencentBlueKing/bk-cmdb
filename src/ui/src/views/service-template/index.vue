@@ -141,6 +141,8 @@
                 return {
                     service_category_id: id,
                     page: {
+                        start: (this.table.pagination.current - 1) * this.table.pagination.size,
+                        limit: this.table.pagination.size,
                         sort: this.table.defaultSort
                     }
                 }
@@ -163,6 +165,7 @@
             ...mapActions('serviceClassification', ['searchServiceCategory']),
             async getTableData () {
                 const templateData = await this.getTemplateData()
+                this.table.pagination.count = templateData.count
                 this.table.allList = templateData.info.map(template => {
                     const result = {
                         process_template_count: template['process_template_count'],
