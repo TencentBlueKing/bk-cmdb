@@ -119,8 +119,6 @@
                 if (node) {
                     this.type = 'details'
                     await this.getInstance()
-                    console.log(node.data.bk_obj_id === 'module')
-                    console.log(this.withTemplate)
                     this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
