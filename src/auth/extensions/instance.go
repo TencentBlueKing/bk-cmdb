@@ -320,6 +320,9 @@ func (am *AuthManager) UpdateRegisteredInstanceByID(ctx context.Context, header 
 	if objectID == common.BKInnerObjIDPlat {
 		return am.UpdateRegisteredPlatByID(ctx, header, ids...)
 	}
+	if objectID == common.BKHostIDField {
+		return am.UpdateRegisteredHostsByID(ctx, header, ids...)
+	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
@@ -337,6 +340,10 @@ func (am *AuthManager) UpdateRegisteredInstanceByRawID(ctx context.Context, head
 		return am.UpdateRegisteredPlatByRawID(ctx, header, ids...)
 	}
 
+	if objectID == common.BKInnerObjIDHost {
+		return am.UpdateRegisteredHostsByID(ctx, header, ids...)
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered instances failed, get instances by id failed, err: %+v", err)
@@ -352,6 +359,10 @@ func (am *AuthManager) DeregisterInstanceByRawID(ctx context.Context, header htt
 		return am.DeregisterPlatByID(ctx, header, ids...)
 	}
 
+	if objectID == common.BKInnerObjIDHost {
+		return am.DeregisterHostsByID(ctx, header, ids...)
+	}
+
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
 	if err != nil {
 		return fmt.Errorf("deregister instances failed, get instance by id failed, err: %+v", err)
@@ -365,6 +376,9 @@ func (am *AuthManager) RegisterInstancesByID(ctx context.Context, header http.He
 	}
 	if objectID == common.BKInnerObjIDPlat {
 		return am.RegisterPlatByID(ctx, header, ids...)
+	}
+	if objectID == common.BKInnerObjIDHost {
+		return am.RegisterHostsByID(ctx, header, ids...)
 	}
 
 	instances, err := am.collectInstancesByRawIDs(ctx, header, objectID, ids...)
