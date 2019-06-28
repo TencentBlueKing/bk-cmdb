@@ -144,6 +144,13 @@
             async handleConfirm () {
                 try {
                     const serviceInstanceTables = this.$refs.serviceInstanceTable
+                    if (serviceInstanceTables.some(table => !table.processList.length)) {
+                        this.$bkMessage({
+                            message: this.$t("BusinessTopology['请为主机添加进程']"),
+                            theme: 'warning'
+                        })
+                        return
+                    }
                     if (this.withTemplate) {
                         await this.$store.dispatch('serviceInstance/createProcServiceInstanceByTemplate', {
                             params: this.$injectMetadata({
