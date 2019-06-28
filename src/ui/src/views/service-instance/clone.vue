@@ -1,7 +1,7 @@
 <template>
     <div class="clone-layout">
         <div class="host-type clearfix">
-            <label class="type-label fl">{{$t('克隆的主机')}}</label>
+            <label class="type-label fl">{{$t('BusinessTopology["克隆到"]')}}</label>
             <div class="type-item fl">
                 <input class="type-radio"
                     type="radio"

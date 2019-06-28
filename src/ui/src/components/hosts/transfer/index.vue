@@ -418,7 +418,7 @@
         .node-model-icon {
             width: 22px;
             height: 22px;
-            line-height: 20px;
+            line-height: 21px;
             text-align: center;
             font-style: normal;
             font-size: 12px;
