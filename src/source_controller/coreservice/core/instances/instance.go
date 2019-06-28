@@ -160,7 +160,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	for _, origin := range origins {
 		instIDI := origin[instIDFieldName]
 		instID, _ := util.GetInt64ByInterface(instIDI)
-		err := m.validUpdateInstanceData(ctx, objID, &inputParam.Data, instMedataData, uint64(instID))
+		err := m.validUpdateInstanceData(ctx, objID, inputParam.Data, instMedataData, uint64(instID))
 		if nil != err {
 			blog.Errorf("update module instance validate error :%v ,rid:%s", err, ctx.ReqID)
 			return nil, err
