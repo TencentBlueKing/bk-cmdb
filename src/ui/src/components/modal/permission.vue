@@ -86,7 +86,8 @@
                 if (isPaasConsole) {
                     topWindow.postMessage(JSON.stringify({
                         action: 'open_other_app',
-                        app_code: authCenter.appCode
+                        app_code: authCenter.appCode,
+                        app_url: 'apply-by-system'
                     }), '*')
                 } else {
                     window.open(authCenter.url)
