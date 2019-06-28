@@ -139,7 +139,7 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 	return valid.validCreateUnique(ctx, instanceData, instMedataData, m)
 }
 
-func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData *mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
+func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
 	originData, err := m.getInstDataByID(ctx, objID, instID, m)
 	if err != nil {
 		blog.Errorf("validUpdateInstanceData failed, FetchBizIDFromInstance failed, err: %+v", err)
@@ -157,7 +157,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 		return err
 	}
 
-	for key, val := range *instanceData {
+	for key, val := range instanceData {
 
 		if util.InStrArr(updateIgnoreKeys, key) {
 			// ignore the key field
@@ -166,7 +166,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			delete(*instanceData, key)
+			delete(instanceData, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {
@@ -197,5 +197,5 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
-	return valid.validUpdateUnique(ctx, *instanceData, instMetaData, instID, m)
+	return valid.validUpdateUnique(ctx, instanceData, instMetaData, instID, m)
 }
