@@ -262,15 +262,33 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 	}
 
 	// parse business id from user's condition for testing.
-	var bizID int64
+	var bizIDs []int64
 	biz, exist := searchCond.Condition[common.BKAppIDField]
 	if exist {
 		// constrict that bk_biz_id field can only be a numeric value,
 		// operators like or/in/and is not allowed.
-		if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+		if bizcond, ok := biz.(map[string]interface{}); ok {
+			if cond, ok := bizcond["$eq"]; ok {
+				if reflect.TypeOf(cond).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+					return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+				}
+				bizIDs = []int64{int64(cond.(float64))}
+			}
+			if cond, ok := bizcond["$in"]; ok {
+				if conds, ok := cond.([]interface{}); ok {
+					for _, c := range conds {
+						if reflect.TypeOf(c).ConvertibleTo(reflect.TypeOf(int64(1))) == false {
+							return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
+						}
+						bizIDs = append(bizIDs, int64(c.(float64)))
+					}
+				}
+			}
+		} else if reflect.TypeOf(biz).ConvertibleTo(reflect.TypeOf(int64(1))) {
+			bizIDs = []int64{int64(searchCond.Condition[common.BKAppIDField].(float64))}
+		} else {
 			return nil, params.Err.New(common.CCErrCommParamsInvalid, common.BKAppIDField)
 		}
-		bizID = int64(searchCond.Condition[common.BKAppIDField].(float64))
 	}
 
 	if s.AuthManager.Enabled() {
@@ -280,15 +298,17 @@ func (s *Service) SearchBusiness(params types.ContextParams, pathParams, queryPa
 			return nil, params.Err.Error(common.CCErrorTopoGetAuthorizedBusinessListFailed)
 		}
 
-		if bizID > 0 {
+		if len(bizIDs) > 0 {
 			// this means that user want to find a specific business.
 			// now we check if he has this authority.
-			if !util.InArray(bizID, appList) {
-				noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, bizID)
-				if err != nil {
-					return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
+			for _, bizID := range bizIDs {
+				if !util.InArray(bizID, appList) {
+					noAuthResp, err := s.AuthManager.GenBusinessAuditNoPermissionResp(params.Context, params.Header, bizID)
+					if err != nil {
+						return nil, params.Err.Error(common.CCErrTopoAppSearchFailed)
+					}
+					return noAuthResp, auth.NoAuthorizeError
 				}
-				return noAuthResp, auth.NoAuthorizeError
 			}
 			// now you have the authority.
 		} else {
