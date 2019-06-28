@@ -119,7 +119,9 @@
                 if (node) {
                     this.type = 'details'
                     await this.getInstance()
-                    this.getDisabledProperties()
+                    console.log(node.data.bk_obj_id === 'module')
+                    console.log(this.withTemplate)
+                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
         },
@@ -166,14 +168,6 @@
                     })
                 }
                 return Promise.resolve(properties)
-            },
-            getDisabledProperties () {
-                this.disabledProperties = []
-                this.properties.forEach(property => {
-                    if (['bk_module_name'].includes(property['bk_property_id']) && this.withTemplate) {
-                        this.disabledProperties.push(property['bk_property_id'])
-                    }
-                })
             },
             getModuleServiceTemplateProperties () {
                 const group = this.getModuleServiceTemplateGroup()
@@ -245,7 +239,6 @@
                 } catch (e) {
                     console.error(e)
                     this.instance = {}
-                    this.disabledProperties = []
                 }
             },
             async getBizInstance () {
