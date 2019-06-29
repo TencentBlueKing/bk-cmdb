@@ -238,6 +238,7 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
 				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+				ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,

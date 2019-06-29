@@ -52,6 +52,9 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 			blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
 			continue
 		}
+		if businessSimplify.IsDefault > 0 {
+			continue
+		}
 
 		businessList = append(businessList, businessSimplify)
 	}
