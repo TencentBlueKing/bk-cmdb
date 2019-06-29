@@ -150,11 +150,6 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 			}
 			continue
 		}
-		if key == common.BKAppIDField {
-			bizID := util.GetStrByInterface(val)
-			instMedataData.Label.Set(metadata.LabelBusinessID, bizID)
-			continue
-		}
 	}
 
 	for _, origin := range origins {
