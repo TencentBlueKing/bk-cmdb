@@ -1035,5 +1035,6 @@ const (
 )
 
 const (
-	ContextRequestIDField = "request_id"
+	ContextRequestIDField   = "request_id"
+	ContextRequestUserField = "request_user"
 )
