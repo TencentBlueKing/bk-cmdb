@@ -67,6 +67,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -78,7 +83,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -86,6 +92,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// update object unique operation.
 	if ps.hitRegexp(updateObjectUniqueLatestRegexp, http.MethodPut) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -104,7 +115,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -112,6 +124,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// delete object unique operation.
 	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -130,7 +147,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -138,6 +156,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -149,7 +172,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
