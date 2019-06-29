@@ -577,6 +577,10 @@ func (ac *AuthCenter) RegisterResource(ctx context.Context, rs ...meta.ResourceA
 
 func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.ResourceAttribute) (*RegisterInfo, error) {
 	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	user := commonutil.ExtractRequestUserFromContext(ctx)
+	if len(user) == 0 {
+		user = cmdbUserID
+	}
 
 	if ac.Config.Enable == false {
 		blog.V(5).Infof("auth disabled, auth config: %+v, rid: %s", ac.Config, rid)
@@ -589,7 +593,7 @@ func (ac *AuthCenter) DryRunRegisterResource(ctx context.Context, rs ...meta.Res
 	}
 	info := RegisterInfo{}
 	info.CreatorType = cmdbUser
-	info.CreatorID = cmdbUserID
+	info.CreatorID = user
 	info.Resources = make([]ResourceEntity, 0)
 	for _, r := range rs {
 		if len(r.Basic.Type) == 0 {

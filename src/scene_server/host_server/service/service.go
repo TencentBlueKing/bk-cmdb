@@ -57,8 +57,10 @@ type srvComm struct {
 func (s *Service) newSrvComm(header http.Header) *srvComm {
 	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
+	user := util.GetUser(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 	return &srvComm{
 		header:        header,
