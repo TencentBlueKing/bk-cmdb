@@ -74,6 +74,18 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+func ExtractRequestUserFromContext(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	user := ctx.Value(common.ContextRequestUserField)
+	userValue, ok := user.(string)
+	if ok == true {
+		return userValue
+	}
+	return ""
+}
+
 // GetSupplierID return supplier_id from http header
 func GetSupplierID(header http.Header) (int64, error) {
 	return GetInt64ByInterface(header.Get(common.BKHTTPSupplierID))
@@ -96,11 +108,13 @@ func GetHTTPCCTransaction(header http.Header) string {
 // GetDBContext returns a new context that contains JoinOption
 func GetDBContext(parent context.Context, header http.Header) context.Context {
 	rid := header.Get(common.BKHTTPCCRequestID)
+	user := GetUser(header)
 	ctx := context.WithValue(parent, common.CCContextKeyJoinOption, dal.JoinOption{
 		RequestID: rid,
 		TxnID:     header.Get(common.BKHTTPCCTransactionID),
 	})
 	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 	return ctx
 }
 
