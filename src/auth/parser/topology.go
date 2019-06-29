@@ -1002,7 +1002,7 @@ func (ps *parseStream) object() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.CreateMany,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
