@@ -15,10 +15,9 @@ export default class Meta {
         }, data.menu)
 
         this.auth = Object.assign({
+            authScope: 'global',
             view: null,
             operation: []
         }, data.auth)
-
-        this.authScope = 'global'
     }
 }
