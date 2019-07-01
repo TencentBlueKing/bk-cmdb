@@ -723,7 +723,7 @@ func (p *process) ReconstructServiceInstanceName(ctx context.Context, h http.Hea
 	ret := new(metadata.RemoveTemplateBoundOnModuleResult)
 	subPath := fmt.Sprintf("/update/process/service_instance_name/%d", instanceID)
 
-	err := p.client.Delete().
+	err := p.client.Post().
 		WithContext(ctx).
 		SubResource(subPath).
 		WithHeaders(h).
