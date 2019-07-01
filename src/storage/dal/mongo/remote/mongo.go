@@ -102,6 +102,9 @@ func (c *Mongo) IsDuplicatedError(err error) bool {
 		if strings.Contains(err.Error(), "There's already an index with name") {
 			return true
 		}
+		if strings.Contains(err.Error(), "E11000 duplicate key error collection") {
+			return true
+		}
 	}
 	return false
 }
