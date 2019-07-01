@@ -32,7 +32,6 @@
 
 <script>
     import { mapGetters, mapActions } from 'vuex'
-    import { OPERATION } from './router.config.js'
     export default {
         data () {
             return {
@@ -54,7 +53,7 @@
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
             archiveAuth () {
-                return OPERATION.BUSINESS_ARCHIVE
+                return this.$OPERATION.BUSINESS_ARCHIVE
             }
         },
         async created () {

@@ -130,8 +130,7 @@
                 const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
                     return node['bk_inst_id'] === 'resource' || [1, 2].includes(node.default)
                 })
-                const isInSpecialModule = this.hostModules.some(module => [1, 2].includes(module.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule && !isInSpecialModule
+                return this.selectedModuleStates.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -368,9 +367,8 @@
                 })
             },
             getTransferParams () {
-                // const hasSpecialNode = this.selectedModuleStates.some(({ node }) => [1, 2].includes(node.default))
                 let increment = this.increment
-                if (this.hasSpecialNode || this.hostIds.length === 1) {
+                if (!this.showIncrementOption || this.hostIds.length === 1) {
                     increment = false
                 }
                 return {
