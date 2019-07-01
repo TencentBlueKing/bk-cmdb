@@ -241,7 +241,6 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 		return err
 	}
 
-	//
 	updateFilter := map[string]int64{
 		common.BKProcessTemplateIDField: template.ID,
 	}
