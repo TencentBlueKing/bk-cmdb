@@ -160,6 +160,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 
 	details := make([]metadata.ListServiceTemplateWithDetailResult, 0)
 	for _, serviceTemplate := range temp.Info {
+		// process templates reference count
 		option := &metadata.ListProcessTemplatesOption{
 			BusinessID:        bizID,
 			ServiceTemplateID: serviceTemplate.ID,
@@ -171,6 +172,7 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			return
 		}
 
+		// module reference
 		listModuleOption := &metadata.QueryCondition{
 			Condition: mapstr.MapStr(map[string]interface{}{
 				common.BKServiceTemplateIDField: serviceTemplate.ID,
@@ -182,9 +184,22 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			return
 		}
 
+		// service instance reference count
+		serviceOption := &metadata.ListServiceInstanceOption{
+			BusinessID:        bizID,
+			ServiceTemplateID: serviceTemplate.ID,
+		}
+		serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
+		if err != nil {
+			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
+				"list service template: %d detail, but list service instance failed.", serviceTemplate.ID)
+			return
+		}
+
 		details = append(details, metadata.ListServiceTemplateWithDetailResult{
 			ServiceTemplate:      serviceTemplate,
 			ProcessTemplateCount: int64(processTemplates.Count),
+			ServiceInstanceCount: int64(serviceInstances.Count),
 			ModuleCount:          int64(moduleRst.Data.Count),
 		})
 	}
