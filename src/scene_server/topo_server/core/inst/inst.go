@@ -13,6 +13,7 @@
 package inst
 
 import (
+	"configcenter/src/common/util"
 	"context"
 	"encoding/json"
 
@@ -56,6 +57,8 @@ type Inst interface {
 	ToMapStr() mapstr.MapStr
 
 	IsDefault() bool
+
+	GetBizID() (int64, error)
 }
 
 var _ Inst = (*inst)(nil)
@@ -332,4 +335,17 @@ func (cli *inst) IsDefault() bool {
 	}
 
 	return false
+}
+
+func (cli *inst) GetBizID() (int64, error) {
+	switch cli.target.Object().ObjectID {
+	case common.BKInnerObjIDApp:
+		return cli.GetInstID()
+	case common.BKInnerObjIDSet:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	case common.BKInnerObjIDModule:
+		return util.GetInt64ByInterface(cli.datas[common.BKAppIDField])
+	default:
+		return metadata.ParseBizIDFromData(cli.datas)
+	}
 }
