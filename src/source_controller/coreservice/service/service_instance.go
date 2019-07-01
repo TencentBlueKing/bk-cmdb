@@ -38,6 +38,25 @@ func (s *coreService) CreateServiceInstance(params core.ContextParams, pathParam
 	return result, nil
 }
 
+func (s *coreService) ReconstructServiceInstanceName(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
+	if len(serviceInstanceIDStr) == 0 {
+		blog.Errorf("GetServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	}
+
+	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GetServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	}
+
+	if err := s.core.ProcessOperation().ReconstructServiceInstanceName(params, serviceInstanceID); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (s *coreService) GetServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
 	if len(serviceInstanceIDStr) == 0 {
