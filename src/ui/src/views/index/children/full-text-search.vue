@@ -7,13 +7,13 @@
                     autocomplete="off"
                     class="search-keywords"
                     type="text"
-                    maxlength="40"
+                    maxlength="32"
                     :placeholder="$t('Common[\'请输入搜索内容\']')"
                     v-model.trim="query.queryString"
-                    @input="searchTriggerType = 'input'"
+                    @input="handleInputSearch"
                     @keypress.enter="handleSearch">
                 <label class="bk-icon icon-search" for="fullTextSearch" v-if="!query.queryString"></label>
-                <i class="bk-icon icon-close-circle-shape" v-else @click="query.queryString = ''"></i>
+                <i class="bk-icon icon-close-circle-shape" v-else @click="handleClearInput"></i>
             </div>
             <div class="classify" v-show="hasData">
                 <span class="classify-item"
@@ -95,6 +95,7 @@
         },
         data () {
             return {
+                toggleTips: null,
                 scrollTop: null,
                 currentClassify: -1,
                 requestId: 'fullTextSearch',
@@ -380,6 +381,29 @@
                 this.pagination.start = (current - 1) * this.pagination.limit
                 this.pagination.current = current
                 this.handleSearch()
+            },
+            handleInputSearch (el) {
+                const target = el.srcElement
+                this.searchTriggerType = 'input'
+                if (target.value.length === 32) {
+                    this.toggleTips = this.$tooltips({
+                        duration: -1,
+                        content: this.$t("Index['最大支持搜索32个字符']"),
+                        placements: ['top'],
+                        customClass: 'full-text-tips',
+                        target: target
+                    })
+                } else if (this.toggleTips) {
+                    this.toggleTips.duration = 0
+                    this.toggleTips.hiddenTooltips()
+                }
+            },
+            handleClearInput () {
+                this.query.queryString = ''
+                if (this.toggleTips) {
+                    this.toggleTips.duration = 0
+                    this.toggleTips.hiddenTooltips()
+                }
             }
         }
     }
@@ -390,6 +414,9 @@
         position: relative;
         overflow: auto;
         padding: 0 0 20px !important;
+        .full-text-tips {
+            left: 248px !important;
+        }
         .full-text-sticky-layout {
             width: 90%;
             margin: 0 auto;
