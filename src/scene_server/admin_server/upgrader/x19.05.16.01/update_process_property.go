@@ -81,7 +81,7 @@ func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader
 		PropertyIndex: 0,
 		IsEditable:    true,
 		PropertyType:  "enum",
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		ID:            56,
 		PropertyName:  "绑定IP",
 		IsSystem:      false,
@@ -141,7 +141,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	var ProcNameProperty = Attribute{
 		Placeholder:   "对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper",
 		IsSystem:      false,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		LastTime:      &now,
 		ID:            54,
 		IsPre:         true,
@@ -220,7 +220,7 @@ func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 			"min": 1,
 			"max": 10000,
 		},
-		Creator:    "cc_system",
+		Creator:    conf.User,
 		CreateTime: &now,
 		LastTime:   &now,
 	}
@@ -280,7 +280,7 @@ func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		IsPre:         true,
 		CreateTime:    &now,
 		LastTime:      &now,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		OwnerID:       "0",
 		ObjectID:      "process",
 		PropertyIndex: 0,
@@ -331,7 +331,7 @@ func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		PropertyGroup: "none",
 		Unit:          "",
 		IsSystem:      false,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		ID:            64,
 		OwnerID:       "0",
 		PropertyIndex: 0,
@@ -392,7 +392,7 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	now := time.Now()
 	var property = Attribute{
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		PropertyIndex: 0,
 		IsReadOnly:    false,
 		Unit:          "",
@@ -504,7 +504,7 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		IsEditable:    true,
 		CreateTime:    &now,
 		IsAPI:         false,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		OwnerID:       "0",
 		ObjectID:      "process",
 		PropertyName:  "功能ID",
