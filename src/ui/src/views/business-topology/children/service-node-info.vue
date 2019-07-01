@@ -32,6 +32,7 @@
             ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
+            :disabled-properties="disabledProperties"
             :inst="instance"
             :type="type"
             @on-submit="handleSubmit"
@@ -61,6 +62,7 @@
             return {
                 type: 'details',
                 properties: [],
+                disabledProperties: [],
                 propertyGroups: [],
                 instance: {},
                 first: '',
@@ -113,10 +115,11 @@
                     this.init()
                 }
             },
-            selectedNode (node) {
+            async selectedNode (node) {
                 if (node) {
                     this.type = 'details'
-                    this.getInstance()
+                    await this.getInstance()
+                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
         },
