@@ -15,6 +15,7 @@ package service
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -170,21 +171,21 @@ func (ps *ProcServer) ListServiceTemplatesWithDetails(ctx *rest.Contexts) {
 			return
 		}
 
-		serviceOption := &metadata.ListServiceInstanceOption{
-			BusinessID:        bizID,
-			ServiceTemplateID: serviceTemplate.ID,
+		listModuleOption := &metadata.QueryCondition{
+			Condition: mapstr.MapStr(map[string]interface{}{
+				common.BKServiceTemplateIDField: serviceTemplate.ID,
+			}),
 		}
-		serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
-		if err != nil {
-			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed,
-				"list service template: %d detail, but list service instance failed.", serviceTemplate.ID)
+		moduleRst, e := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, listModuleOption)
+		if e != nil {
+			ctx.RespWithError(e, common.CCErrTopoModuleSelectFailed, "list service template: %d detail, but module failed.", serviceTemplate.ID)
 			return
 		}
 
 		details = append(details, metadata.ListServiceTemplateWithDetailResult{
 			ServiceTemplate:      serviceTemplate,
 			ProcessTemplateCount: int64(processTemplates.Count),
-			ServiceInstanceCount: int64(serviceInstances.Count),
+			ModuleCount:          int64(moduleRst.Data.Count),
 		})
 	}
 

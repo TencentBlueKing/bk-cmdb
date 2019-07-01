@@ -55,7 +55,7 @@ type ListServiceTemplateInput struct {
 type ListServiceTemplateWithDetailResult struct {
 	ServiceTemplate      ServiceTemplate `json:"service_template"`
 	ProcessTemplateCount int64           `json:"process_template_count"`
-	ServiceInstanceCount int64           `json:"service_instance_count"`
+	ModuleCount          int64           `json:"module_count"`
 }
 
 type DeleteServiceTemplatesInput struct {
