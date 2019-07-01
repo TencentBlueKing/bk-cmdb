@@ -532,6 +532,7 @@ const (
 	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
 	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
 	CCErrProcRemoveTemplateBindingOnModule                = 1108040
+	CCErrProcReconstructServiceInstanceNameFailed         = 1108041
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001

@@ -91,7 +91,6 @@ type GetServiceInstanceInModuleInput struct {
 	ModuleID  int64    `json:"bk_module_id"`
 	Page      BasePage `json:"page"`
 	SearchKey *string  `json:"search_key,omitempty"`
-	WithName  bool     `json:"with_name"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {
