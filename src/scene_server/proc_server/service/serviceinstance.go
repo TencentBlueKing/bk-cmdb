@@ -457,7 +457,7 @@ func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInsta
 	}
 	if listResult.Data.Count > 0 {
 		blog.Errorf("validateRawInstanceUnique failed, bk_process_name duplicated under service instance, err: %v, rid: %s", serviceInstance.Metadata, err, ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCError(common.CCErrCoreServiceProcessNameDuplicated)
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processInfo.ProcessName)
 	}
 
 	// func name unique
