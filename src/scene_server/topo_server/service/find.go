@@ -2,6 +2,8 @@ package service
 
 import (
 	"encoding/json"
+	"strings"
+	"unicode/utf8"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -56,7 +58,11 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 		}
 
 		// check query string
-		checkQueryString(query)
+		rawString, ok := checkQueryString(query)
+		if !ok {
+			blog.Errorf("full_text_find failed, query string [%s] large than 32,", rawString)
+			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
+		}
 		// get query and search types
 		queryEs, types := getEsQueryAndSearchTypes(query)
 
@@ -75,7 +81,7 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 			// ignore not correct cmdb table data
 			if hit.Index == common.CMDBINDEX && hit.Id != common.INDICES {
 				sr := SearchResult{}
-				sr.setHit(hit)
+				sr.setHit(hit, query.BkBizId, rawString)
 				searchResults.Hits = append(searchResults.Hits, sr)
 			}
 		}
@@ -108,13 +114,20 @@ func (s *Service) FullTextFind(params types.ContextParams, pathParams, queryPara
 	return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
 }
 
-func checkQueryString(query *Query) {
+func checkQueryString(query *Query) (string, bool) {
 	// if query string is single string in SpecialChar, make it to null string
 	for i := range common.SpecialChar {
 		if query.QueryString == common.SpecialChar[i] {
 			query.QueryString = ""
-			break
+			return "", true
 		}
+	}
+	rawString := strings.Replace(query.QueryString, "*", "", -1)
+	// judge string if large than 32
+	if utf8.RuneCountInString(rawString) > 32 {
+		return rawString, false
+	} else {
+		return rawString, true
 	}
 }
 
@@ -201,7 +214,7 @@ func (agg *Aggregation) setAgg(bucket *elastic.AggregationBucketKeyItem) {
 	agg.Count = bucket.DocCount
 }
 
-func (sr *SearchResult) setHit(searchHit *elastic.SearchHit) {
+func (sr *SearchResult) setHit(searchHit *elastic.SearchHit, bkBizId, rawString string) {
 	sr.Score = *searchHit.Score
 	switch searchHit.Type {
 	case common.BKTableNameBaseInst:
@@ -216,10 +229,58 @@ func (sr *SearchResult) setHit(searchHit *elastic.SearchHit) {
 		sr.Type = common.TypeModel
 	}
 
-	sr.Highlight = searchHit.Highlight
+	// sr.Highlight = searchHit.Highlight
 	err := json.Unmarshal(*searchHit.Source, &(sr.Source))
 	if err != nil {
 		blog.Warnf("full_text_find unmarshal search result source err: %+v", err)
 		sr.Source = nil
 	}
+
+	sr.dealHighlight(sr.Source, searchHit.Highlight, bkBizId, rawString)
+}
+
+func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight elastic.SearchHitHighlight, bkBizId, rawString string) {
+
+	isObject := true
+	var bkObjId, oldHighlightObjId string
+	if _, ok := source["bk_obj_id"]; ok {
+		bkObjId = source["bk_obj_id"].(string)
+		oldHighlightObjId = "<em>" + bkObjId + "</em>"
+	} else {
+		isObject = false
+	}
+	oldHighlightBizId := "<em>" + bkBizId + "</em>"
+
+	for key, values := range highlight {
+		if key == "bk_obj_id" || key == "bk_obj_id.keyword" {
+			// judge if raw query string in bk_obj_id, if not, ignore bk_obj_id highlight
+			rawStringInObjId := false
+			for _, value := range values {
+				if strings.Contains(value, rawString) {
+					rawStringInObjId = true
+					break
+				} else {
+					continue
+				}
+			}
+			if !rawStringInObjId {
+				delete(highlight, key)
+			}
+		} else if key == "metadata.label.bk_biz_id" || key == "metadata.label.bk_biz_id.keyword" {
+			delete(highlight, key)
+		} else {
+			// we don't need highlight with bk_obj_id and bk_biz_id, just like <em>bk_obj_id</em>, <em>bk_biz_id</em>
+			// replace it <em>bk_obj_id</em> be bk_obj_id (do not need <em>)
+			for i := range values {
+				if isObject && strings.Contains(values[i], oldHighlightObjId) {
+					values[i] = strings.Replace(values[i], oldHighlightObjId, bkObjId, -1)
+				}
+				if strings.Contains(values[i], oldHighlightBizId) {
+					values[i] = strings.Replace(values[i], oldHighlightBizId, bkBizId, -1)
+				}
+			}
+		}
+	}
+
+	sr.Highlight = highlight
 }
