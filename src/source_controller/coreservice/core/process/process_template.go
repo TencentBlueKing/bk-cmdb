@@ -108,7 +108,7 @@ func (p *processOperation) UniqueValidate(ctx core.ContextParams, template *meta
 		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count > 0 {
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated)
+		return ctx.Error.CCErrorf(common.CCErrCoreServiceProcessNameDuplicated, processName)
 	}
 
 	// func name unique
