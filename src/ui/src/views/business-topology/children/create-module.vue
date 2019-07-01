@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="form-item" v-if="withTemplate">
-                <label>{{$t('BusinessTopology["模板名称"]')}}</label>
+                <label>{{$t('BusinessTopology["服务模板"]')}}</label>
                 <cmdb-selector
                     v-model="template"
                     v-validate.disabled="'required'"
@@ -35,7 +35,14 @@
                 <span class="form-error" v-if="errors.has('template')">{{errors.first('template')}}</span>
             </div>
             <div class="form-item">
-                <label>{{$t('BusinessTopology["模块名称"]')}}<font color="red">*</font></label>
+                <label>
+                    {{$t('BusinessTopology["模块名称"]')}}
+                    <font color="red">*</font>
+                    <i class="icon-cc-tips"
+                        v-tooltip.top="$t('BusinessTopology[\'模块名称提示\']')"
+                        v-if="withTemplate === 1">
+                    </i>
+                </label>
                 <cmdb-form-singlechar
                     v-model="moduleName"
                     v-validate="'required|singlechar'"

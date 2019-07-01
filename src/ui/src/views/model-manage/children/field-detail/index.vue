@@ -155,6 +155,7 @@
                     isrequired: false,
                     option: ''
                 },
+                originalFieldInfo: {},
                 charMap: ['singlechar', 'longchar']
             }
         },
@@ -176,6 +177,15 @@
             },
             isComponentShow () {
                 return ['singlechar', 'longchar', 'enum', 'int', 'float'].indexOf(this.fieldInfo['bk_property_type']) !== -1
+            },
+            changedValues () {
+                const changedValues = {}
+                for (const propertyId in this.fieldInfo) {
+                    if (this.fieldInfo[propertyId] !== this.originalFieldInfo[propertyId]) {
+                        changedValues[propertyId] = this.fieldInfo[propertyId]
+                    }
+                }
+                return changedValues
             }
         },
         watch: {
@@ -196,6 +206,7 @@
             }
         },
         created () {
+            this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
             if (this.isEditField) {
                 this.initData()
             }
@@ -209,6 +220,7 @@
                 for (const key in this.fieldInfo) {
                     this.fieldInfo[key] = this.$tools.clone(this.field[key])
                 }
+                this.originalFieldInfo = this.$tools.clone(this.fieldInfo)
             },
             async validateValue () {
                 if (!await this.$validator.validateAll()) {

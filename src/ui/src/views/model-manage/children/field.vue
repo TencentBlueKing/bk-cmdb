@@ -54,15 +54,17 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-field-detail
+                ref="fieldForm"
                 class="slider-content"
                 slot="content"
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 @save="saveField"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-field-detail>
         </cmdb-slider>
     </div>
@@ -240,6 +242,25 @@
                 if (sort[0] === '-') {
                     this.table.list.reverse()
                 }
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }

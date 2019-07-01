@@ -20,7 +20,7 @@
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="mainCategoryName"
-                            @on-confirm="handleEditCategory(mainCategory['id'], mainCategory['name'], 'main')"
+                            @on-confirm="handleEditCategory(mainCategory, 'main')"
                             @on-cancel="handleCloseEditMain">
                         </category-input>
                     </div>
@@ -36,7 +36,7 @@
                             <div class="menu-operational">
                                 <i @click="handleShowAddChild(mainCategory['id'])">{{$t("ServiceCategory['添加二级分类']")}}</i>
                                 <i class="not-allowed" v-if="mainCategory['child_category_list'].length">{{$t("Common['删除']")}}</i>
-                                <i v-else @click="handleDeleteCategory(mainCategory['id'])">{{$t("Common['删除']")}}</i>
+                                <i v-else @click="handleDeleteCategory(mainCategory['id'], 'main', index)">{{$t("Common['删除']")}}</i>
                             </div>
                         </cmdb-dot-menu>
                     </template>
@@ -66,7 +66,7 @@
                             name="categoryName"
                             v-validate="'required|namedCharacter'"
                             v-model="childCategoryName"
-                            @on-confirm="handleEditCategory(childCategory['id'], childCategory['name'], 'child')"
+                            @on-confirm="handleEditCategory(childCategory, 'child', index)"
                             @on-cancel="handleCloseEditChild">
                         </category-input>
                         <template v-else>
@@ -78,7 +78,7 @@
                                     </i>
                                     <i class="icon-cc-tips-close"
                                         v-if="!childCategory['usage_amount']"
-                                        @click.stop="handleDeleteCategory(childCategory['id'])">
+                                        @click.stop="handleDeleteCategory(childCategory['id'], 'child', index)">
                                     </i>
                                     <i class="icon-cc-tips-close" v-else
                                         style="color: #c4c6cc; cursor: not-allowed;"
@@ -171,7 +171,7 @@
                             ...mainCategory,
                             child_category_list: categoryList.filter(category => category['bk_parent_id'] === mainCategory['id'])
                         }
-                    })
+                    }).sort((prev, next) => prev.id - next.id)
                 })
             },
             createdCategory (name, rootId) {
@@ -181,11 +181,22 @@
                         bk_parent_id: rootId,
                         name
                     })
-                }).then(() => {
+                }).then(res => {
                     this.$success(this.$t('Common["保存成功"]'))
                     this.showAddMianCategory = false
                     this.handleCloseAddChild()
-                    this.getCategoryList()
+                    if (rootId) {
+                        let markIndex = null
+                        const currentObj = this.list.find((category, index) => {
+                            markIndex = index
+                            return category.hasOwnProperty('bk_root_id') && category['bk_root_id'] === rootId
+                        })
+                        const childList = currentObj ? currentObj['child_category_list'] : []
+                        childList.unshift(res)
+                        this.$set(this.list[markIndex], 'child_category_list', childList)
+                    } else {
+                        this.getCategoryList()
+                    }
                 })
             },
             async handleAddCategory (name, bk_root_id = 0) {
@@ -198,30 +209,38 @@
                     this.createdCategory(name, bk_root_id)
                 }
             },
-            async handleEditCategory (id, name, type) {
+            async handleEditCategory (data, type, mainIndex) {
                 if (!await this.$validator.validateAll()) {
                     this.$bkMessage({
                         message: this.errors.first('categoryName') || this.$t("ServiceCategory['请输入分类名称']"),
                         theme: 'error'
                     })
-                } else if (name === this.mainCategoryName || name === this.childCategoryName) {
+                } else if (data.name === this.mainCategoryName || data.name === this.childCategoryName) {
                     this.handleCloseEditChild()
                     this.handleCloseEditMain()
                 } else {
                     this.updateServiceCategory({
                         params: this.$injectMetadata({
-                            id,
+                            id: data.id,
                             name: type === 'main' ? this.mainCategoryName : this.childCategoryName
                         })
-                    }).then(() => {
+                    }).then(res => {
                         this.$success(this.$t('Common["保存成功"]'))
                         this.handleCloseEditChild()
                         this.handleCloseEditMain()
-                        this.getCategoryList()
+                        if (mainIndex !== undefined) {
+                            const childList = this.list[mainIndex].child_category_list.map(child => {
+                                if (child.id === res.id) {
+                                    return res
+                                }
+                                return child
+                            })
+                            this.$set(this.list[mainIndex], 'child_category_list', childList)
+                        }
                     })
                 }
             },
-            handleDeleteCategory (id) {
+            handleDeleteCategory (id, type, index) {
                 this.$bkInfo({
                     title: this.$t("ServiceCategory['确认删除分类']"),
                     confirmFn: async () => {
@@ -234,7 +253,16 @@
                             }
                         }).then(() => {
                             this.$success(this.$t('Common["删除成功"]'))
-                            this.getCategoryList()
+                            if (type === 'main') {
+                                this.list.splice(index, 1)
+                            } else {
+                                let childIndex = -1
+                                this.list[index]['child_category_list'].find((category, findIndex) => {
+                                    childIndex = findIndex
+                                    return category.id === id
+                                })
+                                this.list[index]['child_category_list'].splice(childIndex, 1)
+                            }
                         })
                     }
                 })
@@ -291,14 +319,12 @@
 
 <style lang="scss" scoped>
     .category-wrapper {
-        min-width: 1442px;
         .category-list {
             display: flex;
             flex-flow: row wrap;
         }
         .category-item {
             position: relative;
-            min-width: 320px;
             flex: 0 0 22%;
             border: 1px solid #dcdee5;
             margin-right: 30px;
@@ -482,12 +508,8 @@
         }
     }
     @media screen and (min-width: 1920px){
-        .category-wrapper {
-            min-width: 1650px;
-            .category-item {
-                min-width: auto;
-                flex: 0 0 18%;
-            }
+        .category-item {
+            flex: 0 0 18% !important;
         }
     }
 </style>
