@@ -149,7 +149,7 @@ func (p *Pool) call(cmd string, input interface{}, result interface{}) (addr str
 	} else {
 		//  链接存在， 如果链接Ping 不同需要重新建立连接
 		if pingErr := conn.Ping(); pingErr != nil {
-			blog.V(4).Infof("conn rpc connection ping err:%s", err.Error())
+			blog.V(4).Infof("conn rpc connection ping err:%s", pingErr.Error())
 			conn.Close()
 			newConn = true
 		}
