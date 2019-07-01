@@ -10,11 +10,11 @@
         <div class="process-filter clearfix">
             <span class="process-btn"
                 v-cursor="{
-                    active: !$isAuthorized(OPERATION.U_PROCESS),
-                    auth: [OPERATION.U_PROCESS]
+                    active: !$isAuthorized($OPERATION.U_PROCESS),
+                    auth: [$OPERATION.U_PROCESS]
                 }">
                 <bk-button type="default"
-                    :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)"
+                    :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_PROCESS)"
                     @click="handleMultipleEdit">
                     <i class="icon-cc-edit"></i>
                     <span>{{$t("BusinessTopology['修改']")}}</span>
@@ -22,11 +22,11 @@
             </span>
             <span class="process-btn"
                 v-cursor="{
-                    active: !$isAuthorized(OPERATION.C_PROCESS),
-                    auth: [OPERATION.C_PROCESS]
+                    active: !$isAuthorized($OPERATION.C_PROCESS),
+                    auth: [$OPERATION.C_PROCESS]
                 }">
                 <bk-button type="primary"
-                    :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
+                    :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}
                 </bk-button>
@@ -58,8 +58,8 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-auth="OPERATION.U_PROCESS"
-                        :delete-auth="OPERATION.D_PROCESS"
+                        :edit-auth="$OPERATION.U_PROCESS"
+                        :delete-auth="$OPERATION.D_PROCESS"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -68,7 +68,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-auth="attribute.type === 'update' ? OPERATION.U_PROCESS : OPERATION.C_PROCESS"
+                        :save-auth="attribute.type === 'update' ? $OPERATION.U_PROCESS : $OPERATION.C_PROCESS"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -76,7 +76,7 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-auth="OPERATION.U_PROCESS"
+                        :save-auth="$OPERATION.U_PROCESS"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -103,7 +103,6 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
     import featureTips from '@/components/feature-tips/index'
     import vModule from './module'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
@@ -113,7 +112,6 @@
         data () {
             return {
                 showFeatureTips: false,
-                OPERATION,
                 objectUnique: [],
                 properties: [],
                 slider: {

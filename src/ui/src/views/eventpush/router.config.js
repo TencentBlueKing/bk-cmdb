@@ -30,8 +30,11 @@ export default {
             businessView: false
         },
         auth: {
-            view: R_EVENT,
-            operation: Object.values(OPERATION)
+            view: OPERATION.R_EVENT,
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         }
     })
 }
