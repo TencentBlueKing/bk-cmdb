@@ -123,7 +123,7 @@ func getVersion(ctx context.Context, db dal.RDB) (*Version, error) {
 		return data, nil
 	}
 	if err != nil {
-		blog.Error("get system version error,err:%s", err.Error())
+		blog.Errorf("get system version error,err:%s", err.Error())
 		return nil, err
 	}
 
