@@ -416,16 +416,19 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 
 	conds := make(map[string]interface{})
 	var moduleNameLogKey string
+	var action authmeta.Action
 	if common.DefaultResModuleName == moduleName {
 		// 空闲机
 		moduleNameLogKey = "idle"
 		conds[common.BKDefaultField] = common.DefaultResModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultResModuleName
+		action = authmeta.MoveHostToBizIdleModule
 	} else {
 		// 故障机器
 		moduleNameLogKey = "fault"
 		conds[common.BKDefaultField] = common.DefaultFaultModuleFlag
 		conds[common.BKModuleNameField] = common.DefaultFaultModuleName
+		action = authmeta.MoveHostToBizFaultModule
 	}
 	conds[common.BKAppIDField] = conf.ApplicationID
 	moduleID, err := srvData.lgc.GetResoulePoolModuleID(srvData.ctx, conds)
@@ -443,7 +446,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, conf.HostID...); err != nil {
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
 		if err != auth.NoAuthorizeError {
 			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
