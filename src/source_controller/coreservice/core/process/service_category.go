@@ -219,11 +219,14 @@ func (p *processOperation) DeleteServiceCategory(ctx core.ContextParams, categor
 		return err
 	}
 
-	if category.IsBuiltIn == true {
-		blog.Errorf("DeleteServiceCategory failed, forbidden delete built-in category, code: %d, rid: %s", common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
-		err := ctx.Error.CCError(common.CCErrCommOperateBuiltInItemForbidden)
-		return err
-	}
+	// 允许全局模式下删除
+	/*
+		if category.IsBuiltIn == true {
+			blog.Errorf("DeleteServiceCategory failed, forbidden delete built-in category, code: %d, rid: %s", common.CCErrCommOperateBuiltInItemForbidden, ctx.ReqID)
+			err := ctx.Error.CCError(common.CCErrCommOperateBuiltInItemForbidden)
+			return err
+		}
+	*/
 
 	// category that has sub category shouldn't be removed
 	childrenFilter := map[string]interface{}{

@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 )
 
 func (lgc *Logics) CreateCloudTask(ctx context.Context, input interface{}) error {
@@ -26,7 +25,7 @@ func (lgc *Logics) CreateCloudTask(ctx context.Context, input interface{}) error
 	}
 
 	inputc := input.(map[string]interface{})
-	inputc["bk_task_id"] = objID
+	inputc[common.CloudSyncTaskID] = objID
 	if err := lgc.Instance.Table(common.BKTableNameCloudTask).Insert(ctx, inputc); err != nil {
 		return err
 	}
@@ -46,7 +45,6 @@ func (lgc *Logics) CreateResourceConfirm(ctx context.Context, input interface{})
 		return err
 	}
 
-	blog.Info("CreateResourceSync table bk_CloudResourceSync")
 	return nil
 }
 
