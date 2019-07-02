@@ -58,7 +58,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
+    import { RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -100,9 +100,9 @@
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return OPERATION.U_RESOURCE_HOST
+                    return this.$OPERATION.U_RESOURCE_HOST
                 }
-                return OPERATION.U_HOST
+                return this.$OPERATION.U_HOST
             },
             flattenList () {
                 return this.$tools.flattenList(this.properties, this.list)

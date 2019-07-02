@@ -48,6 +48,12 @@ export default [{
     meta: new Meta({
         auth: {
             operation: Object.values(OPERATION),
+            setAuthScope (to, from, app) {
+                const modelId = to.params[param]
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                const bizId = getMetadataBiz(model)
+                this.authScope = bizId ? 'business' : 'global'
+            },
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params[param]
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
