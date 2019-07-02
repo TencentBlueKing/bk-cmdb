@@ -204,7 +204,7 @@ func (t *genericTransfer) generateEvent(ctx core.ContextParams, originDatas, cur
 	}
 	err := t.eventC.Push(ctx, eventArr...)
 	if err != nil {
-		blog.Errorf("host relation event push failed, but create event error:%v", err)
+		blog.Errorf("host relation event push failed, but create event error:%v, rid: %s", err, ctx.ReqID)
 		return ctx.Error.CCErrorf(common.CCErrCoreServiceEventPushEventFailed)
 	}
 
@@ -373,7 +373,7 @@ func (t *genericTransfer) delHostModuleRelationItem(ctx core.ContextParams, bizI
 	delCondition := util.SetQueryOwner(cond.ToMapStr(), ctx.SupplierAccount)
 	num, numError := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Find(delCondition).Count(ctx)
 	if numError != nil {
-		blog.Errorf("delete host relation, but get module host relation failed, err: %v", numError)
+		blog.Errorf("delete host relation, but get module host relation failed, err: %v, rid: %s", numError, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -448,7 +448,7 @@ func (t *genericTransfer) addHostModuleRelation(ctx core.ContextParams, hostID i
 
 	err := t.dbProxy.Table(common.BKTableNameModuleHostConfig).Insert(ctx, insertDataArr)
 	if err != nil {
-		blog.Errorf("add host module relation, add module host relation error: %v", err)
+		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	return insertDataArr, nil

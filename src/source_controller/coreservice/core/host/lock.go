@@ -40,7 +40,7 @@ func (hm *hostManager) LockHost(params core.ContextParams, input *metadata.HostL
 		return params.Error.Errorf(common.CCErrCommDBSelectFailed)
 	}
 
-	diffIP := diffHostLockIP(input.IPS, hostInfos)
+	diffIP := diffHostLockIP(input.IPS, hostInfos, params.ReqID)
 	if 0 != len(diffIP) {
 		blog.Errorf("lock host, not found, ip:%+v, rid:%s", diffIP, params.ReqID)
 		return params.Error.Errorf(common.CCErrCommParamsIsInvalid, " ip_list["+strings.Join(diffIP, ",")+"]")
@@ -112,12 +112,12 @@ func (hm *hostManager) QueryHostLock(params core.ContextParams, input *metadata.
 	return hostLockInfoArr, nil
 }
 
-func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr) []string {
+func diffHostLockIP(ips []string, hostInfos []mapstr.MapStr, rid string) []string {
 	mapInnerIP := make(map[string]bool, 0)
 	for _, hostInfo := range hostInfos {
 		innerIP, err := hostInfo.String(common.BKHostInnerIPField)
 		if nil != err {
-			blog.ErrorJSON("different host lock IP not inner ip, %s", hostInfo)
+			blog.ErrorJSON("different host lock IP not inner ip, %s, rid: %s", hostInfo, rid)
 			continue
 		}
 		mapInnerIP[innerIP] = true
