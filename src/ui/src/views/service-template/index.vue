@@ -100,7 +100,7 @@
                             id: 'process_template_count',
                             name: this.$t("ServiceManagement['进程数量']")
                         }, {
-                            id: 'service_instance_count',
+                            id: 'module_count',
                             name: this.$t("ServiceManagement['应用模块数']")
                         }, {
                             id: 'modifier',
