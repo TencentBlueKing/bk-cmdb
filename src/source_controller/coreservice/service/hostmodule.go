@@ -24,7 +24,7 @@ import (
 func (s *coreService) GetHostModulesIDs(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	dat := &meta.ModuleHostConfigParams{}
 	if err := data.MarshalJSONInto(dat); err != nil {
-		blog.Errorf("get host module id failed, err: %v", err)
+		blog.Errorf("get host module id failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -32,7 +32,7 @@ func (s *coreService) GetHostModulesIDs(params core.ContextParams, pathParams, q
 	condition = util.SetModOwner(condition, params.SupplierAccount)
 	moduleIDs, err := s.getModuleIDsByHostID(params, condition)
 	if nil != err {
-		blog.Errorf("get host module id failed, err: %v", err)
+		blog.Errorf("get host module id failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrGetModule)
 	}
 
@@ -45,7 +45,7 @@ func (s *coreService) getModuleIDsByHostID(params core.ContextParams, moduleCond
 
 	err := s.db.Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).All(params.Context, &result)
 	if nil != err {
-		blog.Errorf("get module id by host id failed, error: %s", err.Error())
+		blog.Errorf("get module id by host id failed, error: %s, rid: %s", err.Error(), params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	for _, r := range result {
@@ -57,7 +57,7 @@ func (s *coreService) getModuleIDsByHostID(params core.ContextParams, moduleCond
 func (s *coreService) GetModulesHostConfig(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	var dat = make(map[string][]int)
 	if err := data.MarshalJSONInto(dat); err != nil {
-		blog.Errorf("del module host config failed, err: %v", err)
+		blog.Errorf("del module host config failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -72,7 +72,7 @@ func (s *coreService) GetModulesHostConfig(params core.ContextParams, pathParams
 	result := make([]meta.ModuleHost, 0)
 	err := s.db.Table(common.BKTableNameModuleHostConfig).Find(query).Limit(uint64(common.BKNoLimit)).All(params.Context, &result)
 	if err != nil {
-		blog.Errorf("get module host config failed, err: %v", err)
+		blog.Errorf("get module host config failed, err: %v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 
