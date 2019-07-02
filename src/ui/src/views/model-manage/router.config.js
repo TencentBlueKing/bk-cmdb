@@ -35,7 +35,11 @@ export default [{
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope (to, from, app) {
+                const isAdminView = app.$store.getters.isAdminView
+                this.authScope = isAdminView ? 'global' : 'business'
+            }
         }
     })
 }, {
@@ -48,6 +52,12 @@ export default [{
                 OPERATION.U_MODEL,
                 OPERATION.D_MODEL
             ],
+            setAuthScope (to, from, app) {
+                const modelId = to.params.modelId
+                const model = app.$store.getters['objectModelClassify/getModelById'](modelId)
+                const bizId = getMetadataBiz(model)
+                this.authScope = bizId ? 'business' : 'global'
+            },
             setDynamicMeta: (to, from, app) => {
                 const modelId = to.params.modelId
                 const model = app.$store.getters['objectModelClassify/getModelById'](modelId)

@@ -60,6 +60,7 @@ const getters = {
         if (resourceMeta) {
             Object.assign(meta, resourceMeta)
         }
+        delete meta.scope
         return meta
     }
 }
