@@ -26,6 +26,10 @@
                         </li>
                     </ul>
                 </bk-dropdown-menu>
+                <bk-button class="options-button sync-template-link" v-show="withTemplate" @click="handleSyncTemplate">
+                    <i class="bk-icon icon-refresh"></i>
+                    {{$t('BusinessTopology["同步模板"]')}}
+                </bk-button>
                 <div class="options-right fr">
                     <cmdb-form-bool class="options-checkbox"
                         :size="16"
@@ -34,7 +38,7 @@
                         <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                     </cmdb-form-bool>
                     <cmdb-form-singlechar class="options-search"
-                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
+                        :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
                         v-model="filter"
                         @keydown.native.enter="handleSearch">
                         <i class="bk-icon icon-close"
@@ -135,6 +139,13 @@
             },
             currentNode () {
                 return this.$store.state.businessTopology.selectedNode
+            },
+            isModuleNode () {
+                return this.currentNode && this.currentNode.data.bk_obj_id === 'module'
+            },
+            withTemplate () {
+                const nodeInstance = this.$store.state.businessTopology.selectedNodeInstance
+                return this.isModuleNode && nodeInstance && nodeInstance.service_template_id
             },
             currentModule () {
                 if (this.currentNode && this.currentNode.data.bk_obj_id === 'module') {
@@ -453,6 +464,19 @@
                 }, () => {
                     this.$error(this.$t('Common["复制失败"]'))
                 })
+            },
+            handleSyncTemplate () {
+                this.$router.push({
+                    name: 'synchronous',
+                    params: {
+                        moduleId: this.currentNode.data.bk_inst_id,
+                        setId: this.currentNode.parent.data.bk_inst_id
+                    },
+                    query: {
+                        path: [...this.currentNode.parents, this.currentNode].map(node => node.name).join(' / '),
+                        from: `${this.$route.path}?module=${this.currentNode.data.bk_inst_id}`
+                    }
+                })
             }
         }
     }
@@ -474,7 +498,7 @@
         line-height: 30px;
         padding: 0 9px;
         text-align: center;
-        border: 1px solid #C4C6CC;
+        border: 1px solid #f0f1f5;
         border-radius: 2px;
     }
     .options-right {
@@ -557,6 +581,22 @@
                 color: #c4c6cc;
                 cursor: not-allowed;
             }
+        }
+    }
+    .sync-template-link {
+        position: relative;
+        margin-left: 18px;
+        &::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: -13px;;
+            width: 1px;
+            height: 20px;
+            background-color: #dcdee5;
+        }
+        .icon-refresh {
+            top: -1px;
         }
     }
     .tables {
