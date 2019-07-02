@@ -486,6 +486,27 @@ func (am *AuthManager) GenMoveBizHostToModuleResp(hostIDs []int64) *metadata.Bas
 	return &resp
 }
 
+func (am *AuthManager) GenMoveBizHostToResourcePoolNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDBiz
+	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+	p.ActionID = string(authcenter.Delete)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Delete]
+
+	for _, id := range hostIDs {
+		p.Resources = append(p.Resources, []metadata.Resource{{
+			ResourceType:     string(authcenter.BizHostInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
+			ResourceID:       strconv.FormatInt(id, 10),
+		}})
+	}
+
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp
+}
+
 func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action, hostIDs ...int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
