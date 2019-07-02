@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 )
 
 func getTMServer() []string {
@@ -41,17 +40,12 @@ func getServerFunc() ([]string, error) {
 }
 
 func TestTransactionQuery(t *testing.T) {
-	config := mongo.Config{
-		Transaction: "enable",
-	}
-	NewWithDiscover(getServerFunc, config)
+	NewWithDiscover(getServerFunc)
 }
 
 func TestTransaction(t *testing.T) {
-	config := mongo.Config{
-		Transaction: "enable",
-	}
-	db, err := NewWithDiscover(getServerFunc, config)
+
+	db, err := NewWithDiscover(getServerFunc)
 	require.NoError(t, err)
 
 	header := http.Header{}

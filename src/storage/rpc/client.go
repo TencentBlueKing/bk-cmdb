@@ -76,7 +76,7 @@ func NewClient(conn net.Conn, compress string) (*client, error) {
 		done:      util.NewBool(false),
 		send:      make(chan *Message, 1024),
 		messages:  map[uint32]*Message{},
-		codec:     JSONCodec,
+		codec:     BSONCodec,
 		stream:    newStreamStore(),
 	}
 	blog.V(3).Infof("connected to rpc server %s", c.TargetID())

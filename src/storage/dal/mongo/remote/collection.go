@@ -18,6 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/mongodb"
 	//"configcenter/src/storage/rpc"
 	"configcenter/src/storage/types"
 )
@@ -149,17 +150,68 @@ func (c *Collection) Insert(ctx context.Context, docs interface{}) error {
 
 // CreateIndex 创建索引
 func (c *Collection) CreateIndex(ctx context.Context, index dal.Index) error {
-	return dal.ErrNotImplemented
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLCreateIndexCommand,
+		Collection: c.collection,
+		Index:      mongodb.Index{Name: index.Name, Keys: index.Keys, Unique: index.Unique, Background: index.Background},
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return err
 }
 
 // DropIndex 移除索引
 func (c *Collection) DropIndex(ctx context.Context, indexName string) error {
-	return dal.ErrNotImplemented
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLDropIndexCommand,
+		Collection: c.collection,
+		Index:      mongodb.Index{Name: indexName},
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+
+	return err
 }
 
 // Indexes 查询索引
 func (c *Collection) Indexes(ctx context.Context) ([]dal.Index, error) {
-	return nil, dal.ErrNotImplemented
+	msg := types.OPDDLOperation{
+		Command:    types.OPDDLIndexCommand,
+		Collection: c.collection,
+		MsgHeader:  types.MsgHeader{OPCode: types.OPDDLCode},
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(nil).Call(types.CommandRDBOperation, msg, &reply)
+	if err != nil {
+		return nil, err
+	}
+	if !reply.Success {
+		return nil, errors.New(reply.Message)
+	}
+	indexs := make([]dal.Index, 0)
+	err = reply.Docs.Decode(&indexs)
+	return indexs, err
 }
 
 // AddColumn 添加字段
@@ -174,7 +226,38 @@ func (c *Collection) RenameColumn(ctx context.Context, oldName, newColumn string
 
 // DropColumn 移除字段
 func (c *Collection) DropColumn(ctx context.Context, field string) error {
-	return dal.ErrNotImplemented
+	// build msg
+	msg := types.OPUpdateOperation{}
+	msg.OPCode = types.OPUpdateUnsetCode
+	msg.Collection = c.collection
+	unsetField := map[string]interface{}{field: ""}
+	if err := msg.DOC.Encode(unsetField); err != nil {
+		return err
+	}
+	if err := msg.Selector.Encode(nil); err != nil {
+		return err
+	}
+
+	// set txn
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.RequestID = opt.RequestID
+		msg.TxnID = opt.TxnID
+	}
+	if c.TxnID != "" {
+		msg.TxnID = c.TxnID
+	}
+
+	// call
+	reply := types.OPReply{}
+	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
+	if err != nil {
+		return err
+	}
+	if !reply.Success {
+		return errors.New(reply.Message)
+	}
+	return nil
 }
 
 // AggregateOne 聚合查询
