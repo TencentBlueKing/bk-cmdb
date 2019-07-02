@@ -131,7 +131,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		}
 		session.Set(common.WEBSessionSupplierID, "0")
 
-		blog.V(5).Infof("skip login, cookieLanuage: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
+		blog.V(5).Infof("skip login, cookie language: %s, cookieOwnerID: %s", cookieLanuage, cookieOwnerID)
 		session.Set(common.WEBSessionUinKey, "admin")
 
 		session.Set(common.WEBSessionRoleKey, "1")

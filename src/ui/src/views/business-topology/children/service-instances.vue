@@ -35,7 +35,8 @@
                     </cmdb-form-bool>
                     <cmdb-form-singlechar class="options-search"
                         :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
-                        v-model="filter">
+                        v-model="filter"
+                        @keydown.native.enter="handleSearch">
                         <i class="bk-icon icon-close"
                             v-show="filter.length"
                             @click="handleClearFilter">
@@ -388,7 +389,12 @@
                         setId: this.currentNode.parent.data.bk_inst_id
                     },
                     query: {
-                        from: this.$route.fullPath,
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.currentModule.bk_module_id
+                            }
+                        },
                         title: this.currentNode.name
                     }
                 })
