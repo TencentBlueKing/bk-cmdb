@@ -13,7 +13,6 @@
 package identifier
 
 import (
-	"configcenter/src/storage/dal"
 	"strconv"
 
 	"configcenter/src/common"
@@ -23,6 +22,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 	hostutil "configcenter/src/source_controller/coreservice/core/host/util"
+	"configcenter/src/storage/dal"
 )
 
 type Identifier struct {
@@ -104,7 +104,7 @@ func (i *Identifier) findModuleHostRelation(ctx core.ContextParams, hostIDs []in
 	hostModuleCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
 	condModuleHostMap := util.SetQueryOwner(hostModuleCond.ToMapStr(), ctx.SupplierAccount)
 	// fetch  host and module relation
-	moduleHostRelation := []metadata.ModuleHost{}
+	moduleHostRelation := make([]metadata.ModuleHost, 0)
 	err := i.dbQuery.DbProxy.Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).All(ctx, &moduleHostRelation)
 	if err != nil {
 		blog.ErrorJSON("findModuleHostRelation query host and module relation error. err:%s, conidtion:%s, rid:%s", err.Error(), condModuleHostMap, ctx.ReqID)
@@ -128,7 +128,7 @@ func (i *Identifier) findHostTopoInfo(ctx core.ContextParams) error {
 
 	// fetch set info
 	if len(i.setIDs) > 0 {
-		setInfoArr := []metadata.SetInst{}
+		setInfoArr := make([]metadata.SetInst, 0)
 		cond := condition.CreateCondition().Field(common.BKSetIDField).In(i.setIDs)
 		err := i.dbQuery.ExecQuery(ctx, common.BKTableNameBaseSet, nil, cond.ToMapStr(), &setInfoArr)
 		if err != nil {
@@ -140,7 +140,7 @@ func (i *Identifier) findHostTopoInfo(ctx core.ContextParams) error {
 		}
 	}
 	if len(i.moduleIDs) > 0 {
-		moduleInfoArr := []*metadata.ModuleInst{}
+		moduleInfoArr := make([]*metadata.ModuleInst, 0)
 		cond := condition.CreateCondition().Field(common.BKModuleIDField).In(i.moduleIDs)
 		err := i.dbQuery.ExecQuery(ctx, common.BKTableNameBaseModule, nil, cond.ToMapStr(), &moduleInfoArr)
 		if err != nil {
@@ -152,7 +152,7 @@ func (i *Identifier) findHostTopoInfo(ctx core.ContextParams) error {
 		}
 	}
 	if len(i.bizIDs) > 0 {
-		bizInfoArr := []metadata.BizInst{}
+		bizInfoArr := make([]metadata.BizInst, 0)
 		cond := condition.CreateCondition().Field(common.BKAppIDField).In(i.bizIDs)
 		err := i.dbQuery.ExecQuery(ctx, common.BKTableNameBaseApp, nil, cond.ToMapStr(), &bizInfoArr)
 		if err != nil {
@@ -177,7 +177,7 @@ func (i *Identifier) findHostCloud(ctx core.ContextParams) error {
 	}
 
 	if len(cloudIDs) > 0 {
-		cloudInfoArr := []metadata.CloudInst{}
+		cloudInfoArr := make([]metadata.CloudInst, 0)
 		cond := condition.CreateCondition().Field(common.BKCloudIDField).In(cloudIDs)
 		err := i.dbQuery.ExecQuery(ctx, common.BKTableNameBasePlat, nil, cond.ToMapStr(), &cloudInfoArr)
 		if err != nil {
@@ -198,7 +198,7 @@ func (i *Identifier) findHostCloud(ctx core.ContextParams) error {
 // findHostServiceInst handle host service instance
 func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64) error {
 	relationCond := condition.CreateCondition().Field(common.BKHostIDField).In(hostIDs)
-	relations := []metadata.ProcessInstanceRelation{}
+	relations := make([]metadata.ProcessInstanceRelation, 0)
 
 	// query process id with host id
 	err := i.dbQuery.ExecQuery(ctx, common.BKTableNameProcessInstanceRelation, nil, relationCond.ToMapStr(), &relations)
@@ -240,7 +240,6 @@ func (i *Identifier) findHostServiceInst(ctx core.ContextParams, hostIDs []int64
 				procModuleRelation[procID] = append(procModuleRelation[procID], moduleID)
 			}
 		}
-
 	}
 
 	procInfos := make([]metadata.HostIdentProcess, 0)

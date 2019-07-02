@@ -16,15 +16,14 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/host/Identifier"
+	"configcenter/src/source_controller/coreservice/core/host/identifier"
 )
 
 func (hm *hostManager) Identifier(ctx core.ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
 	identifier := identifier.NewIdentifier(hm.DbProxy)
-
 	host, err := identifier.Identifier(ctx, input.HostIDs)
 	if err != nil {
-		blog.ErrorJSON("Identifier get host identifier error. err:%s, input:%s, rid:%s", err.Error(), input, ctx.ReqID)
+		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	return host, nil

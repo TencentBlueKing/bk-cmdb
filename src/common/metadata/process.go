@@ -1163,3 +1163,15 @@ type ProcessInstance struct {
 	Property mapstr.MapStr           `json:"property"`
 	Relation ProcessInstanceRelation `json:"relation"`
 }
+
+type GetProc2ModuleOption struct {
+	ProcessID int64 `json:"bk_process_id"`
+	BizID     int64 `json:"bk_biz_id"`
+}
+
+type Proc2Module struct {
+	BizID           int    `json:"bk_biz_id"`
+	ModuleName      string `json:"bk_module_name"`
+	ProcessID       int    `json:"bk_process_id"`
+	SupplierAccount string `json:"bk_supplier_account"`
+}

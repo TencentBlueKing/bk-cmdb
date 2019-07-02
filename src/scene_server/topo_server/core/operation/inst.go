@@ -290,7 +290,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 		common.BKModuleIDField: moduleIDS,
 	}
 
-	rsp, err := c.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -872,7 +872,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.HostController().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
