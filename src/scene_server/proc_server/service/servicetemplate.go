@@ -32,13 +32,13 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	temp, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
+	tpl, err := ps.CoreAPI.CoreService().Process().CreateServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, template)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service template failed, err: %v", err)
 		return
 	}
 
-	ctx.RespEntity(temp)
+	ctx.RespEntity(tpl)
 }
 
 func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
@@ -49,6 +49,23 @@ func (ps *ProcServer) GetServiceTemplate(ctx *rest.Contexts) {
 		return
 	}
 	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplate(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
+		return
+	}
+
+	ctx.RespEntity(temp)
+}
+
+// GetServiceTemplateDetail return more info than GetServiceTemplate
+func (ps *ProcServer) GetServiceTemplateDetail(ctx *rest.Contexts) {
+	templateIDStr := ctx.Request.PathParameter(common.BKServiceTemplateIDField)
+	templateID, err := util.GetInt64ByInterface(templateIDStr)
+	if err != nil {
+		ctx.RespErrorCodeF(common.CCErrCommParamsInvalid, "create service template failed, err: %v", common.BKServiceTemplateIDField, err)
+		return
+	}
+	temp, err := ps.CoreAPI.CoreService().Process().GetServiceTemplateDetail(ctx.Kit.Ctx, ctx.Kit.Header, templateID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "get service template failed, err: %v", err)
 		return

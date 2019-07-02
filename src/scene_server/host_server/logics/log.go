@@ -289,7 +289,7 @@ func (h *HostModuleLog) getInnerIP(ctx context.Context) ([]mapstr.MapStr, errors
 		Fields:    fmt.Sprintf("%s,%s", common.BKHostIDField, common.BKHostInnerIPField),
 	}
 
-	result, err := h.logic.CoreAPI.HostController().Host().GetHosts(ctx, h.header, query)
+	result, err := h.logic.CoreAPI.CoreService().Host().GetHosts(ctx, h.header, query)
 	if err != nil {
 		blog.Errorf("GetHosts http do error, err:%s,input:%+v,rid:%s", err.Error(), query, h.logic.rid)
 		return nil, h.logic.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)

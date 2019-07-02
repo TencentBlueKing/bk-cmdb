@@ -1,11 +1,16 @@
 <template>
     <div class="model-field-wrapper">
-        <div>
-            <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createField">
-                {{$t('ModelManagement["新建字段"]')}}
-            </bk-button>
+        <div class="options">
+            <span class="inline-block-middle" v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" type="primary"
+                    :disabled="createDisabled || isReadOnly || !updateAuth"
+                    @click="createField">
+                    {{$t('ModelManagement["新建字段"]')}}
+                </bk-button>
+            </span>
         </div>
         <cmdb-table
             class="field-table"
@@ -49,15 +54,17 @@
         <cmdb-slider
             :width="450"
             :title="slider.title"
-            :is-show.sync="slider.isShow">
+            :is-show.sync="slider.isShow"
+            :before-close="handleSliderBeforeClose">
             <the-field-detail
+                ref="fieldForm"
                 class="slider-content"
                 slot="content"
                 :is-read-only="isReadOnly"
                 :is-edit-field="slider.isEditField"
                 :field="slider.curField"
                 @save="saveField"
-                @cancel="slider.isShow = false">
+                @cancel="handleSliderBeforeClose">
             </the-field-detail>
         </cmdb-slider>
     </div>
@@ -66,14 +73,12 @@
 <script>
     import theFieldDetail from './field-detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theFieldDetail
         },
         data () {
             return {
-                OPERATION,
                 slider: {
                     isShow: false,
                     isEditField: false,
@@ -131,6 +136,9 @@
             objId () {
                 return this.$route.params.modelId
             },
+            createDisabled () {
+                return !this.isAdminView && this.isPublicModel
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -143,7 +151,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         watch: {
@@ -232,14 +240,33 @@
                 if (sort[0] === '-') {
                     this.table.list.reverse()
                 }
+            },
+            handleSliderBeforeClose () {
+                const hasChanged = Object.keys(this.$refs.fieldForm.changedValues).length
+                if (hasChanged) {
+                    return new Promise((resolve, reject) => {
+                        this.$bkInfo({
+                            title: this.$t('Common["退出会导致未保存信息丢失，是否确认？"]'),
+                            confirmFn: () => {
+                                this.slider.isShow = false
+                                resolve(true)
+                            },
+                            cancelFn: () => {
+                                resolve(false)
+                            }
+                        })
+                    })
+                }
+                this.slider.isShow = false
+                return true
             }
         }
     }
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 10px 0;
     }
     .field-pre {
         display: inline-block;

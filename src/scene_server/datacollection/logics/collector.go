@@ -90,7 +90,7 @@ func (lgc *Logics) SearchCollector(header http.Header, cond metadata.ParamNetcol
 
 	cloudCond := condition.CreateCondition()
 	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchCollector] find clouds by %+v failed: %v", cloudCond, err)
 		return 0, nil, err

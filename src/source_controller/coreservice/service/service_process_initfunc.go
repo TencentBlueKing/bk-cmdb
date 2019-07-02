@@ -28,6 +28,7 @@ func (s *coreService) initProcess() {
 	// service template
 	s.addAction(http.MethodPost, "/create/process/service_template", s.CreateServiceTemplate, nil)
 	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}", s.GetServiceTemplate, nil)
+	s.addAction(http.MethodGet, "/find/process/service_template/{service_template_id}/detail", s.GetServiceTemplateDetail, nil)
 	s.addAction(http.MethodPost, "/findmany/process/service_template", s.ListServiceTemplates, nil)
 	s.addAction(http.MethodPut, "/update/process/service_template/{service_template_id}", s.UpdateServiceTemplate, nil)
 	s.addAction(http.MethodDelete, "/delete/process/service_template/{service_template_id}", s.DeleteServiceTemplate, nil)
@@ -37,7 +38,7 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodGet, "/find/process/service_instance/{service_instance_id}", s.GetServiceInstance, nil)
 	s.addAction(http.MethodPost, "/findmany/process/service_instance", s.ListServiceInstances, nil)
 	s.addAction(http.MethodPut, "/update/process/service_instance/{service_instance_id}", s.UpdateServiceInstance, nil)
-	s.addAction(http.MethodDelete, "/delete/process/service_instance/{service_instance_id}", s.DeleteServiceInstance, nil)
+	s.addAction(http.MethodDelete, "/delete/process/service_instance", s.DeleteServiceInstance, nil)
 
 	// process template
 	s.addAction(http.MethodPost, "/create/process/process_template", s.CreateProcessTemplate, nil)
@@ -55,4 +56,6 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodDelete, "/delete/process/process_instance_relation", s.DeleteProcessInstanceRelation, nil)
 
 	s.addAction(http.MethodGet, "/find/process/business_default_set_module_info/{bk_biz_id}", s.GetBusinessDefaultSetModuleInfo, nil)
+	s.addAction(http.MethodDelete, "/delete/process/module_bound_template/{bk_module_id}", s.RemoveTemplateBindingOnModule, nil)
+	s.addAction(http.MethodPost, "/findmany/process/proc2module", s.GetProc2Module, nil)
 }

@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
@@ -109,19 +110,13 @@ func (s *coreService) UpdateServiceInstance(params core.ContextParams, pathParam
 }
 
 func (s *coreService) DeleteServiceInstance(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	serviceInstanceIDStr := pathParams(common.BKServiceInstanceIDField)
-	if len(serviceInstanceIDStr) == 0 {
-		blog.Errorf("DeleteServiceInstance failed, path parameter `%s` empty, rid: %s", common.BKServiceInstanceIDField, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
+	option := metadata.DeleteServiceInstanceOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("DeleteServiceInstance failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	serviceInstanceID, err := strconv.ParseInt(serviceInstanceIDStr, 10, 64)
-	if err != nil {
-		blog.Errorf("DeleteServiceInstance failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceInstanceIDField, serviceInstanceIDStr, err, params.ReqID)
-		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceInstanceIDField)
-	}
-
-	if err := s.core.ProcessOperation().DeleteServiceInstance(params, serviceInstanceID); err != nil {
+	if err := s.core.ProcessOperation().DeleteServiceInstance(params, option.ServiceInstanceIDs); err != nil {
 		blog.Errorf("DeleteServiceInstance failed, err: %+v, rid: %s", err, common.BKServiceInstanceIDField)
 		return nil, err
 	}
@@ -147,4 +142,44 @@ func (s *coreService) GetBusinessDefaultSetModuleInfo(params core.ContextParams,
 		return nil, err
 	}
 	return defaultSetModuleInfo, nil
+}
+
+// AutoCreateServiceInstanceModuleHost is dependence for host
+func (s *coreService) AutoCreateServiceInstanceModuleHost(params core.ContextParams, hostID int64, moduleID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
+	serviceInstance, err := s.core.ProcessOperation().AutoCreateServiceInstanceModuleHost(params, hostID, moduleID)
+	if err != nil {
+		blog.Errorf("AutoCreateServiceInstanceModuleHost failed, hostID: %d, moduleID: %d, err: %+v, rid: %s", hostID, moduleID, err, params.ReqID)
+		return nil, err
+	}
+	return serviceInstance, nil
+}
+
+func (s *coreService) RemoveTemplateBindingOnModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	moduleIDStr := pathParams(common.BKModuleIDField)
+	moduleID, err := strconv.ParseInt(moduleIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKAppIDField, moduleIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+	}
+
+	if err := s.core.ProcessOperation().RemoveTemplateBindingOnModule(params, moduleID); err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, params.ReqID)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *coreService) GetProc2Module(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	option := metadata.GetProc2ModuleOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("GetProc2Module failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.core.ProcessOperation().GetProc2Module(params, &option)
+	if err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, option: %+v, err: %+v, rid: %s", option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
 }

@@ -46,7 +46,7 @@ func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.
 
 	if len(result.Data.Info) == 0 {
 		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
-		return -1, lgc.ccErr.Errorf(common.CCErrTopoGetAppFaild, lgc.ccLang.Languagef("host_resource_pool_not_exist"))
+		return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 	}
 
 	return result.Data.Info[0].Int64(common.BKModuleIDField)
@@ -186,7 +186,7 @@ func (lgc *Logics) MoveHostToResourcePool(ctx context.Context, conf *metadata.De
 		blog.Errorf("move host to resource pool, but get prev module host config failed, err: %v, input:%+v,rid:%s", err, conf, lgc.rid)
 		return nil, lgc.ccErr.Errorf(common.CCErrCommResourceInitFailed, "audit server")
 	}
-	result, err := lgc.CoreAPI.CoreService().Host().TransferHostCrossBusiness(ctx, lgc.header, param)
+	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, param)
 	if err != nil {
 		blog.Errorf("move host to resource pool, but update host module http do error, err: %v, input:%#v,params:%#v,rid:%v", err, conf, param, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -313,7 +313,7 @@ func (lgc *Logics) AssignHostToApp(ctx context.Context, conf *metadata.DefaultMo
 	audit := lgc.NewHostModuleLog(conf.HostID)
 	audit.WithPrevious(ctx)
 
-	result, err := lgc.CoreAPI.CoreService().Host().TransferHostCrossBusiness(ctx, lgc.header, assignParams) //.AssignHostToApp(ctx, srvData.header, params)
+	result, err := lgc.CoreAPI.CoreService().Host().TransferToAnotherBusiness(ctx, lgc.header, assignParams) //.AssignHostToApp(ctx, srvData.header, params)
 	if err != nil {
 		blog.Errorf("assign host to app, but assign to app http do error. err: %v, input:%+v,param:%+v,rid:%s", err, conf, assignParams, lgc.rid)
 		return nil, lgc.ccErr.Error(common.CCErrHostEditRelationPoolFail)

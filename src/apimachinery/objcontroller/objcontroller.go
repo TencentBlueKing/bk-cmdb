@@ -13,10 +13,9 @@
 package objcontroller
 
 import (
+	"configcenter/src/apimachinery/toposerver/association"
 	"fmt"
 
-	"configcenter/src/apimachinery/objcontroller/association"
-	"configcenter/src/apimachinery/objcontroller/identifier"
 	"configcenter/src/apimachinery/objcontroller/inst"
 	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/objcontroller/openapi"
@@ -29,10 +28,8 @@ import (
 type ObjControllerClientInterface interface {
 	Instance() inst.InstanceInterface
 	Meta() meta.MetaInterface
-	Identifier() identifier.IdentifierInterface
 	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
-	Association() association.AssociationInterface
 	Unique() unique.UniqueInterface
 }
 
@@ -61,10 +58,6 @@ func (o *objectctrl) OpenAPI() openapi.OpenApiInterface {
 
 func (o *objectctrl) Privilege() privilege.PrivilegeInterface {
 	return privilege.NewPrivilegeInterface(o.client)
-}
-
-func (o *objectctrl) Identifier() identifier.IdentifierInterface {
-	return identifier.NewIdentifierInterface(o.client)
 }
 
 func (o *objectctrl) Association() association.AssociationInterface {

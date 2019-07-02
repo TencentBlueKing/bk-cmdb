@@ -17,6 +17,8 @@ import (
 	"io"
 	"strconv"
 
+	// "strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -174,6 +176,16 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 		// create the instance now.
 		if err = currentInst.Create(); nil != err {
 			blog.Errorf("[operation-asst] failed to create object(%s) default inst, err: %s", current.Object().ObjectID, err.Error())
+			return err
+		}
+		instID, err := currentInst.GetInstID()
+		if err != nil {
+			blog.Errorf("create mainline instance for obj: %s, but got invalid instance id, err :%v", current.Object().ObjectID, err)
+			return err
+		}
+		err = cli.authManager.RegisterInstancesByID(params.Context, params.Header, current.Object().ObjectID, instID)
+		if err != nil {
+			blog.Errorf("create mainline instance for object: %s, but register to auth center failed, err: %v", current.Object().ObjectID, err)
 			return err
 		}
 

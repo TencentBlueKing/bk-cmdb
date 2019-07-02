@@ -110,22 +110,22 @@ func (am *AuthManager) extractBusinessIDFromDynamicGroups(dynamicGroups ...Dynam
 	return businessID, nil
 }
 
-func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http.Header, action meta.Action, dynamicGroups ...DynamicGroupSimplify) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	// extract business id
-	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
-	if err != nil {
-		return fmt.Errorf("authorize user api failed, extract business id from user api failed, err: %+v", err)
-	}
-
-	// make auth resources
-	resources := am.MakeResourcesByDynamicGroups(header, action, bizID, dynamicGroups...)
-
-	return am.authorize(ctx, header, bizID, resources...)
-}
+// func (am *AuthManager) AuthorizeByDynamicGroups(ctx context.Context, header http.Header, action meta.Action, dynamicGroups ...DynamicGroupSimplify) error {
+// 	if am.Enabled() == false {
+// 		return nil
+// 	}
+//
+// 	// extract business id
+// 	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
+// 	if err != nil {
+// 		return fmt.Errorf("authorize user api failed, extract business id from user api failed, err: %+v", err)
+// 	}
+//
+// 	// make auth resources
+// 	resources := am.MakeResourcesByDynamicGroups(header, action, bizID, dynamicGroups...)
+//
+// 	return am.authorize(ctx, header, bizID, resources...)
+// }
 
 func (am *AuthManager) UpdateRegisteredDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
 	if am.Enabled() == false {
@@ -206,38 +206,21 @@ func (am *AuthManager) RegisterDynamicGroupByID(ctx context.Context, header http
 	return am.RegisterDynamicGroups(ctx, header, dynamicGroups...)
 }
 
-func (am *AuthManager) DeregisterDynamicGroups(ctx context.Context, header http.Header, dynamicGroups ...DynamicGroupSimplify) error {
+func (am *AuthManager) DeregisterDynamicGroupByID(ctx context.Context, header http.Header, configMeta metadata.UserConfigMeta) error {
 	if am.Enabled() == false {
 		return nil
 	}
 
-	if len(dynamicGroups) == 0 {
-		return nil
+	resource := meta.ResourceAttribute{
+		Basic: meta.Basic{
+			Action:       meta.EmptyAction,
+			Type:         meta.DynamicGrouping,
+			Name:         configMeta.Name,
+			InstanceIDEx: configMeta.ID,
+		},
+		SupplierAccount: util.GetOwnerID(header),
+		BusinessID:      configMeta.AppID,
 	}
 
-	// extract business id
-	bizID, err := am.extractBusinessIDFromDynamicGroups(dynamicGroups...)
-	if err != nil {
-		return fmt.Errorf("deregister dynamic group failed, extract business id from dynamic group failed, err: %+v", err)
-	}
-
-	// make auth resources
-	resources := am.MakeResourcesByDynamicGroups(header, meta.EmptyAction, bizID, dynamicGroups...)
-
-	return am.Authorize.DeregisterResource(ctx, resources...)
-}
-
-func (am *AuthManager) DeregisterDynamicGroupByID(ctx context.Context, header http.Header, ids ...string) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if len(ids) == 0 {
-		return nil
-	}
-	dynamicGroups, err := am.collectDynamicGroupByIDs(ctx, header, ids...)
-	if err != nil {
-		return fmt.Errorf("update registered dynamic group failed, get dynamic group by id failed, err: %+v", err)
-	}
-	return am.DeregisterDynamicGroups(ctx, header, dynamicGroups...)
+	return am.Authorize.DeregisterResource(ctx, resource)
 }
