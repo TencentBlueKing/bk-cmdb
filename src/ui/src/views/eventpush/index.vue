@@ -1,11 +1,24 @@
 <template>
-    <div class="push-wrapper">
+    <div class="push-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'eventpush'"
+            :show-tips="showFeatureTips"
+            :desc="$t('EventPush[\'事件推送顶部提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#EventPush'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="btn-wrapper clearfix">
-            <bk-button type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_EVENT)"
-                @click="createPush">
-                {{$t('Common["新建"]')}}
-            </bk-button>
+            <span class="inline-block-middle"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_EVENT),
+                    auth: [$OPERATION.C_EVENT]
+                }">
+                <bk-button type="primary"
+                    :disabled="!$isAuthorized($OPERATION.C_EVENT)"
+                    @click="createPush">
+                    {{$t('Common["新建"]')}}
+                </bk-button>
+            </span>
         </div>
         <cmdb-table
             row-cursor="default"
@@ -24,17 +37,31 @@
             </template>
             <template slot="setting" slot-scope="{ item }">
                 <span class="text-primary mr20"
-                    v-if="$isAuthorized(OPERATION.U_EVENT)"
+                    v-if="$isAuthorized($OPERATION.U_EVENT)"
                     @click.stop="editPush(item)">
                     {{$t('Common["编辑"]')}}
                 </span>
-                <span class="text-primary disabled mr20" v-else>{{$t('Common["编辑"]')}}</span>
+                <span class="text-primary disabled mr20"
+                    v-else
+                    v-cursor="{
+                        active: true,
+                        auth: [$OPERATION.U_EVENT]
+                    }">
+                    {{$t('Common["编辑"]')}}
+                </span>
                 <span class="text-danger"
-                    v-if="$isAuthorized(OPERATION.D_EVENT)"
+                    v-if="$isAuthorized($OPERATION.D_EVENT)"
                     @click.stop="deleteConfirm(item)">
                     {{$t('Common["删除"]')}}
                 </span>
-                <span class="text-danger disabled" v-else>{{$t('Common["删除"]')}}</span>
+                <span class="text-danger disabled"
+                    v-else
+                    v-cursor="{
+                        active: true,
+                        auth: [$OPERATION.U_EVENT]
+                    }">
+                    {{$t('Common["删除"]')}}
+                </span>
             </template>
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
@@ -60,16 +87,17 @@
 
 <script>
     import { formatTime } from '@/utils/tools'
+    import featureTips from '@/components/feature-tips/index'
     import vPushDetail from './push-detail'
-    import { mapActions } from 'vuex'
-    import { OPERATION } from './router.config.js'
+    import { mapActions, mapGetters } from 'vuex'
     export default {
         components: {
-            vPushDetail
+            vPushDetail,
+            featureTips
         },
         data () {
             return {
-                OPERATION,
+                showFeatureTips: false,
                 curPush: {},
                 table: {
                     header: [{
@@ -110,9 +138,13 @@
                 }
             }
         },
+        computed: {
+            ...mapGetters(['featureTipsParams'])
+        },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["事件推送"]'))
             this.getTableData()
+            this.showFeatureTips = this.featureTipsParams['eventpush']
         },
         methods: {
             ...mapActions('eventSub', [

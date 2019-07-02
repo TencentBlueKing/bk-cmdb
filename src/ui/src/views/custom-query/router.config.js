@@ -30,7 +30,10 @@ export default {
             adminView: false
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'business'
+            }
         },
         requireBusiness: true
     })

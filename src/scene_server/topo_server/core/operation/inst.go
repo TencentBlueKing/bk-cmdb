@@ -251,10 +251,14 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	item := c.instFactory.CreateInst(params, obj)
 	item.SetValues(data)
 
-	//	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, item.ToMapStr()); nil != err {
-	//		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", item.ToMapStr(), err.Error())
-	//		return nil, err
-	//	}
+	iData := item.ToMapStr()
+	if obj.Object().ObjectID == "plat" {
+		iData["bk_supplier_account"] = params.SupplierAccount
+	}
+	// if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
+	// 	blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
+	// 	return nil, err
+	// }
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
@@ -262,6 +266,21 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	}
 
 	NewSupplementary().Audit(params, c.clientSet, item.GetObject(), c).CommitCreateLog(nil, nil, item)
+
+	instID, err := item.GetInstID()
+	if err != nil {
+		return nil, params.Err.Error(common.CCErrTopoInstCreateFailed)
+	}
+	cond := condition.CreateCondition()
+	cond.Field(obj.GetInstIDFieldName()).Eq(instID)
+	_, insts, err := c.FindInst(params, obj, &metadata.QueryInput{Condition: cond.ToMapStr()}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, inst := range insts {
+		return inst, nil
+	}
 
 	return item, nil
 }
@@ -915,7 +934,6 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 	if nil != params.MetaData {
 		fCond.Set(metadata.BKMetadata, *params.MetaData)
 	}
-	data.Remove(metadata.BKMetadata)
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,

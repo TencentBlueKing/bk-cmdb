@@ -130,7 +130,6 @@
 <script>
     import vueDraggable from 'vuedraggable'
     import { mapGetters, mapActions } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             vueDraggable
@@ -187,7 +186,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {
@@ -323,7 +322,7 @@
                         data: {
                             'bk_group_name': this.groupNameInEditing
                         }
-                    }),
+                    }, { inject: this.isInjectable }),
                     config: {
                         requestId: `put_updateGroup_name_${this.groupInEditing.info.id}`,
                         cancelPrevious: true
@@ -438,7 +437,10 @@
                     id: group.info.id,
                     config: {
                         requestId: `delete_deleteGroup_${group.info.id}`,
-                        fromCache: true
+                        fromCache: true,
+                        data: this.$injectMetadata({}, {
+                            inject: this.isInjectable
+                        })
                     }
                 }).then(() => {
                     this.groupedProperties.splice(index, 1)
@@ -459,6 +461,8 @@
                             data: {
                                 'bk_group_index': group.info['bk_group_index']
                             }
+                        }, {
+                            inject: this.isInjectable
                         }),
                         config: {
                             requestId: `put_updateGroup_index_${group.info.id}`,
@@ -540,6 +544,8 @@
                         'bk_group_name': this.newGroupName,
                         'bk_obj_id': this.objId,
                         'bk_supplier_account': this.supplierAccount
+                    }, {
+                        inject: this.isInjectable
                     }),
                     config: {
                         requestId: `post_createGroup_${groupId}`
@@ -585,7 +591,7 @@
                 top: 3px;
                 width: 4px;
                 height: 16px;
-                background-color: $modelHighlightColor;
+                background-color: $cmdbBorderColor;
             }
             .title-input {
                 width: 180px;

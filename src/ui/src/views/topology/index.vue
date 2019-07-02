@@ -54,10 +54,10 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
-                        delete-disabled
-                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
+                        delete-auth=""
+                        :save-auth="$OPERATION.U_HOST"
+                        :edit-auth="$OPERATION.U_HOST"
+                        :transfer-resource-auth="$OPERATION.HOST_TO_RESOURCE"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
@@ -107,7 +107,6 @@
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbTopoNodeProcess from './children/_node-process'
     import treeNodeCreate from './children/_node-create.vue'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsTable,
@@ -116,7 +115,6 @@
         },
         data () {
             return {
-                OPERATION,
                 properties: {
                     biz: [],
                     host: [],
@@ -281,7 +279,6 @@
             },
             getCommonProperties (objId) {
                 if (this.properties.hasOwnProperty(objId)) {
-                    this.tab.properties = this.properties[objId]
                     return Promise.resolve(this.properties[objId])
                 }
                 return this.searchObjectAttribute({
@@ -294,7 +291,6 @@
                     }
                 }).then(properties => {
                     this.$set(this.properties, objId, properties)
-                    this.tab.properties = properties
                     return properties
                 })
             },
@@ -504,7 +500,8 @@
                 const selectedNode = this.tree.selectedNode
                 if (this.showAttributePanel && active === 'attribute') {
                     if (this.tab.type === 'details') {
-                        await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        const [, properties] = await this.getNodeObjPropertyInfo(selectedNode['bk_obj_id'])
+                        this.tab.properties = properties
                         await this.getNodeInst()
                     } else {
                         const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
@@ -554,11 +551,11 @@
                 const selectedNode = this.tree.selectedNode
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
-                const formData = {
+                const formData = this.$injectMetadata({
                     ...value,
                     'bk_biz_id': this.bizId,
                     'bk_parent_id': selectedNode['bk_inst_id']
-                }
+                })
                 let promise
                 let instIdKey
                 let instNameKey
@@ -611,7 +608,7 @@
                 return promise
             },
             updateNode (value) {
-                const formData = { ...value }
+                const formData = this.$injectMetadata({ ...value })
                 const selectedNode = this.tree.selectedNode
                 const objId = selectedNode['bk_obj_id']
                 let promise
@@ -665,7 +662,7 @@
                 const selectedNode = this.tree.selectedNode
                 const parentNode = this.tree.selectedNodeState.parent.node
                 const objId = selectedNode['bk_obj_id']
-                const config = { requestId: 'deleteNode' }
+                const config = { requestId: 'deleteNode', data: this.$injectMetadata({}) }
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${selectedNode['bk_inst_name']}?`,
                     content: objId === 'module'
@@ -690,10 +687,7 @@
                             promise = this.deleteInst({
                                 objId,
                                 instId: selectedNode['bk_inst_id'],
-                                config: {
-                                    ...config,
-                                    data: this.$injectMetadata({})
-                                }
+                                config
                             })
                         }
                         promise.then(() => {

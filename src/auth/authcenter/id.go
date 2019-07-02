@@ -41,7 +41,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 		return modelAssociationResourceID(resourceType, attribute)
 	case meta.ModelInstanceAssociation:
 		return modelInstanceAssociationResourceID(resourceType, attribute)
-	case meta.ModelInstance:
+	case meta.ModelInstance, meta.MainlineInstance:
 		return modelInstanceResourceID(resourceType, attribute)
 	case meta.ModelInstanceTopology:
 		return modelInstanceTopologyResourceID(resourceType, attribute)
@@ -72,7 +72,9 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 	case meta.AuditLog:
 		return auditLogResourceID(resourceType, attribute)
 	case meta.SystemBase:
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
+	case meta.Plat:
+		return platID(resourceType, attribute)
 	default:
 		return nil, fmt.Errorf("gen id failed: unsupported resource type: %s", attribute.Type)
 	}
@@ -81,7 +83,7 @@ func GenerateResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 // generate business related resource id.
 func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 	id := RscTypeAndID{
 		ResourceType: resourceType,
@@ -95,7 +97,7 @@ func businessResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 // resource type in auth center.
 func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 	id := RscTypeAndID{
 		ResourceType: resourceType,
@@ -107,6 +109,14 @@ func modelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttrib
 
 // generate module resource id.
 func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		// for create
+		return []RscTypeAndID{
+			{
+				ResourceType: resourceType,
+			},
+		}, nil
+	}
 
 	return []RscTypeAndID{
 		{
@@ -117,6 +127,14 @@ func modelModuleResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 }
 
 func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	if attribute.InstanceID == 0 {
+		// for create
+		return []RscTypeAndID{
+			{
+				ResourceType: resourceType,
+			},
+		}, nil
+	}
 
 	return []RscTypeAndID{
 		{
@@ -128,26 +146,26 @@ func modelSetResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAtt
 
 func mainlineModelResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func mainlineModelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func mainlineInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func modelAssociationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func associationTypeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 	id := RscTypeAndID{
 		ResourceType: resourceType,
@@ -164,7 +182,7 @@ func modelInstanceAssociationResourceID(resourceType ResourceTypeID, attribute *
 
 func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 
 	if len(attribute.Layers) < 1 {
@@ -192,17 +210,17 @@ func modelInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resour
 
 func modelInstanceTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func modelTopologyResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func modelClassificationResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 	id := RscTypeAndID{
 		ResourceType: resourceType,
@@ -255,12 +273,12 @@ func modelUniqueResourceID(resourceType ResourceTypeID, attribute *meta.Resource
 
 func hostUserCustomResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func hostFavoriteResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
@@ -276,7 +294,7 @@ func processResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttr
 
 func netDataCollectorResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 
-	return nil, nil
+	return make([]RscTypeAndID, 0), nil
 }
 
 func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
@@ -294,18 +312,21 @@ func hostInstanceResourceID(resourceType ResourceTypeID, attribute *meta.Resourc
 		resourceIDs = append(resourceIDs, resourceID)
 	}
 
-	// append host resource id to end
-	hostResourceID := RscTypeAndID{
-		ResourceType: resourceType,
-		ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+	if attribute.InstanceID != 0 {
+		// append host resource id to end
+		hostResourceID := RscTypeAndID{
+			ResourceType: resourceType,
+			ResourceID:   strconv.FormatInt(attribute.InstanceID, 10),
+		}
+		resourceIDs = append(resourceIDs, hostResourceID)
 	}
-	resourceIDs = append(resourceIDs, hostResourceID)
+
 	return resourceIDs, nil
 }
 
 func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 	return []RscTypeAndID{
 		{
@@ -317,7 +338,7 @@ func eventSubscribeResourceID(resourceType ResourceTypeID, attribute *meta.Resou
 
 func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	if attribute.InstanceID <= 0 && len(attribute.InstanceIDEx) == 0 {
-		return nil, nil
+		return make([]RscTypeAndID, 0), nil
 	}
 
 	instanceID := strconv.FormatInt(attribute.InstanceID, 10)
@@ -334,6 +355,16 @@ func dynamicGroupingResourceID(resourceType ResourceTypeID, attribute *meta.Reso
 
 func auditLogResourceID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
 	instanceID := attribute.InstanceIDEx
+	return []RscTypeAndID{
+		{
+			ResourceType: resourceType,
+			ResourceID:   instanceID,
+		},
+	}, nil
+}
+
+func platID(resourceType ResourceTypeID, attribute *meta.ResourceAttribute) ([]RscTypeAndID, error) {
+	instanceID := fmt.Sprintf("plat:%d", attribute.InstanceID)
 	return []RscTypeAndID{
 		{
 			ResourceType: resourceType,

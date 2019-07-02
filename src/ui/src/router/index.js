@@ -15,6 +15,7 @@ import customQuery from '@/views/custom-query/router.config'
 import eventpush from '@/views/eventpush/router.config'
 import history from '@/views/history/router.config'
 import hosts from '@/views/hosts/router.config'
+import hostDetails from '@/views/host-details/router.config'
 import model from '@/views/model-manage/router.config'
 import modelAssociation from '@/views/model-association/router.config'
 import modelTopology from '@/views/model-topology/router.config'
@@ -34,6 +35,7 @@ export const viewRouters = [
     eventpush,
     history,
     hosts,
+    ...hostDetails,
     modelAssociation,
     modelTopology,
     process,
@@ -132,6 +134,13 @@ const setMenuState = to => {
     }
 }
 
+const setAuthScope = (to, from) => {
+    const auth = to.meta.auth || {}
+    if (typeof auth.setAuthScope === 'function') {
+        auth.setAuthScope(to, from, router.app)
+    }
+}
+
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -176,6 +185,7 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            setLoading(true)
             await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
@@ -183,8 +193,8 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
-                setLoading(true)
                 setMenuState(to)
+                setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)
@@ -205,10 +215,12 @@ router.beforeEach((to, from, next) => {
                 next()
             }
         } catch (e) {
-            console.log(e)
-            if (e instanceof StatusError) {
+            if (e.__CANCEL__) {
+                next()
+            } else if (e instanceof StatusError) {
                 next({ name: e.name })
             } else {
+                console.error(e)
                 next({ name: 'error' })
             }
             setLoading(false)

@@ -13,6 +13,7 @@
 package operation
 
 import (
+	"configcenter/src/common/util"
 	"context"
 
 	"configcenter/src/apimachinery"
@@ -171,6 +172,58 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 		return nil, params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
+	clsIDs := []string{}
+	for _, cls := range rsp.Data.Info {
+		clsIDs = append(clsIDs, cls.ClassificationID)
+	}
+	clsIDs = util.StrArrayUnique(clsIDs)
+	queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).In(clsIDs)
+	queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
+	if nil != err {
+		blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
+		return nil, err
+	}
+	if !queryObjectResp.Result {
+		blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
+		return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
+	}
+	objMap := make(map[string][]metadata.Object)
+	objIDs := []string{}
+	for _, info := range queryObjectResp.Data.Info {
+		objIDs = append(objIDs, info.Spec.ObjectID)
+		objMap[info.Spec.ObjCls] = append(objMap[info.Spec.ObjCls], info.Spec)
+	}
+	objIDs = util.StrArrayUnique(objIDs)
+	asstItems, err := c.asst.SearchObjectsAssociation(params, objIDs)
+	if nil != err {
+		return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
+	}
+	asstIDs := []string{}
+	for _, asstItem := range asstItems {
+		asstIDs = append(asstIDs, asstItem.AsstObjID)
+	}
+	asstIDs = util.StrArrayUnique(asstIDs)
+	searchObjCond := condition.CreateCondition()
+	searchObjCond.Field(common.BKObjIDField).In(asstIDs)
+	asstObjs, err := c.obj.FindObject(params, searchObjCond)
+	if nil != err {
+		return nil, err
+	}
+
+	asstObjsMap := make(map[string]map[string][]metadata.Object)
+	for _, asstItem := range asstItems {
+		asstObjMap := make(map[string][]metadata.Object)
+		if asstObjs, ok := asstObjsMap[asstItem.ObjectID]; ok {
+			asstObjMap = asstObjs
+		}
+		for _, obj := range asstObjs {
+			if obj.Object().ObjectID == asstItem.AsstObjID {
+				asstObjMap[asstItem.ObjectID] = append(asstObjMap[asstItem.ObjectID], obj.Object())
+			}
+		}
+		asstObjsMap[asstItem.ObjectID] = asstObjMap
+	}
+
 	datas := []metadata.ClassificationWithObject{}
 	for _, cls := range rsp.Data.Info {
 		clsItem := metadata.ClassificationWithObject{
@@ -178,48 +231,17 @@ func (c *classification) FindClassificationWithObjects(params types.ContextParam
 			Objects:        []metadata.Object{},
 			AsstObjects:    map[string][]metadata.Object{},
 		}
-		queryObjectCond := condition.CreateCondition().Field(common.BKClassificationIDField).Eq(cls.ClassificationID)
-		queryObjectResp, err := c.clientSet.CoreService().Model().ReadModel(context.Background(), params.Header, &metadata.QueryCondition{Condition: queryObjectCond.ToMapStr()})
-		if nil != err {
-			blog.Errorf("[operation-cls]failed to request the object controller, error info is %s", err.Error())
-			return nil, err
+		if obj, ok := objMap[cls.ClassificationID] ; ok {
+			clsItem.Objects = obj
 		}
-
-		if !queryObjectResp.Result {
-			blog.Errorf("[operation-cls] failed to search the classification by the condition(%#v), error info is %s", fCond, queryObjectResp.ErrMsg)
-			return nil, params.Err.New(queryObjectResp.Code, queryObjectResp.ErrMsg)
-		}
-
-		for _, info := range queryObjectResp.Data.Info {
-			clsItem.Objects = append(clsItem.Objects, info.Spec)
-		}
-
-		datas = append(datas, clsItem)
-	}
-
-	for idx, clsItem := range datas {
 		for _, objItem := range clsItem.Objects {
-			asstItems, err := c.asst.SearchObjectAssociation(params, objItem.ObjectID)
-			if nil != err {
-				return nil, params.Err.New(common.CCErrTopoObjectClassificationSelectFailed, err.Error())
-			}
-
-			for _, asstItem := range asstItems {
-
-				searchObjCond := condition.CreateCondition()
-				searchObjCond.Field(common.BKObjIDField).Eq(asstItem.AsstObjID)
-				asstObjs, err := c.obj.FindObject(params, searchObjCond)
-				if nil != err {
-					return nil, err
+			if asstObjs, ok := asstObjsMap[objItem.ObjectID]; ok {
+				for asstObjKey, asstObj := range asstObjs {
+					clsItem.AsstObjects[asstObjKey] = asstObj
 				}
-
-				for _, obj := range asstObjs {
-					datas[idx].AsstObjects[objItem.ObjectID] = append(datas[idx].AsstObjects[objItem.ObjectID], obj.Object())
-				}
-
 			}
 		}
-
+		datas = append(datas, clsItem)
 	}
 
 	return datas, nil
@@ -259,13 +281,6 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 
 	class := cls.Classify()
 	class.ID = id
-	if len(class.ClassificationName) != 0 {
-		// auth: update registered classifications
-		if err := c.authManager.UpdateRegisteredClassification(params.Context, params.Header, class); err != nil {
-			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
-			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
-		}
-	}
 
 	// auth: check authorization
 	// if err := c.authManager.AuthorizeByClassification(params.Context, params.Header, meta.Update, class); err != nil {
@@ -277,6 +292,19 @@ func (c *classification) UpdateClassification(params types.ContextParams, data m
 	if nil != err {
 		blog.Errorf("[operation-cls]failed to update the classification(%#v), error info is %s", cls, err.Error())
 		return err
+	}
+
+	// auth: update registered classifications
+	if len(class.ClassificationID) > 0 {
+		if err := c.authManager.UpdateRegisteredClassificationByID(params.Context, params.Header, class.ClassificationID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
+	} else {
+		if err := c.authManager.UpdateRegisteredClassificationByRawID(params.Context, params.Header, class.ID); err != nil {
+			blog.Errorf("update classification %s, but update to auth failed, err: %v", class.ClassificationName, err)
+			return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
+		}
 	}
 
 	return nil

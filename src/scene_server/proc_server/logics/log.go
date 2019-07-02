@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/common/auditoplog"
 	meta "configcenter/src/common/metadata"
 )
 
@@ -66,8 +65,8 @@ func (h *TemplateLog) WithCurrent(ctx context.Context, tempID int64) error {
 	return nil
 }
 
-func (h *TemplateLog) AuditLog(tempID int64) *auditoplog.AuditLogExt {
-	return &auditoplog.AuditLogExt{
+func (h *TemplateLog) AuditLog(tempID int64) *meta.SaveAuditLogParams {
+	return &meta.SaveAuditLogParams{
 		ID:      tempID,
 		Content: h.Content,
 		ExtKey:  h.ip,

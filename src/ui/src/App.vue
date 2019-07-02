@@ -15,12 +15,14 @@
                 <router-view class="views-layout"></router-view>
             </div>
         </main>
+        <the-permission-modal ref="permissionModal"></the-permission-modal>
     </div>
 </template>
 
 <script>
     import theHeader from '@/components/layout/header'
     import theNav from '@/components/layout/nav'
+    import thePermissionModal from '@/components/modal/permission'
     import { execMainScrollListener, execMainResizeListener } from '@/utils/main-scroller'
     import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
     import { mapGetters } from 'vuex'
@@ -28,7 +30,8 @@
         name: 'app',
         components: {
             theHeader,
-            theNav
+            theNav,
+            thePermissionModal
         },
         data () {
             const showBrowserTips = window.navigator.userAgent.toLowerCase().indexOf('chrome') === -1
@@ -42,7 +45,9 @@
             ...mapGetters('userCustom', ['usercustom', 'firstEntryKey', 'classifyNavigationKey'])
         },
         mounted () {
+            this.$store.commit('setFeatureTipsParams')
             addResizeListener(this.$refs.mainScroller, execMainResizeListener)
+            window.permissionModal = this.$refs.permissionModal
         },
         beforeDestroy () {
             removeResizeListener(this.$refs.mainScroller, execMainResizeListener)

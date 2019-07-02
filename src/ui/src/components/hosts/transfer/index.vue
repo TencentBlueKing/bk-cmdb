@@ -17,11 +17,17 @@
                     <div class="tree-node clearfix" slot-scope="{ node, state }"
                         :class="{
                             'tree-node-selected': state.selected,
-                            'tree-node-leaf-module': node['bk_obj_id'] === 'module'
+                            'tree-node-leaf-module': node['bk_obj_id'] === 'module',
+                            'tree-node-disabled': isNodeDisabled(node)
+                        }"
+                        v-cursor="{
+                            active: isNodeDisabled(node),
+                            auth: [transferResourceAuth]
                         }">
                         <cmdb-form-bool class="topo-node-checkbox"
                             v-if="node['bk_obj_id'] === 'module'"
                             :checked="selectedModuleStates.includes(state)"
+                            :disabled="isNodeDisabled(node)"
                             :true-value="true"
                             :false-value="false">
                         </cmdb-form-bool>
@@ -87,7 +93,10 @@
                     return []
                 }
             },
-            transferResourceDisabled: Boolean
+            transferResourceAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {
@@ -108,9 +117,20 @@
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
+            hostModules () {
+                const modules = []
+                this.selectedHosts.forEach(host => {
+                    host.module.forEach(module => {
+                        modules.push(module)
+                    })
+                })
+                return modules
+            },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source' || [1, 2].includes(node.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule
+                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
+                    return node['bk_inst_id'] === 'resource' || [1, 2].includes(node.default)
+                })
+                return this.selectedModuleStates.length && this.selectedHosts.length > 1 && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -180,22 +200,26 @@
                             'bk_inst_name': module['bk_module_name']
                         }
                     })
-                    const treeData = [{
+                    const resourceNode = {
                         'default': 0,
                         'bk_obj_id': 'module',
                         'bk_obj_name': this.$t('HostResourcePool["资源池"]'),
-                        'bk_inst_id': 'source',
+                        'bk_inst_id': 'resource',
                         'bk_inst_name': this.$t('HostResourcePool["资源池"]'),
                         'child': []
-                    }, {
+                    }
+                    const treeData = [resourceNode, {
                         expanded: true,
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    if (this.transferResourceDisabled) {
-                        treeData.shift()
-                    }
                     this.tree.data = treeData
+                    if (!this.$isAuthorized(this.transferResourceAuth)) {
+                        const nodeId = this.getTopoNodeId(resourceNode)
+                        setTimeout(() => {
+                            this.$refs.topoTree.toggleDisabled(nodeId, true)
+                        }, 0)
+                    }
                 })
             },
             setSelectedModuleStates () {
@@ -233,12 +257,12 @@
                 if (node['bk_obj_id'] !== 'module') {
                     confirmResolver(true)
                 } else {
-                    const isSpecialNode = !!node.default || node['bk_inst_id'] === 'source'
+                    const isSpecialNode = !!node.default || node['bk_inst_id'] === 'resource'
                     const hasNormalNode = this.selectedModuleStates.some(({ node }) => {
-                        return !node.default && node['bk_inst_id'] !== 'source'
+                        return !node.default && node['bk_inst_id'] !== 'resource'
                     })
                     const hasSpecialNode = this.selectedModuleStates.some(({ node }) => {
-                        return node.default || node['bk_inst_id'] === 'source'
+                        return node.default || node['bk_inst_id'] === 'resource'
                     })
                     if (isSpecialNode && hasNormalNode) {
                         this.$bkInfo({
@@ -260,6 +284,12 @@
                 }
                 return asyncConfirm
             },
+            isNodeDisabled (node) {
+                if (node.bk_inst_id === 'resource') {
+                    return !this.$isAuthorized(this.transferResourceAuth)
+                }
+                return false
+            },
             handleNodeClick (node, state) {
                 const isModule = node['bk_obj_id'] === 'module'
                 const isExist = this.selectedModuleStates.some(selectedState => selectedState === state)
@@ -278,7 +308,7 @@
                 }
             },
             getModulePath (state) {
-                if (state.node['bk_inst_id'] === 'source') {
+                if (state.node['bk_inst_id'] === 'resource') {
                     return this.$t('Common["主机资源池"]')
                 }
                 const currentBusiness = this.currentBusiness
@@ -288,7 +318,7 @@
                 return `${currentBusiness['bk_biz_name']}-${state.parent.node['bk_inst_name']}`
             },
             handleTransfer () {
-                const toSource = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source')
+                const toSource = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'resource')
                 const toIdle = this.selectedModuleStates.some(({ node }) => node.default === 1)
                 const toFault = this.selectedModuleStates.some(({ node }) => node.default === 2)
                 const transferConfig = {
@@ -337,9 +367,8 @@
                 })
             },
             getTransferParams () {
-                // const hasSpecialNode = this.selectedModuleStates.some(({ node }) => [1, 2].includes(node.default))
                 let increment = this.increment
-                if (this.hasSpecialNode || this.hostIds.length === 1) {
+                if (!this.showIncrementOption || this.hostIds.length === 1) {
                     increment = false
                 }
                 return {
@@ -418,6 +447,18 @@
             &.tree-node-leaf-module {
                 margin: 0 0 0 -2px !important;
                 padding-left: 0;
+            }
+            &.tree-node-disabled {
+                color: #ccc;
+                .topo-node-text {
+                    color: #ccc;
+                }
+                .topo-node-icon.topo-node-icon-text {
+                    background-color: #ccc;
+                }
+                .topo-node-icon.topo-node-icon-internal{
+                    color: #ccc;
+                }
             }
         }
         .topo-node-checkbox {

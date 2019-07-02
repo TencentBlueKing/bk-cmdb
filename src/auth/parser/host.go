@@ -8,7 +8,7 @@ import (
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
+	"configcenter/src/common/metadata"
 	"configcenter/src/framework/core/errors"
 
 	"github.com/tidwall/gjson"
@@ -24,7 +24,8 @@ func (ps *parseStream) hostRelated() *parseStream {
 		userCustom().
 		hostFavorite().
 		cloudResourceSync().
-		hostSnapshot()
+		hostSnapshot().
+		findObjectIdentifier()
 
 	return ps
 }
@@ -39,10 +40,12 @@ var (
 )
 
 func (ps *parseStream) parseBusinessID() (int64, error) {
+	if !gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Exists() {
+		return 0, nil
+	}
 	bizID := gjson.GetBytes(ps.RequestCtx.Body, common.BKAppIDField).Int()
 	if bizID == 0 {
-		blog.Error("parseBusinessID failed, parse biz id from metadata in request body, but not exist.")
-		return 0, errors.New("can not parse business id")
+		return 0, errors.New("invalid bk_biz_id value")
 	}
 	return bizID, nil
 }
@@ -86,9 +89,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Update,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Update,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -111,9 +114,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Delete,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Delete,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -161,9 +164,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
-					Name:   ps.RequestCtx.Elements[5],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[5],
 				},
 			},
 		}
@@ -262,6 +265,7 @@ const (
 	moveHostsFromModuleToResPoolPattern       = "/api/v3/hosts/modules/resource"
 	moveHostsToBizIdleModulePattern           = "/api/v3/hosts/modules/idle"
 	moveHostsFromOneToAnotherBizModulePattern = "/api/v3/hosts/modules/biz/mutilple"
+	moveHostsFromRscPoolToAppModule           = "/api/v3/hosts//host/add/module"
 	cleanHostInSetOrModulePattern             = "/api/v3/hosts/modules/idle/set"
 	// used in sync framework.
 	moveHostToBusinessOrModulePattern = "/api/v3/hosts/sync/new/host"
@@ -277,7 +281,7 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	if ps.hitPattern(findHostsWithModulesPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			ps.err = fmt.Errorf("find hosts with modules, but parse business id failed, err: %v", err)
 			return ps
@@ -301,8 +305,9 @@ func (ps *parseStream) host() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.DeleteMany,
+					Type: meta.HostInstance,
+					// Action: meta.DeleteMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -366,12 +371,13 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// move resource pool hosts to a business idle module operation.
+	// authcenter: system->host/resource_pool->edit
 	if ps.hitPattern(moveResPoolToBizIdleModulePattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Action: meta.Update,
 				},
 			},
 		}
@@ -431,6 +437,19 @@ func (ps *parseStream) host() *parseStream {
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
 					Action: meta.MoveHostToAnotherBizModule,
+				},
+			},
+		}
+
+		return ps
+	}
+
+	if ps.hitPattern(moveHostsFromRscPoolToAppModule, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			meta.ResourceAttribute{
+				Basic: meta.Basic{
+					Type:   meta.HostInstance,
+					Action: meta.MoveResPoolHostToBizIdleModule,
 				},
 			},
 		}
@@ -520,13 +539,14 @@ func (ps *parseStream) host() *parseStream {
 		return ps
 	}
 
-	// update hosts batch.
+	// update hosts batch. but can not get the exactly host id.
 	if ps.hitPattern(updateHostInfoBatchPattern, http.MethodPut) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			meta.ResourceAttribute{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.UpdateMany,
+					Type: meta.HostInstance,
+					// Action: meta.UpdateMany,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -684,6 +704,28 @@ func (ps *parseStream) hostSnapshot() *parseStream {
 			{
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+	return ps
+}
+
+var (
+	findIdentifierAPIRegexp = regexp.MustCompile(`^/api/v3/identifier/[^\s/]+/search/?$`)
+)
+
+func (ps *parseStream) findObjectIdentifier() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	if ps.hitRegexp(findIdentifierAPIRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
 					Action: meta.SkipAction,
 				},
 			},

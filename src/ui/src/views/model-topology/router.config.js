@@ -1,12 +1,10 @@
 import Meta from '@/router/meta'
 import { NAV_MODEL_MANAGEMENT } from '@/dictionary/menu'
 
-import {
-    U_MODEL
-} from '@/dictionary/auth'
+import { SYSTEM_MODEL_GRAPHICS } from '@/dictionary/auth'
 
 export const OPERATION = {
-    U_MODEL
+    SYSTEM_MODEL_GRAPHICS
 }
 
 const path = '/model/topology'
@@ -24,7 +22,10 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         }
     })
 }
