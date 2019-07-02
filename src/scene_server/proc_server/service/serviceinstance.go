@@ -625,7 +625,7 @@ func (ps *ProcServer) DeleteServiceInstance(ctx *rest.Contexts) {
 			ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "get host related service instances failed, bizID: %d, serviceInstanceID: %d, err: %v", bizID, serviceInstance.HostID, err)
 			return
 		}
-		if len(result.Info) == 0 {
+		if len(result.Info) != 0 {
 			continue
 		}
 		// just remove host from this module

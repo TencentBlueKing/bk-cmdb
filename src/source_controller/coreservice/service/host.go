@@ -67,6 +67,20 @@ func (s *coreService) TransferHostToAnotherBusiness(params core.ContextParams, p
 	return nil, nil
 }
 
+func (s *coreService) RemoveFromModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	inputData := &metadata.RemoveHostsFromModuleOption{}
+	if err := data.MarshalJSONInto(inputData); nil != err {
+		blog.Errorf("RemoveFromModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		return nil, err
+	}
+	exceptionArr, err := s.core.HostOperation().RemoveFromModule(params, inputData)
+	if err != nil {
+		blog.ErrorJSON("RemoveFromModule error. err:%s, input:%s, exception:%s, rid:%s", err.Error(), data, exceptionArr, params.ReqID)
+		return exceptionArr, err
+	}
+	return nil, nil
+}
+
 func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.HostModuleRelationRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
@@ -143,7 +157,7 @@ func (s *coreService) GetHostByID(params core.ContextParams, pathParams, queryPa
 
 func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	var dat metadata.ObjQueryInput
-	if err := data.MarshalJSONInto(dat); err != nil {
+	if err := data.MarshalJSONInto(&dat); err != nil {
 		blog.Errorf("GetHosts failed, get hosts failed with decode body err: %+v, rid: %s", err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}

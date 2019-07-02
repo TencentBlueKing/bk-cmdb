@@ -58,9 +58,9 @@ func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, i
 // 如果主机不在参数指定的模块中，操作失败
 func (h *host) RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
-	subPath := "/update/host/host_module_relations"
+	subPath := "/delete/host/host_module_relations"
 
-	err = h.client.Post().
+	err = h.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -101,7 +101,7 @@ func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, in
 }
 
 // DeleteHost delete host
-func (h *host) DeleteHost(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
 	resp = new(metadata.OperaterException)
 	subPath := "/delete/host"
 
