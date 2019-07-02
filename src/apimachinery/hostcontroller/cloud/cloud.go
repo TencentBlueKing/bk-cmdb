@@ -22,7 +22,7 @@ import (
 type CloudInterface interface {
 	AddCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
 	ResourceConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
-	TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)
+	TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error)
 	DeleteCloudTask(ctx context.Context, h http.Header, taskID string) (resp *metadata.Response, err error)
 	SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error)
 	UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error)

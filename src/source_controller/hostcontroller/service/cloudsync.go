@@ -80,9 +80,9 @@ func (s *Service) TaskNameCheck(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	resp.WriteEntity(meta.Response{
+	resp.WriteEntity(meta.Uint64Response{
 		BaseResp: meta.SuccessBaseResp,
-		Data:     num,
+		Count:    num,
 	})
 }
 
