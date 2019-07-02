@@ -895,7 +895,8 @@
         "暂无符合条件的实例": "There are no matched instances with input condition",
         "删除模块提示": "Need to remove all service instances under the module first",
         "模块名称提示": "The module name must be consistent with the service template name.",
-        "请为主机添加进程": "Please add process to the host"
+        "请为主机添加进程": "Please add process to the host",
+        "请输入实例名称搜索": "Please enter instance name search..."
     },
     "BusinessSynchronous": {
         "功能提示": "Synchronization Template: The latest attribute and process information of the service template will be synchronized to the service instance.",
