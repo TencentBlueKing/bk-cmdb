@@ -81,7 +81,7 @@ func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader
 		PropertyIndex: 0,
 		IsEditable:    true,
 		PropertyType:  "enum",
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		ID:            56,
 		PropertyName:  "绑定IP",
 		IsSystem:      false,
@@ -141,7 +141,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	var ProcNameProperty = Attribute{
 		Placeholder:   "对外显示的服务名</br> 比如程序的二进制名称为java的服务zookeeper，则填zookeeper",
 		IsSystem:      false,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		LastTime:      &now,
 		ID:            54,
 		IsPre:         true,
@@ -220,7 +220,7 @@ func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 			"min": 1,
 			"max": 10000,
 		},
-		Creator:    "cc_system",
+		Creator:    conf.User,
 		CreateTime: &now,
 		LastTime:   &now,
 	}
@@ -280,7 +280,7 @@ func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		IsPre:         true,
 		CreateTime:    &now,
 		LastTime:      &now,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		OwnerID:       "0",
 		ObjectID:      "process",
 		PropertyIndex: 0,
@@ -331,7 +331,7 @@ func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 		PropertyGroup: "none",
 		Unit:          "",
 		IsSystem:      false,
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		ID:            64,
 		OwnerID:       "0",
 		PropertyIndex: 0,
@@ -392,7 +392,7 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 
 	now := time.Now()
 	var property = Attribute{
-		Creator:       "cc_system",
+		Creator:       conf.User,
 		PropertyIndex: 0,
 		IsReadOnly:    false,
 		Unit:          "",
@@ -463,5 +463,66 @@ func deleteProcessUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 		blog.Errorf("[upgrade v19.05.16.01] deleteProcessUnique failed, err: %+v", err)
 		return err
 	}
+	return nil
+}
+
+func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+	type Attribute struct {
+		ID                int64       `field:"id" json:"id" bson:"id"`
+		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
+		ObjectID          string      `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+		PropertyID        string      `field:"bk_property_id" json:"bk_property_id" bson:"bk_property_id"`
+		PropertyName      string      `field:"bk_property_name" json:"bk_property_name" bson:"bk_property_name"`
+		PropertyGroup     string      `field:"bk_property_group" json:"bk_property_group" bson:"bk_property_group"`
+		PropertyGroupName string      `field:"bk_property_group_name,ignoretomap" json:"bk_property_group_name" bson:"-"`
+		PropertyIndex     int64       `field:"bk_property_index" json:"bk_property_index" bson:"bk_property_index"`
+		Unit              string      `field:"unit" json:"unit" bson:"unit"`
+		Placeholder       string      `field:"placeholder" json:"placeholder" bson:"placeholder"`
+		IsEditable        bool        `field:"editable" json:"editable" bson:"editable"`
+		IsPre             bool        `field:"ispre" json:"ispre" bson:"ispre"`
+		IsRequired        bool        `field:"isrequired" json:"isrequired" bson:"isrequired"`
+		IsReadOnly        bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly"`
+		IsOnly            bool        `field:"isonly" json:"isonly" bson:"isonly"`
+		IsSystem          bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem"`
+		IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi"`
+		PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type"`
+		Option            interface{} `field:"option" json:"option" bson:"option"`
+		Description       string      `field:"description" json:"description" bson:"description"`
+		Creator           string      `field:"creator" json:"creator" bson:"creator"`
+		CreateTime        *time.Time  `json:"create_time" bson:"create_time"`
+		LastTime          *time.Time  `json:"last_time" bson:"last_time"`
+	}
+
+	now := time.Now()
+	var property = Attribute{
+		Option:        "",
+		PropertyIndex: 0,
+		Unit:          "",
+		IsRequired:    false,
+		PropertyType:  "singlechar",
+		ID:            59,
+		IsEditable:    true,
+		CreateTime:    &now,
+		IsAPI:         false,
+		Creator:       conf.User,
+		OwnerID:       "0",
+		ObjectID:      "process",
+		PropertyName:  "功能ID",
+		PropertyGroup: "none",
+		IsPre:         true,
+		PropertyID:    "bk_func_id",
+		Placeholder:   "对进程的数字型标注，便于快速检索",
+		IsReadOnly:    false,
+		IsSystem:      false,
+		LastTime:      &now,
+	}
+
+	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, common.BKOwnerIDField}
+	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	if nil != err {
+		blog.Errorf("[upgrade v19.05.16.01] updateFuncIDProperty bk_func_id failed, err: %+v", err)
+		return err
+	}
+
 	return nil
 }
