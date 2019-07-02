@@ -91,7 +91,9 @@ func (c *client) GetRPCByAddr(addr string) (rpc.Client, error) {
 	}
 	rpc, ok := c.getRPCByAddr(addr)
 	if ok {
-		return rpc, nil
+		if err := rpc.Ping(); err == nil {
+			return rpc, nil
+		}
 	}
 	return c.addRPCByAddr(addr)
 }
