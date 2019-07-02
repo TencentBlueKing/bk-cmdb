@@ -197,7 +197,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 			// update ObjAsst
 			instAssts := []metadata.InstAsst{}
-			if err = db.Table(common.BKTableNameInstAsst).Find(updateCond.ToMapStr()).All(ctx, instAssts); err != nil {
+			if err = db.Table(common.BKTableNameInstAsst).Find(updateCond.ToMapStr()).All(ctx, &instAssts); err != nil {
 				return err
 			}
 			for _, instAsst := range instAssts {
