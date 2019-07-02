@@ -27,7 +27,10 @@ export default {
             parent: NAV_BASIC_RESOURCE
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         }
     })
 }

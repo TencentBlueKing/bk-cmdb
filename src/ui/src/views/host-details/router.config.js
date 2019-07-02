@@ -29,6 +29,9 @@ export default [{
                     ...meta,
                     resource_id: parseInt(to.params.id)
                 })
+            },
+            setAuthScope () {
+                this.authScope = 'global'
             }
         }
     }
@@ -47,6 +50,9 @@ export default [{
                     resource_id: parseInt(to.params.id),
                     bk_biz_id: parseInt(to.params.business)
                 })
+            },
+            setAuthScope () {
+                this.authScope = 'business'
             }
         }
     }
