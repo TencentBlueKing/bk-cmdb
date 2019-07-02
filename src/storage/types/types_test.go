@@ -13,9 +13,11 @@
 package types
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,4 +71,68 @@ func TestDecodeArray(t *testing.T) {
 		require.Equal(t, v.Time.Format("2006-01-02 15:04:05"), expect[index].Time.Format("2006-01-02 15:04:05"))
 	}
 
+}
+
+func TestDecodeSubStruct(t *testing.T) {
+	type SubStruct struct {
+		AA map[string]interface{}
+	}
+	type MainStruct struct {
+		S    SubStruct
+		Name string
+		Time time.Time
+	}
+
+	ss := SubStruct{
+		AA: map[string]interface{}{"1": 1, "2": "bbb"},
+	}
+	ms := MainStruct{
+		S:    ss,
+		Name: "test",
+		Time: time.Now(),
+	}
+
+	msbytes, err := bson.Marshal(ms)
+	if err != nil {
+		panic(err)
+	}
+
+	tmpMap := make(map[string]interface{}, 0)
+	err = bson.Unmarshal(msbytes, &tmpMap)
+	if err != nil {
+		panic(err)
+	}
+
+	msbytes, err = bson.Marshal(tmpMap)
+	if err != nil {
+		panic(err)
+	}
+
+	out := MainStruct{}
+	err = bson.Unmarshal(msbytes, &out)
+	if err != nil {
+		panic(err)
+	}
+
+	outArr := []MainStruct{}
+	elemt := reflect.ValueOf(outArr).Type().Elem()
+
+	elem := reflect.New(elemt)
+	err = bson.Unmarshal(msbytes, elem.Interface())
+	if err != nil {
+		panic(err)
+	}
+
+	resultv := reflect.ValueOf(&outArr)
+	slicev := resultv.Elem()
+	slicev = slicev.Slice(0, slicev.Cap())
+	elemt2 := slicev.Type().Elem()
+
+	elem2 := reflect.New(elemt2)
+	err = bson.Unmarshal(msbytes, elem2.Interface())
+	if err != nil {
+		panic(err)
+	}
+
+	t.Logf("%#v   %#v  %#v", out, elem, elem2)
 }

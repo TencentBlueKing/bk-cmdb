@@ -18,20 +18,18 @@ import (
 	"net/http"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"configcenter/src/common"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo"
 )
 
 func MBenchmarkRemoteCUD(b *testing.B) {
-	config := mongo.Config{
-		Transaction: "enable",
-	}
-	db, err := NewWithDiscover(getServerFunc, config)
+
+	db, err := NewWithDiscover(getServerFunc)
 	require.NoError(b, err)
 
 	header := http.Header{}
@@ -72,7 +70,7 @@ func MBenchmarkRemoteCUD(b *testing.B) {
 }
 
 func BenchmarkRemoteCUDParallel(b *testing.B) {
-	db, err := NewWithDiscover(func() ([]string, error) { return []string{"http://192.168.100.130:60008"}, nil }, mongo.Config{Transaction: "enable"})
+	db, err := NewWithDiscover(func() ([]string, error) { return []string{"http://127.0.0.1:60008"}, nil })
 	require.NoError(b, err)
 	tablename := "tmptest"
 	header := http.Header{}
@@ -122,4 +120,64 @@ func BenchmarkRemoteCUDParallel(b *testing.B) {
 		}
 	})
 	db.Close()
+}
+
+func TestDDL(t *testing.T) {
+	// 127.0.0.1:60008
+	db, err := NewWithDiscover(getServerFunc)
+	require.NoError(t, err)
+
+	tableName := "tmp_test"
+	bl, err := db.HasTable(tableName)
+	require.NoError(t, err)
+
+	if bl {
+		err = db.DropTable(tableName)
+		require.NoError(t, err)
+	}
+	err = db.CreateTable(tableName)
+	require.NoError(t, err)
+
+	err = db.Table(tableName).CreateIndex(context.Background(), dal.Index{
+		Name: "idx_1",
+		Keys: map[string]int32{"k1": 1},
+	})
+	require.NoError(t, err)
+
+	err = db.Table(tableName).CreateIndex(context.Background(), dal.Index{
+		Name: "idx_2",
+		Keys: map[string]int32{"k2": 1},
+	})
+	require.NoError(t, err)
+
+	err = db.Table(tableName).DropIndex(context.Background(), "idx_1")
+	require.NoError(t, err)
+
+	idxs, err := db.Table(tableName).Indexes(context.Background())
+	require.NoError(t, err)
+
+	if len(idxs) != 2 {
+		t.Errorf(" index count error. index:%#v ", (idxs))
+		return
+	}
+
+	err = db.Table(tableName).CreateIndex(context.Background(), dal.Index{
+		Name: "",
+		Keys: map[string]int32{"444": 1},
+	})
+	require.NoError(t, err)
+}
+
+func TestInsertTime(t *testing.T) {
+	// 127.0.0.1:60008
+	db, err := NewWithDiscover(getServerFunc)
+	require.NoError(t, err)
+
+	tableName := "tmp_test_insert"
+
+	row := map[string]interface{}{"ts": time.Now()}
+
+	err = db.Table(tableName).Insert(context.Background(), row)
+	require.NoError(t, err)
+
 }

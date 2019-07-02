@@ -27,8 +27,10 @@ import (
 	"configcenter/src/common/version"
 	"configcenter/src/source_controller/proccontroller/app/options"
 	"configcenter/src/source_controller/proccontroller/service"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
 )
 
@@ -67,6 +69,11 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 	coreService.Core = engine
 	procCtr.ProctrlServer.Core = engine
+
+	if err := procCtr.initComponents(); err != nil {
+		blog.Errorf("initialize dependent components error. err:%s", err.Error())
+		return err
+	}
 	if err := backbone.StartServer(ctx, engine, coreService.WebService()); err != nil {
 		return err
 	}
@@ -87,23 +94,32 @@ func (h *ProcController) onProcConfigUpdate(previous, current cc.ProcessConfig) 
 		Mongo: mongo.ParseConfigFromKV("mongodb", current.ConfigMap),
 		Redis: dalredis.ParseConfigFromKV("redis", current.ConfigMap),
 	}
+}
 
-	instance, err := local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+func (h *ProcController) initComponents() error {
+	var err error
+	var instance dal.RDB
+	if h.Config.Mongo.Enable == "true" {
+		instance, err = local.NewMgo(h.Config.Mongo.BuildURI(), time.Minute)
+	} else {
+		instance, err = remote.NewWithDiscover(h.Core.ServiceManageInterface.TMServer().GetServers)
+	}
 	if err != nil {
 		blog.Errorf("new mongo client failed, err: %v", err)
-		return
+		return err
 	}
 	h.ProctrlServer.Instance = instance
 
 	cache, err := dalredis.NewFromConfig(h.Config.Redis)
 	if err != nil {
 		blog.Errorf("new redis client failed, err: %v", err)
-		return
+		return err
 	}
 	h.ProctrlServer.Cache = cache
 
 	ec := eventclient.NewClientViaRedis(cache, instance)
 	h.ProctrlServer.EventC = ec
+	return nil
 }
 
 func newServerInfo(op *options.ServerOption) (*types.ServerInfo, error) {
