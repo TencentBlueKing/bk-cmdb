@@ -569,10 +569,7 @@ const (
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
 
-	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
-	CCErrCloudSyncCreateFail = 1110031
-
-	// CCErrCloudHistoryCreateFail cloud sync history table create failed
+	CCErrCloudSyncCreateFail        = 1110031
 	CCErrCloudHistoryCreateFail     = 1110032
 	CCErrCloudConfirmCreateFail     = 1110033
 	CCErrCloudGetConfirmFail        = 1110034
@@ -713,6 +710,9 @@ const (
 	// synchronize_server 1114xxx
 
 	CCErrSynchronizeError = 1114001
+
+	CCErrCloudSyncDeleteSyncTaskFail = 1116011
+	CCErrCloudSyncUpdateSyncTaskFail = 1116012
 
 	/** TODO: 以下错误码需要改造 **/
 
