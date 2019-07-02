@@ -34,7 +34,7 @@
                         <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                     </cmdb-form-bool>
                     <cmdb-form-singlechar class="options-search"
-                        :placeholder="$t('BusinessTopology[\'请输入IP搜索\']')"
+                        :placeholder="$t('BusinessTopology[\'请输入实例名称搜索\']')"
                         v-model="filter"
                         @keydown.native.enter="handleSearch">
                         <i class="bk-icon icon-close"
