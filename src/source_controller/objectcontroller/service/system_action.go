@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-//GetSystemFlag get the system define flag
+// GetSystemFlag get the system define flag
 func (cli *Service) GetSystemFlag(req *restful.Request, resp *restful.Response) {
 
 	language := util.GetLanguage(req.Request.Header)
