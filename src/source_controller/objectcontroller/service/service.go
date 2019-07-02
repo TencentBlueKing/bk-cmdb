@@ -43,7 +43,7 @@ func (s *Service) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Core.CCErr
 	}
-	api.Path("/object/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/object/{version}").Filter(s.Core.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
@@ -54,30 +54,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
 	api.Route(api.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
 
-	api.Route(api.POST("/meta/objects").To(s.SelectObjects))
-	api.Route(api.DELETE("/meta/object/{id}").To(s.DeleteObject))
-	api.Route(api.POST("/meta/object").To(s.CreateObject))
-	api.Route(api.PUT("/meta/object/{id}").To(s.UpdateObject))
-
-	api.Route(api.POST("/meta/objectassts").To(s.SelectObjectAssociations))
-	api.Route(api.DELETE("/meta/objectasst/{id}").To(s.DeleteObjectAssociation))
-	api.Route(api.POST("/meta/objectasst").To(s.CreateObjectAssociation))
-	api.Route(api.POST("/meta/mainlineobjectasst").To(s.CreateMainlineObjectAssociation))
-	api.Route(api.PUT("/meta/objectasst/{id}").To(s.UpdateObjectAssociation))
-
-	api.Route(api.POST("/meta/objectatt/{id}").To(s.SelectObjectAttByID))
 	api.Route(api.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
-	api.Route(api.DELETE("/meta/objectatt/{id}").To(s.DeleteObjectAttByID))
 	api.Route(api.POST("/meta/objectatt").To(s.CreateObjectAtt))
-	api.Route(api.PUT("/meta/objectatt/{id}").To(s.UpdateObjectAttByID))
 
 	api.Route(api.POST("/meta/objectatt/group/new").To(s.CreatePropertyGroup))
-	api.Route(api.PUT("/meta/objectatt/group/update").To(s.UpdatePropertyGroup))
-	api.Route(api.DELETE("/meta/objectatt/group/groupid/{id}").To(s.DeletePropertyGroup))
-	api.Route(api.PUT("/meta/objectatt/group/property").To(s.UpdatePropertyGroupObjectAtt))
-	api.Route(api.DELETE("/meta/objectatt/group/owner/{owner_id}/object/{object_id}/propertyids/{property_id}/groupids/{group_id}").To(s.DeletePropertyGroupObjectAtt))
-	api.Route(api.POST("/meta/objectatt/group/property/owner/{owner_id}/object/{object_id}").To(s.SelectPropertyGroupByObjectID))
-	api.Route(api.POST("/meta/objectatt/group/search").To(s.SelectGroup))
 
 	api.Route(api.POST("/meta/object/classification/{owner_id}/objects").To(s.SelectClassificationWithObject))
 	api.Route(api.POST("/meta/object/classification/search").To(s.SelectClassifications))
@@ -85,9 +65,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/meta/object/classification").To(s.CreateClassification))
 	api.Route(api.PUT("/meta/object/classification/{id}").To(s.UpdateClassification))
 
-	api.Route(api.POST("/object/{bk_obj_id}/unique/action/create").To(s.CreateObjectUnique))
-	api.Route(api.PUT("/object/{bk_obj_id}/unique/{id}/action/update").To(s.UpdateObjectUnique))
-	api.Route(api.DELETE("/object/{bk_obj_id}/unique/{id}/action/delete").To(s.DeleteObjectUnique))
 	api.Route(api.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
 
 	// association api
@@ -96,11 +73,10 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
 	api.Route(api.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
 
-	api.Route(api.POST("/object/association/action/search").To(s.SelectObjectAssociations))                 // optimization: new api path
-	api.Route(api.POST("/object/association/action/create").To(s.CreateObjectAssociation))                  // optimization: new api path
-	api.Route(api.POST("/object/association/mainline/action/create").To(s.CreateMainlineObjectAssociation)) // interface mainline association
-	api.Route(api.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))              // optimization: new api path
-	api.Route(api.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation))           // optimization: new api path
+	api.Route(api.POST("/object/association/action/search").To(s.SelectObjectAssociations))       // optimization: new api path
+	api.Route(api.POST("/object/association/action/create").To(s.CreateObjectAssociation))        // optimization: new api path
+	api.Route(api.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))    // optimization: new api path
+	api.Route(api.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
 
 	api.Route(api.POST("/inst/association/action/search").To(s.SearchInstAssociations))
 	api.Route(api.POST("/inst/association/action/create").To(s.CreateInstAssociation))

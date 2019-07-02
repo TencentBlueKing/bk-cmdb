@@ -94,22 +94,36 @@ func (ps *parseStream) getAttributeGroup(cond interface{}) ([]metadata.Group, er
 	return groups.Data.Info, nil
 }
 
-func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) (metadata.Association, error) {
+func (ps *parseStream) isMainlineModel(modelID string) (bool, error) {
+	asst, err := ps.getModelAssociation(mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline})
+	if err != nil {
+		return false, err
+	}
+	for _, mainline := range asst {
+		if mainline.ObjectID == modelID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (ps *parseStream) getModelAssociation(cond mapstr.MapStr) ([]metadata.Association, error) {
 	asst, err := ps.engine.CoreAPI.CoreService().Association().ReadModelAssociation(context.Background(), ps.RequestCtx.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
-		return metadata.Association{}, err
+		return nil, err
 	}
 
 	if !asst.Result {
-		return metadata.Association{}, errors.New(asst.Code, asst.ErrMsg)
+		return nil, errors.New(asst.Code, asst.ErrMsg)
 	}
 
 	if len(asst.Data.Info) <= 0 {
-		return metadata.Association{}, fmt.Errorf("model association [%+v] not found", cond)
+		return nil, fmt.Errorf("model association [%+v] not found", cond)
 	}
 
-	return asst.Data.Info[0], nil
+	return asst.Data.Info, nil
 }
 
 func (ps *parseStream) getInstAssociation(cond mapstr.MapStr) (metadata.InstAsst, error) {

@@ -30,8 +30,12 @@ export default {
             businessView: false
         },
         auth: {
-            view: R_EVENT,
-            operation: Object.values(OPERATION)
-        }
+            view: OPERATION.R_EVENT,
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
+        },
+        i18nTitle: 'Nav["事件推送"]'
     })
 }

@@ -303,17 +303,24 @@ type OneServiceTemplateResult struct {
 	Data     ServiceTemplate `json:"data"`
 }
 
+type OneServiceTemplateDetailResult struct {
+	BaseResp `json:",inline"`
+	Data     ServiceTemplateDetail `json:"data"`
+}
+
 type MultipleServiceTemplate struct {
 	Count uint64            `json:"count"`
 	Info  []ServiceTemplate `json:"info"`
 }
 
 type ListServiceInstanceOption struct {
-	BusinessID        int64    `json:"bk_biz_id"`
-	ServiceTemplateID int64    `json:"service_template_id,omitempty"`
-	HostID            int64    `json:"host_id,omitempty"`
-	ModuleID          int64    `json:"module_id,omitempty"`
-	Page              BasePage `json:"page,omitempty"`
+	BusinessID         int64    `json:"bk_biz_id"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty"`
+	HostID             int64    `json:"host_id,omitempty"`
+	ModuleID           int64    `json:"module_id,omitempty"`
+	SearchKey          *string  `json:"search_key,omitempty"`
+	ServiceInstanceIDs *[]int64 `json:"service_instance_ids"`
+	Page               BasePage `json:"page,omitempty"`
 	// only when WithName is true, name field with be filled with `ip + process name + process port`
 	WithName bool `json:"with_name,omitempty"`
 }
@@ -358,8 +365,8 @@ type DeleteProcessInstanceRelationOption struct {
 
 type ListProcessTemplatesOption struct {
 	BusinessID         int64    `json:"bk_biz_id" bson:"bk_biz_id"`
-	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
 	ProcessTemplateIDs *[]int64 `json:"process_template_ids,omitempty" bson:"process_template_ids"`
+	ServiceTemplateID  int64    `json:"service_template_id,omitempty" bson:"service_template_id"`
 	Page               BasePage `json:"page" field:"page" bson:"page"`
 }
 
@@ -402,4 +409,16 @@ type BusinessDefaultSetModuleInfo struct {
 type BusinessDefaultSetModuleInfoResult struct {
 	BaseResp `json:",inline"`
 	Data     BusinessDefaultSetModuleInfo `json:"data"`
+}
+
+type RemoveTemplateBoundOnModuleResult struct {
+	BaseResp `json:",inline"`
+	Data     struct {
+		ServiceTemplateID int64 `json:"service_template_id" bson:"service_template_id" field:"service_template_id"`
+	} `json:"data"`
+}
+
+type GetProc2ModuleResult struct {
+	BaseResp `json:",inline"`
+	Data     []Proc2Module `json:"data"`
 }
