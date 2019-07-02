@@ -99,8 +99,6 @@ func (c *EventContext) InsertEvent(eventType, objType, action string, curData in
 // instEqual Determine whether the data is consistent before and after the change
 func instEqual(predata, curdata interface{}) (bool, error) {
 	switch {
-	case predata == curdata:
-		return true, nil
 	case predata == nil && curdata != nil:
 		return false, nil
 	case curdata == nil && predata != nil:
