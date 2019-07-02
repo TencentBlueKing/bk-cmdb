@@ -14,13 +14,10 @@ package operation
 
 import (
 	"context"
-	"sort"
 	"strings"
-	"sync"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -256,54 +253,15 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	return b.inst.DeleteInst(params, bizObj, innerCond, true)
 }
 
-var businessCache = sync.Map{}
-
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
-	var applist, cacheList []int64
-	var autherr error
-	var authC = make(chan struct{})
-
-	if b.authManager.Enabled() {
-		// it will take a while, so Let the Bullets Fly
-		go func() {
-			applist, autherr = b.authManager.Authorize.GetAuthorizedBusinessList(params.Context, authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount})
-			if autherr == nil {
-				sort.Sort(util.Int64Slice(applist))
-				businessCache.Store(params.SupplierAccount+":"+params.User, applist)
-			}
-			close(authC)
-		}()
-		if tmp, ok := businessCache.Load(params.SupplierAccount + ":" + params.User); ok {
-			cacheList = tmp.([]int64)
-		} else {
-			<-authC
-			cacheList = applist
-		}
-		cond.Field(common.BKAppIDField).In(cacheList)
-	}
-
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()
 	query.Limit = int(cond.GetLimit())
-	if query.Limit > 500 {
-		query.Limit = 500
-	}
 	query.Fields = strings.Join(fields, ",")
 	query.Sort = cond.GetSort()
 	query.Start = int(cond.GetStart())
-	count, results, err = b.inst.FindInst(params, obj, query, false)
 
-	if !b.authManager.Enabled() {
-		return count, results, err
-	}
-	<-authC
-	if util.SliceInt64Equal(cacheList, applist) {
-		return count, results, err
-	}
-
-	cond.Field(common.BKAppIDField).In(cacheList)
-	query.Condition = cond.ToMapStr()
 	return b.inst.FindInst(params, obj, query, false)
 }
 

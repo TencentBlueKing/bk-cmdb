@@ -4,11 +4,11 @@
             <template v-if="!topoEdit.isEdit">
                 <span style="display: inline-block;"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS),
-                        auth: [OPERATION.SYSTEM_MODEL_GRAPHICS]
+                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
                     }">
                     <bk-button class="edit-button" type="primary"
-                        :disabled="!$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
                         {{$t('ModelManagement["编辑拓扑"]')}}
                     </bk-button>
@@ -160,7 +160,6 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
-    import { OPERATION } from './router.config'
     const NAV_WIDTH = 200
     const TOOLBAR_HEIHGT = 50
     export default {
@@ -171,7 +170,6 @@
         },
         data () {
             return {
-                OPERATION,
                 specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {
@@ -784,7 +782,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({ nodes: { fixed: true } })
-                if (this.$isAuthorized(OPERATION.SYSTEM_MODEL_GRAPHICS)) {
+                if (this.$isAuthorized(this.$OPERATION.SYSTEM_MODEL_GRAPHICS)) {
                     this.initPosition()
                 }
                 this.addListener()

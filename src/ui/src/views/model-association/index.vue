@@ -10,12 +10,12 @@
         <p class="operation-box">
             <span v-if="isAdminView" class="inline-block-middle"
                 v-cursor="{
-                    active: !$isAuthorized(OPERATION.C_RELATION),
-                    auth: [OPERATION.C_RELATION]
+                    active: !$isAuthorized($OPERATION.C_RELATION),
+                    auth: [$OPERATION.C_RELATION]
                 }">
                 <bk-button type="primary"
                     class="create-btn"
-                    :disabled="!$isAuthorized(OPERATION.C_RELATION)"
+                    :disabled="!$isAuthorized($OPERATION.C_RELATION)"
                     @click="createRelation">
                     {{$t('Common["新建"]')}}
                 </bk-button>
@@ -39,10 +39,10 @@
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary disabled mr10"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.U_RELATION),
-                        auth: [OPERATION.U_RELATION]
+                        active: !$isAuthorized($OPERATION.U_RELATION),
+                        auth: [$OPERATION.U_RELATION]
                     }"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.U_RELATION)">
+                    v-if="item.ispre || !$isAuthorized($OPERATION.U_RELATION)">
                     {{$t('Common["编辑"]')}}
                 </span>
                 <span class="text-primary mr10"
@@ -52,10 +52,10 @@
                 </span>
                 <span class="text-primary disabled"
                     v-cursor="{
-                        active: !$isAuthorized(OPERATION.D_RELATION),
-                        auth: [OPERATION.D_RELATION]
+                        active: !$isAuthorized($OPERATION.D_RELATION),
+                        auth: [$OPERATION.D_RELATION]
                     }"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.D_RELATION)">
+                    v-if="item.ispre || !$isAuthorized($OPERATION.D_RELATION)">
                     {{$t('Common["删除"]')}}
                 </span>
                 <span class="text-primary"
@@ -86,7 +86,6 @@
     import featureTips from '@/components/feature-tips/index'
     import theRelation from './_detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from './router.config'
     export default {
         components: {
             theRelation,
@@ -95,7 +94,6 @@
         data () {
             return {
                 showFeatureTips: false,
-                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,

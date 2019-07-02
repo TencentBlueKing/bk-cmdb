@@ -23,18 +23,18 @@
                 :wrapper-minus-height="300"
                 :empty-height="230"
                 :header="tableHeader"
-                :list="tableList"
+                :list="displayList"
                 :row-border="true"
                 :col-border="true"
                 v-bind="height ? { height } : {}">
-                <template slot="pre_data" slot-scope="{ item }" v-html="item['pre_data']">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['pre_data']"></div>
+                <template slot="pre_data" slot-scope="{ item }">
+                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.pre_data"></div>
                 </template>
                 <template slot="cur_data" slot-scope="{ item }">
-                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item['cur_data']"></div>
+                    <div :class="['details-data', { 'has-changed': hasChanged(item) }]" v-html="item.cur_data"></div>
                 </template>
             </cmdb-table>
-            <p class="field-btn" @click="toggleFields" v-if="details.op_type !== 1 && details.op_type !== 3">
+            <p class="field-btn" @click="toggleFields" v-if="isShowToggle && details.op_type !== 1 && details.op_type !== 3">
                 {{isShowAllFields ? $t('EventPush["收起"]') : $t('EventPush["展开"]')}}
             </p>
         </template>
@@ -82,15 +82,13 @@
             }
         },
         computed: {
-            ...mapGetters('objectBiz', [
-                'business'
-            ]),
+            ...mapGetters('objectBiz', ['authorizedBusiness']),
             objId () {
                 return this.details ? this.details['op_target'] : null
             },
             options () {
                 const biz = {}
-                this.business.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
+                this.authorizedBusiness.forEach(({ bk_biz_id: bkBizId, bk_biz_name: bkBizName }) => {
                     biz[bkBizId] = bkBizName
                 })
                 const opType = {
@@ -135,21 +133,11 @@
                     attribute.forEach(property => {
                         const preData = this.getCellValue(property, 'pre_data')
                         const curData = this.getCellValue(property, 'cur_data')
-                        if (!this.isShowAllFields) {
-                            if (preData !== curData) {
-                                list.push({
-                                    'bk_property_name': property['bk_property_name'],
-                                    'pre_data': preData,
-                                    'cur_data': curData
-                                })
-                            }
-                        } else {
-                            list.push({
-                                'bk_property_name': property['bk_property_name'],
-                                'pre_data': preData,
-                                'cur_data': curData
-                            })
-                        }
+                        list.push({
+                            'bk_property_name': property['bk_property_name'],
+                            'pre_data': preData,
+                            'cur_data': curData
+                        })
                     })
                 } else {
                     const content = this.details.content
@@ -160,30 +148,29 @@
                     const pre = []
                     const cur = []
                     preModule.forEach(module => {
-                        pre.push(`${this.options.biz[preBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                        pre.push(this.getTopoPath(preBizId, module))
                     })
                     curModule.forEach(module => {
-                        cur.push(`${this.options.biz[curBizId]}→${module.set[0]['ref_name']}→${module['ref_name']}`)
+                        cur.push(this.getTopoPath(curBizId, module))
                     })
                     const preData = pre.join('<br>')
                     const curData = cur.join('<br>')
-                    if (!this.isShowAllFields) {
-                        if (preData !== curData) {
-                            list.push({
-                                'bk_property_name': this.$t('Hosts["关联关系"]'),
-                                'pre_data': preData,
-                                'cur_data': curData
-                            })
-                        }
-                    } else {
-                        list.push({
-                            'bk_property_name': this.$t('Hosts["关联关系"]'),
-                            'pre_data': preData,
-                            'cur_data': curData
-                        })
-                    }
+                    list.push({
+                        'bk_property_name': this.$t('Hosts["关联关系"]'),
+                        'pre_data': preData,
+                        'cur_data': curData
+                    })
                 }
                 return list
+            },
+            changedList () {
+                return this.tableList.filter(item => item.pre_data !== item.cur_data)
+            },
+            displayList () {
+                return this.isShowAllFields ? this.tableList : this.changedList.length ? this.changedList : this.tableList
+            },
+            isShowToggle () {
+                return this.tableList.length !== this.changedList.length && this.changedList.length > 0
             }
         },
         watch: {
@@ -231,18 +218,10 @@
                     if (bkPropertyType === 'enum' && Array.isArray(option)) {
                         const targetOption = option.find(({ id }) => id === value)
                         value = targetOption ? targetOption.name : ''
-                    } else if (bkPropertyType === 'singleasst' || bkPropertyType === 'multiasst') {
-                        const asstVal = [];
-                        (Array.isArray(value) ? value : []).forEach(({ bk_inst_name: bkInstName }) => {
-                            if (bkInstName) {
-                                asstVal.push(bkInstName)
-                            }
-                        })
-                        value = asstVal.join(',')
                     } else if (bkPropertyType === 'date' || bkPropertyType === 'time') {
                         value = this.$tools.formatTime(value, bkPropertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
                     }
-                    return value
+                    return value === '' ? null : value
                 }
                 return null
             },
@@ -251,6 +230,17 @@
                     return item['pre_data'] !== item['cur_data']
                 }
                 return false
+            },
+            getTopoPath (bizId, module) {
+                const path = [this.options.biz[bizId] || `业务ID：${bizId}`]
+                const set = ((module.set || [])[0] || {}).ref_name
+                if (set) {
+                    path.push(set)
+                }
+                if (module.ref_name) {
+                    path.push(module.ref_name)
+                }
+                return path.join('→')
             }
         }
     }
