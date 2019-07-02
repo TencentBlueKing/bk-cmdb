@@ -415,3 +415,8 @@ type RemoveTemplateBoundOnModuleResult struct {
 		ServiceTemplateID int64 `json:"service_template_id" bson:"service_template_id" field:"service_template_id"`
 	} `json:"data"`
 }
+
+type GetProc2ModuleResult struct {
+	BaseResp `json:",inline"`
+	Data     []Proc2Module `json:"data"`
+}

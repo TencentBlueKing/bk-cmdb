@@ -105,7 +105,7 @@ func (cli *inst) searchInsts(targetModel model.Object, cond condition.Condition)
 	}
 
 	// search hosts
-	rsp, err := cli.clientSet.HostController().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
+	rsp, err := cli.clientSet.CoreService().Host().GetHosts(context.Background(), cli.params.Header, queryInput)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request the object controller , error info is %s", err.Error())
 		return nil, cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

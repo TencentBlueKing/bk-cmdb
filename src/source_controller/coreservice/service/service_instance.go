@@ -187,3 +187,18 @@ func (s *coreService) RemoveTemplateBindingOnModule(params core.ContextParams, p
 	}
 	return nil, nil
 }
+
+func (s *coreService) GetProc2Module(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	option := metadata.GetProc2ModuleOption{}
+	if err := mapstr.DecodeFromMapStr(&option, data); err != nil {
+		blog.Errorf("GetProc2Module failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
+		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
+	}
+
+	result, err := s.core.ProcessOperation().GetProc2Module(params, &option)
+	if err != nil {
+		blog.Errorf("RemoveTemplateBindingOnModule failed, option: %+v, err: %+v, rid: %s", option, err, params.ReqID)
+		return nil, err
+	}
+	return result, nil
+}

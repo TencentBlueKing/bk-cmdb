@@ -10,38 +10,27 @@
  * limitations under the License.
  */
 
-package util
+package process
 
 import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal"
 )
 
-type DBExecQuery struct {
-	DbProxy dal.RDB
-}
+func (p *processOperation) GetProc2Module(ctx core.ContextParams, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder) {
+	filter := mapstr.NewFromStruct(option, "json")
+	filter = util.SetModOwner(filter, ctx.SupplierAccount)
 
-func NewDBExecQuery(dbProxy dal.RDB) *DBExecQuery {
-	return &DBExecQuery{
-		DbProxy: dbProxy,
+	result := make([]metadata.Proc2Module, 0)
+	if err := p.dbProxy.Table(common.BKTableNameProcModule).Find(filter).All(ctx, &result); err != nil {
+		blog.Errorf("get process2module config failed. err: %v, rid:%s", err, ctx.ReqID)
+		return nil, ctx.Error.CCError(common.CCErrProcSelectProc2Module)
 	}
-}
 
-// dbExecQuery get info from table with condition
-func (query DBExecQuery) ExecQuery(ctx core.ContextParams, tableName string, fields []string, condMap mapstr.MapStr, result interface{}) error {
-	newCondMap := util.SetQueryOwner(condMap, ctx.SupplierAccount)
-	dbFind := query.DbProxy.Table(tableName).Find(newCondMap)
-	if len(fields) > 0 {
-		dbFind = dbFind.Fields(fields...)
-	}
-	err := dbFind.All(ctx, result)
-	if err != nil {
-		blog.ErrorJSON("ExecQuery query table[%s] error. condition: %s, err:%s, rid:%s", tableName, newCondMap, err.Error(), ctx.ReqID)
-		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
-	}
-	return nil
+	return result, nil
 }
