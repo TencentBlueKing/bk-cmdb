@@ -351,6 +351,8 @@ func (ps *parseStream) host() *parseStream {
 	}
 
 	// move hosts to business module operation.
+	// TODO: remove this auth operation, it has already been done
+	// in host server.
 	if ps.hitPattern(moveHostToBusinessModulePattern, http.MethodPost) {
 		bizID, err := ps.parseBusinessID()
 		if err != nil {
@@ -362,7 +364,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.MoveHostToModule,
+					Action: meta.MoveBizHostToModule,
 				},
 			},
 		}
