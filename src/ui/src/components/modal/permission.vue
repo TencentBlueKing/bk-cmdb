@@ -41,9 +41,18 @@
         props: {},
         data () {
             return {
-                showResource: false,
                 isModalShow: false,
                 list: [],
+                header: [{
+                    id: 'scope',
+                    name: this.$t('资源所属')
+                }, {
+                    id: 'resource',
+                    name: this.$t('资源')
+                }, {
+                    id: 'action',
+                    name: this.$t('需要申请的权限')
+                }],
                 i18n: {
                     permissionTitle: this.$t('没有权限访问或操作此资源'),
                     system: this.$t('系统'),
@@ -55,27 +64,8 @@
                 }
             }
         },
-        computed: {
-            header () {
-                const header = [{
-                    id: 'scope',
-                    name: this.$t('资源所属')
-                }, {
-                    id: 'action',
-                    name: this.$t('需要申请的权限')
-                }]
-                if (this.showResource) {
-                    header.splice(1, 0, {
-                        id: 'resource',
-                        name: this.$t('资源')
-                    })
-                }
-                return header
-            }
-        },
         methods: {
-            show (list, showResource = true) {
-                this.showResource = showResource
+            show (list) {
                 this.list = list
                 this.isModalShow = true
             },
