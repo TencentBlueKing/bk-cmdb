@@ -30,6 +30,8 @@ func (p *processOperation) CreateProcessTemplate(ctx core.ContextParams, templat
 		err := ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, field)
 		return nil, err
 	}
+	*template.Property.ProcessName.AsDefaultValue = true
+	*template.Property.FuncName.AsDefaultValue = true
 	if template.Property != nil && template.Property.ProcessName.Value != nil {
 		template.ProcessName = *template.Property.ProcessName.Value
 	}
@@ -172,6 +174,8 @@ func (p *processOperation) UpdateProcessTemplate(ctx core.ContextParams, templat
 		return nil, err
 	}
 
+	*template.Property.ProcessName.AsDefaultValue = true
+	*template.Property.FuncName.AsDefaultValue = true
 	template.Modifier = ctx.User
 	template.LastTime = time.Now()
 
