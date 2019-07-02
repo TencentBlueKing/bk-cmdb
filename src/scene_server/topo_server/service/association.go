@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strconv"
 
 	"configcenter/src/common"
@@ -140,7 +141,24 @@ func (s *Service) SearchBusinessTopo(params types.ContextParams, pathParams, que
 		return nil, err
 	}
 
-	return s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
+	topoInstRst, err := s.Core.AssociationOperation().SearchMainlineAssociationInstTopo(params, bizObj, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort before response
+	SortTopoInst(topoInstRst)
+
+	return topoInstRst, nil
+}
+
+func SortTopoInst(instData []*metadata.TopoInstRst) {
+	sort.Slice(instData, func(i, j int) bool {
+		return instData[i].InstName < instData[j].InstName
+	})
+	for idx := range instData {
+		SortTopoInst(instData[idx].Child)
+	}
 }
 
 // SearchMainLineChildInstTopo search the child inst topo by a inst

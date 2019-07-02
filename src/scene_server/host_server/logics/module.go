@@ -46,7 +46,7 @@ func (lgc *Logics) GetResoulePoolModuleID(ctx context.Context, condition mapstr.
 
 	if len(result.Data.Info) == 0 {
 		blog.Errorf("GetResoulePoolModuleID http reponse error, err code:%d, err msg:%s,input:%+v,rid:%s", result.Code, result.ErrMsg, query, lgc.rid)
-		return -1, lgc.ccErr.Errorf(common.CCErrTopoGetAppFaild, lgc.ccLang.Languagef("host_resource_pool_not_exist"))
+		return -1, lgc.ccErr.Error(common.CCErrTopoGetAppFailed)
 	}
 
 	return result.Data.Info[0].Int64(common.BKModuleIDField)

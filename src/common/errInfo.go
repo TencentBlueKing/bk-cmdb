@@ -23,6 +23,7 @@ const (
 	CCSystemUnknownError = -2
 	CCSuccess            = 0
 	CCSuccessStr         = "success"
+	CCNoPermission       = 9900403
 
 	// common error code 1199XXX
 
@@ -169,15 +170,21 @@ const (
 	CCErrCommRemoveReferencedRecordForbidden  = 1199056
 	CCErrCommParseBizIDFromMetadataInDBFailed = 1199057
 
-	CCErrCommGenerateRecordIDFailed = 1199058
-	CCErrCommPageLimitIsExceeded    = 1199059
+	CCErrCommGenerateRecordIDFailed   = 1199058
+	CCErrCommPageLimitIsExceeded      = 1199059
+	CCErrCommUnexpectedParameterField = 1199060
+
+	CCErrCommParseDBFailed                     = 1199061
+	CCErrCommGetBusinessDefaultSetModuleFailed = 1199062
+
+	CCErrCommParametersCountNotEnough = 1199063
 
 	// CCErrCommStartTranscationFailed start transcation failed
-	CCErrCommStartTranscationFailed = 1199060
+	CCErrCommStartTranscationFailed = 1199064
 	// CCErrCommCommitTranscationFailed commit transcation failed
-	CCErrCommCommitTranscationFailed = 1199061
+	CCErrCommCommitTranscationFailed = 1199065
 	// CCErrCommcommitTranscationFailed abort transcation failed
-	CCErrCommAbortTranscationFailed = 1199062
+	CCErrCommAbortTranscationFailed = 1199066
 
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
@@ -293,7 +300,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
@@ -399,6 +406,8 @@ const (
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
+	// mainline's object unique can not be updated, deleted or create new rules.
+	CCErrorTopoMainlineObjectCanNotBeChanged = 1101085
 
 	// object controller 1102XXX
 
@@ -513,17 +522,23 @@ const (
 	CCErrProcQueryTaskOPErrFail         = 1108022
 	CCErrProcCreateTemplateFail         = 1108023
 
-	CCErrProcGetServiceInstancesFailed        = 1108024
-	CCErrProcCreateServiceInstancesFailed     = 1108025
-	CCErrProcDeleteServiceInstancesFailed     = 1108026
-	CCErrProcGetProcessTemplatesFailed        = 1108027
-	CCErrProcGetProcessInstanceFailed         = 1108028
-	CCErrProcGetProcessInstanceRelationFailed = 1108029
-	CCErrProcDeleteServiceTemplateFailed      = 1108030
-	CCErrProcCreateProcessTemplateFailed      = 1108031
-	CCErrProcUpdateProcessTemplateFailed      = 1108032
-	CCErrProcGetProcessTemplateFailed         = 1108033
-	CCErrProcGetDefaultServiceCategoryFailed  = 1108034
+	CCErrProcGetServiceInstancesFailed                    = 1108024
+	CCErrProcCreateServiceInstancesFailed                 = 1108025
+	CCErrProcDeleteServiceInstancesFailed                 = 1108026
+	CCErrProcGetProcessTemplatesFailed                    = 1108027
+	CCErrProcGetProcessInstanceFailed                     = 1108028
+	CCErrProcGetProcessInstanceRelationFailed             = 1108029
+	CCErrProcDeleteServiceTemplateFailed                  = 1108030
+	CCErrProcCreateProcessTemplateFailed                  = 1108031
+	CCErrProcUpdateProcessTemplateFailed                  = 1108032
+	CCErrProcGetProcessTemplateFailed                     = 1108033
+	CCErrProcGetDefaultServiceCategoryFailed              = 1108034
+	CCErrProcEditProcessInstanceCreateByTemplateForbidden = 1108035
+	CCErrProcServiceTemplateAndCategoryNotCoincide        = 1108036
+	CCErrProcModuleNotBindWithTemplate                    = 1108037
+	CCErrCreateServiceInstanceWithWrongHTTPMethod         = 1108038
+	CCErrCreateRawProcessInstanceOnTemplateInstance       = 1108039
+	CCErrProcRemoveTemplateBindingOnModule                = 1108040
 
 	// audit log 1109XXX
 	CCErrAuditSaveLogFaile      = 1109001
@@ -561,10 +576,7 @@ const (
 	CCErrAddHostToModule          = 1110029
 	CCErrAddHostToModuleFailStr   = 1110030
 
-	// CCErrCloudSyncCreateFail cloud hosts sync table create failed
-	CCErrCloudSyncCreateFail = 1110031
-
-	// CCErrCloudHistoryCreateFail cloud sync history table create failed
+	CCErrCloudSyncCreateFail        = 1110031
 	CCErrCloudHistoryCreateFail     = 1110032
 	CCErrCloudConfirmCreateFail     = 1110033
 	CCErrCloudGetConfirmFail        = 1110034
@@ -664,6 +676,18 @@ const (
 	// 禁止释放(转移到空闲机/故障机/资源池)已关联到服务实例的主机
 	CCErrCoreServiceForbiddenReleaseHostReferencedByServiceInstance = 1113011
 
+	CCErrHostRemoveFromDefaultModuleFailed                                    = 1113012
+	CCErrCoreServiceTransferToDefaultModuleUseWrongMethod                     = 1113013
+	CCErrCoreServiceModuleWithoutServiceTemplateCouldNotCreateServiceInstance = 1113014
+	CCErrCoreServiceModuleNotFound                                            = 1113015
+	CCErrCoreServiceInstanceAlreadyExist                                      = 1113016
+	CCErrCoreServiceServiceCategoryNameDuplicated                             = 1113017
+	CCErrCoreServiceModuleAndServiceInstanceTemplateNotCoincide               = 1113018
+	CCErrCoreServiceProcessNameDuplicated                                     = 1113019
+	CCErrCoreServiceFuncNameDuplicated                                        = 1113020
+	CCErrCoreServiceModuleNotBoundWithTemplate                                = 1113021
+	CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate                    = 1113022
+
 	// synchronize data core service  11139xx
 	CCErrCoreServiceSyncError = 1113900
 	// CCErrCoreServiceSyncDataClassifyNotExistError %s type data synchronization, data of the same type %sdoes not exist
@@ -693,6 +717,9 @@ const (
 	// synchronize_server 1114xxx
 
 	CCErrSynchronizeError = 1114001
+
+	CCErrCloudSyncDeleteSyncTaskFail = 1116011
+	CCErrCloudSyncUpdateSyncTaskFail = 1116012
 
 	/** TODO: 以下错误码需要改造 **/
 

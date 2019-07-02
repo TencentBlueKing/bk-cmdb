@@ -13,9 +13,12 @@
 package extensions
 
 import (
+	"configcenter/src/auth/authcenter"
+	"configcenter/src/framework/core/errors"
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/auth/meta"
 	"configcenter/src/common"
@@ -97,6 +100,35 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 		resources = append(resources, resource)
 	}
 	return resources
+}
+
+func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDBiz
+	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
+	p.ScopeID = strconv.FormatInt(businessID, 10)
+	p.ActionID = string(authcenter.Get)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+
+	p.Resources = [][]metadata.Resource{
+		{{
+			ResourceType:     string(authcenter.BizProcessInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizProcessInstance],
+		}},
+	}
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if len(businesses) != 1 {
+		return nil, errors.New("get business detail failed")
+	}
+	p.ScopeName = businesses[0].BKAppNameField
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp, nil
 }
 
 func (am *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimplify) (int64, error) {

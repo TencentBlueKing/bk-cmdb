@@ -2,16 +2,28 @@
     <div class="hosts-table-layout">
         <div class="hosts-options">
             <slot name="options">
-                <bk-button class="options-button" type="primary"
-                    :disabled="!table.checked.length || editDisabled"
-                    @click="handleMultipleEdit">
-                    {{$t('Common["编辑"]')}}
-                </bk-button>
-                <bk-button class="options-button" type="default"
-                    :disabled="!table.checked.length || transferDisabled"
-                    @click="transfer.show = true">
-                    {{$t('BusinessTopology["转移"]')}}
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(editAuth),
+                        auth: [editAuth]
+                    }">
+                    <bk-button class="options-button" type="primary"
+                        :disabled="!table.checked.length || !$isAuthorized(editAuth)"
+                        @click="handleMultipleEdit">
+                        {{$t('Common["编辑"]')}}
+                    </bk-button>
+                </span>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(transferAuth),
+                        auth: [transferAuth]
+                    }">
+                    <bk-button class="options-button" type="default"
+                        :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
+                        @click="transfer.show = true">
+                        {{$t('BusinessTopology["转移"]')}}
+                    </bk-button>
+                </span>
                 <bk-button class="options-button" type="submit default"
                     form="exportForm"
                     :disabled="!table.checked.length">
@@ -90,7 +102,7 @@
                         :properties="properties.host"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-disabled="saveDisabled"
+                        :save-auth="saveAuth"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -125,7 +137,7 @@
             </div>
             <div class="transfer-content" slot="content">
                 <cmdb-transfer-host v-if="transfer.show"
-                    :transfer-resource-disabled="transferResourceDisabled"
+                    :transfer-resource-auth="transferResourceAuth"
                     :selected-hosts="selectedHosts"
                     @on-success="handleTransferSuccess"
                     @on-cancel="transfer.show = false">
@@ -167,11 +179,26 @@
                 type: Boolean,
                 default: false
             },
-            saveDisabled: Boolean,
-            editDisabled: Boolean,
-            deleteDisabled: Boolean,
-            transferDisabled: Boolean,
-            transferResourceDisabled: Boolean
+            saveAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            editAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            deleteAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            transferAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            transferResourceAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {
@@ -349,8 +376,8 @@
                 const originalValues = item[objId] instanceof Array ? item[objId] : [item[objId]]
                 const text = []
                 originalValues.forEach(value => {
-                    const flatternedText = this.$tools.getPropertyText(headerProperty, value)
-                    flatternedText ? text.push(flatternedText) : void (0)
+                    const flattenedText = this.$tools.getPropertyText(headerProperty, value)
+                    flattenedText ? text.push(flattenedText) : void (0)
                 })
                 return text.join(',') || '--'
             },
@@ -454,6 +481,9 @@
                         params: {
                             business: this.filter.business,
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 } else {
@@ -461,6 +491,9 @@
                         name: 'resourceHostDetails',
                         params: {
                             id: item.host.bk_host_id
+                        },
+                        query: {
+                            from: this.$route.fullPath
                         }
                     })
                 }

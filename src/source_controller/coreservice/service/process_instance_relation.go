@@ -17,14 +17,16 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
 func (s *coreService) CreateProcessInstanceRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
-	relation := metadata.ProcessInstanceRelation{}
-	if err := mapstr.DecodeFromMapStr(&relation, data); err != nil {
+	relation := &metadata.ProcessInstanceRelation{}
+	if err := mapstr.DecodeFromMapStr(relation, data); err != nil {
 		blog.Errorf("CreateProcessInstanceRelation failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
 		return nil, params.Error.Error(common.CCErrCommJSONUnmarshalFailed)
 	}
@@ -121,4 +123,25 @@ func (s *coreService) DeleteProcessInstanceRelation(params core.ContextParams, p
 	}
 
 	return nil, nil
+}
+
+func (s *coreService) CreateProcessInstance(params core.ContextParams, process *metadata.Process) (*metadata.Process, errors.CCErrorCoder) {
+	processBytes, err := json.Marshal(process)
+	if err != nil {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+	}
+	mData := mapstr.MapStr{}
+	if err := json.Unmarshal(processBytes, &mData); nil != err && 0 != len(processBytes) {
+		return nil, params.Error.CCError(common.CC_ERR_Comm_JSON_DECODE)
+	}
+	inputParam := metadata.CreateModelInstance{
+		Data: mData,
+	}
+	result, err := s.core.InstanceOperation().CreateModelInstance(params, common.BKProcessObjectName, inputParam)
+	if err != nil {
+		blog.Errorf("CreateProcessInstance failed, CreateModelInstance failed, inputParam: %+v, err: %+v, rid: %s", inputParam, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrProcCreateProcessFailed)
+	}
+	process.ProcessID = int64(result.Created.ID)
+	return process, nil
 }

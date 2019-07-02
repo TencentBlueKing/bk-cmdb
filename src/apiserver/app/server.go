@@ -68,12 +68,10 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	if err != nil {
 		return err
 	}
-
-	authorize, err := auth.NewAuthorize(nil, authConf)
+	authorize, err := auth.NewAuthorize(nil, authConf, engine.Metric().Registry())
 	if err != nil {
 		return fmt.Errorf("new authorize failed, err: %v", err)
 	}
-
 	blog.Infof("enable authcenter: %v", authConf.Enable)
 
 	svc.SetConfig(authConf.Enable, engine, client, engine.Discovery(), authorize)
@@ -85,6 +83,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		ctnr.Add(item)
 	}
 	apiSvr.Core = engine
+
 	if err := backbone.StartServer(ctx, engine, ctnr); err != nil {
 		return err
 	}

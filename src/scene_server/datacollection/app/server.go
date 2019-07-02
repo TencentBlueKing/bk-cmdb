@@ -80,14 +80,14 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 		esbChan := make(chan esbutil.EsbConfig, 1)
 		esbChan <- process.Config.Esb
-		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan)
+		esb, err := esbserver.NewEsb(engine.ApiMachineryConfig(), esbChan, engine.Metric().Registry())
 		if err != nil {
 			return fmt.Errorf("new esb client failed, err: %s", err.Error())
 		}
 
 		process.Service.Logics = logics.NewLogics(ctx, service.Engine, instance, esb)
 
-		err = datacollection.NewDataCollection(ctx, process.Config, process.Core).Run()
+		err = datacollection.NewDataCollection(ctx, process.Config, process.Core, engine.Metric().Registry()).Run()
 		if err != nil {
 			return fmt.Errorf("run datacollection routine failed %s", err.Error())
 		}

@@ -15,6 +15,8 @@ package util
 import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/flowctrl"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type APIMachineryConfig struct {
@@ -30,6 +32,7 @@ type Capability struct {
 	Discover discovery.Interface
 	Throttle flowctrl.RateLimiter
 	Mock     MockInfo
+	Reg      prometheus.Registerer
 }
 
 type MockInfo struct {

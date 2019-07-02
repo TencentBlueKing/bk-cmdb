@@ -9,13 +9,16 @@ import (
 // system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
+	SystemNameCMDB = "配置平台"
 )
 
 // ScopeTypeID constant
 const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
+	ScopeTypeIDSystem     = "system"
+	ScopeTypeIDSystemName = "全局"
+
+	ScopeTypeIDBiz     = "biz"
+	ScopeTypeIDBizName = "业务"
 )
 
 type AuthConfig struct {
@@ -153,6 +156,7 @@ type ResourceType struct {
 	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
 	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
+	Share                bool           `json:"is_share"`
 	Actions              []Action       `json:"actions"`
 }
 
@@ -210,6 +214,11 @@ type TypeAction struct {
 type ListAuthorizedResourcesResult struct {
 	BaseResponse
 	Data []AuthorizedResource `json:"data"`
+}
+
+type ListAuthorizedScopeResult struct {
+	BaseResponse
+	Data []string `json:"data"`
 }
 
 type AuthorizedResource struct {

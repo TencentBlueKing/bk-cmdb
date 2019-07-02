@@ -228,35 +228,6 @@ func (am *AuthManager) DeregisterModelAttributeByID(ctx context.Context, header 
 	return am.DeregisterModelAttribute(ctx, header, attributes...)
 }
 
-func (am *AuthManager) AuthorizeModelAttribute(ctx context.Context, header http.Header, action meta.Action, attributes ...metadata.Attribute) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if len(attributes) == 0 {
-		return nil
-	}
-
-	if am.RegisterModelAttributeEnabled == false {
-		businessID, err := am.ExtractBusinessIDFromModelAttributes(attributes...)
-		if err != nil {
-			return fmt.Errorf("extract business id from model attributes failed, err: %+v", businessID)
-		}
-		objectIDs := make([]string, 0)
-		for _, attribute := range attributes {
-			objectIDs = append(objectIDs, attribute.ObjectID)
-		}
-		return am.AuthorizeByObjectID(ctx, header, meta.Update, businessID, objectIDs...)
-	}
-
-	resources, err := am.makeResourceByAttributes(ctx, header, action, attributes...)
-	if err != nil {
-		return fmt.Errorf("authorize model attribute failed, err: %+v", err)
-	}
-
-	return am.Authorize.RegisterResource(ctx, resources...)
-}
-
 func (am *AuthManager) UpdateRegisteredModelAttribute(ctx context.Context, header http.Header, attributes ...metadata.Attribute) error {
 	if am.Enabled() == false {
 		return nil
@@ -296,25 +267,4 @@ func (am *AuthManager) UpdateRegisteredModelAttributeByID(ctx context.Context, h
 		return fmt.Errorf("update registered model attribute failed, get attribute by id failed, err: %+v", err)
 	}
 	return am.UpdateRegisteredModelAttribute(ctx, header, attributes...)
-}
-
-func (am *AuthManager) AuthorizeByAttributeID(ctx context.Context, header http.Header, action meta.Action, attributeIDs ...int64) error {
-	if am.Enabled() == false {
-		return nil
-	}
-
-	if len(attributeIDs) == 0 {
-		return nil
-	}
-
-	if am.RegisterModelAttributeEnabled == false {
-		return nil
-	}
-
-	attributes, err := am.collectAttributesByAttributeIDs(ctx, header, attributeIDs...)
-	if err != nil {
-		return fmt.Errorf("get attributes by id failed, err: %+v", err)
-	}
-
-	return am.AuthorizeModelAttribute(ctx, header, action, attributes...)
 }

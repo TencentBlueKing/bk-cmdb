@@ -52,19 +52,61 @@ func (s *coreService) GetServiceTemplate(params core.ContextParams, pathParams, 
 
 	result, err := s.core.ProcessOperation().GetServiceTemplate(params, serviceTemplateID)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, err: %+v, rid: %s", err, params.ReqID)
+		blog.Errorf("GetServiceTemplate failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
+	}
+	return result, nil
+}
+
+func (s *coreService) GetServiceTemplateDetail(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
+	serviceTemplateIDStr := pathParams(common.BKServiceTemplateIDField)
+	if len(serviceTemplateIDStr) == 0 {
+		blog.Errorf("GetServiceTemplate failed, path parameter `%s` empty, rid: %s", common.BKServiceTemplateIDField, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+
+	serviceTemplateID, err := strconv.ParseInt(serviceTemplateIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("GetServiceTemplate failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceTemplateIDField, serviceTemplateIDStr, err, params.ReqID)
+		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+
+	template, err := s.core.ProcessOperation().GetServiceTemplate(params, serviceTemplateID)
+	if err != nil {
+		blog.Errorf("GetServiceTemplate failed, err: %+v, rid: %s", err, params.ReqID)
+		return nil, err
+	}
+
+	// related service instance count
+	serviceInstanceFilter := map[string]interface{}{
+		common.BKServiceTemplateIDField: template.ID,
+	}
+	serviceInstanceCount, err := s.db.Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	// related service template count
+	processRelationFilter := map[string]interface{}{
+		common.BKServiceTemplateIDField: template.ID,
+	}
+	processRelationCount, err := s.db.Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).Count(params.Context)
+	if err != nil {
+		blog.Errorf("GetServiceCategory failed, filter: %+v, err: %+v, rid: %s", serviceInstanceFilter, err, params.ReqID)
+		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
+	}
+	result := metadata.ServiceTemplateDetail{
+		Template:             *template,
+		ServiceInstanceCount: int64(serviceInstanceCount),
+		ProcessInstanceCount: int64(processRelationCount),
 	}
 	return result, nil
 }
 
 func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	// filter parameter
-	fp := struct {
-		BusinessID        int64             `json:"bk_biz_id" field:"bk_biz_id"`
-		ServiceCategoryID int64             `json:"service_category_id" field:"service_category_id"`
-		Page              metadata.BasePage `json:"page" field:"page"`
-	}{}
+	fp := metadata.ListServiceTemplateOption{}
 
 	if err := mapstr.DecodeFromMapStr(&fp, data); err != nil {
 		blog.Errorf("ListServiceTemplates failed, decode request body failed, body: %+v, err: %v, rid: %s", data, err, params.ReqID)
@@ -76,7 +118,7 @@ func (s *coreService) ListServiceTemplates(params core.ContextParams, pathParams
 		return nil, params.Error.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 
-	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp.BusinessID, fp.ServiceCategoryID, fp.Page)
+	result, err := s.core.ProcessOperation().ListServiceTemplates(params, fp)
 	if err != nil {
 		blog.Errorf("ListServiceTemplates failed, err: %+v, rid: %s", err, params.ReqID)
 		return nil, err
