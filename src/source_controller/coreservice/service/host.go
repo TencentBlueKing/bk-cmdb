@@ -28,7 +28,7 @@ import (
 func (s *coreService) TransferHostToInnerModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.TransferHostToInnerModule{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostToDefaultModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("TransferHostToDefaultModule MarshalJSONInto error, err:%s, input:%v, rid: %s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	exceptionArr, err := s.core.HostOperation().TransferToInnerModule(params, inputData)
@@ -42,7 +42,7 @@ func (s *coreService) TransferHostToInnerModule(params core.ContextParams, pathP
 func (s *coreService) TransferHostToNormalModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.HostsModuleRelation{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("TransferHostModule MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	exceptionArr, err := s.core.HostOperation().TransferToNormalModule(params, inputData)
@@ -56,7 +56,7 @@ func (s *coreService) TransferHostToNormalModule(params core.ContextParams, path
 func (s *coreService) TransferHostToAnotherBusiness(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.TransferHostsCrossBusinessRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("TransferHostCrossBusiness MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("TransferHostCrossBusiness MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	exceptionArr, err := s.core.HostOperation().TransferToAnotherBusiness(params, inputData)
@@ -70,7 +70,7 @@ func (s *coreService) TransferHostToAnotherBusiness(params core.ContextParams, p
 func (s *coreService) RemoveFromModule(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.RemoveHostsFromModuleOption{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("RemoveFromModule MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("RemoveFromModule MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	exceptionArr, err := s.core.HostOperation().RemoveFromModule(params, inputData)
@@ -84,7 +84,7 @@ func (s *coreService) RemoveFromModule(params core.ContextParams, pathParams, qu
 func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.HostModuleRelationRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("GetHostModuleRelation MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("GetHostModuleRelation MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	relationArr, err := s.core.HostOperation().GetHostModuleRelation(params, inputData)
@@ -98,7 +98,7 @@ func (s *coreService) GetHostModuleRelation(params core.ContextParams, pathParam
 func (s *coreService) DeleteHostFromSystem(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.DeleteHostRequest{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("DeleteHost MarshalJSONInto error, err:%s,input:%v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("DeleteHost MarshalJSONInto error, err:%s, input:%v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	exceptionArr, err := s.core.HostOperation().DeleteFromSystem(params, inputData)
@@ -112,7 +112,7 @@ func (s *coreService) DeleteHostFromSystem(params core.ContextParams, pathParams
 func (s *coreService) HostIdentifier(params core.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 	inputData := &metadata.SearchHostIdentifierParam{}
 	if err := data.MarshalJSONInto(inputData); nil != err {
-		blog.Errorf("Identifier MarshalJSONInto error, err:%s,input:%#v,rid:%s", err.Error(), data, params.ReqID)
+		blog.Errorf("Identifier MarshalJSONInto error, err:%s, input:%#v, rid:%s", err.Error(), data, params.ReqID)
 		return nil, err
 	}
 	hostIdentifierArr, err := s.core.HostOperation().Identifier(params, inputData)
@@ -167,13 +167,13 @@ func (s *coreService) GetHosts(params core.ContextParams, pathParams, queryParam
 	fieldArr := util.SplitStrField(dat.Fields, ",")
 	result, err := s.getObjectByCondition(params, common.BKInnerObjIDHost, fieldArr, condition, dat.Sort, dat.Start, dat.Limit)
 	if err != nil {
-		blog.Errorf("get object failed type:%s,input:%v error:%v", common.BKInnerObjIDHost, dat, err)
+		blog.Errorf("get object failed type:%s,input:%v error:%v, rid: %s", common.BKInnerObjIDHost, dat, err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostSelectInst)
 	}
 
 	count, err := s.db.Table(common.BKTableNameBaseHost).Find(condition).Count(params.Context)
 	if err != nil {
-		blog.Errorf("get object failed type:%s ,input: %v error: %v", common.BKInnerObjIDHost, dat, err)
+		blog.Errorf("get object failed type:%s ,input: %v error: %v, rid: %s", common.BKInnerObjIDHost, dat, err, params.ReqID)
 		return nil, params.Error.CCError(common.CCErrHostSelectInst)
 	}
 
@@ -192,7 +192,7 @@ func (s *coreService) getObjectByCondition(params core.ContextParams, objType st
 		dbInst.Fields(fields...)
 	}
 	if err := dbInst.All(params.Context, &results); err != nil {
-		blog.Errorf("failed to query the inst , error info %s", err.Error())
+		blog.Errorf("failed to query the inst , error info %s, rid: %s", err.Error(), params.ReqID)
 		return nil, err
 	}
 
