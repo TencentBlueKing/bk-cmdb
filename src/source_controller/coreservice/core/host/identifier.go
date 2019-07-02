@@ -23,7 +23,7 @@ func (hm *hostManager) Identifier(ctx core.ContextParams, input *metadata.Search
 	identifier := identifier.NewIdentifier(hm.DbProxy)
 	host, err := identifier.Identifier(ctx, input.HostIDs)
 	if err != nil {
-		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%+v, rid:%s", err, input, ctx.ReqID)
+		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), ctx.ReqID)
 		return nil, err
 	}
 	return host, nil
