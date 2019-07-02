@@ -2,7 +2,7 @@
 
 set -e
 
-proc_num=12
+proc_num=14
 withSynchronizeServer=false 
 
 
