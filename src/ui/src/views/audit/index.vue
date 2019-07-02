@@ -234,9 +234,6 @@
                 return operateTypeMap
             }
         },
-        created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["操作审计"]'))
-        },
         mounted () {
             this.initDate()
         },

@@ -13,11 +13,11 @@
 package host
 
 import (
-	redis "gopkg.in/redis.v5"
+	"gopkg.in/redis.v5"
 
 	"configcenter/src/common/eventclient"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/source_controller/coreservice/core/host/modulehost"
+	"configcenter/src/source_controller/coreservice/core/host/transfer"
 	"configcenter/src/storage/dal"
 )
 
@@ -27,17 +27,19 @@ type hostManager struct {
 	DbProxy    dal.RDB
 	Cache      *redis.Client
 	EventC     eventclient.Client
-	moduleHost *modulehost.ModuleHost
+	moduleHost *transfer.TransferManager
+	dependent  transfer.OperationDependence
 }
 
 // New create a new model manager instance
-func New(dbProxy dal.RDB, cache *redis.Client) core.HostOperation {
+func New(dbProxy dal.RDB, cache *redis.Client, dependent transfer.OperationDependence) core.HostOperation {
 
 	coreMgr := &hostManager{
-		DbProxy: dbProxy,
-		Cache:   cache,
-		EventC:  eventclient.NewClientViaRedis(cache, dbProxy),
+		DbProxy:   dbProxy,
+		Cache:     cache,
+		EventC:    eventclient.NewClientViaRedis(cache, dbProxy),
+		dependent: dependent,
 	}
-	coreMgr.moduleHost = modulehost.New(dbProxy, cache, coreMgr.EventC)
+	coreMgr.moduleHost = transfer.New(dbProxy, cache, coreMgr.EventC, dependent)
 	return coreMgr
 }

@@ -17,46 +17,51 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
 type ProcessInterface interface {
 	// service category
-	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
-	GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (resp *metadata.ServiceCategory, err error)
-	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (resp *metadata.ServiceCategory, err error)
-	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (resp *metadata.MultipleServiceCategoryWithStatistics, err error)
-	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) error
-	GetDefaultServiceCategory(ctx context.Context, h http.Header) (resp *metadata.ServiceCategory, err error)
+	CreateServiceCategory(ctx context.Context, h http.Header, category *metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	GetServiceCategory(ctx context.Context, h http.Header, categoryID int64) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	UpdateServiceCategory(ctx context.Context, h http.Header, categoryID int64, category *metadata.ServiceCategory) (*metadata.ServiceCategory, errors.CCErrorCoder)
+	ListServiceCategories(ctx context.Context, h http.Header, bizID int64, withStatistics bool) (*metadata.MultipleServiceCategoryWithStatistics, errors.CCErrorCoder)
+	DeleteServiceCategory(ctx context.Context, h http.Header, categoryID int64) errors.CCErrorCoder
+	GetDefaultServiceCategory(ctx context.Context, h http.Header) (resp *metadata.ServiceCategory, err errors.CCErrorCoder)
 
 	// service template
-	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
-	GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceTemplate, err error)
-	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (resp *metadata.ServiceTemplate, err error)
-	ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (resp *metadata.MultipleServiceTemplate, err error)
-	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) error
+	CreateServiceTemplate(ctx context.Context, h http.Header, template *metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	GetServiceTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	GetServiceTemplateDetail(ctx context.Context, h http.Header, templateID int64) (*metadata.ServiceTemplateDetail, errors.CCErrorCoder)
+	UpdateServiceTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceTemplate) (*metadata.ServiceTemplate, errors.CCErrorCoder)
+	ListServiceTemplates(ctx context.Context, h http.Header, option *metadata.ListServiceTemplateOption) (*metadata.MultipleServiceTemplate, errors.CCErrorCoder)
+	DeleteServiceTemplate(ctx context.Context, h http.Header, serviceTemplateID int64) errors.CCErrorCoder
 
 	// process template
-	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
-	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ProcessTemplate, err error)
-	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (resp *metadata.ProcessTemplate, err error)
-	ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (resp *metadata.MultipleProcessTemplate, err error)
-	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) error
-	DeleteProcessTemplateBatch(ctx context.Context, h http.Header, processTemplateIDs []int64) error
+	CreateProcessTemplate(ctx context.Context, h http.Header, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	GetProcessTemplate(ctx context.Context, h http.Header, templateID int64) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	UpdateProcessTemplate(ctx context.Context, h http.Header, templateID int64, template *metadata.ProcessTemplate) (*metadata.ProcessTemplate, errors.CCErrorCoder)
+	ListProcessTemplates(ctx context.Context, h http.Header, option *metadata.ListProcessTemplatesOption) (*metadata.MultipleProcessTemplate, errors.CCErrorCoder)
+	DeleteProcessTemplate(ctx context.Context, h http.Header, processTemplateID int64) errors.CCErrorCoder
+	DeleteProcessTemplateBatch(ctx context.Context, h http.Header, processTemplateIDs []int64) errors.CCErrorCoder
 
 	// service instance
-	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
-	GetServiceInstance(ctx context.Context, h http.Header, templateID int64) (resp *metadata.ServiceInstance, err error)
-	UpdateServiceInstance(ctx context.Context, h http.Header, templateID int64, template *metadata.ServiceInstance) (resp *metadata.ServiceInstance, err error)
-	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (resp *metadata.MultipleServiceInstance, err error)
-	DeleteServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) error
+	CreateServiceInstance(ctx context.Context, h http.Header, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	GetServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	UpdateServiceInstance(ctx context.Context, h http.Header, serviceInstanceID int64, template *metadata.ServiceInstance) (*metadata.ServiceInstance, errors.CCErrorCoder)
+	ListServiceInstance(ctx context.Context, h http.Header, option *metadata.ListServiceInstanceOption) (*metadata.MultipleServiceInstance, errors.CCErrorCoder)
+	DeleteServiceInstance(ctx context.Context, h http.Header, option *metadata.DeleteServiceInstanceOption) errors.CCErrorCoder
+	GetBusinessDefaultSetModuleInfo(ctx context.Context, h http.Header, bizID int64) (metadata.BusinessDefaultSetModuleInfo, errors.CCErrorCoder)
 
 	// process instance relation
-	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
-	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (resp *metadata.ProcessInstanceRelation, err error)
-	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (resp *metadata.ProcessInstanceRelation, err error)
-	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (resp *metadata.MultipleProcessInstanceRelation, err error)
-	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) error
+	CreateProcessInstanceRelation(ctx context.Context, h http.Header, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	GetProcessInstanceRelation(ctx context.Context, h http.Header, processID int64) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	UpdateProcessInstanceRelation(ctx context.Context, h http.Header, processID int64, template *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder)
+	ListProcessInstanceRelation(ctx context.Context, h http.Header, option *metadata.ListProcessInstanceRelationOption) (*metadata.MultipleProcessInstanceRelation, errors.CCErrorCoder)
+	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
+
+	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder)
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {

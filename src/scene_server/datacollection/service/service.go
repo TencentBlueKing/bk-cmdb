@@ -51,7 +51,7 @@ func (s *Service) WebService() *restful.Container {
 		return s.CCErr
 	}
 
-	api.Path("/collector/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/collector/v3").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/netcollect/device/action/create").To(s.CreateDevice))
 	api.Route(api.POST("/netcollect/device/{device_id}/action/update").To(s.UpdateDevice))

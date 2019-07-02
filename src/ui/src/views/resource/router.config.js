@@ -28,6 +28,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION)
-        }
+        },
+        i18nTitle: 'Nav["主机"]'
     })
 }

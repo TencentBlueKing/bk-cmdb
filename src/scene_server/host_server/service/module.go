@@ -13,6 +13,7 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,7 +29,7 @@ import (
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
-func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
+func (s *Service) TransferHostModule(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	config := new(metadata.HostsModuleRelation)
@@ -124,11 +125,11 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
+	// if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
+	// 	blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
+	// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	// 	return
+	// }
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
@@ -164,18 +165,18 @@ func (s *Service) AssignHostToApp(req *restful.Request, resp *restful.Response) 
 	}
 
 	// auth: check target business update priority
-	if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, conf.ApplicationID); err != nil {
-		blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", conf.ApplicationID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
-
-	// auth: check host transfer priority
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
-		blog.Errorf("AssignHostToApp failed, authorize on host transfer failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
+	// if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, conf.ApplicationID); err != nil {
+	// 	blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", conf.ApplicationID, err, srvData.rid)
+	// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	// 	return
+	// }
+	//
+	// // auth: check host transfer priority
+	// if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveResPoolHostToBizIdleModule, conf.HostID...); err != nil {
+	// 	blog.Errorf("AssignHostToApp failed, authorize on host transfer failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
+	// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	// 	return
+	// }
 
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
@@ -273,27 +274,22 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 	// auth: check authorization
 	if existNewAddHost == true {
 		/*
-		// 检查注册到资源池的权限
-		if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
-			blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
-			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-			return
-		}
+			// 检查注册到资源池的权限
+			if err := s.AuthManager.AuthorizeAddToResourcePool(srvData.ctx, srvData.header); err != nil {
+				blog.Errorf("check host authorization for add to resource pool failed, err: %v", err)
+				resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+				return
+			}
 		*/
 		// 检查转移主机到目标业务的权限
 		// auth: check target business update priority
-		if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, appID); err != nil {
-			blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", appID, err, srvData.rid)
-			resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-			return
-		}
+		// if err := s.AuthManager.AuthorizeByBusinessID(srvData.ctx, srvData.header, authmeta.Update, appID); err != nil {
+		// 	blog.Errorf("AssignHostToApp failed, authorize on business update failed, business: %d, err: %v, rid:%s", appID, err, srvData.rid)
+		// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		// 	return
+		// }
 	}
 
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, hostIDArr...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", hostIDArr, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-		return
-	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, hostIDArr...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", hostIDArr, err)
@@ -449,7 +445,11 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenDeleteHostBatchNoPermissionResp(conf.HostID))
 		return
 	}
 	// auth: deregister hosts

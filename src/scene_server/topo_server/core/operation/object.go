@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -383,18 +382,6 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
 
-	// businessID, err := obj.Object().Metadata.Label.GetBusinessID()
-	// if err != nil && err != metadata.LabelKeyNotExistError {
-	// 	blog.Errorf("create model failed, get business field from model: %+v meta failed, err: %+v", obj.Object(), err)
-	// 	return nil, params.Err.Errorf(common.CCErrCommAuthorizeFailed, "get business field from model meta failed")
-	// }
-
-	// // auth: check authorization
-	// if err := o.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.Model); err != nil {
-	// 	blog.V(2).Infof("create model %s failed, authorization failed, err: %+v", obj.Object(), err)
-	// 	return nil, err
-	// }
-
 	err = obj.Create()
 	if nil != err {
 		blog.Errorf("[operation-obj] failed to save the data(%#v), err: %s", data, err.Error())
@@ -456,7 +443,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 			ObjectID:          object.ObjectID,
 			IsOnly:            true,
 			IsPre:             true,
-			Creator:           "user",
+			Creator:           "system",
 			IsEditable:        true,
 			PropertyIndex:     -1,
 			PropertyGroup:     group.GroupID,
@@ -557,12 +544,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
-	}
-
-	// auth: check authorization
-	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Delete, objects...); err != nil {
-		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
-		return err
 	}
 
 	for _, obj := range objs {

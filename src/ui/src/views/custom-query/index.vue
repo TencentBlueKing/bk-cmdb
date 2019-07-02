@@ -8,11 +8,16 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="filter-wrapper clearfix">
-            <bk-button type="primary" class="api-btn"
-                :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
-                @click="showUserAPISlider('create')">
-                {{$t("Common['新建']")}}
-            </bk-button>
+            <span class="inline-block-middle" v-cursor="{
+                active: !$isAuthorized(OPERATION.C_CUSTOM_QUERY),
+                auth: [OPERATION.C_CUSTOM_QUERY]
+            }">
+                <bk-button type="primary" class="api-btn"
+                    :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
+                    @click="showUserAPISlider('create')">
+                    {{$t("Common['新建']")}}
+                </bk-button>
+            </span>
             <div class="api-input fr">
                 <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
             </div>
@@ -127,7 +132,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["动态分组"]'))
             this.showFeatureTips = this.featureTipsParams['customQuery']
             this.getUserAPIList()
         },

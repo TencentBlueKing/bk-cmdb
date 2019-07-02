@@ -28,6 +28,8 @@ import (
 	"configcenter/src/auth/meta"
 	"configcenter/src/common/blog"
 	commonutil "configcenter/src/common/util"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -102,7 +104,7 @@ func ParseConfigFromKV(prefix string, configmap map[string]string) (AuthConfig, 
 }
 
 // NewAuthCenter create a instance to handle resources with blueking's AuthCenter.
-func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, error) {
+func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig, reg prometheus.Registerer) (*AuthCenter, error) {
 	blog.V(5).Infof("new auth center client with parameters tls: %+v, cfg: %+v", tls, cfg)
 	if !cfg.Enable {
 		return new(AuthCenter), nil
@@ -121,6 +123,7 @@ func NewAuthCenter(tls *util.TLSClientConfig, cfg AuthConfig) (*AuthCenter, erro
 		Mock: util.MockInfo{
 			Mocked: false,
 		},
+		Reg: reg,
 	}
 
 	header := http.Header{}
@@ -155,9 +158,7 @@ func (ac *AuthCenter) Enabled() bool {
 }
 
 func (ac *AuthCenter) Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error) {
-	blog.V(5).Infof("AuthCenter Config is: %+v", ac.Config)
 	if !ac.Config.Enable {
-		blog.V(5).Infof("AuthCenter Config is disabled. config: %+v", ac.Config)
 		return meta.Decision{Authorized: true}, nil
 	}
 
@@ -251,7 +252,7 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 
 		// modify special resource
 		if rsc.Type == meta.MainlineModel || rsc.Type == meta.ModelTopology {
-			blog.Warnf("force convert scope type to global for resource type: %s, rid: %s", rsc.Type, rid)
+			blog.V(4).Infof("force convert scope type to global for resource type: %s, rid: %s", rsc.Type, rid)
 			rsc.BusinessID = 0
 		}
 
@@ -416,48 +417,47 @@ func (ac *AuthCenter) AuthorizeBatch(ctx context.Context, user meta.UserInfo, re
 }
 
 func (ac *AuthCenter) GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error) {
-	info := &ListAuthorizedResources{
-		Principal: Principal{
-			Type: cmdbUser,
-			ID:   user.UserName,
-		},
-		ScopeInfo: ScopeInfo{
-			ScopeType: ScopeTypeIDSystem,
-			ScopeID:   SystemIDCMDB,
-		},
-		TypeActions: []TypeAction{
-			{
-				ActionID:     Get,
-				ResourceType: SysBusinessInstance,
-			},
-		},
-		DataType: "array",
-		Exact:    true,
+	info := &Principal{
+		Type: cmdbUser,
+		ID:   user.UserName,
 	}
 
-	var appList []AuthorizedResource
+	var appList []string
 	var err error
 	if ac.Config.Enable {
-		appList, err = ac.authClient.GetAuthorizedResources(ctx, info)
+		appList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDBiz, info)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	businessIDs := make([]int64, 0)
-	for _, apps := range appList {
-		for _, appRsc := range apps.ResourceIDs {
-			for _, app := range appRsc {
-				id, err := strconv.ParseInt(app.ResourceID, 10, 64)
-				if err != nil {
-					return businessIDs, err
-				}
-				businessIDs = append(businessIDs, id)
-			}
+	for _, app := range appList {
+		id, err := strconv.ParseInt(app, 10, 64)
+		if err != nil {
+			return businessIDs, err
 		}
+		businessIDs = append(businessIDs, id)
 	}
 
 	return businessIDs, nil
+}
+func (ac *AuthCenter) AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error) {
+	info := &Principal{
+		Type: cmdbUser,
+		ID:   user.UserName,
+	}
+
+	var systemList []string
+	var err error
+	if ac.Config.Enable {
+		systemList, err = ac.authClient.GetAuthorizedScopes(ctx, ScopeTypeIDSystem, info)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return systemList, nil
 }
 
 func (ac *AuthCenter) GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]AuthorizedResource, error) {
