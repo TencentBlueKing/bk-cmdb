@@ -151,6 +151,9 @@
                 this.layout.toggleExpanded(this.state.id, expanded)
             },
             async handleNodeClick () {
+                if (this.state.disabled) {
+                    return false
+                }
                 if (typeof this.treeInstance.beforeClick === 'function') {
                     let confirm
                     try {

@@ -74,7 +74,7 @@ func (lgc *Logics) buildSearchCond(header http.Header, param metadata.ParamSearc
 	if param.CloudName != "" || param.Query != "" {
 		cloudCond := condition.CreateCondition()
 		cloudCond.Field(common.BKCloudNameField).Like(param.CloudName)
-		clouds, err := lgc.findInst(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+		clouds, err := lgc.findInst(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond.ToMapStr()})
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +153,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 
 	cloudCond := condition.CreateCondition()
 	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] find clouds by %+v failed: %v", cloudCond, err)
 		return 0, nil, err
@@ -188,7 +188,7 @@ func (lgc *Logics) SearchReport(header http.Header, param metadata.ParamSearchNe
 		if objType == common.BKInnerObjIDObject {
 			cond.Field(common.BKObjIDField).Eq(reports[index].ObjectID)
 		}
-		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		insts, err := lgc.findInst(header, reports[index].ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("[NetDevice][SearchReport] find inst by %+v for %v failed %v", cond.ToMapStr(), reports[index].ObjectID, err)
 			return 0, nil, err
@@ -240,7 +240,7 @@ func (lgc *Logics) findAttrsMap(header http.Header, objIDs ...string) (map[strin
 func (lgc *Logics) findAttrs(header http.Header, objIDs ...string) ([]metadata.Attribute, error) {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).In(objIDs)
-	resp, err := lgc.CoreAPI.ObjectController().Meta().SelectObjectAttWithParams(context.Background(), header, cond.ToMapStr())
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModelAttrByCondition(context.Background(), header, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][findAttrs] for %v error: %v", objIDs, err)
 		return nil, err
@@ -249,7 +249,7 @@ func (lgc *Logics) findAttrs(header http.Header, objIDs ...string) ([]metadata.A
 		blog.Errorf("[NetDevice][findAttrs] for %v error: %v", objIDs, resp)
 		return nil, err
 	}
-	return resp.Data, nil
+	return resp.Data.Info, nil
 }
 
 func (lgc *Logics) findObjectMap(header http.Header, objIDs ...string) (map[string]metadata.Object, error) {
@@ -271,8 +271,8 @@ func (lgc *Logics) findObjectIn(header http.Header, objIDs ...string) ([]metadat
 	return lgc.findObject(header, cond.ToMapStr())
 }
 
-func (lgc *Logics) findObject(header http.Header, cond interface{}) ([]metadata.Object, error) {
-	resp, err := lgc.CoreAPI.ObjectController().Meta().SelectObjects(context.Background(), header, cond)
+func (lgc *Logics) findObject(header http.Header, cond mapstr.MapStr) ([]metadata.Object, error) {
+	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(context.Background(), header, &metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		blog.Errorf("[NetDevice][findObject] by %+v error: %v", cond, err)
 		return nil, err
@@ -281,10 +281,15 @@ func (lgc *Logics) findObject(header http.Header, cond interface{}) ([]metadata.
 		blog.Errorf("[NetDevice][findObject] by %+v error: %v", cond, resp)
 		return nil, err
 	}
-	return resp.Data, nil
+	models := make([]metadata.Object, 0)
+	for _, info := range resp.Data.Info {
+		models = append(models, info.Spec)
+	}
+
+	return models, nil
 }
 
-func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryInput) (map[int64]mapstr.MapStr, error) {
+func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metadata.QueryCondition) (map[int64]mapstr.MapStr, error) {
 	insts, err := lgc.findInst(header, objectID, query)
 	if err != nil {
 		return nil, err
@@ -301,8 +306,8 @@ func (lgc *Logics) findInstMap(header http.Header, objectID string, query *metad
 	return instMap, nil
 }
 
-func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryInput) ([]mapstr.MapStr, error) {
-	resp, err := lgc.CoreAPI.ObjectController().Instance().SearchObjects(context.Background(), objectID, header, query)
+func (lgc *Logics) findInst(header http.Header, objectID string, query *metadata.QueryCondition) ([]mapstr.MapStr, error) {
+	resp, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(context.Background(), header, objectID, query)
 	if err != nil {
 		blog.Errorf("[NetDevice][findInst] by %+v error: %v", query, err)
 		return nil, err
@@ -405,7 +410,7 @@ func (lgc *Logics) confirmAttributes(header http.Header, report *metadata.Netcol
 		cond.Field(common.BKCloudIDField).Eq(report.CloudID)
 		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
 	}
-	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst failed %v", err)
 		return attrCount, err
@@ -485,7 +490,7 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 		cond.Field(common.BKHostInnerIPField).Eq(report.InstKey)
 	}
 
-	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryInput{Condition: cond.ToMapStr()})
+	insts, err := lgc.findInst(header, report.ObjectID, &metadata.QueryCondition{Condition: cond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][ConfirmReport] find inst %+v failed %v", cond.ToMapStr(), err)
 		return 0, append(errs, err)
@@ -517,7 +522,7 @@ func (lgc *Logics) confirmAssociations(header http.Header, report *metadata.Netc
 			asstCond.Field(common.BKCloudIDField).Eq(report.CloudID)
 			asstCond.Field(common.BKHostInnerIPField).Eq(asst.AsstInstName)
 		}
-		asstInsts, err := lgc.findInst(header, asst.AsstObjectID, &metadata.QueryInput{Condition: asstCond.ToMapStr()})
+		asstInsts, err := lgc.findInst(header, asst.AsstObjectID, &metadata.QueryCondition{Condition: asstCond.ToMapStr()})
 		if err != nil {
 			blog.Errorf("[NetDevice][ConfirmReport] find inst by %+v failed %v", asstCond.ToMapStr(), err)
 			errs = append(errs, err)
@@ -611,7 +616,7 @@ func (lgc *Logics) SearchHistory(header http.Header, param metadata.ParamSearchN
 
 	cloudCond := condition.CreateCondition()
 	cloudCond.Field(common.BKCloudIDField).In(cloudIDs)
-	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryInput{Condition: cloudCond.ToMapStr()})
+	cloudMap, err := lgc.findInstMap(header, common.BKInnerObjIDPlat, &metadata.QueryCondition{Condition: cloudCond.ToMapStr()})
 	if err != nil {
 		blog.Errorf("[NetDevice][SearchReport] find clouds by %+v failed: %v", cloudCond, err)
 		return 0, nil, err

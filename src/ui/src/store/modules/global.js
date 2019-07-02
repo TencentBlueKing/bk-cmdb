@@ -1,5 +1,4 @@
 import { language } from '@/i18n'
-import { SYSTEM_MANAGEMENT, GET_AUTH_META } from '@/dictionary/auth'
 import $http from '@/api'
 
 const state = {
@@ -16,7 +15,16 @@ const state = {
         back: false
     },
     userList: [],
-    headerTitle: ''
+    headerTitle: '',
+    featureTipsParams: {
+        process: true,
+        customQuery: true,
+        model: true,
+        modelBusiness: true,
+        association: true,
+        eventpush: true,
+        adminTips: true
+    }
 }
 
 const getters = {
@@ -25,12 +33,8 @@ const getters = {
     userName: state => state.user.name,
     admin: state => state.user.admin === '1',
     isAdminView: (state, getters, rootState, rootGetters) => {
-        const systemAuth = rootState.auth.system
-        const managementData = systemAuth.find(data => {
-            const meta = GET_AUTH_META(SYSTEM_MANAGEMENT)
-            return data.resource_type === meta.resource_type && data.action === meta.action
-        }) || {}
-        if (!managementData.is_pass) {
+        const adminEntranceAuth = rootState.auth.adminEntranceAuth
+        if (!adminEntranceAuth.is_pass) {
             return false
         }
         if (window.sessionStorage.hasOwnProperty('isAdminView')) {
@@ -51,7 +55,8 @@ const getters = {
     navFold: state => state.nav.fold,
     showBack: state => state.header.back,
     userList: state => state.userList,
-    headerTitle: state => state.headerTitle
+    headerTitle: state => state.headerTitle,
+    featureTipsParams: state => state.featureTipsParams
 }
 
 const actions = {
@@ -85,7 +90,20 @@ const mutations = {
     },
     setAdminView (state, isAdminView) {
         window.sessionStorage.setItem('isAdminView', isAdminView)
-        window.location.reload()
+        window.location = '/'
+    },
+    setFeatureTipsParams (state, tab) {
+        if (tab) {
+            state.featureTipsParams[tab] = false
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        } else if (window.localStorage.getItem('featureTipsParams')) {
+            state.featureTipsParams = {
+                ...state.featureTipsParams,
+                ...JSON.parse(window.localStorage.getItem('featureTipsParams'))
+            }
+        } else {
+            window.localStorage.setItem('featureTipsParams', JSON.stringify(state.featureTipsParams))
+        }
     }
 }
 

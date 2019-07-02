@@ -54,7 +54,7 @@
 	"1101081": "blueking business does not allow deletion",
 	"1101031": "query cloud area failed, %s",
 	"1101032": "cloud area does not exist",
-	"1101033": "query business failed,%s",
+	"1101033": "query business failed",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
 	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
@@ -82,6 +82,7 @@
     "1101058": "bk_inst_name field value in line %s is not string.",
     "1101059": "bk_inst_name %s is duplicate.",
     "1101060": "association kind has already been used.",
+	"1101061": "The relationship is 1:n, and multiple source model instances cannot be associated at the same time.",
 	"1001060":"create model unique constrains failed",
 	"1001061":"update model unique constrains failed",
 	"1001062":"delete model unique constrains failed",
@@ -106,5 +107,7 @@
     "1101082": "bk_mainline association type can't use in this scene",
     "1101083":"association type inconsistent with caller method",
     "1101084": "the model stopped to use",
+    "1101085": "mainline object's unique can not be changed",
+    "1101086": "get authorized business list failed",
     "": "" 
 }

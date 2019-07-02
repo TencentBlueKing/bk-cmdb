@@ -154,7 +154,7 @@ func (s *Service) ExportHost(c *gin.Context) {
 		c.Writer.Write([]byte(reply))
 		return
 	}
-	logics.AddDownExcelHttpHeader(c, "host.xlsx")
+	logics.AddDownExcelHttpHeader(c, "bk_cmdb_export_host.xlsx")
 	c.File(dirFileName)
 
 	if err := os.Remove(dirFileName); err != nil {
@@ -197,8 +197,11 @@ func (s *Service) BuildDownLoadExcelTemplate(c *gin.Context) {
 		c.Writer.Write([]byte(reply))
 		return
 	}
-
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("template_%s.xlsx", objID))
+	if objID == common.BKInnerObjIDHost {
+		logics.AddDownExcelHttpHeader(c, "bk_cmdb_import_host.xlsx")
+	} else {
+		logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_inst_%s.xlsx", objID))
+	}
 
 	// http.ServeFile(c.Writer, c.Request, file)
 	c.File(file)

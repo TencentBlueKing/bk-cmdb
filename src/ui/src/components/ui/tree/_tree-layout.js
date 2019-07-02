@@ -74,6 +74,18 @@ class TreeLayout {
         }
     }
 
+    toggleDisabled (id, disabled) {
+        const state = this.getStateById(id)
+        if (state) {
+            state.disabled = disabled
+            if (state.node.hasOwnProperty('disabled')) {
+                state.node.disabled = disabled
+            }
+        } else {
+            console.error('state lost, cannot toggle disabled with node id:' + id)
+        }
+    }
+
     addFlatternState (state) {
         this.flatternStates[state.id] = state
     }

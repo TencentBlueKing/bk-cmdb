@@ -1,19 +1,29 @@
 <template>
     <div class="business-layout">
         <div class="business-options clearfix">
-            <bk-button class="fl" type="primary"
-                v-if="isAdminView"
-                :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
-                @click="handleCreate">
-                {{$t("Common['新建']")}}
-            </bk-button>
-            <div class="options-button fr">
-                <bk-button class="button-history"
-                    v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
-                    :disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
-                    @click="routeToHistory">
-                    <i class="icon-cc-history2"></i>
+            <span class="fl" v-if="isAdminView"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_BUSINESS),
+                    auth: [$OPERATION.C_BUSINESS]
+                }">
+                <bk-button class="fl" type="primary"
+                    :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
+                    @click="handleCreate">
+                    {{$t("Common['新建']")}}
                 </bk-button>
+            </span>
+            <div class="options-button fr">
+                <span class="inline-block-middle" v-cursor="{
+                    active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
+                    auth: [$OPERATION.BUSINESS_ARCHIVE]
+                }">
+                    <bk-button class="button-history"
+                        v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
+                        :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
+                        @click="routeToHistory">
+                        <i class="icon-cc-history2"></i>
+                    </bk-button>
+                </span>
                 <bk-button class="button-setting" v-tooltip.bottom="$t('BusinessTopology[\'列表显示属性配置\']')" @click="columnsConfig.show = true">
                     <i class="icon-cc-setting"></i>
                 </bk-button>
@@ -68,8 +78,8 @@
                         :delete-button-text="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
+                        :edit-auth="$OPERATION.U_BUSINESS"
+                        :delete-auth="$OPERATION.BUSINESS_ARCHIVE"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -79,7 +89,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="saveDisabled"
+                        :save-auth="saveAuth"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -88,7 +98,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :disabled="!$isAuthorized(OPERATION.U_BUSINESS)"
+                        :auth="$OPERATION.U_BUSINESS"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -118,7 +128,6 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -127,7 +136,6 @@
         },
         data () {
             return {
-                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -180,14 +188,14 @@
             customBusinessColumns () {
                 return this.usercustom[this.columnsConfigKey] || []
             },
-            saveDisabled () {
+            saveAuth () {
                 const type = this.attribute.type
                 if (type === 'create') {
-                    return !this.$isAuthorized(this.OPERATION.C_BUSINESS)
+                    return this.$OPERATION.C_BUSINESS
                 } else if (type === 'update') {
-                    return !this.$isAuthorized(this.OPERATION.U_BUSINESS)
+                    return this.$OPERATION.U_BUSINESS
                 }
-                return true
+                return ''
             },
             model () {
                 return this.getModelById('biz') || {}
@@ -210,6 +218,7 @@
         async created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
+                this.$store.dispatch('userCustom/setRencentlyData', { id: 'business' })
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
                         bk_obj_id: 'biz',

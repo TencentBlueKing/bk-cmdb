@@ -83,7 +83,7 @@
         },{
             "i18n": "Cloud['云资源发现']",
             "path": "/cloud-discover",
-            "id": "cloud",
+            "id": "cloud_discover",
             "icon": "icon-cc-host-free-pool",
             "name": "云资源发现",
             "authorized": true,

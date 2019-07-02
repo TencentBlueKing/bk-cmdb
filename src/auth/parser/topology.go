@@ -20,6 +20,10 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 )
 
 func (ps *parseStream) topology() *parseStream {
@@ -41,6 +45,7 @@ func (ps *parseStream) topology() *parseStream {
 		ObjectSet().
 		objectUnique().
 		audit().
+		instanceAudit().
 		privilege()
 
 	return ps
@@ -54,8 +59,23 @@ var (
 	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
+const findReducedBusinessList = `/api/v3/biz/with_reduced`
+
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
+		return ps
+	}
+
+	// find reduced business list for the user with any business resources
+	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -314,7 +334,7 @@ func (ps *parseStream) mainline() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.MainlineModel,
+					Type:   meta.MainlineInstance,
 					Action: meta.Find,
 				},
 			},
@@ -597,7 +617,7 @@ func (ps *parseStream) objectInstanceAssociation() *parseStream {
 }
 
 const (
-	findObjectInstanceBatchRegexp = `/api/v3/object/search/batch`
+	findObjectBatchRegexp = `/api/v3/object/search/batch`
 )
 
 var (
@@ -844,7 +864,7 @@ func (ps *parseStream) objectInstance() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:       meta.ModelInstanceTopology,
+					Type:       meta.MainlineInstanceTopology,
 					Action:     meta.Find,
 					InstanceID: bizID,
 				},
@@ -885,28 +905,50 @@ func (ps *parseStream) objectInstance() *parseStream {
 
 	// find object/s instance list details operation.
 	if ps.hitRegexp(findObjectInstancesDetailRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.FindMany,
-				},
-				Layers: []meta.Item{
-					{
-						Type: meta.Model,
-						Name: ps.RequestCtx.Elements[7],
+		// TODO: parse these query condition
+		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[7]})
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		for _, model := range models {
+			bizID, err := metadata.BizIDFromMetadata(model.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			ps.Attribute.Resources = append(ps.Attribute.Resources,
+				meta.ResourceAttribute{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelInstance,
+						Action: meta.FindMany,
+					},
+					Layers: []meta.Item{
+						{
+							Type: meta.Model,
+							Name: ps.RequestCtx.Elements[7],
+						},
 					},
 				},
-			},
+			)
 		}
+
 		return ps
 	}
 
-	if ps.hitPattern(findObjectInstanceBatchRegexp, http.MethodPost) {
+	if ps.hitPattern(findObjectBatchRegexp, http.MethodPost) {
+		bizID, err := ps.parseBusinessID()
+		if err != nil && err != metadata.LabelKeyNotExistError {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   meta.Model,
 					Action: meta.FindMany,
 				},
 			},
@@ -951,11 +993,16 @@ func (ps *parseStream) object() *parseStream {
 
 	// create common object batch operation.
 	if ps.hitPattern(createObjectBatchPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			blog.Warnf("import object, but parse biz id failed, err: %v", err)
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.CreateMany,
+					Action: meta.UpdateMany,
 				},
 			},
 		}
@@ -1823,7 +1870,8 @@ func (ps *parseStream) objectUnique() *parseStream {
 }
 
 var (
-	searchAuditlog = `/api/v3/audit/search`
+	searchAuditlog               = `/api/v3/audit/search`
+	searchInstanceAuditlogRegexp = regexp.MustCompile(`^/api/v3/object/[^\s/]+/audit/search/?$`)
 )
 
 func (ps *parseStream) audit() *parseStream {
@@ -1836,8 +1884,31 @@ func (ps *parseStream) audit() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.AuditLog,
-					Action: meta.FindMany,
+					Type: meta.AuditLog,
+					// audit authorization in topo scene layer
+					Action: meta.SkipAction,
+				},
+			},
+		}
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) instanceAudit() *parseStream {
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	// add object unique operation.
+	if ps.hitRegexp(searchInstanceAuditlogRegexp, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type: meta.AuditLog,
+					// instance audit authorization by instance
+					Action: meta.SkipAction,
 				},
 			},
 		}

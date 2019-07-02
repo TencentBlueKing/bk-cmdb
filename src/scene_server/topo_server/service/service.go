@@ -13,11 +13,15 @@
 package service
 
 import (
+	"configcenter/src/auth"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/emicklei/go-restful"
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -34,8 +38,6 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
-
-	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -50,37 +52,44 @@ type Service struct {
 }
 
 // WebService the web service
-func (s *Service) WebService() *restful.WebService {
+func (s *Service) WebService() *restful.Container {
 
 	// init service actions
 	s.initService()
 
-	ws := new(restful.WebService)
+	api := new(restful.WebService)
+	healthz := new(restful.WebService).Produces(restful.MIME_JSON)
 
 	getErrFunc := func() errors.CCErrorIf {
 		return s.Error
 	}
-	// TODO: {version} need to replaced by v3
-	ws.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+
+	api.Path("/topo/v3/").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
 	for _, actionItem := range innerActions {
+		action := api
+		if actionItem.Path == "/healthz" {
+			action = healthz
+		}
 		switch actionItem.Verb {
 		case http.MethodPost:
-			ws.Route(ws.POST(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.POST(actionItem.Path).To(actionItem.Handler))
 		case http.MethodDelete:
-			ws.Route(ws.DELETE(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.DELETE(actionItem.Path).To(actionItem.Handler))
 		case http.MethodPut:
-			ws.Route(ws.PUT(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.PUT(actionItem.Path).To(actionItem.Handler))
 		case http.MethodGet:
-			ws.Route(ws.GET(actionItem.Path).To(actionItem.Handler))
+			action.Route(action.GET(actionItem.Path).To(actionItem.Handler))
 		default:
 			blog.Errorf(" the url (%s), the http method (%s) is not supported", actionItem.Path, actionItem.Verb)
 		}
 	}
+	container := restful.NewContainer().Add(api)
+	container.Add(healthz)
 
-	return ws
+	return container
 }
 
 func (s *Service) createAPIRspStr(errcode int, info interface{}) (string, error) {
@@ -146,6 +155,20 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 
 }
 
+func (s *Service) sendNoAuthResp(resp *restful.Response, dataMsg interface{}) {
+	js, err := json.Marshal(dataMsg)
+	if err != nil {
+		if _, err := io.WriteString(resp, "unknown error"); nil != err {
+			blog.Errorf("failed to write no auth resp, err:%s", err.Error())
+		}
+		return
+	}
+	if _, err := io.WriteString(resp, string(js)); nil != err {
+		blog.Errorf("failed to write resp, err:%s", err.Error())
+	}
+	return
+}
+
 func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
 	s.addActionEx(method, path, handlerFunc, handlerParseOriginDataFunc, false)
 }
@@ -168,12 +191,12 @@ func (s *Service) addActionEx(method string, path string, handlerFunc LogicFunc,
 // Actions return the all actions
 func (s *Service) Actions() []*httpserver.Action {
 
-	var httpactions []*httpserver.Action
+	var httpActions []*httpserver.Action
 	for _, a := range s.actions {
 
 		func(act action) {
 
-			httpactions = append(httpactions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
+			httpActions = append(httpActions, &httpserver.Action{Verb: act.Method, Path: act.Path, Handler: func(req *restful.Request, resp *restful.Response) {
 				ownerID := util.GetOwnerID(req.Request.Header)
 				user := util.GetUser(req.Request.Header)
 				rid := util.GetHTTPCCRequestID(req.Request.Header)
@@ -214,6 +237,8 @@ func (s *Service) Actions() []*httpserver.Action {
 				}
 
 				ctx, _ := s.Engine.CCCtx.WithCancel()
+				ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+				ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
 
 				handlerContext := types.ContextParams{
 					Context:         ctx,
@@ -247,6 +272,11 @@ func (s *Service) Actions() []*httpserver.Action {
 					return
 				}
 
+				if dataErr == auth.NoAuthorizeError {
+					s.sendNoAuthResp(resp, data)
+					return
+				}
+
 				switch e := dataErr.(type) {
 				case errors.CCErrorCoder:
 					s.sendCompleteResponse(resp, e.GetCode(), dataErr.Error(), data)
@@ -258,7 +288,7 @@ func (s *Service) Actions() []*httpserver.Action {
 		}(a)
 
 	}
-	return httpactions
+	return httpActions
 }
 
 type MetaShell struct {

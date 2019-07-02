@@ -78,10 +78,14 @@ func (cli MapStr) MarshalJSONInto(target interface{}) error {
 
 	data, err := cli.ToJSON()
 	if nil != err {
-		return err
+		return fmt.Errorf("marshal %#v failed: %v", target, err)
 	}
 
-	return json.Unmarshal(data, target)
+	err = json.Unmarshal(data, target)
+	if err != nil {
+		return fmt.Errorf("unmarshal %s failed: %v", data, err)
+	}
+	return nil
 }
 
 // ToJSON convert to json string

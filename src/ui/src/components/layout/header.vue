@@ -2,7 +2,7 @@
     <header class="header-layout clearfix"
         :class="{ 'nav-sticked': navStick }">
         <div class="breadcrumbs fl">
-            <i class="breadcrumbs-back bk-icon icon-arrows-left" href="javascript:void(0)"
+            <i class="breadcrumbs-back icon-cc-arrow" href="javascript:void(0)"
                 v-if="showBack || $route.meta.returnPath"
                 @click="back"></i>
             <h2 class="breadcrumbs-current">{{headerTitle}}</h2>
@@ -41,7 +41,22 @@
                     </a>
                 </div>
             </div>
-            <div class="admin" v-if="$isAuthorized(OPERATION.SYSTEM_MANAGEMENT, { type: 'system' })" @click="toggleAdminView">
+            <bk-tooltip
+                class="admin-tooltips"
+                v-if="hasAdminEntrance && !isAdminView && showTips"
+                :always="true"
+                :width="275"
+                placement="bottom-end">
+                <div slot="content" class="tooltips-main clearfix">
+                    <h3>管理员后台搬到这里了</h3>
+                    <p>在管理员后台，可以对跨业务的资源如硬件设备，网络设备等进行管理</p>
+                    <span class="fr" @click="handleCloseTips">我知道了</span>
+                </div>
+                <div class="admin" @click="toggleAdminView">
+                    {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
+                </div>
+            </bk-tooltip>
+            <div class="admin" v-else-if="hasAdminEntrance" @click="toggleAdminView">
                 {{isAdminView ? $t('Common["返回业务管理"]') : $t('Common["管理员后台"]')}}
             </div>
         </div>
@@ -50,13 +65,9 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { SYSTEM_MANAGEMENT } from '@/dictionary/auth'
     export default {
         data () {
             return {
-                OPERATION: {
-                    SYSTEM_MANAGEMENT
-                },
                 isShowUserDropdown: false,
                 isShowHelper: false
             }
@@ -69,11 +80,18 @@
                 'showBack',
                 'navStick',
                 'headerTitle',
-                'isAdminView'
+                'isAdminView',
+                'featureTipsParams'
             ]),
             ...mapGetters('objectBiz', ['authorizedBusiness']),
+            hasAdminEntrance () {
+                return this.$store.state.auth.adminEntranceAuth.is_pass
+            },
             userRole () {
                 return this.admin ? this.$t('Common["管理员"]') : this.$t('Common["普通用户"]')
+            },
+            showTips () {
+                return this.featureTipsParams['adminTips']
             }
         },
         methods: {
@@ -104,6 +122,9 @@
             },
             handleCloseHelper () {
                 this.isShowHelper = false
+            },
+            handleCloseTips () {
+                this.$store.commit('setFeatureTipsParams', 'adminTips')
             }
         }
     }
@@ -125,29 +146,31 @@
     .breadcrumbs{
         line-height: 60px;
         position: relative;
-        margin: 0 0 0 25px;
+        margin: 0 0 0 12px;
         font-size: 0;
         .breadcrumbs-back{
             display: inline-block;
             vertical-align: middle;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
             text-align: center;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
+            color: #3c96ff;
+            transition: background-color .1s ease-in;
             &:hover{
-                color: #3c96ff;
+                background-color: #f0f1f5;
             }
         }
         .breadcrumbs-current{
-            margin: 0;
+            margin: 0 0 0 8px;
             padding: 0;
             display: inline-block;
             vertical-align: middle;
             font-size: 16px;
             font-weight: normal;
+            color: #313238;
         }
         .icon-info-circle {
             margin-left: 5px;
@@ -295,6 +318,39 @@
                 border-color: white;
                 z-index: 1;
             }
+        }
+    }
+    .admin-tooltips {
+        .tooltips-main {
+            font-size: 14px;
+            h3 {
+                font-size: 16px;
+            }
+            p {
+                white-space: pre-wrap;
+                padding: 4px 0 6px;
+            }
+            span {
+                font-size: 12px;
+                padding: 4px 10px;
+                background-color: #5d90e4;
+                border-radius: 20px;
+                cursor: pointer;
+                &:hover {
+                    background-color: #477ad0;
+                }
+            }
+        }
+        .bk-tooltip-popper {
+            top: -14px !important;
+            left: -38px !important;
+        }
+        .bk-tooltip-arrow {
+            border-bottom-color: #699DF4 !important;
+        }
+        .bk-tooltip-inner {
+            background-color: #699DF4 !important;
+            padding-top: 12px;
         }
     }
 </style>

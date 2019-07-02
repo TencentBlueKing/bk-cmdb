@@ -1,18 +1,36 @@
 <template>
-    <div class="process-wrapper">
+    <div class="process-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'process'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ProcessManagement[\'进程管理提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%885%EF%BC%89%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="process-filter clearfix">
-            <bk-button class="process-btn"
-                type="default"
-                :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_PROCESS)"
-                @click="handleMultipleEdit">
-                <i class="icon-cc-edit"></i>
-                <span>{{$t("BusinessTopology['修改']")}}</span>
-            </bk-button>
-            <bk-button class="process-btn" type="primary"
-                :disabled="!$isAuthorized(OPERATION.C_PROCESS)"
-                @click="handleCreate">
-                {{$t("Common['新建']")}}
-            </bk-button>
+            <span class="process-btn"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.U_PROCESS),
+                    auth: [$OPERATION.U_PROCESS]
+                }">
+                <bk-button type="default"
+                    :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_PROCESS)"
+                    @click="handleMultipleEdit">
+                    <i class="icon-cc-edit"></i>
+                    <span>{{$t("BusinessTopology['修改']")}}</span>
+                </bk-button>
+            </span>
+            <span class="process-btn"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_PROCESS),
+                    auth: [$OPERATION.C_PROCESS]
+                }">
+                <bk-button type="primary"
+                    :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
+                    @click="handleCreate">
+                    {{$t("Common['新建']")}}
+                </bk-button>
+            </span>
             <div class="filter-text fr">
                 <input type="text" class="bk-form-input" :placeholder="$t('ProcessManagement[\'进程名称搜索\']')"
                     v-model.trim="filter.text" @keyup.enter="handlePageChange(1)">
@@ -40,8 +58,8 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
-                        :delete-disabled="!$isAuthorized(OPERATION.D_PROCESS)"
+                        :edit-auth="$OPERATION.U_PROCESS"
+                        :delete-auth="$OPERATION.D_PROCESS"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -50,7 +68,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_PROCESS' : 'C_PROCESS'])"
+                        :save-auth="attribute.type === 'update' ? $OPERATION.U_PROCESS : $OPERATION.C_PROCESS"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -58,7 +76,7 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-disabled="!$isAuthorized(OPERATION.U_PROCESS)"
+                        :save-auth="$OPERATION.U_PROCESS"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -83,16 +101,17 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import cmdbAuditHistory from '@/components/audit-history/audit-history'
+    import featureTips from '@/components/feature-tips/index'
     import vModule from './module'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbAuditHistory,
-            vModule
+            vModule,
+            featureTips
         },
         data () {
             return {
-                OPERATION,
+                showFeatureTips: false,
                 objectUnique: [],
                 properties: [],
                 slider: {
@@ -128,7 +147,7 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount']),
+            ...mapGetters(['supplierAccount', 'featureTipsParams']),
             ...mapGetters('objectBiz', ['bizId'])
         },
         watch: {
@@ -148,6 +167,8 @@
         },
         created () {
             this.$store.commit('setHeaderTitle', this.$t('Nav["进程管理"]'))
+            this.showFeatureTips = this.featureTipsParams['process']
+            console.log(this.featureTipsParams['process'])
             this.reload()
         },
         methods: {

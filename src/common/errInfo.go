@@ -19,9 +19,10 @@ const (
 	// the system code
 
 	// CCSystemBusy the system is busy
-	CCSystemBusy = -1
-	CCSuccess    = 0
-	CCSuccessStr = "success"
+	CCSystemBusy   = -1
+	CCSuccess      = 0
+	CCSuccessStr   = "success"
+	CCNoPermission = 9900403
 
 	// common error code 1199XXX
 
@@ -43,7 +44,7 @@ const (
 	// CCErrCommHTTPBodyEmpty  HTTP request body data is not set
 	CCErrCommHTTPBodyEmpty = 1199005
 
-	// CCErrCommParamsInvalid parameter validation in the body is not paased
+	// CCErrCommParamsInvalid parameter validation in the body is not pass
 	CCErrCommParamsInvalid = 1199006
 
 	// CCErrCommParamsNeedString  the parameter must be of type string
@@ -161,7 +162,13 @@ const (
 	CCErrCommUnRegistResourceToIAMFailed = 1199050
 	CCErrCommInappropriateVisitToIAM     = 1199051
 	// CCErrCommParamsNotSupportXXErr 参数%s的值%s 无效
-	CCErrCommParamsValueInvalidError = 1199052
+	CCErrCommParamsValueInvalidError = 1199053
+
+	CCErrCommGetMultipleObject      = 1199052
+	CCErrCommAuthCenterIsNotEnabled = 1199053
+
+	// CCErrCommInternalServerError %s Internal Server Error
+	CCErrCommInternalServerError = 1199999
 
 	// apiserver 1100XXX
 	CCErrAPIGetAuthorizedAppListFromAuthFailed = 1100001
@@ -271,7 +278,7 @@ const (
 	CCErrTopoCloudNotFound = 1101032
 
 	// CCErrTopoGetAppFaild search app err %s
-	CCErrTopoGetAppFaild = 1101033
+	CCErrTopoGetAppFailed = 1101033
 	// CCErrTopoGetModuleFailed search  module err %s
 	CCErrTopoGetModuleFailed = 1101034
 	// CCErrTopoBizTopoOverLevel the mainline topo level over limit
@@ -325,38 +332,39 @@ const (
 	// create model's instance patch, but instance's name is duplicate.
 	CCErrorTopoMutipleObjectInstanceName = 1101059
 
-	CCErrorTopoAssociationKindHasBeenUsed          = 1101060
-	CCErrTopoAppDeleteFailed                       = 1001031
-	CCErrTopoAppUpdateFailed                       = 1001032
-	CCErrTopoAppSearchFailed                       = 1001033
-	CCErrTopoAppCreateFailed                       = 1001034
-	CCErrTopoForbiddenToDeleteModelFailed          = 1001035
-	CCErrTopoMainlineCreatFailed                   = 1001037
-	CCErrTopoMainlineDeleteFailed                  = 1001038
-	CCErrTopoMainlineSelectFailed                  = 1001039
-	CCErrTopoTopoSelectFailed                      = 1001040
-	CCErrTopoUserGroupCreateFailed                 = 1001041
-	CCErrTopoUserGroupDeleteFailed                 = 1001042
-	CCErrTopoUserGroupUpdateFailed                 = 1001043
-	CCErrTopoUserGroupSelectFailed                 = 1001044
-	CCErrTopoUserGroupPrivilegeUpdateFailed        = 1001045
-	CCErrTopoUserGroupPrivilegeSelectFailed        = 1001046
-	CCErrTopoUserPrivilegeSelectFailed             = 1001047
-	CCErrTopoRolePrivilegeCreateFailed             = 1001048
-	CCErrTopoDeleteMainLineObjectAndInstNameRepeat = 1001049
-	CCErrHostNotAllowedToMutiBiz                   = 1001050
-	CCErrTopoGraphicsSearchFailed                  = 1001051
-	CCErrTopoGraphicsUpdateFailed                  = 1001052
-	CCErrTopoObjectUniqueCreateFailed              = 1001060
-	CCErrTopoObjectUniqueUpdateFailed              = 1001061
-	CCErrTopoObjectUniqueDeleteFailed              = 1001062
-	CCErrTopoObjectUniqueSearchFailed              = 1001063
-	CCErrTopoObjectPropertyNotFound                = 1001064
-	CCErrTopoObjectPropertyUsedByUnique            = 1001065
-	CCErrTopoObjectUniqueKeyKindInvalid            = 1001066
-	CCErrTopoObjectUniquePresetCouldNotDelOrEdit   = 1001067
-	CCErrTopoObjectUniqueCanNotHasMutiMustCheck    = 1001068
-	CCErrTopoObjectUniqueShouldHaveMoreThanOne     = 1001069
+	CCErrorTopoAssociationKindHasBeenUsed                     = 1101060
+	CCErrorTopoCreateMultipleInstancesForOneToManyAssociation = 1101061
+	CCErrTopoAppDeleteFailed                                  = 1001031
+	CCErrTopoAppUpdateFailed                                  = 1001032
+	CCErrTopoAppSearchFailed                                  = 1001033
+	CCErrTopoAppCreateFailed                                  = 1001034
+	CCErrTopoForbiddenToDeleteModelFailed                     = 1001035
+	CCErrTopoMainlineCreatFailed                              = 1001037
+	CCErrTopoMainlineDeleteFailed                             = 1001038
+	CCErrTopoMainlineSelectFailed                             = 1001039
+	CCErrTopoTopoSelectFailed                                 = 1001040
+	CCErrTopoUserGroupCreateFailed                            = 1001041
+	CCErrTopoUserGroupDeleteFailed                            = 1001042
+	CCErrTopoUserGroupUpdateFailed                            = 1001043
+	CCErrTopoUserGroupSelectFailed                            = 1001044
+	CCErrTopoUserGroupPrivilegeUpdateFailed                   = 1001045
+	CCErrTopoUserGroupPrivilegeSelectFailed                   = 1001046
+	CCErrTopoUserPrivilegeSelectFailed                        = 1001047
+	CCErrTopoRolePrivilegeCreateFailed                        = 1001048
+	CCErrTopoDeleteMainLineObjectAndInstNameRepeat            = 1001049
+	CCErrHostNotAllowedToMutiBiz                              = 1001050
+	CCErrTopoGraphicsSearchFailed                             = 1001051
+	CCErrTopoGraphicsUpdateFailed                             = 1001052
+	CCErrTopoObjectUniqueCreateFailed                         = 1001060
+	CCErrTopoObjectUniqueUpdateFailed                         = 1001061
+	CCErrTopoObjectUniqueDeleteFailed                         = 1001062
+	CCErrTopoObjectUniqueSearchFailed                         = 1001063
+	CCErrTopoObjectPropertyNotFound                           = 1001064
+	CCErrTopoObjectPropertyUsedByUnique                       = 1001065
+	CCErrTopoObjectUniqueKeyKindInvalid                       = 1001066
+	CCErrTopoObjectUniquePresetCouldNotDelOrEdit              = 1001067
+	CCErrTopoObjectUniqueCanNotHasMutiMustCheck               = 1001068
+	CCErrTopoObjectUniqueShouldHaveMoreThanOne                = 1001069
 	// association kind has been apply to object
 	CCErrorTopoAssKindHasApplyToObject = 1101070
 	// pre definition association kind can not be delete
@@ -376,6 +384,9 @@ const (
 	CCErrorTopoAssociationKindInconsistent = 1101083
 	// CCErrorTopoModleStopped means model have been stopped to use
 	CCErrorTopoModleStopped = 1101084
+	// mainline's object unique can not be updated, deleted or create new rules.
+	CCErrorTopoMainlineObjectCanNotBeChanged   = 1101085
+	CCErrorTopoGetAuthorizedBusinessListFailed = 1101086
 
 	// objectcontroller 1102XXX
 
@@ -565,6 +576,7 @@ const (
 	CCErrHostNotBelongIDLEModuleErr = 1110056
 	// CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed Module does not exist or there are multiple built-in modules
 	CCErrHostMulueIDNotFoundORHasMutliInnerModuleIDFailed = 1110057
+	CCErrHostSearchNeedObjectInstIDErr                    = 1110058
 
 	//web  1111XXX
 	CCErrWebFileNoFound                 = 1111001

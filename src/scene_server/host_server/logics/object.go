@@ -113,6 +113,7 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 	condition := make([]meta.ConditionItem, 0)
 
 	instItem := meta.ConditionItem{}
+	var hasInstID bool
 	for _, i := range objectCond {
 		if i.Field != common.BKInstIDField {
 			continue
@@ -121,6 +122,7 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 		if nil != err {
 			return nil, err
 		}
+		hasInstID = true
 		instItem.Field = common.BKInstParentStr
 		instItem.Operator = i.Operator
 		instItem.Value = i.Value
@@ -128,6 +130,10 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 		objectIDArr = append(objectIDArr, value)
 	}
 	condition = append(condition, instItem)
+	if !hasInstID {
+		blog.Errorf("mainline miss bk_inst_id parameters. input:%#v, rid:%s", objectCond, lgc.rid)
+		return nil, lgc.ccErr.Error(common.CCErrHostSearchNeedObjectInstIDErr)
+	}
 
 	nodefaultItem := meta.ConditionItem{}
 	nodefaultItem.Field = common.BKDefaultField
@@ -146,7 +152,7 @@ func (lgc *Logics) GetSetIDByObjectCond(ctx context.Context, appID int64, object
 	if err != nil {
 		return nil, lgc.ccErr.Error(common.CCErrTopoMainlineSelectFailed)
 	}
-	
+
 	for {
 		sSetIDArr, err := lgc.GetSetIDByCond(ctx, condition)
 		if err != nil {
