@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 )
 
@@ -36,9 +37,8 @@ type CreateProcessTemplateBatchInput struct {
 }
 
 type DeleteProcessTemplateBatchInput struct {
-	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"service_template_id"`
-	ProcessTemplates  []int64  `json:"process_templates"`
+	Metadata         Metadata `json:"metadata"`
+	ProcessTemplates []int64  `json:"process_templates"`
 }
 
 type ProcessDetail struct {
@@ -64,11 +64,21 @@ type DeleteServiceTemplatesInput struct {
 }
 
 type CreateServiceInstanceForServiceTemplateInput struct {
-	Metadata   Metadata                `json:"metadata"`
-	Name       string                  `json:"name"`
-	TemplateID int64                   `json:"service_template_id"`
-	ModuleID   int64                   `json:"module_id"`
-	Instances  []ServiceInstanceDetail `json:"instances"`
+	Metadata  Metadata                `json:"metadata"`
+	Name      string                  `json:"name"`
+	ModuleID  int64                   `json:"bk_module_id"`
+	Instances []ServiceInstanceDetail `json:"instances"`
+}
+
+type CreateRawProcessInstanceInput struct {
+	Metadata          Metadata                `json:"metadata"`
+	ServiceInstanceID int64                   `json:"service_instance_Id"`
+	Processes         []ProcessInstanceDetail `json:"processes"`
+}
+
+type UpdateRawProcessInstanceInput struct {
+	Metadata  Metadata  `json:"metadata"`
+	Processes []Process `json:"processes"`
 }
 
 type DeleteProcessInstanceInServiceInstanceInput struct {
@@ -77,35 +87,36 @@ type DeleteProcessInstanceInServiceInstanceInput struct {
 }
 
 type GetServiceInstanceInModuleInput struct {
-	Metadata Metadata `json:"metadata"`
-	ModuleID int64    `json:"module_id"`
-	Page     BasePage `json:"page"`
+	Metadata  Metadata `json:"metadata"`
+	ModuleID  int64    `json:"bk_module_id"`
+	Page      BasePage `json:"page"`
+	SearchKey *string  `json:"search_key,omitempty"`
+	WithName  bool     `json:"with_name"`
 }
 
-type FindServiceTemplateAndInstanceDifferenceOption struct {
-	Metadata          Metadata `json:"metadata"`
-	ModuleID          int64    `json:"module_id"`
-	ServiceTemplateID int64    `json:"service_template_id"`
+type DiffServiceInstanceWithTemplateOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
 }
 
 type DeleteServiceInstanceOption struct {
-	Metadata          Metadata `json:"metadata"`
-	ServiceInstanceID int64    `json:"id"`
+	Metadata           Metadata `json:"metadata"`
+	ServiceInstanceIDs []int64  `json:"service_instance_ids" field:"service_instance_ids" bson:"service_instance_ids"`
 }
 
 type FindServiceAndProcessInstanceOption struct {
-	Metadata          Metadata `json:"metadata"`
-	ModuleID          int64    `json:"module_id"`
-	ServiceTemplateID int64    `json:"service_template_id"`
+	Metadata          Metadata `json:"metadata" field:"metadata" bson:"metadata"`
+	ModuleID          int64    `json:"bk_module_id" field:"bk_module_id" bson:"bk_module_id"`
+	ServiceTemplateID int64    `json:"service_template_id" field:"service_template_id" bson:"service_template_id"`
 }
 
 // to describe the differences between service instance and it's service template's
 // process template's attribute.
 type ServiceProcessInstanceDifference struct {
-	ServiceInstanceID   int64             `json:"service_instance_id"`
-	ServiceInstanceName string            `json:"service_instance_name"`
-	HostID              int64             `json:"host_id"`
-	Differences         *DifferenceDetail `json:"differences"`
+	ServiceInstanceID   int64             `json:"service_instance_id" field:"service_instance_id" bson:"service_instance_id"`
+	ServiceInstanceName string            `json:"service_instance_name" field:"service_instance_name" bson:"service_instance_name"`
+	HostID              int64             `json:"bk_host_id" field:"bk_host_id" bson:"bk_host_id"`
+	Differences         *DifferenceDetail `json:"differences" field:"differences" bson:"differences"`
 }
 
 type DifferenceDetail struct {
@@ -158,37 +169,47 @@ type ServiceDifferenceDetails struct {
 }
 
 type ServiceInstanceDetail struct {
-	HostID    int64                   `json:"host_id"`
+	HostID int64 `json:"bk_host_id"`
+	// Processes parameter usable only when create instance with raw
 	Processes []ProcessInstanceDetail `json:"processes"`
 }
 
 type ProcessInstanceDetail struct {
-	ProcessTemplateID int64   `json:"process_template_id"`
-	ProcessInfo       Process `json:"process_info"`
+	// ProcessTemplateID int64   `json:"process_template_id"`
+	ProcessInfo Process `json:"process_info"`
 }
 
 type ListProcessTemplateWithServiceTemplateInput struct {
 	Metadata            Metadata `json:"metadata"`
-	ProcessTemplatesIDs []int64  `json:"process_template_ids"`
+	ProcessTemplatesIDs *[]int64 `json:"process_template_ids"`
 	ServiceTemplateID   int64    `json:"service_template_id"`
+	Page                BasePage `json:"page" field:"page" bson:"page"`
 }
 
-type ForceSyncServiceInstanceWithTemplateInput struct {
-	Metadata          Metadata `json:"metadata"`
-	ServiceTemplateID int64    `json:"service_template_id"`
-	ModuleID          int64    `json:"module_id"`
-	ServiceInstances  []int64  `json:"service_instances"`
+type SyncServiceInstanceByTemplateOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
 }
 
 type ListServiceInstancesWithHostInput struct {
 	Metadata Metadata `json:"metadata"`
-	HostID   int64    `json:"host_id"`
+	HostID   int64    `json:"bk_host_id"`
+	WithName bool     `json:"with_name"`
+}
+
+type ListProcessInstancesOption struct {
+	Metadata          Metadata `json:"metadata"`
+	ServiceInstanceID int64    `json:"service_instance_id"`
+}
+
+type RemoveTemplateBindingOnModuleOption struct {
+	Metadata Metadata `json:"metadata"`
+	ModuleID int64    `json:"bk_module_id"`
 }
 
 type UpdateProcessTemplateInput struct {
 	Metadata          Metadata         `json:"metadata"`
 	ProcessTemplateID int64            `json:"process_template_id"`
-	ServiceTemplateID int64            `json:"service_template_id"`
 	ProcessProperty   *ProcessProperty `json:"process_property"`
 }
 
@@ -252,32 +273,33 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	Metadata        Metadata       `field:"metadata" json:"metadata" bson:"metadata"`
-	ProcNum         int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num"`
-	StopCmd         string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd"`
-	RestartCmd      string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd"`
-	ForceStopCmd    string         `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd"`
-	ProcessID       int64          `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id"`
-	FuncName        string         `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name"`
-	WorkPath        string         `field:"work_path" json:"work_path,omitempty" bson:"work_path"`
-	BindIP          SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip"`
-	Priority        int64          `field:"priority" json:"priority,omitempty" bson:"priority"`
-	ReloadCmd       string         `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd"`
-	ProcessName     string         `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name"`
-	Port            string         `field:"port" json:"port,omitempty" bson:"port"`
-	PidFile         string         `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file"`
-	AutoStart       bool           `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start"`
-	AutoTimeGap     int64          `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap"`
-	LastTime        time.Time      `field:"last_time" json:"last_time,omitempty" bson:"last_time"`
-	CreateTime      time.Time      `field:"create_time" json:"create_time,omitempty" bson:"create_time"`
-	BusinessID      int64          `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	StartCmd        string         `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd"`
-	FuncID          string         `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id"`
-	User            string         `field:"user" json:"user,omitempty" bson:"user"`
-	TimeoutSeconds  int64          `field:"timeout" json:"timeout,omitempty" bson:"timeout"`
-	Protocol        ProtocolType   `field:"protocol" json:"protocol,omitempty" bson:"protocol"`
-	Description     string         `field:"description" json:"description,omitempty" bson:"description"`
-	SupplierAccount string         `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
+	Metadata        Metadata        `field:"metadata" json:"metadata" bson:"metadata" structs:"metadata"`
+	ProcNum         *int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
+	StopCmd         *string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd" structs:"stop_cmd"`
+	RestartCmd      *string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd" structs:"restart_cmd"`
+	ForceStopCmd    *string         `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd" structs:"face_stop_cmd"`
+	ProcessID       int64           `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id" structs:"bk_process_id"`
+	FuncName        *string         `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name" structs:"bk_func_name"`
+	WorkPath        *string         `field:"work_path" json:"work_path,omitempty" bson:"work_path" structs:"work_path"`
+	BindIP          *SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip" structs:"bind_ip"`
+	Priority        *int64          `field:"priority" json:"priority,omitempty" bson:"priority" structs:"priority"`
+	ReloadCmd       *string         `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd" structs:"reload_cmd"`
+	ProcessName     *string         `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name" structs:"bk_process_name"`
+	Port            *string         `field:"port" json:"port,omitempty" bson:"port" structs:"port"`
+	PidFile         *string         `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file" structs:"pid_file"`
+	AutoStart       *bool           `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start" structs:"auto_start"`
+	AutoTimeGap     *int64          `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap" structs:"auto_time_gap"`
+	LastTime        time.Time       `field:"last_time" json:"last_time,omitempty" bson:"last_time" structs:"last_time"`
+	CreateTime      time.Time       `field:"create_time" json:"create_time,omitempty" bson:"create_time" structs:"create_time"`
+	BusinessID      int64           `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id" structs:"bk_biz_id"`
+	StartCmd        *string         `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd" structs:"start_cmd"`
+	FuncID          *string         `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id" structs:"bk_func_id"`
+	User            *string         `field:"user" json:"user,omitempty" bson:"user" structs:"user"`
+	TimeoutSeconds  *int64          `field:"timeout" json:"timeout,omitempty" bson:"timeout" structs:"timeout"`
+	Protocol        *ProtocolType   `field:"protocol" json:"protocol,omitempty" bson:"protocol" structs:"protocol"`
+	Description     *string         `field:"description" json:"description,omitempty" bson:"description" structs:"description"`
+	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" structs:"bk_supplier_account"`
+	StartParamRegex *string         `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty" structs:"bk_start_param_regex"`
 }
 
 type ServiceCategory struct {
@@ -286,8 +308,8 @@ type ServiceCategory struct {
 	ID   int64  `field:"id" json:"id,omitempty" bson:"id"`
 	Name string `field:"name" json:"name,omitempty" bson:"name"`
 
-	RootID          int64  `field:"root_id" json:"root_id,omitempty" bson:"root_id"`
-	ParentID        int64  `field:"parent_id" json:"parent_id,omitempty" bson:"parent_id"`
+	RootID          int64  `field:"bk_root_id" json:"bk_root_id,omitempty" bson:"bk_root_id"`
+	ParentID        int64  `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 
 	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
@@ -308,6 +330,12 @@ func (sc *ServiceCategory) Validate() (field string, err error) {
 type ServiceCategoryWithStatistics struct {
 	ServiceCategory ServiceCategory `field:"category" json:"category" bson:"category"`
 	UsageAmount     int64           `field:"usage_amount" json:"usage_amount" bson:"usage_amount"`
+}
+
+type ServiceTemplateDetail struct {
+	Template             ServiceTemplate `field:"template" json:"template" bson:"template"`
+	ServiceInstanceCount int64           `field:"service_instance_count" json:"service_instance_count" bson:"service_instance_count"`
+	ProcessInstanceCount int64           `field:"process_instance_count" json:"process_instance_count" bson:"process_instance_count"`
 }
 
 type ServiceTemplate struct {
@@ -359,36 +387,520 @@ type ProcessTemplate struct {
 }
 
 func (pt *ProcessTemplate) Validate() (field string, err error) {
-	if pt.Property != nil {
-		field, err = pt.Property.Validate()
-		if err != nil {
-			return field, err
-		}
+	if pt.Property == nil {
+		return "property", errors.New("property field shouldn't be nil")
+	}
+	field, err = pt.Property.Validate()
+	if err != nil {
+		return field, err
 	}
 	return "", nil
 }
 
+func IsAsDefaultValue(asDefaultValue *bool) bool {
+	if asDefaultValue != nil {
+		return *asDefaultValue
+	}
+	return false
+}
+
+func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Process {
+	now := time.Now()
+	processInstance := &Process{
+		LastTime:        now,
+		CreateTime:      now,
+		BusinessID:      bizID,
+		Metadata:        NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+		SupplierAccount: supplierAccount,
+	}
+
+	property := pt.Property
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == true {
+		processInstance.ProcessName = property.ProcessName.Value
+	}
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == true {
+		processInstance.ProcNum = property.ProcNum.Value
+	}
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == true {
+		processInstance.StopCmd = property.StopCmd.Value
+	}
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == true {
+		processInstance.RestartCmd = property.RestartCmd.Value
+	}
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == true {
+		processInstance.ForceStopCmd = property.ForceStopCmd.Value
+	}
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == true {
+		processInstance.FuncName = property.FuncName.Value
+	}
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == true {
+		processInstance.WorkPath = property.WorkPath.Value
+	}
+	processInstance.BindIP = nil
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == true {
+		processInstance.BindIP = property.BindIP.Value
+	}
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) == true {
+		processInstance.Priority = property.Priority.Value
+	}
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == true {
+		processInstance.ReloadCmd = property.ReloadCmd.Value
+	}
+	if IsAsDefaultValue(property.Port.AsDefaultValue) == true {
+		processInstance.Port = property.Port.Value
+	}
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == true {
+		processInstance.PidFile = property.PidFile.Value
+	}
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == true {
+		processInstance.AutoStart = property.AutoStart.Value
+	}
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
+		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
+	}
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == true {
+		processInstance.StartCmd = property.StartCmd.Value
+	}
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == true {
+		processInstance.FuncID = property.FuncID.Value
+	}
+	if IsAsDefaultValue(property.User.AsDefaultValue) == true {
+		processInstance.User = property.User.Value
+	}
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == true {
+		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
+	}
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == true {
+		processInstance.Protocol = property.Protocol.Value
+	}
+	if IsAsDefaultValue(property.Description.AsDefaultValue) == true {
+		processInstance.Description = property.Description.Value
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == true {
+		processInstance.StartParamRegex = property.StartParamRegex.Value
+	}
+	return processInstance
+}
+
+// ExtractChangeInfo get changes that will be applied to process instance
+func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
+	t := pt.Property
+	var changed bool
+	if t == nil || i == nil {
+		return nil, false
+	}
+
+	process := make(mapstr.MapStr)
+	if IsAsDefaultValue(t.ProcNum.AsDefaultValue) {
+		if t.ProcNum.Value == nil && i.ProcNum != nil {
+			process["proc_num"] = nil
+			changed = true
+		} else if t.ProcNum.Value != nil && i.ProcNum == nil {
+			process["proc_num"] = *t.ProcNum.Value
+			changed = true
+		} else if t.ProcNum.Value != nil && i.ProcNum != nil && *t.ProcNum.Value != *i.ProcNum {
+			process["proc_num"] = *t.ProcNum.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StopCmd.AsDefaultValue) {
+		if t.StopCmd.Value == nil && i.StopCmd != nil {
+			process["stop_cmd"] = nil
+			changed = true
+		} else if t.StopCmd.Value != nil && i.StopCmd == nil {
+			process["stop_cmd"] = *t.StopCmd.Value
+			changed = true
+		} else if t.StopCmd.Value != nil && i.StopCmd != nil && *t.StopCmd.Value != *i.StopCmd {
+			process["stop_cmd"] = *t.StopCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.RestartCmd.AsDefaultValue) {
+		if t.RestartCmd.Value == nil && i.RestartCmd != nil {
+			process["restart_cmd"] = nil
+			changed = true
+		} else if t.RestartCmd.Value != nil && i.RestartCmd == nil {
+			process["restart_cmd"] = *t.RestartCmd.Value
+			changed = true
+		} else if t.RestartCmd.Value != nil && i.RestartCmd != nil && *t.RestartCmd.Value != *i.RestartCmd {
+			process["restart_cmd"] = *t.RestartCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ForceStopCmd.AsDefaultValue) {
+		if t.ForceStopCmd.Value == nil && i.ForceStopCmd != nil {
+			process["face_stop_cmd"] = nil
+			changed = true
+		} else if t.ForceStopCmd.Value != nil && i.ForceStopCmd == nil {
+			process["face_stop_cmd"] = *t.ForceStopCmd.Value
+			changed = true
+		} else if t.ForceStopCmd.Value != nil && i.ForceStopCmd != nil && *t.ForceStopCmd.Value != *i.ForceStopCmd {
+			process["face_stop_cmd"] = *t.ForceStopCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.FuncName.AsDefaultValue) {
+		if t.FuncName.Value == nil && i.FuncName != nil {
+			process["bk_func_name"] = nil
+			changed = true
+		} else if t.FuncName.Value != nil && i.FuncName == nil {
+			process["bk_func_name"] = *t.FuncName.Value
+			changed = true
+		} else if t.FuncName.Value != nil && i.FuncName != nil && *t.FuncName.Value != *i.FuncName {
+			process["bk_func_name"] = *t.FuncName.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.WorkPath.AsDefaultValue) {
+		if t.WorkPath.Value == nil && i.WorkPath != nil {
+			process["work_path"] = nil
+			changed = true
+		} else if t.WorkPath.Value != nil && i.WorkPath == nil {
+			process["work_path"] = *t.WorkPath.Value
+			changed = true
+		} else if t.WorkPath.Value != nil && i.WorkPath != nil && *t.WorkPath.Value != *i.WorkPath {
+			process["work_path"] = *t.WorkPath.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.BindIP.AsDefaultValue) {
+		if t.BindIP.Value == nil && i.BindIP != nil {
+			process["bind_ip"] = nil
+			changed = true
+		} else if t.BindIP.Value != nil && i.BindIP == nil {
+			process["bind_ip"] = *t.BindIP.Value
+			changed = true
+		} else if t.BindIP.Value != nil && i.BindIP != nil && *t.BindIP.Value != *i.BindIP {
+			process["bind_ip"] = *t.BindIP.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Priority.AsDefaultValue) {
+		if t.Priority.Value != nil && i.Priority == nil {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		} else if t.Priority.Value == nil && i.Priority != nil {
+			process["priority"] = nil
+			changed = true
+		} else if t.Priority.Value != nil && i.Priority != nil && *t.Priority.Value != *i.Priority {
+			process["priority"] = *t.Priority.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ReloadCmd.AsDefaultValue) {
+		if t.ReloadCmd.Value == nil && i.ReloadCmd != nil {
+			process["reload_cmd"] = nil
+			changed = true
+		} else if t.ReloadCmd.Value != nil && i.ReloadCmd == nil {
+			process["reload_cmd"] = *t.ReloadCmd.Value
+			changed = true
+		} else if t.ReloadCmd.Value != nil && i.ReloadCmd != nil && *t.ReloadCmd.Value != *i.ReloadCmd {
+			process["reload_cmd"] = *t.ReloadCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.ProcessName.AsDefaultValue) {
+		if t.ProcessName.Value == nil && i.ProcessName != nil {
+			process["bk_process_name"] = nil
+			changed = true
+		} else if t.ProcessName.Value != nil && i.ProcessName == nil {
+			process["bk_process_name"] = *t.ProcessName.Value
+			changed = true
+		} else if t.ProcessName.Value != nil && i.ProcessName != nil && *t.ProcessName.Value != *i.ProcessName {
+			process["bk_process_name"] = *t.ProcessName.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Port.AsDefaultValue) {
+		if t.Port.Value == nil && i.Port != nil {
+			process["port"] = nil
+			changed = true
+		} else if t.Port.Value != nil && i.Port == nil {
+			process["port"] = *t.Port.Value
+			changed = true
+		} else if t.Port.Value != nil && i.Port != nil && *t.Port.Value != *i.Port {
+			process["port"] = *t.Port.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.PidFile.AsDefaultValue) {
+		if t.PidFile.Value == nil && i.PidFile != nil {
+			process["pid_file"] = nil
+			changed = true
+		} else if t.PidFile.Value != nil && i.PidFile == nil {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+		} else if t.PidFile.Value != nil && i.PidFile != nil && *t.PidFile.Value != *i.PidFile {
+			process["pid_file"] = *t.PidFile.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.AutoStart.AsDefaultValue) {
+		if t.AutoStart.Value == nil && i.AutoStart != nil {
+			process["auto_start"] = nil
+			changed = true
+		} else if t.AutoStart.Value != nil && i.AutoStart == nil {
+			process["auto_start"] = *t.AutoStart.Value
+			changed = true
+		} else if t.AutoStart.Value != nil && i.AutoStart != nil && *t.AutoStart.Value != *i.AutoStart {
+			process["auto_start"] = *t.AutoStart.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.AutoTimeGapSeconds.AsDefaultValue) {
+		if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap == nil {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		} else if t.AutoTimeGapSeconds.Value == nil && i.AutoTimeGap != nil {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		} else if t.AutoTimeGapSeconds.Value != nil && i.AutoTimeGap != nil && *t.AutoTimeGapSeconds.Value != *i.AutoTimeGap {
+			process["auto_time_gap"] = *t.AutoTimeGapSeconds.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StartCmd.AsDefaultValue) {
+		if t.StartCmd.Value == nil && i.StartCmd != nil {
+			process["start_cmd"] = nil
+			changed = true
+		} else if t.StartCmd.Value != nil && i.StartCmd == nil {
+			process["start_cmd"] = *t.StartCmd.Value
+			changed = true
+		} else if t.StartCmd.Value != nil && i.StartCmd != nil && *t.StartCmd.Value != *i.StartCmd {
+			process["start_cmd"] = *t.StartCmd.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.FuncID.AsDefaultValue) {
+		if t.FuncID.Value == nil && i.FuncID != nil {
+			process["bk_func_id"] = nil
+			changed = true
+		} else if t.FuncID.Value != nil && i.FuncID == nil {
+			process["bk_func_id"] = *t.FuncID.Value
+			changed = true
+		} else if t.FuncID.Value != nil && i.FuncID != nil && *t.FuncID.Value != *i.FuncID {
+			process["bk_func_id"] = *t.FuncID.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.User.AsDefaultValue) {
+		if t.User.Value == nil && i.User != nil {
+			process["user"] = nil
+			changed = true
+		} else if t.User.Value != nil && i.User == nil {
+			process["user"] = *t.User.Value
+			changed = true
+		} else if t.User.Value != nil && i.User != nil && *t.User.Value != *i.User {
+			process["user"] = *t.User.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.TimeoutSeconds.AsDefaultValue) {
+		if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds == nil {
+			process["timeout"] = *t.TimeoutSeconds.Value
+			changed = true
+		} else if t.TimeoutSeconds.Value == nil && i.TimeoutSeconds != nil {
+			process["timeout"] = nil
+			changed = true
+		} else if t.TimeoutSeconds.Value != nil && i.TimeoutSeconds != nil && *t.TimeoutSeconds.Value != *i.TimeoutSeconds {
+			process["timeout"] = *t.TimeoutSeconds.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Protocol.AsDefaultValue) {
+		if t.Protocol.Value == nil && i.Protocol != nil {
+			process["protocol"] = nil
+			changed = true
+		} else if t.Protocol.Value != nil && i.Protocol == nil {
+			process["protocol"] = *t.Protocol.Value
+			changed = true
+		} else if t.Protocol.Value != nil && i.Protocol != nil && *t.Protocol.Value != *i.Protocol {
+			process["protocol"] = *t.ProcNum.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.Description.AsDefaultValue) {
+		if t.Description.Value == nil && i.Description != nil {
+			process["description"] = nil
+			changed = true
+		} else if t.Description.Value != nil && i.Description == nil {
+			process["description"] = *t.Description.Value
+			changed = true
+		} else if t.Description.Value != nil && i.Description != nil && *t.Description.Value != *i.Description {
+			process["description"] = *t.Description.Value
+			changed = true
+		}
+	}
+
+	if IsAsDefaultValue(t.StartParamRegex.AsDefaultValue) {
+		if t.StartParamRegex.Value == nil && i.StartParamRegex != nil {
+			process["bk_start_param_regex"] = nil
+			changed = true
+		} else if t.StartParamRegex.Value != nil && i.StartParamRegex == nil {
+			process["bk_start_param_regex"] = *t.StartParamRegex.Value
+			changed = true
+		} else if t.StartParamRegex.Value != nil && i.StartParamRegex != nil && *t.StartParamRegex.Value != *i.StartParamRegex {
+			process["bk_start_param_regex"] = *t.StartParamRegex.Value
+			changed = true
+		}
+	}
+
+	return process, changed
+}
+
+// InstanceUpdate is used for update instance's value
+func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]interface{} {
+	data := make(map[string]interface{})
+	property := pt.Property
+	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == false {
+		if input.FuncName != nil {
+			data["bk_func_name"] = *input.FuncName
+		}
+	}
+	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == false {
+		if input.ProcessName != nil {
+			data["bk_process_name"] = *input.ProcessName
+		}
+	}
+	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == false {
+		if input.FuncID != nil {
+			data["bk_func_id"] = *input.FuncID
+		}
+	}
+	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == false {
+		if input.StartParamRegex != nil {
+			data["bk_start_param_regex"] = *input.StartParamRegex
+		}
+	}
+	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == false {
+		if input.AutoTimeGap != nil {
+			data["auto_time_gap"] = *input.AutoTimeGap
+		}
+	}
+	if IsAsDefaultValue(property.User.AsDefaultValue) == false {
+		if input.User != nil {
+			data["user"] = *input.User
+		}
+	}
+	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == false {
+		if input.StopCmd != nil {
+			data["stop_cmd"] = *input.StopCmd
+		}
+	}
+	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == false {
+		if input.ProcNum != nil {
+			data["proc_num"] = *input.ProcNum
+		}
+	}
+	if IsAsDefaultValue(property.Port.AsDefaultValue) == false {
+		if input.Port != nil {
+			data["port"] = *input.Port
+		}
+	}
+	if IsAsDefaultValue(property.Description.AsDefaultValue) == false {
+		if input.Description != nil {
+			data["description"] = *input.Description
+		}
+	}
+	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == false {
+		if input.Protocol != nil {
+			data["protocol"] = *input.Protocol
+		}
+	}
+	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == false {
+		if input.TimeoutSeconds != nil {
+			data["timeout"] = *input.TimeoutSeconds
+		}
+	}
+	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == false {
+		if input.AutoStart != nil {
+			data["auto_start"] = *input.AutoStart
+		}
+	}
+	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == false {
+		if input.PidFile != nil {
+			data["pid_file"] = *input.PidFile
+		}
+	}
+	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == false {
+		if input.ReloadCmd != nil {
+			data["reload_cmd"] = *input.ReloadCmd
+		}
+	}
+	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == false {
+		if input.RestartCmd != nil {
+			data["restart_cmd"] = *input.RestartCmd
+		}
+	}
+	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == false {
+		if input.ForceStopCmd != nil {
+			data["face_stop_cmd"] = *input.ForceStopCmd
+		}
+	}
+	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == false {
+		if input.WorkPath != nil {
+			data["work_path"] = *input.WorkPath
+		}
+	}
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
+		if input.BindIP != nil {
+			data["bind_ip"] = *input.BindIP
+		}
+	}
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
+		if input.Priority != nil {
+			data["priority"] = *input.Priority
+		}
+	}
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
+		if input.StartCmd != nil {
+			data["start_cmd"] = *input.StartCmd
+		}
+	}
+	return data
+}
+
 type ProcessProperty struct {
-	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty"`
+	ProcNum            PropertyInt64       `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num,omitempty" validate:"max=10000,min=1"`
 	StopCmd            PropertyString      `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd,omitempty"`
 	RestartCmd         PropertyString      `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd,omitempty"`
 	ForceStopCmd       PropertyString      `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd,omitempty"`
-	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty"`
+	FuncName           PropertyString      `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name,omitempty" validate:"required"`
 	WorkPath           PropertyString      `field:"work_path" json:"work_path,omitempty" bson:"work_path,omitempty"`
 	BindIP             PropertyBindIP      `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip,omitempty"`
-	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty"`
+	Priority           PropertyInt64       `field:"priority" json:"priority,omitempty" bson:"priority,omitempty" validate:"max=10000,min=1"`
 	ReloadCmd          PropertyString      `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd,omitempty"`
-	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty"`
+	ProcessName        PropertyString      `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name,omitempty" validate:"required"`
 	Port               PropertyPort        `field:"port" json:"port,omitempty" bson:"port,omitempty"`
 	PidFile            PropertyString      `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file,omitempty"`
 	AutoStart          PropertyBool        `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start,omitempty"`
-	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty"`
+	AutoTimeGapSeconds PropertyInt64       `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap,omitempty" validate:"max=10000,min=1"`
 	StartCmd           PropertyString      `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd,omitempty"`
 	FuncID             PropertyInt64String `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id,omitempty"`
 	User               PropertyString      `field:"user" json:"user,omitempty" bson:"user,omitempty"`
-	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty"`
+	TimeoutSeconds     PropertyInt64       `field:"timeout" json:"timeout,omitempty" bson:"timeout,omitempty" validate:"max=10000,min=1"`
 	Protocol           PropertyProtocol    `field:"protocol" json:"protocol,omitempty" bson:"protocol,omitempty"`
 	Description        PropertyString      `field:"description" json:"description,omitempty" bson:"description,omitempty"`
+	StartParamRegex    PropertyString      `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty"`
 }
 
 func (pt *ProcessProperty) Validate() (field string, err error) {
@@ -416,6 +928,33 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 			tag := field.Tag.Get("json")
 			fieldName := strings.Split(tag, ",")[0]
 			return fieldName, err
+		}
+	}
+
+	if pt.ProcessName.Value == nil {
+		return "bk_process_name", fmt.Errorf("field [%s] is required", "bk_process_name")
+	}
+	if pt.FuncName.Value == nil {
+		return "bk_func_name", fmt.Errorf("field [%s] is required", "bk_func_name")
+	}
+	if pt.AutoTimeGapSeconds.Value != nil {
+		if *pt.AutoTimeGapSeconds.Value < 1 || *pt.AutoTimeGapSeconds.Value > 10000 {
+			return "auto_time_gap", fmt.Errorf("field %s value must in range [1, 10000]", "auto_time_gap")
+		}
+	}
+	if pt.TimeoutSeconds.Value != nil {
+		if *pt.TimeoutSeconds.Value < 1 || *pt.TimeoutSeconds.Value > 10000 {
+			return "timeout", fmt.Errorf("field %s value must in range [1, 10000]", "timeout")
+		}
+	}
+	if pt.ProcNum.Value != nil {
+		if *pt.ProcNum.Value < 1 || *pt.ProcNum.Value > 10000 {
+			return "proc_num", fmt.Errorf("field %s value must in range [1, 10000]", "proc_num")
+		}
+	}
+	if pt.Priority.Value != nil {
+		if *pt.Priority.Value < 1 || *pt.Priority.Value > 10000 {
+			return "priority", fmt.Errorf("field %s value must in range [1, 10000]", "priority")
 		}
 	}
 	return "", nil
@@ -485,6 +1024,12 @@ type PropertyInt64String struct {
 
 func (ti *PropertyInt64String) Validate() error {
 	if ti.Value != nil {
+		// 兼容前端
+		if *ti.Value == "" {
+			ti.Value = nil
+			return nil
+		}
+
 		if _, err := strconv.ParseInt(*ti.Value, 10, 64); err != nil {
 			return err
 		}
@@ -521,6 +1066,9 @@ type PropertyPort struct {
 
 func (ti *PropertyPort) Validate() error {
 	if ti.Value != nil {
+		if len(*ti.Value) == 0 {
+			return nil
+		}
 		if matched := ProcessPortFormat.MatchString(*ti.Value); matched == false {
 			return fmt.Errorf("port format invalid")
 		}
@@ -564,11 +1112,12 @@ type ServiceInstance struct {
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
-	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
-	HostID            int64 `field:"host_id" json:"host_id,omitempty" bson:"host_id"`
+	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id,omitempty" bson:"service_template_id"`
+	HostID            int64  `field:"bk_host_id" json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	InnerIP           string `field:"bk_host_innerip" json:"bk_host_innerip,omitempty" bson:"bk_host_innerip"`
 
 	// the module that this service belongs to.
-	ModuleID int64 `field:"module_id" json:"module_id,omitempty" bson:"module_id"`
+	ModuleID int64 `field:"bk_module_id" json:"bk_module_id,omitempty" bson:"bk_module_id"`
 
 	Creator         string    `field:"creator" json:"creator,omitempty" bson:"creator"`
 	Modifier        string    `field:"modifier" json:"modifier,omitempty" bson:"modifier"`
@@ -578,9 +1127,11 @@ type ServiceInstance struct {
 }
 
 func (si *ServiceInstance) Validate() (field string, err error) {
-	if len(si.Name) == 0 {
-		return "name", errors.New("name can't be empty")
-	}
+	/*
+		if len(si.Name) == 0 {
+			return "name", errors.New("name can't be empty")
+		}
+	*/
 
 	if len(si.Name) > common.NameFieldMaxLength {
 		return "name", fmt.Errorf("name too long, input: %d > max: %d", len(si.Name), common.NameFieldMaxLength)
@@ -606,4 +1157,9 @@ type ProcessInstanceRelation struct {
 
 func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 	return "", nil
+}
+
+type ProcessInstance struct {
+	Property mapstr.MapStr           `json:"property"`
+	Relation ProcessInstanceRelation `json:"relation"`
 }

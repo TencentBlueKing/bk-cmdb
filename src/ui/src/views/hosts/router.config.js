@@ -21,7 +21,7 @@ export default {
     meta: new Meta({
         menu: {
             id: 'hosts',
-            i18n: 'Nav["主机查询"]',
+            i18n: 'Nav["业务主机"]',
             path: path,
             parent: NAV_BUSINESS_RESOURCE,
             adminView: false
@@ -29,6 +29,7 @@ export default {
         auth: {
             operation: Object.values(OPERATION)
         },
-        requireBusiness: true
+        requireBusiness: true,
+        i18nTitle: 'Nav["业务主机"]'
     })
 }

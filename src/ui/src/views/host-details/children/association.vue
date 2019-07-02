@@ -2,15 +2,19 @@
     <div class="association">
         <div class="options clearfix">
             <div class="fl" v-show="activeView === viewName.list">
-                <bk-button type="primary" class="options-button"
-                    v-if="updateAuth && hasAssociation"
-                    @click="showCreate = true">
-                    {{$t('HostDetails["新增关联"]')}}
-                </bk-button>
-                <cmdb-form-bool
+                <span class="inline-block-middle" v-if="hasAssociation"
+                    v-cursor="{
+                        active: !$isAuthorized(updateAuth),
+                        auth: [updateAuth]
+                    }">
+                    <bk-button type="primary" class="options-button"
+                        :disabled="!$isAuthorized(updateAuth)"
+                        @click="showCreate = true">
+                        {{$t('HostDetails["新增关联"]')}}
+                    </bk-button>
+                </span>
+                <cmdb-form-bool v-if="hasAssociation"
                     :size="16" class="options-checkbox"
-                    :checked="expandAll"
-                    :indeterminate="indeterminate"
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
@@ -61,18 +65,12 @@
             }
         },
         computed: {
-            expandAll () {
-                return this.$store.state.hostDetails.expandAll
-            },
-            indeterminate () {
-                return this.$store.state.hostDetails.indeterminate
-            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return this.$isAuthorized(OPERATION.U_RESOURCE_HOST)
+                    return OPERATION.U_RESOURCE_HOST
                 }
-                return this.$isAuthorized(OPERATION.U_HOST)
+                return OPERATION.U_HOST
             },
             hasAssociation () {
                 const association = this.$store.state.hostDetails.association
@@ -81,7 +79,6 @@
         },
         beforeDestroy () {
             this.$store.commit('hostDetails/toggleExpandAll', false)
-            this.$store.commit('hostDetails/setExpandIndeterminate', true)
         },
         methods: {
             toggleView (view) {
@@ -89,7 +86,6 @@
             },
             handleExpandAll (expandAll) {
                 this.$store.commit('hostDetails/toggleExpandAll', expandAll)
-                this.$store.commit('hostDetails/setExpandIndeterminate', false)
             }
         }
     }

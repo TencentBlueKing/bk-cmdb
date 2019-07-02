@@ -133,7 +133,7 @@ func (m *instanceManager) UpdateModelInstance(ctx core.ContextParams, objID stri
 	}
 
 	if len(origins) == 0 {
-		blog.Errorf("UpdateModelInstance update %s model instance not found. condition:%s, rid:%s", objID, inputParam.Condition, ctx.ReqID)
+		blog.Errorf("UpdateModelInstance update %s model instance not found. condition:%+v, rid:%s", objID, inputParam.Condition, ctx.ReqID)
 		return nil, ctx.Error.Error(common.CCErrCommNotFound)
 	}
 

@@ -99,27 +99,26 @@
                 }
             },
             routeToConfig () {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
+                this.$router.push({
+                    name: 'networkDiscoveryConfig',
+                    query: {
+                        from: this.$route.fullPath
+                    }
                 })
-                this.$router.push({ name: 'networkDiscoveryConfig' })
             },
             routeToConfirm (item) {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.setCloudName(item['bk_cloud_name'])
                 this.$router.push({
                     name: 'networkDiscoveryConfirm',
                     params: {
                         cloudId: item['bk_cloud_id']
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             },
             routeToHistory () {
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'networkDiscoveryHistory'
                 })

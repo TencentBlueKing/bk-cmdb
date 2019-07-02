@@ -13,10 +13,13 @@
 package auth
 
 import (
+	"context"
+	"errors"
+
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/meta"
-	"context"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Authorize interface {
@@ -24,11 +27,14 @@ type Authorize interface {
 	ResourceHandler
 }
 
+var NoAuthorizeError = errors.New("no authorize")
+
 type Authorizer interface {
 	// Authorize works to check if a user has the authority to operate resources.
 	Authorize(ctx context.Context, a *meta.AuthAttribute) (decision meta.Decision, err error)
 	AuthorizeBatch(ctx context.Context, user meta.UserInfo, resources ...meta.ResourceAttribute) (decisions []meta.Decision, err error)
 	GetAuthorizedBusinessList(ctx context.Context, user meta.UserInfo) ([]int64, error)
+	AdminEntrance(ctx context.Context, user meta.UserInfo) ([]string, error)
 	GetAuthorizedAuditList(ctx context.Context, user meta.UserInfo, businessID int64) ([]authcenter.AuthorizedResource, error)
 	Enabled() bool
 }
@@ -59,6 +65,6 @@ type ResourceHandler interface {
 // This allows bk-cmdb to support other kind of auth center.
 // tls can be nil if it is not care.
 // authConfig is a way to parse configuration info for the connection to a auth center.
-func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig) (Authorize, error) {
-	return authcenter.NewAuthCenter(tls, authConfig)
+func NewAuthorize(tls *util.TLSClientConfig, authConfig authcenter.AuthConfig, reg prometheus.Registerer) (Authorize, error) {
+	return authcenter.NewAuthCenter(tls, authConfig, reg)
 }

@@ -8,29 +8,26 @@
             </div>
             <div class="tree-layout">
                 <cmdb-tree ref="topoTree" class="topo-tree"
-                    children-key="child"
+                    v-cursor="{
+                        active: !$isAuthorized(transferResourceAuth),
+                        auth: [transferResourceAuth],
+                        selector: '.is-root.is-first-child'
+                    }"
+                    expand-icon="bk-icon icon-down-shape"
+                    collapse-icon="bk-icon icon-right-shape"
+                    :options="{
+                        idKey: getTopoNodeId,
+                        nameKey: 'bk_inst_name',
+                        childrenKey: 'child'
+                    }"
                     :selectable="false"
-                    :id-generator="getTopoNodeId"
-                    :tree="tree.data"
-                    :before-click="beforeNodeSelect"
-                    @on-click="handleNodeClick">
-                    <div class="tree-node clearfix" slot-scope="{ node, state }"
-                        :class="{
-                            'tree-node-selected': state.selected,
-                            'tree-node-leaf-module': node['bk_obj_id'] === 'module'
-                        }">
-                        <cmdb-form-bool class="topo-node-checkbox"
-                            v-if="node['bk_obj_id'] === 'module'"
-                            :checked="selectedModuleStates.includes(state)"
-                            :true-value="true"
-                            :false-value="false">
-                        </cmdb-form-bool>
-                        <template v-if="[1, 2].includes(node.default)">
-                            <i class="topo-node-icon topo-node-icon-internal icon-cc-host-free-pool" v-if="node.default === 1"></i>
-                            <i class="topo-node-icon topo-node-icon-internal icon-cc-host-breakdown" v-else></i>
-                        </template>
-                        <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
-                        <span class="topo-node-text">{{node['bk_inst_name']}}</span>
+                    :show-checkbox="shouldShowCheckbox"
+                    :before-check="beforeNodeCheck"
+                    @node-click="handleNodeClick"
+                    @check-change="handleNodeCheck">
+                    <div class="node-info clearfix" slot-scope="{ node, data }">
+                        <i :class="['node-model-icon fl', { 'is-checked': node.checked }]">{{modelIconMap[data.bk_obj_id]}}</i>
+                        <span class="node-name">{{data.bk_inst_name}}</span>
                     </div>
                 </cmdb-tree>
             </div>
@@ -42,12 +39,12 @@
             <div class="modules-layout">
                 <ul class="module-list">
                     <li class="module-item clearfix"
-                        v-for="(state, index) in selectedModuleStates" :key="index">
+                        v-for="(node, index) in selectedModules" :key="index">
                         <div class="module-info fl">
-                            <span class="module-info-name">{{state.node['bk_inst_name']}}</span>
-                            <span class="module-info-path">{{getModulePath(state)}}</span>
+                            <span class="module-info-name">{{node.data.bk_inst_name}}</span>
+                            <span class="module-info-path">{{getModulePath(node)}}</span>
                         </div>
-                        <i class="bk-icon icon-close fr" @click="removeSelectedModule(state, index)"></i>
+                        <i class="bk-icon icon-close fr" @click="removeSelectedModule(node)"></i>
                     </li>
                 </ul>
             </div>
@@ -66,7 +63,7 @@
             </div>
             <div class="button-layout content-middle fr">
                 <bk-button class="transfer-button" type="primary"
-                    :disabled="!selectedModuleStates.length"
+                    :disabled="!selectedModules.length"
                     @click="handleTransfer">
                     {{$t('Common[\'确认转移\']')}}
                 </bk-button>
@@ -77,7 +74,7 @@
 </template>
 
 <script>
-    import { mapGetters, mapActions } from 'vuex'
+    import { mapActions } from 'vuex'
     export default {
         props: {
             selectedHosts: {
@@ -87,7 +84,10 @@
                     return []
                 }
             },
-            transferResourceDisabled: Boolean
+            transferResourceAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {
@@ -96,15 +96,11 @@
                 tree: {
                     data: []
                 },
-                selectedModuleStates: [],
+                selectedModules: [],
                 increment: true
             }
         },
         computed: {
-            ...mapGetters('objectBiz', ['authorizedBusiness']),
-            currentBusiness () {
-                return this.authorizedBusiness.find(item => item['bk_biz_id'] === this.businessId)
-            },
             hostIds () {
                 return this.selectedHosts.map(host => host['host']['bk_host_id'])
             },
@@ -118,11 +114,13 @@
                 return modules
             },
             showIncrementOption () {
-                const hasSpecialModule = this.selectedModuleStates.some(({ node }) => {
-                    return node['bk_inst_id'] === 'source' || [1, 2].includes(node.default)
+                if (this.selectedHosts.length === 1) {
+                    return false
+                }
+                const hasSpecialModule = this.selectedModules.some(node => {
+                    return node.data.bk_inst_id === 'resource' || [1, 2].includes(node.data.default)
                 })
-                const isInSpecialModule = this.hostModules.some(module => [1, 2].includes(module.default))
-                return !!this.selectedModuleStates.length && !hasSpecialModule && !isInSpecialModule
+                return !!this.selectedModules.length && !hasSpecialModule
             },
             loading () {
                 const requestIds = [
@@ -132,6 +130,17 @@
                     'post_transferHost'
                 ]
                 return this.$loading(requestIds)
+            },
+            mainLineModels () {
+                const models = this.$store.getters['objectModelClassify/models']
+                return this.topoModel.map(data => models.find(model => model.bk_obj_id === data.bk_obj_id))
+            },
+            modelIconMap () {
+                const map = {}
+                this.mainLineModels.forEach(model => {
+                    map[model.bk_obj_id] = model.bk_obj_name[0]
+                })
+                return map
             }
         },
         watch: {
@@ -140,9 +149,12 @@
                     await this.getMainlineModel()
                     await this.getBusinessTopo()
                     if (this.selectedHosts.length === 1) {
-                        this.setSelectedModuleStates()
+                        this.setSelectedModules()
                     }
                 }
+            },
+            showIncrementOption (show) {
+                this.increment = show
             }
         },
         methods: {
@@ -182,127 +194,123 @@
                         }
                     })
                 ]).then(([instTopo, internalTopo]) => {
-                    const moduleModel = this.getModelByObjId('module')
                     const internalModule = (internalTopo.module || []).map(module => {
                         return {
-                            'default': ['空闲机', 'idle machine'].includes(module['bk_module_name']) ? 1 : 2,
+                            'default': ['空闲机', 'idle machine'].includes(module.bk_module_name) ? 1 : 2,
                             'bk_obj_id': 'module',
-                            'bk_obj_name': moduleModel['bk_obj_name'],
-                            'bk_inst_id': module['bk_module_id'],
-                            'bk_inst_name': module['bk_module_name']
+                            'bk_inst_id': module.bk_module_id,
+                            'bk_inst_name': module.bk_module_name
                         }
                     })
                     const treeData = [{
                         'default': 0,
                         'bk_obj_id': 'module',
-                        'bk_obj_name': this.$t('HostResourcePool["资源池"]'),
-                        'bk_inst_id': 'source',
-                        'bk_inst_name': this.$t('HostResourcePool["资源池"]'),
-                        'child': []
+                        'bk_inst_id': 'resource',
+                        'bk_inst_name': this.$t('HostResourcePool["资源池"]')
                     }, {
-                        expanded: true,
                         ...instTopo[0],
                         child: [...internalModule, ...instTopo[0].child]
                     }]
-                    if (this.transferResourceDisabled) {
-                        treeData.shift()
+                    this.$refs.topoTree.setData(treeData)
+                    if (!this.$isAuthorized(this.transferResourceAuth)) {
+                        this.$nextTick(() => {
+                            this.$refs.topoTree.setDisabled('module-resource')
+                        })
                     }
-                    this.tree.data = treeData
                 })
             },
-            setSelectedModuleStates () {
+            setSelectedModules () {
                 this.$nextTick(() => {
                     const modules = this.selectedHosts[0]['module']
-                    const selectedStates = []
-                    modules.forEach(module => {
-                        const nodeId = this.getTopoNodeId({
+                    const moduleIds = modules.map(module => {
+                        return this.getTopoNodeId({
                             'bk_obj_id': 'module',
-                            'bk_inst_id': module['bk_module_id']
+                            'bk_inst_id': module.bk_module_id
                         })
-                        const state = this.$refs.topoTree.getStateById(nodeId)
-                        if (state) {
-                            selectedStates.push(state)
-                        }
                     })
-                    this.selectedModuleStates = selectedStates
+                    this.$refs.topoTree.setChecked(moduleIds, {
+                        checked: true,
+                        emitEvent: true,
+                        beforeCheck: false
+                    })
                 })
-            },
-            getModelByObjId (id) {
-                return this.topoModel.find(model => model['bk_obj_id'] === id)
             },
             getTopoNodeId (node) {
                 return `${node['bk_obj_id']}-${node['bk_inst_id']}`
             },
-            beforeNodeSelect (node, state) {
-                /* eslint-disable */
+            shouldShowCheckbox (data) {
+                return data.bk_obj_id === 'module'
+            },
+            handleNodeCheck (checked, nodes) {
+                this.selectedModules = nodes
+            },
+            beforeNodeCheck (node) {
                 let confirmResolver
-                let confirmRejecter
-                /* eslint-enable */
-                const asyncConfirm = new Promise((resolve, reject) => {
+                const asyncConfirm = new Promise(resolve => {
                     confirmResolver = resolve
-                    confirmRejecter = reject
                 })
-                if (node['bk_obj_id'] !== 'module') {
-                    confirmResolver(true)
-                } else {
-                    const isSpecialNode = !!node.default || node['bk_inst_id'] === 'source'
-                    const hasNormalNode = this.selectedModuleStates.some(({ node }) => {
-                        return !node.default && node['bk_inst_id'] !== 'source'
-                    })
-                    const hasSpecialNode = this.selectedModuleStates.some(({ node }) => {
-                        return node.default || node['bk_inst_id'] === 'source'
-                    })
-                    if (isSpecialNode && hasNormalNode) {
-                        this.$bkInfo({
-                            title: this.$t('Common[\'转移确认\']', { target: node['bk_inst_name'] }),
-                            confirmFn: () => {
-                                this.selectedModuleStates = []
-                                confirmResolver(true)
-                            },
-                            cancelFn: () => {
-                                confirmResolver(false)
-                            }
-                        })
-                    } else {
-                        if (hasSpecialNode && !this.selectedModuleStates.includes(state)) {
-                            this.selectedModuleStates = []
+                const data = node.data
+                const isSpecialNode = !!data.default || data.bk_inst_id === 'resource'
+                const hasNormalNode = this.selectedModules.some(selectedNode => {
+                    const selectedNodeData = selectedNode.data
+                    return !selectedNodeData.default && selectedNodeData.bk_inst_id !== 'resource'
+                })
+                if (isSpecialNode && hasNormalNode) {
+                    this.$bkInfo({
+                        title: this.$t('Common[\'转移确认\']', { target: data.bk_inst_name }),
+                        confirmFn: () => {
+                            this.$refs.topoTree.removeChecked({ emitEvent: true })
+                            confirmResolver(true)
+                        },
+                        cancelFn: () => {
+                            confirmResolver(false)
                         }
-                        confirmResolver(true)
+                    })
+                } else {
+                    const specialNodes = this.selectedModules.filter(selectedNode => {
+                        const selectedNodeData = selectedNode.data
+                        return selectedNodeData.default || selectedNodeData.bk_inst_id === 'resource'
+                    })
+                    if (specialNodes.length && !specialNodes.includes(node)) {
+                        this.$refs.topoTree.removeChecked({ emitEvent: true })
                     }
+                    confirmResolver(true)
                 }
                 return asyncConfirm
             },
-            handleNodeClick (node, state) {
-                const isModule = node['bk_obj_id'] === 'module'
-                const isExist = this.selectedModuleStates.some(selectedState => selectedState === state)
+            handleNodeClick (node) {
+                const isModule = node.data.bk_obj_id === 'module'
                 if (isModule) {
-                    if (isExist) {
-                        this.selectedModuleStates = this.selectedModuleStates.filter(selectedState => selectedState !== state)
-                    } else {
-                        this.selectedModuleStates.push(state)
-                    }
+                    this.$refs.topoTree.setChecked(node.id, {
+                        checked: !node.checked,
+                        emitEvent: true,
+                        beforeCheck: true
+                    })
+                } else {
+                    this.$refs.topoTree.setExpanded(node.id, {
+                        expanded: !node.expanded,
+                        emitEvent: false
+                    })
                 }
             },
-            removeSelectedModule (state, index) {
-                this.selectedModuleStates.splice(index, 1)
-                if (state.selected) {
-                    state.selected = false
-                }
+            removeSelectedModule (node) {
+                this.$refs.topoTree.setChecked(node.id, {
+                    checked: false,
+                    emitEvent: true,
+                    beforeCheck: false
+                })
             },
-            getModulePath (state) {
-                if (state.node['bk_inst_id'] === 'source') {
+            getModulePath (node) {
+                const data = node.data
+                if (data.bk_inst_id === 'resource') {
                     return this.$t('Common["主机资源池"]')
                 }
-                const currentBusiness = this.currentBusiness
-                if ([1, 2].includes(state.node.default)) {
-                    return `${currentBusiness['bk_biz_name']}-${state.node['bk_inst_name']}`
-                }
-                return `${currentBusiness['bk_biz_name']}-${state.parent.node['bk_inst_name']}`
+                return node.parents.map(parent => parent.data.bk_inst_name).join('-')
             },
             handleTransfer () {
-                const toSource = this.selectedModuleStates.some(({ node }) => node['bk_inst_id'] === 'source')
-                const toIdle = this.selectedModuleStates.some(({ node }) => node.default === 1)
-                const toFault = this.selectedModuleStates.some(({ node }) => node.default === 2)
+                const toSource = this.selectedModules.some(node => node.data.bk_inst_id === 'resource')
+                const toIdle = this.selectedModules.some(node => node.data.default === 1)
+                const toFault = this.selectedModules.some(node => node.data.default === 2)
                 const transferConfig = {
                     requestId: 'transferHost'
                 }
@@ -349,15 +357,11 @@
                 })
             },
             getTransferParams () {
-                // const hasSpecialNode = this.selectedModuleStates.some(({ node }) => [1, 2].includes(node.default))
-                let increment = this.increment
-                if (this.hasSpecialNode || this.hostIds.length === 1) {
-                    increment = false
-                }
+                const increment = this.hostIds.length === 1 ? false : this.increment
                 return {
                     'bk_biz_id': this.businessId,
                     'bk_host_id': this.hostIds,
-                    'bk_module_id': this.selectedModuleStates.map(({ node }) => node['bk_inst_id']),
+                    'bk_module_id': this.selectedModules.map(node => node.data.bk_inst_id),
                     'is_increment': increment
                 }
             },
@@ -409,60 +413,22 @@
         padding: 0 0 0 20px;
         height: 100%;
         @include scrollbar-y;
-        .tree-node {
-            font-size: 0;
-            &:hover{
-                .topo-node-icon.topo-node-icon-text{
-                    background-color: #50abff;
-                }
-                .topo-node-icon.topo-node-icon-internal{
-                    color: #50abff;
-                }
-            }
-            &.tree-node-selected{
-                .topo-node-icon.topo-node-icon-text{
-                    background-color: #498fe0;
-                }
-                .topo-node-icon.topo-node-icon-internal{
-                    color: #ffb400;
-                }
-            }
-            &.tree-node-leaf-module {
-                margin: 0 0 0 -2px !important;
-                padding-left: 0;
-            }
-        }
-        .topo-node-checkbox {
-            position: relative;
-            margin: 0 10px 0 0;
-            transform: scale(0.888);
-            background-color: #fff;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .topo-node-icon{
-            display: inline-block;
-            vertical-align: middle;
-            width: 18px;
-            height: 18px;
-            line-height: 16px;
-            font-size: 12px;
+    }
+    .node-info {
+        .node-model-icon {
+            width: 22px;
+            height: 22px;
+            line-height: 21px;
             text-align: center;
-            color: #fff;
             font-style: normal;
-            background-color: #c3cdd7;
+            font-size: 12px;
+            margin: 5px 4px 0 6px;
             border-radius: 50%;
-            &.topo-node-icon-internal{
-                font-size: 16px;
-                color: $cmdbTextColor;
-                background-color: transparent;
+            background-color: #c4c6cc;
+            color: #fff;
+            &.is-checked {
+                background-color: #3a84ff;
             }
-        }
-        .topo-node-text{
-            display: inline-block;
-            vertical-align: middle;
-            padding: 0 0 0 8px;
-            font-size: 14px;
         }
     }
     .selected-layout {

@@ -14,11 +14,17 @@
             @handlePageChange="handlePageChange"
             @handleSizeChange="handleSizeChange">
             <template slot="options" slot-scope="{ item }">
-                <bk-button type="primary" size="mini"
-                    :disabled="!archiveAuth"
-                    @click="handleRecovery(item)">
-                    {{$t('Inst["恢复业务"]')}}
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !$isAuthorized(archiveAuth),
+                        auth: [archiveAuth]
+                    }">
+                    <bk-button type="primary" size="mini"
+                        :disabled="!$isAuthorized(archiveAuth)"
+                        @click="handleRecovery(item)">
+                        {{$t('Inst["恢复业务"]')}}
+                    </bk-button>
+                </span>
             </template>
         </cmdb-table>
     </div>
@@ -48,11 +54,10 @@
                 return this.usercustom[`${this.userName}_biz_${this.isAdminView ? 'adminView' : this.bizId}_table_columns`]
             },
             archiveAuth () {
-                return this.$isAuthorized(OPERATION.BUSINESS_ARCHIVE)
+                return OPERATION.BUSINESS_ARCHIVE
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务"]'))
             try {
                 this.properties = await this.searchObjectAttribute({
                     params: this.$injectMetadata({
@@ -103,7 +108,7 @@
                     }
                 }).then(business => {
                     this.pagination.count = business.count
-                    this.list = this.$tools.flatternList(this.properties, business.info.map(biz => {
+                    this.list = this.$tools.flattenList(this.properties, business.info.map(biz => {
                         biz['last_time'] = this.$tools.formatTime(biz['last_time'], 'YYYY-MM-DD HH:mm:ss')
                         return biz
                     }))

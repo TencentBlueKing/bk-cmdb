@@ -79,6 +79,18 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				return err
 			}
 
+			// set module template
+			moduleFilter := map[string]interface{}{
+				common.BKModuleIDField: modules[0].ModuleID,
+			}
+			moduleUpdateData := map[string]interface{}{
+				common.BKServiceCategoryIDField: categoryID,
+				common.BKServiceTemplateIDField: svcTemplateID,
+			}
+			if err = db.Table(common.BKTableNameBaseModule).Update(ctx, moduleFilter, moduleUpdateData); err != nil {
+				return err
+			}
+
 			// build process template
 			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: modulename}
 			processMappingInModule := []metadata.ProcessModule{}
@@ -185,7 +197,7 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 							HostID:            moduleHost.HostID,
 							SupplierAccount:   ownerID,
 						}
-						blog.InfoJSON("relateion: %s", relateion)
+						blog.InfoJSON("relation: %s", relateion)
 						if err = db.Table(common.BKTableNameProcessInstanceRelation).Insert(ctx, relateion); err != nil {
 							return err
 						}
@@ -194,6 +206,20 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 			}
 			blog.Info("done \n")
 		}
+	}
+
+	// 填充默认值：service_template_id, service_category_id
+	notSetFilter := map[string]interface{}{
+		common.BKServiceCategoryIDField: map[string]interface{}{
+			common.BKDBExists: false,
+		},
+	}
+	defaultData := map[string]interface{}{
+		common.BKServiceCategoryIDField: categoryID,
+		common.BKServiceTemplateIDField: 0,
+	}
+	if err = db.Table(common.BKTableNameBaseModule).Update(ctx, notSetFilter, defaultData); err != nil {
+		return err
 	}
 
 	return db.Table(common.BKTableNameBaseProcess).Delete(ctx, mapstr.MapStr{"old_flag": true})
@@ -222,84 +248,84 @@ func backupProcessBase(ctx context.Context, db dal.RDB, conf *upgrader.Config) (
 func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 	var True = true
 	template := metadata.ProcessProperty{}
-	if inst.ProcNum > 0 {
-		template.ProcNum.Value = &inst.ProcNum
+	if inst.ProcNum != nil && *inst.ProcNum > 0 {
+		template.ProcNum.Value = inst.ProcNum
 		template.ProcNum.AsDefaultValue = &True
 	}
-	if inst.StopCmd != "" {
-		template.StopCmd.Value = &inst.StopCmd
+	if inst.StopCmd != nil {
+		template.StopCmd.Value = inst.StopCmd
 		template.StopCmd.AsDefaultValue = &True
 	}
-	if inst.RestartCmd != "" {
-		template.RestartCmd.Value = &inst.RestartCmd
+	if inst.RestartCmd != nil {
+		template.RestartCmd.Value = inst.RestartCmd
 		template.RestartCmd.AsDefaultValue = &True
 	}
-	if inst.ForceStopCmd != "" {
-		template.ForceStopCmd.Value = &inst.ForceStopCmd
+	if inst.ForceStopCmd != nil {
+		template.ForceStopCmd.Value = inst.ForceStopCmd
 		template.ForceStopCmd.AsDefaultValue = &True
 	}
-	if inst.FuncName != "" {
-		template.FuncName.Value = &inst.FuncName
+	if inst.FuncName != nil {
+		template.FuncName.Value = inst.FuncName
 		template.FuncName.AsDefaultValue = &True
 	}
-	if inst.WorkPath != "" {
-		template.WorkPath.Value = &inst.WorkPath
+	if inst.WorkPath != nil {
+		template.WorkPath.Value = inst.WorkPath
 		template.WorkPath.AsDefaultValue = &True
 	}
-	if inst.BindIP != "" {
-		template.BindIP.Value = &inst.BindIP
+	if inst.BindIP != nil {
+		template.BindIP.Value = inst.BindIP
 		template.BindIP.AsDefaultValue = &True
 	}
-	if inst.Priority > 0 {
-		template.Priority.Value = &inst.Priority
+	if inst.Priority != nil && *inst.Priority > 0 {
+		template.Priority.Value = inst.Priority
 		template.Priority.AsDefaultValue = &True
 	}
-	if inst.ReloadCmd != "" {
-		template.ReloadCmd.Value = &inst.ReloadCmd
+	if inst.ReloadCmd != nil {
+		template.ReloadCmd.Value = inst.ReloadCmd
 		template.ReloadCmd.AsDefaultValue = &True
 	}
-	if inst.ProcessName != "" {
-		template.ProcessName.Value = &inst.ProcessName
+	if inst.ProcessName != nil {
+		template.ProcessName.Value = inst.ProcessName
 		template.ProcessName.AsDefaultValue = &True
 	}
-	if inst.Port != "" {
-		template.Port.Value = &inst.Port
+	if inst.Port != nil {
+		template.Port.Value = inst.Port
 		template.Port.AsDefaultValue = &True
 	}
-	if inst.PidFile != "" {
-		template.PidFile.Value = &inst.PidFile
+	if inst.PidFile != nil {
+		template.PidFile.Value = inst.PidFile
 		template.PidFile.AsDefaultValue = &True
 	}
-	if inst.AutoStart == true {
-		template.AutoStart.Value = &inst.AutoStart
+	if inst.AutoStart != nil {
+		template.AutoStart.Value = inst.AutoStart
 		template.AutoStart.AsDefaultValue = &True
 	}
-	if inst.AutoTimeGap > 0 {
-		template.AutoTimeGapSeconds.Value = &inst.AutoTimeGap
+	if inst.AutoTimeGap != nil && *inst.AutoTimeGap > 0 {
+		template.AutoTimeGapSeconds.Value = inst.AutoTimeGap
 		template.AutoTimeGapSeconds.AsDefaultValue = &True
 	}
-	if inst.StartCmd != "" {
-		template.StartCmd.Value = &inst.StartCmd
+	if inst.StartCmd != nil {
+		template.StartCmd.Value = inst.StartCmd
 		template.StartCmd.AsDefaultValue = &True
 	}
-	if inst.FuncID != "" {
-		template.FuncID.Value = &inst.FuncID
+	if inst.FuncID != nil {
+		template.FuncID.Value = inst.FuncID
 		template.FuncID.AsDefaultValue = &True
 	}
-	if inst.User != "" {
-		template.User.Value = &inst.User
+	if inst.User != nil {
+		template.User.Value = inst.User
 		template.User.AsDefaultValue = &True
 	}
-	if inst.TimeoutSeconds > 0 {
-		template.TimeoutSeconds.Value = &inst.TimeoutSeconds
+	if inst.TimeoutSeconds != nil && *inst.TimeoutSeconds > 0 {
+		template.TimeoutSeconds.Value = inst.TimeoutSeconds
 		template.TimeoutSeconds.AsDefaultValue = &True
 	}
-	if inst.Protocol != "" {
-		template.Protocol.Value = &inst.Protocol
+	if inst.Protocol != nil {
+		template.Protocol.Value = inst.Protocol
 		template.Protocol.AsDefaultValue = &True
 	}
-	if inst.Description != "" {
-		template.Description.Value = &inst.Description
+	if inst.Description != nil {
+		template.Description.Value = inst.Description
 		template.Description.AsDefaultValue = &True
 	}
 

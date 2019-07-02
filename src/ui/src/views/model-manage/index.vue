@@ -12,24 +12,40 @@
                 @close-tips="showFeatureTips = false">
             </feature-tips>
             <div class="fl">
-                <bk-button type="primary"
-                    v-if="isAdminView"
-                    :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
-                    @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新建模型"]')}}
-                </bk-button>
-                <bk-button type="primary"
-                    v-else
-                    v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
-                    :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
-                    @click="showModelDialog(false)">
-                    {{$t('ModelManagement["新建模型"]')}}
-                </bk-button>
-                <bk-button type="default"
-                    :disabled="!$isAuthorized(OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
-                    @click="showGroupDialog(false)">
-                    {{$t('ModelManagement["新建分组"]')}}
-                </bk-button>
+                <span v-if="isAdminView" style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.C_MODEL),
+                        auth: [OPERATION.C_MODEL]
+                    }">
+                    <bk-button type="primary"
+                        :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
+                        @click="showModelDialog(false)">
+                        {{$t('ModelManagement["新建模型"]')}}
+                    </bk-button>
+                </span>
+                <span v-else style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.C_MODEL),
+                        auth: [OPERATION.C_MODEL]
+                    }">
+                    <bk-button type="primary"
+                        v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
+                        :disabled="!$isAuthorized(OPERATION.C_MODEL) || modelType === 'disabled'"
+                        @click="showModelDialog(false)">
+                        {{$t('ModelManagement["新建模型"]')}}
+                    </bk-button>
+                </span>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized(OPERATION.C_MODEL_GROUP),
+                        auth: [OPERATION.C_MODEL_GROUP]
+                    }">
+                    <bk-button type="default"
+                        :disabled="!$isAuthorized(OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
+                        @click="showGroupDialog(false)">
+                        {{$t('ModelManagement["新建分组"]')}}
+                    </bk-button>
+                </span>
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
@@ -70,11 +86,19 @@
                     <span class="number">({{classification['bk_objects'].length}})</span>
                     <template v-if="isEditable(classification)">
                         <i class="icon-cc-edit text-primary"
-                            v-if="$isAuthorized(OPERATION.U_MODEL_GROUP)"
+                            :style="{ color: $isAuthorized(OPERATION.U_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                            v-cursor="{
+                                active: !$isAuthorized(OPERATION.U_MODEL_GROUP),
+                                auth: [OPERATION.U_MODEL_GROUP]
+                            }"
                             @click="showGroupDialog(true, classification)">
                         </i>
                         <i class="icon-cc-del text-primary"
-                            v-if="$isAuthorized(OPERATION.D_MODEL_GROUP)"
+                            :style="{ color: $isAuthorized(OPERATION.D_MODEL_GROUP) ? '' : '#e6e6e6 !important' }"
+                            v-cursor="{
+                                active: !$isAuthorized(OPERATION.D_MODEL_GROUP),
+                                auth: [OPERATION.D_MODEL_GROUP]
+                            }"
                             @click="deleteGroup(classification)">
                         </i>
                     </template>
@@ -229,7 +253,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["模型"]'))
             this.scrollHandler = event => {
                 this.scrollTop = event.target.scrollTop
             }
@@ -270,12 +293,14 @@
             },
             showGroupDialog (isEdit, group) {
                 if (isEdit) {
+                    if (!this.$isAuthorized(OPERATION.U_MODEL_GROUP)) return
                     this.groupDialog.data.id = group.id
                     this.groupDialog.title = this.$t('ModelManagement["编辑分组"]')
                     this.groupDialog.data.bk_classification_id = group['bk_classification_id']
                     this.groupDialog.data.bk_classification_name = group['bk_classification_name']
                     this.groupDialog.data.id = group.id
                 } else {
+                    if (!this.$isAuthorized(OPERATION.C_MODEL_GROUP)) return
                     this.groupDialog.title = this.$t('ModelManagement["新建分组"]')
                     this.groupDialog.data.bk_classification_id = ''
                     this.groupDialog.data.bk_classification_name = ''
@@ -321,6 +346,7 @@
                 this.hideGroupDialog()
             },
             deleteGroup (group) {
+                if (!this.$isAuthorized(OPERATION.D_MODEL_GROUP)) return
                 this.$bkInfo({
                     title: this.$t('ModelManagement["确认要删除此分组"]'),
                     confirmFn: async () => {
@@ -357,13 +383,13 @@
             },
             modelClick (model) {
                 this.$store.commit('objectModel/setActiveModel', model)
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push({
                     name: 'modelDetails',
                     params: {
                         modelId: model['bk_obj_id']
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 })
             }

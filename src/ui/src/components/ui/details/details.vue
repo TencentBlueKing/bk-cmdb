@@ -15,11 +15,13 @@
                                 :key="propertyIndex"
                                 :title="getTitle(inst, property)">
                                 <span class="property-name fl">{{property['bk_property_name']}}</span>
-                                <span class="property-value clearfix fl" v-if="property.unit">
-                                    <span class="property-value-text fl">{{getValue(property)}}</span>
-                                    <span class="property-value-unit fl">{{property.unit}}</span>
-                                </span>
-                                <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                                <slot :name="property['bk_property_id']">
+                                    <span class="property-value clearfix fl" v-if="property.unit">
+                                        <span class="property-value-text fl">{{getValue(property)}}</span>
+                                        <span class="property-value-unit fl">{{property.unit}}</span>
+                                    </span>
+                                    <span class="property-value fl" v-else>{{getValue(property)}}</span>
+                                </slot>
                             </li>
                         </ul>
                     </cmdb-collapse>
@@ -30,18 +32,30 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="details-options">
-                <bk-button class="button-edit" type="primary"
+                <span class="inline-block-middle"
                     v-if="showEdit"
-                    :disabled="editDisabled"
-                    @click="handleEdit">
-                    {{editText}}
-                </bk-button>
-                <bk-button class="button-delete" type="danger"
+                    v-cursor="{
+                        active: !$isAuthorized(editAuth),
+                        auth: [editAuth]
+                    }">
+                    <bk-button class="button-edit" type="primary"
+                        :disabled="!$isAuthorized(editAuth)"
+                        @click="handleEdit">
+                        {{editText}}
+                    </bk-button>
+                </span>
+                <span class="inline-block-middle"
                     v-if="showDelete"
-                    :disabled="deleteDisabled"
-                    @click="handleDelete">
-                    {{deleteText}}
-                </bk-button>
+                    v-cursor="{
+                        active: !$isAuthorized(deleteAuth),
+                        auth: [deleteAuth]
+                    }">
+                    <bk-button class="button-delete" type="danger"
+                        :disabled="!$isAuthorized(deleteAuth)"
+                        @click="handleDelete">
+                        {{deleteText}}
+                    </bk-button>
+                </span>
             </slot>
         </div>
     </div>
@@ -78,8 +92,14 @@
                 type: Boolean,
                 default: true
             },
-            editDisabled: Boolean,
-            deleteDisabled: Boolean
+            editAuth: {
+                type: [String, Array],
+                default: ''
+            },
+            deleteAuth: {
+                type: [String, Array],
+                default: ''
+            }
         },
         data () {
             return {
@@ -143,8 +163,8 @@
         }
     }
     .group-name{
-        font-size: 14px;
-        line-height: 14px;
+        font-size: 16px;
+        line-height: 16px;
         color: #333948;
         overflow: visible;
         .group-toggle {
@@ -166,14 +186,13 @@
             width: 50%;
             max-width: 400px;
             margin: 12px 0 0;
-            font-size: 12px;
-            line-height: 16px;
+            font-size: 14px;
+            line-height: 26px;
             .property-name{
                 position: relative;
                 width: 35%;
                 padding: 0 16px 0 0;
-                text-align: right;
-                color: $cmdbTextColor;
+                color: #63656e;
                 @include ellipsis;
                 &:after{
                     content: ":";
@@ -184,6 +203,7 @@
             .property-value{
                 width: 65%;
                 padding: 0 15px 0 0;
+                color: #313238;
                 @include ellipsis;
                 &-text{
                     display: block;

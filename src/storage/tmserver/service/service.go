@@ -91,9 +91,13 @@ func (s *coreService) WebService() *restful.WebService {
 	restful.TraceLogger(&blog.GlogWriter{})
 
 	ws := &restful.WebService{}
-	ws.Path("/txn/v3")
+	ws.Path("/txn/v3").Filter(s.engine.Metric().RestfulMiddleWare)
 
 	ws.Route(ws.Method(http.MethodConnect).Path("rpc").To(func(req *restful.Request, resp *restful.Response) {
+		if sub, ok := resp.ResponseWriter.(*restful.Response); ok {
+			s.rpc.ServeHTTP(sub.ResponseWriter, req.Request)
+			return
+		}
 		s.rpc.ServeHTTP(resp.ResponseWriter, req.Request)
 	}))
 

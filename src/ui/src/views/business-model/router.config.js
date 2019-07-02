@@ -22,6 +22,7 @@ export default {
         },
         auth: {
             operation: Object.values(OPERATION)
-        }
+        },
+        i18nTitle: 'Nav["业务层级"]'
     })
 }
