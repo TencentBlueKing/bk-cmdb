@@ -226,7 +226,7 @@ func (manager *TransferManager) RemoveFromModule(ctx core.ContextParams, input *
 
 	moduleIDs := make([]int64, 0)
 	for _, hostConfig := range hostConfigs {
-		moduleIDs = append(moduleIDs, hostConfig.HostID)
+		moduleIDs = append(moduleIDs, hostConfig.ModuleID)
 	}
 
 	// 检查 moduleIDs 是否有空闲机或故障机模块

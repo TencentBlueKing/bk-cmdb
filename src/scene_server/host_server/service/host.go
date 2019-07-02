@@ -138,7 +138,7 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		ApplicationID: appID,
 		HostIDArr:     iHostIDArr,
 	}
-	delResult, err := s.CoreAPI.CoreService().Host().DeleteHost(srvData.ctx, srvData.header, input)
+	delResult, err := s.CoreAPI.CoreService().Host().DeleteHostFromSystem(srvData.ctx, srvData.header, input)
 	if err != nil {
 		blog.Error("DeleteHostBatch DeleteHost http do error. err:%s, input:%s, rid:%s", err.Error(), input, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})

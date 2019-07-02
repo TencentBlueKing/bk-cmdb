@@ -116,13 +116,14 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostToAnotherBusiness, nil)
 
 	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHostFromSystem, nil)
+	s.addAction(http.MethodDelete, "/delete/host/host_module_relations", s.RemoveFromModule, nil)
 
 	s.addAction(http.MethodPost, "/read/host/indentifier", s.HostIdentifier, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
 
-	s.addAction(http.MethodPost, "/find/host/{bk_host_id}", s.GetHostByID, nil)
+	s.addAction(http.MethodGet, "/find/host/{bk_host_id}", s.GetHostByID, nil)
 	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
-	s.addAction(http.MethodPost, "/find/host/snapshot/%s", s.GetHostSnap, nil)
+	s.addAction(http.MethodGet, "/find/host/snapshot/{bk_host_id}", s.GetHostSnap, nil)
 
 	s.addAction(http.MethodPost, "/find/host/lock", s.LockHost, nil)
 	s.addAction(http.MethodDelete, "/delete/host/lock", s.UnlockHost, nil)

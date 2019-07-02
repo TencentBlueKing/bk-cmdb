@@ -104,7 +104,7 @@ func (s *coreService) UpdateUserConfig(params core.ContextParams, pathParams, qu
 		common.BKAppIDField: appID,
 	}
 	filter = util.SetModOwner(filter, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(params).Count(params.Context)
+	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(params.Context)
 	if nil != err {
 		blog.Errorf("query user api fail, error information is %s, params:%v", err.Error(), params)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
@@ -115,7 +115,11 @@ func (s *coreService) UpdateUserConfig(params core.ContextParams, pathParams, qu
 	}
 
 	if len(dat.Name) != 0 {
-		dupParams := common.KvMap{"name": dat.Name, common.BKAppIDField: appID, common.BKFieldID: common.KvMap{common.BKDBNE: id}}
+		dupParams := common.KvMap{
+			"name":              dat.Name,
+			common.BKAppIDField: appID,
+			common.BKFieldID:    common.KvMap{common.BKDBNE: id},
+		}
 		dupParams = util.SetModOwner(dupParams, params.SupplierAccount)
 		rowCount, getErr := s.db.Table(common.BKTableNameUserAPI).Find(dupParams).Count(params.Context)
 		if nil != getErr {
@@ -132,7 +136,7 @@ func (s *coreService) UpdateUserConfig(params core.ContextParams, pathParams, qu
 	dat.ModifyUser = util.GetUser(params.Header)
 	dat.AppID = appID
 	dat.OwnerID = params.SupplierAccount
-	err = s.db.Table(common.BKTableNameUserAPI).Update(params.Context, params, dat)
+	err = s.db.Table(common.BKTableNameUserAPI).Update(params.Context, filter, dat)
 	if nil != err {
 		blog.Errorf("update user api fail, error information is %s, params:%v", err.Error(), params)
 		return nil, params.Error.CCError(common.CCErrCommDBUpdateFailed)
@@ -151,19 +155,19 @@ func (s *coreService) DeleteUserConfig(params core.ContextParams, pathParams, qu
 
 	filter := common.KvMap{"id": id, common.BKAppIDField: appID}
 	filter = util.SetModOwner(filter, params.SupplierAccount)
-	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(params).Count(params.Context)
+	rowCount, err := s.db.Table(common.BKTableNameUserAPI).Find(filter).Count(params.Context)
 	if nil != err {
-		blog.Errorf("query user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("query user api fail, error information is %s, params:%v", err.Error(), filter)
 		return nil, params.Error.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if 1 != rowCount {
-		blog.V(5).Infof("host user api not permissions or not exists, params:%v", params)
+		blog.V(5).Infof("host user api not permissions or not exists, params:%v", filter)
 		return nil, params.Error.CCError(common.CCErrCommNotFound)
 	}
 
-	err = s.db.Table(common.BKTableNameUserAPI).Delete(params.Context, params)
+	err = s.db.Table(common.BKTableNameUserAPI).Delete(params.Context, filter)
 	if nil != err {
-		blog.Errorf("delete user api fail, error information is %s, params:%v", err.Error(), params)
+		blog.Errorf("delete user api fail, error information is %s, params:%v", err.Error(), filter)
 		return nil, params.Error.CCError(common.CCErrCommDBDeleteFailed)
 	}
 
