@@ -13,8 +13,6 @@
 package parser
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/mapstr"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,7 +20,9 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -59,8 +59,23 @@ var (
 	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
+const findReducedBusinessList = `/api/v3/biz/with_reduced`
+
 func (ps *parseStream) business() *parseStream {
 	if ps.shouldReturn() {
+		return ps
+	}
+
+	// find reduced business list for the user with any business resources
+	if ps.hitPattern(findReducedBusinessList, http.MethodGet) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.Business,
+					Action: meta.SkipAction,
+				},
+			},
+		}
 		return ps
 	}
 
@@ -987,7 +1002,7 @@ func (ps *parseStream) object() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.Model,
-					Action: meta.CreateMany,
+					Action: meta.UpdateMany,
 				},
 			},
 		}

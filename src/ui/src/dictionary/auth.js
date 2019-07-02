@@ -45,9 +45,9 @@ export const D_HOST = 'hostInstance.delete'
 export const HOST_TO_RESOURCE = 'hostInstance.moveHostFromModuleToResPool'
 
 // 资源池主机
-export const C_RESOURCE_HOST = 'hostInstance.create.global'
-export const U_RESOURCE_HOST = 'hostInstance.update.global'
-export const D_RESOURCE_HOST = 'hostInstance.delete.global'
+export const C_RESOURCE_HOST = 'hostInstance.create'
+export const U_RESOURCE_HOST = 'hostInstance.update'
+export const D_RESOURCE_HOST = 'hostInstance.delete'
 export const HOST_ASSIGN = 'hostInstance.moveResPoolHostToBizIdleModule'
 
 // 关联类型
@@ -161,8 +161,9 @@ export const RESOURCE_ACTION_NAME = {
 const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id']
 
 export const GET_AUTH_META = (auth, options = {}) => {
-    const [type, action] = auth.split('.')
+    const [type, action, scope] = auth.split('.')
     const meta = {
+        scope: scope || 'global',
         resource_type: type,
         action: action
     }

@@ -169,8 +169,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("parameter field `%s` is unexpected, rid: %s", key, ctx.ReqID)
-			return valid.errif.Errorf(common.CCErrCommUnexpectedParameterField, key)
+			delete(instanceData, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

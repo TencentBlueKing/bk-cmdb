@@ -9,11 +9,11 @@
         </feature-tips>
         <div class="filter-wrapper clearfix">
             <span class="inline-block-middle" v-cursor="{
-                active: !$isAuthorized(OPERATION.C_CUSTOM_QUERY),
-                auth: [OPERATION.C_CUSTOM_QUERY]
+                active: !$isAuthorized($OPERATION.C_CUSTOM_QUERY),
+                auth: [$OPERATION.C_CUSTOM_QUERY]
             }">
                 <bk-button type="primary" class="api-btn"
-                    :disabled="!$isAuthorized(OPERATION.C_CUSTOM_QUERY)"
+                    :disabled="!$isAuthorized($OPERATION.C_CUSTOM_QUERY)"
                     @click="showUserAPISlider('create')">
                     {{$t("Common['新建']")}}
                 </bk-button>
@@ -67,7 +67,6 @@
     import { mapActions, mapGetters } from 'vuex'
     import featureTips from '@/components/feature-tips/index'
     import vDefine from './define'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             vDefine,
@@ -76,7 +75,6 @@
         data () {
             return {
                 showFeatureTips: false,
-                OPERATION,
                 filter: {
                     name: ''
                 },

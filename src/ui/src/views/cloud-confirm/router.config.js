@@ -44,8 +44,11 @@ export default [{
     meta: new Meta({
         auth: {
             operation: [
-                R_CONFIRM_HISTORY
-            ]
+                OPERATION.R_CONFIRM_HISTORY
+            ],
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         i18nTitle: 'Cloud["确认记录"]'
     })

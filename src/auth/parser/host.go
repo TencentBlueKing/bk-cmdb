@@ -89,9 +89,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Update,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Update,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -114,9 +114,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Delete,
-					Name:   ps.RequestCtx.Elements[4],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Delete,
+					InstanceIDEx: ps.RequestCtx.Elements[4],
 				},
 			},
 		}
@@ -164,9 +164,9 @@ func (ps *parseStream) userAPI() *parseStream {
 			meta.ResourceAttribute{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.DynamicGrouping,
-					Action: meta.Find,
-					Name:   ps.RequestCtx.Elements[5],
+					Type:         meta.DynamicGrouping,
+					Action:       meta.Find,
+					InstanceIDEx: ps.RequestCtx.Elements[5],
 				},
 			},
 		}

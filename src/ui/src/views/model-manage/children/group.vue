@@ -130,7 +130,6 @@
 <script>
     import vueDraggable from 'vuedraggable'
     import { mapGetters, mapActions } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             vueDraggable
@@ -187,7 +186,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {
