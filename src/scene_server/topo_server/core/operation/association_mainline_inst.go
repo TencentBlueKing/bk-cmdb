@@ -17,13 +17,12 @@ import (
 	"io"
 	"strconv"
 
-	// "strconv"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -221,7 +220,7 @@ func (cli *association) SetMainlineInstAssociation(params types.ContextParams, p
 	return nil
 }
 
-func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64) ([]*metadata.TopoInstRst, error) {
+func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextParams, obj model.Object, instID int64, withStatistics bool) ([]*metadata.TopoInstRst, error) {
 
 	cond := &metadata.QueryInput{}
 	cond.Condition = mapstr.MapStr{
@@ -258,10 +257,110 @@ func (cli *association) SearchMainlineAssociationInstTopo(params types.ContextPa
 	}
 
 	if err = cli.fillMainlineChildInst(params, obj, results); err != nil {
-		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v", results, err)
+		blog.Errorf("[SearchMainlineAssociationInstTopo] fillMainlineChildInst for %+v failed: %v, rid: %s", results, err, params.ReqID)
 		return nil, err
 	}
+	if withStatistics && len(bizInsts) > 0 {
+		inst := bizInsts[0]
+		bizID, err := inst.GetBizID()
+		if err != nil {
+			blog.Errorf("[SearchMainlineAssociationInstTopo] parse biz id failed, inst: %+v, err: %v, rid: %s", inst, err, params.ReqID)
+			return nil, params.Err.CCError(common.CCErrCommParseBizIDFromMetadataInDBFailed)
+		}
+		if err := cli.fillStatistics(params, bizID, results); err != nil {
+			blog.Errorf("[SearchMainlineAssociationInstTopo] fill statistics data failed, bizID: %d, err: %v, rid: %s", bizID, err, params.ReqID)
+			return nil, err
+		}
+	}
 	return results, nil
+}
+
+func (cli *association) fillStatistics(params types.ContextParams, bizID int64, parentInsts []*metadata.TopoInstRst) error {
+	// fill service instance count
+	option := &metadata.ListServiceInstanceOption{
+		BusinessID: bizID,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	serviceInstances, err := cli.clientSet.CoreService().Process().ListServiceInstance(params.Context, params.Header, option)
+	if err != nil {
+		blog.Errorf("fillStatistics failed, list service instances failed, option: %+v, err: %s, rid: %s", option, err.Error(), params.ReqID)
+		return err
+	}
+	moduleServiceInstanceCount := map[int64]int64{}
+	for _, serviceInstance := range serviceInstances.Info {
+		if _, exist := moduleServiceInstanceCount[serviceInstance.ModuleID]; exist == false {
+			moduleServiceInstanceCount[serviceInstance.ModuleID] = 0
+		}
+		moduleServiceInstanceCount[serviceInstance.ModuleID]++
+	}
+	listHostOption := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+	}
+	hostModules, e := cli.clientSet.CoreService().Host().GetHostModuleRelation(params.Context, params.Header, listHostOption)
+	if e != nil {
+		blog.Errorf("fillStatistics failed, list host modules failed, option: %+v, err: %s, rid: %s", listHostOption, e.Error(), params.ReqID)
+		return e
+	}
+	// topoObjectID -> topoInstanceID -> []hostIDs
+	moduleHostCount := make(map[string]map[int64][]int64)
+	moduleHostCount[common.BKInnerObjIDApp] = make(map[int64][]int64)
+	moduleHostCount[common.BKInnerObjIDSet] = make(map[int64][]int64)
+	moduleHostCount[common.BKInnerObjIDModule] = make(map[int64][]int64)
+	for _, hostModule := range hostModules.Data {
+		if _, exist := moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID]; exist == false {
+			moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = make([]int64, 0)
+		}
+		moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID] = append(moduleHostCount[common.BKInnerObjIDModule][hostModule.ModuleID], hostModule.HostID)
+
+		if _, exist := moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID]; exist == false {
+			moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID] = make([]int64, 0)
+		}
+		moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID] = append(moduleHostCount[common.BKInnerObjIDSet][hostModule.SetID], hostModule.HostID)
+
+		if _, exist := moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID]; exist == false {
+			moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID] = make([]int64, 0)
+		}
+		moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID] = append(moduleHostCount[common.BKInnerObjIDApp][hostModule.AppID], hostModule.HostID)
+	}
+	for _, objectID := range []string{common.BKInnerObjIDSet, common.BKInnerObjIDSet, common.BKInnerObjIDModule} {
+		for key := range moduleHostCount[objectID] {
+			moduleHostCount[objectID][key] = util.IntArrayUnique(moduleHostCount[objectID][key])
+		}
+	}
+	for _, tir := range parentInsts {
+		tir.DeepFirstTraverse(func(node *metadata.TopoInstRst) {
+			if len(node.Child) > 0 {
+				// calculate service instance count
+				subTreeSvcInstCount := int64(0)
+				for _, child := range node.Child {
+					subTreeSvcInstCount += child.ServiceInstanceCount
+				}
+				node.ServiceInstanceCount = subTreeSvcInstCount
+
+				// calculate host count
+				subTreeHostCount := int64(0)
+				for _, child := range node.Child {
+					subTreeHostCount += child.HostCount
+				}
+				node.HostCount = subTreeHostCount
+			}
+			if node.ObjID == common.BKInnerObjIDModule {
+				if _, exist := moduleServiceInstanceCount[node.InstID]; exist == true {
+					node.ServiceInstanceCount = moduleServiceInstanceCount[node.InstID]
+				}
+			}
+			if node.ObjID == common.BKInnerObjIDApp ||
+				node.ObjID == common.BKInnerObjIDSet ||
+				node.ObjID == common.BKInnerObjIDModule {
+				if _, exist := moduleHostCount[node.ObjID][node.InstID]; exist == true {
+					node.HostCount = int64(len(moduleHostCount[node.ObjID][node.InstID]))
+				}
+			}
+		})
+	}
+	return nil
 }
 
 func (cli *association) fillMainlineChildInst(params types.ContextParams, object model.Object, parentInsts []*metadata.TopoInstRst) error {

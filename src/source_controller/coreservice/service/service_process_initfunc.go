@@ -39,6 +39,7 @@ func (s *coreService) initProcess() {
 	s.addAction(http.MethodPost, "/findmany/process/service_instance", s.ListServiceInstances, nil)
 	s.addAction(http.MethodPut, "/update/process/service_instance/{service_instance_id}", s.UpdateServiceInstance, nil)
 	s.addAction(http.MethodDelete, "/delete/process/service_instance", s.DeleteServiceInstance, nil)
+	s.addAction(http.MethodPost, "/update/process/service_instance_name/{service_instance_id}", s.ReconstructServiceInstanceName, nil)
 
 	// process template
 	s.addAction(http.MethodPost, "/create/process/process_template", s.CreateProcessTemplate, nil)
