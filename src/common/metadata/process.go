@@ -962,10 +962,16 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 
 // Update all not nil field from input to pt
 func (pt *ProcessProperty) Update(input ProcessProperty) {
+	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
+	updateIgnoreField := []string{"FuncName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		fieldName := selfType.Field(fieldIdx).Name
+		if util.InArray(fieldName, updateIgnoreField) == true {
+			continue
+		}
 		inputField := inputVal.Field(fieldIdx)
 		selfField := selfVal.Field(fieldIdx)
 		subFieldCount := inputField.NumField()
