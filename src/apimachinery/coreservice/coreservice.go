@@ -13,6 +13,7 @@
 package coreservice
 
 import (
+	"configcenter/src/apimachinery/coreservice/cloudsync"
 	"fmt"
 
 	"configcenter/src/apimachinery/coreservice/association"
@@ -36,6 +37,7 @@ type CoreServiceClientInterface interface {
 	Host() host.HostClientInterface
 	Audit() auditlog.AuditClientInterface
 	Process() process.ProcessInterface
+	Cloud() cloudsync.CloudSyncClientInterface
 }
 
 func NewCoreServiceClient(c *util.Capability, version string) CoreServiceClientInterface {
@@ -79,4 +81,8 @@ func (c *coreService) Audit() auditlog.AuditClientInterface {
 
 func (c *coreService) Process() process.ProcessInterface {
 	return process.NewProcessInterfaceClient(c.restCli)
+}
+
+func (c *coreService) Cloud() cloudsync.CloudSyncClientInterface {
+	return cloudsync.NewCloudSyncClientInterface(c.restCli)
 }

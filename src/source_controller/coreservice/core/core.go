@@ -142,6 +142,12 @@ type HostOperation interface {
 	GetHostModuleRelation(ctx ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error)
 	DeleteHost(ctx ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error)
 	Identifier(ctx ContextParams, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error)
+
+	// cloud sync
+	CreateCloudSyncTask(ctx ContextParams, input *metadata.CloudTaskList) (uint64, error)
+	CreateResourceConfirm(ctx ContextParams, input *metadata.ResourceConfirm) (uint64, error)
+	CreateCloudSyncHistory(ctx ContextParams, input *metadata.CloudHistory) (uint64, error)
+	CreateConfirmHistory(ctx ContextParams, input mapstr.MapStr) (uint64, error)
 }
 
 // AssociationOperation association methods
