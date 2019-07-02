@@ -32,6 +32,7 @@
             ref="form"
             :properties="properties"
             :property-groups="propertyGroups"
+            :disabled-properties="disabledProperties"
             :inst="instance"
             :type="type"
             @on-submit="handleSubmit"
@@ -61,6 +62,7 @@
             return {
                 type: 'details',
                 properties: [],
+                disabledProperties: [],
                 propertyGroups: [],
                 instance: {},
                 first: '',
@@ -91,7 +93,7 @@
                 return this.$store.state.businessTopology.selectedNode
             },
             isModuleNode () {
-                return this.selectedNode && this.selectedNode.bk_obj_id === 'module'
+                return this.selectedNode && this.selectedNode.data.bk_obj_id === 'module'
             },
             modelId () {
                 if (this.selectedNode) {
@@ -113,10 +115,11 @@
                     this.init()
                 }
             },
-            selectedNode (node) {
+            async selectedNode (node) {
                 if (node) {
                     this.type = 'details'
-                    this.getInstance()
+                    await this.getInstance()
+                    this.disabledProperties = node.data.bk_obj_id === 'module' && this.withTemplate ? ['bk_module_name'] : []
                 }
             }
         },
@@ -172,14 +175,16 @@
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 1,
                     bk_isapi: false,
-                    editable: false
+                    editable: false,
+                    unit: ''
                 }, {
                     bk_property_id: '__service_category__',
                     bk_property_name: this.$t('BusinessTopology["服务分类"]'),
                     bk_property_group: group.bk_group_id,
                     bk_property_index: 2,
                     bk_isapi: false,
-                    editable: false
+                    editable: false,
+                    unit: ''
                 }]
             },
             updateCategoryProperty (state) {

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-package cloud
+package cloudsync
 
 import (
 	"context"
@@ -20,51 +20,23 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (c *cloud) AddCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/add"
+func (c *cloud) CreateCloudSyncTask(ctx context.Context, header http.Header, input interface{}) (resp *metadata.Uint64DataResponse, err error) {
+	resp = new(metadata.Uint64DataResponse)
+	subPath := "/create/cloud/sync/task"
 
 	err = c.client.Post().
 		WithContext(ctx).
-		Body(data).
+		Body(input).
 		SubResource(subPath).
-		WithHeaders(h).
+		WithHeaders(header).
 		Do().
 		Into(resp)
 	return
 }
 
-func (c *cloud) ResourceConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) DeleteCloudSyncTask(ctx context.Context, h http.Header, id int64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/confirm"
-
-	err = c.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (c *cloud) TaskNameCheck(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
-	resp = new(metadata.Uint64Response)
-	subPath := "/hosts/cloud/nameCheck"
-
-	err = c.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID string) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/hosts/cloud/delete/%v", taskID)
+	subPath := fmt.Sprintf("/delete/cloud/sync/task/%v", id)
 
 	err = c.client.Delete().
 		WithContext(ctx).
@@ -76,23 +48,9 @@ func (c *cloud) DeleteCloudTask(ctx context.Context, h http.Header, taskID strin
 	return
 }
 
-func (c *cloud) SearchCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error) {
-	resp = new(metadata.CloudTaskSearch)
-	subPath := "/hosts/cloud/search"
-
-	err = c.client.Post().
-		WithContext(ctx).
-		Body(data).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
-func (c *cloud) UpdateCloudTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) UpdateCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/update"
+	subPath := "/update/cloud/sync/task"
 
 	err = c.client.Put().
 		WithContext(ctx).
@@ -104,9 +62,51 @@ func (c *cloud) UpdateCloudTask(ctx context.Context, h http.Header, data interfa
 	return
 }
 
-func (c *cloud) DeleteConfirm(ctx context.Context, h http.Header, ResourceID int64) (resp *metadata.Response, err error) {
+func (c *cloud) SearchCloudSyncTask(ctx context.Context, h http.Header, data interface{}) (resp *metadata.CloudTaskSearch, err error) {
+	resp = new(metadata.CloudTaskSearch)
+	subPath := "/search/cloud/sync/task"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (c *cloud) CreateConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64DataResponse, err error) {
+	resp = new(metadata.Uint64DataResponse)
+	subPath := "/create/cloud/confirm"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (c *cloud) CheckTaskNameUnique(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
+	resp = new(metadata.Uint64Response)
+	subPath := "/check/cloud/task/name"
+
+	err = c.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResource(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	return
+}
+
+func (c *cloud) DeleteConfirm(ctx context.Context, h http.Header, id int64) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := fmt.Sprintf("/hosts/cloud/confirm/delete/%v", ResourceID)
+	subPath := fmt.Sprintf("/delete/cloud/confirm/%v", id)
 
 	err = c.client.Delete().
 		WithContext(ctx).
@@ -120,7 +120,7 @@ func (c *cloud) DeleteConfirm(ctx context.Context, h http.Header, ResourceID int
 
 func (c *cloud) SearchConfirm(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
 	resp = new(metadata.FavoriteResult)
-	subPath := "/hosts/cloud/confirm/search"
+	subPath := "/search/cloud/confirm"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -132,9 +132,9 @@ func (c *cloud) SearchConfirm(ctx context.Context, h http.Header, data interface
 	return
 }
 
-func (c *cloud) AddSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/syncHistory/add"
+func (c *cloud) CreateSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Uint64Response, err error) {
+	resp = new(metadata.Uint64Response)
+	subPath := "/create/cloud/sync/history"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -148,7 +148,7 @@ func (c *cloud) AddSyncHistory(ctx context.Context, h http.Header, data interfac
 
 func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
 	resp = new(metadata.FavoriteResult)
-	subPath := "/hosts/cloud/syncHistory/search"
+	subPath := "/search/cloud/sync/history"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -160,9 +160,9 @@ func (c *cloud) SearchSyncHistory(ctx context.Context, h http.Header, data inter
 	return
 }
 
-func (c *cloud) AddConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
+func (c *cloud) CreateConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
-	subPath := "/hosts/cloud/confirmHistory/add"
+	subPath := "/create/cloud/confirm/history"
 
 	err = c.client.Post().
 		WithContext(ctx).
@@ -176,7 +176,7 @@ func (c *cloud) AddConfirmHistory(ctx context.Context, h http.Header, data inter
 
 func (c *cloud) SearchConfirmHistory(ctx context.Context, h http.Header, data interface{}) (resp *metadata.FavoriteResult, err error) {
 	resp = new(metadata.FavoriteResult)
-	subPath := "/hosts/cloud/confirmHistory/search"
+	subPath := "/search/cloud/confirm/history"
 
 	err = c.client.Post().
 		WithContext(ctx).

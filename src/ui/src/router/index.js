@@ -201,6 +201,7 @@ const setupStatus = {
 router.beforeEach((to, from, next) => {
     Vue.nextTick(async () => {
         try {
+            setLoading(true)
             await cancelRequest()
             if (setupStatus.preload) {
                 await preload(router.app)
@@ -208,7 +209,6 @@ router.beforeEach((to, from, next) => {
             if (!isShouldShow(to)) {
                 next({ name: index.name })
             } else {
-                setLoading(true)
                 setMenuState(to)
                 setTitle(to)
                 checkAuthDynamicMeta(to, from)

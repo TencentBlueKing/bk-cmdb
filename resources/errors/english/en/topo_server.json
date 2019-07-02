@@ -28,7 +28,7 @@
 	"1101027": "Failed to update model attribute grouping",
 	"1101028": "Query Model Attribute Grouping Failed",
 	"1101029": "There is a model under the category, not allowed to delete",
-	"1101030": "Having a host under the target",
+	"1101030": "Having hosts under the target, deleting forbidden",
 	"1001031": "Delete Business Failure",
 	"1001032": "Update business failed",
 	"1001033": "Query service failure",
@@ -54,7 +54,7 @@
 	"1101081": "blueking business does not allow deletion",
 	"1101031": "query cloud area failed, %s",
 	"1101032": "cloud area does not exist",
-	"1101033": "query business failed,%s",
+	"1101033": "query business failed",
 	"1101034": "query module failed,%s",
 	"1101035": "Business topology level exceeds the limit",
 	"1101036": "the instance has been associated by [%s], coule not be delete or archived",
@@ -107,5 +107,6 @@
     "1101082": "bk_mainline association type can't use in this scene",
     "1101083":"association type inconsistent with caller method",
     "1101084": "the model stopped to use",
+    "1101085": "mainline object's unique can not be changed",
     "": "" 
 }
