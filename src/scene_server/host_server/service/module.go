@@ -29,6 +29,7 @@ import (
 )
 
 // HostModuleRelation transfer host to module specify by bk_module_id (in the same business)
+// move a business host to a module.
 func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
@@ -62,15 +63,18 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	}
 
 	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostsToBusinessOrModule, config.HostID...); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", config.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveBizHostToModule, config.HostID...); err != nil {
+		blog.Errorf("check move host to module authorization failed, hosts: %+v, err: %v", config.HostID, err)
+		if err != auth.NoAuthorizeError {
+			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		}
+		resp.WriteEntity(s.AuthManager.GenMoveBizHostToModuleResp(config.HostID))
 		return
 	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, config.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", config.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -94,7 +98,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, config.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", config.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -308,7 +312,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 		}
 		host[common.BKCloudIDField] = data.PlatID
 
-		//dispatch to app
+		// dispatch to app
 		err := srvData.lgc.EnterIP(srvData.ctx, util.GetOwnerID(req.Request.Header), appID, moduleID, ip, data.PlatID, host, data.IsIncrement)
 		if nil != err {
 			blog.Errorf("%s add host error: %s,input:%+v,rid:%s", ip, err.Error(), data, srvData.rid)
@@ -333,7 +337,7 @@ func (s *Service) AssignHostToAppModule(req *restful.Request, resp *restful.Resp
 }
 
 // GetHostModuleRelation  query host and module relation,
-// hostID can emtpy
+// hostID can empty
 func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	data := new(metadata.HostModuleRelationParameter)
@@ -401,6 +405,7 @@ func (s *Service) DeleteHostFromBusiness(req *restful.Request, resp *restful.Res
 	return
 }
 
+// move host to idle or fault module under the same business.
 func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Response, moduleName string) {
 	pheader := req.Request.Header
 	srvData := s.newSrvComm(pheader)
@@ -447,12 +452,12 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, action, conf.HostID...); err != nil {
-		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
+		blog.Errorf("auth host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
 		if err != auth.NoAuthorizeError {
 			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		resp.WriteEntity(s.AuthManager.GenDeleteHostBatchNoPermissionResp(conf.HostID))
+		resp.WriteEntity(s.AuthManager.GenMoveBizHostToIdleFaultModule(conf.HostID))
 		return
 	}
 	// auth: deregister hosts

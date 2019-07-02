@@ -46,7 +46,7 @@ type DataInfo struct {
 }
 
 // delete hosts from resource pool
-func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) {
+func (s *Service) DeleteHostBatchFromResourcePool(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 
 	opt := new(meta.DeleteHostBatchOpt)
