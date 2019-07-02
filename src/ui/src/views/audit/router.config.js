@@ -15,7 +15,10 @@ export default {
             parent: NAV_AUDIT_ANALYSE
         },
         auth: {
-            view: R_AUDIT
+            view: R_AUDIT,
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         i18nTitle: 'Nav["操作审计"]'
     })

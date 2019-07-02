@@ -255,11 +255,10 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	if obj.Object().ObjectID == "plat" {
 		iData["bk_supplier_account"] = params.SupplierAccount
 	}
-	iData.Remove("metadata")
-	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
-		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
-		return nil, err
-	}
+	// if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
+	// 	blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
+	// 	return nil, err
+	// }
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
@@ -932,6 +931,9 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 
 	// update insts
 	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Set(metadata.BKMetadata, *params.MetaData)
+	}
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,

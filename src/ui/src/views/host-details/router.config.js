@@ -30,6 +30,9 @@ export default [{
                     ...meta,
                     resource_id: parseInt(to.params.id)
                 })
+            },
+            setAuthScope () {
+                this.authScope = 'global'
             }
         },
         i18nTitle: 'HostDetails["主机详情"]'
@@ -49,6 +52,9 @@ export default [{
                     resource_id: parseInt(to.params.id),
                     bk_biz_id: parseInt(to.params.business)
                 })
+            },
+            setAuthScope () {
+                this.authScope = 'business'
             }
         },
         i18nTitle: 'HostDetails["主机详情"]'

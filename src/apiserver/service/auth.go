@@ -115,7 +115,7 @@ func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response)
 	resp.WriteEntity(metadata.NewSuccessResp(result))
 }
 
-func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Response) {
+func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
@@ -131,7 +131,7 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 		SupplierAccount: util.GetOwnerID(pheader),
 	}
 
-	appIDList, err := s.authorizer.GetAuthorizedBusinessList(req.Request.Context(), userInfo)
+	appIDList, err := s.authorizer.GetAnyAuthorizedBusinessList(req.Request.Context(), userInfo)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
