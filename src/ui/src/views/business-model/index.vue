@@ -1,5 +1,13 @@
 <template>
-    <div class="business-topo-wrapper">
+    <div class="business-topo-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            style="text-align: left;"
+            :feature-name="'modelBusiness'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ModelManagement[\'业务层级提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%EF%BC%882%EF%BC%89%E6%96%B0%E5%A2%9E%E8%87%AA%E5%AE%9A%E4%B9%89%E5%B1%82%E7%BA%A7'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <div class="topo-level" v-bkloading="{ isLoading: $loading() }">
             <div class="topo-node"
                 v-for="(model, index) in topo"
@@ -12,12 +20,20 @@
                         'is-first': index === 0,
                         'is-last': index === (topo.length - 1),
                         'is-inner': innerModel.includes(model['bk_obj_id'])
-                    }">
+                    }"
+                    @click.native="handleLinkClick">
                     <i :class="['icon', model['bk_obj_icon']]"></i>
                 </router-link>
                 <div class="node-name" :title="model['bk_obj_name']">{{model['bk_obj_name']}}</div>
                 <a href="javascript:void(0)" class="node-add"
-                    v-if="createAuth && canAddLevel(model)"
+                    :class="{
+                        disabled: !createAuth
+                    }"
+                    v-cursor="{
+                        active: !createAuth,
+                        auth: [$OPERATION.SYSTEM_TOPOLOGY]
+                    }"
+                    v-if="canAddLevel(model)"
                     @click="handleAddLevel(model)">
                 </a>
             </div>
@@ -34,16 +50,17 @@
 <script>
     import { mapGetters, mapActions } from 'vuex'
     import theCreateModel from '@/components/model-manage/_create-model'
-    import { OPERATION } from './router.config.js'
+    import featureTips from '@/components/feature-tips/index'
     const NODE_MARGIN = 62
 
     export default {
         components: {
-            theCreateModel
+            theCreateModel,
+            featureTips
         },
         data () {
             return {
-                OPERATION,
+                showFeatureTips: false,
                 margin: NODE_MARGIN * 1.5,
                 topo: [],
                 innerModel: ['biz', 'set', 'module', 'host'],
@@ -54,14 +71,15 @@
             }
         },
         computed: {
-            ...mapGetters(['supplierAccount', 'userName', 'isAdminView']),
+            ...mapGetters(['supplierAccount', 'userName', 'isAdminView', 'featureTipsParams']),
             ...mapGetters('objectModelClassify', ['models']),
             createAuth () {
-                return this.$isAuthorized(OPERATION.SYSTEM_TOPOLOGY)
+                return this.$isAuthorized(this.$OPERATION.SYSTEM_TOPOLOGY)
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务模型"]'))
+            this.$store.commit('setHeaderTitle', this.$t('Nav["业务层级"]'))
+            this.showFeatureTips = this.featureTipsParams['modelBusiness']
             this.getMainLineModel()
         },
         methods: {
@@ -94,8 +112,10 @@
                 return this.isAdminView && !['set', 'module', 'host'].includes(model['bk_obj_id'])
             },
             handleAddLevel (model) {
-                this.addLevel.parent = model
-                this.addLevel.showDialog = true
+                if (this.createAuth) {
+                    this.addLevel.parent = model
+                    this.addLevel.showDialog = true
+                }
             },
             async handleCreateLevel (data) {
                 try {
@@ -126,6 +146,11 @@
             handleCancelCreateLevel () {
                 this.addLevel.parent = null
                 this.addLevel.showDialog = false
+            },
+            handleLinkClick () {
+                this.$store.commit('setHeaderStatus', {
+                    back: true
+                })
             }
         }
     }
@@ -143,7 +168,7 @@
             display: inline-block;
             vertical-align: middle;
             width: 0;
-            height: 100%;
+            height: calc(100% - 20px);
         }
     }
     .topo-level {
@@ -233,6 +258,9 @@
                 top: 4px;
                 width: 2px;
                 height: 8px;
+            }
+            &.disabled {
+                background-color: #ccc;
             }
         }
     }

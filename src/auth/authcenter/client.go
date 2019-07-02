@@ -108,13 +108,13 @@ func (a *authClient) verifyAnyResourceBatch(ctx context.Context, header http.Hea
 }
 
 func (a *authClient) registerResource(ctx context.Context, header http.Header, info *RegisterInfo) error {
-	// register resource with emtpy id will make crash
+	// register resource with empty id will make crash
 	for _, resource := range info.Resources {
-		if resource.ResourceID == nil || len(resource.ResourceID) == 0{
+		if resource.ResourceID == nil || len(resource.ResourceID) == 0 {
 			return fmt.Errorf("resource id can't be empty, resource: %+v", resource)
 		}
 	}
-	
+
 	util.CopyHeader(a.basicHeader, header)
 	resp := new(ResourceResult)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/batch-register", a.Config.SystemID)
@@ -441,6 +441,27 @@ func (a *authClient) GetAuthorizedResources(ctx context.Context, body *ListAutho
 	return resp.Data, nil
 }
 
+// find resource list that a user got any authorized resources.
+func (a *authClient) GetAnyAuthorizedScopes(ctx context.Context, scopeID string, body *Principal) ([]string, error) {
+	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/scope_type/%s/authorized-scopes", SystemIDCMDB, scopeID)
+	resp := ListAuthorizedScopeResult{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(a.basicHeader).
+		Body(body).
+		Do().Into(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", err)
+	}
+	if !resp.Result {
+		return nil, fmt.Errorf("get authorized resource failed, err: %v", resp.ErrorString())
+	}
+
+	return resp.Data, nil
+}
+
 func (a *authClient) ListResources(ctx context.Context, header http.Header, searchCondition SearchCondition) (result []meta.BackendResource, err error) {
 	util.CopyHeader(a.basicHeader, header)
 	url := fmt.Sprintf("/bkiam/api/v1/perm/systems/%s/resources/search", a.Config.SystemID)
@@ -461,4 +482,31 @@ func (a *authClient) ListResources(ctx context.Context, header http.Header, sear
 	}
 
 	return resp.Data, nil
+}
+
+func (a *authClient) RegisterUserRole(ctx context.Context, header http.Header, roles RoleWithAuthResources) (int64, error) {
+	util.CopyHeader(a.basicHeader, header)
+	url := fmt.Sprintf("/bkiam/api/v1/perm-model/systems/%s/perm-templates", a.Config.SystemID)
+
+	resp := struct {
+		BaseResponse
+		Data struct {
+			TemplateID int64 `json:"perm_template_id"`
+		}
+	}{}
+
+	err := a.client.Post().
+		SubResource(url).
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(roles).
+		Do().Into(&resp)
+	if err != nil {
+		return 0, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return 0, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.TemplateID, nil
 }

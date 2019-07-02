@@ -21,11 +21,16 @@
                 <label class="userapi-label">
                     {{$t("CustomQuery['查询名称']")}}<span class="color-danger"> * </span>
                 </label>
-                <input type="text" class="cmdb-form-input"
-                    v-model.trim="name"
-                    :name="$t('CustomQuery[\'查询名称\']')"
-                    :disabled="!editable"
-                    v-validate="'required|max:15'">
+                <div v-cursor="{
+                    active: !editable,
+                    auth: [$OPERATION.U_CUSTOM_QUERY]
+                }">
+                    <input type="text" class="cmdb-form-input"
+                        v-model.trim="name"
+                        :name="$t('CustomQuery[\'查询名称\']')"
+                        :disabled="!editable"
+                        v-validate="'required|max:15'">
+                </div>
                 <span v-show="errors.has($t('CustomQuery[\'查询名称\']'))" class="color-danger">{{ errors.first($t('CustomQuery[\'查询名称\']')) }}</span>
             </div>
             <div class="userapi-group content">
@@ -34,6 +39,10 @@
                 </label>
                 <div class="userapi-content-display">
                     <div class="text-content"
+                        v-cursor="{
+                            active: !editable,
+                            auth: [$OPERATION.U_CUSTOM_QUERY]
+                        }"
                         :class="{
                             open: attribute.isShow,
                             disabled: !editable
@@ -63,7 +72,11 @@
                     <label class="filter-label">
                         {{property.objName}} - {{property.propertyName}}
                     </label>
-                    <div class="filter-content clearfix" :class="{ disabled: !editable }">
+                    <div class="filter-content clearfix" :class="{ disabled: !editable }"
+                        v-cursor="{
+                            active: !editable,
+                            auth: [$OPERATION.U_CUSTOM_QUERY]
+                        }">
                         <filter-field-operator class="filter-field-operator fl"
                             v-if="!['date', 'time'].includes(property.propertyType)"
                             :type="getOperatorType(property)"
@@ -101,11 +114,16 @@
                 </li>
             </ul>
             <div class="userapi-new">
-                <button class="userapi-new-btn"
-                    :disabled="!editable"
-                    @click="toggleUserAPISelector(true)">
-                    {{$t("CustomQuery['新增查询条件']")}}
-                </button>
+                <div v-cursor="{
+                    active: !editable,
+                    auth: [$OPERATION.U_CUSTOM_QUERY]
+                }">
+                    <button class="userapi-new-btn"
+                        :disabled="!editable"
+                        @click="toggleUserAPISelector(true)">
+                        {{$t("CustomQuery['新增查询条件']")}}
+                    </button>
+                </div>
                 <div class="userapi-new-mask" v-if="filter.isShow"></div>
                 <bk-selector class="userapi-new-selector"
                     v-if="filter.isShow"
@@ -125,23 +143,35 @@
                 <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
-                <bk-button type="primary" class="userapi-btn"
-                    v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
-                    :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
-                    :disabled="errors.any() || !editable"
-                    @click="saveUserAPI">
-                    {{$t("Common['保存']")}}
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !editable,
+                        auth: [$OPERATION.U_CUSTOM_QUERY]
+                    }">
+                    <bk-button type="primary" class="userapi-btn"
+                        v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
+                        :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
+                        :disabled="errors.any() || !editable"
+                        @click="saveUserAPI">
+                        {{$t("Common['保存']")}}
+                    </bk-button>
+                </span>
                 <bk-button type="default" class="userapi-btn" @click="closeSlider">
                     {{$t("Common['取消']")}}
                 </bk-button>
-                <bk-button type="danger" class="userapi-btn button-delete"
-                    v-if="type === 'update'"
-                    :loading="$loading('deleteCustomQuery')"
-                    :disabled="!editable"
-                    @click="deleteUserAPI">
-                    {{$t("Common['删除']")}}
-                </bk-button>
+                <span class="inline-block-middle"
+                    v-cursor="{
+                        active: !editable,
+                        auth: [$OPERATION.U_CUSTOM_QUERY]
+                    }">
+                    <bk-button type="danger" class="userapi-btn button-delete"
+                        v-if="type === 'update'"
+                        :loading="$loading('deleteCustomQuery')"
+                        :disabled="!editable"
+                        @click="deleteUserAPI">
+                        {{$t("Common['删除']")}}
+                    </bk-button>
+                </span>
             </div>
         </div>
         <!-- eslint-disable vue/space-infix-ops -->
@@ -160,7 +190,6 @@
     import { mapActions, mapGetters } from 'vuex'
     import filterFieldOperator from '@/components/hosts/filter/_filter-field-operator'
     import vPreview from './preview'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             filterFieldOperator,
@@ -251,10 +280,8 @@
                 'supplierAccount'
             ]),
             editable () {
-                if (this.type === 'create') {
-                    return this.$isAuthorized(OPERATION.C_CUSTOM_QUERY)
-                } else if (this.type === 'update') {
-                    return this.$isAuthorized(OPERATION.U_CUSTOM_QUERY)
+                if (this.type === 'update') {
+                    return this.$isAuthorized(this.$OPERATION.U_CUSTOM_QUERY)
                 }
                 return true
             },

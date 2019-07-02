@@ -424,17 +424,23 @@ func NewHostIdentifier(m map[string]interface{}) *HostIdentifier {
 	if nil != err {
 		blog.Errorf("%s is not integer, %+v ", "bk_host_id", m)
 	}
-	ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_mem", m)
+	if m["bk_mem"] != nil {
+		ident.Memory, err = util.GetInt64ByInterface(m["bk_mem"])
+		if nil != err {
+			blog.Warnf("%s is not integer, %+v ", "bk_mem", m)
+		}
 	}
-	ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_cpu", m)
+	if m["bk_cpu"] != nil {
+		ident.CPU, err = util.GetInt64ByInterface(m["bk_cpu"])
+		if nil != err {
+			blog.Warnf("%s is not integer, %+v ", "bk_cpu", m)
+		}
 	}
-	ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
-	if nil != err {
-		blog.Errorf("%s is not integer, %+v ", "bk_disk", m)
+	if m["bk_disk"] != nil {
+		ident.Disk, err = util.GetInt64ByInterface(m["bk_disk"])
+		if nil != err {
+			blog.Warnf("%s is not integer, %+v ", "bk_disk", m)
+		}
 	}
 	ident.Module = map[string]*Module{}
 	return &ident

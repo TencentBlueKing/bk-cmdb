@@ -18,8 +18,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
-
 	"configcenter/src/auth"
 	"configcenter/src/auth/authcenter"
 	"configcenter/src/auth/extensions"
@@ -46,8 +44,6 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 
 	procSvr := new(service.ProcServer)
 	procSvr.EsbConfigChn = make(chan esbutil.EsbConfig, 0)
-	container := restful.NewContainer()
-	container.Add(procSvr.WebService())
 
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: procSvr.OnProcessConfigUpdate,
@@ -96,7 +92,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	procSvr.EsbServ = esbSrv
 	procSvr.Cache = cacheDB
 	go procSvr.InitFunc()
-	if err := backbone.StartServer(ctx, engine, container); err != nil {
+	if err := backbone.StartServer(ctx, engine, procSvr.WebService()); err != nil {
 		return err
 	}
 

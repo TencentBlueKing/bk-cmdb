@@ -26,7 +26,7 @@ const (
 
 // cc modules
 const (
-	CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
+	// CC_MODULE_AUDITCONTROLLER  = "auditcontroller"
 	CC_MODULE_HOSTCONTROLLER   = "hostcontroller"
 	CC_MODULE_OBJECTCONTROLLER = "objectcontroller"
 	CC_MODULE_PROCCONTROLLER   = "proccontroller"
@@ -47,7 +47,7 @@ const (
 
 // AllModule all cc module
 var AllModule = map[string]bool{
-	CC_MODULE_AUDITCONTROLLER:  true,
+	// CC_MODULE_AUDITCONTROLLER:  true,
 	CC_MODULE_HOSTCONTROLLER:   true,
 	CC_MODULE_OBJECTCONTROLLER: true,
 	CC_MODULE_PROCCONTROLLER:   true,

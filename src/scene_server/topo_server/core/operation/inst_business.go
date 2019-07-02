@@ -113,7 +113,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 			var createAsstRsp *metadata.CreatedOneOptionResult
 			var err error
 			if asst.AsstKindID == common.AssociationKindMainline {
-				// bk_mainline is a inner association type that can only create in special case, 
+				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
 				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			} else {
@@ -254,7 +254,6 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 }
 
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
-
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()

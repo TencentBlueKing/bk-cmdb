@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -56,12 +55,6 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 		if err := data.MarshalJSONInto(batchInfo); err != nil {
 			blog.Errorf("create instance failed, import object[%s] instance batch, but got invalid BatchInfo:[%v], err: %+v", objID, batchInfo, err)
 			return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
-		}
-
-		// auth: check authorization
-		if err := s.AuthManager.AuthorizeInstanceCreateByObject(params.Context, params.Header, meta.Update, obj.Object()); err != nil {
-			blog.Errorf("create instance failed, authorization for create instance by model %d failed, authorization failed, err: %+v", obj.Object().ID, err)
-			return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 		}
 
 		setInst, err := s.Core.InstOperation().CreateInstBatch(params, obj, batchInfo)
@@ -108,6 +101,7 @@ func (s *Service) CreateInst(params types.ContextParams, pathParams, queryParams
 	}
 	return setInst.ToMapStr(), nil
 }
+
 func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParams ParamsGetter, data mapstr.MapStr) (interface{}, error) {
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, pathParams("bk_obj_id"))
@@ -122,7 +116,7 @@ func (s *Service) DeleteInsts(params types.ContextParams, pathParams, queryParam
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, deleteCondition.Delete.InstID...); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), deleteCondition.Delete.InstID...); err != nil {
 		blog.Errorf("batch delete instance failed, deregister instance failed, instID: %d, err: %s", deleteCondition.Delete.InstID, err)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
@@ -150,7 +144,7 @@ func (s *Service) DeleteInst(params types.ContextParams, pathParams, queryParams
 	}
 
 	// auth: deregister resources
-	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, instID); err != nil {
+	if err := s.AuthManager.DeregisterInstanceByRawID(params.Context, params.Header, obj.GetObjectID(), instID); err != nil {
 		blog.Errorf("delete instance failed, deregister instance failed, instID: %d, err: %s", instID, err)
 		return nil, params.Err.Error(common.CCErrCommUnRegistResourceToIAMFailed)
 	}
@@ -227,6 +221,18 @@ func (s *Service) UpdateInst(params types.ContextParams, pathParams, queryParams
 	if nil != err {
 		blog.Errorf("[api-inst] failed to find the objects(%s), error info is %s", pathParams("bk_obj_id"), err.Error())
 		return nil, err
+	}
+
+	// this is a special logic for mainline object instance.
+	// for auth reason, the front's request add metadata for mainline model's instance update.
+	// but actually, it's should not add metadata field in the request.
+	// so, we need remove it from the data if it's a mainline model instance.
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objID)
+	if err != nil {
+		return nil, err
+	}
+	if yes {
+		data.Remove("metadata")
 	}
 
 	cond := condition.CreateCondition()
@@ -449,14 +455,8 @@ func (s *Service) SearchInstTopo(params types.ContextParams, pathParams, queryPa
 	objID := pathParams("bk_obj_id")
 	instID, err := strconv.ParseInt(pathParams("inst_id"), 10, 64)
 	if nil != err {
-		blog.Errorf("seearch inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v", pathParams("inst_id"), err)
+		blog.Errorf("search inst topo failed, path parameter inst_id invalid, inst_id: %s, err: %+v", pathParams("inst_id"), err)
 		return nil, params.Err.Error(common.CCErrCommParamsIsInvalid)
-	}
-
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeByInstanceID(params.Context, params.Header, meta.Find, objID, instID); err != nil {
-		blog.Errorf("search inst topo failed, authorization failed, objectID: %s, instanceID: %d, err: %+v", objID, instID, err)
-		return nil, params.Err.Error(common.CCErrCommAuthorizeFailed)
 	}
 
 	obj, err := s.Core.ObjectOperation().FindSingleObject(params, objID)

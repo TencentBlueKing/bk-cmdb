@@ -60,7 +60,7 @@ func (r *RespError) Error() string {
 // data is the data you want to return to client.
 func NewSuccessResp(data interface{}) *Response {
 	return &Response{
-		BaseResp: BaseResp{true, common.CCSuccess, common.CCSuccessStr},
+		BaseResp: BaseResp{Result: true, Code: common.CCSuccess, ErrMsg: common.CCSuccessStr},
 		Data:     data,
 	}
 }
@@ -188,7 +188,7 @@ func (o *QueryInput) convTimeItem(item interface{}) (interface{}, error) {
 func (o *QueryInput) convInterfaceToTime(val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case string:
-		ts, err := timeparser.TimeParser(val.(string))
+		ts, err := timeparser.TimeParserInLocation(val.(string), time.UTC)
 		if nil != err {
 			return nil, err
 		}

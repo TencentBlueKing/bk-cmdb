@@ -2,11 +2,17 @@
     <div class="topo-wrapper" :class="{ 'has-nav': topoEdit.isEdit }">
         <div class="toolbar">
             <template v-if="!topoEdit.isEdit">
-                <bk-button class="edit-button" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.U_MODEL)"
-                    @click="editTopo">
-                    {{$t('ModelManagement["编辑拓扑"]')}}
-                </bk-button>
+                <span style="display: inline-block;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
+                        auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
+                    }">
+                    <bk-button class="edit-button" type="primary"
+                        :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
+                        @click="editTopo">
+                        {{$t('ModelManagement["编辑拓扑"]')}}
+                    </bk-button>
+                </span>
             </template>
             <template v-else>
                 <bk-button type="primary" @click="exitEdit">
@@ -138,6 +144,7 @@
             </span>
             <span class="icon-box is-del"
                 ref="deleteNodeIcon"
+                v-show="topoTooltip.showDelete"
                 @click="deleteNode">
                 <i class="icon-cc-del"></i>
             </span>
@@ -153,7 +160,6 @@
     import { generateObjIcon as GET_OBJ_ICON } from '@/utils/util'
     import { mapGetters, mapActions } from 'vuex'
     import throttle from 'lodash.throttle'
-    import { OPERATION } from './router.config'
     const NAV_WIDTH = 200
     const TOOLBAR_HEIHGT = 50
     export default {
@@ -164,7 +170,6 @@
         },
         data () {
             return {
-                OPERATION,
                 specialModel: ['process', 'plat'],
                 associationList: [],
                 slider: {
@@ -182,7 +187,8 @@
                     hoverNode: null,
                     hoverNodeTimer: null,
                     hoverEdge: null,
-                    hoverEdgeTimer: null
+                    hoverEdgeTimer: null,
+                    showDelete: true
                 },
                 topoEdit: {
                     isEdit: false,
@@ -553,6 +559,7 @@
             popupNodeTooltips (data) {
                 const nodeId = data.node
                 this.topoTooltip.hoverNode = this.network.nodes.find(node => node.id === nodeId)
+                this.checkIsShowDelete(nodeId)
                 this.$nextTick(() => {
                     const view = this.networkInstance.getViewPosition()
                     const scale = this.networkInstance.getScale()
@@ -578,6 +585,14 @@
                     deleteNodeIcon.style.top = y2 + 'px'
                     deleteNodeIcon.style.left = -1 * x2 + 'px'
                 })
+            },
+            checkIsShowDelete (id) {
+                if (this.isAdminView) {
+                    this.topoTooltip.showDelete = true
+                } else {
+                    const model = this.getModelById(id)
+                    this.topoTooltip.showDelete = !!this.$tools.getMetadataBiz(model)
+                }
             },
             clearHoverTooltip () {
                 this.topoTooltip.hoverNode = null
@@ -767,7 +782,7 @@
                     edges: this.networkDataSet.edges
                 }, this.network.options)
                 this.networkInstance.setOptions({ nodes: { fixed: true } })
-                if (this.$isAuthorized(OPERATION.U_MODEL)) {
+                if (this.$isAuthorized(this.$OPERATION.SYSTEM_MODEL_GRAPHICS)) {
                     this.initPosition()
                 }
                 this.addListener()
@@ -930,9 +945,9 @@
             },
             updateSingleNodePosition (node) {
                 this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: [node]
-                    })
+                    }
                 })
             },
             // 批量更新节点位置信息
@@ -970,9 +985,9 @@
                 }
 
                 await this.$store.dispatch('globalModels/updateModelAction', {
-                    params: this.$injectMetadata({
+                    params: {
                         origin: params
-                    })
+                    }
                 })
                 updateNodes.forEach(node => {
                     const model = this.localTopoModelList.find(({ bk_obj_id: objId }) => objId === node.id)

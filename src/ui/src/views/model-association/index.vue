@@ -1,13 +1,25 @@
 <template>
-    <div class="relation-wrapper">
+    <div class="relation-wrapper" :style="{ 'padding-top': showFeatureTips ? '10px' : '' }">
+        <feature-tips
+            :feature-name="'association'"
+            :show-tips="showFeatureTips"
+            :desc="$t('ModelManagement[\'关联关系提示\']')"
+            :more-href="'https://docs.bk.tencent.com/cmdb/Introduction.html#%E6%A8%A1%E5%9E%8B%E5%85%B3%E8%81%94'"
+            @close-tips="showFeatureTips = false">
+        </feature-tips>
         <p class="operation-box">
-            <bk-button type="primary"
-                class="create-btn"
-                v-if="isAdminView"
-                :disabled="!$isAuthorized(OPERATION.C_RELATION)"
-                @click="createRelation">
-                {{$t('Common["新建"]')}}
-            </bk-button>
+            <span v-if="isAdminView" class="inline-block-middle"
+                v-cursor="{
+                    active: !$isAuthorized($OPERATION.C_RELATION),
+                    auth: [$OPERATION.C_RELATION]
+                }">
+                <bk-button type="primary"
+                    class="create-btn"
+                    :disabled="!$isAuthorized($OPERATION.C_RELATION)"
+                    @click="createRelation">
+                    {{$t('Common["新建"]')}}
+                </bk-button>
+            </span>
             <label class="search-input">
                 <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
                 <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
@@ -26,7 +38,11 @@
             </template>
             <template slot="operation" slot-scope="{ item }">
                 <span class="text-primary disabled mr10"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.U_RELATION)">
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_RELATION),
+                        auth: [$OPERATION.U_RELATION]
+                    }"
+                    v-if="item.ispre || !$isAuthorized($OPERATION.U_RELATION)">
                     {{$t('Common["编辑"]')}}
                 </span>
                 <span class="text-primary mr10"
@@ -35,7 +51,11 @@
                     {{$t('Common["编辑"]')}}
                 </span>
                 <span class="text-primary disabled"
-                    v-if="item.ispre || !$isAuthorized(OPERATION.D_RELATION)">
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_RELATION),
+                        auth: [$OPERATION.D_RELATION]
+                    }"
+                    v-if="item.ispre || !$isAuthorized($OPERATION.D_RELATION)">
                     {{$t('Common["删除"]')}}
                 </span>
                 <span class="text-primary"
@@ -63,16 +83,17 @@
 </template>
 
 <script>
+    import featureTips from '@/components/feature-tips/index'
     import theRelation from './_detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from './router.config'
     export default {
         components: {
-            theRelation
+            theRelation,
+            featureTips
         },
         data () {
             return {
-                OPERATION,
+                showFeatureTips: false,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -115,7 +136,7 @@
             }
         },
         computed: {
-            ...mapGetters(['isAdminView']),
+            ...mapGetters(['isAdminView', 'featureTipsParams']),
             searchParams () {
                 const params = {
                     page: {
@@ -137,13 +158,12 @@
             }
         },
         created () {
-            const updateAuth = this.$isAuthorized(this.OPERATION.U_RELATION)
-            const deleteAuth = this.$isAuthorized(this.OPERATION.D_RELATION)
-            if (!this.isAdminView || !(updateAuth || deleteAuth)) {
+            if (!this.isAdminView) {
                 this.table.header.pop()
             }
             this.$store.commit('setHeaderTitle', this.$t('Nav["关联类型"]'))
             this.searchRelation()
+            this.showFeatureTips = this.featureTipsParams['association']
         },
         methods: {
             ...mapActions('objectAssociation', [

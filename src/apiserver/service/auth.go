@@ -42,7 +42,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
-		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v", err)
+		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -66,9 +66,10 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		}
 	}
 
-	verifyResults, err := s.authorizer.AuthorizeBatch(context.Background(), user, attrs...)
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+	verifyResults, err := s.authorizer.AuthorizeBatch(ctx, user, attrs...)
 	if err != nil {
-		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v", err)
+		blog.Errorf("get user's resource auth verify status, but authorize batch failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
 		return
 	}
@@ -81,7 +82,7 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp(resources))
 }
 
-func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Response) {
+func (s *service) GetAdminEntrance(req *restful.Request, resp *restful.Response) {
 	pheader := req.Request.Header
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
 	rid := util.GetHTTPCCRequestID(pheader)
@@ -97,9 +98,42 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 		SupplierAccount: util.GetOwnerID(pheader),
 	}
 
-	appIDList, err := s.authorizer.GetAuthorizedBusinessList(req.Request.Context(), userInfo)
+	systemlist, err := s.authorizer.AdminEntrance(req.Request.Context(), userInfo)
 	if err != nil {
-		blog.Errorf("get user: %s authorized business list failed, err: %v", err)
+		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", err, rid)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+		return
+	}
+
+	result := struct {
+		Passed bool `json:"is_pass"`
+	}{}
+	if len(systemlist) > 0 {
+		result.Passed = true
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(result))
+}
+
+func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Response) {
+	pheader := req.Request.Header
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	rid := util.GetHTTPCCRequestID(pheader)
+
+	if s.authorizer.Enabled() == false {
+		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
+		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		return
+	}
+
+	userInfo := meta.UserInfo{
+		UserName:        util.GetUser(pheader),
+		SupplierAccount: util.GetOwnerID(pheader),
+	}
+
+	appIDList, err := s.authorizer.GetAnyAuthorizedBusinessList(req.Request.Context(), userInfo)
+	if err != nil {
+		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
@@ -115,13 +149,13 @@ func (s *service) GetAuthorizedAppList(req *restful.Request, resp *restful.Respo
 
 	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.SupplierAccount, req.Request.Header, &input)
 	if err != nil {
-		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, err)
+		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v, rid: %s", appIDList, err, rid)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}
 
 	if !result.Result {
-		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v", appIDList, result.ErrMsg)
+		blog.Errorf("get authorized business list, but get apps[%v] failed, err: %v, rid: %s", appIDList, result.ErrMsg, rid)
 		resp.WriteError(http.StatusBadRequest, &metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
 		return
 	}

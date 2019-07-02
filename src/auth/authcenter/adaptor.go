@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/metadata"
 )
 
 var NotEnoughLayer = fmt.Errorf("not enough layer")
@@ -29,7 +30,7 @@ func adaptor(attribute *meta.ResourceAttribute) (*ResourceInfo, error) {
 
 	resourceTypeID, err := convertResourceType(attribute.Type, attribute.BusinessID)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 	info.ResourceType = *resourceTypeID
 
@@ -60,8 +61,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = SysModel
 		}
 
-	case meta.ModelModule, meta.ModelSet, meta.ModelInstanceTopology:
-		iamResourceType = BizTopoInstance
+	case meta.ModelModule, meta.ModelSet, meta.MainlineInstance, meta.MainlineInstanceTopology:
+		iamResourceType = BizTopology
 
 	case meta.MainlineModel, meta.ModelTopology:
 		iamResourceType = SysSystemBase
@@ -91,6 +92,8 @@ func convertResourceType(resourceType meta.ResourceType, businessID int64) (*Res
 			iamResourceType = BizInstance
 		}
 
+	case meta.Plat:
+		iamResourceType = SysInstance
 	case meta.HostInstance:
 		if businessID <= 0 {
 			iamResourceType = SysHostInstance
@@ -131,33 +134,55 @@ type ResourceTypeID string
 
 // System Resource
 const (
-	SysSystemBase       ResourceTypeID = "sysSystemBase"
-	SysBusinessInstance ResourceTypeID = "sysBusinessInstance"
-	SysHostInstance     ResourceTypeID = "sysHostInstance"
-	SysEventPushing     ResourceTypeID = "sysEventPushing"
-	SysModelGroup       ResourceTypeID = "sysModelGroup"
-	SysModel            ResourceTypeID = "sysModel"
-	SysInstance         ResourceTypeID = "sysInstance"
-	SysAssociationType  ResourceTypeID = "sysAssociationType"
-	SysAuditLog         ResourceTypeID = "sysAuditLog"
+	SysSystemBase       ResourceTypeID = "sys_system_base"
+	SysBusinessInstance ResourceTypeID = "sys_business_instance"
+	SysHostInstance     ResourceTypeID = "sys_host_instance"
+	SysEventPushing     ResourceTypeID = "sys_event_pushing"
+	SysModelGroup       ResourceTypeID = "sys_model_group"
+	SysModel            ResourceTypeID = "sys_model"
+	SysInstance         ResourceTypeID = "sys_instance"
+	SysAssociationType  ResourceTypeID = "sys_association_type"
+	SysAuditLog         ResourceTypeID = "sys_audit_log"
 )
 
 // Business Resource
 const (
 	// the alias name maybe "dynamic classification"
-	BizCustomQuery     ResourceTypeID = "bizCustomQuery"
-	BizHostInstance    ResourceTypeID = "bizHostInstance"
-	BizProcessInstance ResourceTypeID = "bizProcessInstance"
-	BizTopoInstance    ResourceTypeID = "bizTopoInstance"
-	BizModelGroup      ResourceTypeID = "bizModelGroup"
-	BizModel           ResourceTypeID = "bizModel"
-	BizInstance        ResourceTypeID = "bizInstance"
-	BizAuditLog        ResourceTypeID = "bizAuditLog"
+	BizCustomQuery     ResourceTypeID = "biz_custom_query"
+	BizHostInstance    ResourceTypeID = "biz_host_instance"
+	BizProcessInstance ResourceTypeID = "biz_process_instance"
+	BizTopology        ResourceTypeID = "biz_topology"
+	BizModelGroup      ResourceTypeID = "biz_model_group"
+	BizModel           ResourceTypeID = "biz_model"
+	BizInstance        ResourceTypeID = "biz_instance"
+	BizAuditLog        ResourceTypeID = "biz_audit_log"
 )
 
 const (
 	UserCustom ResourceTypeID = "userCustom"
 )
+
+var ResourceTypeIDMap = map[ResourceTypeID]string{
+	SysSystemBase:       "系统基础",
+	SysBusinessInstance: "业务",
+	SysHostInstance:     "主机",
+	SysEventPushing:     "事件推送",
+	SysModelGroup:       "模型分级",
+	SysModel:            "模型",
+	SysInstance:         "实例",
+	SysAssociationType:  "关联类型",
+	SysAuditLog:         "操作审计",
+	BizCustomQuery:      "动态分组",
+	BizHostInstance:     "业务主机",
+	BizProcessInstance:  "进程",
+	// TODO: delete this when upgrade to v3.5.x
+	BizTopology:   "拓扑",
+	BizModelGroup: "模型分组",
+	BizModel:      "模型",
+	BizInstance:   "实例",
+	BizAuditLog:   "操作审计",
+	UserCustom:    "",
+}
 
 type ActionID string
 
@@ -173,19 +198,31 @@ const (
 	// Archive for business
 	Archive ActionID = "archive"
 	// host action
-	ModuleTransfer ActionID = "moduleTransfer"
+	ModuleTransfer ActionID = "module_transfer"
 	// business topology action
-	HostTransfer ActionID = "hostTransfer"
+	HostTransfer ActionID = "host_transfer"
 	// system base action, related to model topology
-	ModelTopologyView ActionID = "modelTopologyView"
+	ModelTopologyView ActionID = "model_topology_view"
 	// business model topology operation.
-	ModelTopologyOperation ActionID = "modelTopologyOperation"
+	ModelTopologyOperation ActionID = "model_topology_operation"
 	// assign host(s) to a business
 	// located system/host/assignHostsToBusiness in auth center.
-	AssignHostsToBusiness ActionID = "assignHostsToBusiness"
-	BindModule            ActionID = "bindModule"
-	AdminEntrance         ActionID = "adminEntrance"
+	AssignHostsToBusiness ActionID = "assign_hosts_to_business"
+	BindModule            ActionID = "bind_module"
+	AdminEntrance         ActionID = "admin_entrance"
 )
+
+var ActionIDNameMap = map[ActionID]string{
+	Unknown:                "未知操作",
+	Edit:                   "编辑",
+	Create:                 "新建",
+	Get:                    "查询",
+	Delete:                 "删除",
+	Archive:                "归档",
+	ModelTopologyOperation: "拓扑层级管理",
+	// TODO: delete this when upgrade to v3.5.x
+	BindModule: "绑定到模块",
+}
 
 func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	if r.Basic.Type == meta.ModelAttributeGroup ||
@@ -217,6 +254,10 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 	}
 
+	// if r.Basic.Type == meta.ModelModule || r.Basic.Type == meta.ModelSet || r.Basic.Type == meta.MainlineInstance {
+	// 	return ModelTopologyOperation, nil
+	// }
+
 	if r.Action == meta.Find || r.Action == meta.Update {
 		if r.Basic.Type == meta.ModelTopology {
 			return ModelTopologyView, nil
@@ -229,9 +270,8 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	if r.Basic.Type == meta.Process {
 		if r.Action == meta.BoundModuleToProcess || r.Action == meta.UnboundModuleToProcess {
-			return BindModule, nil
+			return Edit, nil
 		}
-
 	}
 
 	if r.Basic.Type == meta.HostInstance {
@@ -244,7 +284,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 		}
 
 		if r.Action == meta.MoveResPoolHostToBizIdleModule {
-			return Create, nil
+			return Edit, nil
 		}
 	}
 
@@ -263,7 +303,7 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 
 	case meta.MoveResPoolHostToBizIdleModule:
 		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return AssignHostsToBusiness, nil
+			return Edit, nil
 		}
 
 	case meta.MoveHostToBizFaultModule,
@@ -277,13 +317,6 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	case meta.MoveHostFromModuleToResPool:
 		return Delete, nil
 
-	case meta.AddHostToResourcePool:
-		// add hosts to resource pool
-		if r.Basic.Type == meta.ModelInstance && r.Basic.Name == meta.Host {
-			return Create, nil
-		}
-		return ModuleTransfer, nil
-
 	case meta.MoveHostsToBusinessOrModule:
 		return Edit, nil
 	case meta.ModelTopologyView:
@@ -295,6 +328,53 @@ func adaptorAction(r *meta.ResourceAttribute) (ActionID, error) {
 	}
 
 	return Unknown, fmt.Errorf("unsupported action: %s", r.Action)
+}
+
+// TODO: add multiple language support
+func AdoptPermissions(rs []meta.ResourceAttribute) ([]metadata.Permission, error) {
+
+	ps := make([]metadata.Permission, 0)
+	for _, r := range rs {
+		var p metadata.Permission
+		p.SystemID = SystemIDCMDB
+		p.SystemName = SystemNameCMDB
+
+		if r.BusinessID > 0 {
+			p.ScopeType = ScopeTypeIDBiz
+			p.ScopeTypeName = ScopeTypeIDBizName
+		} else {
+			p.ScopeType = ScopeTypeIDSystem
+			p.ScopeTypeName = ScopeTypeIDSystemName
+		}
+
+		actID, err := adaptorAction(&r)
+		if err != nil {
+			return nil, err
+		}
+		p.ActionID = string(actID)
+		p.ActionName = ActionIDNameMap[actID]
+
+		rscType, err := convertResourceType(r.Basic.Type, r.BusinessID)
+		if err != nil {
+			return nil, err
+		}
+
+		rscIDs, err := GenerateResourceID(*rscType, &r)
+		if err != nil {
+			return nil, err
+		}
+
+		var rsc metadata.Resource
+		rsc.ResourceType = string(*rscType)
+		rsc.ResourceTypeName = ResourceTypeIDMap[*rscType]
+		if len(rscIDs) != 0 {
+			rsc.ResourceID = rscIDs[0].ResourceID
+		}
+		rsc.ResourceName = r.Basic.Name
+		p.Resources = [][]metadata.Resource{{rsc}}
+		ps = append(ps, p)
+	}
+	return ps, nil
 }
 
 type ResourceDetail struct {
@@ -326,7 +406,7 @@ var (
 	}
 
 	TopologyDescribe = ResourceDetail{
-		Type:    BizTopoInstance,
+		Type:    BizTopology,
 		Actions: []ActionID{Get, Delete, Edit, Create, HostTransfer},
 	}
 

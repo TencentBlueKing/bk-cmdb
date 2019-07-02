@@ -33,8 +33,6 @@ import (
 	"configcenter/src/scene_server/admin_server/synchronizer"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
-
-	"github.com/emicklei/go-restful"
 )
 
 func Run(ctx context.Context, op *options.ServerOption) error {
@@ -63,6 +61,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 	}
 
 	service.Engine = engine
+	service.Config = *process.Config
 	process.Core = engine
 	process.Service = service
 	process.ConfigCenter = configures.NewConfCenter(ctx, engine.ServiceManageClient())
@@ -88,18 +87,25 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		}
 
 		if process.Config.AuthCenter.Enable {
+			blog.Info("enable auth center access.")
 			authcli, err := authcenter.NewAuthCenter(nil, process.Config.AuthCenter)
 			if err != nil {
 				return fmt.Errorf("new authcenter client failed: %v", err)
-			} else {
-				process.Service.SetAuthcenter(authcli)
 			}
-			authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
-			authSynchronizer.Run()
+			process.Service.SetAuthcenter(authcli)
+
+			if process.Config.AuthCenter.EnableSync {
+				authSynchronizer := synchronizer.NewSynchronizer(ctx, &process.Config.AuthCenter, engine.CoreAPI)
+				authSynchronizer.Run()
+				blog.Info("enable auth center and enable auth sync function.")
+			}
+
+		} else {
+			blog.Infof("disable auth center access.")
 		}
 		break
 	}
-	if err := backbone.StartServer(ctx, engine, restful.NewContainer().Add(service.WebService())); err != nil {
+	if err := backbone.StartServer(ctx, engine, service.WebService()); err != nil {
 		return err
 	}
 
