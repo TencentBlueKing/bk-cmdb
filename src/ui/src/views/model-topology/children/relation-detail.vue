@@ -80,14 +80,14 @@
         data () {
             return {
                 mappingList: [{
-                    id: '1:1',
-                    name: '1-1'
+                    id: 'n:n',
+                    name: 'N-N'
                 }, {
                     id: '1:n',
                     name: '1-N'
                 }, {
-                    id: 'n:n',
-                    name: 'N-N'
+                    id: '1:1',
+                    name: '1-1'
                 }],
                 relationInfo: {
                     ispre: false,
@@ -158,7 +158,10 @@
                         await this.deleteObjectAssociation({
                             id: this.relationInfo.id,
                             config: {
-                                requestId: 'deleteObjectAssociation'
+                                requestId: 'deleteObjectAssociation',
+                                data: this.$injectMetadata({}, {
+                                    inject: !!this.$tools.getMetadataBiz(this.relationInfo)
+                                })
                             }
                         })
                         this.$emit('save', {

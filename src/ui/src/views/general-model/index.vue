@@ -2,9 +2,13 @@
     <div class="models-layout">
         <div class="models-options clearfix">
             <div class="options-button clearfix fl">
-                <div class="fl" v-tooltip="$t('ModelManagement[\'导入\']')">
+                <div class="fl" v-tooltip="$t('ModelManagement[\'导入\']')"
+                    v-cursor="{
+                        active: !$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST]),
+                        auth: [$OPERATION.C_INST, $OPERATION.U_INST]
+                    }">
                     <bk-button class="models-button"
-                        :disabled="!$isAuthorized([OPERATION.C_INST, OPERATION.U_INST])"
+                        :disabled="!$isAuthorized([$OPERATION.C_INST, $OPERATION.U_INST])"
                         @click="importSlider.show = true">
                         <i class="icon-cc-import"></i>
                     </bk-button>
@@ -16,23 +20,35 @@
                         <i class="icon-cc-derivation"></i>
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')">
+                <div class="fl" v-tooltip="$t('Inst[\'批量更新\']')"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.U_INST),
+                        auth: [$OPERATION.U_INST]
+                    }">
                     <bk-button class="models-button"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_INST)"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_INST)"
                         @click="handleMultipleEdit">
                         <i class="icon-cc-edit"></i>
                     </bk-button>
                 </div>
-                <div class="fl" v-tooltip="$t('Common[\'删除\']')">
+                <div class="fl" v-tooltip="$t('Common[\'删除\']')"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.D_INST),
+                        auth: [$OPERATION.D_INST]
+                    }">
                     <bk-button class="models-button button-delete"
-                        :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_INST)"
+                        :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_INST)"
                         @click="handleMultipleDelete">
                         <i class="icon-cc-del"></i>
                     </bk-button>
                 </div>
-                <div class="fl">
-                    <bk-button style="margin-left: 20px;" type="primary"
-                        :disabled="!$isAuthorized(OPERATION.C_INST)"
+                <div class="fl" style="margin-left: 20px;"
+                    v-cursor="{
+                        active: !$isAuthorized($OPERATION.C_INST),
+                        auth: [$OPERATION.C_INST]
+                    }">
+                    <bk-button type="primary"
+                        :disabled="!$isAuthorized($OPERATION.C_INST)"
                         @click="handleCreate">
                         {{$t("Common['新建']")}}
                     </bk-button>
@@ -100,8 +116,8 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.details"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_INST)"
-                        :delete-disabled="!$isAuthorized(OPERATION.D_INST)"
+                        :edit-auth="$OPERATION.U_INST"
+                        :delete-auth="$OPERATION.D_INST"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -111,7 +127,7 @@
                         :property-groups="propertyGroups"
                         :inst="attribute.inst.edit"
                         :type="attribute.type"
-                        :save-disabled="!$isAuthorized(OPERATION[attribute.type === 'update' ? 'U_INST' : 'C_INST'])"
+                        :save-auth="attribute.type === 'update' ? $OPERATION.U_INST : $OPERATION.C_INST"
                         @on-submit="handleSave"
                         @on-cancel="handleCancel">
                     </cmdb-form>
@@ -120,7 +136,7 @@
                         :properties="properties"
                         :property-groups="propertyGroups"
                         :object-unique="objectUnique"
-                        :save-disabled="!$isAuthorized(OPERATION.U_INST)"
+                        :save-auth="$OPERATION.U_INST"
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
@@ -128,7 +144,7 @@
                 <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
-                        :disabled="!$isAuthorized(OPERATION.U_INST)"
+                        :auth="$OPERATION.U_INST"
                         :obj-id="objId"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
@@ -172,7 +188,6 @@
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
     import cmdbImport from '@/components/import/import'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -182,7 +197,6 @@
         },
         data () {
             return {
-                OPERATION,
                 objectUnique: [],
                 properties: [],
                 propertyGroups: [],
@@ -667,7 +681,10 @@
             handleExport () {
                 const data = new FormData()
                 data.append('bk_inst_id', this.table.checked.join(','))
-                data.append('export_custom_fields', this.usercustom[this.customConfigKey])
+                const customFields = this.usercustom[this.customConfigKey]
+                if (customFields) {
+                    data.append('export_custom_fields', customFields)
+                }
                 if (!this.isPublicModel) {
                     data.append('metadata', JSON.stringify(this.$injectMetadata().metadata))
                 }
@@ -678,16 +695,8 @@
                 })
             },
             setRencentlyData () {
-                const usercustomData = this.usercustom.recently_models || []
-                const isExist = usercustomData.some(id => id === this.model.id)
-                let newUsercustomData = [...usercustomData]
-                if (isExist) {
-                    newUsercustomData = newUsercustomData.filter(id => id !== this.model.id)
-                }
-                newUsercustomData.unshift(this.model.id)
-                this.$store.dispatch('userCustom/saveUsercustom', {
-                    recently_models: newUsercustomData
-                })
+                const modelId = this.model.id
+                this.$store.dispatch('userCustom/setRencentlyData', { id: modelId })
             }
         }
     }

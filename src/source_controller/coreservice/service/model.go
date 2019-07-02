@@ -170,7 +170,7 @@ func (s *coreService) SearchModel(params core.ContextParams, pathParams, queryPa
 			dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyName = s.TranslatePropertyName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			dataResult.Info[modelIdx].Attributes[attributeIdx].Placeholder = s.TranslatePlaceholder(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx])
 			if dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType == common.FieldTypeEnum {
-				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx])
+				dataResult.Info[modelIdx].Attributes[attributeIdx].Option = s.TranslateEnumName(params.Lang, &dataResult.Info[modelIdx].Attributes[attributeIdx], dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 			}
 		}
 	}

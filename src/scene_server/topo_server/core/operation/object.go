@@ -19,7 +19,6 @@ import (
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
-	"configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -124,14 +123,17 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 
 			metaAttr := metadata.Attribute{}
 			targetAttr, err := metaAttr.Parse(attr)
-			targetAttr.OwnerID = params.SupplierAccount
-			targetAttr.ObjectID = objID
 			if nil != err {
 				blog.Errorf("create object batch, but got invalid object attribute, object id: %s", objID)
 				subResult["errors"] = err.Error()
 				result[objID] = subResult
 				hasError = true
 				continue
+			}
+			targetAttr.OwnerID = params.SupplierAccount
+			targetAttr.ObjectID = objID
+			if params.MetaData != nil {
+				targetAttr.Metadata = *params.MetaData
 			}
 
 			if targetAttr.PropertyType == common.FieldTypeMultiAsst || targetAttr.PropertyType == common.FieldTypeSingleAsst {
@@ -165,12 +167,16 @@ func (o *object) CreateObjectBatch(params types.ContextParams, data mapstr.MapSt
 			} else {
 
 				newGrp := o.modelFactory.CreateGroup(params)
-				newGrp.SetGroup(metadata.Group{
+				g := metadata.Group{
 					GroupName: targetAttr.PropertyGroupName,
 					GroupID:   model.NewGroupID(false),
 					ObjectID:  objID,
 					OwnerID:   params.SupplierAccount,
-				})
+				}
+				if params.MetaData != nil {
+					g.Metadata = *params.MetaData
+				}
+				newGrp.SetGroup(g)
 				err := newGrp.Save(nil)
 				if nil != err {
 					errStr := params.Lang.Languagef("import_row_int_error_str", idx, params.Err.Error(common.CCErrTopoObjectGroupCreateFailed))
@@ -325,12 +331,17 @@ func (o *object) FindSingleObject(params types.ContextParams, objectID string) (
 	objs, err := o.FindObject(params, cond)
 	if nil != err {
 		blog.Errorf("get model failed, failed to get model by supplier account(%s) objects(%s), err: %s", params.SupplierAccount, objectID, err.Error())
-		return nil, fmt.Errorf("get model by supplier account(%s) objects(%s) failed", params.SupplierAccount, objectID)
+		return nil, err
 	}
-	
-	if len(objs) != 1 {
-		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not exactly one, result: %+v", params.SupplierAccount, objectID, objs)
-		return nil, fmt.Errorf("get [%d] model by supplier account(%s) objects(%s), not exactly one", len(objs), params.SupplierAccount, objectID)
+
+	if len(objs) == 0 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) not found, result: %+v", params.SupplierAccount, objectID, objs)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommNotFound).Error())
+	}
+
+	if len(objs) > 1 {
+		blog.Errorf("get model failed, get model by supplier account(%s) objects(%s) get multiple, result: %+v", params.SupplierAccount, objectID, objs)
+		return nil, params.Err.New(common.CCErrTopoObjectSelectFailed, params.Err.Error(common.CCErrCommGetMultipleObject).Error())
 	}
 
 	objects := make([]metadata.Object, 0)
@@ -370,18 +381,6 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 		blog.Errorf("[operation-obj] the object(%#v) is repeated", data)
 		return nil, params.Err.Errorf(common.CCErrCommDuplicateItem, "")
 	}
-
-	// businessID, err := obj.Object().Metadata.Label.GetBusinessID()
-	// if err != nil && err != metadata.LabelKeyNotExistError {
-	// 	blog.Errorf("create model failed, get business field from model: %+v meta failed, err: %+v", obj.Object(), err)
-	// 	return nil, params.Err.Errorf(common.CCErrCommAuthorizeFailed, "get business field from model meta failed")
-	// }
-
-	// // auth: check authorization
-	// if err := o.authManager.AuthorizeResourceCreate(params.Context, params.Header, businessID, meta.Model); err != nil {
-	// 	blog.V(2).Infof("create model %s failed, authorization failed, err: %+v", obj.Object(), err)
-	// 	return nil, err
-	// }
 
 	err = obj.Create()
 	if nil != err {
@@ -444,7 +443,7 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 			ObjectID:          object.ObjectID,
 			IsOnly:            true,
 			IsPre:             true,
-			Creator:           "user",
+			Creator:           "system",
 			IsEditable:        true,
 			PropertyIndex:     -1,
 			PropertyGroup:     group.GroupID,
@@ -481,6 +480,9 @@ func (o *object) CreateObject(params types.ContextParams, isMainline bool, data 
 }
 
 func (o *object) CanDelete(params types.ContextParams, targetObj model.Object) error {
+	if common.IsInnerModel(targetObj.GetObjectID()) {
+		return params.Err.Error(common.CCErrTopoForbiddenToDeleteModelFailed)
+	}
 
 	tObject := targetObj.Object()
 	cond := condition.CreateCondition()
@@ -542,12 +544,6 @@ func (o *object) DeleteObject(params types.ContextParams, id int64, cond conditi
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		objects = append(objects, obj.Object())
-	}
-
-	// auth: check authorization
-	if err := o.authManager.AuthorizeByObject(params.Context, params.Header, meta.Delete, objects...); err != nil {
-		blog.V(2).Infof("delete models %+v failed, authorization failed, err: %+v", objects, err)
-		return err
 	}
 
 	for _, obj := range objs {
@@ -761,13 +757,13 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 	object := obj.Object()
 
 	/*
-	// auth: check authorization
-	if err := o.authManager.AuthorizeObjectByRawID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
-		blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
-		return err
-	}
+		// auth: check authorization
+		if err := o.authManager.AuthorizeObjectByRawID(params.Context, params.Header, meta.Update, object.ObjectID); err != nil {
+			blog.V(2).Infof("update model %s failed, authorization failed, err: %+v", object.ObjectID, err)
+			return err
+		}
 	*/
-	
+
 	// check repeated
 	exists, err := obj.IsExists()
 	if nil != err {
@@ -784,8 +780,14 @@ func (o *object) UpdateObject(params types.ContextParams, data mapstr.MapStr, id
 		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
 	}
 
+	bizID, err := metadata.BizIDFromMetadata(object.Metadata)
+	if err != nil {
+		blog.Error("update object: %s, but parse business id failed, err: %v", object.ObjectID, err)
+		return params.Err.New(common.CCErrTopoObjectUpdateFailed, err.Error())
+	}
+
 	// auth update register info
-	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, id); err != nil {
+	if err := o.authManager.UpdateRegisteredObjectsByRawIDs(params.Context, params.Header, bizID, id); err != nil {
 		blog.Errorf("update object %s success, but update to auth failed, err: %v", object.ObjectName, err)
 		return params.Err.New(common.CCErrCommRegistResourceToIAMFailed, err.Error())
 	}

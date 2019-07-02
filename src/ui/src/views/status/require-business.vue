@@ -2,8 +2,9 @@
     <div class="tips-wrapper">
         <div class="content-wrapper">
             <div class="title">
-                <i class="icon icon-cc-no-authority"></i>
+                <img src="../../assets/images/no-authority.png" alt="no-authority">
                 <h2>{{$t("Common['无业务权限']")}}</h2>
+                <p>{{$t("Common['点击下方按钮申请']")}}</p>
             </div>
             <div class="btns">
                 <bk-button type="primary" @click="handleApplyPermission">
@@ -26,7 +27,8 @@
                 if (isPaasConsole) {
                     topWindow.postMessage(JSON.stringify({
                         action: 'open_other_app',
-                        app_code: authCenter.appCode
+                        app_code: authCenter.appCode,
+                        app_url: 'apply-by-system'
                     }), '*')
                 } else {
                     window.open(authCenter.url)
@@ -43,16 +45,18 @@
         color: #63656E;
         font-size: 14px;
         .title {
-            .icon {
-                font-size: 56px;
-                color: #979BA5;
+            img {
+                width: 136px;
             }
             h2 {
-                margin-top: 10px;
                 margin-bottom: 10px;
                 font-size: 22px;
                 color: #313238;
                 font-weight: normal;
+            }
+            p {
+                color: #63656e;
+                font-size: 14px;
             }
         }
         .btns {

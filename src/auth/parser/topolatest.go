@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 
 	"github.com/tidwall/gjson"
 )
@@ -66,6 +67,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 	// TODO: add business id for these filter rules to resources.
 	// add object unique operation.
 	if ps.hitRegexp(createObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -77,7 +83,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Type:   meta.ModelUnique,
 					Action: meta.Create,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -85,6 +92,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// update object unique operation.
 	if ps.hitRegexp(updateObjectUniqueLatestRegexp, http.MethodPut) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -103,14 +115,20 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Update,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
 	}
 
 	// delete object unique operation.
-	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodDelete) {
+	if ps.hitRegexp(deleteObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		uniqueID, err := strconv.ParseInt(ps.RequestCtx.Elements[7], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("update object unique, but got invalid unique id %s", ps.RequestCtx.Elements[7])
@@ -129,7 +147,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: uniqueID,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -137,6 +156,11 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 
 	// find object unique operation.
 	if ps.hitRegexp(findObjectUniqueLatestRegexp, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
 		if err != nil {
 			ps.err = err
@@ -148,7 +172,8 @@ func (ps *parseStream) objectUniqueLatest() *parseStream {
 					Type:   meta.ModelUnique,
 					Action: meta.FindMany,
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				Layers:     []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				BusinessID: bizID,
 			},
 		}
 		return ps
@@ -272,7 +297,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// create object association operation
 	if ps.hitPattern(createObjectAssociationLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -303,7 +328,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// update object association operation
 	if ps.hitRegexp(updateObjectAssociationLatestRegexp, http.MethodPut) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -325,8 +350,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -350,7 +375,7 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 
 	// delete object association operation
 	if ps.hitRegexp(deleteObjectAssociationLatestRegexp, http.MethodDelete) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -372,8 +397,8 @@ func (ps *parseStream) objectAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -426,8 +451,14 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// find object instance's association operation.
 	if ps.hitPattern(findObjectInstanceAssociationLatestPattern, http.MethodPost) {
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.ModelInstanceAssociation,
 					Action: meta.FindMany,
@@ -439,9 +470,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 	// create object's instance association operation.
 	if ps.hitPattern(createObjectInstanceAssociationLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		asst, err := ps.getModelAssociation(mapstr.MapStr{common.AssociationObjAsstIDField: gjson.GetBytes(ps.RequestCtx.Body, common.AssociationObjAsstIDField).String()})
 		if err != nil {
@@ -450,8 +482,8 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 		}
 
 		models, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: []interface{}{
-			asst.ObjectID,
-			asst.AsstObjID,
+			asst[0].ObjectID,
+			asst[0].AsstObjID,
 		}}})
 		if err != nil {
 			ps.err = err
@@ -460,7 +492,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 		for _, model := range models {
 			var instID int64
-			if model.ObjectID == asst.ObjectID {
+			if model.ObjectID == asst[0].ObjectID {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKInstIDField).Int()
 			} else {
 				instID = gjson.GetBytes(ps.RequestCtx.Body, common.BKAsstInstIDField).Int()
@@ -488,9 +520,10 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
-			blog.Warnf("get business id in metadata failed, err: %v", err)
+			ps.err = err
+			return ps
 		}
 		asst, err := ps.getInstAssociation(mapstr.MapStr{common.BKFieldID: assoID})
 		if err != nil {
@@ -534,7 +567,7 @@ func (ps *parseStream) objectInstanceAssociationLatest() *parseStream {
 
 var (
 	createObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/create/instance/object/[^\s/]+/?$`)
-	findObjectInstanceLatestRegexp            = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
+	findObjectInstanceAssociationLatestRegexp = regexp.MustCompile(`^/api/v3/find/instassociation/object/[^\s/]+/?$`)
 	updateObjectInstanceLatestRegexp          = regexp.MustCompile(`^/api/v3/update/instance/object/[^\s/]+/inst/[0-9]+/?$`)
 	updateObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/updatemany/instance/object/[^\s/]+/?$`)
 	deleteObjectInstanceBatchLatestRegexp     = regexp.MustCompile(`^/api/v3/deletemany/instance/object/[^\s/]+/?$`)
@@ -557,10 +590,37 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
+
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			// special logic for mainline object's instance authorization.
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			if bizID == 0 {
+				ps.err = errors.New("create mainline instance must have metadata with biz id")
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
+				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
+					Type:   modelType,
 					Action: meta.Create,
 				},
 				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
@@ -570,9 +630,9 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 	}
 
 	// find object instance operation.
-	if ps.hitRegexp(findObjectInstanceLatestRegexp, http.MethodPost) {
+	if ps.hitRegexp(findObjectInstanceAssociationLatestRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 6 {
-			ps.err = errors.New("search object instance, but got invalid url")
+			ps.err = errors.New("search object instance association, but got invalid url")
 			return ps
 		}
 		model, err := ps.getModel(mapstr.MapStr{common.BKObjIDField: ps.RequestCtx.Elements[5]})
@@ -580,15 +640,37 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.Find,
-				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
-			},
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			modelType = meta.MainlineInstance
 		}
+
+		if len(model) != 0 {
+			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   modelType,
+						Action: meta.Find,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				},
+			}
+		} else {
+			ps.err = errors.New("can not find this object")
+			return ps
+		}
+
 		return ps
 	}
 
@@ -611,15 +693,45 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
-					Action:     meta.Update,
-					InstanceID: instID,
+		var modelType = meta.ModelInstance
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+
+		isMainline, err := ps.isMainlineModel(model[0].ObjectID)
+		if err != nil {
+			ps.err = err
+			return ps
+		}
+		if isMainline {
+			// only works for mainline instance update.
+			var err error
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
+		if len(model) != 0 {
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:       modelType,
+						Action:     meta.Update,
+						InstanceID: instID,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
-			},
+			}
+		} else {
+			ps.err = errors.New("can not find this object")
+			return ps
 		}
 		return ps
 	}
@@ -644,15 +756,31 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 				return true
 			})
 
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.UpdateMany,
-				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
-			},
+		if len(model) != 0 {
+			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			for _, id := range ids {
+				ps.Attribute.Resources = append(ps.Attribute.Resources, meta.ResourceAttribute{
+
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:       meta.ModelInstance,
+						Action:     meta.UpdateMany,
+						InstanceID: id,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				})
+			}
+
+		} else {
+			ps.err = errors.New("can not find this object")
+			return ps
 		}
+
 		return ps
 	}
 
@@ -668,15 +796,28 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.ModelInstance,
-					Action: meta.DeleteMany,
+		if len(model) != 0 {
+			bizID, err := metadata.BizIDFromMetadata(model[0].Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:   meta.ModelInstance,
+						Action: meta.DeleteMany,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
 				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
-			},
+			}
+		} else {
+			ps.err = errors.New("can not find this object")
+			return ps
 		}
+
 		return ps
 	}
 
@@ -698,17 +839,48 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			ps.err = err
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.ModelInstance,
-					Action:     meta.Delete,
-					InstanceID: instID,
-				},
-				Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
-			},
+		var bizID int64
+		bizID, err = metadata.BizIDFromMetadata(model[0].Metadata)
+		if err != nil {
+			ps.err = err
+			return ps
 		}
+
+		var modelType = meta.ModelInstance
+		if isMainline, err := ps.isMainlineModel(model[0].ObjectID); err != nil {
+			ps.err = err
+			return ps
+		} else if isMainline {
+			// special logic for mainline object's instance authorization.
+			bizID, err = metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
+			if err != nil {
+				ps.err = err
+				return ps
+			}
+			if bizID == 0 {
+				ps.err = errors.New("create mainline instance must have metadata with biz id")
+				return ps
+			}
+			modelType = meta.MainlineInstance
+		}
+
+		if len(model) != 0 {
+			ps.Attribute.Resources = []meta.ResourceAttribute{
+				{
+					BusinessID: bizID,
+					Basic: meta.Basic{
+						Type:       modelType,
+						Action:     meta.Delete,
+						InstanceID: instID,
+					},
+					Layers: []meta.Item{{Type: meta.Model, InstanceID: model[0].ID}},
+				},
+			}
+		} else {
+			ps.err = errors.New("can not find this object")
+			return ps
+		}
+
 		return ps
 	}
 
@@ -753,8 +925,8 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Type:   meta.ModelInstanceTopology,
+					Action: meta.Find,
 				},
 			},
 		}
@@ -768,7 +940,7 @@ func (ps *parseStream) objectInstanceLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find business instance, but get business id in metadata failed, err: %v", err)
 		}
@@ -831,7 +1003,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// create common object operation.
 	if ps.hitPattern(createObjectLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("create object, but get business id in metadata failed, err: %v", err)
 		}
@@ -860,7 +1032,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("delete object, but get business id in metadata failed, err: %v", err)
 		}
@@ -890,7 +1062,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("update object, but get business id in metadata failed, err: %v", err)
 		}
@@ -909,7 +1081,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// get object operation.
 	if ps.hitPattern(findObjectsLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
@@ -927,7 +1099,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// find object's topology operation.
 	if ps.hitPattern(findObjectTopologyLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object, but get business id in metadata failed, err: %v", err)
 		}
@@ -945,7 +1117,7 @@ func (ps *parseStream) objectLatest() *parseStream {
 
 	// find object's topology graphic operation.
 	if ps.hitRegexp(findObjectTopologyGraphicLatestRegexp, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("find object topology graphic, but get business id in metadata failed, err: %v", err)
 		}
@@ -953,8 +1125,9 @@ func (ps *parseStream) objectLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.ModelTopology,
-					Action: meta.Find,
+					Type: meta.ModelTopology,
+					// Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -968,8 +1141,9 @@ func (ps *parseStream) objectLatest() *parseStream {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelTopology,
-					Action: meta.Update,
+					Type: meta.ModelTopology,
+					// Action: meta.Update,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -997,7 +1171,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 
 	// create object's classification operation.
 	if ps.hitPattern(createObjectClassificationLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1026,7 +1200,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1056,7 +1230,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1075,7 +1249,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 
 	// find object's classification list operation.
 	if ps.hitPattern(findObjectClassificationListLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1092,7 +1266,7 @@ func (ps *parseStream) ObjectClassificationLatest() *parseStream {
 	}
 	// find all the objects belongs to a classification
 	if ps.hitPattern(findObjectsBelongsToClassificationLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1128,7 +1302,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 	}
 	// create object's attribute group operation.
 	if ps.hitPattern(createObjectAttributeGroupLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1163,7 +1337,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1182,7 +1356,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 
 	// update object's attribute group operation.
 	if ps.hitPattern(updateObjectAttributeGroupLatestPattern, http.MethodPut) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1225,7 +1399,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1262,7 +1436,7 @@ func (ps *parseStream) objectAttributeGroupLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1299,7 +1473,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// create object's attribute operation.
 	if ps.hitPattern(createObjectAttributeLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1347,7 +1521,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1390,7 +1564,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 			return ps
 		}
 
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1410,7 +1584,7 @@ func (ps *parseStream) objectAttributeLatest() *parseStream {
 
 	// get object's attribute operation.
 	if ps.hitPattern(findObjectAttributeLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.V(5).Infof("get business id in metadata failed, err: %v", err)
 		}
@@ -1458,7 +1632,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// create mainline object operation.
 	if ps.hitPattern(createMainlineObjectLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1476,7 +1650,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// delete mainline object operation
 	if ps.hitRegexp(deleteMainlineObjectLatestRegexp, http.MethodDelete) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1495,7 +1669,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// get mainline object operation
 	if ps.hitPattern(findMainlineObjectTopoLatestPattern, http.MethodPost) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}
@@ -1503,8 +1677,9 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 			{
 				BusinessID: bizID,
 				Basic: meta.Basic{
-					Type:   meta.MainlineModelTopology,
-					Action: meta.Find,
+					Type: meta.MainlineModelTopology,
+					// Action: meta.Find,
+					Action: meta.SkipAction,
 				},
 			},
 		}
@@ -1515,7 +1690,7 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 	// find mainline instance topology operation.
 	// TODO: confirm this api about multiple biz filed in url and metadata.
 	if ps.hitRegexp(findMainlineInstanceTopoLatestRegexp, http.MethodGet) {
-		bizID, err := ps.RequestCtx.Metadata.Label.GetBusinessID()
+		bizID, err := metadata.BizIDFromMetadata(ps.RequestCtx.Metadata)
 		if err != nil {
 			blog.Warnf("get business id in metadata failed, err: %v", err)
 		}

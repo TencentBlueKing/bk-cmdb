@@ -44,7 +44,7 @@ func (cli *inst) updateMainlineAssociation(child Inst, parentID int64) error {
 		},
 		Condition: cond.ToMapStr(),
 	}
-	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, object.GetObjectType(), &input)
+	rsp, err := cli.clientSet.CoreService().Instance().UpdateInstance(context.Background(), cli.params.Header, object.ObjectID, &input)
 	if nil != err {
 		blog.Errorf("[inst-inst] failed to request object controller, error info %s", err.Error())
 		return cli.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

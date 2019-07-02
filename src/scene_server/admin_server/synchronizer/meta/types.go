@@ -28,6 +28,7 @@ var (
 	AuditCategory        = ResourceType("audit")
 	ProcessResource      = ResourceType("process")
 	DynamicGroupResource = ResourceType("dynamicGroup")
+	ClassificationResource = ResourceType("classification")
 )
 
 // ResourceType represent a resource type that will be enqueue to WorkerQueue
@@ -52,4 +53,5 @@ type SyncHandler interface {
 	HandleAuditSync(task *WorkRequest) error
 	HandleProcessSync(task *WorkRequest) error
 	HandleDynamicGroupSync(task *WorkRequest) error
+	HandleClassificationSync(task *WorkRequest) error
 }

@@ -9,13 +9,16 @@ import (
 // system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
+	SystemNameCMDB = "配置平台"
 )
 
 // ScopeTypeID constant
 const (
-	ScopeTypeIDSystem = "system"
-	ScopeTypeIDBiz    = "biz"
+	ScopeTypeIDSystem     = "system"
+	ScopeTypeIDSystemName = "全局"
+
+	ScopeTypeIDBiz     = "biz"
+	ScopeTypeIDBizName = "业务"
 )
 
 type AuthConfig struct {
@@ -27,8 +30,10 @@ type AuthConfig struct {
 	AppSecret string
 	// the system id that cmdb used in auth center.
 	SystemID string
-	// enable string
+	// enable auth
 	Enable bool
+	// enable sync auth data to iam
+	EnableSync bool
 }
 
 type RegisterInfo struct {
@@ -151,6 +156,7 @@ type ResourceType struct {
 	ResourceTypeID       ResourceTypeID `json:"resource_type"`
 	ResourceTypeName     string         `json:"resource_type_name"`
 	ParentResourceTypeID ResourceTypeID `json:"parent_resource_type"`
+	Share                bool           `json:"is_share"`
 	Actions              []Action       `json:"actions"`
 }
 
@@ -210,8 +216,26 @@ type ListAuthorizedResourcesResult struct {
 	Data []AuthorizedResource `json:"data"`
 }
 
+type ListAuthorizedScopeResult struct {
+	BaseResponse
+	Data []string `json:"data"`
+}
+
 type AuthorizedResource struct {
 	ActionID     ActionID         `json:"action_id"`
 	ResourceType ResourceTypeID   `json:"resource_type"`
 	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
+}
+
+type RoleWithAuthResources struct {
+	RoleTemplateName string       `json:"perm_template_name"`
+	TemplateID       string       `json:"template_id"`
+	Desc             string       `json:"desc"`
+	ResourceActions  []RoleAction `json:"resource_types_actions"`
+}
+
+type RoleAction struct {
+	ScopeTypeID    string         `json:"scope_type_id"`
+	ResourceTypeID ResourceTypeID `json:"resource_type_id"`
+	ActionID       ActionID       `json:"action_id"`
 }

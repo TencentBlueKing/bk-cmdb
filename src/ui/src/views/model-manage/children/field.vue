@@ -1,11 +1,16 @@
 <template>
     <div class="model-field-wrapper">
-        <div>
-            <bk-button class="create-btn" type="primary"
-                :disabled="isReadOnly || !updateAuth"
-                @click="createField">
-                {{$t('ModelManagement["新建字段"]')}}
-            </bk-button>
+        <div class="options">
+            <span class="inline-block-middle" v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
+                <bk-button class="create-btn" type="primary"
+                    :disabled="createDisabled || isReadOnly || !updateAuth"
+                    @click="createField">
+                    {{$t('ModelManagement["新建字段"]')}}
+                </bk-button>
+            </span>
         </div>
         <cmdb-table
             class="field-table"
@@ -66,14 +71,12 @@
 <script>
     import theFieldDetail from './field-detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theFieldDetail
         },
         data () {
             return {
-                OPERATION,
                 slider: {
                     isShow: false,
                     isEditField: false,
@@ -131,6 +134,9 @@
             objId () {
                 return this.$route.params.modelId
             },
+            createDisabled () {
+                return !this.isAdminView && this.isPublicModel
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -143,7 +149,7 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         watch: {
@@ -238,8 +244,8 @@
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .options {
+        padding: 10px 0;
     }
     .field-pre {
         display: inline-block;

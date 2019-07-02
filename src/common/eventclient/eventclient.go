@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 
+	"github.com/google/go-cmp/cmp"
 	"gopkg.in/redis.v5"
 )
 
@@ -68,6 +69,22 @@ func (c *ClientViaRedis) Push(ctx context.Context, events ...*metadata.EventInst
 	c.queueLock.Lock()
 	for i := range events {
 		if events[i] != nil {
+			var allEqual = true
+			for _, data := range events[i].Data {
+				equal, err := instEqual(data)
+				if err != nil {
+					return fmt.Errorf("[event] compare failed: %v, source data is %#v", err, data)
+				}
+				if !equal {
+					allEqual = false
+					break
+				}
+			}
+
+			if allEqual {
+				continue
+			}
+
 			eventID, err := c.rdb.NextSequence(ctx, common.EventCacheEventIDKey)
 			if err != nil {
 				c.queueLock.Unlock()
@@ -158,4 +175,41 @@ func (c *ClientViaRedis) pushToRedis(event *eventtmp) error {
 		return c.cache.LPush(common.EventCacheEventTxnQueuePrefix+event.TxnID, event.data).Err()
 	}
 	return c.cache.LPush(common.EventCacheEventQueueKey, event.data).Err()
+}
+
+// instEqual Determine whether the data is consistent before and after the change
+func instEqual(data metadata.EventData) (bool, error) {
+	switch {
+	case data.PreData == nil && data.CurData != nil:
+		return false, nil
+	case data.CurData == nil && data.PreData != nil:
+		return false, nil
+	}
+
+	preData, err := toMap(data.PreData)
+	if err != nil {
+		return false, err
+	}
+	curData, err := toMap(data.CurData)
+	if err != nil {
+		return false, err
+	}
+	delete(preData, common.LastTimeField)
+	delete(curData, common.LastTimeField)
+	return cmp.Equal(preData, curData), nil
+}
+
+func toMap(data interface{}) (map[string]interface{}, error) {
+	out, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string]interface{}{}
+	err = json.Unmarshal(out, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }

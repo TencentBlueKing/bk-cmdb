@@ -113,10 +113,23 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 
 	srvData := s.newSrvComm(req.Request.Header)
 
-	ID := req.PathParameter("id")
+	dynamicID := req.PathParameter("id")
 	appID := req.PathParameter("bk_biz_id")
 
-	result, err := s.CoreAPI.HostController().User().DeleteUserConfig(srvData.ctx, appID, ID, srvData.header)
+	dyResult, err := s.CoreAPI.HostController().User().GetUserConfigDetail(srvData.ctx, appID, dynamicID, srvData.header)
+	if err != nil {
+		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
+		return
+	}
+
+	if !dyResult.Result {
+		blog.Errorf("DeleteUserCustomQuery http response error,err code:%d,err msg:%s, bizID:%v,rid:%s", dyResult.Code, dyResult.ErrMsg, appID, srvData.rid)
+		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(dyResult.Code, dyResult.ErrMsg)})
+		return
+	}
+
+	result, err := s.CoreAPI.HostController().User().DeleteUserConfig(srvData.ctx, appID, dynamicID, srvData.header)
 	if err != nil {
 		blog.Errorf("DeleteUserCustomQuery http do error,err:%s, biz:%v, rid:%s", err.Error(), appID, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
@@ -128,7 +141,7 @@ func (s *Service) DeleteUserCustomQuery(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, ID); err != nil {
+	if err := s.AuthManager.DeregisterDynamicGroupByID(srvData.ctx, srvData.header, dyResult.Data); err != nil {
 		blog.Errorf("GetUserCustom deregister user api failed, err: %+v, rid: %s", err, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 	}

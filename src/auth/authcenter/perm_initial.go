@@ -19,9 +19,22 @@ import (
 	"strconv"
 
 	"configcenter/src/auth/meta"
+	"configcenter/src/common/blog"
 )
 
 func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
+	if err := ac.initAuthResources(ctx, configs); err != nil {
+		return fmt.Errorf("initial auth resources failed, err: %v", err)
+	}
+
+	if err := ac.initDefaultUserRoleWithAuth(ctx); err != nil {
+		return fmt.Errorf("initail default user's role with auth failed: %v", err)
+	}
+	blog.Info("initial auth center success.")
+	return nil
+}
+
+func (ac *AuthCenter) initAuthResources(ctx context.Context, configs meta.InitConfig) error {
 	header := http.Header{}
 	if err := ac.authClient.RegistSystem(ctx, header, expectSystem); err != nil && err != ErrDuplicated {
 		return err
@@ -139,5 +152,220 @@ func (ac *AuthCenter) Init(ctx context.Context, configs meta.InitConfig) error {
 		}
 	}
 
+	// init association kind
+	for _, kind := range configs.AssociationKinds {
+		info := RegisterInfo{
+			CreatorID:   "system",
+			CreatorType: "user",
+			Resources: []ResourceEntity{
+				{
+					ResourceType: SysAssociationType,
+					ResourceID: []RscTypeAndID{
+						{ResourceType: SysAssociationType, ResourceID: strconv.FormatInt(kind.ID, 10)},
+					},
+					ResourceName: kind.AssociationKindID,
+					ScopeInfo: ScopeInfo{
+						ScopeType: ScopeTypeIDSystem,
+						ScopeID:   SystemIDCMDB,
+					},
+				},
+			},
+		}
+
+		if err := ac.authClient.registerResource(ctx, header, &info); err != nil && err != ErrDuplicated {
+			return err
+		}
+	}
 	return nil
+}
+
+func (ac *AuthCenter) initDefaultUserRoleWithAuth(ctx context.Context) error {
+	normalActions := []RoleAction{
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizCustomQuery,
+			ActionID:       Get,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizInstance,
+			ActionID:       Get,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizAuditLog,
+			ActionID:       Get,
+		},
+	}
+	rolesWithAuth := []RoleWithAuthResources{
+		bizOperatorRoleAuth,
+		{
+			RoleTemplateName: "产品",
+			TemplateID:       "product_manager",
+			Desc:             "Product Manager",
+			ResourceActions:  normalActions,
+		},
+		{
+			RoleTemplateName: "开发",
+			TemplateID:       "product_developer",
+			Desc:             "Product Developer",
+			ResourceActions:  normalActions,
+		},
+		{
+			RoleTemplateName: "测试",
+			TemplateID:       "product_tester",
+			Desc:             "Product Tester",
+			ResourceActions:  normalActions,
+		},
+		{
+			RoleTemplateName: "职能化",
+			TemplateID:       "product_operator",
+			Desc:             "Product Operator",
+			ResourceActions:  normalActions,
+		},
+	}
+	for _, role := range rolesWithAuth {
+		id, err := ac.authClient.RegisterUserRole(ctx, http.Header{}, role)
+		if err != nil {
+			return err
+		}
+		blog.Infof("register auth with role: %s, id: %d", role.RoleTemplateName, id)
+	}
+	return nil
+}
+
+var bizOperatorRoleAuth = RoleWithAuthResources{
+	RoleTemplateName: "业务运维",
+	TemplateID:       "business_maintainer",
+	Desc:             "a business's maintainer",
+	ResourceActions: []RoleAction{
+		// business host instance related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizHostInstance,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizHostInstance,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizHostInstance,
+			ActionID:       Delete,
+		},
+		// dynamic group related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizCustomQuery,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizCustomQuery,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizCustomQuery,
+			ActionID:       Delete,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizCustomQuery,
+			ActionID:       Get,
+		},
+		// biz topology related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizTopology,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizTopology,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizTopology,
+			ActionID:       Delete,
+		},
+		// process related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessInstance,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessInstance,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizProcessInstance,
+			ActionID:       Delete,
+		},
+		// model classification related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModelGroup,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModelGroup,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModelGroup,
+			ActionID:       Delete,
+		},
+		// model related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModel,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModel,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizModel,
+			ActionID:       Delete,
+		},
+		// model instance
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizInstance,
+			ActionID:       Create,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizInstance,
+			ActionID:       Edit,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizInstance,
+			ActionID:       Delete,
+		},
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizInstance,
+			ActionID:       Get,
+		},
+		// audit related
+		{
+			ScopeTypeID:    ScopeTypeIDBiz,
+			ResourceTypeID: BizAuditLog,
+			ActionID:       Get,
+		},
+	},
 }

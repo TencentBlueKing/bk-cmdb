@@ -13,6 +13,7 @@
 package metadata
 
 import (
+	"configcenter/src/common/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -80,10 +81,13 @@ func PublicAndBizCondition(meta Metadata) mapstr.MapStr {
 		return NewPublicOrBizConditionByBizID(0)
 	}
 
-	businessID, err = util.GetInt64ByInterface(bizID)
-	if err != nil {
-		blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
-		businessID = 0
+	bizIDStr := util.GetStrByInterface(bizID)
+	if len(bizIDStr) > 0 {
+		businessID, err = util.GetInt64ByInterface(bizID)
+		if err != nil {
+			blog.Errorf("PublicAndBizCondition parse business id failed, generate public condition only, bizID: %+v, err: %+v", bizID, err)
+			businessID = 0
+		}
 	}
 	return NewPublicOrBizConditionByBizID(businessID)
 }
@@ -145,27 +149,13 @@ func ParseBizIDFromData(rawData mapstr.MapStr) (int64, error) {
 	if exist == false {
 		return 0, fmt.Errorf("invalid input, metadata field not exist")
 	}
-	metadata, ok := rawMetadata.(map[string]interface{})
-	if ok == false {
-		return 0, fmt.Errorf("invalid input, not mapstr struct")
+	js, _ := json.Marshal(rawMetadata)
+	meta := new(Metadata)
+	if err := json.Unmarshal(js, meta); err != nil {
+		return 0, err
 	}
 
-	return ParseBizIDFromMetadata(metadata)
-}
-
-func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
-	if metadata == nil {
-		return 0, fmt.Errorf("metadata is nil")
-	}
-	rawLabel, existed := metadata[BKLabel]
-	if existed == false {
-		return 0, nil
-	}
-	label, ok := rawLabel.(map[string]interface{})
-	if !ok {
-		return 0, fmt.Errorf("invalid label field format, not mapstr struct")
-	}
-	rawBizID, existed := label[LabelBusinessID]
+	rawBizID, existed := meta.Label[LabelBusinessID]
 	if !existed {
 		return 0, nil
 	}
@@ -174,6 +164,7 @@ func ParseBizIDFromMetadata(metadata mapstr.MapStr) (int64, error) {
 		return 0, fmt.Errorf("invalid biz id value, parse int failed, id: %+v, err: %+v", rawBizID, err)
 	}
 	return bizID, nil
+
 }
 
 // Metadata  used to define the metadata for the resources

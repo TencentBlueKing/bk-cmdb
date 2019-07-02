@@ -16,9 +16,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -35,6 +32,9 @@ import (
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdpartyclient/esbserver"
 	"configcenter/src/thirdpartyclient/esbserver/esbutil"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 type srvComm struct {
@@ -61,11 +61,16 @@ type ProcServer struct {
 }
 
 func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
+	rid := util.GetHTTPCCRequestID(header)
 	lang := util.GetLanguage(header)
+	user := util.GetUser(header)
 	ctx, cancel := s.Engine.CCCtx.WithCancel()
+	ctx = context.WithValue(ctx, common.ContextRequestIDField, rid)
+	ctx = context.WithValue(ctx, common.ContextRequestUserField, user)
+
 	return &srvComm{
 		header:        header,
-		rid:           util.GetHTTPCCRequestID(header),
+		rid:           rid,
 		ccErr:         s.CCErr.CreateDefaultCCErrorIf(lang),
 		ccLang:        s.Language.CreateDefaultCCLanguageIf(lang),
 		ctx:           ctx,
@@ -76,55 +81,64 @@ func (s *ProcServer) newSrvComm(header http.Header) *srvComm {
 	}
 }
 
-func (ps *ProcServer) WebService() *restful.WebService {
+func (ps *ProcServer) WebService() *restful.Container {
+
+	container := restful.NewContainer()
+
 	getErrFunc := func() errors.CCErrorIf {
 		return ps.Engine.CCErr
 	}
 
 	// v3
-	ws := new(restful.WebService)
-	ws.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api := new(restful.WebService)
+	api.Path("/process/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 	restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	ws.Route(ws.POST("/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateProcess))
-	ws.Route(ws.DELETE("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.DeleteProcess))
-	ws.Route(ws.POST("/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchProcess))
-	ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.UpdateProcess))
-	ws.Route(ws.PUT("/{bk_supplier_account}/{bk_biz_id}").To(ps.BatchUpdateProcess))
+	api.Route(api.POST("/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateProcess))
+	api.Route(api.DELETE("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.DeleteProcess))
+	api.Route(api.POST("/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchProcess))
+	api.Route(api.PUT("/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.UpdateProcess))
+	api.Route(api.PUT("/{bk_supplier_account}/{bk_biz_id}").To(ps.BatchUpdateProcess))
 
-	ws.Route(ws.GET("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcessBindModule))
-	ws.Route(ws.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
-	ws.Route(ws.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
+	api.Route(api.GET("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcessBindModule))
+	api.Route(api.PUT("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.BindModuleProcess))
+	api.Route(api.DELETE("/module/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{bk_module_name}").To(ps.DeleteModuleProcessBind))
 
-	ws.Route(ws.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
+	api.Route(api.GET("/{" + common.BKOwnerIDField + "}/{" + common.BKAppIDField + "}/{" + common.BKProcessIDField + "}").To(ps.GetProcessDetailByID))
 
-	ws.Route(ws.POST("/operate/process").To(ps.OperateProcessInstance))
-	ws.Route(ws.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
+	api.Route(api.POST("/operate/process").To(ps.OperateProcessInstance))
+	api.Route(api.GET("/operate/process/taskresult/{taskID}").To(ps.QueryProcessOperateResult))
 
-	ws.Route(ws.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
-	ws.Route(ws.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
-	ws.Route(ws.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
-	ws.Route(ws.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
-	ws.Route(ws.POST("/template/version/search/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.SearchTemplateVersion))
-	ws.Route(ws.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateTemplateVersion))
-	ws.Route(ws.PUT("/template/vesrion/{bk_supplier_account}/{bk_biz_id}/{template_id}/{version_id}").To(ps.UpdateTemplateVersion))
-	ws.Route(ws.GET("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
-	ws.Route(ws.PUT("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.BindProc2Template))
-	ws.Route(ws.DELETE("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.DeleteProc2Template))
-	ws.Route(ws.POST("/template/preview/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PreviewCfg))
-	ws.Route(ws.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
-	ws.Route(ws.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
-	ws.Route(ws.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
-	ws.Route(ws.GET("/template/group/{bk_supplier_account}/{bk_biz_id}").To(ps.GetTemplateGroup))
+	api.Route(api.POST("/template/{bk_supplier_account}/{bk_biz_id}").To(ps.CreateTemplate))
+	api.Route(api.PUT("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.UpdateTemplate))
+	api.Route(api.DELETE("/template/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.DeleteTemplate))
+	api.Route(api.POST("/template/search/{bk_supplier_account}/{bk_biz_id}").To(ps.SearchTemplate))
+	api.Route(api.POST("/template/version/search/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.SearchTemplateVersion))
+	api.Route(api.POST("/template/version/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateTemplateVersion))
+	api.Route(api.PUT("/template/vesrion/{bk_supplier_account}/{bk_biz_id}/{template_id}/{version_id}").To(ps.UpdateTemplateVersion))
+	api.Route(api.GET("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}").To(ps.GetProcBindTemplate))
+	api.Route(api.PUT("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.BindProc2Template))
+	api.Route(api.DELETE("/template/proc/{bk_supplier_account}/{bk_biz_id}/{bk_process_id}/{template_id}").To(ps.DeleteProc2Template))
+	api.Route(api.POST("/template/preview/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PreviewCfg))
+	api.Route(api.POST("/template/create/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.CreateCfg))
+	api.Route(api.POST("/template/push/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.PushCfg))
+	api.Route(api.POST("/template/getremote/{bk_supplier_account}/{bk_biz_id}/{template_id}").To(ps.GetRemoteCfg))
+	api.Route(api.GET("/template/group/{bk_supplier_account}/{bk_biz_id}").To(ps.GetTemplateGroup))
 
 	//v2
-	ws.Route(ws.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
-	ws.Route(ws.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
+	api.Route(api.POST("/openapi/GetProcessPortByApplicationID/{" + common.BKAppIDField + "}").To(ps.GetProcessPortByApplicationID))
+	api.Route(api.POST("/openapi/GetProcessPortByIP").To(ps.GetProcessPortByIP))
 
-	ws.Route(ws.GET("/healthz").To(ps.Healthz))
-	ws.Route(ws.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
-	return ws
+	api.Route(api.POST("/process/refresh/hostinstnum").To(ps.RefreshProcHostInstByEvent))
+
+	container.Add(api)
+
+	healthzAPI := new(restful.WebService).Produces(restful.MIME_JSON)
+	healthzAPI.Route(healthzAPI.GET("/healthz").To(ps.Healthz))
+	container.Add(healthzAPI)
+
+	return container
 }
 
 func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
@@ -146,14 +160,6 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 	}
 	meta.Items = append(meta.Items, objCtr)
 
-	// audit controller
-	auditCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_AUDITCONTROLLER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_AUDITCONTROLLER); err != nil {
-		auditCtrl.IsHealthy = false
-		auditCtrl.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, auditCtrl)
-
 	// host controller
 	hostCtrl := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_HOSTCONTROLLER}
 	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_HOSTCONTROLLER); err != nil {
@@ -168,6 +174,14 @@ func (s *ProcServer) Healthz(req *restful.Request, resp *restful.Response) {
 		procCtrl.Message = err.Error()
 	}
 	meta.Items = append(meta.Items, procCtrl)
+
+	// coreservice
+	coreSrv := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_CORESERVICE}
+	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+		coreSrv.IsHealthy = false
+		coreSrv.Message = err.Error()
+	}
+	meta.Items = append(meta.Items, coreSrv)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {

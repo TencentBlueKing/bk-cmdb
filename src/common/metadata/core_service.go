@@ -193,10 +193,10 @@ func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanc
 }
 
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {
-	if common.GetObjectTypeByObjectID(node.ObjectID) == objectType && node.InstanceID == targetID {
+	if common.GetObjByType(node.ObjectID) == objectType && node.InstanceID == targetID {
 		return []*TopoInstanceNode{node}
 	}
-	
+
 	for _, child := range node.Children {
 		path := child.TraversalFindNode(objectType, targetID)
 		if len(path) > 0 {
@@ -204,7 +204,7 @@ func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int6
 			return path
 		}
 	}
-	
+
 	return []*TopoInstanceNode{}
 }
 
@@ -213,6 +213,7 @@ type TopoInstance struct {
 	InstanceID       int64
 	ParentInstanceID int64
 	Detail           map[string]interface{}
+	Default        int64
 }
 
 // Key generate a unique key for instance(as instances's of different object type maybe conflict)

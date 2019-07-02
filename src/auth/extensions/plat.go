@@ -30,6 +30,8 @@ import (
  */
 
 func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify, error) {
+	rid := util.ExtractRequestIDFromContext(ctx)
+
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
 	platIDs = util.IntArrayUnique(platIDs)
 
@@ -38,7 +40,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	}
 	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
 	if err != nil {
-		blog.V(3).Infof("get plats by id failed, err: %+v", err)
+		blog.V(3).Infof("get plats by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get plats by id failed, err: %+v", err)
 	}
 	plats := make([]PlatSimplify, 0)

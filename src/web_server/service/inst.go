@@ -110,7 +110,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 	if err != nil {
 		msg := getReturnStr(common.CCErrWebGetObjectFail, defErr.Errorf(common.CCErrWebGetObjectFail, err.Error()).Error(), nil)
 		fmt.Println("return msg: ", msg)
-		c.String(http.StatusInternalServerError, msg)
+		c.String(http.StatusForbidden, msg)
 		return
 	}
 
@@ -120,6 +120,13 @@ func (s *Service) ExportInst(c *gin.Context) {
 
 	customFields := logics.GetCustomFields(nil, customFieldsStr)
 	fields, err := s.Logics.GetObjFieldIDs(objID, nil, customFields, pheader, metaInfo)
+	if err != nil {
+		blog.Errorf("export object instance, but get object:%s attribute field failed, err: %v", objID, err)
+		reply := getReturnStr(common.CCErrCommExcelTemplateFailed, defErr.Errorf(common.CCErrCommExcelTemplateFailed, objID).Error(), nil)
+		c.Writer.Write([]byte(reply))
+		return
+	}
+
 	err = s.Logics.BuildExcelFromData(context.Background(), objID, fields, nil, instInfo, file, pheader, metaInfo)
 	if nil != err {
 		blog.Errorf("ExportHost object:%s error:%s", objID, err.Error())
@@ -145,7 +152,7 @@ func (s *Service) ExportInst(c *gin.Context) {
 			return
 		}
 	}
-	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("inst_%s.xlsx", objID))
+	logics.AddDownExcelHttpHeader(c, fmt.Sprintf("bk_cmdb_export_inst_%s.xlsx", objID))
 	c.File(dirFileName)
 	os.Remove(dirFileName)
 }
