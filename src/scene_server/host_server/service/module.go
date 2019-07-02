@@ -129,28 +129,32 @@ func (s *Service) MoveHostToResourcePool(req *restful.Request, resp *restful.Res
 	}
 
 	// auth: check authorization
-	// if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
-	// 	blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
-	// 	resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
-	// 	return
-	// }
+	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.MoveHostFromModuleToResPool, conf.HostID...); err != nil {
+		blog.Errorf("check host authorization failed, hosts: %+v, err: %v", conf.HostID, err)
+		if err != auth.NoAuthorizeError {
+			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenMoveBizHostToResourcePoolNoPermissionResp(conf.HostID))
+		return
+	}
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 	exceptionArr, err := srvData.lgc.MoveHostToResourcePool(srvData.ctx, conf)
 	if err != nil {
 		blog.Errorf("move host to resource pool failed, err:%s, input:%#v, rid:%s", err.Error(), conf, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err, Data: exceptionArr})
+		resp.WriteEntity(&metadata.RespError{Msg: err, Data: exceptionArr})
 		return
 	}
 
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -463,7 +467,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	// auth: deregister hosts
 	if err := s.AuthManager.DeregisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("deregister host from iam failed, hosts: %+v, err: %v", conf.HostID, err)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommUnRegistResourceToIAMFailed)})
 		return
 	}
 
@@ -486,7 +490,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 	// auth: register hosts
 	if err := s.AuthManager.RegisterHostsByID(srvData.ctx, srvData.header, conf.HostID...); err != nil {
 		blog.Errorf("register host to iam failed, hosts: %+v, err: %v,rid:%s", conf.HostID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
+		resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommRegistResourceToIAMFailed)})
 		return
 	}
 
