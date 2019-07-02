@@ -28,7 +28,7 @@
 	"1101027": "Failed to update model attribute grouping",
 	"1101028": "Query Model Attribute Grouping Failed",
 	"1101029": "There is a model under the category, not allowed to delete",
-	"1101030": "Having a host under the target",
+	"1101030": "Having hosts under the target, deleting forbidden",
 	"1001031": "Delete Business Failure",
 	"1001032": "Update business failed",
 	"1001033": "Query service failure",

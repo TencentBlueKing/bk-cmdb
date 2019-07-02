@@ -13,14 +13,12 @@
 package process
 
 import (
-	"strconv"
-	"strings"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
+	"strconv"
 )
 
 func (p *processOperation) CreateProcessInstanceRelation(ctx core.ContextParams, relation *metadata.ProcessInstanceRelation) (*metadata.ProcessInstanceRelation, errors.CCErrorCoder) {
@@ -156,42 +154,35 @@ func (p *processOperation) DeleteProcessInstanceRelation(ctx core.ContextParams,
 	if option.BusinessID != nil {
 		deleteFilter[common.BKAppIDField] = option.BusinessID
 	}
+	parameterEnough := false
 	if option.ProcessIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKProcIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessIDs,
 		}
 	}
 	if option.ProcessTemplateIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKProcessTemplateIDField] = map[string]interface{}{
 			common.BKDBIN: option.ProcessTemplateIDs,
 		}
 	}
 	if option.ServiceInstanceIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKServiceInstanceIDField] = map[string]interface{}{
 			common.BKDBIN: option.ServiceInstanceIDs,
 		}
 	}
 	if option.ModuleIDs != nil {
+		parameterEnough = true
 		deleteFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
 	}
 
-	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(deleteFilter).All(ctx.Context, &relations); err != nil {
-		blog.Errorf("DeleteProcessInstanceRelation failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, err, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-	templateProcessIDs := make([]string, 0)
-	for _, relation := range relations {
-		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
-			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
-		}
-	}
-	if len(templateProcessIDs) > 0 {
-		invalidProcesses := strings.Join(templateProcessIDs, ",")
-		blog.Errorf("DeleteProcessInstanceRelation failed, some process:%s initialized by template, rid: %s", invalidProcesses, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, invalidProcesses)
+	if parameterEnough == false {
+		blog.Errorf("DeleteProcessInstanceRelation failed, filter parameters not enough, filter: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, deleteFilter, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommParametersCountNotEnough)
 	}
 
 	if err := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Delete(ctx, deleteFilter); nil != err {

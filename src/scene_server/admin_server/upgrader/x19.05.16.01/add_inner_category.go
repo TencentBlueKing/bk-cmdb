@@ -32,23 +32,56 @@ func addInnerCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			Name:       "数据库",
 			ParentName: "",
 		}, {
-			Name:       "mysql",
+			Name:       "Mysql",
 			ParentName: "数据库",
 		}, {
-			Name:       "oracle",
+			Name:       "Redis",
 			ParentName: "数据库",
 		}, {
-			Name:       "redis",
+			Name:       "Oracle",
 			ParentName: "数据库",
 		}, {
-			Name:       "web中间件",
+			Name:       "SQLServer",
+			ParentName: "数据库",
+		}, {
+			Name:       "MongoDB",
+			ParentName: "数据库",
+		}, {
+			Name:       "Etcd",
+			ParentName: "数据库",
+		}, {
+			Name:       "Zookeeper",
+			ParentName: "数据库",
+		}, {
+			Name:       "消息队列",
 			ParentName: "",
 		}, {
-			Name:       "apache",
-			ParentName: "web中间件",
+			Name:       "Kafka",
+			ParentName: "消息队列",
 		}, {
-			Name:       "nginx",
-			ParentName: "web中间件",
+			Name:       "RabbitMQ",
+			ParentName: "消息队列",
+		}, {
+			Name:       "HTTP 服务",
+			ParentName: "",
+		}, {
+			Name:       "Nginx",
+			ParentName: "HTTP 服务",
+		}, {
+			Name:       "Apache",
+			ParentName: "HTTP 服务",
+		}, {
+			Name:       "Tomcat",
+			ParentName: "HTTP 服务",
+		}, {
+			Name:       "存储",
+			ParentName: "",
+		}, {
+			Name:       "Ceph",
+			ParentName: "存储",
+		}, {
+			Name:       "NFS",
+			ParentName: "存储",
 		},
 	}
 
