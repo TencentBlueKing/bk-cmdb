@@ -98,11 +98,11 @@
                     name: 'generalModel',
                     params: {
                         objId: model.bk_obj_id
+                    },
+                    query: {
+                        from: this.$route.fullPath
                     }
                 }
-                this.$store.commit('setHeaderStatus', {
-                    back: true
-                })
                 this.$router.push(router)
             },
             toggleClassify () {

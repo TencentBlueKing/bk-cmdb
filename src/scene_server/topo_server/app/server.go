@@ -101,7 +101,7 @@ func Run(ctx context.Context, op *options.ServerOption) error {
 		return err
 	}
 
-	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth)
+	authorize, err := authcenter.NewAuthCenter(nil, server.Config.Auth, engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("it is failed to create a new auth API, err:%s", err.Error())
 	}

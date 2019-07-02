@@ -33,12 +33,14 @@ func (s *Service) CreateObjectUnique(params types.ContextParams, pathParams, que
 
 	objectID := pathParams(common.BKObjIDField)
 
-	// TODO: remove this, this has already be done in api server
-	// auth: check authorization
-	// if err := s.AuthManager.AuthorizeModelUniqueResourceCreate(params.Context, params.Header, objectID); err != nil {
-	// 	blog.Errorf("create model unique failed, authorization failed, modelID: %s, err: %+v", objectID, err)
-	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	// }
+	// mainline object's unique can not be changed.
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	if err != nil {
+		return nil, err
+	}
+	if yes {
+		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+	}
 
 	id, err := s.Core.UniqueOperation().Create(params, objectID, request)
 	if err != nil {
@@ -74,11 +76,25 @@ func (s *Service) UpdateObjectUnique(params types.ContextParams, pathParams, que
 
 	data.Remove(metadata.BKMetadata)
 
-	// auth: check authorization
-	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-	// 	blog.Errorf("update model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	// }
+	// validate unique keys.
+	for _, key := range request.Keys {
+		if key.ID == 0 {
+			return nil, params.Err.New(common.CCErrCommParamsInvalid, "unique key_id is 0")
+		}
+		if len(key.Kind) == 0 {
+			return nil, params.Err.New(common.CCErrCommParamsInvalid, "unique key_kind is empty")
+		}
+	}
+
+	// mainline object's unique can not be changed.
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	if err != nil {
+		return nil, err
+	}
+	if yes {
+		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+	}
+
 	err = s.Core.UniqueOperation().Update(params, objectID, id, request)
 	if err != nil {
 		blog.Errorf("[UpdateObjectUnique] update for [%s](%d) failed: %v, raw: %#v", objectID, id, err, data)
@@ -101,6 +117,15 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 	}
 	data.Remove(metadata.BKMetadata)
 
+	// mainline object's unique can not be changed.
+	yes, err := s.Core.AssociationOperation().IsMainlineObject(params, objectID)
+	if err != nil {
+		return nil, err
+	}
+	if yes {
+		return nil, params.Err.Error(common.CCErrorTopoMainlineObjectCanNotBeChanged)
+	}
+
 	uniques, err := s.Core.UniqueOperation().Search(params, objectID)
 	if err != nil {
 		return nil, err
@@ -110,12 +135,6 @@ func (s *Service) DeleteObjectUnique(params types.ContextParams, pathParams, que
 		blog.Errorf("[DeleteObjectUnique][%s] unique should have more than one", objectID)
 		return nil, params.Err.Error(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
-
-	// auth: check authorization
-	// if err := s.AuthManager.AuthorizeByUniqueID(params.Context, params.Header, meta.Update, int64(id)); err != nil {
-	// 	blog.Errorf("delete model unique failed, authorization failed, unique ID: %d, err: %+v", id, err)
-	// 	return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	// }
 
 	err = s.Core.UniqueOperation().Delete(params, objectID, id)
 	if err != nil {
@@ -152,10 +171,10 @@ func (s *Service) SearchObjectUnique(params types.ContextParams, pathParams, que
 	}
 
 	/*
-	if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
-		blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
-		return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
-	}
+		if err := s.AuthManager.AuthorizeModelUniqueByID(params.Context, params.Header, meta.Find, ids...); err != nil {
+			blog.Errorf("authorize model unique failed, unique: %+v, err: %+v", uniques, err)
+			return nil, params.Err.New(common.CCErrCommAuthNotHavePermission, err.Error())
+		}
 	*/
 
 	return uniques, nil

@@ -104,3 +104,13 @@ func (s *coreService) Identifier(params core.ContextParams, pathParams, queryPar
 
 	return metadata.SearchHostIdentifierData{Info: hostIdentifierArr, Count: len(hostIdentifierArr)}, nil
 }
+
+// TransferHostModuleDep is a TransferHostModule dependence
+func (s *coreService) TransferHostModuleDep(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+	exceptionArr, err := s.core.HostOperation().TransferHostModule(ctx, input)
+	if err != nil {
+		blog.ErrorJSON("TransferHostModule  error. err:%s, exception:%s, rid:%s", err.Error(), exceptionArr, ctx.ReqID)
+		return exceptionArr, err
+	}
+	return nil, nil
+}

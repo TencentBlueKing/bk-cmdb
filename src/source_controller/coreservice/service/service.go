@@ -21,9 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	redis "gopkg.in/redis.v5"
-
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -48,6 +45,9 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/remote"
 	dalredis "configcenter/src/storage/dal/redis"
+
+	"github.com/emicklei/go-restful"
+	redis "gopkg.in/redis.v5"
 )
 
 // CoreServiceInterface the topo service methods used to init
@@ -114,9 +114,9 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		association.New(db, s),
 		datasynchronize.New(db, s),
 		mainline.New(db),
-		host.New(db, cache),
+		host.New(db, cache, s),
 		auditlog.New(db),
-		process.New(db),
+		process.New(db, s),
 	)
 	return nil
 }
@@ -125,7 +125,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 func (s *coreService) WebService() *restful.Container {
 
 	container := restful.NewContainer()
-
+	container.ServiceErrorHandler(rdapi.ServiceErrorHandler)
 	// init service actions
 	s.initService()
 
@@ -133,7 +133,7 @@ func (s *coreService) WebService() *restful.Container {
 	getErrFunc := func() errors.CCErrorIf {
 		return s.err
 	}
-	api.Path("/api/v3").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/api/v3").Filter(s.engin.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 

@@ -21,8 +21,8 @@
                     {{$t('Cloud["新增"]')}}
                 </span>
             </template>
-            <template slot="bk_account_type">
-                <span>{{$t('Cloud["腾讯云"]')}}</span>
+            <template slot="bk_account_type" slot-scope="{ item }">
+                <span v-if="item.bk_account_type === 'tencent_cloud'">{{$t('Cloud[\'腾讯云\']')}}</span>
             </template>
         </cmdb-table>
     </div>
@@ -100,7 +100,6 @@
             }
         },
         created () {
-            this.$store.commit('setHeaderTitle', this.$t('Cloud["确认记录"]'))
             this.initDateRange()
             this.getTableData()
         },

@@ -14,10 +14,13 @@ package operation
 
 import (
 	"context"
+	"sort"
 	"strings"
+	"sync"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/auth/extensions"
+	authmeta "configcenter/src/auth/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -113,7 +116,7 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 			var createAsstRsp *metadata.CreatedOneOptionResult
 			var err error
 			if asst.AsstKindID == common.AssociationKindMainline {
-				// bk_mainline is a inner association type that can only create in special case, 
+				// bk_mainline is a inner association type that can only create in special case,
 				// so we separate bk_mainline association type creation with a independent method,
 				createAsstRsp, err = b.clientSet.CoreService().Association().CreateMainlineModelAssociation(context.Background(), params.Header, &metadata.CreateModelAssociation{Spec: asst})
 			} else {
@@ -194,12 +197,20 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 		return nil, params.Err.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
+	defaultCategory, err := b.clientSet.CoreService().Process().GetDefaultServiceCategory(params.Context, params.Header)
+	if err != nil {
+		blog.Errorf("failed to search default category, err: %+v, rid: %s", err, params.ReqID)
+		return nil, params.Err.New(common.CCErrProcGetDefaultServiceCategoryFailed, err.Error())
+	}
+
 	moduleData := mapstr.New()
 	moduleData.Set(common.BKSetIDField, setID)
 	moduleData.Set(common.BKInstParentStr, setID)
 	moduleData.Set(common.BKAppIDField, bizID)
 	moduleData.Set(common.BKModuleNameField, common.DefaultResModuleName)
 	moduleData.Set(common.BKDefaultField, common.DefaultResModuleFlag)
+	moduleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	moduleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, moduleData)
 	if nil != err {
@@ -214,6 +225,8 @@ func (b *business) CreateBusiness(params types.ContextParams, obj model.Object, 
 	faultModuleData.Set(common.BKAppIDField, bizID)
 	faultModuleData.Set(common.BKModuleNameField, common.DefaultFaultModuleName)
 	faultModuleData.Set(common.BKDefaultField, common.DefaultFaultModuleFlag)
+	faultModuleData.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
+	faultModuleData.Set(common.BKServiceCategoryIDField, defaultCategory.ID)
 
 	_, err = b.module.CreateModule(params, objModule, bizID, setID, faultModuleData)
 	if nil != err {
@@ -253,16 +266,54 @@ func (b *business) DeleteBusiness(params types.ContextParams, obj model.Object, 
 	return b.inst.DeleteInst(params, bizObj, innerCond, true)
 }
 
+var businessCache = sync.Map{}
+
 func (b *business) FindBusiness(params types.ContextParams, obj model.Object, fields []string, cond condition.Condition) (count int, results []inst.Inst, err error) {
+	var applist, cacheList []int64
+	var autherr error
+	var authC = make(chan struct{})
+
+	if b.authManager.Enabled() {
+		// it will take a while, so Let the Bullets Fly
+		go func() {
+			applist, autherr = b.authManager.Authorize.GetAuthorizedBusinessList(params.Context, authmeta.UserInfo{UserName: params.User, SupplierAccount: params.SupplierAccount})
+			if autherr == nil {
+				sort.Sort(util.Int64Slice(applist))
+				businessCache.Store(params.SupplierAccount+":"+params.User, applist)
+			}
+			close(authC)
+		}()
+		if tmp, ok := businessCache.Load(params.SupplierAccount + ":" + params.User); ok {
+			cacheList = tmp.([]int64)
+		} else {
+			<-authC
+			cacheList = applist
+		}
+		cond.Field(common.BKAppIDField).In(cacheList)
+	}
 
 	query := &metadata.QueryInput{}
 	cond.Field(common.BKDefaultField).Eq(0)
 	query.Condition = cond.ToMapStr()
 	query.Limit = int(cond.GetLimit())
+	if query.Limit > 500 {
+		query.Limit = 500
+	}
 	query.Fields = strings.Join(fields, ",")
 	query.Sort = cond.GetSort()
 	query.Start = int(cond.GetStart())
+	count, results, err = b.inst.FindInst(params, obj, query, false)
 
+	if !b.authManager.Enabled() {
+		return count, results, err
+	}
+	<-authC
+	if util.SliceInt64Equal(cacheList, applist) {
+		return count, results, err
+	}
+
+	cond.Field(common.BKAppIDField).In(cacheList)
+	query.Condition = cond.ToMapStr()
 	return b.inst.FindInst(params, obj, query, false)
 }
 

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/inst"
 	"configcenter/src/scene_server/topo_server/core/model"
 	"configcenter/src/scene_server/topo_server/core/types"
@@ -78,6 +79,53 @@ func (m *module) CreateModule(params types.ContextParams, obj model.Object, bizI
 	data.Set(common.BKAppIDField, bizID)
 	if !data.Exists(common.BKDefaultField) {
 		data.Set(common.BKDefaultField, 0)
+	}
+
+	// validate service category id and service template id
+	// 如果服务分类没有设置，则从服务模版中获取，如果服务模版也没有设置，则参数错误
+	// 有效参数参数形式:
+	// 1. serviceCategoryID > 0  && serviceTemplateID == 0
+	// 2. serviceCategoryID not set && serviceTemplateID > 0
+	// 3. serviceCategoryID > 0 && serviceTemplateID > 0 && serviceTemplate.ServiceCategoryID == serviceCategoryID
+	var serviceCategoryID int64
+	serviceCategoryIDIf, serviceCategoryExist := data.Get(common.BKServiceCategoryIDField)
+	if serviceCategoryExist == true {
+		scID, err := util.GetInt64ByInterface(serviceCategoryIDIf)
+		if err != nil {
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField)
+		}
+		serviceCategoryID = scID
+	}
+
+	serviceTemplateIDIf, serviceTemplateExist := data.Get(common.BKServiceTemplateIDField)
+	serviceTemplateID, err := util.GetInt64ByInterface(serviceTemplateIDIf)
+	if err != nil {
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+	if serviceCategoryExist == false && (serviceTemplateExist == false || serviceTemplateID == common.ServiceTemplateIDNotSet) {
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+	if serviceTemplateID != common.ServiceTemplateIDNotSet {
+		// 校验 serviceCategoryID 与 serviceTemplateID 对应
+		templateIDs := []int64{serviceTemplateID}
+		option := metadata.ListServiceTemplateOption{
+			BusinessID:         bizID,
+			ServiceTemplateIDs: &templateIDs,
+		}
+		stResult, err := m.clientSet.CoreService().Process().ListServiceTemplates(params.Context, params.Header, &option)
+		if err != nil {
+			return nil, err
+		}
+		if len(stResult.Info) == 0 {
+			blog.Errorf("create module failed, service template not found, filter: %+v, rid: %s", option, params.ReqID)
+			return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+		}
+		if serviceCategoryExist == true && serviceCategoryID != stResult.Info[0].ServiceCategoryID {
+			return nil, params.Err.Error(common.CCErrProcServiceTemplateAndCategoryNotCoincide)
+		}
+		if serviceCategoryExist == false {
+			data.Set(common.BKServiceCategoryIDField, serviceCategoryID)
+		}
 	}
 
 	return m.inst.CreateInst(params, obj, data)

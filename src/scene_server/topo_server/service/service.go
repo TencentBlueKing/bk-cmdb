@@ -13,14 +13,13 @@
 package service
 
 import (
+	"configcenter/src/auth"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/emicklei/go-restful"
 
 	"configcenter/src/auth/extensions"
 	"configcenter/src/common"
@@ -37,6 +36,8 @@ import (
 	"configcenter/src/scene_server/topo_server/core"
 	"configcenter/src/scene_server/topo_server/core/types"
 	"configcenter/src/storage/dal"
+
+	"github.com/emicklei/go-restful"
 )
 
 type Service struct {
@@ -63,7 +64,7 @@ func (s *Service) WebService() *restful.Container {
 		return s.Error
 	}
 	// TODO: {version} need to replaced by v3
-	api.Path("/topo/{version}").Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
+	api.Path("/topo/{version}").Filter(s.Engine.Metric().RestfulMiddleWare).Filter(rdapi.AllGlobalFilter(getErrFunc)).Produces(restful.MIME_JSON)
 
 	innerActions := s.Actions()
 
@@ -152,6 +153,20 @@ func (s *Service) sendCompleteResponse(resp *restful.Response, errorCode int, er
 	}
 	blog.Errorf("failed to send response , error info is %s", rspErr.Error())
 
+}
+
+func (s *Service) sendNoAuthResp(resp *restful.Response, dataMsg interface{}) {
+	js, err := json.Marshal(dataMsg)
+	if err != nil {
+		if _, err := io.WriteString(resp, "unknown error"); nil != err {
+			blog.Errorf("failed to write no auth resp, err:%s", err.Error())
+		}
+		return
+	}
+	if _, err := io.WriteString(resp, string(js)); nil != err {
+		blog.Errorf("failed to write resp, err:%s", err.Error())
+	}
+	return
 }
 
 func (s *Service) addAction(method string, path string, handlerFunc LogicFunc, handlerParseOriginDataFunc ParseOriginDataFunc) {
@@ -253,6 +268,11 @@ func (s *Service) Actions() []*httpserver.Action {
 
 				if dataErr == nil {
 					s.sendResponse(resp, common.CCSuccess, data)
+					return
+				}
+
+				if dataErr == auth.NoAuthorizeError {
+					s.sendNoAuthResp(resp, data)
 					return
 				}
 

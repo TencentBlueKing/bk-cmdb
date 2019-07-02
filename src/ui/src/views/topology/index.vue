@@ -54,10 +54,10 @@
                         {{$t("HostResourcePool['刷新查询']")}}
                     </bk-button>
                     <cmdb-hosts-table class="topo-table" ref="topoTable"
-                        delete-disabled
-                        :save-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :edit-disabled="!$isAuthorized(OPERATION.U_HOST)"
-                        :transfer-resource-disabled="!$isAuthorized(OPERATION.HOST_TO_RESOURCE)"
+                        delete-auth=""
+                        :save-auth="OPERATION.U_HOST"
+                        :edit-auth="OPERATION.U_HOST"
+                        :transfer-resource-auth="OPERATION.HOST_TO_RESOURCE"
                         :columns-config-key="columnsConfigKey"
                         :columns-config-properties="columnsConfigProperties"
                         :quick-search="true"
@@ -73,7 +73,7 @@
                         :show-options="!isAdminView"
                         :properties="tab.properties"
                         :property-groups="tab.propertyGroups"
-                        :inst="tree.flatternedSelectedNodeInst"
+                        :inst="tree.flattenedSelectedNodeInst"
                         @on-edit="handleEdit">
                     </cmdb-details>
                     <cmdb-form class="topology-details" v-else-if="['update', 'create'].includes(tab.type)"
@@ -132,7 +132,7 @@
                     selectedNode: null,
                     selectedNodeState: null,
                     selectedNodeInst: {},
-                    flatternedSelectedNodeInst: {},
+                    flattenedSelectedNodeInst: {},
                     internalModule: [],
                     create: {
                         showDialog: false,
@@ -214,7 +214,6 @@
             }
         },
         async created () {
-            this.$store.commit('setHeaderTitle', this.$t('Nav["业务拓扑"]'))
             try {
                 await Promise.all([
                     // this.getBusiness(),
@@ -359,7 +358,7 @@
                 }
                 promise.then(data => {
                     this.tree.selectedNodeInst = data.info[0]
-                    this.tree.flatternedSelectedNodeInst = this.$tools.flatternItem(this.tab.properties, data.info[0])
+                    this.tree.flattenedSelectedNodeInst = this.$tools.flattenItem(this.tab.properties, data.info[0])
                 })
             },
             getMainlineModel () {
@@ -509,12 +508,12 @@
                         const model = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                         await this.getNodeObjPropertyInfo(model['bk_next_obj'])
                         this.tree.selectedNodeInst = {}
-                        this.tree.flatternedSelectedNodeInst = {}
+                        this.tree.flattenedSelectedNodeInst = {}
                     }
                 } else {
                     this.tab.type = 'details'
                     this.tree.selectedNodeInst = {}
-                    this.tree.flatternedSelectedNodeInst = {}
+                    this.tree.flattenedSelectedNodeInst = {}
                     if (active === 'hosts') {
                         this.handleRefresh()
                     }
@@ -553,11 +552,11 @@
                 const selectedNode = this.tree.selectedNode
                 const selectedNodeModel = this.topoModel.find(model => model['bk_obj_id'] === selectedNode['bk_obj_id'])
                 const nextObjId = selectedNodeModel['bk_next_obj']
-                const formData = {
+                const formData = this.$injectMetadata({
                     ...value,
                     'bk_biz_id': this.bizId,
                     'bk_parent_id': selectedNode['bk_inst_id']
-                }
+                })
                 let promise
                 let instIdKey
                 let instNameKey
@@ -610,7 +609,7 @@
                 return promise
             },
             updateNode (value) {
-                const formData = { ...value }
+                const formData = this.$injectMetadata({ ...value })
                 const selectedNode = this.tree.selectedNode
                 const objId = selectedNode['bk_obj_id']
                 let promise
@@ -643,9 +642,9 @@
                         ...this.tree.selectedNodeInst,
                         ...value
                     }
-                    this.tree.flatternedSelectedNodeInst = {
-                        ...this.tree.flatternedSelectedNodeInst,
-                        ...this.$tools.flatternItem(this.tab.properties, value)
+                    this.tree.flattenedSelectedNodeInst = {
+                        ...this.tree.flattenedSelectedNodeInst,
+                        ...this.$tools.flattenItem(this.tab.properties, value)
                     }
                     this.tab.type = 'details'
                     this.$success(this.$t('Common[\'修改成功\']'))
@@ -664,7 +663,7 @@
                 const selectedNode = this.tree.selectedNode
                 const parentNode = this.tree.selectedNodeState.parent.node
                 const objId = selectedNode['bk_obj_id']
-                const config = { requestId: 'deleteNode' }
+                const config = { requestId: 'deleteNode', data: this.$injectMetadata({}) }
                 this.$bkInfo({
                     title: `${this.$t('Common["确定删除"]')} ${selectedNode['bk_inst_name']}?`,
                     content: objId === 'module'
@@ -689,10 +688,7 @@
                             promise = this.deleteInst({
                                 objId,
                                 instId: selectedNode['bk_inst_id'],
-                                config: {
-                                    ...config,
-                                    data: this.$injectMetadata({})
-                                }
+                                config
                             })
                         }
                         promise.then(() => {
