@@ -114,12 +114,11 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPost, "/set/module/host/relation/inner/module", s.TransferHostToInnerModule, nil)
 	s.addAction(http.MethodPost, "/set/module/host/relation/module", s.TransferHostToNormalModule, nil)
 	s.addAction(http.MethodPost, "/set/module/host/relation/cross/business", s.TransferHostToAnotherBusiness, nil)
-
 	s.addAction(http.MethodDelete, "/delete/host", s.DeleteHostFromSystem, nil)
 	s.addAction(http.MethodDelete, "/delete/host/host_module_relations", s.RemoveFromModule, nil)
 
-	s.addAction(http.MethodPost, "/read/host/indentifier", s.HostIdentifier, nil)
 	s.addAction(http.MethodPost, "/read/module/host/relation", s.GetHostModuleRelation, nil)
+	s.addAction(http.MethodPost, "/read/host/indentifier", s.HostIdentifier, nil)
 
 	s.addAction(http.MethodGet, "/find/host/{bk_host_id}", s.GetHostByID, nil)
 	s.addAction(http.MethodPost, "/findmany/hosts/search", s.GetHosts, nil)
@@ -143,7 +142,7 @@ func (s *coreService) host() {
 	s.addAction(http.MethodPut, "/hosts/favorites/{user}/{id}", s.UpdateHostFavouriteByID, nil)
 	s.addAction(http.MethodDelete, "/hosts/favorites/{user}/{id}", s.DeleteHostFavouriteByID, nil)
 	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}", s.GetHostFavourites, nil)
-	s.addAction(http.MethodPost, "/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
+	s.addAction(http.MethodGet, "/hosts/favorites/search/{user}/{id}", s.GetHostFavouriteByID, nil)
 
 	s.addAction(http.MethodPost, "/meta/hosts/modules/search", s.GetHostModulesIDs, nil)
 	s.addAction(http.MethodPost, "/meta/hosts/module/config/search", s.GetModulesHostConfig, nil)

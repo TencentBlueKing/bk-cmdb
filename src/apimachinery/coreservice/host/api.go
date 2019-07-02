@@ -85,12 +85,12 @@ func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header
 	return
 }
 
-// GetHostModuleRelation get host module relation
-func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
-	resp = new(metadata.HostConfig)
-	subPath := "/read/module/host/relation"
+// DeleteHost delete host
+func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
+	resp = new(metadata.OperaterException)
+	subPath := "/delete/host"
 
-	err = h.client.Post().
+	err = h.client.Delete().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -100,12 +100,12 @@ func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, in
 	return
 }
 
-// DeleteHost delete host
-func (h *host) DeleteHostFromSystem(ctx context.Context, header http.Header, input *metadata.DeleteHostRequest) (resp *metadata.OperaterException, err error) {
-	resp = new(metadata.OperaterException)
-	subPath := "/delete/host"
+// GetHostModuleRelation get host module relation
+func (h *host) GetHostModuleRelation(ctx context.Context, header http.Header, input *metadata.HostModuleRelationRequest) (resp *metadata.HostConfig, err error) {
+	resp = new(metadata.HostConfig)
+	subPath := "/read/module/host/relation"
 
-	err = h.client.Delete().
+	err = h.client.Post().
 		WithContext(ctx).
 		Body(input).
 		SubResource(subPath).
@@ -398,9 +398,8 @@ func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string,
 	resp = new(metadata.GetHostFavoriteWithIDResult)
 	subPath := fmt.Sprintf("/hosts/favorites/search/%s/%s", user, id)
 
-	err = h.client.Post().
+	err = h.client.Get().
 		WithContext(ctx).
-		Body(nil).
 		SubResource(subPath).
 		WithHeaders(header).
 		Do().
