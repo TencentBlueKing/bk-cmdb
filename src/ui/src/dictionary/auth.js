@@ -72,7 +72,6 @@ export const R_AUDIT = 'auditlog.findMany'
 
 // 系统基础
 export const SYSTEM_TOPOLOGY = 'systemBase.modelTopologyOperation'
-export const SYSTEM_MANAGEMENT = 'systemBase.adminEntrance'
 export const SYSTEM_MODEL_GRAPHICS = 'systemBase.modelTopologyView'
 
 // 云资源发现
@@ -96,8 +95,6 @@ export const R_STATISTICAL_REPORT = 'statisticalReport.findMany'
 export const STATIC_BUSINESS_MODE = [
     C_MODEL,
     R_MODEL,
-    U_MODEL,
-    D_MODEL,
 
     C_MODEL_GROUP,
     U_MODEL_GROUP,
@@ -118,7 +115,8 @@ export const STATIC_BUSINESS_MODE = [
     
     C_HOST,
     U_HOST,
-    D_HOST
+    D_HOST,
+    HOST_TO_RESOURCE
 ]
 
 export const DYNAMIC_BUSINESS_MODE = [
@@ -163,10 +161,18 @@ export const RESOURCE_ACTION_NAME = {
     modelTopologyView: '模型拓扑视图'
 }
 
+const AUTH_META_KEYS = ['bk_biz_id', 'parent_layers', 'resource_id']
+
 export const GET_AUTH_META = (auth, options = {}) => {
     const [type, action] = auth.split('.')
-    return {
+    const meta = {
         resource_type: type,
         action: action
     }
+    Object.keys(options).forEach(key => {
+        if (AUTH_META_KEYS.includes(key)) {
+            meta[key] = options[key]
+        }
+    })
+    return meta
 }

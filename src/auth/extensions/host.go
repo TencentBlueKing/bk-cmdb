@@ -415,7 +415,7 @@ func (am *AuthManager) GenDeleteHostBatchNoPermissionResp(hostIDs []int64) *meta
 		p.Resources = append(p.Resources, []metadata.Resource{{
 			ResourceType:     string(authcenter.SysHostInstance),
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysHostInstance],
-			ResourceID:       strconv.FormatInt(id, 64),
+			ResourceID:       strconv.FormatInt(id, 10),
 		}})
 	}
 
@@ -436,7 +436,7 @@ func (am *AuthManager) GenMoveHostFromModuleToIdleFaultModuleResp(hostIDs []int6
 		p.Resources = append(p.Resources, []metadata.Resource{{
 			ResourceType:     string(authcenter.BizHostInstance),
 			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
-			ResourceID:       strconv.FormatInt(id, 64),
+			ResourceID:       strconv.FormatInt(id, 10),
 		}})
 	}
 

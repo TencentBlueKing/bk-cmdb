@@ -204,6 +204,10 @@
                 &:hover {
                     opacity: .8;
                 }
+                &.disabled {
+                    opacity: 1;
+                    color: #ccc;
+                }
             }
             .property-form {
                 display: inline-block;

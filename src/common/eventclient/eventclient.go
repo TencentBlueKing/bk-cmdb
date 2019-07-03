@@ -180,8 +180,6 @@ func (c *ClientViaRedis) pushToRedis(event *eventtmp) error {
 // instEqual Determine whether the data is consistent before and after the change
 func instEqual(data metadata.EventData) (bool, error) {
 	switch {
-	case data.PreData == data.CurData:
-		return true, nil
 	case data.PreData == nil && data.CurData != nil:
 		return false, nil
 	case data.CurData == nil && data.PreData != nil:

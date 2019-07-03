@@ -241,19 +241,17 @@ func (p *processOperation) DeleteProcessTemplate(ctx core.ContextParams, process
 		return err
 	}
 
-	// service template that referenced by process template shouldn't be removed
-	usageFilter := map[string]int64{
+	//
+	updateFilter := map[string]int64{
 		common.BKProcessTemplateIDField: template.ID,
 	}
-	usageCount, e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(ctx.Context)
-	if nil != e {
-		blog.Errorf("DeleteProcessTemplate failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, usageFilter, e, ctx.ReqID)
-		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
+	updateDoc := map[string]interface{}{
+		common.BKProcessTemplateIDField: common.ServiceTemplateIDNotSet,
 	}
-	if usageCount > 0 {
-		blog.Errorf("DeleteProcessTemplate failed, forbidden delete process template be referenced, code: %d, rid: %s", common.CCErrCommRemoveRecordHasChildrenForbidden, ctx.ReqID)
-		err := ctx.Error.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
-		return err
+	e := p.dbProxy.Table(common.BKTableNameProcessInstanceRelation).Update(ctx.Context, updateFilter, updateDoc)
+	if nil != e {
+		blog.Errorf("DeleteProcessTemplate failed, clear process instance templateID field failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameProcessInstanceRelation, updateFilter, e, ctx.ReqID)
+		return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	deleteFilter := map[string]int64{common.BKFieldID: template.ID}
