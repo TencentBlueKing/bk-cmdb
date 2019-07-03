@@ -86,8 +86,12 @@
             }
         },
         computed: {
+            isModuleNode () {
+                const node = this.$store.state.businessTopology.selectedNode
+                return node && node.data.bk_obj_id === 'module'
+            },
             withTemplate () {
-                return !!this.instance.service_template_id
+                return this.isModuleNode && !!this.instance.service_template_id
             },
             instanceMenu () {
                 const menu = [{
@@ -253,7 +257,12 @@
                         templateId: this.instance.service_template_id
                     },
                     query: {
-                        from: this.$route.fullPath
+                        from: {
+                            name: this.$route.name,
+                            query: {
+                                module: this.module.bk_module_id
+                            }
+                        }
                     }
                 })
             }

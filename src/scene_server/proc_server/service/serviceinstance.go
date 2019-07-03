@@ -14,7 +14,9 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -70,7 +72,7 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 
 	processIDs := make([]int64, 0)
 	for _, process := range input.Processes {
-		process.ProcessInfo.ProcessID = 0
+		process.ProcessInfo.ProcessID = int64(0)
 		process.ProcessInfo.BusinessID = bizID
 		process.ProcessInfo.SupplierAccount = ctx.Kit.SupplierAccount
 		now := time.Now()
@@ -78,7 +80,6 @@ func (ps *ProcServer) createProcessInstances(ctx *rest.Contexts, input *metadata
 		process.ProcessInfo.LastTime = now
 
 		if err := ps.validateRawInstanceUnique(ctx, serviceInstance.ID, &process.ProcessInfo); err != nil {
-			ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "create process instance failed, serviceInstanceID: %d, process: %+v, err: %v", input.ServiceInstanceID, process, err)
 			return nil, err
 		}
 
@@ -127,6 +128,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		}
 		processIDs = append(processIDs, process.ProcessID)
 	}
+	processIDs = util.IntArrayUnique(processIDs)
 	option := &metadata.ListProcessInstanceRelationOption{
 		BusinessID: bizID,
 		ProcessIDs: &processIDs,
@@ -135,6 +137,24 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "update process instance failed, search process instance relation failed, err: %+v", err)
+		return
+	}
+
+	// make sure all process valid
+	foundProcessIDs := make([]int64, 0)
+	for _, relation := range relations.Info {
+		foundProcessIDs = append(foundProcessIDs, relation.ProcessID)
+	}
+	invalidProcessIDs := make([]string, 0)
+	for _, processID := range processIDs {
+		if util.InArray(processID, foundProcessIDs) == false {
+			invalidProcessIDs = append(invalidProcessIDs, strconv.FormatInt(processID, 10))
+		}
+	}
+	if len(invalidProcessIDs) > 0 {
+		msg := fmt.Sprintf("[%s: %s]", common.BKProcessIDField, strings.Join(invalidProcessIDs, ","))
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, msg)
+		ctx.RespWithError(err, common.CCErrCommParamsIsInvalid, "update process instance failed, process %+v not found", invalidProcessIDs)
 		return
 	}
 
@@ -167,12 +187,31 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 			ctx.RespWithError(err, common.CCErrCommParamsInvalid, "update process instance failed, process related service instance not found, process: %+v, err: %v", process, err)
 			return
 		}
+
+		processData := mapstr.MapStr{}
 		if relation.ProcessTemplateID == 0 {
 			serviceInstanceID := relation.ServiceInstanceID
 			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
 				ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process instance failed, serviceInstanceID: %d, process: %+v, err: %v", serviceInstanceID, process, err)
 				return
 			}
+			process.BusinessID = bizID
+			process.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
+			processBytes, err := json.Marshal(process)
+			if err != nil {
+				blog.Errorf("UpdateProcessInstances failed, json Marshal process failed, process: %+v, err: %+v", process, err)
+				err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
+				ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+			}
+			if err := json.Unmarshal(processBytes, &processData); nil != err && 0 != len(processBytes) {
+				blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v", processData, err)
+				err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
+				ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
+			}
+			processData.Remove(common.BKProcessIDField)
+			processData.Remove(common.MetadataField)
+			processData.Remove(common.LastTimeField)
+			processData.Remove(common.CreateTimeField)
 		} else {
 			processTemplate, exist = processTemplateMap[relation.ProcessTemplateID]
 			if exist == false {
@@ -180,35 +219,50 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 				ctx.RespWithError(err, common.CCErrCommNotFound, "update process instance failed, process related template not found, relation: %+v, err: %v", relation, err)
 				return
 			}
-			processTemplate.InstanceUpdate(&process)
+			updateData := processTemplate.ExtractInstanceUpdateData(&process)
+			processData = mapstr.MapStr(updateData)
 		}
 
-		processID := process.ProcessID
-		process.BusinessID = bizID
-		process.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
-		processBytes, err := json.Marshal(process)
-		if err != nil {
-			blog.Errorf("UpdateProcessInstances failed, json Marshal process failed, process: %+v, err: %+v", process, err)
-			err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_ENCODE)
-			ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
-		}
-		processData := mapstr.MapStr{}
-		if err := json.Unmarshal(processBytes, &processData); nil != err && 0 != len(processBytes) {
-			blog.Errorf("UpdateProcessInstances failed, json Unmarshal process failed, processData: %s, err: %+v", processData, err)
-			err := ctx.Kit.CCError.CCError(common.CC_ERR_Comm_JSON_DECODE)
-			ctx.RespWithError(err, common.CC_ERR_Comm_JSON_DECODE, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
-		}
-		processData.Remove(common.BKProcessIDField)
-		processData.Remove(common.MetadataField)
-		processData.Remove(common.LastTimeField)
-		processData.Remove(common.CreateTimeField)
-		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, processID, processData); err != nil {
+		if err := ps.Logic.UpdateProcessInstance(ctx.Kit, process.ProcessID, processData); err != nil {
 			ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process failed, processID: %d, process: %+v, err: %v", process.ProcessID, process, err)
 			return
 		}
 	}
 
 	ctx.RespEntity(processIDs)
+}
+
+func (ps *ProcServer) CheckHostInBusiness(ctx *rest.Contexts, bizID int64, hostIDs []int64) errors.CCErrorCoder {
+	hostIDHit := make(map[int64]bool)
+	for _, hostID := range hostIDs {
+		hostIDHit[hostID] = false
+	}
+	hostConfigFilter := &metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		HostIDArr:     hostIDs,
+	}
+	result, err := ps.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header, hostConfigFilter)
+	if err != nil {
+		e, ok := err.(errors.CCErrorCoder)
+		if ok == true {
+			return e
+		} else {
+			return ctx.Kit.CCError.CCError(common.CCErrWebGetHostFail)
+		}
+	}
+	for _, item := range result.Data {
+		hostIDHit[item.HostID] = true
+	}
+	invalidHost := make([]int64, 0)
+	for hostID, hit := range hostIDHit {
+		if hit == false {
+			invalidHost = append(invalidHost, hostID)
+		}
+	}
+	if len(invalidHost) > 0 {
+		return ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceHostNotBelongBusiness, invalidHost, bizID)
+	}
+	return nil
 }
 
 // createServiceInstances 创建服务实例
@@ -220,15 +274,35 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "create service instance with template : %d, moduleID: %d, but get business id failed, err: %v", input.ModuleID, err)
+		return
+	}
+
+	// check hosts in business
+	hostIDs := make([]int64, 0)
+	hostIDHit := make(map[int64]bool)
+	for _, instance := range input.Instances {
+		if util.InArray(instance.HostID, hostIDs) == false {
+			hostIDs = append(hostIDs, instance.HostID)
+			hostIDHit[instance.HostID] = false
+		}
+	}
+	if err := ps.CheckHostInBusiness(ctx, bizID, hostIDs); err != nil {
+		ctx.RespWithError(err, common.CCErrCoreServiceHostNotBelongBusiness, "create service instance failed, host %+v not belong to business %d, hostIDs: %+v, err: %v", hostIDs, bizID, err)
 		return
 	}
 
 	module, err := ps.getModule(ctx, input.ModuleID)
 	if err != nil {
 		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		return
+	}
+
+	if module.BizID != bizID {
+		err := ctx.Kit.CCError.Errorf(common.CCErrCoreServiceHasModuleNotBelongBusiness, module.ModuleID, bizID)
+		ctx.RespWithError(err, common.CCErrCoreServiceHasModuleNotBelongBusiness, "create service instance failed, module %d not belongs to biz %d, err: %v", input.ModuleID, bizID, err)
 		return
 	}
 
@@ -245,7 +319,7 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 		// create service instance at first
 		serviceInstance, err := ps.CoreAPI.CoreService().Process().CreateServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, instance)
 		if err != nil {
-			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, moduleID: %d, err: %v", input.ModuleID, err)
+			ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
 			return
 		}
 
@@ -257,7 +331,7 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 				Processes:         inst.Processes,
 			}
 			if _, err := ps.createProcessInstances(ctx, createProcessInput); err != nil {
-				ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %v", input.ModuleID, err)
+				ctx.RespWithError(err, common.CCErrCommHTTPDoRequestFailed, "create service instance failed, create process instances failed, moduleID: %d, err: %s", input.ModuleID, err.Error())
 				return
 			}
 		}
@@ -277,7 +351,7 @@ func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.M
 	}
 	modules, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, moduleFilter)
 	if err != nil {
-		blog.Errorf("getModule failed, moduleID: %d, err: %+v, rid: %s", moduleID, err, ctx.Kit.Rid)
+		blog.Errorf("getModule failed, moduleID: %d, err: %s, rid: %s", moduleID, err.Error(), ctx.Kit.Rid)
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrTopoGetModuleFailed, err)
 	}
 	if len(modules.Data.Info) == 0 {
@@ -298,10 +372,12 @@ func (ps *ProcServer) getModule(ctx *rest.Contexts, moduleID int64) (*metadata.M
 }
 
 func (ps *ProcServer) validateRawInstanceUnique(ctx *rest.Contexts, serviceInstanceID int64, processInfo *metadata.Process) errors.CCErrorCoder {
-	if len(processInfo.ProcessName) == 0 || len(processInfo.ProcessName) > common.NameFieldMaxLength {
+	if processInfo.ProcessName != nil &&
+		(len(*processInfo.ProcessName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKProcessNameField)
 	}
-	if len(processInfo.FuncName) == 0 || len(processInfo.ProcessName) > common.NameFieldMaxLength {
+	if processInfo.FuncName != nil &&
+		(len(*processInfo.FuncName) == 0 || len(*processInfo.ProcessName) > common.NameFieldMaxLength) {
 		return ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKFuncName)
 	}
 	serviceInstance, err := ps.CoreAPI.CoreService().Process().GetServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceInstanceID)
@@ -393,9 +469,31 @@ func (ps *ProcServer) DeleteProcessInstance(ctx *rest.Contexts) {
 		return
 	}
 
-	_, err := metadata.BizIDFromMetadata(input.Metadata)
+	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "delete process instance in service instance failed, err: %v", err)
+		return
+	}
+
+	listOption := &metadata.ListProcessInstanceRelationOption{
+		BusinessID: bizID,
+		ProcessIDs: &input.ProcessInstanceIDs,
+		Page: metadata.BasePage{
+			Limit: common.BKNoLimit,
+		},
+	}
+	relations, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, listOption)
+	templateProcessIDs := make([]string, 0)
+	for _, relation := range relations.Info {
+		if relation.ProcessTemplateID != common.ServiceTemplateIDNotSet {
+			templateProcessIDs = append(templateProcessIDs, strconv.FormatInt(relation.ProcessID, 10))
+		}
+	}
+	if len(templateProcessIDs) > 0 {
+		invalidProcesses := strings.Join(templateProcessIDs, ",")
+		blog.Errorf("DeleteProcessInstance failed, some process:%s initialized by template, rid: %s", invalidProcesses, ctx.Kit.Rid)
+		err := ctx.Kit.CCError.CCErrorf(common.CCErrCoreServiceShouldNotRemoveProcessCreateByTemplate, invalidProcesses)
+		ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "delete process instance: %v, but delete instance relation failed.", input.ProcessInstanceIDs)
 		return
 	}
 
@@ -637,6 +735,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 		BusinessID:        module.BizID,
 		ServiceTemplateID: module.ServiceTemplateID,
 		ModuleID:          diffOption.ModuleID,
+		WithName:          true,
 	}
 	serviceInstances, e := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, serviceOption)
 	if e != nil {
@@ -681,7 +780,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				// process's template doesn't exist means the template has already been removed.
 				removed[relation.ProcessTemplateID] = append(removed[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
-					ProcessName:     process.ProcessName,
+					ProcessName:     *process.ProcessName,
 					ServiceInstance: &serviceInstance,
 				})
 				continue
@@ -692,7 +791,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 				// nothing changed
 				unchanged[relation.ProcessTemplateID] = append(unchanged[relation.ProcessTemplateID], recorder{
 					ProcessID:       relation.ProcessID,
-					ProcessName:     process.ProcessName,
+					ProcessName:     *process.ProcessName,
 					ServiceInstance: &serviceInstance,
 				})
 				continue
@@ -701,7 +800,7 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 			// something has already changed.
 			changed[relation.ProcessTemplateID] = append(changed[relation.ProcessTemplateID], recorder{
 				ProcessID:        relation.ProcessID,
-				ProcessName:      process.ProcessName,
+				ProcessName:      *process.ProcessName,
 				ServiceInstance:  &serviceInstance,
 				ChangedAttribute: diff,
 			})
@@ -734,7 +833,10 @@ func (ps *ProcServer) DiffServiceInstanceWithTemplate(ctx *rest.Contexts) {
 
 		serviceInstances := make([]metadata.ServiceDifferenceDetails, 0)
 		for _, record := range records {
-			serviceInstances = append(serviceInstances, metadata.ServiceDifferenceDetails{ServiceInstance: *record.ServiceInstance})
+			item := metadata.ServiceDifferenceDetails{
+				ServiceInstance: *record.ServiceInstance,
+			}
+			serviceInstances = append(serviceInstances, item)
 		}
 		differences.Removed = append(differences.Removed, metadata.ServiceInstanceDifferenceDetail{
 			ProcessTemplateID:    removedID,
@@ -934,6 +1036,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 				deleteOption.ProcessIDs = &[]int64{process.ProcessID}
 				if err := ps.CoreAPI.CoreService().Process().DeleteProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, deleteOption); err != nil {
 					ctx.RespWithError(err, common.CCErrProcDeleteProcessFailed, "force sync service instance according to service template: %d, but delete process instance relation: %d with template: %d failed, err: %v", module.ServiceTemplateID, process.ProcessID, template.ID, err)
+					return
 				}
 				continue
 			}
@@ -980,9 +1083,7 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 			// create service instance relation, so that the process instance created upper can be related to this service instance.
 			_, err = ps.CoreAPI.CoreService().Process().CreateProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relation)
 			if err != nil {
-				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed,
-					"force sync service instance according to service template: %d, but create process instance relation with template: %d failed, err: %v",
-					module.ServiceTemplateID, processTemplateID, err)
+				ctx.RespWithError(err, common.CCErrProcCreateProcessFailed, "force sync service instance according to service template: %d, but create process instance relation with template: %d failed, err: %v", module.ServiceTemplateID, processTemplateID, err)
 				return
 			}
 		}
@@ -1140,49 +1241,25 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 
 	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
-			"remove template binding on module failed, parse business id failed, err: %+v", err)
-		return
-	}
-	queryCondition := metadata.QueryCondition{
-		Condition: mapstr.New(),
-	}
-	queryCondition.Condition.Set(common.BKModuleIDField, input.ModuleID)
-	queryCondition.Condition.Set(common.BKAppIDField, bizID)
-	result, err := ps.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &queryCondition)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
-			"remove template binding on module failed, get module failed, err: %+v", err)
-		return
-	}
-	if result.Data.Count == 0 || len(result.Data.Info) == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrCommNotFound, "remove template binding on module failed, get module result in not found, filter: %+v", queryCondition)
-		return
-	}
-	moduleSimple := struct {
-		ServiceTemplateID int64 `field:"service_template_id" bson:"service_template_id" json:"service_template_id"`
-		ServiceCategoryID int64 `field:"service_category_id" bson:"service_category_id" json:"service_category_id"`
-	}{}
-	if err := result.Data.Info[0].ToStructByTag(&moduleSimple, "field"); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommParseDBFailed, "remove template binding on module failed, parse module info from db failed, module: %+v, err: %+v", result.Data.Info, err)
+		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid, "remove template binding on module failed, parse business id failed, err: %+v", err)
 		return
 	}
 
-	if moduleSimple.ServiceTemplateID == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrProcModuleNotBindWithTemplate, "remove template binding on module failed, module doesn't bind with template yet, module: %+v, err: %+v", result.Data.Info, err)
+	module, err := ps.getModule(ctx, input.ModuleID)
+	if err != nil {
+		ctx.RespWithError(err, common.CCErrTopoGetModuleFailed, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
+		return
+	}
+	if module.BizID != bizID {
+		err := ctx.Kit.CCError.CCError(common.CCErrCommNotFound)
+		ctx.RespWithError(err, common.CCErrCommNotFound, "create service instance failed, get module failed, moduleID: %d, err: %v", input.ModuleID, err)
 		return
 	}
 
-	data := mapstr.New()
-	data.Set(common.BKServiceTemplateIDField, common.ServiceTemplateIDNotSet)
-	updateOption := metadata.UpdateOption{
-		Data:      data,
-		Condition: queryCondition.Condition,
-	}
-	updateResult, err := ps.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header, common.BKInnerObjIDModule, &updateOption)
+	response, err := ps.CoreAPI.CoreService().Process().RemoveTemplateBindingOnModule(ctx.Kit.Ctx, ctx.Kit.Header, input.ModuleID)
 	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPDoRequestFailed, "remove template binding on module failed, reset service_template_id attribute failed, module: %+v, err: %+v", result.Data.Info, err)
+		ctx.RespWithError(err, common.CCErrProcRemoveTemplateBindingOnModule, "remove template binding on module failed, parse business id failed, err: %+v", err)
 		return
 	}
-	ctx.RespEntity(updateResult)
+	ctx.RespEntity(response)
 }

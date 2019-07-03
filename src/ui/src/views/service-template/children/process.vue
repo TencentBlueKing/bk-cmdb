@@ -109,7 +109,7 @@
                     result['originData'] = template
                     return result
                 })
-                list = this.$tools.flattenList(this.properties, list)
+                list = this.$tools.flattenList(this.properties, list).sort((prev, next) => prev.process_id - next.process_id)
                 return list
             }
         },

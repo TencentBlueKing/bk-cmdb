@@ -192,8 +192,7 @@
                 position: relative;
                 width: 35%;
                 padding: 0 16px 0 0;
-                text-align: right;
-                color: $cmdbTextColor;
+                color: #63656e;
                 @include ellipsis;
                 &:after{
                     content: ":";
@@ -204,6 +203,7 @@
             .property-value{
                 width: 65%;
                 padding: 0 15px 0 0;
+                color: #313238;
                 @include ellipsis;
                 &-text{
                     display: block;

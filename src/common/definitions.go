@@ -981,7 +981,6 @@ const (
 	RedisCloudSyncInstancePendingStart        = BKCacheKeyV3Prefix + "cloudsyncinstancependingstart:list"
 	RedisCloudSyncInstanceStarted             = BKCacheKeyV3Prefix + "cloudsyncinstancestarted:list"
 	RedisCloudSyncInstancePendingStop         = BKCacheKeyV3Prefix + "cloudsyncinstancependingstop:list"
-	RedisCloudSyncStartLockKey                = BKCacheKeyV3Prefix + "lock:cloudsyncstart"
 )
 
 // association fields
@@ -1072,4 +1071,13 @@ const (
 	ModelAndInstCount    = "model_and_inst_count"
 	ModelInstChart       = "model_inst_chart"
 	ModelInstChangeChart = "model_inst_change_chart"
+)
+
+// 云同步
+const (
+	CloudSyncTaskID            = "bk_task_id"
+	CloudSyncTaskName          = "bk_task_name"
+	CloudSyncResourceConfirmID = "bk_resource_id"
+	CloudSyncConfirmTime       = "confirm_time"
+	CloudSyncConfirmHistoryID  = "confirm_history_id"
 )

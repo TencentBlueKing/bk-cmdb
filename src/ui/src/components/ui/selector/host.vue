@@ -25,7 +25,7 @@
                     :checked.sync="checked"
                     :pagination="pagination"
                     :height="286"
-                    :empty-height="42"
+                    :empty-height="246"
                     :cross-page-check="false"
                     :sortable="false"
                     @handlePageChange="handlePageChange"
