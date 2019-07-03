@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
 )
 
@@ -314,13 +315,14 @@ type MultipleServiceTemplate struct {
 }
 
 type ListServiceInstanceOption struct {
-	BusinessID         int64    `json:"bk_biz_id"`
-	ServiceTemplateID  int64    `json:"service_template_id,omitempty"`
-	HostID             int64    `json:"host_id,omitempty"`
-	ModuleID           int64    `json:"module_id,omitempty"`
-	SearchKey          *string  `json:"search_key,omitempty"`
-	ServiceInstanceIDs *[]int64 `json:"service_instance_ids"`
-	Page               BasePage `json:"page,omitempty"`
+	BusinessID         int64              `json:"bk_biz_id"`
+	ServiceTemplateID  int64              `json:"service_template_id,omitempty"`
+	HostID             int64              `json:"host_id,omitempty"`
+	ModuleID           int64              `json:"module_id,omitempty"`
+	SearchKey          *string            `json:"search_key,omitempty"`
+	ServiceInstanceIDs *[]int64           `json:"service_instance_ids"`
+	Page               BasePage           `json:"page,omitempty"`
+	Selectors          selector.Selectors `json:"selectors,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {

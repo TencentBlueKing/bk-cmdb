@@ -22,6 +22,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
 )
 
@@ -124,15 +125,6 @@ type DifferenceDetail struct {
 	Changed   []ProcessDifferenceDetail `json:"changed"`
 	Added     []ProcessDifferenceDetail `json:"added"`
 	Removed   []ProcessDifferenceDetail `json:"removed"`
-}
-
-func NewDifferenceDetail() *DifferenceDetail {
-	return &DifferenceDetail{
-		Unchanged: make([]ProcessDifferenceDetail, 0),
-		Changed:   make([]ProcessDifferenceDetail, 0),
-		Added:     make([]ProcessDifferenceDetail, 0),
-		Removed:   make([]ProcessDifferenceDetail, 0),
-	}
 }
 
 type ProcessDifferenceDetail struct {
@@ -966,7 +958,7 @@ func (pt *ProcessProperty) Update(input ProcessProperty) {
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
-	updateIgnoreField := []string{"FuncName"}
+	updateIgnoreField := []string{"FuncName", "ProcessName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
 		fieldName := selfType.Field(fieldIdx).Name
 		if util.InArray(fieldName, updateIgnoreField) == true {
@@ -1112,9 +1104,10 @@ func (ti *PropertyProtocol) Validate() error {
 
 // ServiceInstance is a service, which created when a host binding with a service template.
 type ServiceInstance struct {
-	Metadata Metadata `field:"metadata" json:"metadata" bson:"metadata"`
-	ID       int64    `field:"id" json:"id,omitempty" bson:"id"`
-	Name     string   `field:"name" json:"name,omitempty" bson:"name"`
+	Metadata Metadata        `field:"metadata" json:"metadata" bson:"metadata"`
+	ID       int64           `field:"id" json:"id,omitempty" bson:"id"`
+	Name     string          `field:"name" json:"name,omitempty" bson:"name"`
+	Labels   selector.Labels `field:"labels" json:"labels,omitempty" bson:"labels"`
 
 	// the template id can not be updated, once the service is created.
 	// it can be 0 when the service is not created with a service template.
