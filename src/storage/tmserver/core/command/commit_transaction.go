@@ -35,7 +35,7 @@ func (d *commitTransaction) SetTxn(txn *session.Manager) {
 }
 
 func (d *commitTransaction) Execute(ctx core.ContextParams, decoder rpc.Request) (*types.OPReply, error) {
-	blog.V(4).Infof("[MONGO OPERATION] %+v", &ctx.Header)
+	blog.V(4).Infof("[MONGO OPERATION] %#v", &ctx.Header)
 	reply := &types.OPReply{}
 	reply.RequestID = ctx.Header.RequestID
 	err := d.txn.Commit(ctx.Header.TxnID)
