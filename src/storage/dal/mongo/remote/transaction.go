@@ -56,8 +56,12 @@ func (c *Mongo) Commit(ctx context.Context) error {
 	msg := types.OPCommitOperation{}
 	msg.OPCode = types.OPCommitCode
 	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
-	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.TxnID = opt.TxnID
+		msg.RequestID = opt.RequestID
+	}
 
 	reply := types.OPReply{}
 	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
@@ -76,8 +80,12 @@ func (c *Mongo) Abort(ctx context.Context) error {
 	msg := types.OPAbortOperation{}
 	msg.OPCode = types.OPAbortCode
 	msg.RequestID = c.RequestID
-	msg.TxnID = c.TxnID
-	opt, _ := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+
+	opt, ok := ctx.Value(common.CCContextKeyJoinOption).(dal.JoinOption)
+	if ok {
+		msg.TxnID = opt.TxnID
+		msg.RequestID = opt.RequestID
+	}
 
 	reply := types.OPReply{}
 	err := c.rpc.Option(&opt).Call(types.CommandRDBOperation, &msg, &reply)
