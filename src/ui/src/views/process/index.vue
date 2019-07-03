@@ -13,7 +13,7 @@
                     active: !$isAuthorized($OPERATION.U_PROCESS),
                     auth: [$OPERATION.U_PROCESS]
                 }">
-                <bk-button type="default"
+                <bk-button theme="default"
                     :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_PROCESS)"
                     @click="handleMultipleEdit">
                     <i class="icon-cc-edit"></i>
@@ -25,7 +25,7 @@
                     active: !$isAuthorized($OPERATION.C_PROCESS),
                     auth: [$OPERATION.C_PROCESS]
                 }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_PROCESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}

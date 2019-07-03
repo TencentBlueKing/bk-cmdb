@@ -1,19 +1,19 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="showPropertyDialog('create')">
+            <bk-button theme="primary" @click="showPropertyDialog('create')">
                 {{$t('NetworkDiscovery["新增属性"]')}}
             </bk-button>
-            <bk-button type="default"
+            <bk-button theme="default"
                 :loading="$loading('deleteNetcollectProperty')"
                 :disabled="!table.checked.length"
                 @click="deleteProperty">
                 {{$t('Common["删除"]')}}
             </bk-button>
-            <bk-button type="default" @click="importSlider.isShow = true">
+            <bk-button theme="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button type="default" form="exportForm" :disabled="!table.checked.length">
+            <bk-button theme="default" form="exportForm" :disabled="!table.checked.length">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
@@ -101,10 +101,10 @@
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
+                    <bk-button theme="primary" @click="saveProperty" :loading="$loading(['createNetcollectProperty', 'updateNetcollectProperty'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hidePropertyDialog">
+                    <bk-button theme="default" @click="hidePropertyDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>

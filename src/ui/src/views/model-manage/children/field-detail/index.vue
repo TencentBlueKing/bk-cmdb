@@ -74,10 +74,10 @@
             <textarea v-model.trim="fieldInfo['placeholder']" :disabled="isReadOnly"></textarea>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
+            <bk-button theme="primary" :loading="$loading(['updateObjectAttribute', 'createObjectAttribute'])" @click="saveField">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
+            <bk-button theme="default" @click="cancel">
                 {{$t('Common["取消"]')}}
             </bk-button>
         </div>

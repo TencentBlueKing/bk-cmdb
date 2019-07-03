@@ -76,21 +76,21 @@
             </div>
             <div class="button-group" v-if="isEditMode && !info.ispre">
                 <bk-button class="form-button"
-                    type="primary"
+                    theme="primary"
                     :loading="$loading()"
                     @click="handleSave">
                     {{$t('Common["确定"]')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-if="isViewMode"
-                    type="danger"
+                    theme="danger"
                     :loading="$loading()"
                     @click="handleDelete">
                     {{$t('ModelManagement["删除关联"]')}}
                 </bk-button>
                 <bk-button class="form-button"
                     v-else
-                    type="default"
+                    theme="default"
                     @click="handleCancel">
                     {{$t('Common["取消"]')}}
                 </bk-button>

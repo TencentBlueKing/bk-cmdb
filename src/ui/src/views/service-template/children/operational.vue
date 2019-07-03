@@ -69,7 +69,7 @@
                     :list="processList">
                 </process-table>
                 <div class="btn-box">
-                    <bk-button type="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
+                    <bk-button theme="primary" @click="handleSubmit">{{$t("Common['确定']")}}</bk-button>
                     <bk-button @click="handleCancelOperation">{{$t("Common['取消']")}}</bk-button>
                 </div>
             </div>
@@ -106,7 +106,7 @@
                 </div>
                 <div class="btn-box">
                     <bk-button
-                        type="primary"
+                        theme="primary"
                         class="mr10"
                         @click="handleGoInstance">
                         {{$t("ServiceManagement['创建服务实例']")}}

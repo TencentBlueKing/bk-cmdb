@@ -7,7 +7,7 @@
                         active: !$isAuthorized(updateAuth),
                         auth: [updateAuth]
                     }">
-                    <bk-button type="primary" class="options-button"
+                    <bk-button theme="primary" class="options-button"
                         :disabled="!$isAuthorized(updateAuth)"
                         @click="showCreate = true">
                         {{$t('HostDetails["新增关联"]')}}
@@ -18,16 +18,16 @@
                     @change="handleExpandAll">
                     <span class="checkbox-label">{{$t('Common["全部展开"]')}}</span>
                 </cmdb-form-bool>
-                <bk-button type="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
+                <bk-button theme="default" class="options-button" v-show="false">{{$t('HostDetails["批量取消"]')}}</bk-button>
             </div>
             <div class="fr">
                 <bk-button class="options-button options-button-view"
-                    :type="activeView === viewName.list ? 'primary' : 'default'"
+                    :theme="activeView === viewName.list ? 'primary' : 'default'"
                     @click="toggleView(viewName.list)">
                     {{$t('HostDetails["列表"]')}}
                 </bk-button>
                 <bk-button class="options-button options-button-view"
-                    :type="activeView === viewName.graphics ? 'primary' : 'default'"
+                    :theme="activeView === viewName.graphics ? 'primary' : 'default'"
                     @click="toggleView(viewName.graphics)">
                     {{$t('HostDetails["拓扑"]')}}
                 </bk-button>

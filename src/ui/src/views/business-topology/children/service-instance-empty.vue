@@ -5,8 +5,8 @@
             <p class="empty-text">{{$t('BusinessTopology["模板未定义进程"]', { template: (moduleNode || {}).name })}}</p>
             <p class="empty-tips">{{$t('BusinessTopology["模板未定义进程提示"]')}}</p>
             <div class="empty-options">
-                <bk-button class="empty-button" type="primary" @click="goToTemplate">跳转模板添加进程</bk-button>
-                <bk-button class="empty-button" type="default" @click="handleAddHost">添加主机</bk-button>
+                <bk-button class="empty-button" theme="primary" @click="goToTemplate">跳转模板添加进程</bk-button>
+                <bk-button class="empty-button" theme="default" @click="handleAddHost">添加主机</bk-button>
             </div>
         </div>
         <div class="empty-content" v-else>

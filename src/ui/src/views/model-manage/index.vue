@@ -17,7 +17,7 @@
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
                     }">
-                    <bk-button type="primary"
+                    <bk-button theme="primary"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
                         {{$t('ModelManagement["新建模型"]')}}
@@ -28,7 +28,7 @@
                         active: !$isAuthorized($OPERATION.C_MODEL),
                         auth: [$OPERATION.C_MODEL]
                     }">
-                    <bk-button type="primary"
+                    <bk-button theme="primary"
                         v-tooltip="$t('ModelManagement[\'新增模型提示\']')"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL) || modelType === 'disabled'"
                         @click="showModelDialog(false)">
@@ -40,7 +40,7 @@
                         active: !$isAuthorized($OPERATION.C_MODEL_GROUP),
                         auth: [$OPERATION.C_MODEL_GROUP]
                     }">
-                    <bk-button type="default"
+                    <bk-button theme="default"
                         :disabled="!$isAuthorized($OPERATION.C_MODEL_GROUP) || modelType === 'disabled'"
                         @click="showGroupDialog(false)">
                         {{$t('ModelManagement["新建分组"]')}}
@@ -49,7 +49,7 @@
             </div>
             <div class="model-type-options fr">
                 <bk-button class="model-type-button enable"
-                    size="mini"
+                    size="small"
                     :type="modelType === 'enable' ? 'primary' : 'default'"
                     @click="modelType = 'enable'">
                     {{$t('ModelManagement["启用模型"]')}}
@@ -60,7 +60,7 @@
                     v-if="!disabledClassifications.length">
                     <bk-button class="model-type-button disabled"
                         v-tooltip="$t('ModelManagement[\'停用模型提示\']')"
-                        size="mini"
+                        size="small"
                         :disabled="!disabledClassifications.length"
                         :type="modelType === 'disabled' ? 'primary' : 'default'"
                         @click="modelType = 'disabled'">
@@ -69,9 +69,9 @@
                 </bk-tooltip>
                 <bk-button class="model-type-button disabled"
                     v-else
-                    size="mini"
+                    size="small"
                     :disabled="!disabledClassifications.length"
-                    :type="modelType === 'disabled' ? 'primary' : 'default'"
+                    :theme="modelType === 'disabled' ? 'primary' : 'default'"
                     @click="modelType = 'disabled'">
                     {{$t('ModelManagement["停用模型"]')}}
                 </bk-button>
@@ -167,8 +167,8 @@
                 </div>
             </div>
             <div slot="footer" class="footer">
-                <bk-button type="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t("Common['保存']")}}</bk-button>
-                <bk-button type="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
+                <bk-button theme="primary" :loading="$loading(['updateClassification', 'createClassification'])" @click="saveGroup">{{$t("Common['保存']")}}</bk-button>
+                <bk-button theme="default" @click="hideGroupDialog">{{$t("Common['取消']")}}</bk-button>
             </div>
         </bk-dialog>
         <the-create-model

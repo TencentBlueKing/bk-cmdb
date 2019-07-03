@@ -1,7 +1,7 @@
 <template>
     <div class="network-wrapper">
         <div class="filter-wrapper">
-            <bk-button type="primary" @click="routeToConfig">
+            <bk-button theme="primary" @click="routeToConfig">
                 {{$t('NetworkDiscovery["配置网络发现"]')}}
             </bk-button>
             <div class="filter-content fr">
@@ -12,7 +12,7 @@
                         @keyup.enter="getTableData">
                     <i class="filter-search bk-icon icon-search" @click="getTableData"></i>
                 </div>
-                <bk-button type="default" class="fl" v-tooltip="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
+                <bk-button theme="default" class="fl" v-tooltip="$t('NetworkDiscovery[\'查看完成历史\']')" @click="routeToHistory">
                     <i class="icon-cc-history"></i>
                 </bk-button>
             </div>

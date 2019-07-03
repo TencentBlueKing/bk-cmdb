@@ -32,11 +32,11 @@
                     @handleSizeChange="handleSizeChange">
                 </cmdb-table>
                 <div class="button-wrapper">
-                    <bk-button class="button" type="primary"
+                    <bk-button class="button" theme="primary"
                         :disabled="!checked.length"
                         @click="handleConfirm">{{$t('Common["确定"]')}}
                     </bk-button>
-                    <bk-button class="button" type="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+                    <bk-button class="button" theme="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
                 </div>
             </div>
         </div>

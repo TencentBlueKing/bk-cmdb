@@ -6,7 +6,7 @@
                 active: !$isAuthorized($OPERATION.U_MODEL),
                 auth: [$OPERATION.U_MODEL]
             }">
-            <bk-button class="create-btn" type="primary"
+            <bk-button class="create-btn" theme="primary"
                 :disabled="isReadOnly || !updateAuth"
                 @click="createVerification">
                 {{$t('ModelManagement["新建校验"]')}}

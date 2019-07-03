@@ -8,12 +8,12 @@
                     :title="$t('Common[\'全选本页\']')"
                     @change="handleCheckALL">
                 </cmdb-form-bool>
-                <bk-button class="options-button" type="primary"
+                <bk-button class="options-button" theme="primary"
                     @click="handleCreateServiceInstance">
                     {{$t('BusinessTopology["添加服务实例"]')}}
                 </bk-button>
                 <bk-dropdown-menu trigger="click">
-                    <bk-button class="options-button clipboard-trigger" type="default" slot="dropdown-trigger">
+                    <bk-button class="options-button clipboard-trigger" theme="default" slot="dropdown-trigger">
                         {{$t('Common["更多"]')}}
                         <i class="bk-icon icon-angle-down"></i>
                     </bk-button>

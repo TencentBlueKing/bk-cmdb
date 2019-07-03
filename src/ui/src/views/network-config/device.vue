@@ -1,19 +1,19 @@
 <template>
     <div class="device-wrapper">
         <div class="title">
-            <bk-button type="primary" @click="showDeviceDialog('create')">
+            <bk-button theme="primary" @click="showDeviceDialog('create')">
                 {{$t('NetworkDiscovery["新增设备"]')}}
             </bk-button>
-            <bk-button type="default"
+            <bk-button theme="default"
                 :loading="$loading('deleteDevice')"
                 :disabled="!table.checked.length"
                 @click="deleteDevices">
                 {{$t('Common["删除"]')}}
             </bk-button>
-            <bk-button type="default" @click="importSlider.isShow = true">
+            <bk-button theme="default" @click="importSlider.isShow = true">
                 {{$t('ModelManagement["导入"]')}}
             </bk-button>
-            <bk-button :disabled="!table.checked.length" type="default submit" form="exportForm">
+            <bk-button :disabled="!table.checked.length" type="submit" form="exportForm">
                 {{$t('ModelManagement["导出"]')}}
             </bk-button>
             <form id="exportForm" :action="url.export" method="POST" hidden>
@@ -83,10 +83,10 @@
                     <div v-show="errors.has('bk_vendor')" class="color-danger">{{ errors.first('bk_vendor') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
+                    <bk-button theme="primary" @click="saveDevice" :loading="$loading(['createDevice', 'updateDevice'])">
                         {{$t('Common["保存"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hideDeviceDialog">
+                    <bk-button theme="default" @click="hideDeviceDialog">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>

@@ -38,7 +38,7 @@
                         active: !$isAuthorized(editAuth),
                         auth: [editAuth]
                     }">
-                    <bk-button class="button-edit" type="primary"
+                    <bk-button class="button-edit" theme="primary"
                         :disabled="!$isAuthorized(editAuth)"
                         @click="handleEdit">
                         {{editText}}
@@ -50,7 +50,7 @@
                         active: !$isAuthorized(deleteAuth),
                         auth: [deleteAuth]
                     }">
-                    <bk-button class="button-delete" type="danger"
+                    <bk-button class="button-delete" theme="danger"
                         :disabled="!$isAuthorized(deleteAuth)"
                         @click="handleDelete">
                         {{deleteText}}

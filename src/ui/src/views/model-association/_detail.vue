@@ -89,10 +89,10 @@
         </div>
         <slot name="operation">
             <div class="btn-group">
-                <bk-button type="primary" :disabled="isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
+                <bk-button theme="primary" :disabled="isEdit && relation.ispre" :loading="$loading(['updateAssociationType', 'createAssociationType'])" @click="saveRelation">
                     {{saveBtnText || $t('Common["确定"]')}}
                 </bk-button>
-                <bk-button type="default" @click="cancel">
+                <bk-button theme="default" @click="cancel">
                     {{$t('Common["取消"]')}}
                 </bk-button>
             </div>

@@ -1,7 +1,7 @@
 <template>
     <div class="collect-wrapper">
         <div class="title">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="!table.checked.length"
                 :loading="$loading('collectDataCollection')"
                 @click="executionDiscovery">
@@ -102,10 +102,10 @@
                     <div v-show="errors.has('community')" class="color-danger">{{ errors.first('community') }}</div>
                 </div>
                 <div class="footer">
-                    <bk-button type="primary" @click="saveConfig">
+                    <bk-button theme="primary" @click="saveConfig">
                         {{$t('NetworkDiscovery["保存并下发"]')}}
                     </bk-button>
-                    <bk-button type="default" @click="hideConfig">
+                    <bk-button theme="default" @click="hideConfig">
                         {{$t('Common["取消"]')}}
                     </bk-button>
                 </div>

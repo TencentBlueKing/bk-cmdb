@@ -2,7 +2,7 @@
     <div class="history-layout">
         <div class="history-options clearfix">
             <label class="fl">{{$t('Common["已删除历史"]')}}</label>
-            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <bk-button class="fr" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
             <bk-date-range class="history-date-range fr"
                 :ranges="ranges"
                 :range-separator="'-'"

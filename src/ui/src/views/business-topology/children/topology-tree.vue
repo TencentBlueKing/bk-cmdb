@@ -16,7 +16,7 @@
             <div class="node-info clearfix" slot-scope="{ node, data }">
                 <i :class="['node-model-icon fl', { 'is-selected': node.selected }]">{{modelIconMap[data.bk_obj_id]}}</i>
                 <bk-button class="node-button fr"
-                    type="primary"
+                    theme="primary"
                     v-if="showCreate(node, data)"
                     @click.stop="showCreateDialog(node)">
                     {{$t('Common[\'新建\']')}}

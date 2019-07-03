@@ -4,14 +4,14 @@
             <div class="no-content">
                 <img src="../../assets/images/no-content.png" alt="no-content">
                 <p>{{$t("BusinessSynchronous['找不到更新信息']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
         <template v-else-if="isLatsetData">
             <div class="no-content">
                 <img src="../../assets/images/latset-data.png" alt="no-content">
                 <p>{{$t("BusinessSynchronous['最新数据']")}}</p>
-                <bk-button type="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
+                <bk-button theme="primary" @click="handleGoBackModule">{{$t("Common['返回']")}}</bk-button>
             </div>
         </template>
         <template v-else-if="list.length">
@@ -93,7 +93,7 @@
                 <bk-button
                     class="mr10"
                     :disabled="readNum !== list.length"
-                    type="primary"
+                    theme="primary"
                     @click="handleSubmitSync">
                     {{$t("BusinessSynchronous['确认并同步']")}}
                 </bk-button>

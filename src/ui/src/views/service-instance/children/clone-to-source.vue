@@ -28,7 +28,7 @@
             </template>
         </cmdb-table>
         <div class="page-options">
-            <bk-button class="options-button" type="primary"
+            <bk-button class="options-button" theme="primary"
                 :disabled="!!repeatedProcesses.length"
                 @click="doClone">
                 {{$t('Common["确定"]')}}

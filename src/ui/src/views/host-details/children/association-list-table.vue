@@ -49,8 +49,8 @@
         <div class="confirm-tips" ref="confirmTips" v-click-outside="hideTips" v-show="confirm.item">
             <p class="tips-content">{{$t('Association["确认取消"]')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" type="primary" @click="cancelAssociation">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" type="default" @click="hideTips">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click="cancelAssociation">{{$t('Common["确认"]')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click="hideTips">{{$t('Common["取消"]')}}</bk-button>
             </div>
         </div>
     </div>

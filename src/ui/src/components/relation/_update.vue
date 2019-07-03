@@ -20,7 +20,7 @@
                     @on-value-change="handleValueChange">
                 </cmdb-property-filter>
             </div>
-            <bk-button type="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
+            <bk-button theme="primary" class="btn-search fr" @click="search">{{$t('Association["搜索"]')}}</bk-button>
         </div>
         <cmdb-table class="new-association-table"
             :loading="$loading()"
@@ -49,8 +49,8 @@
         <div class="confirm-tips" ref="confirmTips" v-click-outside="cancelUpdate" v-show="confirm.id">
             <p class="tips-content">{{$t('Association["更新确认"]')}}</p>
             <div class="tips-option">
-                <bk-button class="tips-button" type="primary" @click="confirmUpdate">{{$t('Common["确认"]')}}</bk-button>
-                <bk-button class="tips-button" type="default" @click="cancelUpdate">{{$t('Common["取消"]')}}</bk-button>
+                <bk-button class="tips-button" theme="primary" @click="confirmUpdate">{{$t('Common["确认"]')}}</bk-button>
+                <bk-button class="tips-button" theme="default" @click="cancelUpdate">{{$t('Common["取消"]')}}</bk-button>
             </div>
         </div>
     </div>

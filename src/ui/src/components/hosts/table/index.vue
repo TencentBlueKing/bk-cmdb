@@ -7,7 +7,7 @@
                         active: !$isAuthorized(editAuth),
                         auth: [editAuth]
                     }">
-                    <bk-button class="options-button" type="primary"
+                    <bk-button class="options-button" theme="primary"
                         :disabled="!table.checked.length || !$isAuthorized(editAuth)"
                         @click="handleMultipleEdit">
                         {{$t('Common["编辑"]')}}
@@ -18,13 +18,15 @@
                         active: !$isAuthorized(transferAuth),
                         auth: [transferAuth]
                     }">
-                    <bk-button class="options-button" type="default"
+                    <bk-button class="options-button" theme="default"
                         :disabled="!table.checked.length || !$isAuthorized(transferAuth)"
                         @click="transfer.show = true">
                         {{$t('BusinessTopology["转移"]')}}
                     </bk-button>
                 </span>
-                <bk-button class="options-button" type="submit default"
+                <bk-button class="options-button"
+                    theme="default"
+                    type="submit"
                     form="exportForm"
                     :disabled="!table.checked.length">
                     {{$t('ModelManagement["导出"]')}}
@@ -44,7 +46,7 @@
                     :disabled="!table.checked.length"
                     @on-copy="handleCopy">
                 </cmdb-clipboard-selector>
-                <bk-button class="options-button quick-search-button" type="default"
+                <bk-button class="options-button quick-search-button" theme="default"
                     v-if="quickSearch"
                     ref="quickSearchButton"
                     @click="quickSearchStatus.active = true">
@@ -52,7 +54,7 @@
                     <i class="bk-icon icon-angle-down"></i>
                 </bk-button>
                 <div class="fr" v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')">
-                    <bk-button class="options-button" type="default" style="margin-right: 0"
+                    <bk-button class="options-button" theme="default" style="margin-right: 0"
                         @click="columnsConfig.show = true">
                         <i class="icon-cc-setting"></i>
                     </bk-button>

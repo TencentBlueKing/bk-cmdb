@@ -140,7 +140,7 @@
                 </bk-selector>
             </div>
             <div class="userapi-btn-group">
-                <bk-button type="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
+                <bk-button theme="primary" class="userapi-btn" :disabled="errors.any()" @click.stop="previewUserAPI">
                     {{$t("CustomQuery['预览']")}}
                 </bk-button>
                 <span class="inline-block-middle"
@@ -148,7 +148,7 @@
                         active: !editable,
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
-                    <bk-button type="primary" class="userapi-btn"
+                    <bk-button theme="primary" class="userapi-btn"
                         v-tooltip="$t('CustomQuery[\'保存后的查询可通过接口调用生效\']')"
                         :loading="$loading(['createCustomQuery', 'updateCustomQuery'])"
                         :disabled="errors.any() || !editable"
@@ -156,7 +156,7 @@
                         {{$t("Common['保存']")}}
                     </bk-button>
                 </span>
-                <bk-button type="default" class="userapi-btn" @click="closeSlider">
+                <bk-button theme="default" class="userapi-btn" @click="closeSlider">
                     {{$t("Common['取消']")}}
                 </bk-button>
                 <span class="inline-block-middle"
@@ -164,7 +164,7 @@
                         active: !editable,
                         auth: [$OPERATION.U_CUSTOM_QUERY]
                     }">
-                    <bk-button type="danger" class="userapi-btn button-delete"
+                    <bk-button theme="danger" class="userapi-btn button-delete"
                         v-if="type === 'update'"
                         :loading="$loading('deleteCustomQuery')"
                         :disabled="!editable"

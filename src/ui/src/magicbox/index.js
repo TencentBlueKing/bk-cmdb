@@ -4,6 +4,7 @@ import magicbox from './src'
 import magicboxLocal from './src/locale'
 import magicboxEn from './src/locale/lang/en-US'
 import magicboxCn from './src/locale/lang/zh-CN'
+import './update.js'
 
 i18n.setLocaleMessage('zh_CN', Object.assign({}, magicboxCn, i18n.messages['zh_CN']))
 i18n.setLocaleMessage('en', Object.assign({}, magicboxEn, i18n.messages.en))

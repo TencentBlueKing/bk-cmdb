@@ -120,8 +120,8 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="update">{{$t('Common["保存"]')}}</bk-button>
-            <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="update">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
     </div>
 </template>

@@ -13,7 +13,7 @@
                     active: !$isAuthorized($OPERATION.C_RELATION),
                     auth: [$OPERATION.C_RELATION]
                 }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     class="create-btn"
                     :disabled="!$isAuthorized($OPERATION.C_RELATION)"
                     @click="createRelation">

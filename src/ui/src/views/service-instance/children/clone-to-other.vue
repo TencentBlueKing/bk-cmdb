@@ -2,7 +2,7 @@
     <div class="create-layout clearfix" v-bkloading="{ isLoading: $loading() }">
         <label class="create-label fl">{{$t('businessTopology["添加主机"]')}}</label>
         <div class="create-hosts">
-            <bk-button class="select-host-button" type="default"
+            <bk-button class="select-host-button" theme="default"
                 @click="hostSelectorVisible = true">
                 <i class="bk-icon icon-plus"></i>
                 {{$t('businessTopology["添加主机"]')}}
@@ -21,7 +21,7 @@
                     @delete-instance="handleDeleteInstance">
                 </service-instance-table>
                 <div class="buttons">
-                    <bk-button type="primary"
+                    <bk-button theme="primary"
                         :disabled="!hosts.length"
                         @click="handleConfirm">
                         {{$t('Common["确定"]')}}

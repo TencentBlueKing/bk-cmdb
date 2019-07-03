@@ -49,10 +49,10 @@
             </div>
         </label>
         <div class="btn-group" v-if="isEdit && relationInfo.bk_asst_id !== 'bk_mainline'">
-            <bk-button type="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
+            <bk-button theme="primary" :loading="$loading('updateObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
+            <bk-button theme="danger" @click="deleteRelation" :disabled="relationInfo.ispre || $loading('deleteObjectAssociation')">
                 {{$t('ModelManagement["删除关联"]')}}
             </bk-button>
         </div>

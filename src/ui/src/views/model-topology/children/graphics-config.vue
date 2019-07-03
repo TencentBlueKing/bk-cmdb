@@ -68,10 +68,10 @@
                 </ul>
             </div>
             <div class="config-section button-section">
-                <bk-button type="primary" @click="handleConfirm">
+                <bk-button theme="primary" @click="handleConfirm">
                     {{$t('Common["确定"]')}}
                 </bk-button>
-                <bk-button type="default" @click="handleReset">
+                <bk-button theme="default" @click="handleReset">
                     {{$t('ModelManagement["重置"]')}}
                 </bk-button>
             </div>

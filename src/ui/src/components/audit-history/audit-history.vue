@@ -9,7 +9,7 @@
                 <label class="options-label">{{$t("HostResourcePool['操作账号']")}}</label>
                 <cmdb-form-objuser class="options-filter" v-model="operator" :exclude="false" :multiple="false"></cmdb-form-objuser>
             </div>
-            <bk-button class="fr" type="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
+            <bk-button class="fr" theme="primary" @click="refresh(true)">{{$t("Common['查询']")}}</bk-button>
         </div>
         <cmdb-table class="audit-table"
             :loading="$loading('getOperationLog')"

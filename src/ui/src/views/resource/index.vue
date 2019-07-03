@@ -31,7 +31,7 @@
                             active: !$isAuthorized($OPERATION.C_RESOURCE_HOST),
                             auth: [$OPERATION.C_RESOURCE_HOST]
                         }">
-                        <bk-button class="options-button" type="primary" style="margin-left: 0"
+                        <bk-button class="options-button" theme="primary" style="margin-left: 0"
                             :disabled="!$isAuthorized($OPERATION.C_RESOURCE_HOST)"
                             @click="importInst.show = true">
                             {{$t('HostResourcePool[\'导入主机\']')}}
@@ -53,7 +53,7 @@
                             active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
                             auth: [$OPERATION.U_RESOURCE_HOST]
                         }">
-                        <bk-button class="options-button" type="default"
+                        <bk-button class="options-button" theme="default"
                             :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
                             @click="handleMultipleEdit">
                             {{$t('BusinessTopology[\'修改\']')}}
@@ -64,13 +64,13 @@
                             active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
                             auth: [$OPERATION.D_RESOURCE_HOST]
                         }">
-                        <bk-button class="options-button options-button-delete" type="default"
+                        <bk-button class="options-button options-button-delete" theme="default"
                             :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_RESOURCE_HOST)"
                             @click="handleMultipleDelete">
                             {{$t('Common[\'删除\']')}}
                         </bk-button>
                     </span>
-                    <bk-button class="options-button" type="default"
+                    <bk-button class="options-button" theme="default"
                         form="exportForm"
                         :disabled="!table.checked.length"
                         @click="exportField">
@@ -83,12 +83,12 @@
                     </cmdb-clipboard-selector>
                 </div>
                 <div class="fr">
-                    <bk-button class="options-button options-icon" type="default"
+                    <bk-button class="options-button options-icon" theme="default"
                         v-tooltip="$t('BusinessTopology[\'列表显示属性配置\']')"
                         @click="handleColumnsConfig">
                         <i class="icon-cc-setting"></i>
                     </bk-button>
-                    <bk-button class="options-button options-icon" type="default"
+                    <bk-button class="options-button options-icon" theme="default"
                         v-tooltip="$t('Common[\'查看删除历史\']')"
                         @click="routeToHistory">
                         <i class="icon-cc-history"></i>

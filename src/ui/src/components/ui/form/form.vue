@@ -50,7 +50,7 @@
                         active: !$isAuthorized(saveAuth),
                         auth: [saveAuth]
                     }">
-                    <bk-button class="button-save" type="primary"
+                    <bk-button class="button-save" theme="primary"
                         :disabled="!$isAuthorized(saveAuth) || !hasChange || $loading()"
                         @click="handleSave">
                         {{$t("Common['保存']")}}

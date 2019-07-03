@@ -7,7 +7,7 @@
             @close-tips="showFeatureTips = false">
         </feature-tips>
         <div class="template-filter clearfix">
-            <bk-button class="fl mr10" type="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
+            <bk-button class="fl mr10" theme="primary" @click="operationTemplate()">{{$t("Common['新建']")}}</bk-button>
             <div class="filter-text fr">
                 <cmdb-selector
                     class="fl"

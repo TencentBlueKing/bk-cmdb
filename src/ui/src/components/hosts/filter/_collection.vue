@@ -41,12 +41,12 @@
                     v-if="collection.deleteConfirm"
                     v-click-outside="handleCancelDelete">
                     <p class="confirm-title">{{$t('Hosts[\'确认删除\']')}}</p>
-                    <bk-button class="confirm-btn" size="small" type="primary"
+                    <bk-button class="confirm-btn" size="small" theme="primary"
                         :loading="$loading(`delete_deleteFavorites_${collection.id}`)"
                         @click.stop="handleDeleteCollection(collection)">
                         {{$t('Hosts[\'确认\']')}}
                     </bk-button>
-                    <bk-button class="confirm-btn" size="small" type="default"
+                    <bk-button class="confirm-btn" size="small" theme="default"
                         @click.stop="handleCancelDelete">
                         {{$t('Common[\'取消\']')}}
                     </bk-button>

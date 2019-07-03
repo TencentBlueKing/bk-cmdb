@@ -22,7 +22,7 @@
                     </template>
                     <i class="topo-node-icon topo-node-icon-text" v-else>{{node['bk_obj_name'][0]}}</i>
                     <span class="topo-node-text" :title="node['bk_inst_name']">{{node['bk_inst_name']}}</span>
-                    <bk-button type="primary" class="topo-node-btn-create fr"
+                    <bk-button theme="primary" class="topo-node-btn-create fr"
                         v-if="showCreate(node, state)"
                         @click.stop="handleCreate">
                         {{$t('Common[\'新建\']')}}
@@ -48,7 +48,7 @@
         <div class="hosts-layout">
             <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
                 <bk-tabpanel class="topo-tabpanel" name="hosts" :title="$t('BusinessTopology[\'主机调配\']')">
-                    <bk-button class="topo-table-btn-refresh" type="primary" style="display: none;"
+                    <bk-button class="topo-table-btn-refresh" theme="primary" style="display: none;"
                         :disabled="$loading()"
                         @click="handleRefresh">
                         {{$t("HostResourcePool['刷新查询']")}}
@@ -84,7 +84,7 @@
                         @on-submit="handleSubmit"
                         @on-cancel="handleCancel">
                         <template slot="extra-options">
-                            <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
+                            <bk-button theme="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
                             </bk-button>
                         </template>
                     </cmdb-form>
