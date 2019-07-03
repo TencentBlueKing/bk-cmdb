@@ -181,6 +181,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				blog.Warnf("property: %+v, asst: %+v, for key: %v", property, asst, buildObjPropertyMapKey(asst.ObjectID, asst.ObjectAttID))
 				asst.Mapping = metadata.ManyToManyMapping
 			}
+			// 交换 源<->目标
 			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
@@ -189,8 +190,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 			blog.InfoJSON("obj: %s, att: %s to asst %s", asst.ObjectID, asst.ObjectAttID, asst)
 			// update ObjAsst
 			updateCond := condition.CreateCondition()
-			updateCond.Field("bk_obj_id").Eq(asst.AsstObjID)
-			updateCond.Field("bk_asst_obj_id").Eq(asst.ObjectID)
+			updateCond.Field("id").Eq(asst.ID)
 			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
 				return err
 			}
