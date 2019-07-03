@@ -1,6 +1,6 @@
 <template>
     <div class="relation-topology-layout" :class="{ 'full-screen': fullScreen }">
-        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" type="default"
+        <bk-button class="exit-full-screen icon-cc-resize-small" size="small" theme="default"
             v-show="fullScreen"
             @click="toggleFullScreen(false)">
             {{$t('Common["退出"]')}}

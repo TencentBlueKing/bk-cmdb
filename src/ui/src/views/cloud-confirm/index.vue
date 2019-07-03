@@ -2,7 +2,7 @@
     <div>
         <div class="clearfix">
             <bk-button
-                type="primary"
+                theme="primary"
                 @click="batchConfirm"
                 :disabled="!table.checked.length">
                 <span>{{$t("Cloud['批量确认']")}}</span>

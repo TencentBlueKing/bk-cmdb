@@ -13,7 +13,7 @@
                     active: !$isAuthorized($OPERATION.C_EVENT),
                     auth: [$OPERATION.C_EVENT]
                 }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_EVENT)"
                     @click="createPush">
                     {{$t('Common["新建"]')}}

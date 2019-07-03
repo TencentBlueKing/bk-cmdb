@@ -30,8 +30,8 @@
             </cmdb-table>
         </div>
         <div class="permission-footer" slot="footer">
-            <bk-button type="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
-            <bk-button type="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
+            <bk-button theme="primary" @click="handleApplyPermission">{{ i18n.apply }}</bk-button>
+            <bk-button theme="default" @click="onCloseDialog">{{ i18n.cancel }}</bk-button>
         </div>
     </bk-dialog>
 </template>

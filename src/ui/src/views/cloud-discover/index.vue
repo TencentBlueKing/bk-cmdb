@@ -1,7 +1,7 @@
 <template>
     <div class="cloud-wrapper">
         <div class="cloud-filter clearfix">
-            <bk-button class="cloud-btn" type="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
+            <bk-button class="cloud-btn" theme="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
             <div class="cloud-option-filter clearfix fr">
                 <bk-selector class="cloud-filter-selector fl"
                     :list="selectList"

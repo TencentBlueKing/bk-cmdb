@@ -5,7 +5,7 @@
                 active: !$isAuthorized($OPERATION.U_MODEL),
                 auth: [$OPERATION.U_MODEL]
             }">
-                <bk-button class="create-btn" type="primary"
+                <bk-button class="create-btn" theme="primary"
                     :disabled="createDisabled || isReadOnly || !updateAuth"
                     @click="createField">
                     {{$t('ModelManagement["新建字段"]')}}

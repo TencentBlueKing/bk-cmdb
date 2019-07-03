@@ -2,7 +2,7 @@
     <div class="archived-layout">
         <div class="archived-options clearfix">
             <label class="fl">{{$t('Common["归档历史"]')}}</label>
-            <bk-button class="fr" type="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
+            <bk-button class="fr" theme="primary" @click="back">{{$t('Common["返回"]')}}</bk-button>
         </div>
         <cmdb-table class="archived-table"
             row-cursor="default"
@@ -19,7 +19,7 @@
                         active: !$isAuthorized(archiveAuth),
                         auth: [archiveAuth]
                     }">
-                    <bk-button type="primary" size="mini"
+                    <bk-button theme="primary" size="small"
                         :disabled="!$isAuthorized(archiveAuth)"
                         @click="handleRecovery(item)">
                         {{$t('Inst["恢复业务"]')}}

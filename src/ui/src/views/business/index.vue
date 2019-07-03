@@ -6,7 +6,7 @@
                     active: !$isAuthorized($OPERATION.C_BUSINESS),
                     auth: [$OPERATION.C_BUSINESS]
                 }">
-                <bk-button class="fl" type="primary"
+                <bk-button class="fl" theme="primary"
                     :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}

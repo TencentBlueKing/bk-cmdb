@@ -53,7 +53,7 @@
             v-if="showOptions"
             :class="{ sticky: scrollbar }">
             <slot name="form-options">
-                <bk-button class="button-save" type="primary"
+                <bk-button class="button-save" theme="primary"
                     :disabled="saveDisabled || !hasChange || $loading()"
                     @click="handleSave">
                     {{$t("Common['保存']")}}

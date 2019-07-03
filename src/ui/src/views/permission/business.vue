@@ -28,7 +28,7 @@
             </div>
         </div>
         <footer class="footer" v-if="!isMaintainers">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :loading="$loading('updateAuthorities')"
                 @click="updateAuthorities">
                 {{$t("Common['保存']")}}

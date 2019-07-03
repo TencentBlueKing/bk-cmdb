@@ -1,6 +1,6 @@
 <template>
     <bk-dropdown-menu trigger="click" :disabled="disabled" ref="dropdownMenu">
-        <bk-button class="table-selector-trigger" type="default" slot="dropdown-trigger" :disabled="disabled">
+        <bk-button class="table-selector-trigger" theme="default" slot="dropdown-trigger" :disabled="disabled">
             <i class="table-selector-checkbox" :class="type" @click.stop="handleCurrentClick"></i>
             <i class="bk-icon icon-angle-down"></i>
         </bk-button>

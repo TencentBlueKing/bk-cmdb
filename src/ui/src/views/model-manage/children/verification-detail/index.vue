@@ -36,13 +36,13 @@
             </label>
         </div>
         <div class="btn-group">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="isReadOnly || !verificationInfo.selected.length"
                 :loading="$loading(['createObjectUniqueConstraints', 'updateObjectUniqueConstraints'])"
                 @click="saveVerification">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
+            <bk-button theme="default" @click="cancel">
                 {{$t('Common["取消"]')}}
             </bk-button>
         </div>

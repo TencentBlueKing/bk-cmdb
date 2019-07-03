@@ -39,9 +39,9 @@
             </div>
         </div>
         <div class="config-options clearfix">
-            <bk-button class="config-button fl" type="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
-            <bk-button class="config-button fl" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
-            <bk-button class="config-button fr" type="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
+            <bk-button class="config-button fl" theme="primary" @click="handleApply">{{$t('Inst[\'应用\']')}}</bk-button>
+            <bk-button class="config-button fl" theme="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+            <bk-button class="config-button fr" theme="default" @click="handleReset">{{$t("Common['还原默认']")}}</bk-button>
         </div>
     </div>
 </template>

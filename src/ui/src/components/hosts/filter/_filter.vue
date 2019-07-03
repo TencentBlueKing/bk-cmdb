@@ -55,9 +55,9 @@
                 </div>
             </div>
             <div class="filter-button clearfix" :class="{ sticky: layout.scroll }">
-                <bk-button type="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
-                <bk-button type="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
-                <bk-button class="collection-button fr" type="default" v-if="activeSetting.includes('collection')"
+                <bk-button theme="primary" @click="refresh" :disabled="$loading()">{{$t('Common["查询"]')}}</bk-button>
+                <bk-button theme="default" @click="reset">{{$t('Common["清空"]')}}</bk-button>
+                <bk-button class="collection-button fr" theme="default" v-if="activeSetting.includes('collection')"
                     :class="{ collecting: collection.show }"
                     @click.stop="handleCollectionBox">
                     <i class="icon-cc-collection"></i>
@@ -76,13 +76,13 @@
                         <div class="form-content">{{collection.content}}</div>
                     </div>
                     <div class="form-group form-group-button">
-                        <bk-button type="primary"
+                        <bk-button theme="primary"
                             :loading="$loading('create_collection')"
                             :disabled="$loading('create_collection') || !collection.name"
                             @click="handleSaveCollection">
                             {{$t('Hosts[\'确认\']')}}
                         </bk-button>
-                        <bk-button type="default" @click="handleCloseCollection">
+                        <bk-button theme="default" @click="handleCloseCollection">
                             {{$t('Common[\'取消\']')}}
                         </bk-button>
                     </div>

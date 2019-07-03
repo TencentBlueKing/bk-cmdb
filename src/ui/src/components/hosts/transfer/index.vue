@@ -62,12 +62,12 @@
                 </label>
             </div>
             <div class="button-layout content-middle fr">
-                <bk-button class="transfer-button" type="primary"
+                <bk-button class="transfer-button" theme="primary"
                     :disabled="!selectedModules.length"
                     @click="handleTransfer">
                     {{$t('Common[\'确认转移\']')}}
                 </bk-button>
-                <bk-button class="transfer-button" type="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
+                <bk-button class="transfer-button" theme="default" @click="handleCancel">{{$t('Common[\'取消\']')}}</bk-button>
             </div>
         </div>
     </div>

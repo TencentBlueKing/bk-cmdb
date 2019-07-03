@@ -75,8 +75,8 @@
             </div>
         </div>
         <div slot="footer" class="footer">
-            <bk-button type="primary" @click="confirm">{{$t("Common['保存']")}}</bk-button>
-            <bk-button type="default" @click="cancel">{{$t("Common['取消']")}}</bk-button>
+            <bk-button theme="primary" @click="confirm">{{$t("Common['保存']")}}</bk-button>
+            <bk-button theme="default" @click="cancel">{{$t("Common['取消']")}}</bk-button>
         </div>
     </bk-dialog>
 </template>

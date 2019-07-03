@@ -37,7 +37,7 @@
                 v-model.trim="value">
             </comonent>
         </div>
-        <bk-button type="primary"
+        <bk-button theme="primary"
             :loading="$loading()"
             @click="handleSearch">
             {{$t('Common["搜索"]')}}

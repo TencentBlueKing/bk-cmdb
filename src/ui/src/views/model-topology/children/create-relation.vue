@@ -66,10 +66,10 @@
             <i class="bk-icon icon-info-circle"></i>
         </div>
         <div class="btn-group">
-            <bk-button type="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
+            <bk-button theme="primary" :loading="$loading('createObjectAssociation')" @click="saveRelation">
                 {{$t('Common["确定"]')}}
             </bk-button>
-            <bk-button type="default" @click="cancel">
+            <bk-button theme="default" @click="cancel">
                 {{$t('Common["取消"]')}}
             </bk-button>
         </div>

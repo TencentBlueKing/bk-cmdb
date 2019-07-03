@@ -8,7 +8,6 @@
 import './bk-magic-ui/src/common.scss'
 
 import Vue from 'vue'
-import bkButton from './components/button'
 import bkDropdownMenu from './components/dropdown-menu'
 import bkSideslider from './components/sideslider'
 import bkSwitcher from './components/switcher'
@@ -57,7 +56,6 @@ const {
 
 const components = {
     bkBadge,
-    bkButton,
     bkCollapse,
     bkCollapseItem,
     bkCombox,
@@ -136,7 +134,6 @@ const bkMagic = {
 // 组件单独抛出，方便 import {bkBadge} from '@tencent/bk-magic' 这样引用
 export {
     bkBadge,
-    bkButton,
     bkCollapse,
     bkCollapseItem,
     bkCombox,

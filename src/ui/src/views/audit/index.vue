@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="group-content button-group">
-                <bk-button type="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
+                <bk-button theme="primary" :loading="$loading('getOperationLog')" @click="handlePageChange(1)">{{$t('OperationAudit[\'查询\']')}}</bk-button>
             </div>
         </div>
         <cmdb-table

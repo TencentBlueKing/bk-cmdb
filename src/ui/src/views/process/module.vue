@@ -7,14 +7,14 @@
             :wrapper-minus-height="150"
             :sortable="false">
             <template slot="is_bind" slot-scope="{ item }">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     v-if="item['is_bind'] === 1"
                     :loading="$loading(`${item['bk_module_name']}Bind`)"
                     :disabled="!unbindModuleAuth"
                     @click="unbindModule(item)">
                     {{$t("ProcessManagement['已绑定']")}}
                 </bk-button>
-                <bk-button type="default"
+                <bk-button theme="default"
                     v-else
                     :loading="$loading(`${item['bk_module_name']}Bind`)"
                     :disabled="!bindModuleAuth"

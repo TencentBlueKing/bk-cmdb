@@ -42,7 +42,7 @@
                             >
                             <span v-show="errors.has('http')" class="color-danger">{{ errors.first('http') }}</span>
                         </div>
-                        <bk-button class="test-btn" type="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
+                        <bk-button class="test-btn" theme="primary" @click.prevent="testPush">{{$t('EventPush["测试推送"]')}}</bk-button>
                     </div>
                 </li>
                 <li class="form-item">
@@ -197,8 +197,8 @@
             </ul>
         </div>
         <footer class="footer">
-            <bk-button type="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
-            <bk-button type="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="primary" :loading="$loading('savePush')" class="btn" @click="save">{{$t('Common["保存"]')}}</bk-button>
+            <bk-button theme="default" class="btn vice-btn" @click="cancel">{{$t('Common["取消"]')}}</bk-button>
         </footer>
         <v-pop
             v-if="isPopShow"

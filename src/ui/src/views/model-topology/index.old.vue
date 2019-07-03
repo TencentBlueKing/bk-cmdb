@@ -7,7 +7,7 @@
                         active: !$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS),
                         auth: [$OPERATION.SYSTEM_MODEL_GRAPHICS]
                     }">
-                    <bk-button class="edit-button" type="primary"
+                    <bk-button class="edit-button" theme="primary"
                         :disabled="!$isAuthorized($OPERATION.SYSTEM_MODEL_GRAPHICS)"
                         @click="editTopo">
                         {{$t('ModelManagement["编辑拓扑"]')}}
@@ -15,7 +15,7 @@
                 </span>
             </template>
             <template v-else>
-                <bk-button type="primary" @click="exitEdit">
+                <bk-button theme="primary" @click="exitEdit">
                     {{$t('Common["返回"]')}}
                 </bk-button>
                 <p class="edit-cue">{{$t('ModelManagement["所有更改已自动保存"]')}}</p>

@@ -50,7 +50,7 @@
             <h3>进程服务</h3>
             <div class="precess-box">
                 <div class="process-create">
-                    <bk-button type="primary" class="create-btn" @click="handleCreateProcess">
+                    <bk-button theme="primary" class="create-btn" @click="handleCreateProcess">
                         <span>{{$t("ProcessManagement['添加进程']")}}</span>
                     </bk-button>
                     <span class="create-tips">{{$t("ServiceManagement['新建进程提示']")}}</span>

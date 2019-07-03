@@ -22,12 +22,12 @@
             </div>
         </div>
         <div class="node-create-options">
-            <bk-button type="primary"
+            <bk-button theme="primary"
                 :disabled="$loading() || errors.any()"
                 @click="handleSave">
                 {{$t('Common["保存"]')}}
             </bk-button>
-            <bk-button type="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
+            <bk-button theme="default" @click="handleCancel">{{$t('Common["取消"]')}}</bk-button>
         </div>
     </div>
 </template>

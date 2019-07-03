@@ -38,7 +38,7 @@
             @on-submit="handleSubmit"
             @on-cancel="handleCancel">
             <template slot="extra-options">
-                <bk-button type="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
+                <bk-button theme="danger" style="margin-left: 4px" @click="handleDelete">{{$t('Common["删除"]')}}
                 </bk-button>
             </template>
             <template slot="__service_category__" v-if="!withTemplate">

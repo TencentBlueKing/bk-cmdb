@@ -2,14 +2,14 @@
     <div class="graphics-toolbar clearfix">
         <div class="toolbar-left fl">
             <template v-if="isEditMode">
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     @click="handleToggleMode">
                     {{$t('Common["返回"]')}}
                 </bk-button>
                 <span class="edit-tips">{{$t('ModelManagement["所有更改已自动保存"]')}}</span>
             </template>
             <template v-else>
-                <bk-button type="primary"
+                <bk-button theme="primary"
                     @click="handleToggleMode">
                     {{$t('ModelManagement["编辑拓扑"]')}}
                 </bk-button>

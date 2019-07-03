@@ -12,7 +12,7 @@
                 active: !$isAuthorized($OPERATION.C_CUSTOM_QUERY),
                 auth: [$OPERATION.C_CUSTOM_QUERY]
             }">
-                <bk-button type="primary" class="api-btn"
+                <bk-button theme="primary" class="api-btn"
                     :disabled="!$isAuthorized($OPERATION.C_CUSTOM_QUERY)"
                     @click="showUserAPISlider('create')">
                     {{$t("Common['新建']")}}

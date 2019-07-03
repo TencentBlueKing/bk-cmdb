@@ -3,10 +3,10 @@
         <div class="page clearfix">
             <input type="text" class="cmdb-form-input" :placeholder="$t('ModelManagement[\'请输入关键词\']')" v-model.trim="searchText">
             <div class="page-btn">
-                <bk-button type="default" :disabled="!page.current" @click="pageTurning(--page.current)">
+                <bk-button theme="default" :disabled="!page.current" @click="pageTurning(--page.current)">
                     <i class="bk-icon icon-angle-left"></i>
                 </bk-button>
-                <bk-button type="default" :disabled="page.current === page.totalPage - 1" @click="pageTurning(++page.current)">
+                <bk-button theme="default" :disabled="page.current === page.totalPage - 1" @click="pageTurning(++page.current)">
                     <i class="bk-icon icon-angle-right"></i>
                 </bk-button>
             </div>

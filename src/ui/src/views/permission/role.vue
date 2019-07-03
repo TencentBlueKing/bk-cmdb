@@ -2,7 +2,7 @@
     <div class="role-wrapper">
         <div class="role-options clearfix">
             <div class="role-options-create fl">
-                <bk-button type="primary" @click="createRole">
+                <bk-button theme="primary" @click="createRole">
                     {{$t('Common["新建"]')}}
                 </bk-button>
             </div>
@@ -34,7 +34,7 @@
             <div class="empty-info" slot="data-empty">
                 <p>{{$t("Common['暂时没有数据']")}}</p>
                 <p>{{$t("Permission['当前并无角色，可点击下方按钮新增']")}}</p>
-                <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
+                <bk-button class="process-btn" theme="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
             </div>
         </cmdb-table>
         <v-role-form
