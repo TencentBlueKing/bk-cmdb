@@ -376,7 +376,9 @@ func (ia *importAssociation) getInstDataByConds() error {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		conds := condition.CreateCondition()
-		conds.Field(common.BKObjIDField).Eq(objID)
+		if !util.IsInnerObject(objID) {
+			conds.Field(common.BKObjIDField).Eq(objID)
+		}
 		conds.NewOR().MapStrArr(valArr)
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
@@ -591,6 +593,11 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return util.GetInt64ByInterface(val)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
+	case common.FieldTypeForeignKey:
+		if attr.PropertyID == common.BKCloudIDField {
+			return util.GetInt64ByInterface(val)
+		}
+		fallthrough
 	default:
 		return val, nil
 	}
