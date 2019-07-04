@@ -182,6 +182,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.Mapping = metadata.ManyToManyMapping
 			}
 			// 交换 源<->目标
+			asst.AssociationAliasName = property.PropertyName
 			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
