@@ -527,6 +527,7 @@ func (c *collection) ReplaceOne(ctx context.Context, filter interface{}, replace
 	}, nil
 }
 
+// UpdateUnsetMany update data support $unset command
 func (c *collection) UpdateUnsetMany(ctx context.Context, filter interface{}, update interface{}, opts *updateopt.Many) (*mongodb.UpdateResult, error) {
 
 	updateOption := &options.UpdateOptions{}
