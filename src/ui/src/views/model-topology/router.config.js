@@ -22,8 +22,12 @@ export default {
             parent: NAV_MODEL_MANAGEMENT
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         i18nTitle: 'Nav["模型拓扑"]'
+            
     })
 }

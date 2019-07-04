@@ -125,7 +125,7 @@ func (phpapi *PHPAPI) AddModuleHostConfig(ctx context.Context, hostID, appID int
 	}
 	blog.V(5).Infof("addModuleHostConfig start, data: %+v,rid:%s", data, phpapi.rid)
 
-	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferHostModule(ctx, phpapi.header, data)
+	res, err := phpapi.logic.CoreAPI.CoreService().Host().TransferToNormalModule(ctx, phpapi.header, data)
 	if nil != err {
 		blog.Errorf("AddModuleHostConfig http do error.err:%s,param:%+v,rid:%s", err.Error(), data, phpapi.rid)
 		return phpapi.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)
