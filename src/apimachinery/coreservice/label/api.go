@@ -61,7 +61,7 @@ func (l *label) RemoveLabel(ctx context.Context, h http.Header, tableName string
 		Option:    option,
 		TableName: tableName,
 	}
-	err := l.client.Post().
+	err := l.client.Delete().
 		Body(body).
 		WithContext(ctx).
 		SubResource(subPath).

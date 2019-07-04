@@ -170,7 +170,7 @@ func (s *coreService) audit() {
 
 func (s *coreService) label() {
 	s.addAction(http.MethodPost, "/createmany/labels", s.AddLabels, nil)
-	s.addAction(http.MethodPost, "/deletemany/labels", s.RemoveLabels, nil)
+	s.addAction(http.MethodDelete, "/deletemany/labels", s.RemoveLabels, nil)
 }
 
 func (s *coreService) initService() {
