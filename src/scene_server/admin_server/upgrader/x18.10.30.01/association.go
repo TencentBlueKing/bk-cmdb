@@ -95,7 +95,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 			AssociationKindName:     "默认关联",
 			OwnerID:                 conf.OwnerID,
 			SourceToDestinationNote: "关联",
-			DestinationToSourceNote: "关联",
+			DestinationToSourceNote: "被关联",
 			Direction:               metadata.DestinationToSource,
 			IsPre:                   ptrue(),
 		},
@@ -138,6 +138,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		blog.Infof("key %s: %+v", buildObjPropertyMapKey(property.ObjectID, property.PropertyID), property)
 	}
 
+	flag := "updateflag"
 	for _, asst := range assts {
 		if asst.ObjectAttID == common.BKChildStr {
 			asst.AsstKindID = common.AssociationKindMainline
@@ -153,8 +154,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 			// update ObjAsst
 			updateCond := condition.CreateCondition()
-			updateCond.Field("bk_obj_id").Eq(asst.ObjectID)
-			updateCond.Field("bk_asst_obj_id").Eq(asst.AsstObjID)
+			updateCond.Field("id").Eq(asst.ID)
 			if err = db.Table(common.BKTableNameObjAsst).Update(ctx, updateCond.ToMapStr(), asst); err != nil {
 				return err
 			}
@@ -182,6 +182,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				asst.Mapping = metadata.ManyToManyMapping
 			}
 			// 交换 源<->目标
+			asst.AssociationAliasName = property.PropertyName
 			asst.ObjectID, asst.AsstObjID = asst.AsstObjID, asst.ObjectID
 			asst.OnDelete = metadata.NoAction
 			asst.IsPre = pfalse()
@@ -197,7 +198,13 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 
 			// update ObjAsst
 			instAssts := []metadata.InstAsst{}
-			if err = db.Table(common.BKTableNameInstAsst).Find(updateCond.ToMapStr()).All(ctx, &instAssts); err != nil {
+
+			instCond := condition.CreateCondition()
+			instCond.Field("bk_obj_id").Eq(asst.AsstObjID)
+			instCond.Field("bk_asst_obj_id").Eq(asst.ObjectID)
+			instCond.Field(flag).NotEq(true)
+
+			if err = db.Table(common.BKTableNameInstAsst).Find(instCond.ToMapStr()).All(ctx, &instAssts); err != nil {
 				return err
 			}
 			for _, instAsst := range instAssts {
@@ -211,13 +218,20 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 				updateInst.Set("bk_inst_id", instAsst.AsstInstID)
 				updateInst.Set("bk_asst_inst_id", instAsst.InstID)
 
+				updateInst.Set(flag, true)
+
 				updateInst.Set("last_time", time.Now())
-				if err = db.Table(common.BKTableNameInstAsst).Update(ctx, mapstr.MapStr{"id": instAsst.ID}, updateInst); err != nil {
+				if err = db.Table(common.BKTableNameInstAsst).Update(ctx,
+					mapstr.MapStr{
+						"id": instAsst.ID,
+					}, updateInst); err != nil {
 					return err
 				}
 			}
 		}
-
+	}
+	if err = db.Table(common.BKTableNameInstAsst).DropColumn(ctx, flag); err != nil {
+		return err
 	}
 
 	// update bk_cloud_id to int
