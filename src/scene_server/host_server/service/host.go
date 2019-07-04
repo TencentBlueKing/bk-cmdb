@@ -79,31 +79,9 @@ func (s *Service) DeleteHostBatch(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	condition := hutil.NewOperation().WithDefaultField(int64(common.DefaultAppFlag)).WithOwnerID(srvData.ownerID).MapStr()
-	query := meta.QueryCondition{Condition: condition}
-	query.Limit.Limit = 1
-	query.Limit.Offset = 0
-	result, err := s.CoreAPI.CoreService().Instance().ReadInstance(srvData.ctx, srvData.header, common.BKInnerObjIDApp, &query)
+	appID, err := srvData.lgc.GetDefaultAppID(srvData.ctx)
 	if err != nil {
-		blog.Errorf("delete host batch  SearchObjects http do error, err: %v, input:%#v, rid:%s", err, opt, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommHTTPDoRequestFailed)})
-		return
-	}
-	if !result.Result {
-		blog.Errorf("delete host in batch SearchObjects http response error, err code:%d,err msg:%s, input:%+v, rid:%s", result.Code, result.ErrMsg, opt, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.New(result.Code, result.ErrMsg)})
-		return
-	}
-
-	if len(result.Data.Info) == 0 {
-		blog.Errorf("delete host batch, but can not found it's instance. input:%+v,rid:%s", opt, srvData.rid)
-		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrHostNotFound)})
-		return
-	}
-
-	appID, err := result.Data.Info[0].Int64(common.BKAppIDField)
-	if err != nil {
-		blog.Errorf("delete host batch, but got invalid app id, err: %v, appinfo:%+v,input:%s,rid:%s", err, result.Data.Info[0], opt, srvData.rid)
+		blog.Errorf("delete host batch, but got invalid app id, err: %v,input:%s,rid:%s", err, opt, srvData.rid)
 		resp.WriteError(http.StatusInternalServerError, &meta.RespError{Msg: srvData.ccErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
 		return
 	}
