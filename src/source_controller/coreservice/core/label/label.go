@@ -43,12 +43,16 @@ func (p *labelOperation) AddLabel(ctx core.ContextParams, tableName string, opti
 		filter := map[string]interface{}{
 			common.BKFieldID: instanceID,
 		}
-		data := selector.LabelInstance{}
+		data := &selector.LabelInstance{}
 		if err := p.dbProxy.Table(tableName).Find(filter).One(ctx.Context, data); err != nil {
 			blog.Errorf("AddLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
-		data.Labels.AddLabel(option.Labels)
+		if data.Labels != nil {
+			data.Labels.AddLabel(option.Labels)
+		} else {
+			data.Labels = option.Labels
+		}
 		if err := p.dbProxy.Table(tableName).Update(ctx.Context, filter, data); err != nil {
 			blog.Errorf("AddLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)
@@ -62,12 +66,16 @@ func (p *labelOperation) RemoveLabel(ctx core.ContextParams, tableName string, o
 		filter := map[string]interface{}{
 			common.BKFieldID: instanceID,
 		}
-		data := selector.LabelInstance{}
+		data := &selector.LabelInstance{}
 		if err := p.dbProxy.Table(tableName).Find(filter).One(ctx.Context, data); err != nil {
 			blog.Errorf("RemoveLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
-		data.Labels.RemoveLabel(option.Keys)
+		if data.Labels != nil {
+			data.Labels.RemoveLabel(option.Keys)
+		} else {
+			data.Labels = make(map[string]string)
+		}
 		if err := p.dbProxy.Table(tableName).Update(ctx.Context, filter, data); err != nil {
 			blog.Errorf("RemoveLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, ctx.ReqID)
 			return ctx.Error.CCErrorf(common.CCErrCommDBUpdateFailed)

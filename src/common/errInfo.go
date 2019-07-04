@@ -179,6 +179,8 @@ const (
 
 	CCErrCommParametersCountNotEnough = 1199063
 
+	CCErrCommFuncCalledWithInappropriateParam = 1199064
+
 	// unknown or unrecognized error
 	CCErrorUnknownOrUnrecognizedError = 1199998
 

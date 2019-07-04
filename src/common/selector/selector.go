@@ -60,69 +60,69 @@ var AvailableOperators = []Operator{
 }
 
 type Selector struct {
-	key      string
-	operator Operator
-	values   []string
+	Key      string   `json:"key" field:"key" bson:"key"`
+	Operator Operator `json:"operator" field:"operator" bson:"operator"`
+	Values   []string `json:"values" field:"values" bson:"values"`
 }
 
 func (s *Selector) Validate() (string, error) {
-	if util.InArray(s.operator, AvailableOperators) == false {
-		return "operator", fmt.Errorf("operator %s not available, available operators: %+v", s.operator, AvailableOperators)
+	if util.InArray(s.Operator, AvailableOperators) == false {
+		return "operator", fmt.Errorf("operator %s not available, available operators: %+v", s.Operator, AvailableOperators)
 	}
 
-	if (s.operator == In || s.operator == NotIn) && len(s.values) == 0 {
+	if (s.Operator == In || s.Operator == NotIn) && len(s.Values) == 0 {
 		return "values", errors.New("values shouldn't be empty")
 	}
 
-	if (s.operator == Exists || s.operator == DoesNotExist) && len(s.values) > 0 {
+	if (s.Operator == Exists || s.Operator == DoesNotExist) && len(s.Values) > 0 {
 		return "values", errors.New("values shouldn be empty")
 	}
 
-	if (s.operator == Equals || s.operator == NotEquals) && len(s.values) != 1 {
+	if (s.Operator == Equals || s.Operator == NotEquals) && len(s.Values) != 1 {
 		return "values", errors.New("values field length for equal operation should exactly one")
 	}
 
-	if LabelNGKeyRule.MatchString(s.key) == false {
-		return "key", fmt.Errorf("key %s invalid", s.key)
+	if LabelNGKeyRule.MatchString(s.Key) == false {
+		return "key", fmt.Errorf("key %s invalid", s.Key)
 	}
 	return "", nil
 }
 
 func (s *Selector) ToMgoFilter() (map[string]interface{}, error) {
 	filter := make(map[string]interface{})
-	field := "labels." + s.key
-	switch s.operator {
+	field := "labels." + s.Key
+	switch s.Operator {
 	case In:
 		filter = map[string]interface{}{
 			field: map[string]interface{}{
-				common.BKDBIN: s.values,
+				common.BKDBIN: s.Values,
 			},
 		}
 	case NotIn:
 		filter = map[string]interface{}{
 			field: map[string]interface{}{
-				common.BKDBNIN: s.values,
+				common.BKDBNIN: s.Values,
 			},
 		}
 	case DoesNotExist, Exists:
 		filter = map[string]interface{}{
 			field: map[string]interface{}{
-				common.BKDBExists: s.operator == Exists,
+				common.BKDBExists: s.Operator == Exists,
 			},
 		}
 	case Equals:
-		if len(s.values) == 0 {
+		if len(s.Values) == 0 {
 			return nil, errors.New("values empty")
 		}
-		firstValue := s.values[0]
+		firstValue := s.Values[0]
 		filter = map[string]interface{}{
 			field: firstValue,
 		}
 	case NotEquals:
-		if len(s.values) == 0 {
+		if len(s.Values) == 0 {
 			return nil, errors.New("values empty")
 		}
-		firstValue := s.values[0]
+		firstValue := s.Values[0]
 		filter = map[string]interface{}{
 			field: map[string]interface{}{
 				common.BKDBNot: firstValue,

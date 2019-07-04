@@ -13,12 +13,12 @@
 package label
 
 import (
-	"configcenter/src/common/selector"
 	"context"
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/selector"
 )
 
 type LabelInterface interface {
