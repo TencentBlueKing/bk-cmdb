@@ -38,6 +38,7 @@ usage:
 """
 
 if __name__ == "__main__":
+    print("argv", sys.argv)
     # bin_path = os.environ.get("BIN_PATH")
     bin_path = sys.argv[1]
     # target_name = os.environ.get("TARGET_NAME")
@@ -46,12 +47,10 @@ if __name__ == "__main__":
     resource_dir = sys.argv[3]
     # script_dir = os.environ.get("SCRIPT_DIR")
     script_dir = sys.argv[4]
-    # target_name = os.environ.get("TARGET_NAME")
-    target_name = sys.argv[5]
     # target_port = os.environ.get("TARGET_PORT")
-    target_port = sys.argv[6]
+    target_port = sys.argv[5]
     # version = os.environ.get("VERSION")
-    version = sys.argv[7]
+    version = sys.argv[6]
 
     # @rm -rf $(BIN_PATH)/$(TARGET_NAME)
     # @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/errors

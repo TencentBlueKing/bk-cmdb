@@ -41,7 +41,7 @@ TARGET_PORT?=9999
 
 # building
 ${TARGET_NAME}: $(GOFILES_ALL)
-	@python $(SCRIPT_DIR)/prepare_cfg.py $(BIN_PATH) $(TARGET_NAME) $(RESOURCE_DIR) $(SCRIPT_DIR) $(TARGET_NAME) $(TARGET_PORT) $(VERSION)
+	@python $(SCRIPT_DIR)/prepare_cfg.py $(BIN_PATH) $(TARGET_NAME) $(RESOURCE_DIR) $(SCRIPT_DIR) $(TARGET_PORT) $(VERSION)
 	@echo 
 	@echo -e "\033[34mbuilding the target: $@... \033[0m"
 	@echo 
