@@ -51,7 +51,7 @@
                 </button>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow"
@@ -66,7 +66,7 @@
                 @save="saveField"
                 @cancel="handleSliderBeforeClose">
             </the-field-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

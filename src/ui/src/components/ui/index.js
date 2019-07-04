@@ -5,7 +5,6 @@ import clipboardSelector from './selector/clipboard.vue'
 import selector from './selector/selector.vue'
 import table from './table/table.vue'
 import tableSelector from './table/table-selector.vue'
-import slider from './slider/slider.vue'
 import details from './details/details.vue'
 import form from './form/form.vue'
 import formMultiple from './form/form-multiple.vue'
@@ -35,7 +34,6 @@ const install = (Vue, opts = {}) => {
         selector,
         table,
         tableSelector,
-        slider,
         details,
         form,
         formMultiple,
@@ -71,7 +69,6 @@ export default {
     selector,
     table,
     tableSelector,
-    slider,
     details,
     form,
     formMultiple,

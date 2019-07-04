@@ -78,7 +78,7 @@
                 </p>
             </div>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="slider.show"
             :title="slider.title"
             :before-close="handleSliderBeforeClose"
@@ -90,8 +90,8 @@
                 @saveSuccess="saveSuccess"
                 @cancel="closeSlider">
             </v-create>
-            <bk-tab :active-name.sync="tab.active" slot="content" v-else>
-                <bk-tabpanel name="details" :title="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content" v-else>
+                <bk-tab-panel name="details" :label="$t('Cloud[\'任务详情\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <v-update v-if="attribute.type === 'update'"
                         ref="detail"
                         :type="attribute.type"
@@ -106,14 +106,14 @@
                         @edit="handleEdit"
                         @cancel="closeSlider">
                     </v-task-details>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('Cloud[\'同步历史\']')" :show="['update', 'details'].includes(attribute.type)">
                     <v-sync-history
                         :cur-push="curPush">
                     </v-sync-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

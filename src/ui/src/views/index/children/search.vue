@@ -9,15 +9,16 @@
                 <div class="search-loading" v-bkloading="{ isLoading: loading }" v-if="loading"></div>
                 <div :class="['result-layout', { 'result-layout-empty': !resultTabpanels.length }]" v-show="!loading">
                     <bk-tab class="result-tab" v-if="resultTabpanels.length"
-                        :active-name.sync="resultTab.active"
+                        type="unborder-card"
+                        :active.sync="resultTab.active"
                         :size="'small'"
                         :head-style="resultTab.headStyle">
-                        <bk-tabpanel v-for="(panel, index) in resultTabpanels"
+                        <bk-tab-panel v-for="(panel, index) in resultTabpanels"
                             :key="index"
                             :name="panel"
-                            :title="getPanelTitle(panel)">
+                            :label="getPanelTitle(panel)">
                             <v-search-item :list="resultTab.list[panel]" :model="panel"></v-search-item>
-                        </bk-tabpanel>
+                        </bk-tab-panel>
                     </bk-tab>
                     <div class="result-empty" v-else>{{$t('Common["暂时没有数据"]')}}</div>
                     <div class="result-more" v-if="hasMore()" @click="showMore">{{$t('Index["查看更多结果"]')}}</div>

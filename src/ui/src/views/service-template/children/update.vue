@@ -58,7 +58,10 @@
                 <process-table></process-table>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :width="800"
+            :title="slider.title">
             <template slot="content">
                 <process-form
                     :properties="properties"
@@ -71,7 +74,7 @@
                     @on-cancel="handleSliderCancel">
                 </process-form>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

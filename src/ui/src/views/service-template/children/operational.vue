@@ -74,7 +74,11 @@
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
             <template slot="content">
                 <process-form
                     ref="processForm"
@@ -89,7 +93,7 @@
                     @on-cancel="handleCancelProcess">
                 </process-form>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
         <bk-dialog
             :is-show.sync="createdSucess.show"
             :width="490"

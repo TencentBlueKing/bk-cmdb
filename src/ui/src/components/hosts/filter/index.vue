@@ -2,8 +2,8 @@
     <div class="hosts-filter-layout" :class="{ close }">
         <i class="filter-toggle bk-icon icon-angle-right" @click="close = !close"></i>
         <div class="filter-main">
-            <bk-tab class="filter-tab" size="small" :active-name.sync="tab.active" style="padding: 0">
-                <bk-tabpanel name="filter" :title="$t('HostResourcePool[\'筛选\']')" v-if="activeTab.includes('filter')">
+            <bk-tab class="filter-tab" type="unborder-card" :active.sync="tab.active" style="padding: 0">
+                <bk-tab-panel name="filter" :label="$t('HostResourcePool[\'筛选\']')" v-if="activeTab.includes('filter')">
                     <keep-alive>
                         <the-filter ref="theFilter"
                             v-if="tab.active === 'filter'"
@@ -16,10 +16,10 @@
                             <slot name="scope" slot="scope"></slot>
                         </the-filter>
                     </keep-alive>
-                </bk-tabpanel>
-                <bk-tabpanel name="collection" :title="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
+                </bk-tab-panel>
+                <bk-tab-panel name="collection" :label="$t('Hosts[\'收藏\']')" v-if="activeTab.includes('collection')">
                     <the-collection v-if="tab.active === 'collection'" @on-apply="handleApplyCollection"></the-collection>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
         </div>
     </div>

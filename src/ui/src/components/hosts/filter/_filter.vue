@@ -89,14 +89,14 @@
                 </div>
             </div>
         </div>
-        <cmdb-slider :is-show.sync="filterConfig.show" :title="$t('HostResourcePool[\'主机筛选项设置\']')" :width="600">
+        <bk-sideslider :is-show.sync="filterConfig.show" :title="$t('HostResourcePool[\'主机筛选项设置\']')" :width="600">
             <cmdb-filter-config slot="content"
                 :properties="filterConfigProperties"
                 :selected="customFields"
                 @on-cancel="filterConfig.show = false"
                 @on-apply="handleApplyFilterConfig">
             </cmdb-filter-config>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

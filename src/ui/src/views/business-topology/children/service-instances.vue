@@ -81,7 +81,8 @@
         <service-instance-empty v-else
             @create-instance-success="handleCreateInstanceSuccess">
         </service-instance-empty>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :title="processForm.title"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
@@ -95,7 +96,7 @@
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

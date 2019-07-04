@@ -96,19 +96,19 @@
                 </div>
             </template>
         </div>
-        <bk-tab class="model-details-tab" :active-name.sync="tab.active">
-            <bk-tabpanel name="field" :title="$t('ModelManagement[\'模型字段\']')">
+        <bk-tab class="model-details-tab" type="unborder-card" :active.sync="tab.active">
+            <bk-tab-panel name="field" :label="$t('ModelManagement[\'模型字段\']')">
                 <the-field ref="field" v-if="tab.active === 'field'"></the-field>
-            </bk-tabpanel>
-            <bk-tabpanel name="relation" :title="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
+            </bk-tab-panel>
+            <bk-tab-panel name="relation" :label="$t('ModelManagement[\'模型关联\']')" :show="activeModel && !specialModel.includes(activeModel['bk_obj_id'])">
                 <the-relation v-if="tab.active === 'relation'"></the-relation>
-            </bk-tabpanel>
-            <bk-tabpanel name="verification" :title="$t('ModelManagement[\'唯一校验\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="verification" :label="$t('ModelManagement[\'唯一校验\']')">
                 <the-verification v-if="tab.active === 'verification'"></the-verification>
-            </bk-tabpanel>
-            <bk-tabpanel name="propertyGroup" :title="$t('ModelManagement[\'字段分组\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="propertyGroup" :label="$t('ModelManagement[\'字段分组\']')">
                 <the-property-group v-if="tab.active === 'propertyGroup'"></the-property-group>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>

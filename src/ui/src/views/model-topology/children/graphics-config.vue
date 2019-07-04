@@ -1,5 +1,5 @@
 <template>
-    <cmdb-slider
+    <bk-sideslider
         :is-show.sync="isShow"
         :width="600"
         :title="$t('ModelManagement[\'拓扑显示设置\']')"
@@ -76,7 +76,7 @@
                 </bk-button>
             </div>
         </div>
-    </cmdb-slider>
+    </bk-sideslider>
 </template>
 
 <script>

@@ -51,9 +51,12 @@
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
         </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content">
+                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -80,21 +83,21 @@
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="moduleBind" :title="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
+                </bk-tab-panel>
+                <bk-tab-panel name="moduleBind" :label="$t('ProcessManagement[\'模块绑定\']')" :show="attribute.type === 'details'">
                     <v-module v-if="tab.active === 'moduleBind'"
                         :process-id="attribute.inst.details['bk_process_id']"
                         :biz-id="bizId">
                     </v-module>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :show="attribute.type === 'details'">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         target="process"
                         :inst-id="attribute.inst.details['bk_process_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

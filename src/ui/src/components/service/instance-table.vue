@@ -35,7 +35,8 @@
                 <span>{{$t('BusinessTopology["添加进程"]')}}</span>
             </button>
         </div>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :title="`${$t('BusinessTopology[\'添加进程\']')}(${name})`"
             :is-show.sync="processForm.show"
             :before-close="handleBeforeClose">
@@ -49,7 +50,7 @@
                 @on-submit="handleSaveProcess"
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

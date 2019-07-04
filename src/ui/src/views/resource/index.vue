@@ -96,9 +96,12 @@
                 </div>
             </div>
         </cmdb-hosts-table>
-        <cmdb-slider :is-show.sync="importInst.show" :title="$t('HostResourcePool[\'批量导入\']')">
-            <bk-tab :active-name.sync="importInst.active" slot="content">
-                <bk-tabpanel name="import" :title="$t('HostResourcePool[\'批量导入\']')">
+        <bk-sideslider
+            :is-show.sync="importInst.show"
+            :width="800"
+            :title="$t('HostResourcePool[\'批量导入\']')">
+            <bk-tab :active.sync="importInst.active" type="unborder-card" slot="content">
+                <bk-tab-panel name="import" :label="$t('HostResourcePool[\'批量导入\']')">
                     <cmdb-import v-if="importInst.show && importInst.active === 'import'"
                         :template-url="importInst.templateUrl"
                         :import-url="importInst.importUrl"
@@ -108,8 +111,8 @@
                             {{$t('HostResourcePool["说明：内网IP为必填列"]')}}
                         </span>
                     </cmdb-import>
-                </bk-tabpanel>
-                <bk-tabpanel name="agent" :title="$t('HostResourcePool[\'自动导入\']')">
+                </bk-tab-panel>
+                <bk-tab-panel name="agent" :label="$t('HostResourcePool[\'自动导入\']')">
                     <div class="automatic-import">
                         <p>{{$t("HostResourcePool['agent安装说明']")}}</p>
                         <div class="back-contain">
@@ -117,9 +120,9 @@
                             <a href="javascript:void(0)" @click="openAgentApp">{{$t("HostResourcePool['点此进入节点管理']")}}</a>
                         </div>
                     </div>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

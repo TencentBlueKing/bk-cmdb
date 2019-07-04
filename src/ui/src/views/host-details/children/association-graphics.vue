@@ -28,7 +28,8 @@
                 {{$t('Common["详情信息"]')}}
             </a>
         </div>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :is-show.sync="details.show"
             :title="details.title">
             <cmdb-details slot="content"
@@ -37,7 +38,7 @@
                 :properties="details.properties"
                 :property-groups="details.propertyGroups">
             </cmdb-details>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

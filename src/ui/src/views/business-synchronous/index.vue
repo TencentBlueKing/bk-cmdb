@@ -101,14 +101,14 @@
             </div>
         </template>
 
-        <cmdb-slider
+        <bk-sideslider
             :width="676"
             :is-show.sync="slider.show"
             :title="slider.title">
             <template slot="content">
                 <instance-details :attribute-list="slider.details"></instance-details>
             </template>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

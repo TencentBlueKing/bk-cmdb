@@ -43,7 +43,7 @@
                 <p>{{$t("Common['暂时没有数据']")}}</p>
             </div>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="slider.isShow"
             :has-quick-close="true"
             :width="430"
@@ -59,7 +59,7 @@
                 @update="getUserAPIList"
                 @cancel="hideUserAPISlider">
             </v-define>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

@@ -36,9 +36,9 @@
         <div class="association-view">
             <component :is="activeView"></component>
         </div>
-        <cmdb-slider :is-show.sync="showCreate">
+        <bk-sideslider :is-show.sync="showCreate" :width="800">
             <cmdb-host-association-create slot="content" v-if="showCreate"></cmdb-host-association-create>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

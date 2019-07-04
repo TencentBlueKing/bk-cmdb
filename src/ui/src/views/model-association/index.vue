@@ -65,7 +65,7 @@
                 </span>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             class="relation-slider"
             :width="450"
             :title="slider.title"
@@ -78,7 +78,7 @@
                 @saved="saveRelation"
                 @cancel="slider.isShow = false">
             </the-relation>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

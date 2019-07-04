@@ -43,7 +43,7 @@
                 </div>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow">
@@ -57,7 +57,7 @@
                 @save="saveVerification"
                 @cancel="slider.isShow = false">
             </the-verification-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

@@ -9,7 +9,6 @@ import './bk-magic-ui/src/common.scss'
 
 import Vue from 'vue'
 import bkDropdownMenu from './components/dropdown-menu'
-import bkSideslider from './components/sideslider'
 import bkSwitcher from './components/switcher'
 import bkTagInput from './components/tag-input'
 import bkDialog from './components/dialog'
@@ -25,7 +24,6 @@ import bkTooltip from './components/tooltip'
 import bkDatePicker from './components/date-picker'
 import bkDateRange from './components/date-range'
 import bkSelector from './components/selector'
-import Tab from './components/tab'
 import bkPaging from './components/paging'
 import bkTransfer from './components/transfer'
 import bkTree from './components/tree'
@@ -49,11 +47,6 @@ const langPkg = {
     zhCN
 }
 
-const {
-    bkTab,
-    bkTabpanel
-} = Tab
-
 const components = {
     bkBadge,
     bkCollapse,
@@ -69,11 +62,8 @@ const components = {
     bkProcess,
     bkRound,
     bkSelector,
-    bkSideslider,
     bkSteps,
     bkSwitcher,
-    bkTab,
-    bkTabpanel,
     bkTagInput,
     bkTimeline,
     bkTooltip,
@@ -147,7 +137,6 @@ export {
     bkProcess,
     bkRound,
     bkSelector,
-    bkSideslider,
     bkSteps,
     bkSwitcher,
     bkTab,

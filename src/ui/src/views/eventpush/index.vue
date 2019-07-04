@@ -68,7 +68,7 @@
                 <p>{{$t("EventPush['事件推送功能提示']")}}</p>
             </div>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="slider.isShow"
             :title="slider.title"
             :width="564"
@@ -81,7 +81,7 @@
                 @saveSuccess="saveSuccess"
                 @cancel="closeSlider">
             </v-push-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

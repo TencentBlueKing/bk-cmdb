@@ -35,9 +35,10 @@
             </bk-button>
             <bk-button class="options-button" @click="backToModule">{{$t('Common["取消"]')}}</bk-button>
         </div>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="processForm.show"
             :title="processForm.title"
+            :width="800"
             :before-close="handleBeforeClose">
             <cmdb-form slot="content"
                 ref="processForm"
@@ -48,7 +49,7 @@
                 @on-submit="handleSubmit"
                 @on-cancel="handleBeforeClose">
             </cmdb-form>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

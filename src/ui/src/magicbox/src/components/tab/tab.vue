@@ -40,15 +40,15 @@
      * @desc 选项卡
      * @param type {String} 选项卡类型
      * @param size {String} 选项卡尺寸
-     * @param active-name {String} 当前显示的子面板的别名，对应`bk-tabpanel`属性中的`name`字段
+     * @param active-name {String} 当前显示的子面板的别名，对应`bk-tab-panel`属性中的`name`字段
      * @example
      *  <bk-tab :size= "'small'" :active-name="'project1'" @tab-changed="tabChanged">
-            <bk-tabpanel name="project1" title="项目一">
+            <bk-tab-panel name="project1" title="项目一">
                 <div class="p15 f12">项目一</div>
-            </bk-tabpanel>
-            <bk-tabpanel name="project2" title="项目二">
+            </bk-tab-panel>
+            <bk-tab-panel name="project2" title="项目二">
                 <div class="p15 f12">项目二</div>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
      */
 
