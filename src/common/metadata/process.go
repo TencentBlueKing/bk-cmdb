@@ -89,10 +89,11 @@ type DeleteProcessInstanceInServiceInstanceInput struct {
 }
 
 type GetServiceInstanceInModuleInput struct {
-	Metadata  Metadata `json:"metadata"`
-	ModuleID  int64    `json:"bk_module_id"`
-	Page      BasePage `json:"page"`
-	SearchKey *string  `json:"search_key,omitempty"`
+	Metadata  Metadata           `json:"metadata"`
+	ModuleID  int64              `json:"bk_module_id"`
+	Page      BasePage           `json:"page"`
+	SearchKey *string            `json:"search_key,omitempty"`
+	Selectors selector.Selectors `json:"selectors"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {

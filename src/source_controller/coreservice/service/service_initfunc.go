@@ -187,4 +187,5 @@ func (s *coreService) initService() {
 	s.audit()
 	s.initProcess()
 	s.initCloudSync()
+	s.label()
 }
