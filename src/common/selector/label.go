@@ -19,8 +19,8 @@ import (
 type Labels map[string]string
 
 var (
-	LabelNGKeyRule, _   = regexp.Compile("[a-z0-9A-Z]+([a-z0-9A-Z\\-_.]*[a-z0-9A-Z])?")
-	LabelNGValueRule, _ = regexp.Compile("[a-z0-9A-Z]+([a-z0-9A-Z\\-_.]*[a-z0-9A-Z])?")
+	LabelNGKeyRule   = regexp.MustCompile(`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
+	LabelNGValueRule = regexp.MustCompile(`^[a-z0-9A-Z]([a-z0-9A-Z\-_.]*[a-z0-9A-Z])?$`)
 )
 
 func (lng Labels) Validate() (string, error) {
@@ -36,7 +36,7 @@ func (lng Labels) Validate() (string, error) {
 		}
 
 		// validate value
-		field := fmt.Sprintf("%s/%s", key, value)
+		field := fmt.Sprintf("%s:%s", key, value)
 		if LabelNGValueRule.MatchString(value) == false {
 			return field, fmt.Errorf("value: %s format error", field)
 		}
