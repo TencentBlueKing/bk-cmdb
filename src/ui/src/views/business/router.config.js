@@ -29,7 +29,10 @@ export default [{
             parent: NAV_BASIC_RESOURCE
         },
         auth: {
-            operation: Object.values(OPERATION)
+            operation: Object.values(OPERATION),
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         i18nTitle: 'Nav["业务"]'
     })
@@ -39,8 +42,11 @@ export default [{
     component: () => import('./archived.vue'),
     meta: new Meta({
         auth: {
-            view: BUSINESS_ARCHIVE,
-            operation: [BUSINESS_ARCHIVE]
+            view: OPERATION.BUSINESS_ARCHIVE,
+            operation: [OPERATION.BUSINESS_ARCHIVE],
+            setAuthScope () {
+                this.authScope = 'global'
+            }
         },
         i18nTitle: 'Nav["业务"]'
     })

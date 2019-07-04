@@ -56,6 +56,7 @@ type ListServiceTemplateWithDetailResult struct {
 	ServiceTemplate      ServiceTemplate `json:"service_template"`
 	ProcessTemplateCount int64           `json:"process_template_count"`
 	ServiceInstanceCount int64           `json:"service_instance_count"`
+	ModuleCount          int64           `json:"module_count"`
 }
 
 type DeleteServiceTemplatesInput struct {
@@ -91,7 +92,6 @@ type GetServiceInstanceInModuleInput struct {
 	ModuleID  int64    `json:"bk_module_id"`
 	Page      BasePage `json:"page"`
 	SearchKey *string  `json:"search_key,omitempty"`
-	WithName  bool     `json:"with_name"`
 }
 
 type DiffServiceInstanceWithTemplateOption struct {
@@ -962,10 +962,16 @@ func (pt *ProcessProperty) Validate() (field string, err error) {
 
 // Update all not nil field from input to pt
 func (pt *ProcessProperty) Update(input ProcessProperty) {
+	selfType := reflect.TypeOf(pt).Elem()
 	selfVal := reflect.ValueOf(pt).Elem()
 	inputVal := reflect.ValueOf(input)
 	fieldCount := selfVal.NumField()
+	updateIgnoreField := []string{"FuncName"}
 	for fieldIdx := 0; fieldIdx < fieldCount; fieldIdx++ {
+		fieldName := selfType.Field(fieldIdx).Name
+		if util.InArray(fieldName, updateIgnoreField) == true {
+			continue
+		}
 		inputField := inputVal.Field(fieldIdx)
 		selfField := selfVal.Field(fieldIdx)
 		subFieldCount := inputField.NumField()
@@ -1162,4 +1168,16 @@ func (pir *ProcessInstanceRelation) Validate() (field string, err error) {
 type ProcessInstance struct {
 	Property mapstr.MapStr           `json:"property"`
 	Relation ProcessInstanceRelation `json:"relation"`
+}
+
+type GetProc2ModuleOption struct {
+	ProcessID int64 `json:"bk_process_id"`
+	BizID     int64 `json:"bk_biz_id"`
+}
+
+type Proc2Module struct {
+	BizID           int    `json:"bk_biz_id"`
+	ModuleName      string `json:"bk_module_name"`
+	ProcessID       int    `json:"bk_process_id"`
+	SupplierAccount string `json:"bk_supplier_account"`
 }
