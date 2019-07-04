@@ -19,9 +19,24 @@ import (
 	"configcenter/src/common/util"
 )
 
-type LabelOperateOption struct {
+type LabelAddOption struct {
 	InstanceIDs []int64 `json:"instance_ids"`
 	Labels      Labels  `json:"labels"`
+}
+
+type LabelAddRequest struct {
+	Option    LabelAddOption `json:"option"`
+	TableName string         `json:"table_name"`
+}
+
+type LabelRemoveOption struct {
+	InstanceIDs []int64  `json:"instance_ids"`
+	Keys        []string `json:"keys"`
+}
+
+type LabelRemoveRequest struct {
+	Option    LabelRemoveOption `json:"option"`
+	TableName string            `json:"table_name"`
 }
 
 type Operator string

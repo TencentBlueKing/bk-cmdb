@@ -168,6 +168,11 @@ func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
 }
 
+func (s *coreService) label() {
+	s.addAction(http.MethodPost, "/createmany/labels", s.AddLabels, nil)
+	s.addAction(http.MethodPost, "/deletemany/labels", s.RemoveLabels, nil)
+}
+
 func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()

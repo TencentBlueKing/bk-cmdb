@@ -53,8 +53,12 @@ func (lng Labels) AddLabel(l Labels) {
 	}
 }
 
-func (lng Labels) RemoveLabel(l Labels) {
-	for key := range l {
+func (lng Labels) RemoveLabel(keys []string) {
+	for _, key := range keys {
 		delete(lng, key)
 	}
+}
+
+type LabelInstance struct {
+	Labels Labels `bson:"labels" json:"labels"`
 }
