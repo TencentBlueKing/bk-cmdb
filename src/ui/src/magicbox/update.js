@@ -34,8 +34,6 @@ const components = [
     bkPagination,
     bkSideslider,
     bkSelect,
-    bkTab,
-    bkTabPanel,
     bkDialog,
     bkPopover
 ]
@@ -44,3 +42,6 @@ components.forEach(component => {
 })
 
 Vue.component('bk-button', bkButton)
+Vue.component('bk-tab', bkTab)
+Vue.component('bk-tab-panel', bkTabPanel)
+Vue.component('bk-sideslider', bkSideslider)

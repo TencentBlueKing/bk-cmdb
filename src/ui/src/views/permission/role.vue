@@ -45,7 +45,7 @@
             @on-success="handleCreateSuccess"
             @closeRoleForm="form.isShow = false">
         </v-role-form>
-        <cmdb-slider
+        <bk-sideslider
             :width="600"
             :title="slider.title"
             :is-show.sync="slider.isShow">
@@ -55,7 +55,7 @@
                 :group-id="slider.groupId"
                 @cancel="slider.isShow = false">
             </vAuthority>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

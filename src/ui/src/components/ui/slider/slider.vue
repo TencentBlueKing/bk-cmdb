@@ -19,7 +19,7 @@
 
 <script>
     export default {
-        name: 'cmdb-slider',
+        name: 'bk-sideslider',
         props: {
             /*
                 标题

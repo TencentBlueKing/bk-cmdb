@@ -25,11 +25,12 @@
                 {{$tools.formatTime(item['op_time'])}}
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="details.show"
+            :width="800"
             :title="$t('OperationAudit[\'操作详情\']')">
             <cmdb-host-history-details :details="details.data" slot="content"></cmdb-host-history-details>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

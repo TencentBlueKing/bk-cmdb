@@ -52,7 +52,7 @@
                 </button>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :width="450"
             :title="slider.title"
             :is-show.sync="slider.isShow">
@@ -66,7 +66,7 @@
                 @save="saveRelation"
                 @cancel="slider.isShow = false">
             </the-relation-detail>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

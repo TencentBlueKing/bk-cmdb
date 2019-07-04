@@ -67,11 +67,12 @@
             @handleSortChange="handleSortChange"
             @handleRowClick="handleRowClick"
         ></cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :is-show.sync="details.isShow"
+            :width="800"
             :title="$t('OperationAudit[\'操作详情\']')">
             <v-details :details="details.data" slot="content"></v-details>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

@@ -110,7 +110,8 @@
                 </div>
             </div>
         </bk-dialog>
-        <cmdb-slider
+        <bk-sideslider
+            :width="800"
             :is-show.sync="importSlider.isShow"
             :title="$t('HostResourcePool[\'批量导入\']')">
             <cmdb-import v-if="importSlider.isShow" slot="content"
@@ -119,7 +120,7 @@
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

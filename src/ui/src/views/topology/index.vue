@@ -46,8 +46,8 @@
             </bk-dialog>
         </cmdb-resize-layout>
         <div class="hosts-layout">
-            <bk-tab :active-name.sync="tab.active" @tab-changed="handleTabChanged">
-                <bk-tabpanel class="topo-tabpanel" name="hosts" :title="$t('BusinessTopology[\'主机调配\']')">
+            <bk-tab :active.sync="tab.active" type="unborder-card" @tab-changed="handleTabChanged">
+                <bk-tab-panel class="topo-tabpanel" name="hosts" :label="$t('BusinessTopology[\'主机调配\']')">
                     <bk-button class="topo-table-btn-refresh" theme="primary" style="display: none;"
                         :disabled="$loading()"
                         @click="handleRefresh">
@@ -63,8 +63,8 @@
                         :quick-search="true"
                         @on-quick-search="handleQuickSearch">
                     </cmdb-hosts-table>
-                </bk-tabpanel>
-                <bk-tabpanel name="attribute" :title="$t('BusinessTopology[\'节点属性\']')"
+                </bk-tab-panel>
+                <bk-tab-panel name="attribute" :label="$t('BusinessTopology[\'节点属性\']')"
                     v-bkloading="{ isLoading: $loading() }"
                     :show="showAttributePanel">
                     <cmdb-details class="topology-details"
@@ -88,15 +88,15 @@
                             </bk-button>
                         </template>
                     </cmdb-form>
-                </bk-tabpanel>
-                <bk-tabpanel name="process" :title="$t('ProcessManagement[\'进程信息\']')"
+                </bk-tab-panel>
+                <bk-tab-panel name="process" :label="$t('ProcessManagement[\'进程信息\']')"
                     :show="showProcessPanel">
                     <cmdb-topo-node-process
                         v-if="tab.active === 'process'"
                         :business="bizId"
                         :module="tree.selectedNode">
                     </cmdb-topo-node-process>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
         </div>
     </div>

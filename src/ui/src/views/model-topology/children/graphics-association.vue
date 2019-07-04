@@ -1,5 +1,5 @@
 <template>
-    <cmdb-slider
+    <bk-sideslider
         :width="514"
         :title="title"
         :is-show.sync="isShow"
@@ -96,7 +96,7 @@
                 </bk-button>
             </div>
         </div>
-    </cmdb-slider>
+    </bk-sideslider>
 </template>
 
 <script>

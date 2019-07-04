@@ -148,8 +148,8 @@
     }
     .relation-options {
         .options-full-screen {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             text-align: center;
             margin-right: 10px;

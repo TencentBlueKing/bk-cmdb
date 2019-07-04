@@ -74,7 +74,7 @@
                 </template>
             </template>
         </cmdb-table>
-        <cmdb-slider
+        <bk-sideslider
             :width="740"
             :title="slider.title"
             :is-show.sync="slider.isShow">
@@ -87,7 +87,7 @@
                 @toggleSwitcher="toggleSwitcher"
                 @updateView="updateView"
             ></v-confirm-details>
-        </cmdb-slider>
+        </bk-sideslider>
         <div class="footer">
             <bk-button theme="primary" @click="showResultDialog">
                 {{$t('NetworkDiscovery["确认变更"]')}}

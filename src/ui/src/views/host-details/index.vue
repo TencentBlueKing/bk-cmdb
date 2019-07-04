@@ -5,22 +5,23 @@
             @info-toggle="setInfoHeight">
         </cmdb-host-info>
         <bk-tab class="details-tab"
-            :active-name.sync="active"
+            type="unborder-card"
+            :active.sync="active"
             :style="{
                 '--infoHeight': infoHeight
             }">
-            <bk-tabpanel name="property" :title="$t('HostDetails[\'主机属性\']')">
+            <bk-tab-panel name="property" :label="$t('HostDetails[\'主机属性\']')">
                 <cmdb-host-property></cmdb-host-property>
-            </bk-tabpanel>
-            <bk-tabpanel name="association" :title="$t('HostDetails[\'关联\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="association" :label="$t('HostDetails[\'关联\']')">
                 <cmdb-host-association v-if="active === 'association'"></cmdb-host-association>
-            </bk-tabpanel>
-            <bk-tabpanel name="status" :title="$t('HostDetails[\'实时状态\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="status" :label="$t('HostDetails[\'实时状态\']')">
                 <cmdb-host-status v-if="active === 'status'"></cmdb-host-status>
-            </bk-tabpanel>
-            <bk-tabpanel name="history" :title="$t('HostDetails[\'变更记录\']')">
+            </bk-tab-panel>
+            <bk-tab-panel name="history" :label="$t('HostDetails[\'变更记录\']')">
                 <cmdb-host-history v-if="active === 'history'"></cmdb-host-history>
-            </bk-tabpanel>
+            </bk-tab-panel>
         </bk-tab>
     </div>
 </template>

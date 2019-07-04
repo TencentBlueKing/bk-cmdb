@@ -109,9 +109,13 @@
             @handlePageChange="handlePageChange"
             @handleCheckAll="handleCheckAll">
         </cmdb-table>
-        <cmdb-slider :is-show.sync="slider.show" :title="slider.title" :before-close="handleSliderBeforeClose">
-            <bk-tab :active-name.sync="tab.active" slot="content">
-                <bk-tabpanel name="attribute" :title="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
+        <bk-sideslider
+            :is-show.sync="slider.show"
+            :title="slider.title"
+            :width="800"
+            :before-close="handleSliderBeforeClose">
+            <bk-tab :active.sync="tab.active" type="unborder-card" slot="content">
+                <bk-tab-panel name="attribute" :label="$t('Common[\'属性\']')" style="width: calc(100% + 40px);margin: 0 -20px;">
                     <cmdb-details v-if="attribute.type === 'details'"
                         :properties="properties"
                         :property-groups="propertyGroups"
@@ -140,24 +144,24 @@
                         @on-submit="handleMultipleSave"
                         @on-cancel="handleMultipleCancel">
                     </cmdb-form-multiple>
-                </bk-tabpanel>
-                <bk-tabpanel name="relevance" :title="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="relevance" :label="$t('HostResourcePool[\'关联\']')" :show="['update', 'details'].includes(attribute.type)">
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         :auth="$OPERATION.U_INST"
                         :obj-id="objId"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
-                </bk-tabpanel>
-                <bk-tabpanel name="history" :title="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
+                </bk-tab-panel>
+                <bk-tab-panel name="history" :label="$t('HostResourcePool[\'变更记录\']')" :show="['update', 'details'].includes(attribute.type)">
                     <cmdb-audit-history v-if="tab.active === 'history'"
                         :target="objId"
                         :inst-id="attribute.inst.details['bk_inst_id']">
                     </cmdb-audit-history>
-                </bk-tabpanel>
+                </bk-tab-panel>
             </bk-tab>
-        </cmdb-slider>
-        <cmdb-slider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
+        </bk-sideslider>
+        <bk-sideslider :is-show.sync="columnsConfig.show" :width="600" :title="$t('BusinessTopology[\'列表显示属性配置\']')">
             <cmdb-columns-config slot="content"
                 :properties="properties"
                 :selected="columnsConfig.selected"
@@ -166,9 +170,10 @@
                 @on-cancel="columnsConfig.show = false"
                 @on-reset="handleResetColumnsConfig">
             </cmdb-columns-config>
-        </cmdb-slider>
-        <cmdb-slider
+        </bk-sideslider>
+        <bk-sideslider
             :is-show.sync="importSlider.show"
+            :width="800"
             :title="$t('HostResourcePool[\'批量导入\']')">
             <cmdb-import v-if="importSlider.show" slot="content"
                 :template-url="url.template"
@@ -178,7 +183,7 @@
                 @success="handlePageChange(1)"
                 @partialSuccess="handlePageChange(1)">
             </cmdb-import>
-        </cmdb-slider>
+        </bk-sideslider>
     </div>
 </template>
 

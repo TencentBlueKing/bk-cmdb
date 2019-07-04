@@ -88,7 +88,7 @@
             </ul>
         </template>
         
-        <cmdb-slider
+        <bk-sideslider
             :width="slider.width"
             :is-show.sync="slider.isShow"
             :title="slider.title"
@@ -101,7 +101,7 @@
                 @save="handleSliderSave"
                 @cancel="handleSliderCancel"
             ></component>
-        </cmdb-slider>
+        </bk-sideslider>
         <div class="global-model" ref="topo" v-bkloading="{ isLoading: loading }"
             @dragover.prevent=""
             @drop="handleDrop"

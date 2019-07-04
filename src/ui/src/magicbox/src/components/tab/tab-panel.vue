@@ -5,7 +5,7 @@
 </template>
 <script>
 export default {
-    name: 'bk-tabpanel',
+    name: 'bk-tab-panel',
     props: {
         name: {
             type: String,
