@@ -19,34 +19,33 @@ import (
 
 // TransferHostToInnerModule transfer host to inner module
 // 转移到空闲机/故障机模块
-func (hm *hostManager) TransferHostToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferHostToInnerModule(ctx, input)
+func (hm *hostManager) TransferToInnerModule(ctx core.ContextParams, input *metadata.TransferHostToInnerModule) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferToInnerModule(ctx, input)
 }
 
-// TransferHostModule transfer host to  module
+// TransferToNormalModule transfer host to normal module(modules except idle and fault module)
 // 业务内主机转移
 // 将主机转移到 input 表示的目标模块中
 // IsIncrement 控制增量更新还是覆盖更新
-func (hm *hostManager) TransferHostModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferHostModule(ctx, input)
+func (hm *hostManager) TransferToNormalModule(ctx core.ContextParams, input *metadata.HostsModuleRelation) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferToNormalModule(ctx, input)
 }
 
-// TransferHostCrossBusiness transfer host to other business module
-// 业务间主机转移
-func (hm *hostManager) TransferHostCrossBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.TransferHostCrossBusiness(ctx, input)
+// TransferToAnotherBusiness transfer host to another business module
+func (hm *hostManager) TransferToAnotherBusiness(ctx core.ContextParams, input *metadata.TransferHostsCrossBusinessRequest) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.TransferToAnotherBusiness(ctx, input)
+}
+
+// DeleteHost delete host from cmdb
+func (hm *hostManager) DeleteFromSystem(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.DeleteFromSystem(ctx, input)
+}
+
+// RemoveFromModule remove from one of original modules
+func (hm *hostManager) RemoveFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
+	return hm.moduleHost.RemoveFromModule(ctx, input)
 }
 
 func (hm *hostManager) GetHostModuleRelation(ctx core.ContextParams, input *metadata.HostModuleRelationRequest) ([]metadata.ModuleHost, error) {
 	return hm.moduleHost.GetHostModuleRelation(ctx, input)
-}
-
-// DeleteHost delete host module relation and host info
-// 删除主机之后，CMDB中找不到主机记录
-func (hm *hostManager) DeleteHost(ctx core.ContextParams, input *metadata.DeleteHostRequest) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.DeleteHost(ctx, input)
-}
-
-func (hm *hostManager) RemoveHostFromModule(ctx core.ContextParams, input *metadata.RemoveHostsFromModuleOption) ([]metadata.ExceptionResult, error) {
-	return hm.moduleHost.RemoveHostFromModule(ctx, input)
 }

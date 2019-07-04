@@ -62,6 +62,8 @@ type ProcessInterface interface {
 	DeleteProcessInstanceRelation(ctx context.Context, h http.Header, option metadata.DeleteProcessInstanceRelationOption) errors.CCErrorCoder
 
 	RemoveTemplateBindingOnModule(ctx context.Context, h http.Header, moduleID int64) (*metadata.RemoveTemplateBoundOnModuleResult, errors.CCErrorCoder)
+	ReconstructServiceInstanceName(ctx context.Context, h http.Header, instanceID int64) errors.CCErrorCoder
+	GetProc2Module(ctx context.Context, h http.Header, option metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
 }
 
 func NewProcessInterfaceClient(client rest.ClientInterface) ProcessInterface {

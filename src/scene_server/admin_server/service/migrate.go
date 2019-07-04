@@ -32,7 +32,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	err := upgrader.Upgrade(s.ctx, s.db, &upgrader.Config{
 		OwnerID:      ownerID,
 		SupplierID:   common.BKDefaultSupplierID,
-		User:         "migrate",
+		User:         common.CCSystemOperatorUserName,
 		CCApiSrvAddr: s.ccApiSrvAddr,
 	})
 

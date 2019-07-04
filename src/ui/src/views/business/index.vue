@@ -3,23 +3,23 @@
         <div class="business-options clearfix">
             <span class="fl" v-if="isAdminView"
                 v-cursor="{
-                    active: !$isAuthorized(OPERATION.C_BUSINESS),
-                    auth: [OPERATION.C_BUSINESS]
+                    active: !$isAuthorized($OPERATION.C_BUSINESS),
+                    auth: [$OPERATION.C_BUSINESS]
                 }">
                 <bk-button class="fl" type="primary"
-                    :disabled="!$isAuthorized(OPERATION.C_BUSINESS)"
+                    :disabled="!$isAuthorized($OPERATION.C_BUSINESS)"
                     @click="handleCreate">
                     {{$t("Common['新建']")}}
                 </bk-button>
             </span>
             <div class="options-button fr">
                 <span class="inline-block-middle" v-cursor="{
-                    active: !$isAuthorized(OPERATION.BUSINESS_ARCHIVE),
-                    auth: [OPERATION.BUSINESS_ARCHIVE]
+                    active: !$isAuthorized($OPERATION.BUSINESS_ARCHIVE),
+                    auth: [$OPERATION.BUSINESS_ARCHIVE]
                 }">
                     <bk-button class="button-history"
                         v-tooltip.bottom="$t('Common[\'查看删除历史\']')"
-                        :disabled="!$isAuthorized(OPERATION.BUSINESS_ARCHIVE)"
+                        :disabled="!$isAuthorized($OPERATION.BUSINESS_ARCHIVE)"
                         @click="routeToHistory">
                         <i class="icon-cc-history2"></i>
                     </bk-button>
@@ -78,8 +78,8 @@
                         :delete-button-text="$t('Inst[\'归档\']')"
                         :show-delete="attribute.inst.details['bk_biz_name'] !== '蓝鲸'"
                         :show-options="isAdminView"
-                        :edit-auth="OPERATION.U_BUSINESS"
-                        :delete-auth="OPERATION.BUSINESS_ARCHIVE"
+                        :edit-auth="$OPERATION.U_BUSINESS"
+                        :delete-auth="$OPERATION.BUSINESS_ARCHIVE"
                         @on-edit="handleEdit"
                         @on-delete="handleDelete">
                     </cmdb-details>
@@ -98,7 +98,7 @@
                     <cmdb-relation
                         v-if="tab.active === 'relevance'"
                         obj-id="biz"
-                        :auth="OPERATION.U_BUSINESS"
+                        :auth="$OPERATION.U_BUSINESS"
                         :inst="attribute.inst.details">
                     </cmdb-relation>
                 </bk-tabpanel>
@@ -128,7 +128,6 @@
     import cmdbColumnsConfig from '@/components/columns-config/columns-config'
     import cmdbAuditHistory from '@/components/audit-history/audit-history.vue'
     import cmdbRelation from '@/components/relation'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbColumnsConfig,
@@ -137,7 +136,6 @@
         },
         data () {
             return {
-                OPERATION,
                 properties: [],
                 propertyGroups: [],
                 table: {
@@ -193,9 +191,9 @@
             saveAuth () {
                 const type = this.attribute.type
                 if (type === 'create') {
-                    return this.OPERATION.C_BUSINESS
+                    return this.$OPERATION.C_BUSINESS
                 } else if (type === 'update') {
-                    return this.OPERATION.U_BUSINESS
+                    return this.$OPERATION.U_BUSINESS
                 }
                 return ''
             },

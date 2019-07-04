@@ -13,6 +13,8 @@
 package instances
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -139,7 +141,56 @@ func (m *instanceManager) validCreateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
+
+	// module instance's name must coincide with template
+	if objID == common.BKInnerObjIDModule {
+		if err := m.validateModuleCreate(ctx, instanceData, valid); err != nil {
+			return err
+		}
+	}
 	return valid.validCreateUnique(ctx, instanceData, instMedataData, m)
+}
+
+func (m *instanceManager) validateModuleCreate(ctx core.ContextParams, instanceData mapstr.MapStr, valid *validator) error {
+	svcTplIDIf, exist := instanceData[common.BKServiceTemplateIDField]
+	if exist == false {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceTemplateIDField)
+	}
+	svcTplID, err := util.GetInt64ByInterface(svcTplIDIf)
+	if err != nil {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceTemplateIDField)
+	}
+	if svcTplID == common.ServiceTemplateIDNotSet {
+		return nil
+	}
+	svcCategoryIDIf, exist := instanceData[common.BKServiceCategoryIDField]
+	if exist == false {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKServiceCategoryIDField)
+	}
+	svcCategoryID, err := util.GetInt64ByInterface(svcCategoryIDIf)
+	if err != nil {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.BKServiceCategoryIDField)
+	}
+	bizIDIf, exist := instanceData[common.BKAppIDField]
+	if exist == false {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedSet, common.BKAppIDField)
+	}
+	bizID, err := util.GetInt64ByInterface(bizIDIf)
+	if err != nil {
+		return valid.errif.Errorf(common.CCErrCommParamsNeedInt, common.MetadataLabelBiz)
+	}
+	tpl := metadata.ServiceTemplate{}
+	filter := map[string]interface{}{
+		common.BKFieldID:                svcTplID,
+		common.BKServiceCategoryIDField: svcCategoryID,
+		common.MetadataField:            metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10)),
+	}
+	if err := m.dbProxy.Table(common.BKTableNameServiceTemplate).Find(filter).One(ctx.Context, &tpl); err != nil {
+		return valid.errif.Errorf(common.CCErrCommParamsInvalid, common.BKServiceTemplateIDField)
+	}
+	instanceData[common.BKModuleNameField] = tpl.Name
+
+	return nil
 }
 
 func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID string, instanceData mapstr.MapStr, instMetaData metadata.Metadata, instID uint64) error {
@@ -169,8 +220,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("parameter field `%s` is unexpected, rid: %s", key, ctx.ReqID)
-			return valid.errif.Errorf(common.CCErrCommUnexpectedParameterField, key)
+			delete(instanceData, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {
@@ -201,5 +251,29 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 			return err
 		}
 	}
+
+	if objID == common.BKInnerObjIDModule {
+		if err := m.validModuleUpdate(ctx, instanceData, instID); err != nil {
+			return err
+		}
+	}
+
 	return valid.validUpdateUnique(ctx, instanceData, instMetaData, instID, m)
+}
+
+func (m *instanceManager) validModuleUpdate(ctx core.ContextParams, instanceData mapstr.MapStr, instID uint64) error {
+	module := metadata.ModuleInst{}
+	filter := map[string]interface{}{
+		common.BKModuleIDField: instID,
+	}
+	if err := m.dbProxy.Table(common.BKTableNameBaseModule).Find(filter).One(ctx.Context, &module); err != nil {
+		blog.Errorf("validModuleUpdate failed, err: %+v, rid: %s", err, ctx.ReqID)
+		return err
+	}
+	delete(instanceData, common.BKServiceTemplateIDField)
+	delete(instanceData, common.BKServiceCategoryIDField)
+	if module.ServiceTemplateID != common.ServiceTemplateIDNotSet {
+		delete(instanceData, common.BKModuleNameField)
+	}
+	return nil
 }

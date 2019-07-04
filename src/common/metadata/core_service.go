@@ -321,8 +321,6 @@ type ListServiceInstanceOption struct {
 	SearchKey          *string  `json:"search_key,omitempty"`
 	ServiceInstanceIDs *[]int64 `json:"service_instance_ids"`
 	Page               BasePage `json:"page,omitempty"`
-	// only when WithName is true, name field with be filled with `ip + process name + process port`
-	WithName bool `json:"with_name,omitempty"`
 }
 
 type ListProcessInstanceRelationOption struct {
@@ -416,4 +414,9 @@ type RemoveTemplateBoundOnModuleResult struct {
 	Data     struct {
 		ServiceTemplateID int64 `json:"service_template_id" bson:"service_template_id" field:"service_template_id"`
 	} `json:"data"`
+}
+
+type GetProc2ModuleResult struct {
+	BaseResp `json:",inline"`
+	Data     []Proc2Module `json:"data"`
 }
