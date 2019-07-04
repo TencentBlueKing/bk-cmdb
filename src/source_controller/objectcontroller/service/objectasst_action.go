@@ -205,7 +205,7 @@ func (cli *Service) UpdateObjectAssociation(req *restful.Request, resp *restful.
 
 	// only field in white list could be update
 	// bk_asst_obj_id is allowed for add business model level
-	validFields := []string{"bk_obj_asst_name", "bk_asst_obj_id"}
+	validFields := []string{"bk_obj_asst_name", "bk_asst_obj_id", "bk_asst_id"}
 	validData := map[string]interface{}{}
 	filterOutFields := []string{}
 	for key, val := range data {
