@@ -28,7 +28,7 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 	queryCond := metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance association error %v", err)
+		blog.Errorf("search instance association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
 	cond = mongo.NewCondition()
@@ -36,7 +36,7 @@ func (s *coreService) IsInstAsstExist(ctx core.ContextParams, objID string, inst
 	queryCond = metadata.QueryCondition{Condition: cond.ToMapStr()}
 	objAsstInsts, err := s.core.AssociationOperation().SearchInstanceAssociation(ctx, queryCond)
 	if nil != err {
-		blog.Errorf("search instance to association error %v", err)
+		blog.Errorf("search instance to association error %v, rid: %s", err, ctx.ReqID)
 		return false, err
 	}
 	if 0 < objInsts.Count && 0 < objAsstInsts.Count {
@@ -53,7 +53,7 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond := metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err := s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance association error %v", err)
+		blog.Errorf("delete instance association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	cond = mongo.NewCondition()
@@ -61,7 +61,7 @@ func (s *coreService) DeleteInstAsst(ctx core.ContextParams, objID string, instI
 	deleteCond = metadata.DeleteOption{Condition: cond.ToMapStr()}
 	_, err = s.core.AssociationOperation().DeleteInstanceAssociation(ctx, deleteCond)
 	if nil != err {
-		blog.Errorf("delete instance to association error %v", err)
+		blog.Errorf("delete instance to association error %v, rid: %s", err, ctx.ReqID)
 		return err
 	}
 	return nil

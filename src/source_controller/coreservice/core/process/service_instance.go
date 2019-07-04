@@ -161,6 +161,11 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 		}
 	}
 
+	if err := p.ReconstructServiceInstanceName(ctx, instance.ID); err != nil {
+		blog.Errorf("CreateServiceInstance failed, reconstruct instance name failed, instance: %+v, err: %s, rid: %s", instance, err.Error(), ctx.ReqID)
+		return nil, err
+	}
+
 	// transfer host to target module
 	transferConfig := &metadata.HostsModuleRelation{
 		ApplicationID: bizID,
@@ -243,7 +248,7 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 	}
 
 	if option.SearchKey != nil {
-		filter[common.BKHostInnerIPField] = map[string]interface{}{
+		filter[common.BKFieldName] = map[string]interface{}{
 			common.BKDBLIKE: fmt.Sprintf(".*%s.*", *option.SearchKey),
 		}
 	}
@@ -259,17 +264,6 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(ctx.Context, &instances); nil != err {
 		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, filter, err, ctx.ReqID)
 		return nil, ctx.Error.CCErrorf(common.CCErrCommDBSelectFailed)
-	}
-
-	if option.WithName == true {
-		for idx, instance := range instances {
-			instanceName, err := p.GetServiceInstanceName(ctx, instance.ID)
-			if err != nil {
-				blog.Errorf("ListServiceInstance failed, construct instance name failed, instanceID: %d, err: %+v, rid: %s", instance.ID, err, ctx.ReqID)
-				return nil, err
-			}
-			instances[idx].Name = instanceName
-		}
 	}
 
 	result := &metadata.MultipleServiceInstance{
@@ -312,7 +306,7 @@ func (p *processOperation) DeleteServiceInstance(ctx core.ContextParams, service
 // GetServiceInstanceName get service instance's name, format: `IP + first process name + first process port`
 // 可能应用场景：1. 查询服务实例时组装名称；2. 更新进程信息时根据组装名称直接更新到 `name` 字段
 // issue: https://github.com/Tencent/bk-cmdb/issues/2485
-func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instanceID int64) (string, errors.CCErrorCoder) {
+func (p *processOperation) generateServiceInstanceName(ctx core.ContextParams, instanceID int64) (string, errors.CCErrorCoder) {
 
 	// get instance
 	instance := metadata.ServiceInstance{}
@@ -381,6 +375,27 @@ func (p *processOperation) GetServiceInstanceName(ctx core.ContextParams, instan
 		}
 	}
 	return instanceName, nil
+}
+
+// ReconstructServiceInstanceName do reconstruct service instance name after process name or process port changed
+func (p *processOperation) ReconstructServiceInstanceName(ctx core.ContextParams, instanceID int64) errors.CCErrorCoder {
+	name, err := p.generateServiceInstanceName(ctx, instanceID)
+	if err != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, generate instance name failed, err: %s, rid: %s", err.Error(), ctx.ReqID)
+		return err
+	}
+	filter := map[string]interface{}{
+		common.BKFieldID: instanceID,
+	}
+	doc := map[string]interface{}{
+		common.BKFieldName: name,
+	}
+	e := p.dbProxy.Table(common.BKTableNameServiceInstance).Update(ctx.Context, filter, doc)
+	if e != nil {
+		blog.Errorf("ReconstructServiceInstanceName failed, update instance name failed, err: %+v, rid: %s", e, ctx.ReqID)
+		return ctx.Error.CCError(common.CCErrCommDBUpdateFailed)
+	}
+	return nil
 }
 
 // GetDefaultModuleIDs get business's default module id, default module type specified by DefaultResModuleFlag
@@ -541,7 +556,6 @@ func (p *processOperation) RemoveTemplateBindingOnModule(ctx core.ContextParams,
 		Page: metadata.BasePage{
 			Limit: common.BKNoLimit,
 		},
-		WithName: false,
 	}
 	serviceInstanceResult, err := p.ListServiceInstance(ctx, listOption)
 	if err != nil {

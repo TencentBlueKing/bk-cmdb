@@ -255,11 +255,10 @@ func (c *commonInst) CreateInst(params types.ContextParams, obj model.Object, da
 	if obj.Object().ObjectID == "plat" {
 		iData["bk_supplier_account"] = params.SupplierAccount
 	}
-	iData.Remove("metadata")
-	if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
-		blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
-		return nil, err
-	}
+	// if err := NewSupplementary().Validator(c).ValidatorCreate(params, obj, iData); nil != err {
+	// 	blog.Errorf("[operation-inst] valid is bad, the data is (%#v)  err: %s", iData, err.Error())
+	// 	return nil, err
+	// }
 
 	if err := item.Create(); nil != err {
 		blog.Errorf("[operation-inst] failed to save the object(%s) inst data (%#v), err: %s", obj.Object().ObjectID, data, err.Error())
@@ -291,7 +290,7 @@ func (c *commonInst) innerHasHost(params types.ContextParams, moduleIDS []int64)
 		common.BKModuleIDField: moduleIDS,
 	}
 
-	rsp, err := c.clientSet.HostController().Module().GetModulesHostConfig(context.Background(), params.Header, cond)
+	rsp, err := c.clientSet.CoreService().Host().GetModulesHostConfig(context.Background(), params.Header, cond)
 	if nil != err {
 		blog.Errorf("[operation-module] failed to request the object controller, err: %s", err.Error())
 		return false, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -873,7 +872,7 @@ func (c *commonInst) FindInstByAssociationInst(params types.ContextParams, obj m
 func (c *commonInst) FindOriginInst(params types.ContextParams, obj model.Object, cond *metadata.QueryInput) (*metadata.InstResult, error) {
 	switch obj.Object().ObjectID {
 	case common.BKInnerObjIDHost:
-		rsp, err := c.clientSet.HostController().Host().GetHosts(context.Background(), params.Header, cond)
+		rsp, err := c.clientSet.CoreService().Host().GetHosts(context.Background(), params.Header, cond)
 		if nil != err {
 			blog.Errorf("[operation-inst] failed to request object controller, err: %s", err.Error())
 			return nil, params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -932,6 +931,9 @@ func (c *commonInst) UpdateInst(params types.ContextParams, data mapstr.MapStr, 
 
 	// update insts
 	fCond := cond.ToMapStr()
+	if nil != params.MetaData {
+		fCond.Set(metadata.BKMetadata, *params.MetaData)
+	}
 	inputParams := metadata.UpdateOption{
 		Data:      data,
 		Condition: fCond,

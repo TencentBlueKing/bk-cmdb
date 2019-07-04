@@ -40,7 +40,7 @@ func (query DBExecQuery) ExecQuery(ctx core.ContextParams, tableName string, fie
 	}
 	err := dbFind.All(ctx, result)
 	if err != nil {
-		blog.ErrorJSON("findAll query table[%s] error. err:%s, condition: %s, rid:%s", tableName, err.Error(), newCondMap, ctx.ReqID)
+		blog.ErrorJSON("ExecQuery query table[%s] error. condition: %s, err:%s, rid:%s", tableName, newCondMap, err.Error(), ctx.ReqID)
 		return ctx.Error.Error(common.CCErrCommDBSelectFailed)
 	}
 	return nil
