@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/errors
     # @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/certs
     # @mkdir -p $(BIN_PATH)/$(TARGET_NAME)/conf/language
-    shutil.rmtree(os.path.join(bin_path, target_name))
+    shutil.rmtree(os.path.join(bin_path, target_name), ignore_errors=True)
     os.makedirs(os.path.join(bin_path, target_name, "conf/certs"))
 
     # @cp -R $(RESOURCE_DIR)/errors/*  $(BIN_PATH)/$(TARGET_NAME)/conf/errors
