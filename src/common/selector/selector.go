@@ -125,7 +125,7 @@ func (s *Selector) ToMgoFilter() (map[string]interface{}, error) {
 		firstValue := s.Values[0]
 		filter = map[string]interface{}{
 			field: map[string]interface{}{
-				common.BKDBNot: firstValue,
+				common.BKDBNE: firstValue,
 			},
 		}
 	}
