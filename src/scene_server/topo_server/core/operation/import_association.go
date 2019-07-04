@@ -15,6 +15,7 @@ package operation
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -72,6 +73,10 @@ type importAssociation struct {
 
 	// map[objID][instcnade id]strings.Joion([]string{property name, property value}, "=")[]importAssociationInst
 	instIDAttrKeyValMap map[string]map[string][]*importAssociationInst
+
+	// map[objID][kesname1,keyname2]
+	objUniques map[string]map[string]bool
+
 	//http header http request id
 	rid string
 }
@@ -113,6 +118,11 @@ func (ia *importAssociation) ParsePrimaryKey() error {
 	}
 
 	err = ia.getAssociationObjProperty()
+	if err != nil {
+		return err
+	}
+
+	err = ia.getAssociationObjUnique()
 	if err != nil {
 		return err
 	}
@@ -245,6 +255,46 @@ func (ia *importAssociation) getAssociationObjProperty() error {
 
 }
 
+func (ia *importAssociation) getAssociationObjUnique() error {
+	var objIDArr = []string{ia.objID}
+	for _, info := range ia.asstIDInfoMap {
+		objIDArr = append(objIDArr, info.AsstObjID)
+	}
+
+	ia.objUniques = map[string]map[string]bool{}
+	for _, objID := range objIDArr {
+		rsp, err := ia.cli.clientSet.ObjectController().Unique().Search(context.Background(), ia.params.Header, objID)
+		if nil != err {
+			blog.Errorf("[getAssociationInfo] failed to  search attribute , error info is %s, input:%+v, rid:%s", err.Error(), objID, ia.rid)
+			return ia.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+		}
+
+		if !rsp.Result {
+			blog.Errorf("[getAssociationInfo] failed to search attribute, error code:%s, error messge: %s, input:%+v, rid:%s", rsp.Code, rsp.ErrMsg, objID, ia.rid)
+			return ia.params.Err.New(rsp.Code, rsp.ErrMsg)
+		}
+
+		for _, unique := range rsp.Data {
+			keynames := []string{}
+			for _, keyitem := range unique.Keys {
+				for _, property := range ia.asstObjIDProperty[objID] {
+					if uint64(property.ID) == keyitem.ID {
+						keynames = append(keynames, property.PropertyName)
+					}
+				}
+			}
+			sort.Strings(keynames)
+			if _, ok := ia.objUniques[objID]; !ok {
+				ia.objUniques[objID] = map[string]bool{}
+			}
+			ia.objUniques[objID][strings.Join(keynames, ",")] = true
+		}
+	}
+
+	return nil
+
+}
+
 func (ia *importAssociation) parseImportDataPrimary() {
 
 	for idx, info := range ia.importData {
@@ -257,6 +307,7 @@ func (ia *importAssociation) parseImportDataPrimary() {
 		srcCond, err := ia.parseImportDataPrimaryItem(ia.objID, info.SrcPrimary)
 		if err != nil {
 			ia.parseImportDataErr[idx] = err.Error()
+			continue
 		} else {
 			_, ok = ia.queryInstConds[ia.objID]
 			if !ok {
@@ -287,6 +338,7 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 	keyValMap := mapstr.New()
 	primaryArr := strings.Split(item, common.ExcelAsstPrimaryKeySplitChar)
 
+	keys := []string{}
 	for _, primary := range primaryArr {
 		primary = strings.TrimSpace(primary)
 		keyValArr := strings.Split(primary, common.ExcelAsstPrimaryKeyJoinChar)
@@ -303,12 +355,19 @@ func (ia *importAssociation) parseImportDataPrimaryItem(objID string, item strin
 		}
 
 		keyValMap[attr.PropertyID] = realVal
+		keys = append(keys, keyValArr[0])
 	}
-	if len(keyValMap) != len(ia.asstObjIDProperty[objID]) {
-		return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_property_str_primary_count_len", objID, item))
+	sort.Strings(keys)
+	if !ia.objUniques[objID][strings.Join(keys, ",")] {
+		var key = ""
+		for key = range ia.objUniques[objID] {
+			break
+		}
+		return nil, fmt.Errorf(ia.params.Lang.Languagef("import_asst_obj_property_str_primary_count_len", objID, item, key))
 	}
 
 	return keyValMap, nil
+
 }
 
 func (ia *importAssociation) getInstDataByConds() error {
@@ -317,7 +376,9 @@ func (ia *importAssociation) getInstDataByConds() error {
 
 		instIDKey := metadata.GetInstIDFieldByObjID(objID)
 		conds := condition.CreateCondition()
-		conds.Field(common.BKObjIDField).Eq(objID)
+		if !util.IsInnerObject(objID) {
+			conds.Field(common.BKObjIDField).Eq(objID)
+		}
 		conds.NewOR().MapStrArr(valArr)
 
 		instArr, err := ia.getInstDataByObjIDConds(objID, instIDKey, conds)
@@ -532,6 +593,11 @@ func convStrToCCType(val string, attr metadata.Attribute) (interface{}, error) {
 		return util.GetInt64ByInterface(val)
 	case common.FieldTypeFloat:
 		return util.GetFloat64ByInterface(val)
+	case common.FieldTypeForeignKey:
+		if attr.PropertyID == common.BKCloudIDField {
+			return util.GetInt64ByInterface(val)
+		}
+		fallthrough
 	default:
 		return val, nil
 	}
