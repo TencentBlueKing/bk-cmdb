@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 	"configcenter/src/common/util"
 )
 
@@ -563,6 +564,7 @@ func (ps *ProcServer) SearchServiceInstancesInModule(ctx *rest.Contexts) {
 		ModuleID:   input.ModuleID,
 		Page:       input.Page,
 		SearchKey:  input.SearchKey,
+		Selectors:  input.Selectors,
 	}
 	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
 	if err != nil {
@@ -1297,4 +1299,30 @@ func (ps *ProcServer) RemoveTemplateBindingOnModule(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(response)
+}
+
+func (ps *ProcServer) ServiceInstanceAddLabels(ctx *rest.Contexts) {
+	option := selector.LabelAddOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := ps.CoreAPI.CoreService().Label().AddLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
+		ctx.RespWithError(err, common.CCErrCommDBUpdateFailed, "ServiceInstanceAddLabels failed, option: %+v, err: %v", option, err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+func (ps *ProcServer) ServiceInstanceRemoveLabels(ctx *rest.Contexts) {
+	option := selector.LabelRemoveOption{}
+	if err := ctx.DecodeInto(&option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if err := ps.CoreAPI.CoreService().Label().RemoveLabel(ctx.Kit.Ctx, ctx.Kit.Header, common.BKTableNameServiceInstance, option); err != nil {
+		ctx.RespWithError(err, common.CCErrCommDBUpdateFailed, "ServiceInstanceRemoveLabels failed, option: %+v, err: %v", option, err)
+		return
+	}
+	ctx.RespEntity(nil)
 }
