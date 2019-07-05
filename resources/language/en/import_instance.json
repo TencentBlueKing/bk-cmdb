@@ -4,7 +4,7 @@
     "import_asst_property_str_not_found": "property %s does not exists",
     "import_asst_property_str_primary_count_len": "Association Object %s primary Key  count error",
     "import_str_asst_str_query_data_format_error": "Get %s Association Object %s Data Format",
-    "import_asst_obj_property_str_primary_count_len": " [%s] Object [%s] primary Key  count error",
+    "import_asst_obj_property_str_primary_count_len": " [%s] Object [%s] primary Key  count error, expect %s",
     "import_asst_obj_property_str_primary_format_error": "[%s] association primary Key [%s] data format error",
     "import_asst_obj_property_str_primary_type_error": "[%s] association primary Key [%s] data transform type  error",
     "import_asstid_not_foud":"association [%s]  does not exists",
