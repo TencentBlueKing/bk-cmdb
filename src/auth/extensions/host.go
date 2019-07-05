@@ -444,28 +444,7 @@ func (am *AuthManager) GenMoveBizHostToIdleFaultModule(hostIDs []int64) *metadat
 	return &resp
 }
 
-func (am *AuthManager) GenMoveHostFromModuleToIdleFaultModuleResp(hostIDs []int64) *metadata.BaseResp {
-	var p metadata.Permission
-	p.SystemID = authcenter.SystemIDCMDB
-	p.SystemName = authcenter.SystemNameCMDB
-	p.ScopeType = authcenter.ScopeTypeIDBiz
-	p.ScopeTypeName = authcenter.ScopeTypeIDBizName
-	p.ActionID = string(authcenter.Edit)
-	p.ActionName = authcenter.ActionIDNameMap[authcenter.Edit]
-
-	for _, id := range hostIDs {
-		p.Resources = append(p.Resources, []metadata.Resource{{
-			ResourceType:     string(authcenter.BizHostInstance),
-			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.BizHostInstance],
-			ResourceID:       strconv.FormatInt(id, 10),
-		}})
-	}
-
-	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
-	return &resp
-}
-
-func (am *AuthManager) GenMoveBizHostToModuleResp(hostIDs []int64) *metadata.BaseResp {
+func (am *AuthManager) GenEditBizHostNoPermissionResp(hostIDs []int64) *metadata.BaseResp {
 	var p metadata.Permission
 	p.SystemID = authcenter.SystemIDCMDB
 	p.SystemName = authcenter.SystemNameCMDB

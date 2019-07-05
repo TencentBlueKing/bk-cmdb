@@ -68,7 +68,7 @@ func (s *Service) HostModuleRelation(req *restful.Request, resp *restful.Respons
 		if err != auth.NoAuthorizeError {
 			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 		}
-		resp.WriteEntity(s.AuthManager.GenMoveBizHostToModuleResp(config.HostID))
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(config.HostID))
 		return
 	}
 	// auth: deregister hosts
@@ -369,7 +369,7 @@ func (s *Service) GetHostModuleRelation(req *restful.Request, resp *restful.Resp
 }
 
 // TransferHostAcrossBusiness  Transfer host across business,
-// delete old business  host and module reltaion
+// delete old business  host and module relation
 func (s *Service) TransferHostAcrossBusiness(req *restful.Request, resp *restful.Response) {
 	srvData := s.newSrvComm(req.Request.Header)
 	data := new(metadata.TransferHostAcrossBusinessParameter)
@@ -461,7 +461,7 @@ func (s *Service) moveHostToModuleByName(req *restful.Request, resp *restful.Res
 			resp.WriteEntity(&metadata.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
 			return
 		}
-		resp.WriteEntity(s.AuthManager.GenMoveBizHostToIdleFaultModule(conf.HostID))
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp(conf.HostID))
 		return
 	}
 	// auth: deregister hosts
