@@ -328,6 +328,10 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.Description.Value = inst.Description
 		template.Description.AsDefaultValue = &True
 	}
+	if inst.StartParamRegex != nil {
+		template.StartParamRegex.Value = inst.StartParamRegex
+		template.StartParamRegex.AsDefaultValue = &True
+	}
 
 	return &template
 }
