@@ -12,9 +12,12 @@
                     :list="typeList"
                     :selected.sync="filter.type"
                 ></bk-selector>
-                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
-                <i class="filter-search bk-icon icon-search"
-                @click="getRoleList"></i>
+                <input class="cmdb-form-input"
+                       :placeholder="$t('Common[\'请输入\']')"
+                       type="text" id="SearchUserName"
+                       v-model.trim="filter.text"
+                       @keyup.enter="getRoleList">
+                <i class="filter-search bk-icon icon-search" @click="getRoleList"></i>
             </div>
         </div>
         <cmdb-table
@@ -36,10 +39,10 @@
                 <bk-button class="process-btn" type="primary" @click="createRole">{{$t("Permission['新建角色']")}}</bk-button>
             </div>
         </cmdb-table>
-        <v-role-form 
+        <v-role-form
             ref="roleForm"
             v-if="form.isShow"
-            :data="form.data" 
+            :data="form.data"
             :type="form.type"
             @on-success="handleCreateSuccess"
             @closeRoleForm="form.isShow = false">
@@ -208,6 +211,7 @@
             top: 11px;
             cursor: pointer;
             font-size: 14px;
+            z-index: 3;
         }
         label{
             padding: 0 9px 0 0;
