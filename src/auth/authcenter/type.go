@@ -9,7 +9,7 @@ import (
 // system constant
 const (
 	SystemIDCMDB   = "bk_cmdb"
-	SystemNameCMDB = "蓝鲸智云配置平台"
+	SystemNameCMDB = "配置平台"
 )
 
 // ScopeTypeID constant
@@ -225,4 +225,17 @@ type AuthorizedResource struct {
 	ActionID     ActionID         `json:"action_id"`
 	ResourceType ResourceTypeID   `json:"resource_type"`
 	ResourceIDs  [][]RscTypeAndID `json:"resource_ids"`
+}
+
+type RoleWithAuthResources struct {
+	RoleTemplateName string       `json:"perm_template_name"`
+	TemplateID       string       `json:"template_id"`
+	Desc             string       `json:"desc"`
+	ResourceActions  []RoleAction `json:"resource_types_actions"`
+}
+
+type RoleAction struct {
+	ScopeTypeID    string         `json:"scope_type_id"`
+	ResourceTypeID ResourceTypeID `json:"resource_type_id"`
+	ActionID       ActionID       `json:"action_id"`
 }

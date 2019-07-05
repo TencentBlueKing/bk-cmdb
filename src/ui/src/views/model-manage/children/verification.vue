@@ -1,9 +1,11 @@
 <template>
-    <div>
-        <span v-cursor="{
-            active: !$isAuthorized(OPERATION.U_MODEL),
-            auth: [OPERATION.U_MODEL]
-        }">
+    <div class="verification-layout">
+        <span class="inline-block-middle"
+            v-if="!isTopoModel"
+            v-cursor="{
+                active: !$isAuthorized($OPERATION.U_MODEL),
+                auth: [$OPERATION.U_MODEL]
+            }">
             <bk-button class="create-btn" type="primary"
                 :disabled="isReadOnly || !updateAuth"
                 @click="createVerification">
@@ -11,7 +13,7 @@
             </bk-button>
         </span>
         <cmdb-table
-            class="relation-table"
+            class="verification-table"
             :loading="$loading(['searchObjectUniqueConstraints', 'deleteObjectUniqueConstraints'])"
             :sortable="false"
             :header="table.header"
@@ -62,14 +64,12 @@
 <script>
     import theVerificationDetail from './verification-detail'
     import { mapActions, mapGetters } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             theVerificationDetail
         },
         data () {
             return {
-                OPERATION,
                 slider: {
                     isShow: false,
                     isEdit: false,
@@ -97,6 +97,9 @@
                 'activeModel',
                 'isInjectable'
             ]),
+            isTopoModel () {
+                return this.activeModel.bk_classification_id === 'bk_biz_topo'
+            },
             isReadOnly () {
                 if (this.activeModel) {
                     return this.activeModel['bk_ispaused']
@@ -109,11 +112,11 @@
                     return false
                 }
                 const editable = this.isAdminView || (this.isBusinessSelected && this.isInjectable)
-                return editable && this.$isAuthorized(OPERATION.U_MODEL)
+                return editable && this.$isAuthorized(this.$OPERATION.U_MODEL)
             }
         },
         async created () {
-            if (!this.updateAuth) {
+            if (!this.updateAuth || this.isTopoModel) {
                 this.table.header.pop()
             }
             this.initAttrList()
@@ -208,7 +211,10 @@
 </script>
 
 <style lang="scss" scoped>
-    .create-btn {
-        margin: 10px 0;
+    .verification-layout {
+        padding: 10px 0;
+    }
+    .verification-table {
+        margin: 10px 0 0 0;
     }
 </style>

@@ -134,6 +134,13 @@ const setMenuState = to => {
     }
 }
 
+const setAuthScope = (to, from) => {
+    const auth = to.meta.auth || {}
+    if (typeof auth.setAuthScope === 'function') {
+        auth.setAuthScope(to, from, router.app)
+    }
+}
+
 const checkAuthDynamicMeta = (to, from) => {
     router.app.$store.commit('auth/clearDynamicMeta')
     const auth = to.meta.auth || {}
@@ -187,6 +194,7 @@ router.beforeEach((to, from, next) => {
                 next({ name: index.name })
             } else {
                 setMenuState(to)
+                setAuthScope(to, from)
                 checkAuthDynamicMeta(to, from)
 
                 const isAvailable = checkAvailable(to, from)

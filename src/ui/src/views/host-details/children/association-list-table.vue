@@ -1,9 +1,9 @@
 <template>
     <div class="table" v-bkloading="{ isLoading: $loading(propertyRequest, instanceRequest) }">
         <div class="table-info clearfix">
-            <div class="info-title fl" @click="localVisible = !localVisible">
+            <div class="info-title fl" @click="expanded = !expanded">
                 <i class="icon bk-icon icon-right-shape"
-                    :class="{ 'is-open': localVisible }">
+                    :class="{ 'is-open': expanded }">
                 </i>
                 <span class="title-text">{{title}}</span>
                 <span class="title-count">({{instances.length}})</span>
@@ -24,7 +24,7 @@
         </div>
         <cmdb-collapse-transition>
             <cmdb-table class="association-table"
-                v-show="localVisible"
+                v-show="expanded"
                 :header="header"
                 :list="flatternList"
                 :show-footer="false"
@@ -58,7 +58,7 @@
 
 <script>
     import { mapGetters } from 'vuex'
-    import { OPERATION, RESOURCE_HOST } from '../router.config.js'
+    import { RESOURCE_HOST } from '../router.config.js'
     export default {
         name: 'cmdb-host-association-list-table',
         props: {
@@ -73,8 +73,7 @@
             associationType: {
                 type: Object,
                 required: true
-            },
-            visible: Boolean
+            }
         },
         data () {
             return {
@@ -85,7 +84,7 @@
                     current: 1,
                     size: 10
                 },
-                localVisible: this.visible,
+                expanded: false,
                 confirm: {
                     instance: null,
                     item: null,
@@ -98,18 +97,12 @@
                 'sourceInstances',
                 'targetInstances'
             ]),
-            expandAll () {
-                return this.$store.state.hostDetails.expandAll
-            },
-            indeterminate () {
-                return this.$store.state.hostDetails.indeterminate
-            },
             updateAuth () {
                 const isResourceHost = this.$route.name === RESOURCE_HOST
                 if (isResourceHost) {
-                    return OPERATION.U_RESOURCE_HOST
+                    return this.$OPERATION.U_RESOURCE_HOST
                 }
-                return OPERATION.U_HOST
+                return this.$OPERATION.U_HOST
             },
             flatternList () {
                 return this.$tools.flatternList(this.properties, this.list)
@@ -164,39 +157,25 @@
                     width: 150
                 })
                 return header
+            },
+            expandAll () {
+                return this.$store.state.hostDetails.expandAll
             }
         },
         watch: {
-            visible (visible) {
-                this.localVisible = visible
-            },
-            localVisible (visible) {
-                if (visible) {
-                    this.getData()
-                }
-                this.$store.commit('hostDetails/updateExpandCount', visible ? 1 : -1)
-                this.checkExpandAllState()
-            },
             instances () {
-                if (this.localVisible) {
+                if (this.expanded) {
                     this.getData()
                 }
             },
-            expandAll (expandAll) {
-                if (!this.indeterminate) {
-                    this.localVisible = expandAll
+            expandAll (expanded) {
+                this.expanded = expanded
+            },
+            expanded (expanded) {
+                if (expanded) {
+                    this.getData()
                 }
             }
-        },
-        created () {
-            this.$store.commit('hostDetails/updateTableCount', 1)
-            if (this.visible) {
-                this.getData()
-                this.$store.commit('hostDetails/updateExpandCount', 1)
-            }
-        },
-        beforeDestroy () {
-            this.$store.commit('hostDetails/updateTableCount', -1)
         },
         methods: {
             getData () {
@@ -393,15 +372,6 @@
                     target: event.target
                 })
                 this.confirm.instance.$el.append(this.$refs.confirmTips)
-            },
-            checkExpandAllState () {
-                this.$nextTick(() => {
-                    const state = this.$store.state.hostDetails
-                    const tableCount = state.tableCount
-                    const expandCount = state.expandCount
-                    this.$store.commit('hostDetails/setExpandIndeterminate', expandCount !== 0 && tableCount !== expandCount)
-                    this.$store.commit('hostDetails/toggleExpandAll', tableCount === expandCount)
-                })
             }
         }
     }

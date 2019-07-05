@@ -62,6 +62,9 @@
             toggleExpanded (id, expanded) {
                 this.layout.toggleExpanded(id, expanded)
             },
+            toggleDisabled (id, disabled) {
+                this.layout.toggleDisabled(id, disabled)
+            },
             selectNode (id) {
                 this.layout.selectState(id)
             },

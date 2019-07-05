@@ -52,14 +52,14 @@
                     <template v-if="canBeImport">
                         <label class="label-btn"
                             v-cursor="{
-                                active: !$isAuthorized(OPERATION.U_MODEL),
-                                auth: [OPERATION.U_MODEL]
+                                active: !$isAuthorized($OPERATION.U_MODEL),
+                                auth: [$OPERATION.U_MODEL]
                             }"
                             v-if="tab.active === 'field'"
                             :class="{ 'disabled': isReadOnly }">
                             <i class="icon-cc-import"></i>
                             <span>{{$t('ModelManagement["导入"]')}}</span>
-                            <input v-if="!isReadOnly && $isAuthorized(OPERATION.U_MODEL)" ref="fileInput" type="file" @change.prevent="handleFile">
+                            <input v-if="!isReadOnly && $isAuthorized($OPERATION.U_MODEL)" ref="fileInput" type="file" @change.prevent="handleFile">
                         </label>
                         <label class="label-btn" @click="exportField">
                             <i class="icon-cc-derivation"></i>
@@ -69,8 +69,8 @@
                     <template v-if="isShowOperationButton">
                         <label class="label-btn"
                             v-cursor="{
-                                active: !$isAuthorized(OPERATION.U_MODEL),
-                                auth: [OPERATION.U_MODEL]
+                                active: !$isAuthorized($OPERATION.U_MODEL),
+                                auth: [$OPERATION.U_MODEL]
                             }"
                             v-if="!isMainLine"
                             v-tooltip="$t('ModelManagement[\'保留模型和相应实例，隐藏关联关系\']')">
@@ -84,8 +84,8 @@
                         </label>
                         <label class="label-btn"
                             v-cursor="{
-                                active: !$isAuthorized(OPERATION.U_MODEL),
-                                auth: [OPERATION.U_MODEL]
+                                active: !$isAuthorized($OPERATION.D_MODEL),
+                                auth: [$OPERATION.D_MODEL]
                             }"
                             v-tooltip="$t('ModelManagement[\'删除模型和其下所有实例，此动作不可逆，请谨慎操作\']')"
                             @click="dialogConfirm('delete')">
@@ -120,7 +120,6 @@
     import theChooseIcon from '@/components/model-manage/_choose-icon'
     import theVerification from './verification'
     import { mapActions, mapGetters, mapMutations } from 'vuex'
-    import { OPERATION } from '../router.config.js'
     export default {
         components: {
             thePropertyGroup,
@@ -131,7 +130,6 @@
         },
         data () {
             return {
-                OPERATION,
                 tab: {
                     active: 'field'
                 },
@@ -170,7 +168,7 @@
                 return false
             },
             isEditable () {
-                const updateAuth = this.$isAuthorized(OPERATION.U_MODEL)
+                const updateAuth = this.$isAuthorized(this.$OPERATION.U_MODEL)
                 if (!updateAuth) {
                     return false
                 }
@@ -200,7 +198,7 @@
             },
             canBeImport () {
                 const cantImport = ['host', 'biz', 'process', 'plat']
-                return this.$isAuthorized(OPERATION.U_MODEL)
+                return this.$isAuthorized(this.$OPERATION.U_MODEL)
                     && !this.isMainLine
                     && !cantImport.includes(this.$route.params.modelId)
             }
@@ -346,7 +344,13 @@
                 this.exportExcel(res)
             },
             dialogConfirm (type) {
-                if (!this.$isAuthorized(OPERATION.U_MODEL)) return
+                if (type === 'delete') {
+                    if (!this.$isAuthorized(this.$OPERATION.D_MODEL)) {
+                        return false
+                    }
+                } else if (!this.$isAuthorized(this.$OPERATION.U_MODEL)) {
+                    return false
+                }
                 switch (type) {
                     case 'restart':
                         this.$bkInfo({
