@@ -38,6 +38,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core/datasynchronize"
 	"configcenter/src/source_controller/coreservice/core/host"
 	"configcenter/src/source_controller/coreservice/core/instances"
+	"configcenter/src/source_controller/coreservice/core/label"
 	"configcenter/src/source_controller/coreservice/core/mainline"
 	"configcenter/src/source_controller/coreservice/core/model"
 	"configcenter/src/source_controller/coreservice/core/process"
@@ -121,6 +122,7 @@ func (s *coreService) SetConfig(cfg options.Config, engin *backbone.Engine, err 
 		host.New(db, cache, s),
 		auditlog.New(db),
 		process.New(db, s),
+		label.New(db),
 	)
 	return nil
 }

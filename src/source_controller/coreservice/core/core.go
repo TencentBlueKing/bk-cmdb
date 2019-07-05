@@ -16,6 +16,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 )
 
 // ModelAttributeGroup model attribute group methods definitions
@@ -176,6 +177,7 @@ type Core interface {
 	HostOperation() HostOperation
 	AuditOperation() AuditOperation
 	ProcessOperation() ProcessOperation
+	LabelOperation() LabelOperation
 }
 
 // ProcessOperation methods
@@ -223,6 +225,11 @@ type ProcessOperation interface {
 	GetProc2Module(ctx ContextParams, option *metadata.GetProc2ModuleOption) ([]metadata.Proc2Module, errors.CCErrorCoder)
 }
 
+type LabelOperation interface {
+	AddLabel(ctx ContextParams, tableName string, option selector.LabelAddOption) errors.CCErrorCoder
+	RemoveLabel(ctx ContextParams, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder
+}
+
 type core struct {
 	model           ModelOperation
 	instance        InstanceOperation
@@ -232,10 +239,13 @@ type core struct {
 	host            HostOperation
 	audit           AuditOperation
 	process         ProcessOperation
+	label           LabelOperation
 }
 
 // New create core
-func New(model ModelOperation, instance InstanceOperation, association AssociationOperation, dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation, audit AuditOperation, process ProcessOperation) Core {
+func New(model ModelOperation, instance InstanceOperation, association AssociationOperation,
+	dataSynchronize DataSynchronizeOperation, topo TopoOperation, host HostOperation,
+	audit AuditOperation, process ProcessOperation, label LabelOperation) Core {
 	return &core{
 		model:           model,
 		instance:        instance,
@@ -245,6 +255,7 @@ func New(model ModelOperation, instance InstanceOperation, association Associati
 		host:            host,
 		audit:           audit,
 		process:         process,
+		label:           label,
 	}
 }
 
@@ -278,4 +289,8 @@ func (m *core) AuditOperation() AuditOperation {
 
 func (m *core) ProcessOperation() ProcessOperation {
 	return m.process
+}
+
+func (m *core) LabelOperation() LabelOperation {
+	return m.label
 }
