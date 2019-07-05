@@ -79,15 +79,13 @@ if __name__ == "__main__":
     with open(os.path.join(script_dir, "template.sh.stop"), "r") as f:
         data = f.read()
         data = data.replace("cmdb-name-placeholder", target_name)
-        data = data.replace("cmdb-port-placeholder", target_port)
         with open(os.path.join(bin_path, target_name, "stop.sh"), "w") as tf:
             tf.write(data)
 
     # @sed  -e 's/admin_port_placeholer/${TARGET_PORT}/g;' $(SCRIPT_DIR)/init_db.sh >  $(BIN_PATH)/$(TARGET_NAME)/init_db.sh
     with open(os.path.join(script_dir, "init_db.sh"), "r") as f:
         data = f.read()
-        data = data.replace("cmdb-name-placeholder", target_name)
-        data = data.replace("cmdb-port-placeholder", target_port)
+        data = data.replace("admin_port_placeholer", target_port)
         with open(os.path.join(bin_path, target_name, "init_db.sh"), "w") as tf:
             tf.write(data)
 
