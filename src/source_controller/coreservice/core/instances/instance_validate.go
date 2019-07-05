@@ -153,7 +153,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 	valid, err := NewValidator(ctx, m.dependent, objID, bizID)
 	if nil != err {
-		blog.Errorf("init validator faile %s", err.Error())
+		blog.Errorf("init validator failed %s", err.Error())
 		return err
 	}
 
@@ -166,8 +166,7 @@ func (m *instanceManager) validUpdateInstanceData(ctx core.ContextParams, objID 
 
 		property, ok := valid.propertys[key]
 		if !ok {
-			blog.Errorf("params is not valid, the key is %s", key)
-			return valid.errif.Errorf(common.CCErrCommParamsIsInvalid, key)
+			delete(instanceData, key)
 		}
 		fieldType := property.PropertyType
 		switch fieldType {

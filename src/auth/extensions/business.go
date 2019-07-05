@@ -52,6 +52,9 @@ func (am *AuthManager) CollectAllBusiness(ctx context.Context, header http.Heade
 			blog.Errorf("parse businesses %+v simplify information failed, err: %+v, rid: %s", business, err, rid)
 			continue
 		}
+		if businessSimplify.IsDefault > 0 {
+			continue
+		}
 
 		businessList = append(businessList, businessSimplify)
 	}
@@ -150,7 +153,7 @@ func (am *AuthManager) GenBusinessAuditNoPermissionResp(ctx context.Context, hea
 	p.SystemName = authcenter.SystemNameCMDB
 	p.ScopeType = authcenter.ScopeTypeIDSystem
 	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
-	p.ScopeID = strconv.FormatInt(businessID, 64)
+	p.ScopeID = strconv.FormatInt(businessID, 10)
 	p.ActionID = string(authcenter.Get)
 	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
 
@@ -302,6 +305,34 @@ func (am *AuthManager) DeregisterBusinessesByID(ctx context.Context, header http
 		return fmt.Errorf("get businesses by id failed, err: %+v", err)
 	}
 	return am.DeregisterBusinesses(ctx, header, businesses...)
+}
+
+func (am *AuthManager) GenBusinessNoPermissionResp(ctx context.Context, header http.Header, businessID int64) (*metadata.BaseResp, error) {
+	var p metadata.Permission
+	p.SystemID = authcenter.SystemIDCMDB
+	p.SystemName = authcenter.SystemNameCMDB
+	p.ScopeType = authcenter.ScopeTypeIDSystem
+	p.ScopeTypeName = authcenter.ScopeTypeIDSystemName
+	p.ActionID = string(authcenter.Get)
+	p.ActionName = authcenter.ActionIDNameMap[authcenter.Get]
+
+	p.Resources = [][]metadata.Resource{
+		{{
+			ResourceType:     string(authcenter.SysBusinessInstance),
+			ResourceTypeName: authcenter.ResourceTypeIDMap[authcenter.SysBusinessInstance],
+		}},
+	}
+
+	businesses, err := am.collectBusinessByIDs(ctx, header, businessID)
+	if err != nil {
+		return nil, err
+	}
+	if len(businesses) != 1 {
+		return nil, errors.New("get business detail failed")
+	}
+	p.ScopeName = businesses[0].BKAppNameField
+	resp := metadata.NewNoPermissionResp([]metadata.Permission{p})
+	return &resp, nil
 }
 
 // func (am *AuthManager) AuthorizeBusinessesByID(ctx context.Context, header http.Header, action meta.Action, businessIDs ...int64) error {

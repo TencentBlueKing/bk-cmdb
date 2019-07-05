@@ -19,20 +19,20 @@
             :columns-config-key="columnsConfigKey"
             :columns-config-properties="columnsConfigProperties"
             :columns-config-disabled-columns="['bk_host_innerip', 'bk_cloud_id', 'bk_biz_name', 'bk_module_name']"
-            :edit-auth="OPERATION.U_RESOURCE_HOST"
-            :delete-auth="OPERATION.D_RESOURCE_HOST"
-            :save-auth="OPERATION.U_RESOURCE_HOST"
+            :edit-auth="$OPERATION.U_RESOURCE_HOST"
+            :delete-auth="$OPERATION.D_RESOURCE_HOST"
+            :save-auth="$OPERATION.U_RESOURCE_HOST"
             @on-checked="handleChecked"
             @on-set-header="handleSetHeader">
             <div class="resource-options clearfix" slot="options">
                 <div class="fl">
                     <span style="display: inline-block;" v-if="isAdminView"
                         v-cursor="{
-                            active: !$isAuthorized(OPERATION.C_RESOURCE_HOST),
-                            auth: [OPERATION.C_RESOURCE_HOST]
+                            active: !$isAuthorized($OPERATION.C_RESOURCE_HOST),
+                            auth: [$OPERATION.C_RESOURCE_HOST]
                         }">
                         <bk-button class="options-button" type="primary" style="margin-left: 0"
-                            :disabled="!$isAuthorized(OPERATION.C_RESOURCE_HOST)"
+                            :disabled="!$isAuthorized($OPERATION.C_RESOURCE_HOST)"
                             @click="importInst.show = true">
                             {{$t('HostResourcePool[\'导入主机\']')}}
                         </bk-button>
@@ -50,22 +50,22 @@
                     </cmdb-selector>
                     <span style="display: inline-block;"
                         v-cursor="{
-                            active: !$isAuthorized(OPERATION.U_RESOURCE_HOST),
-                            auth: [OPERATION.U_RESOURCE_HOST]
+                            active: !$isAuthorized($OPERATION.U_RESOURCE_HOST),
+                            auth: [$OPERATION.U_RESOURCE_HOST]
                         }">
                         <bk-button class="options-button" type="default"
-                            :disabled="!table.checked.length || !$isAuthorized(OPERATION.U_RESOURCE_HOST)"
+                            :disabled="!table.checked.length || !$isAuthorized($OPERATION.U_RESOURCE_HOST)"
                             @click="handleMultipleEdit">
                             {{$t('BusinessTopology[\'修改\']')}}
                         </bk-button>
                     </span>
                     <span style="display: inline-block;" v-if="isAdminView"
                         v-cursor="{
-                            active: !$isAuthorized(OPERATION.D_RESOURCE_HOST),
-                            auth: [OPERATION.D_RESOURCE_HOST]
+                            active: !$isAuthorized($OPERATION.D_RESOURCE_HOST),
+                            auth: [$OPERATION.D_RESOURCE_HOST]
                         }">
                         <bk-button class="options-button options-button-delete" type="default"
-                            :disabled="!table.checked.length || !$isAuthorized(OPERATION.D_RESOURCE_HOST)"
+                            :disabled="!table.checked.length || !$isAuthorized($OPERATION.D_RESOURCE_HOST)"
                             @click="handleMultipleDelete">
                             {{$t('Common[\'删除\']')}}
                         </bk-button>
@@ -128,7 +128,6 @@
     import cmdbHostsFilter from '@/components/hosts/filter'
     import cmdbHostsTable from '@/components/hosts/table'
     import cmdbImport from '@/components/import/import'
-    import { OPERATION } from './router.config.js'
     export default {
         components: {
             cmdbHostsFilter,
@@ -137,7 +136,6 @@
         },
         data () {
             return {
-                OPERATION,
                 properties: {
                     biz: [],
                     host: [],

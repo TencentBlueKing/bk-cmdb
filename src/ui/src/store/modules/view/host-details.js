@@ -13,10 +13,7 @@ const state = {
         target: []
     },
     associationTypes: [],
-    expandAll: false,
-    indeterminate: true,
-    tableCount: 0,
-    expandCount: 0
+    expandAll: false
 }
 
 const getters = {
@@ -92,15 +89,6 @@ const mutations = {
     },
     toggleExpandAll (state, expandAll) {
         state.expandAll = expandAll
-    },
-    setExpandIndeterminate (state, indeterminate) {
-        state.indeterminate = indeterminate
-    },
-    updateTableCount (state, count) {
-        state.tableCount = state.tableCount + count
-    },
-    updateExpandCount (state, count) {
-        state.expandCount = state.expandCount + count
     }
 }
 
