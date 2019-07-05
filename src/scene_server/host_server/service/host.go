@@ -1007,8 +1007,12 @@ func (s *Service) CloneHostProperty(req *restful.Request, resp *restful.Response
 	}
 	// auth: check authorization
 	if err := s.AuthManager.AuthorizeByHostsIDs(srvData.ctx, srvData.header, authmeta.Update, dstHostID); err != nil {
-		blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
-		resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+		if err != auth.NoAuthorizeError {
+			blog.Errorf("check host authorization failed, hosts: %+v, err: %v, rid:%s", dstHostID, err, srvData.rid)
+			resp.WriteError(http.StatusForbidden, &meta.RespError{Msg: srvData.ccErr.Error(common.CCErrCommAuthorizeFailed)})
+			return
+		}
+		resp.WriteEntity(s.AuthManager.GenEditBizHostNoPermissionResp([]int64{dstHostID}))
 		return
 	}
 
