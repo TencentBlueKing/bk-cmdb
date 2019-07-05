@@ -273,7 +273,7 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.WorkPath.AsDefaultValue = &True
 	}
 	if inst.BindIP != nil {
-		template.BindIP.Value = inst.BindIP
+		*template.BindIP.Value = metadata.SocketBindType(*inst.BindIP)
 		template.BindIP.AsDefaultValue = &True
 	}
 	if inst.Priority != nil && *inst.Priority > 0 {
