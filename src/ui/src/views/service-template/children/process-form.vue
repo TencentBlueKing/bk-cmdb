@@ -168,6 +168,7 @@
                             property.isLocking = false
                         }
                         if (['bind_ip'].includes(property['bk_property_id'])) {
+                            property.type = 'enum'
                             property.option = this.ipOption
                         }
                     })
