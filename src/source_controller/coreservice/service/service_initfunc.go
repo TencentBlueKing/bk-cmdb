@@ -168,6 +168,11 @@ func (s *coreService) audit() {
 	s.addAction(http.MethodPost, "/read/auditlog", s.SearchAuditLog, nil)
 }
 
+func (s *coreService) label() {
+	s.addAction(http.MethodPost, "/createmany/labels", s.AddLabels, nil)
+	s.addAction(http.MethodDelete, "/deletemany/labels", s.RemoveLabels, nil)
+}
+
 func (s *coreService) initService() {
 	s.initModelClassification()
 	s.initModel()
@@ -182,4 +187,5 @@ func (s *coreService) initService() {
 	s.audit()
 	s.initProcess()
 	s.initCloudSync()
+	s.label()
 }
