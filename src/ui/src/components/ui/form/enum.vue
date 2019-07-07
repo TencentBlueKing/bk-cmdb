@@ -1,12 +1,17 @@
 <template>
     <div class="form-enum">
-        <bk-selector class="form-enum-selector"
+        <bk-select class="form-enum-selector"
+            v-model="selected"
+            :clearable="allowClear"
             :searchable="searchable"
-            :list="options"
-            :disabled="disabled"
-            :allow-clear="allowClear"
-            :selected.sync="selected">
-        </bk-selector>
+            :disabled="disabled">
+            <bk-option
+                v-for="(option, index) in options"
+                :key="index"
+                :id="option.id"
+                :name="option.name">
+            </bk-option>
+        </bk-select>
     </div>
 </template>
 

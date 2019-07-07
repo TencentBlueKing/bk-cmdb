@@ -3,10 +3,14 @@
         <div class="cloud-filter clearfix">
             <bk-button class="cloud-btn" theme="primary" @click="handleCreate">{{ $t('Cloud["新建云同步任务"]')}}</bk-button>
             <div class="cloud-option-filter clearfix fr">
-                <bk-selector class="cloud-filter-selector fl"
-                    :list="selectList"
-                    :selected.sync="defaultDemo.selected">
-                </bk-selector>
+                <bk-select class="cloud-filter-selector fl"
+                    v-model="defaultDemo.selected">
+                    <bk-option v-for="(option, index) in selectList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <input class="cloud-filter-value cmdb-form-input fl"
                     type="text"
                     :placeholder="$t('Cloud[\'任务名称搜索\']')"

@@ -16,16 +16,22 @@
                         {{$t('ServiceManagement["服务分类"]')}}：
                     </span>
                     <div class="item-main fl" v-if="showEidtClassification">
-                        <bk-selector
-                            placeholder="请选择一级分类"
-                            :list="[]"
-                            :selected.sync="formData.primaryClassification">
-                        </bk-selector>
-                        <bk-selector
-                            placeholder="请选择二级分类"
-                            :list="[]"
-                            :selected.sync="formData.secondaryClassification">
-                        </bk-selector>
+                        <bk-select v-model="formData.primaryClassification"
+                            placeholder="请选择一级分类">
+                            <bk-option v-for="(option, index) in []"
+                                :key="index"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
+                        <bk-select v-model="formData.secondaryClassification"
+                            placeholder="请选择二级分类">
+                            <bk-option v-for="(option, index) in []"
+                                :key="index"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
                         <div class="operation-btn">
                             <span class="text-primary" @click="handleEditSave">{{$t("Common['保存']")}}</span>
                             <span class="text-primary ml10" @click="handleEditCancel">{{$t("Common['取消']")}}</span>

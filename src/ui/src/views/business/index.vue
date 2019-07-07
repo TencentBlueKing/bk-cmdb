@@ -29,11 +29,16 @@
                 </bk-button>
             </div>
             <div class="options-filter clearfix fr">
-                <bk-selector class="filter-selector fl"
-                    :searchable="true"
-                    :list="filter.options"
-                    :selected.sync="filter.id">
-                </bk-selector>
+                <bk-select
+                    v-model="filter.id"
+                    searchable
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in filter.options"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-form-enum class="filter-value fl"
                     v-if="filter.type === 'enum'"
                     :options="$tools.getEnumOptions(properties, filter.id)"

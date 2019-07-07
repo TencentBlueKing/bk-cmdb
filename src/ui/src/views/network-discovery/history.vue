@@ -2,20 +2,24 @@
     <div class="history-wrapper">
         <div class="filter-wrapper clearfix">
             <cmdb-form-date-range class="date-range" v-model="filter['last_time']"></cmdb-form-date-range>
-            <bk-selector
-                class="selector"
-                :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
-                :allow-clear="true"
-                :list="changeList"
-                :selected.sync="filter['action']"
-            ></bk-selector>
-            <bk-selector
-                class="selector"
-                :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
-                :allow-clear="true"
-                :list="typeList"
-                :selected.sync="filter['bk_obj_id']"
-            ></bk-selector>
+            <bk-select class="selector"
+                v-model="filter.action"
+                :placeholder="$t('NetworkDiscovery[\'全部变更\']')">
+                <bk-option v-for="(option, index) in changeList"
+                    :key="index"
+                    :id="option.id"
+                    :name="option.name">
+                </bk-option>
+            </bk-select>
+            <bk-select class="selector"
+                v-model="filter.bk_obj_id"
+                :placeholder="$t('NetworkDiscovery[\'全部类型\']')">
+                <bk-option v-for="(option, index) in typeList"
+                    :key="index"
+                    :id="option.id"
+                    :name="option.name">
+                </bk-option>
+            </bk-select>
             <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')" v-model.trim="filter['bk_cloud_name']">
             <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_host_innerip']">
             <bk-button theme="primary" @click="getTableData">

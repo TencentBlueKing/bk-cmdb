@@ -4,15 +4,13 @@
             <div class="group-content" v-if="isAdminView">
                 <span class="title-name">{{$t('Common["业务"]')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="authorizedBusiness"
-                        :selected.sync="filter.bizId"
-                        :searchable="true"
-                        :allow-clear="true"
-                        display-key="bk_biz_name"
-                        search-key="bk_biz_id"
-                        setting-key="bk_biz_id"
-                    ></bk-selector>
+                    <bk-select v-model="filter.bizId" searchable>
+                        <bk-option v-for="business in authorizedBusiness"
+                            :key="business.bk_biz_id"
+                            :id="business.bk_biz_id"
+                            :name="business.bk_biz_name">
+                        </bk-option>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
@@ -24,22 +22,29 @@
             <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit["模型"]')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="filterClassifications"
-                        :selected.sync="filter.classify"
-                        :has-children="true"
-                        :searchable="true"
-                        :allow-clear="true"
-                    ></bk-selector>
+                    <bk-select v-model="filter.classify" searchable>
+                        <bk-option-group v-for="group in filterClassifications"
+                            :key="group.id"
+                            :name="group.name">
+                            <bk-option v-for="classify in group.children"
+                                :key="classify.id"
+                                :id="classify.id"
+                                :name="classify.name">
+                            </bk-option>
+                        </bk-option-group>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
                 <span class="title-name">{{$t('OperationAudit[\'类型\']')}}</span>
                 <div class="selector-content">
-                    <bk-selector
-                        :list="operateTypeList"
-                        :selected.sync="filter.bkOpType"
-                    ></bk-selector>
+                    <bk-select v-model="filter.bkOpType" :clearable="false">
+                        <bk-option v-for="option in operateTypeList"
+                            :key="option.id"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                 </div>
             </div>
             <div class="group-content">
@@ -89,11 +94,11 @@
                     bizId: '',
                     bkIP: '',
                     classify: '',
-                    bkOpType: '',
+                    bkOpType: 0,
                     bkCreateTime: []
                 },
                 operateTypeList: [{
-                    id: '',
+                    id: 0,
                     name: this.$t('OperationAudit["全部"]')
                 }, {
                     id: 1,

@@ -14,6 +14,8 @@ import {
     bkSideslider,
     bkButton,
     bkSelect,
+    bkOption,
+    bkOptionGroup,
     bkTab,
     bkTabPanel,
     bkDialog,
@@ -33,7 +35,6 @@ const components = [
     bkTableColumn,
     bkPagination,
     bkSideslider,
-    bkSelect,
     bkTab,
     bkTabPanel,
     bkDialog,
@@ -44,3 +45,6 @@ components.forEach(component => {
 })
 
 Vue.component('bk-button', bkButton)
+Vue.component('bk-select', bkSelect)
+Vue.component('bk-option', bkOption)
+Vue.component('bk-option-group', bkOptionGroup)

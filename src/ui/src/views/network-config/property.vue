@@ -20,11 +20,14 @@
                 <input type="hidden" name="netcollect_property_id" :value="table.checked.join(',')">
             </form>
             <div class="filter">
-                <bk-selector
-                    class="search-selector"
-                    :list="filter.typeList"
-                    :selected.sync="filter.type"
-                ></bk-selector>
+                <bk-select class="search-selector"
+                    v-model="filter.type">
+                    <bk-option v-for="(option, index) in filter.typeList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
                 <i class="bk-icon icon-search"
                     @click="getTableData"></i>
@@ -55,14 +58,15 @@
                     <label class="label first">
                         <span>{{$t('NetworkDiscovery["所属设备"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="propertyDialog.deviceList"
-                        :searchable="true"
-                        search-key="device_name"
-                        setting-key="device_id"
-                        display-key="device_name"
-                        :selected.sync="propertyDialog.data.device_id"
-                    ></bk-selector>
+                    <bk-select
+                        searchable
+                        v-model="propertyDialog.data.device_id">
+                        <bk-option v-for="(option, index) in propertyDialog.deviceList"
+                            :key="index"
+                            :id="option.device_id"
+                            :name="option.device_name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" hidden name="device_id" v-model="propertyDialog.data['device_id']" v-validate="'required'">
                     <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
                 </div>
@@ -77,10 +81,13 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["采集方式"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="propertyDialog.actionList"
-                        :selected.sync="propertyDialog.data.action"
-                    ></bk-selector>
+                    <bk-select v-model="propertyDialog.data.action">
+                        <bk-option v-for="(option, index) in propertyDialog.actionList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" hidden name="action" v-model="propertyDialog.data.action" v-validate="'required'">
                     <div v-show="errors.has('action')" class="color-danger">{{ errors.first('action') }}</div>
                 </div>
@@ -88,15 +95,16 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["模型属性"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        search-key="bk_property_name"
-                        setting-key="bk_property_id"
-                        display-key="bk_property_name"
-                        :searchable="true"
-                        :content-max-height="200"
-                        :list="propertyDialog.attrList"
-                        :selected.sync="propertyDialog.data.bk_property_id"
-                    ></bk-selector>
+                    <bk-select
+                        searchable
+                        v-model="propertyDialog.data.bk_property_id"
+                        :scroll-height="200">
+                        <bk-option v-for="(option, index) in propertyDialog.attrList"
+                            :key="index"
+                            :id="option.bk_property_id"
+                            :name="option.bk_property_name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" hidden name="bk_property_id" v-model="propertyDialog.data['bk_property_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
                 </div>
