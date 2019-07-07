@@ -19,18 +19,22 @@
                     </label>
                 </div>
                 <div class="details-right clearfix">
-                    <bk-selector
-                        :list="changeList"
-                        :allow-clear="true"
-                        :selected.sync="filterCopy.action"
-                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')"
-                    ></bk-selector>
-                    <bk-selector
-                        :list="typeList"
-                        :allow-clear="true"
-                        :selected.sync="filterCopy['bk_obj_name']"
-                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')"
-                    ></bk-selector>
+                    <bk-select v-model="filterCopy.action"
+                        :placeholder="$t('NetworkDiscovery[\'全部变更\']')">
+                        <bk-option v-for="(option, index) in changeList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
+                    <bk-select v-model="filterCopy.bk_obj_name"
+                        :placeholder="$t('NetworkDiscovery[\'全部类型\']')">
+                        <bk-option v-for="(option, index) in typeList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')">
                     <bk-button theme="default" @click="search">
                         {{$t('Common["查询"]')}}

@@ -70,11 +70,13 @@
                         {{ $t('Cloud["同步周期"]')}}
                     </label>
                     <div class="item-content-two length-short">
-                        <bk-selector
-                            class="selector"
-                            :list="periodList"
-                            :selected.sync="taskMap.bk_period_type">
-                        </bk-selector>
+                        <bk-select v-model="taskMap.bk_period_type">
+                            <bk-option v-for="(option, index) in periodList"
+                                :key="index"
+                                :id="option.id"
+                                :name="option.name">
+                            </bk-option>
+                        </bk-select>
                         <input
                             type="text"
                             class="cmdb-form-input"

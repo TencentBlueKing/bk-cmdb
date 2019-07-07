@@ -1,21 +1,20 @@
 <template>
     <div class="bk-page-count">
         <div class="bk-total-page">{{'共计' + totalPage + '页'}}</div>
-        <bk-selector :placeholder="'页数'"
-            :selected.sync="paginationIndex"
-            :list="paginationListTmp"
-            :setting-key="'id'"
-            :display-key="'count'">
-        </bk-selector>
+        <bk-select v-model="paginationIndex" :placeholder="'页数'">
+            <bk-option v-for="(option, index) in paginationListTmp"
+                :key="index"
+                :id="option.id"
+                :name="option.count"
+                :clearable="false"
+                :searchable="false">
+            </bk-option>
+        </bk-select>
     </div>
 </template>
 <script>
-    import bkSelector from '../selector/selector.vue'
     export default {
         name: 'bk-pagination',
-        components: {
-            bkSelector
-        },
         props: {
             paginationCount: {
                 type: Number,

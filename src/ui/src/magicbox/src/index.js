@@ -24,7 +24,6 @@ import bkInfoBox from './components/info-box'
 import bkTooltip from './components/tooltip'
 import bkDatePicker from './components/date-picker'
 import bkDateRange from './components/date-range'
-import bkSelector from './components/selector'
 import Tab from './components/tab'
 import bkPaging from './components/paging'
 import bkTransfer from './components/transfer'
@@ -68,7 +67,6 @@ const components = {
     bkPaging,
     bkProcess,
     bkRound,
-    bkSelector,
     bkSideslider,
     bkSteps,
     bkSwitcher,
@@ -146,7 +144,6 @@ export {
     bkPaging,
     bkProcess,
     bkRound,
-    bkSelector,
     bkSideslider,
     bkSteps,
     bkSwitcher,

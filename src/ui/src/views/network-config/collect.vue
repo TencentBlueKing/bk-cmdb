@@ -89,10 +89,13 @@
                         <span>{{$t('NetworkDiscovery["采集频率"]')}}</span>
                         <span class="color-danger">*</span>
                     </label>
-                    <bk-selector
-                        :list="configDialog.periodList"
-                        :selected.sync="configDialog.period"
-                    ></bk-selector>
+                    <bk-select v-model="configDialog.period">
+                        <bk-option v-for="(option, index) in configDialog.periodList"
+                            :key="index"
+                            :id="option.id"
+                            :name="option.name">
+                        </bk-option>
+                    </bk-select>
                     <label>
                         <span>{{$t('NetworkDiscovery["团体字"]')}}</span>
                         <span class="color-danger">*</span>

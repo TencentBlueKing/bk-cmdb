@@ -7,11 +7,14 @@
                 </bk-button>
             </div>
             <div class="role-options-search fr clearfix">
-                <bk-selector
-                    class="search-selector"
-                    :list="typeList"
-                    :selected.sync="filter.type"
-                ></bk-selector>
+                <bk-select class="search-selector"
+                    v-model="filter.type">
+                    <bk-option v-for="(option, index) in typeList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
                 <i class="filter-search bk-icon icon-search"
                     @click="getRoleList">
