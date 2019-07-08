@@ -144,10 +144,11 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 	cond.Field(common.BKAppIDField).Eq(bizID)
 	cond.Field(common.BKModuleIDField).In(moduleIDS)
 
-	updateData := mapstr.New()
-	updateData.Set("condition", cond.ToMapStr())
-	updateData.Set("data", innerData)
-	rsp, err := m.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDModule, m.params.Header, updateData)
+	updateParam := &metadata.UpdateOption{
+		Data:      innerData,
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().UpdateInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, updateParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

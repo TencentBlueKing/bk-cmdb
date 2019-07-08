@@ -817,10 +817,12 @@ func (lgc *Logics) UpdateCloudHosts(ctx context.Context, cloudHostAttr []mapstr.
 		delete(hostInfo, common.BKHostIDField)
 		delete(hostInfo, common.BKCloudConfirm)
 		delete(hostInfo, common.BKAttrConfirm)
-		opt := mapstr.MapStr{"condition": mapstr.MapStr{common.BKHostIDField: hostID}, "data": hostInfo}
 
-		blog.V(5).Infof("opt: %+v", opt)
-		result, err := lgc.CoreAPI.ObjectController().Instance().UpdateObject(ctx, common.BKInnerObjIDHost, lgc.header, opt)
+		updateParam := &meta.UpdateOption{
+			Data:      hostInfo,
+			Condition: mapstr.MapStr{common.BKHostIDField: hostID},
+		}
+		result, err := lgc.CoreAPI.CoreService().Instance().UpdateInstance(ctx, lgc.header, common.BKInnerObjIDHost, updateParam)
 		if err != nil || (err == nil && !result.Result) {
 			blog.Errorf("update host batch failed, ids[%v], err: %v, %v, rid: %s", hostID, err, result.ErrMsg, lgc.rid)
 			return err
