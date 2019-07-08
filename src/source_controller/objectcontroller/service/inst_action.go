@@ -14,12 +14,10 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
@@ -211,58 +209,6 @@ func (cli *Service) UpdateInstObject(req *restful.Request, resp *restful.Respons
 	}
 
 	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp})
-
-}
-
-// SearchInstObjects SearchInstObjects
-func (cli *Service) SearchInstObjects(req *restful.Request, resp *restful.Response) {
-	// get the language
-	language := util.GetLanguage(req.Request.Header)
-	ownerID := util.GetOwnerID(req.Request.Header)
-	// get the error factory by the language
-	defErr := cli.Core.CCErr.CreateDefaultCCErrorIf(language)
-	defLang := cli.Core.Language.CreateDefaultCCLanguageIf(language)
-	ctx := util.GetDBContext(context.Background(), req.Request.Header)
-	db := cli.Instance.Clone()
-
-	pathParams := req.PathParameters()
-	objType := pathParams["obj_type"]
-
-	value, err := ioutil.ReadAll(req.Request.Body)
-	var dat meta.QueryInput
-	err = json.Unmarshal([]byte(value), &dat)
-	if err != nil {
-		blog.Errorf("get object type:%s,input:%v error:%v", string(objType), value, err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrCommJSONUnmarshalFailed, err.Error())})
-		return
-	}
-	//dat.ConvTime()
-	fields := dat.Fields
-	condition := dat.Condition
-	condition = util.SetQueryOwner(condition, ownerID)
-
-	skip := dat.Start
-	limit := dat.Limit
-	sort := dat.Sort
-	fieldArr := strings.Split(fields, ",")
-	result := make([]map[string]interface{}, 0)
-	count, err := cli.GetCntByCondition(ctx, db, objType, condition)
-	if err != nil && !db.IsNotFoundError(err) {
-		blog.Errorf("get object type:%s,input:%v error:%v", objType, string(value), err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
-	}
-	err = cli.GetObjectByCondition(ctx, db, defLang, objType, fieldArr, condition, &result, sort, skip, limit)
-	if err != nil && !db.IsNotFoundError(err) {
-		blog.Errorf("get object type:%s,input:%v error:%v", string(objType), string(value), err)
-		resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.New(common.CCErrObjectSelectInstFailed, err.Error())})
-		return
-	}
-	info := make(map[string]interface{})
-	info["count"] = count
-	info["info"] = result
-	//fmt.Println("result:", result)
-	resp.WriteEntity(meta.Response{BaseResp: meta.SuccessBaseResp, Data: info})
 
 }
 
