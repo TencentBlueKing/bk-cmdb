@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -181,10 +182,10 @@ func (p *processOperation) CreateServiceInstance(ctx core.ContextParams, instanc
 	return &instance, nil
 }
 
-func (p *processOperation) GetServiceInstance(ctx core.ContextParams, templateID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
+func (p *processOperation) GetServiceInstance(ctx core.ContextParams, instanceID int64) (*metadata.ServiceInstance, errors.CCErrorCoder) {
 	instance := metadata.ServiceInstance{}
 
-	filter := map[string]int64{common.BKFieldID: templateID}
+	filter := map[string]int64{common.BKFieldID: instanceID}
 	if err := p.dbProxy.Table(common.BKTableNameServiceInstance).Find(filter).One(ctx.Context, &instance); nil != err {
 		blog.Errorf("GetServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s", common.BKTableNameServiceInstance, instance, err, ctx.ReqID)
 		if p.dbProxy.IsNotFoundError(err) {
@@ -226,8 +227,9 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField)
 	}
 	md := metadata.NewMetaDataFromBusinessID(strconv.FormatInt(option.BusinessID, 10))
-	filter := map[string]interface{}{}
-	filter[common.MetadataField] = md.ToMapStr()
+	filter := map[string]interface{}{
+		common.MetadataField: md.ToMapStr(),
+	}
 
 	if option.ServiceTemplateID != 0 {
 		filter[common.BKServiceTemplateIDField] = option.ServiceTemplateID
@@ -251,6 +253,19 @@ func (p *processOperation) ListServiceInstance(ctx core.ContextParams, option me
 		filter[common.BKFieldName] = map[string]interface{}{
 			common.BKDBLIKE: fmt.Sprintf(".*%s.*", *option.SearchKey),
 		}
+	}
+
+	if key, err := option.Selectors.Validate(); err != nil {
+		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s", option.Selectors, key, err, ctx.ReqID)
+		return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, key)
+	}
+	if len(option.Selectors) != 0 {
+		labelFilter, err := option.Selectors.ToMgoFilter()
+		if err != nil {
+			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s", option.Selectors, err, ctx.ReqID)
+			return nil, ctx.Error.CCErrorf(common.CCErrCommParamsInvalid, "labels")
+		}
+		filter = util.MergeMaps(filter, labelFilter)
 	}
 
 	var total uint64
