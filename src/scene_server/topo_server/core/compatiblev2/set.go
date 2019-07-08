@@ -89,12 +89,11 @@ func (s *set) deleteModules(bizID int64, setIDS []int64) error {
 }
 
 func (s *set) UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Condition) error {
-
-	input := mapstr.New()
-	input.Set("data", data)
-	input.Set("condition", cond.ToMapStr())
-
-	rsp, err := s.client.ObjectController().Instance().UpdateObject(context.Background(), common.BKInnerObjIDSet, s.params.Header, input)
+	updateParam := &metadata.UpdateOption{
+		Data:      data,
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := s.client.CoreService().Instance().UpdateInstance(s.params.Context, s.params.Header, common.BKInnerObjIDSet, updateParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-set] failed to request the object controller, err: %s", rsp.ErrMsg)
 		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)

@@ -13,19 +13,17 @@
 package objcontroller
 
 import (
-	"configcenter/src/apimachinery/toposerver/association"
 	"fmt"
 
-	"configcenter/src/apimachinery/objcontroller/inst"
 	"configcenter/src/apimachinery/objcontroller/meta"
 	"configcenter/src/apimachinery/objcontroller/openapi"
 	"configcenter/src/apimachinery/objcontroller/privilege"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/apimachinery/toposerver/association"
 	"configcenter/src/apimachinery/util"
 )
 
 type ObjControllerClientInterface interface {
-	Instance() inst.InstanceInterface
 	Meta() meta.MetaInterface
 	OpenAPI() openapi.OpenApiInterface
 	Privilege() privilege.PrivilegeInterface
@@ -40,10 +38,6 @@ func NewObjectControllerInterface(c *util.Capability, version string) ObjControl
 
 type objectctrl struct {
 	client rest.ClientInterface
-}
-
-func (o *objectctrl) Instance() inst.InstanceInterface {
-	return inst.NewInstanceInterface(o.client)
 }
 
 func (o *objectctrl) Meta() meta.MetaInterface {
