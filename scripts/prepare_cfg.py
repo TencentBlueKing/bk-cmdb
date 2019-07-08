@@ -38,8 +38,6 @@ usage:
 """
 
 if __name__ == "__main__":
-    print("environ", os.environ)
-    print("argv", sys.argv)
     # bin_path = os.environ.get("BIN_PATH")
     bin_path = sys.argv[1]
     # target_name = os.environ.get("TARGET_NAME")
