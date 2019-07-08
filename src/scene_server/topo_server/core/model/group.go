@@ -118,7 +118,7 @@ func (g *group) Create() error {
 	}
 
 	if exists {
-		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+		return g.params.Err.Errorf(common.CCErrCommDuplicateItem, g.GetName())
 	}
 
 	rsp, err := g.clientSet.ObjectController().Meta().CreatePropertyGroup(context.Background(), g.params.Header, &g.grp)
@@ -150,7 +150,7 @@ func (g *group) Update(data frtypes.MapStr) error {
 	}
 
 	if exists {
-		return g.params.Err.Error(common.CCErrCommDuplicateItem)
+		return g.params.Err.Errorf(common.CCErrCommDuplicateItem, g.GetName())
 	}
 
 	cond := condition.CreateCondition()
