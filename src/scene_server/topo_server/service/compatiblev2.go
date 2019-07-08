@@ -166,14 +166,18 @@ func (s *Service) SearchModuleByApp(params types.ContextParams, pathParams, quer
 	}
 
 	cond.Condition.Set(common.BKAppIDField, bizID)
-	query := &metadata.QueryInput{}
-	query.Condition = cond.Condition
-	query.Fields = strings.Join(cond.Fields, ",")
-	query.Start = cond.Page.Start
-	query.Limit = cond.Page.Limit
-	query.Sort = cond.Page.Sort
-
-	return s.Core.CompatibleV2Operation().Module(params).SearchModuleByApp(query)
+	sortParser := metadata.NewSearchSortParse()
+	sortArr := sortParser.String(cond.Page.Sort).ToSearchSortArr()
+	inputParam := &metadata.QueryCondition{
+		Fields: cond.Fields,
+		Limit: metadata.SearchLimit{
+			Offset: int64(cond.Page.Start),
+			Limit:  int64(cond.Page.Limit),
+		},
+		SortArr:   sortArr,
+		Condition: cond.Condition,
+	}
+	return s.Core.CompatibleV2Operation().Module(params).SearchModuleByApp(inputParam)
 }
 
 // SearchModuleBySetProperty search module by set property
