@@ -67,15 +67,17 @@ func (m *module) hasHost(bizID int64, moduleIDS []int64) (bool, error) {
 }
 
 func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).Eq(setID)
-
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		SortArr: nil,
+		Condition: map[string]interface{}{
+			common.BKAppIDField: bizID,
+			common.BKSetIDField: setID,
+		},
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDSet, inputParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module]failed to request object controller, err: %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -84,6 +86,9 @@ func (m *module) isValidSet(bizID int64, setID int64) (bool, error) {
 	if !rsp.Result {
 		blog.Errorf("[compatiblev2-module] failed to search the sets, err: %s", rsp.ErrMsg)
 		return false, m.params.Err.New(rsp.Code, rsp.ErrMsg)
+	}
+	if rsp.Data.Count == 0 {
+		blog.Errorf("[compatiblev2-module] failed to search the sets, err: not found, rid: %s", m.params.ReqID)
 	}
 
 	return true, nil
