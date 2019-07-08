@@ -47,8 +47,6 @@ func (s *Service) WebService() *restful.Container {
 	//restful.DefaultRequestContentType(restful.MIME_JSON)
 	restful.DefaultResponseContentType(restful.MIME_JSON)
 
-	api.Route(api.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))
-
 	api.Route(api.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
 	api.Route(api.POST("/meta/objectatt").To(s.CreateObjectAtt))
 
