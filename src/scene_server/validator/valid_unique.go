@@ -225,15 +225,20 @@ func (valid *ValidMap) validUpdateUnique(valData map[string]interface{}, instID 
 func (valid *ValidMap) getInstDataByID(instID int64) (map[string]interface{}, error) {
 	objID := valid.objID
 	searchCond := make(map[string]interface{})
-
 	searchCond[common.GetInstIDField(objID)] = instID
 	if common.GetInstTableName(objID) == common.BKTableNameBaseInst {
 		objID = common.BKInnerObjIDObject
 		searchCond[common.BKObjIDField] = valid.objID
 	}
 
-	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", searchCond, objID)
-	result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, objID, valid.pheader, &metadata.QueryInput{Condition: searchCond, Limit: common.BKNoLimit})
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: searchCond,
+	}
+	blog.V(4).Infof("[getInstDataByID] condition: %#v, objID %s ", inputParam, objID)
+	result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objID, inputParam)
 	if nil != err {
 		return nil, err
 	}

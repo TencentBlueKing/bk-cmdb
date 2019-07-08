@@ -181,13 +181,13 @@ func (m *module) SearchModuleByApp(query *metadata.QueryCondition) (*metadata.In
 }
 
 func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
-
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-	query.Limit = common.BKNoLimit
-	// fmt.Println("cond:", cond.ToMapStr())
-	// search sets
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDSet, m.params.Header, query)
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: cond.ToMapStr(),
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDSet, inputParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -211,7 +211,7 @@ func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition
 	}
 
 	// search modules
-	inputParam := &metadata.QueryCondition{
+	inputParam = &metadata.QueryCondition{
 		Limit: metadata.SearchLimit{
 			Limit: common.BKNoLimit,
 		},
