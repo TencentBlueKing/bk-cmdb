@@ -20,19 +20,6 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (t *instance) SearchObjects(ctx context.Context, objType string, h http.Header, dat *metadata.QueryInput) (resp *metadata.QueryInstResult, err error) {
-	subPath := fmt.Sprintf("/insts/%s/search", objType)
-	resp = new(metadata.QueryInstResult)
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
