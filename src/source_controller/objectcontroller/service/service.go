@@ -60,21 +60,6 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.GET("/object/{bk_obj_id}/unique/action/search").To(s.SearchObjectUnique))
 
-	// association api
-	api.Route(api.POST("/association/action/search").To(s.SearchAssociationType))
-	api.Route(api.POST("/association/action/create").To(s.CreateAssociationType))
-	api.Route(api.PUT("/association/{id}/action/update").To(s.UpdateAssociationType))
-	api.Route(api.DELETE("/association/{id}/action/delete").To(s.DeleteAssociationType))
-
-	api.Route(api.POST("/object/association/action/search").To(s.SelectObjectAssociations))       // optimization: new api path
-	api.Route(api.POST("/object/association/action/create").To(s.CreateObjectAssociation))        // optimization: new api path
-	api.Route(api.PUT("/object/association/{id}/action/update").To(s.UpdateObjectAssociation))    // optimization: new api path
-	api.Route(api.DELETE("/object/association/{id}/action/delete").To(s.DeleteObjectAssociation)) // optimization: new api path
-
-	api.Route(api.POST("/inst/association/action/search").To(s.SearchInstAssociations))
-	api.Route(api.POST("/inst/association/action/create").To(s.CreateInstAssociation))
-	api.Route(api.DELETE("/inst/association/{association_id}/action/delete").To(s.DeleteInstAssociation))
-
 	api.Route(api.POST("/topographics/search").To(s.SearchTopoGraphics))
 	api.Route(api.POST("/topographics/update").To(s.UpdateTopoGraphics))
 
