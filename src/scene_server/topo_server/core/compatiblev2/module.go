@@ -27,7 +27,7 @@ import (
 // ModuleInterface module interface
 type ModuleInterface interface {
 	UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData mapstr.MapStr) error
-	SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error)
+	SearchModuleByApp(query *metadata.QueryCondition) (*metadata.InstResult, error)
 	SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error)
 	AddMultiModule(bizID, setID int64, moduleNames []string, data mapstr.MapStr) error
 	DeleteMultiModule(bizID int64, moduleIDS []int64) error
@@ -161,9 +161,8 @@ func (m *module) UpdateMultiModule(bizID int64, moduleIDS interface{}, innerData
 	return nil
 }
 
-func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstResult, error) {
-
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+func (m *module) SearchModuleByApp(query *metadata.QueryCondition) (*metadata.InstResult, error) {
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, query)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return nil, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
@@ -174,7 +173,11 @@ func (m *module) SearchModuleByApp(query *metadata.QueryInput) (*metadata.InstRe
 		return nil, m.params.Err.New(rsp.Code, rsp.ErrMsg)
 	}
 
-	return &rsp.Data, nil
+	result := &metadata.InstResult{
+		Count: rsp.Data.Count,
+		Info:  rsp.Data.Info,
+	}
+	return result, nil
 }
 
 func (m *module) SearchModuleBySetProperty(bizID int64, cond condition.Condition) (*metadata.InstResult, error) {
