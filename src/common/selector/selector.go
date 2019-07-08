@@ -152,5 +152,13 @@ func (ss Selectors) ToMgoFilter() (map[string]interface{}, error) {
 		}
 		filters = append(filters, filter)
 	}
-	return util.MergeMaps(filters...), nil
+	if len(filters) == 0 {
+		return make(map[string]interface{}), nil
+	}
+	if len(filters) == 1 {
+		return filters[0], nil
+	}
+	return map[string]interface{}{
+		common.BKDBAND: filters,
+	}, nil
 }

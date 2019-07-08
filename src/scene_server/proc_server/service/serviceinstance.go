@@ -197,7 +197,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		}
 
 		processData := mapstr.MapStr{}
-		if relation.ProcessTemplateID == 0 {
+		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
 			serviceInstanceID := relation.ServiceInstanceID
 			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
 				ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process instance failed, serviceInstanceID: %d, process: %+v, err: %v", serviceInstanceID, process, err)
