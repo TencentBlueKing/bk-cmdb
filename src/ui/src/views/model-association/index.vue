@@ -22,7 +22,11 @@
             </span>
             <label class="search-input">
                 <i class="bk-icon icon-search" @click="searchRelation(true)"></i>
-                <input type="text" class="cmdb-form-input" v-model.trim="searchText" :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')" @keyup.enter="searchRelation(true)">
+                <bk-input type="text" class="cmdb-form-input"
+                    v-model.trim="searchText"
+                    :placeholder="$t('ModelManagement[\'请输入关联类型名称\']')"
+                    @enter="searchRelation(true)">
+                </bk-input>
             </label>
         </p>
         <cmdb-table

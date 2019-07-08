@@ -28,7 +28,12 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" v-model.trim="filter.text" @keyup.enter="getTableData">
+                <bk-input class="cmdb-form-input"
+                    type="text"
+                    :placeholder="$t('Common[\'请输入\']')"
+                    v-model.trim="filter.text"
+                    @enter="getTableData">
+                </bk-input>
                 <i class="bk-icon icon-search"
                     @click="getTableData"></i>
             </div>
@@ -67,14 +72,20 @@
                             :name="option.device_name">
                         </bk-option>
                     </bk-select>
-                    <input type="text" hidden name="device_id" v-model="propertyDialog.data['device_id']" v-validate="'required'">
+                    <bk-input type="text" hidden name="device_id"
+                        v-model="propertyDialog.data['device_id']"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('device_id')" class="color-danger">{{ errors.first('device_id') }}</div>
                 </div>
                 <div>
                     <label class="label">
                         <span>oid<span class="color-danger">*</span></span>
                     </label>
-                    <input type="text" class="cmdb-form-input" name="oid" v-model="propertyDialog.data.oid" v-validate="'required|oid'">
+                    <bk-input type="text" class="cmdb-form-input" name="oid"
+                        v-model="propertyDialog.data.oid"
+                        v-validate="'required|oid'">
+                    </bk-input>
                     <div v-show="errors.has('oid')" class="color-danger">{{ errors.first('oid') }}</div>
                 </div>
                 <div>
@@ -88,7 +99,10 @@
                             :name="option.name">
                         </bk-option>
                     </bk-select>
-                    <input type="text" hidden name="action" v-model="propertyDialog.data.action" v-validate="'required'">
+                    <bk-input type="text" hidden name="action"
+                        v-model="propertyDialog.data.action"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('action')" class="color-danger">{{ errors.first('action') }}</div>
                 </div>
                 <div>
@@ -105,7 +119,10 @@
                             :name="option.bk_property_name">
                         </bk-option>
                     </bk-select>
-                    <input type="text" hidden name="bk_property_id" v-model="propertyDialog.data['bk_property_id']" v-validate="'required'">
+                    <bk-input type="text" hidden name="bk_property_id"
+                        v-model="propertyDialog.data['bk_property_id']"
+                        v-validate="'required'">
+                    </bk-input>
                     <div v-show="errors.has('bk_property_id')" class="color-danger">{{ errors.first('bk_property_id') }}</div>
                 </div>
                 <div class="footer">

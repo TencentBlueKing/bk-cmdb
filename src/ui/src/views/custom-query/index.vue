@@ -19,7 +19,11 @@
                 </bk-button>
             </span>
             <div class="api-input fr">
-                <input type="text" class="cmdb-form-input" :placeholder="$t('Inst[\'快速查询\']')" v-model="filter.name" @keyup.enter="getUserAPIList">
+                <bk-input type="text" class="cmdb-form-input"
+                    v-model="filter.name"
+                    :placeholder="$t('Inst[\'快速查询\']')"
+                    @enter="getUserAPIList">
+                </bk-input>
             </div>
         </div>
         <cmdb-table

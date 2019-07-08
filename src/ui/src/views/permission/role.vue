@@ -15,7 +15,13 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <input class="cmdb-form-input" :placeholder="$t('Common[\'请输入\']')" type="text" id="SearchUserName" v-model.trim="filter.text" @keyup.enter="getRoleList">
+                <bk-input class="cmdb-form-input"
+                    :placeholder="$t('Common[\'请输入\']')"
+                    type="text"
+                    id="SearchUserName"
+                    v-model.trim="filter.text"
+                    @enter="getRoleList">
+                </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     @click="getRoleList">
                 </i>

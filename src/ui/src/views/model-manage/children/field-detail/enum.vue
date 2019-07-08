@@ -16,7 +16,7 @@
             </div>
             <div class="enum-id">
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`id${index}`) }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         :placeholder="$t('ModelManagement[\'请输入ID\']')"
                         v-model.trim="item.id"
@@ -24,12 +24,13 @@
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`id${index}`">
+                    </bk-input>
                     <p class="form-error">{{errors.first(`id${index}`)}}</p>
                 </div>
             </div>
             <div class="enum-name">
                 <div class="cmdb-form-item" :class="{ 'is-error': errors.has(`name${index}`) }">
-                    <input type="text"
+                    <bk-input type="text"
                         class="cmdb-form-input"
                         :placeholder="$t('ModelManagement[\'请输入名称英文数字\']')"
                         v-model.trim="item.name"
@@ -37,6 +38,7 @@
                         @input="handleInput"
                         :disabled="isReadOnly"
                         :name="`name${index}`">
+                    </bk-input>
                     <p class="form-error">{{errors.first(`name${index}`)}}</p>
                 </div>
             </div>

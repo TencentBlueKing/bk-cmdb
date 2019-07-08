@@ -1,12 +1,13 @@
 <template>
     <div class="cmdb-form form-singlechar">
-        <input class="cmdb-form-input form-singlechar-input" type="text"
+        <bk-input class="cmdb-form-input form-singlechar-input" type="text"
             :placeholder="localPlaceholder"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
             @input="handleInput($event)"
             @change="handleChange">
+        </bk-input>
         <slot></slot>
     </div>
 </template>

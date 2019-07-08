@@ -80,21 +80,24 @@
                     v-model="filter.value"
                     @on-selected="getTableData">
                 </cmdb-form-enum>
-                <input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
+                <bk-input class="filter-value cmdb-form-input fl" type="text" maxlength="11"
                     v-else-if="filter.type === 'int'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    @enter="getTableData">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else-if="filter.type === 'float'"
                     v-model.number="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
-                <input class="filter-value cmdb-form-input fl" type="text"
+                    @enter="getTableData">
+                </bk-input>
+                <bk-input class="filter-value cmdb-form-input fl" type="text"
                     v-else
                     v-model.trim="filter.value"
                     :placeholder="$t('Common[\'快速查询\']')"
-                    @keydown.enter="getTableData">
+                    @enter="getTableData">
+                </bk-input>
                 <i class="filter-search bk-icon icon-search"
                     v-show="filter.type !== 'enum'"
                     @click="getTableData"></i>

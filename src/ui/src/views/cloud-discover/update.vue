@@ -7,11 +7,12 @@
                         {{ $t('Cloud["任务名称"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="update-item-content">
-                        <input type="text"
+                        <bk-input type="text"
                             v-model="curPush.bk_task_name"
                             name="taskName"
                             v-validate="'required|singlechar'"
                             class="cmdb-form-input">
+                        </bk-input>
                     </div>
                     <span v-show="errors.has('taskName')" class="color-danger">{{ errors.first('taskName') }}</span>
                 </li>
@@ -35,11 +36,12 @@
                         {{ $t('Cloud["ID"]')}}<span class="color-danger">*</span>
                     </label>
                     <div class="update-item-content">
-                        <input type="text"
+                        <bk-input type="text"
                             v-model="curPush.bk_secret_id"
                             name="ID"
                             v-validate="'required|singlechar'"
-                            class="cmdb-form-input" />
+                            class="cmdb-form-input">
+                        </bk-input>
                     </div>
                     <span v-show="errors.has('ID')" class="color-danger">{{ errors.first('ID') }}</span>
                 </li>
@@ -52,9 +54,10 @@
                         </a>
                     </label>
                     <div class="update-item-content">
-                        <input v-model="curPush.bk_secret_key"
+                        <bk-input v-model="curPush.bk_secret_key"
                             class="cmdb-form-input"
-                            type="password" />
+                            type="password">
+                        </bk-input>
                     </div>
                 </li>
                 <li class="form-item-two">
@@ -68,20 +71,22 @@
                                 :name="option.name">
                             </bk-option>
                         </bk-select>
-                        <input type="text"
+                        <bk-input type="text"
                             class="cmdb-form-input"
                             v-model="curPush.bk_period"
                             v-if="curPush.bk_period_type === 'day'"
                             name="day"
                             v-validate="'required|dayFormat'"
-                            :placeholder="$t('Cloud[\'例如: 19:30\']')" />
-                        <input type="text"
+                            :placeholder="$t('Cloud[\'例如: 19:30\']')">
+                        </bk-input>
+                        <bk-input type="text"
                             class="cmdb-form-input"
                             v-model="curPush.bk_period"
                             v-if="curPush.bk_period_type === 'hour'"
                             name="hour"
                             v-validate="'required|hourFormat'"
                             :placeholder="$t('Cloud[\'例如: 30\']')">
+                        </bk-input>
                         <div v-show="errors.has('day')" class="update-error-info color-danger">{{ errors.first('day') }}</div>
                         <div v-show="errors.has('hour')" class="update-error-info color-danger">{{ errors.first('hour') }}</div>
                     </div>

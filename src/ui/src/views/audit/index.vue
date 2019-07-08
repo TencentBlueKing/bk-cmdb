@@ -16,7 +16,10 @@
             <div class="group-content">
                 <span class="title-name">IP</span>
                 <div class="selector-content">
-                    <input class="cmdb-form-input" type="text" :placeholder="$t('OperationAudit[\'使用逗号分隔\']')" v-model.trim="filter.bkIP">
+                    <bk-input class="cmdb-form-input" type="text"
+                        :placeholder="$t('OperationAudit[\'使用逗号分隔\']')"
+                        v-model.trim="filter.bkIP">
+                    </bk-input>
                 </div>
             </div>
             <div class="group-content">

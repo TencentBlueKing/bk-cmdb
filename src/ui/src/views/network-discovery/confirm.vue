@@ -35,7 +35,7 @@
                             :name="option.name">
                         </bk-option>
                     </bk-select>
-                    <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')">
+                    <bk-input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')"></bk-input>
                     <bk-button theme="default" @click="search">
                         {{$t('Common["查询"]')}}
                     </bk-button>

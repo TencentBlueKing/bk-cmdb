@@ -23,7 +23,6 @@ import {
 } from 'bk-magic-vue'
 
 const components = [
-    bkInput,
     bkRadio,
     bkCheckbox,
     bkDropdownMenu,
@@ -41,7 +40,8 @@ components.forEach(component => {
     Vue.component(`update-${component.name}`, component)
 })
 
-Vue.component('bk-button', bkButton)
+Vue.component('bk-button', bkInput)
+Vue.component('bk-input', bkButton)
 Vue.component('bk-tab', bkTab)
 Vue.component('bk-tab-panel', bkTabPanel)
 Vue.component('bk-sideslider', bkSideslider)

@@ -12,9 +12,10 @@
                     }">
                     {{$t('ModelManagement["源模型"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.source)">
+                </bk-input>
             </div>
             <div class="form-group">
                 <label class="form-label"
@@ -23,9 +24,10 @@
                     }">
                     {{$t('ModelManagement["目标模型"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     disabled
                     :value="getModelName(info.target)">
+                </bk-input>
             </div>
             <div class="form-group" v-if="!isViewMode">
                 <label class="form-label required">
@@ -50,11 +52,12 @@
                     }">
                     {{$t('ModelManagement["关联描述"]')}}
                 </label>
-                <input type="text"class="cmdb-form-input"
+                <bk-input type="text"class="cmdb-form-input"
                     :disabled="isViewMode"
                     name="description"
                     v-validate="'required|singlechar'"
                     v-model="info.description">
+                </bk-input>
                 <p class="form-error" v-if="errors.has('description')">{{errors.first('description')}}</p>
             </div>
             <div class="form-group">

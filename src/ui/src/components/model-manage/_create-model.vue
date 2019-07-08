@@ -40,11 +40,12 @@
                         <span class="label-title">{{$t('ModelManagement["唯一标识"]')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelId') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="modelId"
                                 :placeholder="$t('ModelManagement[\'请输入唯一标识\']')"
                                 v-model.trim="modelDialog.data['bk_obj_id']"
                                 v-validate="'required|modelId'">
+                            </bk-input>
                             <p class="form-error">{{errors.first('modelId')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'下划线，数字，英文小写的组合\']')"></i>
@@ -53,11 +54,12 @@
                         <span class="label-title">{{$t('ModelManagement["名称"]')}}</span>
                         <span class="color-danger">*</span>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
                                 :placeholder="$t('ModelManagement[\'请输入名称\']')"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelDialog.data['bk_obj_name']">
+                            </bk-input>
                             <p class="form-error">{{errors.first('modelName')}}</p>
                         </div>
                         <i class="bk-icon icon-info-circle" v-tooltip="$t('ModelManagement[\'请填写模型名\']')"></i>

@@ -20,8 +20,14 @@
                     :name="option.name">
                 </bk-option>
             </bk-select>
-            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')" v-model.trim="filter['bk_cloud_name']">
-            <input type="text" class="cmdb-form-input" :placeholder="$t('NetworkDiscovery[\'请输入IP\']')" v-model.trim="filter['bk_host_innerip']">
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('NetworkDiscovery[\'请输入云区域名称\']')"
+                v-model.trim="filter['bk_cloud_name']">
+            </bk-input>
+            <bk-input type="text" class="cmdb-form-input"
+                :placeholder="$t('NetworkDiscovery[\'请输入IP\']')"
+                v-model.trim="filter['bk_host_innerip']">
+            </bk-input>
             <bk-button theme="primary" @click="getTableData">
                 {{$t("Common['查询']")}}
             </bk-button>

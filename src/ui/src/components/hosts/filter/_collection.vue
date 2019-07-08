@@ -3,9 +3,10 @@
         <div class="collection-options clearfix">
             <label for="searchCollection" class="options-search fl" :class="$i18n.locale">
                 <i class="bk-icon icon-search"></i>
-                <input id="searchCollection" class="search-input cmdb-form-input" type="text"
+                <bk-input id="searchCollection" class="search-input cmdb-form-input" type="text"
                     :placeholder="`${$t('Common[\'快速查询\']')}...`"
                     v-model.trim="filter.text">
+                </bk-input>
             </label>
             <div class="options-sort fr">
                 <span class="sort-item"
@@ -31,10 +32,11 @@
                 :class="{ 'delete-confirm': collection.deleteConfirm }"
                 @click="handleApplyCollection(collection)">
                 <span class="collection-name fl" v-show="!collection.edit">{{collection.name}}</span>
-                <input class="collection-input cmdb-form-input fl" type="text" :ref="collection.id"
+                <bk-input class="collection-input cmdb-form-input fl" type="text" :ref="collection.id"
                     v-show="collection.edit"
                     v-model.trim="collection.name"
                     @blur="handleUpdateCollection(collection)">
+                </bk-input>
                 <i class="collection-icon icon-cc-del fr" @click.stop="handleConfirmDelete(collection)"></i>
                 <i class="collection-icon icon-cc-edit fr" @click.stop="handleEditCollection($event, collection)"></i>
                 <div class="collection-delete-confirm"

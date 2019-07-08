@@ -1,12 +1,13 @@
 <template>
     <div class="cmdb-form form-longchar">
-        <input class="cmdb-form-input form-longchar-input" type="text"
+        <bk-input class="cmdb-form-input form-longchar-input" type="text"
             :placeholder="placeholder || $t('Form[\'请输入长字符\']')"
             :maxlength="maxlength"
             :value="value"
             :disabled="disabled"
             @input="handleInput($event)"
             @change="handleChange">
+        </bk-input>
     </div>
 </template>
 

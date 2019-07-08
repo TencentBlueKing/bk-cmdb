@@ -6,12 +6,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldId') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="fieldId"
                     :placeholder="$t('ModelManagement[\'下划线/数字/字母\']')"
                     v-model.trim="fieldInfo['bk_property_id']"
                     :disabled="isEditField"
                     v-validate="'required|fieldId'">
+                </bk-input>
                 <p class="form-error">{{errors.first('fieldId')}}</p>
             </div>
         </label>
@@ -21,12 +22,13 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item" :class="{ 'is-error': errors.has('fieldName') }">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     name="fieldName"
                     :placeholder="$t('ModelManagement[\'请输入字段名称\']')"
                     v-model.trim="fieldInfo['bk_property_name']"
                     :disabled="isReadOnly"
                     v-validate="'required|enumName'">
+                </bk-input>
                 <p class="form-error">{{errors.first('fieldName')}}</p>
             </div>
         </label>
@@ -66,10 +68,11 @@
                 {{$t('ModelManagement["单位"]')}}
             </span>
             <div class="cmdb-form-item">
-                <input type="text" class="cmdb-form-input"
+                <bk-input type="text" class="cmdb-form-input"
                     v-model.trim="fieldInfo['unit']"
                     :disabled="isReadOnly"
                     :placeholder="$t('ModelManagement[\'请输入单位\']')">
+                </bk-input>
             </div>
         </label>
         <div class="form-label">

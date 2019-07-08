@@ -3,7 +3,7 @@
         <div class="config-wrapper config-unselected fl">
             <div class="wrapper-header unselected-header">
                 <cmdb-selector class="header-selector" :list="modelOptions" v-model.trim="selectedModel"></cmdb-selector>
-                <input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter">
+                <bk-input class="header-filter" type="text" :placeholder="$t('Inst[\'搜索属性\']')" v-model.trim="filter"></bk-input>
             </div>
             <ul class="property-list">
                 <li ref="unselectedPropertyItem" class="property-item" v-for="(property, index) in unselectedProperties" :key="index" @click="selectProperty(property)">

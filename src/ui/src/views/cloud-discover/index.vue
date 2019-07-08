@@ -11,11 +11,12 @@
                         :name="option.name">
                     </bk-option>
                 </bk-select>
-                <input class="cloud-filter-value cmdb-form-input fl"
+                <bk-input class="cloud-filter-value cmdb-form-input fl"
                     type="text"
                     :placeholder="$t('Cloud[\'任务名称搜索\']')"
                     v-model.trim="filter.text"
-                    @keyup.enter="getTableData">
+                    @enter="getTableData">
+                </bk-input>
                 <i class="cloud-filter-search bk-icon icon-search" @click="getTableData"></i>
             </div>
         </div>

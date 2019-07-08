@@ -6,9 +6,10 @@
             <div class="group-header clearfix">
                 <div class="header-title fl">
                     <template v-if="group.info['bk_group_id'] !== 'none' && group === groupInEditing">
-                        <input type="text" class="title-input cmdb-form-input"
+                        <bk-input type="text" class="title-input cmdb-form-input"
                             ref="titleInput"
                             v-model.trim="groupNameInEditing">
+                        </bk-input>
                         <a class="title-input-button" href="javascript:void(0)" @click="handleUpdateGroupName(group)">{{$t('Common["保存"]')}}</a>
                         <a class="title-input-button" href="javascript:void(0)" @click="handleCancelEditGroupName">{{$t('Common["取消"]')}}</a>
                     </template>
@@ -85,9 +86,10 @@
                         <i class="icon icon-cc-edit"></i>
                     </a>
                     <template v-else>
-                        <input type="text" class="add-group-input cmdb-form-input"
+                        <bk-input type="text" class="add-group-input cmdb-form-input"
                             ref="addGroupInput"
                             v-model.trim="newGroupName">
+                        </bk-input>
                         <a class="add-group-button" href="javascript:void(0)" @click="handleCreateGroup">{{$t('Common["保存"]')}}</a>
                         <a class="add-group-button" href="javascript:void(0)" @click="handleCancelCreateGroup">{{$t('Common["取消"]')}}</a>
                     </template>
@@ -104,7 +106,7 @@
             <div class="dialog-title" slot="tools">{{$t('ModelManagement["新建字段"]')}}</div>
             <div class="dialog-content" slot="content">
                 <div class="dialog-filter">
-                    <input type="text" class="cmdb-form-input" v-model.trim="dialog.filter">
+                    <bk-input type="text" class="cmdb-form-input" v-model.trim="dialog.filter"></bk-input>
                     <i class="bk-icon icon-search"></i>
                 </div>
                 <ul class="dialog-property clearfix" ref="dialogProperty">

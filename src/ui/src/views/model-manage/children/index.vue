@@ -39,10 +39,11 @@
                     </template>
                     <template v-else>
                         <div class="cmdb-form-item" :class="{ 'is-error': errors.has('modelName') }">
-                            <input type="text" class="cmdb-form-input"
+                            <bk-input type="text" class="cmdb-form-input"
                                 name="modelName"
                                 v-validate="'required|singlechar'"
                                 v-model.trim="modelInfo.objName">
+                            </bk-input>
                         </div>
                         <span class="text-primary" @click="saveModel">{{$t("Common['保存']")}}</span>
                         <span class="text-primary" @click="isEditName = false">{{$t("Common['取消']")}}</span>
