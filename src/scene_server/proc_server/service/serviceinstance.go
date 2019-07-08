@@ -197,7 +197,7 @@ func (ps *ProcServer) UpdateProcessInstances(ctx *rest.Contexts) {
 		}
 
 		processData := mapstr.MapStr{}
-		if relation.ProcessTemplateID == 0 {
+		if relation.ProcessTemplateID == common.ServiceTemplateIDNotSet {
 			serviceInstanceID := relation.ServiceInstanceID
 			if err := ps.validateRawInstanceUnique(ctx, serviceInstanceID, &process); err != nil {
 				ctx.RespWithError(err, common.CCErrProcUpdateProcessFailed, "update process instance failed, serviceInstanceID: %d, process: %+v, err: %v", serviceInstanceID, process, err)
@@ -1132,40 +1132,6 @@ func (ps *ProcServer) SyncServiceInstanceByTemplate(ctx *rest.Contexts) {
 }
 
 func (ps *ProcServer) ListServiceInstancesWithHost(ctx *rest.Contexts) {
-	input := new(metadata.ListServiceInstancesWithHostInput)
-	if err := ctx.DecodeInto(input); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	bizID, err := metadata.BizIDFromMetadata(input.Metadata)
-	if err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
-			"list service instances with host, but parse biz id failed, err: %v", err)
-		return
-	}
-
-	if input.HostID == 0 {
-		ctx.RespErrorCodeOnly(common.CCErrCommHTTPInputInvalid,
-			"list service instances with host, but got empty host id. input: %+v", err)
-		return
-	}
-
-	option := metadata.ListServiceInstanceOption{
-		BusinessID: bizID,
-		HostID:     input.HostID,
-	}
-	instances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, &option)
-	if err != nil {
-		ctx.RespWithError(err, common.CCErrProcGetServiceInstancesFailed, "list service instance failed, bizID: %d, hostID: %d",
-			bizID, input.HostID, err)
-		return
-	}
-
-	ctx.RespEntity(instances)
-}
-
-func (ps *ProcServer) AddProcessInstanceToServiceInstance(ctx *rest.Contexts) {
 	input := new(metadata.ListServiceInstancesWithHostInput)
 	if err := ctx.DecodeInto(input); err != nil {
 		ctx.RespAutoError(err)
