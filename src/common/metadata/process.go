@@ -215,9 +215,27 @@ const (
 	BindOtterIP   SocketBindType = "4"
 )
 
-func (p SocketBindType) String() string {
+func (p *SocketBindType) IP() string {
+	// TODO: support BindInnerIP and BindOtterIP
+	if p == nil {
+		return ""
+	}
+	switch *p {
+	case BindLocalHost:
+		return "127.0.0.1"
+	case BindAll:
+		return "0.0.0.0"
+	default:
+		return ""
+	}
+}
+
+func (p *SocketBindType) String() string {
 	// TODO: how to support internationalization?
-	switch p {
+	if p == nil {
+		return ""
+	}
+	switch *p {
 	case BindLocalHost:
 		return "127.0.0.1"
 	case BindAll:
@@ -232,7 +250,8 @@ func (p SocketBindType) String() string {
 }
 
 func (p SocketBindType) Validate() error {
-	validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
+	// validValues := []SocketBindType{BindLocalHost, BindAll, BindInnerIP, BindOtterIP}
+	validValues := []SocketBindType{BindLocalHost, BindAll}
 	if util.InArray(p, validValues) == false {
 		return fmt.Errorf("invalid socket bind type, value: %s, available values: %+v", p, validValues)
 	}
@@ -266,33 +285,33 @@ func (p ProtocolType) Validate() error {
 }
 
 type Process struct {
-	Metadata        Metadata        `field:"metadata" json:"metadata" bson:"metadata" structs:"metadata"`
-	ProcNum         *int64          `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
-	StopCmd         *string         `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd" structs:"stop_cmd"`
-	RestartCmd      *string         `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd" structs:"restart_cmd"`
-	ForceStopCmd    *string         `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd" structs:"face_stop_cmd"`
-	ProcessID       int64           `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id" structs:"bk_process_id"`
-	FuncName        *string         `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name" structs:"bk_func_name"`
-	WorkPath        *string         `field:"work_path" json:"work_path,omitempty" bson:"work_path" structs:"work_path"`
-	BindIP          *SocketBindType `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip" structs:"bind_ip"`
-	Priority        *int64          `field:"priority" json:"priority,omitempty" bson:"priority" structs:"priority"`
-	ReloadCmd       *string         `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd" structs:"reload_cmd"`
-	ProcessName     *string         `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name" structs:"bk_process_name"`
-	Port            *string         `field:"port" json:"port,omitempty" bson:"port" structs:"port"`
-	PidFile         *string         `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file" structs:"pid_file"`
-	AutoStart       *bool           `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start" structs:"auto_start"`
-	AutoTimeGap     *int64          `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap" structs:"auto_time_gap"`
-	LastTime        time.Time       `field:"last_time" json:"last_time,omitempty" bson:"last_time" structs:"last_time"`
-	CreateTime      time.Time       `field:"create_time" json:"create_time,omitempty" bson:"create_time" structs:"create_time"`
-	BusinessID      int64           `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id" structs:"bk_biz_id"`
-	StartCmd        *string         `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd" structs:"start_cmd"`
-	FuncID          *string         `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id" structs:"bk_func_id"`
-	User            *string         `field:"user" json:"user,omitempty" bson:"user" structs:"user"`
-	TimeoutSeconds  *int64          `field:"timeout" json:"timeout,omitempty" bson:"timeout" structs:"timeout"`
-	Protocol        *ProtocolType   `field:"protocol" json:"protocol,omitempty" bson:"protocol" structs:"protocol"`
-	Description     *string         `field:"description" json:"description,omitempty" bson:"description" structs:"description"`
-	SupplierAccount string          `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" structs:"bk_supplier_account"`
-	StartParamRegex *string         `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty" structs:"bk_start_param_regex"`
+	Metadata        Metadata      `field:"metadata" json:"metadata" bson:"metadata" structs:"metadata"`
+	ProcNum         *int64        `field:"proc_num" json:"proc_num,omitempty" bson:"proc_num" structs:"proc_num"`
+	StopCmd         *string       `field:"stop_cmd" json:"stop_cmd,omitempty" bson:"stop_cmd" structs:"stop_cmd"`
+	RestartCmd      *string       `field:"restart_cmd" json:"restart_cmd,omitempty" bson:"restart_cmd" structs:"restart_cmd"`
+	ForceStopCmd    *string       `field:"face_stop_cmd" json:"face_stop_cmd,omitempty" bson:"face_stop_cmd" structs:"face_stop_cmd"`
+	ProcessID       int64         `field:"bk_process_id" json:"bk_process_id,omitempty" bson:"bk_process_id" structs:"bk_process_id"`
+	FuncName        *string       `field:"bk_func_name" json:"bk_func_name,omitempty" bson:"bk_func_name" structs:"bk_func_name"`
+	WorkPath        *string       `field:"work_path" json:"work_path,omitempty" bson:"work_path" structs:"work_path"`
+	BindIP          *string       `field:"bind_ip" json:"bind_ip,omitempty" bson:"bind_ip" structs:"bind_ip"`
+	Priority        *int64        `field:"priority" json:"priority,omitempty" bson:"priority" structs:"priority"`
+	ReloadCmd       *string       `field:"reload_cmd" json:"reload_cmd,omitempty" bson:"reload_cmd" structs:"reload_cmd"`
+	ProcessName     *string       `field:"bk_process_name" json:"bk_process_name,omitempty" bson:"bk_process_name" structs:"bk_process_name"`
+	Port            *string       `field:"port" json:"port,omitempty" bson:"port" structs:"port"`
+	PidFile         *string       `field:"pid_file" json:"pid_file,omitempty" bson:"pid_file" structs:"pid_file"`
+	AutoStart       *bool         `field:"auto_start" json:"auto_start,omitempty" bson:"auto_start" structs:"auto_start"`
+	AutoTimeGap     *int64        `field:"auto_time_gap" json:"auto_time_gap,omitempty" bson:"auto_time_gap" structs:"auto_time_gap"`
+	LastTime        time.Time     `field:"last_time" json:"last_time,omitempty" bson:"last_time" structs:"last_time"`
+	CreateTime      time.Time     `field:"create_time" json:"create_time,omitempty" bson:"create_time" structs:"create_time"`
+	BusinessID      int64         `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id" structs:"bk_biz_id"`
+	StartCmd        *string       `field:"start_cmd" json:"start_cmd,omitempty" bson:"start_cmd" structs:"start_cmd"`
+	FuncID          *string       `field:"bk_func_id" json:"bk_func_id,omitempty" bson:"bk_func_id" structs:"bk_func_id"`
+	User            *string       `field:"user" json:"user,omitempty" bson:"user" structs:"user"`
+	TimeoutSeconds  *int64        `field:"timeout" json:"timeout,omitempty" bson:"timeout" structs:"timeout"`
+	Protocol        *ProtocolType `field:"protocol" json:"protocol,omitempty" bson:"protocol" structs:"protocol"`
+	Description     *string       `field:"description" json:"description,omitempty" bson:"description" structs:"description"`
+	SupplierAccount string        `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" structs:"bk_supplier_account"`
+	StartParamRegex *string       `field:"bk_start_param_regex" json:"bk_start_param_regex,omitempty" bson:"bk_start_param_regex,omitempty" structs:"bk_start_param_regex"`
 }
 
 type ServiceCategory struct {
@@ -408,70 +427,28 @@ func (pt *ProcessTemplate) NewProcess(bizID int64, supplierAccount string) *Proc
 	}
 
 	property := pt.Property
-	if IsAsDefaultValue(property.ProcessName.AsDefaultValue) == true {
-		processInstance.ProcessName = property.ProcessName.Value
-	}
-	if IsAsDefaultValue(property.ProcNum.AsDefaultValue) == true {
-		processInstance.ProcNum = property.ProcNum.Value
-	}
-	if IsAsDefaultValue(property.StopCmd.AsDefaultValue) == true {
-		processInstance.StopCmd = property.StopCmd.Value
-	}
-	if IsAsDefaultValue(property.RestartCmd.AsDefaultValue) == true {
-		processInstance.RestartCmd = property.RestartCmd.Value
-	}
-	if IsAsDefaultValue(property.ForceStopCmd.AsDefaultValue) == true {
-		processInstance.ForceStopCmd = property.ForceStopCmd.Value
-	}
-	if IsAsDefaultValue(property.FuncName.AsDefaultValue) == true {
-		processInstance.FuncName = property.FuncName.Value
-	}
-	if IsAsDefaultValue(property.WorkPath.AsDefaultValue) == true {
-		processInstance.WorkPath = property.WorkPath.Value
-	}
-	processInstance.BindIP = nil
-	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == true {
-		processInstance.BindIP = property.BindIP.Value
-	}
-	if IsAsDefaultValue(property.Priority.AsDefaultValue) == true {
-		processInstance.Priority = property.Priority.Value
-	}
-	if IsAsDefaultValue(property.ReloadCmd.AsDefaultValue) == true {
-		processInstance.ReloadCmd = property.ReloadCmd.Value
-	}
-	if IsAsDefaultValue(property.Port.AsDefaultValue) == true {
-		processInstance.Port = property.Port.Value
-	}
-	if IsAsDefaultValue(property.PidFile.AsDefaultValue) == true {
-		processInstance.PidFile = property.PidFile.Value
-	}
-	if IsAsDefaultValue(property.AutoStart.AsDefaultValue) == true {
-		processInstance.AutoStart = property.AutoStart.Value
-	}
-	if IsAsDefaultValue(property.AutoTimeGapSeconds.AsDefaultValue) == true {
-		processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
-	}
-	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == true {
-		processInstance.StartCmd = property.StartCmd.Value
-	}
-	if IsAsDefaultValue(property.FuncID.AsDefaultValue) == true {
-		processInstance.FuncID = property.FuncID.Value
-	}
-	if IsAsDefaultValue(property.User.AsDefaultValue) == true {
-		processInstance.User = property.User.Value
-	}
-	if IsAsDefaultValue(property.TimeoutSeconds.AsDefaultValue) == true {
-		processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
-	}
-	if IsAsDefaultValue(property.Protocol.AsDefaultValue) == true {
-		processInstance.Protocol = property.Protocol.Value
-	}
-	if IsAsDefaultValue(property.Description.AsDefaultValue) == true {
-		processInstance.Description = property.Description.Value
-	}
-	if IsAsDefaultValue(property.StartParamRegex.AsDefaultValue) == true {
-		processInstance.StartParamRegex = property.StartParamRegex.Value
-	}
+	processInstance.ProcessName = property.ProcessName.Value
+	processInstance.ProcNum = property.ProcNum.Value
+	processInstance.StopCmd = property.StopCmd.Value
+	processInstance.RestartCmd = property.RestartCmd.Value
+	processInstance.ForceStopCmd = property.ForceStopCmd.Value
+	processInstance.FuncName = property.FuncName.Value
+	processInstance.WorkPath = property.WorkPath.Value
+	processInstance.BindIP = new(string)
+	*processInstance.BindIP = property.BindIP.Value.IP()
+	processInstance.Priority = property.Priority.Value
+	processInstance.ReloadCmd = property.ReloadCmd.Value
+	processInstance.Port = property.Port.Value
+	processInstance.PidFile = property.PidFile.Value
+	processInstance.AutoStart = property.AutoStart.Value
+	processInstance.AutoTimeGap = property.AutoTimeGapSeconds.Value
+	processInstance.StartCmd = property.StartCmd.Value
+	processInstance.FuncID = property.FuncID.Value
+	processInstance.User = property.User.Value
+	processInstance.TimeoutSeconds = property.TimeoutSeconds.Value
+	processInstance.Protocol = property.Protocol.Value
+	processInstance.Description = property.Description.Value
+	processInstance.StartParamRegex = property.StartParamRegex.Value
 	return processInstance
 }
 
@@ -569,8 +546,8 @@ func (pt *ProcessTemplate) ExtractChangeInfo(i *Process) (mapstr.MapStr, bool) {
 		} else if t.BindIP.Value != nil && i.BindIP == nil {
 			process["bind_ip"] = *t.BindIP.Value
 			changed = true
-		} else if t.BindIP.Value != nil && i.BindIP != nil && *t.BindIP.Value != *i.BindIP {
-			process["bind_ip"] = *t.BindIP.Value
+		} else if t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP {
+			process["bind_ip"] = t.BindIP.Value.IP()
 			changed = true
 		}
 	}
@@ -854,17 +831,17 @@ func (pt *ProcessTemplate) ExtractInstanceUpdateData(input *Process) map[string]
 			data["work_path"] = *input.WorkPath
 		}
 	}
-	if IsAsDefaultValue(property.BindIP.AsDefaultValue) {
+	if IsAsDefaultValue(property.BindIP.AsDefaultValue) == false {
 		if input.BindIP != nil {
 			data["bind_ip"] = *input.BindIP
 		}
 	}
-	if IsAsDefaultValue(property.Priority.AsDefaultValue) {
+	if IsAsDefaultValue(property.Priority.AsDefaultValue) == false {
 		if input.Priority != nil {
 			data["priority"] = *input.Priority
 		}
 	}
-	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) {
+	if IsAsDefaultValue(property.StartCmd.AsDefaultValue) == false {
 		if input.StartCmd != nil {
 			data["start_cmd"] = *input.StartCmd
 		}

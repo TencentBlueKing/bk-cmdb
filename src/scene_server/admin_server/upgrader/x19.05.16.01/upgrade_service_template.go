@@ -183,6 +183,12 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 						inst.Metadata = metadata.NewMetaDataFromBusinessID(strconv.FormatInt(bizID, 10))
 						inst.CreateTime = time.Now()
 						inst.LastTime = time.Now()
+						if inst.BindIP != nil {
+							tplBindIP := metadata.SocketBindType(*inst.BindIP)
+							*inst.BindIP = tplBindIP.IP()
+						} else {
+							inst.BindIP = new(string)
+						}
 						blog.InfoJSON("procInst: %s", inst)
 						if err = db.Table(common.BKTableNameBaseProcess).Insert(ctx, inst); err != nil {
 							return err
@@ -272,8 +278,9 @@ func procInstToProcTemplate(inst metadata.Process) *metadata.ProcessProperty {
 		template.WorkPath.Value = inst.WorkPath
 		template.WorkPath.AsDefaultValue = &True
 	}
-	if inst.BindIP != nil && len(inst.BindIP.String()) > 0 {
-		template.BindIP.Value = inst.BindIP
+	if inst.BindIP != nil {
+		template.BindIP.Value = new(metadata.SocketBindType)
+		*template.BindIP.Value = metadata.SocketBindType(*inst.BindIP)
 		template.BindIP.AsDefaultValue = &True
 	}
 	if inst.Priority != nil && *inst.Priority > 0 {

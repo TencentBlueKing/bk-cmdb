@@ -264,13 +264,13 @@ func (lgc *Logic) DiffWithProcessTemplate(t *metadata.ProcessProperty, i *metada
 	if metadata.IsAsDefaultValue(t.BindIP.AsDefaultValue) {
 		if (t.BindIP.Value == nil && i.BindIP != nil) ||
 			(t.BindIP.Value != nil && i.BindIP == nil) ||
-			(t.BindIP.Value != nil && i.BindIP != nil && *t.BindIP.Value != *i.BindIP) {
+			(t.BindIP.Value != nil && i.BindIP != nil && t.BindIP.Value.IP() != *i.BindIP) {
 			changes = append(changes, metadata.ProcessChangedAttribute{
 				ID:                    attrMap["bind_ip"].ID,
 				PropertyID:            "bind_ip",
 				PropertyName:          attrMap["bind_ip"].PropertyName,
 				PropertyValue:         i.BindIP,
-				TemplatePropertyValue: t.BindIP,
+				TemplatePropertyValue: t.BindIP.Value.IP(),
 			})
 		}
 	}
