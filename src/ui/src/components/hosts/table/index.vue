@@ -61,7 +61,7 @@
                 </div>
             </slot>
         </div>
-        <cmdb-collapse-transition @after-enter="handleQuickSearchToggle" @after-leave="handleQuickSearchToggle">
+        <cmdb-collapse-transition>
             <cmdb-host-quick-search
                 v-if="quickSearch && quickSearchStatus.active"
                 :properties="properties.host"
@@ -69,13 +69,13 @@
                 @on-search="handleQuickSearch">
             </cmdb-host-quick-search>
         </cmdb-collapse-transition>
-        <cmdb-table class="hosts-table" ref="hostsTable"
+        <!-- <cmdb-table class="hosts-table" ref="hostsTable"
             :loading="$loading()"
             :checked.sync="table.checked"
             :header="table.header"
             :list="table.list"
+            :height="200"
             :default-sort="table.defaultSort"
-            :pagination.sync="table.pagination"
             :wrapper-minus-height="table.tableMinusHeight"
             @handleRowClick="handleRowClick"
             @handleSortChange="handleSortChange"
@@ -95,7 +95,27 @@
                     {{getHostCellText(header, item)}}
                 </span>
             </template>
-        </cmdb-table>
+        </cmdb-table> -->
+        <bk-table class="hosts-table"
+            v-bkloading="{ isLoading: $loading() }"
+            :data="table.list"
+            :pagination="table.pagination"
+            @selection-change="handleSelectionChange"
+            @row-click="handleRowClick"
+            @sort-change="handleSortChange"
+            @page-change="handlePageChange"
+            @page-limit-change="handleSizeChange">
+            <bk-table-column type="selection" width="60" align="center" fixed></bk-table-column>
+            <bk-table-column v-for="column in table.header"
+                :key="column.id"
+                :label="column.name"
+                :sortable="column.sortable"
+                :prop="column.id">
+                <template slot-scope="{ row }">
+                    {{getHostCellText(column, row)}}
+                </template>
+            </bk-table-column>
+        </bk-table>
         <bk-sideslider
             :is-show.sync="slider.show"
             :title="slider.title"
@@ -226,8 +246,9 @@
                     allList: [],
                     pagination: {
                         current: 1,
-                        size: 10,
-                        count: 0
+                        limit: 10,
+                        count: 0,
+                        limitList: [10, 50, 100, 500]
                     },
                     defaultSort: 'bk_host_id',
                     sort: 'bk_host_id',
@@ -305,18 +326,11 @@
                 console.log(e)
             }
         },
-        mounted () {
-            this.calcTableMinusHeight()
-        },
         methods: {
             ...mapActions('objectModelProperty', ['batchSearchObjectAttribute']),
             ...mapActions('objectModelFieldGroup', ['searchGroup']),
             ...mapActions('hostUpdate', ['updateHost']),
             ...mapActions('hostSearch', ['searchHost', 'searchHostByInnerip']),
-            calcTableMinusHeight () {
-                const $table = this.$refs.hostsTable.$el
-                this.table.tableMinusHeight = $table.getBoundingClientRect().top + 20
-            },
             getProperties () {
                 return this.batchSearchObjectAttribute({
                     params: this.$injectMetadata({
@@ -349,18 +363,14 @@
             },
             setTableHeader () {
                 const properties = this.$tools.getHeaderProperties(this.columnsConfigProperties, this.customColumns, this.columnsConfigDisabledColumns)
-                this.table.header = [{
-                    id: 'bk_host_id',
-                    type: 'checkbox',
-                    objId: 'host'
-                }].concat(properties.map(property => {
+                this.table.header = properties.map(property => {
                     return {
                         id: property['bk_property_id'],
                         name: property['bk_property_name'],
                         objId: property['bk_obj_id'],
                         sortable: property['bk_obj_id'] === 'host' && !['foreignkey'].includes(property['bk_property_type'])
                     }
-                }))
+                })
                 this.columnsConfig.selected = properties.map(property => property['bk_property_id'])
             },
             setAllHostList (list) {
@@ -393,8 +403,8 @@
                         ...this.filter.condition,
                         'bk_biz_id': this.filter.business,
                         page: {
-                            start: (this.table.pagination.current - 1) * this.table.pagination.size,
-                            limit: this.table.pagination.size,
+                            start: (this.table.pagination.current - 1) * this.table.pagination.limit,
+                            limit: this.table.pagination.limit,
                             sort: this.table.sort
                         }
                     },
@@ -438,15 +448,16 @@
                 this.getHostList()
             },
             handlePageChange (current) {
+                console.log(current)
                 this.table.pagination.current = current
                 this.getHostList()
             },
-            handleSizeChange (size) {
-                this.table.pagination.size = size
+            handleSizeChange (limit) {
+                this.table.pagination.limit = limit
                 this.handlePageChange(1)
             },
             handleSortChange (sort) {
-                this.table.sort = sort
+                this.table.sort = this.$tools.getSort(sort)
                 this.handlePageChange(1)
             },
             handleCopy (target) {
@@ -479,6 +490,10 @@
                     list = data.info
                 }
                 this.table.checked = list.map(item => item['host']['bk_host_id'])
+            },
+            handleSelectionChange (selection) {
+                console.log('fuck')
+                this.table.checked = selection.map(item => item.host.bk_host_id)
             },
             handleRowClick (item) {
                 const business = item.biz[0]
@@ -569,9 +584,6 @@
                     return true
                 }
                 return true
-            },
-            handleQuickSearchToggle () {
-                this.calcTableMinusHeight()
             },
             handleQuickSearch (property, value, operator) {
                 this.$emit('on-quick-search', property, value, operator)

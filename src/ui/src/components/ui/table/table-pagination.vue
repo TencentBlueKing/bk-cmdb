@@ -1,35 +1,5 @@
 <template>
-    <div class="table-pagination clearfix">
-        <div class="pagination-info fl">
-            <span class="mr10" v-if="hasCheckbox">{{$tc("Common['已选N行']", checked.length, { N: checked.length })}}</span>
-            <span class="mr10">{{$tc('Common[\'页码\']', pagination.current, { current: pagination.current, count: pagination.count, total: totalPage })}}</span>
-            <i18n path="Common['每页显示']">
-                <div ref="paginationSize" place="page"
-                    :class="['pagination-size', { 'active': isShowSizeSetting }]"
-                    @click="isShowSizeSetting = !isShowSizeSetting"
-                    v-click-outside="closeSizeSetting">
-                    <span>{{pagination.size}}</span>
-                    <i class="bk-icon icon-angle-down"></i>
-                    <transition :name="transformOrigin === 'top' ? 'toggle-slide-top' : 'toggle-slide-bottom'">
-                        <ul :class="['pagination-size-setting', transformOrigin === 'top' ? 'bottom' : 'top']"
-                            v-show="sizeTransitionReady">
-                            <li v-for="(size, index) in sizeSetting"
-                                :key="index"
-                                :class="['size-setting-item', { 'selected': pagination.size === size }]"
-                                @click.stop="setSize(size)">{{size}}</li>
-                        </ul>
-                    </transition>
-                </div>
-            </i18n>
-        </div>
-        <bk-paging class="pagination-list fr"
-            v-if="pagination.count && totalPage > 1"
-            :type="'compact'"
-            :total-page="totalPage"
-            :cur-page="pagination.current"
-            @page-change="setCurrent">
-        </bk-paging>
-    </div>
+    <div class="table-pagination clearfix"></div>
 </template>
 
 <script>
