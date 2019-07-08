@@ -1,17 +1,33 @@
 <template>
-    <bk-selector class="form-selector"
+    <bk-select v-if="hasChildren"
+        v-model="selected"
         :placeholder="placeholder"
         :searchable="searchable"
-        :list="list"
-        :disabled="disabled"
-        :allow-clear="allowClear"
-        :selected.sync="selected"
-        :has-children="hasChildren"
-        :setting-key="settingKey"
-        :search-key="displayKey"
-        :display-key="displayKey"
-        :empty-text="emptyText">
-    </bk-selector>
+        :clearable="allowClear"
+        :disabled="disabled">
+        <bk-option-group v-for="(group, index) in list"
+            :key="index"
+            :name="group[displayKey]">
+            <bk-option v-for="option in group.children || []"
+                :key="option[settingKey]"
+                :id="option[settingKey]"
+                :name="option[displayKey]">
+            </bk-option>
+        </bk-option-group>
+    </bk-select>
+    <bk-select v-else
+        v-model="selected"
+        :placeholder="placeholder"
+        :searchable="searchable"
+        :clearable="allowClear"
+        :disabled="disabled">
+        <bk-option
+            v-for="(option, index) in list"
+            :key="index"
+            :id="option[settingKey]"
+            :name="option[displayKey]">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>

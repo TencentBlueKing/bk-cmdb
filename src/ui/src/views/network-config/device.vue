@@ -66,12 +66,13 @@
                     <label class="label">
                         <span>{{$t('NetworkDiscovery["对应模型"]')}}<span class="color-danger">*</span></span>
                     </label>
-                    <bk-selector
-                        :list="netList"
-                        setting-key="bk_obj_id"
-                        display-key="bk_obj_name"
-                        :selected.sync="deviceDialog.data['bk_obj_id']"
-                    ></bk-selector>
+                    <bk-select v-model="deviceDialog.data.bk_obj_id">
+                        <bk-option v-for="(option, index) in netList"
+                            :key="index"
+                            :id="option.bk_obj_id"
+                            :name="option.bk_obj_name">
+                        </bk-option>
+                    </bk-select>
                     <input type="text" hidden name="bk_obj_id" v-model.trim="deviceDialog.data['bk_obj_id']" v-validate="'required'">
                     <div v-show="errors.has('bk_obj_id')" class="color-danger">{{ errors.first('bk_obj_id') }}</div>
                 </div>

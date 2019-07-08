@@ -3,10 +3,15 @@
         <div class="selector-wrapper clearfix">
             <h2 class="selector-title fl">{{$t('Permission["业务角色"]')}}</h2>
             <div class="selector-container fl clearfix">
-                <bk-selector class="role-selector fl"
-                    :list="businessRoles"
-                    :selected.sync="selectedBusinessRole">
-                </bk-selector>
+                <bk-select class="role-selector fl"
+                    v-model="selectedBusinessRole"
+                    :clearable="false">
+                    <bk-option v-for="(option, index) in businessRoles"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
             </div>
         </div>
         <div class="authority-wrapper clearfix">

@@ -1,11 +1,17 @@
 <template>
     <div class="cmdb-form form-timezone">
-        <bk-selector class="form-timezone-selector"
-            :searchable="true"
-            :list="timezoneList"
-            :disabled="disabled"
-            :selected.sync="selected">
-        </bk-selector>
+        <bk-select
+            searchable
+            v-model="selected"
+            :clearable="false"
+            :disabled="disabled">
+            <bk-option
+                v-for="(option, index) in timezoneList"
+                :key="index"
+                :id="option.id"
+                :name="option.name">
+            </bk-option>
+        </bk-select>
     </div>
 </template>
 

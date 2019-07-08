@@ -10,15 +10,17 @@
                     <span>{{selectedName}}</span>
                     <i class="bk-icon icon-angle-down"></i>
                 </div>
-                <bk-selector
-                    setting-key="id"
-                    display-key="bk_property_name"
+                <bk-select
                     ref="attrSelector"
-                    :multi-select="true"
-                    :selected.sync="verificationInfo.selected"
-                    :list="attribute.list"
-                    @visible-toggle="toggleSelector"
-                ></bk-selector>
+                    multiple
+                    v-model="verificationInfo.selected"
+                    @toggle="toggleSelector">
+                    <bk-option v-for="(option, index) in attribute.list"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.bk_property_name">
+                    </bk-option>
+                </bk-select>
             </div>
         </div>
         <div class="verification-selector-mask" v-if="attribute.isShow"></div>
@@ -127,7 +129,7 @@
             },
             toggleSelector (isShow) {
                 if (!this.isReadOnly) {
-                    this.$refs.attrSelector.open = isShow
+                    isShow ? this.$refs.attrSelector.show() : this.$refs.attrSelector.hide()
                     this.attribute.isShow = isShow
                 }
             },

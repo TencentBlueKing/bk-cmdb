@@ -13,11 +13,14 @@
                 </bk-button>
             </div>
             <div class="confirm-options-filter clearfix fr">
-                <bk-selector
-                    class="confirm-filter-selector fl"
-                    :list="selector.list"
-                    :selected.sync="selector.defaultDemo.selected">
-                </bk-selector>
+                <bk-select class="confirm-filter-selector fl"
+                    v-model="selector.defaultDemo.selected">
+                    <bk-option v-for="(option, index) in selector.list"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
                 <cmdb-form-enum
                     class="confirm-filter-value fl"
                     v-if="filter.type === 'enum'"

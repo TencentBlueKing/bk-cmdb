@@ -36,11 +36,14 @@
                 <span class="color-danger">*</span>
             </span>
             <div class="cmdb-form-item">
-                <bk-selector
-                    :disabled="isEditField"
-                    :list="fieldTypeList"
-                    :selected.sync="fieldInfo['bk_property_type']"
-                ></bk-selector>
+                <bk-select v-model="fieldInfo.bk_property_type"
+                    :disabled="isEditField">
+                    <bk-option v-for="(option, index) in fieldTypeList"
+                        :key="index"
+                        :id="option.id"
+                        :name="option.name">
+                    </bk-option>
+                </bk-select>
             </div>
         </div>
         <div class="field-detail">

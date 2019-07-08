@@ -324,62 +324,6 @@ input.cmdb-form-input {
     transition: .2s height ease-in-out, .2s padding-top ease-in-out, .2s padding-bottom ease-in-out
 }
 
-/* rewrite magicbox style -----start----- */
-
-.bk-tab2 {
-    border: none !important;
-    height: 100% !important;
-    padding: 0 20px;
-
-    .bk-tab2-content {
-        height: calc(100% - 58px) !important;
-
-        section {
-            height: 100% !important;
-        }
-    }
-}
-
-.bk-tab2 .bk-tab2-head .bk-tab2-nav .tab2-nav-item {
-    padding: 0 32px !important;
-}
-
-.bk-button.bk-default:hover {
-    color: #0082ff;
-    border-color: #0082ff;
-    background: #fff;
-}
-
-button.bk-button.bk-danger {
-    background: #fff;
-    color: $cmdbDangerColor;
-
-    &:hover {
-        border-color: $cmdbDangerHoverColor;
-        color: $cmdbDangerHoverColor;
-        background: #fff;
-    }
-}
-
-.bk-selector .bk-selector-list-item .text {
-    @include ellipsis;
-}
-
-.bk-selector.bk-selector-small {
-    .bk-selector-input {
-        height: 30px;
-        line-height: 30px;
-    }
-
-    .bk-selector-icon {
-        top: 9px;
-    }
-}
-
-
-/* rewrite magicbox style ------end------ */
-
-
 /* form-error -----------start----------- */
 
 .form-component.error {
