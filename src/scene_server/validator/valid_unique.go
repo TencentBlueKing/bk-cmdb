@@ -88,7 +88,14 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 			cond.Field(common.BKObjIDField).Eq(valid.objID)
 		}
 
-		result, err := valid.CoreAPI.ObjectController().Instance().SearchObjects(valid.ctx, common.GetObjByType(valid.objID), valid.pheader, &metadata.QueryInput{Condition: cond.ToMapStr()})
+		inputParam := &metadata.QueryCondition{
+			Limit: metadata.SearchLimit{
+				Limit: common.BKNoLimit,
+			},
+			Condition: cond.ToMapStr(),
+		}
+		objectType := common.GetObjByType(valid.objID)
+		result, err := valid.CoreAPI.CoreService().Instance().ReadInstance(valid.ctx, valid.pheader, objectType, inputParam)
 		if nil != err {
 			blog.Errorf("[validCreateUnique] search [%s] inst error %v", valid.objID, err)
 			return err
@@ -109,7 +116,6 @@ func (valid *ValidMap) validCreateUnique(valData map[string]interface{}) error {
 
 			return valid.errif.Errorf(common.CCErrCommDuplicateItem, strings.Join(propertyNames, ","))
 		}
-
 	}
 
 	return nil
