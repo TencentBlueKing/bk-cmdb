@@ -20,20 +20,6 @@ import (
 	"configcenter/src/common/metadata"
 )
 
-func (t *instance) CreateObject(ctx context.Context, objType string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult, err error) {
-	resp = new(metadata.CreateInstResult)
-	subPath := fmt.Sprintf("/insts/%s", objType)
-
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(dat).
-		SubResource(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 func (t *instance) DelObject(ctx context.Context, objType string, h http.Header, dat map[string]interface{}) (resp *metadata.DeleteResult, err error) {
 	resp = new(metadata.DeleteResult)
 	subPath := fmt.Sprintf("/insts/%s", objType)
