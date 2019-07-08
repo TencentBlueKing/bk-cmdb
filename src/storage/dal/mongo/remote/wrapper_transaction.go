@@ -38,11 +38,11 @@ func (c *Mongo) AutoRun(ctx context.Context, opt dal.TxnWrapperOption, f func(he
 	err = f(header)
 	if err != nil {
 		// Abort error. mongodb session can rollback
-		txnErr := txn.Abort(newCtx)
-		if txnErr != nil {
+		if txnErr := txn.Abort(newCtx); txnErr != nil {
 			blog.ErrorfDepth(1, "wrapper stranscation start error. err:%s, txnErr:%s, rid:%s", err.Error(), txnErr.Error(), rid)
+			return txnErr
 		}
-		return err
+		return nil
 	}
 
 	err = txn.Commit(newCtx)

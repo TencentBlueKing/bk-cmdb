@@ -93,6 +93,7 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if f.TxnID != "" {
 		f.msg.TxnID = f.TxnID
 	}
+	// find one. need return one row
 	f.msg.Start = 0
 	f.msg.Limit = 1
 
