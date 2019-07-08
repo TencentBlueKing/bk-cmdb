@@ -89,15 +89,18 @@ func (m *module) isValidSet(bizID, setID int64) (bool, error) {
 }
 
 func (m *module) isRepeated(moduleName string, excludeModuleIDS interface{}) (bool, error) {
-
-	cond := condition.CreateCondition()
-	cond.Field(common.BKModuleNameField).Eq(moduleName)
-	cond.Field(common.BKModuleIDField).NotIn(excludeModuleIDS)
-
-	query := &metadata.QueryInput{}
-	query.Condition = cond.ToMapStr()
-
-	rsp, err := m.client.ObjectController().Instance().SearchObjects(context.Background(), common.BKInnerObjIDModule, m.params.Header, query)
+	inputParam := &metadata.QueryCondition{
+		Limit: metadata.SearchLimit{
+			Limit: common.BKNoLimit,
+		},
+		Condition: map[string]interface{}{
+			common.BKModuleNameField: moduleName,
+			common.BKModuleIDField: map[string]interface{}{
+				common.BKDBNIN: excludeModuleIDS,
+			},
+		},
+	}
+	rsp, err := m.client.CoreService().Instance().ReadInstance(m.params.Context, m.params.Header, common.BKInnerObjIDModule, inputParam)
 	if nil != err {
 		blog.Errorf("[compatiblev2-module] failed to request object controller, err: %s", err.Error())
 		return false, m.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
