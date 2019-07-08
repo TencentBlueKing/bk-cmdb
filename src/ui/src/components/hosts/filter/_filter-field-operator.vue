@@ -1,5 +1,15 @@
 <template>
-    <bk-selector :list="list" :selected.sync="localSelected" :disabled="disabled"></bk-selector>
+    <bk-select
+        v-model="localSelected"
+        :clearable="false"
+        :disabled="disabled">
+        <bk-option
+            v-for="(option, index) in list"
+            :key="index"
+            :id="option.id"
+            :name="option.name">
+        </bk-option>
+    </bk-select>
 </template>
 
 <script>

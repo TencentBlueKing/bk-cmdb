@@ -1,0 +1,23 @@
+.bk-selector .bk-selector-list-item .text {
+    @include ellipsis;
+}
+
+.bk-selector.bk-selector-small {
+    .bk-selector-input {
+        height: 30px;
+        line-height: 30px;
+    }
+
+    .bk-selector-icon {
+        top: 9px;
+    }
+}
+
+.bk-sideslider {
+    .bk-sideslider-wrapper {
+        padding: 0;
+    }
+    .bk-sideslider-content {
+        height: calc(100% - 60px);
+    }
+}
