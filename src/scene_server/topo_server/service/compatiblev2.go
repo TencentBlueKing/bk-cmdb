@@ -113,16 +113,15 @@ func (s *Service) DeleteSetHost(params types.ContextParams, pathParams, queryPar
 		return nil, params.Err.Errorf(common.CCErrCommParamsNeedInt, "business id")
 	}
 
-	setIDS, exists := data.Get(common.BKSetIDField)
-	if !exists {
-		blog.Errorf("[api-compatiblev2] failed to get the set ids, the input data is %#v", data)
-		return nil, params.Err.Errorf(common.CCErrCommParamsLostField, common.BKSetIDField)
+	requestBody := struct {
+		setIDs []int64 `json:"bk_set_id" field:"bk_set_id" bson:"bk_set_id"`
+	}{}
+	if err := data.MarshalJSONInto(&requestBody); err != nil {
+		blog.Errorf("[api-compatiblev2] parse request body failed, the input data is %#v", data)
+		return nil, params.Err.Errorf(common.CCErrCommParamsInvalid, common.BKSetIDField)
 	}
 
-	cond := condition.CreateCondition()
-	cond.Field(common.BKAppIDField).Eq(bizID)
-	cond.Field(common.BKSetIDField).In(setIDS)
-	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, cond)
+	err = s.Core.CompatibleV2Operation().Set(params).DeleteSetHost(bizID, requestBody.setIDs)
 	return nil, err
 }
 

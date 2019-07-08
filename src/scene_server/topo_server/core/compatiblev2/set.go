@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/core/types"
 )
 
@@ -28,7 +29,8 @@ import (
 type SetInterface interface {
 	UpdateMultiSet(bizID int64, data mapstr.MapStr, cond condition.Condition) error
 	DeleteMultiSet(bizID int64, setIDS []int64) error
-	DeleteSetHost(bizID int64, cond condition.Condition) error
+	// DeleteSetHost(bizID int64, option interface{}) error
+	DeleteSetHost(bizID int64, setIDs []int64) error
 }
 
 // NewSet ceate a new set instance
@@ -147,13 +149,37 @@ func (s *set) DeleteMultiSet(bizID int64, setIDS []int64) error {
 
 	return nil
 }
-func (s *set) DeleteSetHost(bizID int64, cond condition.Condition) error {
 
-	rsp, err := s.client.ObjectController().OpenAPI().DeleteSetHost(context.Background(), s.params.Header, cond.ToMapStr())
+func (s *set) DeleteSetHost(bizID int64, setIDs []int64) error {
+	defaultModule, err := s.client.CoreService().Process().GetBusinessDefaultSetModuleInfo(s.params.Context, s.params.Header, bizID)
+	if err != nil {
+		blog.Errorf("[compatiblev2-set] failed to get biz default modules, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		return err
+	}
 
-	if nil != err {
-		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s", err.Error())
-		return s.params.Err.Error(common.CCErrCommHTTPDoRequestFailed)
+	relationParam := metadata.HostModuleRelationRequest{
+		ApplicationID: bizID,
+		SetIDArr:      setIDs,
+	}
+	relations, ccerr := s.client.CoreService().Host().GetHostModuleRelation(s.params.Context, s.params.Header, &relationParam)
+	if ccerr != nil {
+		blog.Errorf("[compatiblev2-set] failed find hosts, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		return ccerr
+	}
+	hostIDs := make([]int64, 0)
+	for _, relation := range relations.Data {
+		hostIDs = append(hostIDs, relation.HostID)
+	}
+	hostIDs = util.IntArrayUnique(hostIDs)
+	transferOption := &metadata.TransferHostToInnerModule{
+		ApplicationID: bizID,
+		ModuleID:      defaultModule.IdleModuleID,
+		HostID:        hostIDs,
+	}
+	rsp, ccerr := s.client.CoreService().Host().TransferToInnerModule(s.params.Context, s.params.Header, transferOption)
+	if nil != ccerr {
+		blog.Errorf("[compatiblev2-set] failed to delete the set hosts, err: %s, rid: %s", err.Error(), s.params.ReqID)
+		return ccerr
 	}
 
 	if !rsp.Result {
