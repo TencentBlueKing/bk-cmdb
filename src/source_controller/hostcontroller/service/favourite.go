@@ -126,7 +126,7 @@ func (s *Service) UpdateHostFavouriteByID(req *restful.Request, resp *restful.Re
 		}
 		if 0 < rowCount {
 			blog.Errorf("host user api  name duplicate , params:%v", dupParams)
-			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, "")})
+			resp.WriteError(http.StatusBadRequest, &meta.RespError{Msg: defErr.Errorf(common.CCErrCommDuplicateItem, fav.Name)})
 			return
 		}
 	}
