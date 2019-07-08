@@ -49,7 +49,6 @@ func (s *Service) WebService() *restful.Container {
 
 	api.Route(api.POST("/identifier/{obj_type}/search").To(s.SearchIdentifier))
 
-	api.Route(api.DELETE("/insts/{obj_type}").To(s.DeleteInstObject))
 	api.Route(api.PUT("/insts/{obj_type}").To(s.UpdateInstObject))
 
 	api.Route(api.POST("/meta/objectatts").To(s.SelectObjectAttWithParams))
